@@ -1,0 +1,302 @@
+# Two-DC EVPN lab skeleton (topology only)
+# - Each DC: 4 spines + 4 leaves + 4 dual-homed hosts
+# - Each DC: 2 extra cEOS routers connected to spine1 and spine3
+# - Inter-DC: routers connected for MPLS-based DCI (EVPN-MPLS in configs later)
+# Save as: ceos-2dc-evpn-dci.clab.yml
+name: ceos-2dc-evpn-dci
+
+topology:
+  kinds:
+    arista_ceos:
+      image: ceos:4.35.1F
+
+  nodes:
+    # =========================
+    # DC1 (left)
+    # =========================
+    dc1-spine1:
+      kind: arista_ceos
+      binds:
+        - configs/dc1-spine1.cfg:/mnt/flash/startup-config
+    dc1-spine2:
+      kind: arista_ceos
+      binds:
+        - configs/dc1-spine2.cfg:/mnt/flash/startup-config
+    dc1-spine3:
+      kind: arista_ceos
+      binds:
+        - configs/dc1-spine3.cfg:/mnt/flash/startup-config
+    dc1-spine4:
+      kind: arista_ceos
+      binds:
+        - configs/dc1-spine4.cfg:/mnt/flash/startup-config
+
+    dc1-leaf1:
+      kind: arista_ceos
+      binds:
+        - configs/dc1-leaf1.cfg:/mnt/flash/startup-config
+    dc1-leaf2:
+      kind: arista_ceos
+      binds:
+        - configs/dc1-leaf2.cfg:/mnt/flash/startup-config
+    dc1-leaf3:
+      kind: arista_ceos
+      binds:
+        - configs/dc1-leaf3.cfg:/mnt/flash/startup-config
+    dc1-leaf4:
+      kind: arista_ceos
+      binds:
+        - configs/dc1-leaf4.cfg:/mnt/flash/startup-config
+
+    # DC1 DCI routers (cEOS)
+    dc1-router1:
+      kind: arista_ceos
+      binds:
+        - configs/dc1-router1.cfg:/mnt/flash/startup-config
+    dc1-router2:
+      kind: arista_ceos
+      binds:
+        - configs/dc1-router2.cfg:/mnt/flash/startup-config
+
+    # DC1 hosts (dual-homed)
+    dc1-host1:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      exec:
+        - bash -lc 'set -e; ip link del bond0 2>/dev/null || true; ip link del bond0.10 2>/dev/null || true; ip link del bond0.20 2>/dev/null || true'
+        - bash -lc 'set -e; ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast xmit_hash_policy layer3+4'
+        - bash -lc 'set -e; ip link set eth1 down; ip link set eth2 down; ip link set eth1 master bond0; ip link set eth2 master bond0'
+        - bash -lc 'set -e; ip link set bond0 up; ip link set eth1 up; ip link set eth2 up'
+        - bash -lc 'set -e; ip link add link bond0 name bond0.10 type vlan id 10; ip link add link bond0 name bond0.20 type vlan id 20; ip link set bond0.10 up; ip link set bond0.20 up'
+        - bash -lc 'set -e; ip addr add 192.168.10.11/24 dev bond0.10; ip addr add 192.168.20.11/24 dev bond0.20'
+        - bash -lc 'set -e; ip route replace default via 192.168.10.1 dev bond0.10'
+
+    dc1-host2:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      exec:
+        - bash -lc 'set -e; ip link del bond0 2>/dev/null || true; ip link del bond0.10 2>/dev/null || true; ip link del bond0.30 2>/dev/null || true'
+        - bash -lc 'set -e; ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast xmit_hash_policy layer3+4'
+        - bash -lc 'set -e; ip link set eth1 down; ip link set eth2 down; ip link set eth1 master bond0; ip link set eth2 master bond0'
+        - bash -lc 'set -e; ip link set bond0 up; ip link set eth1 up; ip link set eth2 up'
+        - bash -lc 'set -e; ip link add link bond0 name bond0.10 type vlan id 10; ip link add link bond0 name bond0.30 type vlan id 30; ip link set bond0.10 up; ip link set bond0.30 up'
+        - bash -lc 'set -e; ip addr add 192.168.10.12/24 dev bond0.10; ip addr add 192.168.30.12/24 dev bond0.30'
+        - bash -lc 'set -e; ip route replace default via 192.168.10.1 dev bond0.10'
+
+    dc1-host3:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      exec:
+        - bash -lc 'set -e; ip link del bond0 2>/dev/null || true; ip link del bond0.10 2>/dev/null || true; ip link del bond0.20 2>/dev/null || true'
+        - bash -lc 'set -e; ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast xmit_hash_policy layer3+4'
+        - bash -lc 'set -e; ip link set eth1 down; ip link set eth2 down; ip link set eth1 master bond0; ip link set eth2 master bond0'
+        - bash -lc 'set -e; ip link set bond0 up; ip link set eth1 up; ip link set eth2 up'
+        - bash -lc 'set -e; ip link add link bond0 name bond0.10 type vlan id 10; ip link add link bond0 name bond0.20 type vlan id 20; ip link set bond0.10 up; ip link set bond0.20 up'
+        - bash -lc 'set -e; ip addr add 192.168.10.13/24 dev bond0.10; ip addr add 192.168.20.13/24 dev bond0.20'
+        - bash -lc 'set -e; ip route replace default via 192.168.10.1 dev bond0.10'
+
+    dc1-host4:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      exec:
+        - bash -lc 'set -e; ip link del bond0 2>/dev/null || true; ip link del bond0.10 2>/dev/null || true; ip link del bond0.30 2>/dev/null || true'
+        - bash -lc 'set -e; ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast xmit_hash_policy layer3+4'
+        - bash -lc 'set -e; ip link set eth1 down; ip link set eth2 down; ip link set eth1 master bond0; ip link set eth2 master bond0'
+        - bash -lc 'set -e; ip link set bond0 up; ip link set eth1 up; ip link set eth2 up'
+        - bash -lc 'set -e; ip link add link bond0 name bond0.10 type vlan id 10; ip link add link bond0 name bond0.30 type vlan id 30; ip link set bond0.10 up; ip link set bond0.30 up'
+        - bash -lc 'set -e; ip addr add 192.168.10.14/24 dev bond0.10; ip addr add 192.168.30.14/24 dev bond0.30'
+        - bash -lc 'set -e; ip route replace default via 192.168.10.1 dev bond0.10'
+
+    # =========================
+    # DC2 (right)
+    # =========================
+    dc2-spine1:
+      kind: arista_ceos
+      binds:
+        - configs/dc2-spine1.cfg:/mnt/flash/startup-config
+    dc2-spine2:
+      kind: arista_ceos
+      binds:
+        - configs/dc2-spine2.cfg:/mnt/flash/startup-config
+    dc2-spine3:
+      kind: arista_ceos
+      binds:
+        - configs/dc2-spine3.cfg:/mnt/flash/startup-config
+    dc2-spine4:
+      kind: arista_ceos
+      binds:
+        - configs/dc2-spine4.cfg:/mnt/flash/startup-config
+
+    dc2-leaf1:
+      kind: arista_ceos
+      binds:
+        - configs/dc2-leaf1.cfg:/mnt/flash/startup-config
+    dc2-leaf2:
+      kind: arista_ceos
+      binds:
+        - configs/dc2-leaf2.cfg:/mnt/flash/startup-config
+    dc2-leaf3:
+      kind: arista_ceos
+      binds:
+        - configs/dc2-leaf3.cfg:/mnt/flash/startup-config
+    dc2-leaf4:
+      kind: arista_ceos
+      binds:
+        - configs/dc2-leaf4.cfg:/mnt/flash/startup-config
+
+    # DC2 DCI routers (cEOS)
+    dc2-router1:
+      kind: arista_ceos
+      binds:
+        - configs/dc2-router1.cfg:/mnt/flash/startup-config
+    dc2-router2:
+      kind: arista_ceos
+      binds:
+        - configs/dc2-router2.cfg:/mnt/flash/startup-config
+
+    # DC2 hosts (dual-homed)
+    dc2-host1:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      exec:
+        - bash -lc 'set -e; ip link del bond0 2>/dev/null || true; ip link del bond0.10 2>/dev/null || true; ip link del bond0.20 2>/dev/null || true'
+        - bash -lc 'set -e; ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast xmit_hash_policy layer3+4'
+        - bash -lc 'set -e; ip link set eth1 down; ip link set eth2 down; ip link set eth1 master bond0; ip link set eth2 master bond0'
+        - bash -lc 'set -e; ip link set bond0 up; ip link set eth1 up; ip link set eth2 up'
+        - bash -lc 'set -e; ip link add link bond0 name bond0.10 type vlan id 10; ip link add link bond0 name bond0.20 type vlan id 20; ip link set bond0.10 up; ip link set bond0.20 up'
+        - bash -lc 'set -e; ip addr add 192.168.10.21/24 dev bond0.10; ip addr add 192.168.120.21/24 dev bond0.20'
+        - bash -lc 'set -e; ip route replace default via 192.168.10.1 dev bond0.10'
+
+    dc2-host2:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      exec:
+        - bash -lc 'set -e; ip link del bond0 2>/dev/null || true; ip link del bond0.10 2>/dev/null || true; ip link del bond0.30 2>/dev/null || true'
+        - bash -lc 'set -e; ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast xmit_hash_policy layer3+4'
+        - bash -lc 'set -e; ip link set eth1 down; ip link set eth2 down; ip link set eth1 master bond0; ip link set eth2 master bond0'
+        - bash -lc 'set -e; ip link set bond0 up; ip link set eth1 up; ip link set eth2 up'
+        - bash -lc 'set -e; ip link add link bond0 name bond0.10 type vlan id 10; ip link add link bond0 name bond0.30 type vlan id 30; ip link set bond0.10 up; ip link set bond0.30 up'
+        - bash -lc 'set -e; ip addr add 192.168.10.22/24 dev bond0.10; ip addr add 192.168.130.22/24 dev bond0.30'
+        - bash -lc 'set -e; ip route replace default via 192.168.10.1 dev bond0.10'
+
+    dc2-host3:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      exec:
+        - bash -lc 'set -e; ip link del bond0 2>/dev/null || true; ip link del bond0.10 2>/dev/null || true; ip link del bond0.20 2>/dev/null || true'
+        - bash -lc 'set -e; ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast xmit_hash_policy layer3+4'
+        - bash -lc 'set -e; ip link set eth1 down; ip link set eth2 down; ip link set eth1 master bond0; ip link set eth2 master bond0'
+        - bash -lc 'set -e; ip link set bond0 up; ip link set eth1 up; ip link set eth2 up'
+        - bash -lc 'set -e; ip link add link bond0 name bond0.10 type vlan id 10; ip link add link bond0 name bond0.20 type vlan id 20; ip link set bond0.10 up; ip link set bond0.20 up'
+        - bash -lc 'set -e; ip addr add 192.168.10.23/24 dev bond0.10; ip addr add 192.168.120.23/24 dev bond0.20'
+        - bash -lc 'set -e; ip route replace default via 192.168.10.1 dev bond0.10'
+
+    dc2-host4:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      exec:
+        - bash -lc 'set -e; ip link del bond0 2>/dev/null || true; ip link del bond0.10 2>/dev/null || true; ip link del bond0.30 2>/dev/null || true'
+        - bash -lc 'set -e; ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast xmit_hash_policy layer3+4'
+        - bash -lc 'set -e; ip link set eth1 down; ip link set eth2 down; ip link set eth1 master bond0; ip link set eth2 master bond0'
+        - bash -lc 'set -e; ip link set bond0 up; ip link set eth1 up; ip link set eth2 up'
+        - bash -lc 'set -e; ip link add link bond0 name bond0.10 type vlan id 10; ip link add link bond0 name bond0.30 type vlan id 30; ip link set bond0.10 up; ip link set bond0.30 up'
+        - bash -lc 'set -e; ip addr add 192.168.10.24/24 dev bond0.10; ip addr add 192.168.130.24/24 dev bond0.30'
+        - bash -lc 'set -e; ip route replace default via 192.168.10.1 dev bond0.10'
+
+  links:
+    # =========================================================
+    # DC1 leaf <-> spines
+    # =========================================================
+    - endpoints: ["dc1-leaf1:eth1", "dc1-spine1:eth1"]
+    - endpoints: ["dc1-leaf1:eth2", "dc1-spine2:eth1"]
+    - endpoints: ["dc1-leaf1:eth3", "dc1-spine3:eth1"]
+    - endpoints: ["dc1-leaf1:eth4", "dc1-spine4:eth1"]
+
+    - endpoints: ["dc1-leaf2:eth1", "dc1-spine1:eth2"]
+    - endpoints: ["dc1-leaf2:eth2", "dc1-spine2:eth2"]
+    - endpoints: ["dc1-leaf2:eth3", "dc1-spine3:eth2"]
+    - endpoints: ["dc1-leaf2:eth4", "dc1-spine4:eth2"]
+
+    - endpoints: ["dc1-leaf3:eth1", "dc1-spine1:eth3"]
+    - endpoints: ["dc1-leaf3:eth2", "dc1-spine2:eth3"]
+    - endpoints: ["dc1-leaf3:eth3", "dc1-spine3:eth3"]
+    - endpoints: ["dc1-leaf3:eth4", "dc1-spine4:eth3"]
+
+    - endpoints: ["dc1-leaf4:eth1", "dc1-spine1:eth4"]
+    - endpoints: ["dc1-leaf4:eth2", "dc1-spine2:eth4"]
+    - endpoints: ["dc1-leaf4:eth3", "dc1-spine3:eth4"]
+    - endpoints: ["dc1-leaf4:eth4", "dc1-spine4:eth4"]
+
+    # DC1 leaf-to-leaf links (ops/keepalive; NOT MLAG for ESI)
+    - endpoints: ["dc1-leaf1:eth7", "dc1-leaf2:eth7"]
+    - endpoints: ["dc1-leaf3:eth7", "dc1-leaf4:eth7"]
+
+    # DC1 hosts (dual-homed)
+    - endpoints: ["dc1-leaf1:eth5", "dc1-host1:eth1"]
+    - endpoints: ["dc1-leaf2:eth5", "dc1-host1:eth2"]
+
+    - endpoints: ["dc1-leaf1:eth6", "dc1-host2:eth1"]
+    - endpoints: ["dc1-leaf2:eth6", "dc1-host2:eth2"]
+
+    - endpoints: ["dc1-leaf3:eth5", "dc1-host3:eth1"]
+    - endpoints: ["dc1-leaf4:eth5", "dc1-host3:eth2"]
+
+    - endpoints: ["dc1-leaf3:eth6", "dc1-host4:eth1"]
+    - endpoints: ["dc1-leaf4:eth6", "dc1-host4:eth2"]
+
+    # DC1 routers to spines (directive: connected to spine1 and spine3)
+    - endpoints: ["dc1-router1:eth1", "dc1-spine1:eth5"]
+    - endpoints: ["dc1-router2:eth1", "dc1-spine3:eth5"]
+
+    # =========================================================
+    # DC2 leaf <-> spines
+    # =========================================================
+    - endpoints: ["dc2-leaf1:eth1", "dc2-spine1:eth1"]
+    - endpoints: ["dc2-leaf1:eth2", "dc2-spine2:eth1"]
+    - endpoints: ["dc2-leaf1:eth3", "dc2-spine3:eth1"]
+    - endpoints: ["dc2-leaf1:eth4", "dc2-spine4:eth1"]
+
+    - endpoints: ["dc2-leaf2:eth1", "dc2-spine1:eth2"]
+    - endpoints: ["dc2-leaf2:eth2", "dc2-spine2:eth2"]
+    - endpoints: ["dc2-leaf2:eth3", "dc2-spine3:eth2"]
+    - endpoints: ["dc2-leaf2:eth4", "dc2-spine4:eth2"]
+
+    - endpoints: ["dc2-leaf3:eth1", "dc2-spine1:eth3"]
+    - endpoints: ["dc2-leaf3:eth2", "dc2-spine2:eth3"]
+    - endpoints: ["dc2-leaf3:eth3", "dc2-spine3:eth3"]
+    - endpoints: ["dc2-leaf3:eth4", "dc2-spine4:eth3"]
+
+    - endpoints: ["dc2-leaf4:eth1", "dc2-spine1:eth4"]
+    - endpoints: ["dc2-leaf4:eth2", "dc2-spine2:eth4"]
+    - endpoints: ["dc2-leaf4:eth3", "dc2-spine3:eth4"]
+    - endpoints: ["dc2-leaf4:eth4", "dc2-spine4:eth4"]
+
+    # DC2 leaf-to-leaf links (ops/keepalive; NOT MLAG for ESI)
+    - endpoints: ["dc2-leaf1:eth7", "dc2-leaf2:eth7"]
+    - endpoints: ["dc2-leaf3:eth7", "dc2-leaf4:eth7"]
+
+    # DC2 hosts (dual-homed)
+    - endpoints: ["dc2-leaf1:eth5", "dc2-host1:eth1"]
+    - endpoints: ["dc2-leaf2:eth5", "dc2-host1:eth2"]
+
+    - endpoints: ["dc2-leaf1:eth6", "dc2-host2:eth1"]
+    - endpoints: ["dc2-leaf2:eth6", "dc2-host2:eth2"]
+
+    - endpoints: ["dc2-leaf3:eth5", "dc2-host3:eth1"]
+    - endpoints: ["dc2-leaf4:eth5", "dc2-host3:eth2"]
+
+    - endpoints: ["dc2-leaf3:eth6", "dc2-host4:eth1"]
+    - endpoints: ["dc2-leaf4:eth6", "dc2-host4:eth2"]
+
+    # DC2 routers to spines (directive: connected to spine1 and spine3)
+    - endpoints: ["dc2-router1:eth1", "dc2-spine1:eth5"]
+    - endpoints: ["dc2-router2:eth1", "dc2-spine3:eth5"]
+
+    # =========================================================
+    # Inter-DC DCI links (routers)
+    # =========================================================
+    # As per directive #8 (and symmetric for redundancy):
+    - endpoints: ["dc1-router1:eth2", "dc2-router1:eth2"]
+    - endpoints: ["dc1-router1:eth3", "dc2-router2:eth2"]
+    - endpoints: ["dc1-router2:eth2", "dc2-router1:eth3"]
+    - endpoints: ["dc1-router2:eth3", "dc2-router2:eth3"]
