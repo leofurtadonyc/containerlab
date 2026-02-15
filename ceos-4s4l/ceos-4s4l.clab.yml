@@ -1,6 +1,9 @@
 # 4x4 Clos fabric with Arista cEOS (4 spines, 4 leaves)
 # + dual-homed end hosts (bonding/LACP to leaf pairs)
 # + leaf-to-leaf links (leaf1<->leaf2, leaf3<->leaf4)
+# Variant B: VLAN10 stretched (192.168.10.0/24), VLAN20 rack-local
+#   Rack A VLAN20 = 192.168.20.0/24 (l4h1,l4h2)
+#   Rack B VLAN20 = 192.168.30.0/24 (l4h3,l4h4)
 # Save as: ceos-4s4l.clab.yml
 name: ceos-4s4l
 
@@ -78,7 +81,7 @@ topology:
         - bash -lc 'set -e; ip link set eth1 down; ip link set eth2 down; ip link set eth1 master bond0; ip link set eth2 master bond0'
         - bash -lc 'set -e; ip link set bond0 up; ip link set eth1 up; ip link set eth2 up'
         - bash -lc 'set -e; ip link add link bond0 name bond0.10 type vlan id 10; ip link add link bond0 name bond0.20 type vlan id 20; ip link set bond0.10 up; ip link set bond0.20 up'
-        - bash -lc 'set -e; ip addr add 192.168.10.13/24 dev bond0.10; ip addr add 192.168.20.13/24 dev bond0.20'
+        - bash -lc 'set -e; ip addr add 192.168.10.13/24 dev bond0.10; ip addr add 192.168.30.13/24 dev bond0.20'
         - bash -lc 'set -e; ip route replace default via 192.168.10.1 dev bond0.10'
 
     l4h4:
@@ -90,7 +93,7 @@ topology:
         - bash -lc 'set -e; ip link set eth1 down; ip link set eth2 down; ip link set eth1 master bond0; ip link set eth2 master bond0'
         - bash -lc 'set -e; ip link set bond0 up; ip link set eth1 up; ip link set eth2 up'
         - bash -lc 'set -e; ip link add link bond0 name bond0.10 type vlan id 10; ip link add link bond0 name bond0.20 type vlan id 20; ip link set bond0.10 up; ip link set bond0.20 up'
-        - bash -lc 'set -e; ip addr add 192.168.10.14/24 dev bond0.10; ip addr add 192.168.20.14/24 dev bond0.20'
+        - bash -lc 'set -e; ip addr add 192.168.10.14/24 dev bond0.10; ip addr add 192.168.30.14/24 dev bond0.20'
         - bash -lc 'set -e; ip route replace default via 192.168.10.1 dev bond0.10'
 
   links:
