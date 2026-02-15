@@ -89,7 +89,7 @@ host2: 192.168.10.12
 host3: 192.168.10.13
 host4: 192.168.10.14
 
-## VLAN 20 (“DB”): also stretched or kept local depending on what you want
+## VLAN 20 (“DB”): also stretched or kept local depending on what we want
 
 Two good variants:
 Variant A (stretched too): good for pure L2 learning exercises
@@ -123,3 +123,31 @@ a) EVPN Ethernet Segment (ES)
 b) DF election
 c) split-horizon
 d) all-active load-sharing
+
+# Regarding the BGP design of this topology
+And why I put each leaf in its own ASN (65101–65104) while all spines share one ASN (65000).
+
+That pattern is a very common eBGP Clos choice:
+Spines share one ASN (e.g., 65000) so they look like a single “core AS” for the pod.
+Each leaf (or each leaf pair / rack) gets its own ASN so every leaf–spine session is true eBGP, and you get BGP’s native loop-prevention and clearer troubleshooting.
+
+Several Arista’s ATD EVPN labs also describe spines as EVPN “Route Servers” that receive EVPN routes from leaves and naturally propagate them across the fabric in an eBGP design.
+
+So the intent was:
+
+- Underlay: leaf↔spine eBGP for loopbacks and p2p
+- Overlay: leaf↔spine eBGP EVPN, with spines acting as route servers (not VTEPs)
+
+So, this Multi-AS (unique leaf ASNs; spines share one ASN) has the following pros and cons:
+
+a) Pros
+- Clean eBGP loop prevention (no special knobs).
+- Easy to see where routes originate (AS-path tells you which leaf/rack).
+- Scales cleanly; matches how many operators run eBGP Clos.
+
+b) Cons / gotcha
+
+- If you use route-target … auto, you can accidentally generate different RTs per leaf (because “auto” often derives from ASN), which will break EVPN import/export across leaves — exactly what you hit (no MAC/IP routes imported).
+- In multi-AS you should either:
+    - set RTs explicitly, or
+    - Use an RT scheme that’s not tied to varying ASNs.
