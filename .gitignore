@@ -1,0 +1,19 @@
+# Containerlab runtime artifacts
+clab-*/
+*__clabtmp*
+*.log
+
+# Generated per-run inventories / ansible
+inventory.yml
+ansible-inventory.yml
+
+# Local tooling / OS
+.DS_Store
+Thumbs.db
+
+# Secrets / creds
+*.key
+*.pem
+*.crt
+*.pfx
+*.env

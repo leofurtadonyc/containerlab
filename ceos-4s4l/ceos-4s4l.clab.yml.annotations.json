@@ -1,0 +1,455 @@
+{
+  "freeTextAnnotations": [
+    {
+      "id": "freeText_1771096138744_74a3e15a",
+      "text": "L0: 10.255.1.1/32",
+      "position": {
+        "x": -151,
+        "y": 122
+      },
+      "fontSize": 4,
+      "fontColor": "#f90101",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1771096629322_4f1b6800",
+      "text": "L0: 10.255.1.2/32",
+      "position": {
+        "x": -38,
+        "y": 121
+      },
+      "fontSize": 4,
+      "fontColor": "#f90101",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1771096645575_d85d68c5",
+      "text": "L1: 10.255.2.2/32",
+      "position": {
+        "x": -38,
+        "y": 130
+      },
+      "fontSize": 4,
+      "fontColor": "#f99e00",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1771096668481_bf92da76",
+      "text": "L0: 10.255.1.3/32",
+      "position": {
+        "x": 73,
+        "y": 121
+      },
+      "fontSize": 4,
+      "fontColor": "#f90101",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1771096704836_e7a108d3",
+      "text": "L1: 10.255.2.3/32",
+      "position": {
+        "x": 73,
+        "y": 130
+      },
+      "fontSize": 4,
+      "fontColor": "#f99e00",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1771096740369_96ba277d",
+      "text": "L0: 10.255.1.4/32\n",
+      "position": {
+        "x": 157,
+        "y": 120
+      },
+      "fontSize": 4,
+      "fontColor": "#f90101",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1771096762098_2eac807f",
+      "text": "L1: 10.255.2.4/32",
+      "position": {
+        "x": 157,
+        "y": 130
+      },
+      "fontSize": 4,
+      "fontColor": "#f29a03",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1771096868172_ee0b2144",
+      "text": "L0: 10.255.0.1/32",
+      "position": {
+        "x": -151,
+        "y": -16
+      },
+      "fontSize": 4,
+      "fontColor": "#f90002",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1771096925010_6c826069",
+      "text": "L0: 10.255.0.2/32",
+      "position": {
+        "x": -39,
+        "y": -16
+      },
+      "fontSize": 4,
+      "fontColor": "#f90002",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1771096950449_284b2dfa",
+      "text": "L0: 10.255.0.3/32",
+      "position": {
+        "x": 73,
+        "y": -16
+      },
+      "fontSize": 4,
+      "fontColor": "#f90002",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true,
+      "groupId": "group-1"
+    },
+    {
+      "id": "freeText_1771096967100_21f4a0f6",
+      "text": "L0: 10.255.0.4/32",
+      "position": {
+        "x": 157,
+        "y": -16
+      },
+      "fontSize": 4,
+      "fontColor": "#f90002",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true,
+      "groupId": "group-1"
+    },
+    {
+      "id": "freeText_1771097145104_5680c626",
+      "text": "L1: 10.255.2.1/32",
+      "position": {
+        "x": -151,
+        "y": 130
+      },
+      "fontSize": 4,
+      "fontColor": "#f99e00",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1771097435861_876b0dcd",
+      "text": "BGP AS 65000",
+      "position": {
+        "x": -151,
+        "y": -24
+      },
+      "fontSize": 4,
+      "fontColor": "#00f6fa",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true,
+      "groupId": "group-1"
+    },
+    {
+      "id": "freeText_1771097476292_4357b256",
+      "text": "BGP AS 65000",
+      "position": {
+        "x": -38,
+        "y": -24
+      },
+      "fontSize": 4,
+      "fontColor": "#00f6fa",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true,
+      "groupId": "group-1"
+    },
+    {
+      "id": "freeText_1771097531186_b257645f",
+      "text": "BGP AS 65000",
+      "position": {
+        "x": 73,
+        "y": -24
+      },
+      "fontSize": 4,
+      "fontColor": "#00f6fa",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true,
+      "groupId": "group-1"
+    },
+    {
+      "id": "freeText_1771097545145_0e75d706",
+      "text": "BGP AS 65000",
+      "position": {
+        "x": 157,
+        "y": -24
+      },
+      "fontSize": 4,
+      "fontColor": "#00f6fa",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true,
+      "groupId": "group-1"
+    },
+    {
+      "id": "freeText_1771097615075_9d157b37",
+      "text": "BGP AS 65101",
+      "position": {
+        "x": -151,
+        "y": 139
+      },
+      "fontSize": 4,
+      "fontColor": "#00f6fa",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1771097646720_5004ab3a",
+      "text": "BGP AS 65102",
+      "position": {
+        "x": -38,
+        "y": 140
+      },
+      "fontSize": 4,
+      "fontColor": "#00f6fa",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1771097665025_cf34e850",
+      "text": "BGP AS 65103",
+      "position": {
+        "x": 74,
+        "y": 140
+      },
+      "fontSize": 4,
+      "fontColor": "#00f6fa",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1771097680913_6ab74f1d",
+      "text": "BGP AS 65104",
+      "position": {
+        "x": 157,
+        "y": 139
+      },
+      "fontSize": 4,
+      "fontColor": "#00f6fa",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    }
+  ],
+  "freeShapeAnnotations": [],
+  "groupStyleAnnotations": [
+    {
+      "id": "group-1",
+      "name": "EVPN-VXLAN - Network Automation Lab",
+      "level": "1",
+      "position": {
+        "x": -14.252131581559922,
+        "y": 34.34879539816899
+      },
+      "width": 391.5518023544062,
+      "height": 182.42865658978255,
+      "backgroundColor": "#d9d9d9",
+      "backgroundOpacity": 20,
+      "borderColor": "#dddddd",
+      "borderWidth": 0.5,
+      "borderStyle": "solid",
+      "borderRadius": 0,
+      "labelColor": "#ebecf0",
+      "labelPosition": "top-center",
+      "zIndex": 1
+    }
+  ],
+  "networkNodeAnnotations": [],
+  "nodeAnnotations": [
+    {
+      "id": "spine2",
+      "position": {
+        "x": -49,
+        "y": -21
+      }
+    },
+    {
+      "id": "spine3",
+      "position": {
+        "x": 63,
+        "y": -21
+      }
+    },
+    {
+      "id": "leaf3",
+      "position": {
+        "x": 63,
+        "y": 77
+      }
+    },
+    {
+      "id": "leaf4",
+      "position": {
+        "x": 147,
+        "y": 77
+      }
+    },
+    {
+      "id": "spine4",
+      "position": {
+        "x": 147,
+        "y": -21
+      }
+    },
+    {
+      "id": "spine1",
+      "position": {
+        "x": -161,
+        "y": -21
+      }
+    },
+    {
+      "id": "leaf1",
+      "position": {
+        "x": -161,
+        "y": 77
+      }
+    },
+    {
+      "id": "leaf2",
+      "position": {
+        "x": -49,
+        "y": 77
+      }
+    }
+  ],
+  "edgeAnnotations": [],
+  "aliasEndpointAnnotations": [],
+  "viewerSettings": {}
+}

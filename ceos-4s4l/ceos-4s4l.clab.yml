@@ -1,0 +1,137 @@
+# 4x4 Clos fabric with Arista cEOS (4 spines, 4 leaves)
+# + dual-homed end hosts (bonding/LACP to leaf pairs)
+# + leaf-to-leaf links (leaf1<->leaf2, leaf3<->leaf4)
+# Save as: ceos-4s4l.clab.yml
+name: ceos-4s4l
+
+topology:
+  kinds:
+    arista_ceos:
+      image: ceos:4.35.1F
+
+  nodes:
+    spine1:
+      kind: arista_ceos
+      binds:
+        - configs/spine1.cfg:/mnt/flash/startup-config
+    spine2:
+      kind: arista_ceos
+      binds:
+        - configs/spine2.cfg:/mnt/flash/startup-config
+    spine3:
+      kind: arista_ceos
+      binds:
+        - configs/spine3.cfg:/mnt/flash/startup-config
+    spine4:
+      kind: arista_ceos
+      binds:
+        - configs/spine4.cfg:/mnt/flash/startup-config
+
+    leaf1:
+      kind: arista_ceos
+      binds:
+        - configs/leaf1.cfg:/mnt/flash/startup-config
+    leaf2:
+      kind: arista_ceos
+      binds:
+        - configs/leaf2.cfg:/mnt/flash/startup-config
+    leaf3:
+      kind: arista_ceos
+      binds:
+        - configs/leaf3.cfg:/mnt/flash/startup-config
+    leaf4:
+      kind: arista_ceos
+      binds:
+        - configs/leaf4.cfg:/mnt/flash/startup-config
+
+    # Dual-homed end hosts (each host will connect with 2 NICs)
+    l4h1:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      exec:
+        - bash -lc 'set -e; ip link del bond0 2>/dev/null || true; ip link del bond0.10 2>/dev/null || true; ip link del bond0.20 2>/dev/null || true'
+        - bash -lc 'set -e; ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast xmit_hash_policy layer3+4'
+        - bash -lc 'set -e; ip link set eth1 down; ip link set eth2 down; ip link set eth1 master bond0; ip link set eth2 master bond0'
+        - bash -lc 'set -e; ip link set bond0 up; ip link set eth1 up; ip link set eth2 up'
+        - bash -lc 'set -e; ip link add link bond0 name bond0.10 type vlan id 10; ip link add link bond0 name bond0.20 type vlan id 20; ip link set bond0.10 up; ip link set bond0.20 up'
+        - bash -lc 'set -e; ip addr add 192.168.10.11/24 dev bond0.10; ip addr add 192.168.20.11/24 dev bond0.20'
+        - bash -lc 'set -e; ip route replace default via 192.168.10.1 dev bond0.10'
+
+    l4h2:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      exec:
+        - bash -lc 'set -e; ip link del bond0 2>/dev/null || true; ip link del bond0.10 2>/dev/null || true; ip link del bond0.20 2>/dev/null || true'
+        - bash -lc 'set -e; ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast xmit_hash_policy layer3+4'
+        - bash -lc 'set -e; ip link set eth1 down; ip link set eth2 down; ip link set eth1 master bond0; ip link set eth2 master bond0'
+        - bash -lc 'set -e; ip link set bond0 up; ip link set eth1 up; ip link set eth2 up'
+        - bash -lc 'set -e; ip link add link bond0 name bond0.10 type vlan id 10; ip link add link bond0 name bond0.20 type vlan id 20; ip link set bond0.10 up; ip link set bond0.20 up'
+        - bash -lc 'set -e; ip addr add 192.168.10.12/24 dev bond0.10; ip addr add 192.168.20.12/24 dev bond0.20'
+        - bash -lc 'set -e; ip route replace default via 192.168.10.1 dev bond0.10'
+
+    l4h3:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      exec:
+        - bash -lc 'set -e; ip link del bond0 2>/dev/null || true; ip link del bond0.10 2>/dev/null || true; ip link del bond0.20 2>/dev/null || true'
+        - bash -lc 'set -e; ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast xmit_hash_policy layer3+4'
+        - bash -lc 'set -e; ip link set eth1 down; ip link set eth2 down; ip link set eth1 master bond0; ip link set eth2 master bond0'
+        - bash -lc 'set -e; ip link set bond0 up; ip link set eth1 up; ip link set eth2 up'
+        - bash -lc 'set -e; ip link add link bond0 name bond0.10 type vlan id 10; ip link add link bond0 name bond0.20 type vlan id 20; ip link set bond0.10 up; ip link set bond0.20 up'
+        - bash -lc 'set -e; ip addr add 192.168.10.13/24 dev bond0.10; ip addr add 192.168.20.13/24 dev bond0.20'
+        - bash -lc 'set -e; ip route replace default via 192.168.10.1 dev bond0.10'
+
+    l4h4:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      exec:
+        - bash -lc 'set -e; ip link del bond0 2>/dev/null || true; ip link del bond0.10 2>/dev/null || true; ip link del bond0.20 2>/dev/null || true'
+        - bash -lc 'set -e; ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast xmit_hash_policy layer3+4'
+        - bash -lc 'set -e; ip link set eth1 down; ip link set eth2 down; ip link set eth1 master bond0; ip link set eth2 master bond0'
+        - bash -lc 'set -e; ip link set bond0 up; ip link set eth1 up; ip link set eth2 up'
+        - bash -lc 'set -e; ip link add link bond0 name bond0.10 type vlan id 10; ip link add link bond0 name bond0.20 type vlan id 20; ip link set bond0.10 up; ip link set bond0.20 up'
+        - bash -lc 'set -e; ip addr add 192.168.10.14/24 dev bond0.10; ip addr add 192.168.20.14/24 dev bond0.20'
+        - bash -lc 'set -e; ip route replace default via 192.168.10.1 dev bond0.10'
+
+  links:
+    # leaf1 <-> spines
+    - endpoints: ["leaf1:eth1", "spine1:eth1"]
+    - endpoints: ["leaf1:eth2", "spine2:eth1"]
+    - endpoints: ["leaf1:eth3", "spine3:eth1"]
+    - endpoints: ["leaf1:eth4", "spine4:eth1"]
+
+    # leaf2 <-> spines
+    - endpoints: ["leaf2:eth1", "spine1:eth2"]
+    - endpoints: ["leaf2:eth2", "spine2:eth2"]
+    - endpoints: ["leaf2:eth3", "spine3:eth2"]
+    - endpoints: ["leaf2:eth4", "spine4:eth2"]
+
+    # leaf3 <-> spines
+    - endpoints: ["leaf3:eth1", "spine1:eth3"]
+    - endpoints: ["leaf3:eth2", "spine2:eth3"]
+    - endpoints: ["leaf3:eth3", "spine3:eth3"]
+    - endpoints: ["leaf3:eth4", "spine4:eth3"]
+
+    # leaf4 <-> spines
+    - endpoints: ["leaf4:eth1", "spine1:eth4"]
+    - endpoints: ["leaf4:eth2", "spine2:eth4"]
+    - endpoints: ["leaf4:eth3", "spine3:eth4"]
+    - endpoints: ["leaf4:eth4", "spine4:eth4"]
+
+    # leaf-to-leaf links (for ops / keepalive usage)
+    - endpoints: ["leaf1:eth7", "leaf2:eth7"]
+    - endpoints: ["leaf3:eth7", "leaf4:eth7"]
+
+    # Dual-homed hosts to leaf1/leaf2 pair
+    - endpoints: ["leaf1:eth5", "l4h1:eth1"]
+    - endpoints: ["leaf2:eth5", "l4h1:eth2"]
+
+    - endpoints: ["leaf1:eth6", "l4h2:eth1"]
+    - endpoints: ["leaf2:eth6", "l4h2:eth2"]
+
+    # Dual-homed hosts to leaf3/leaf4 pair
+    - endpoints: ["leaf3:eth5", "l4h3:eth1"]
+    - endpoints: ["leaf4:eth5", "l4h3:eth2"]
+
+    - endpoints: ["leaf3:eth6", "l4h4:eth1"]
+    - endpoints: ["leaf4:eth6", "l4h4:eth2"]

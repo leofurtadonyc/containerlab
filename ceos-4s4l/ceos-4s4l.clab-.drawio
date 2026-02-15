@@ -1,0 +1,468 @@
+<mxfile host="65bd71144e" compressed="false">
+    <diagram id="Network Topology" name="Network Topology">
+        <mxGraphModel dx="1234" dy="553" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="893" pageHeight="1775" background="none" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <object label="spine1" id="clab-ceos-4s4l-spine1">
+                    <mxCell style="shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;editableCssRules=\.st[0-2]$;labelBackgroundColor=none;aspect=fixed;imageAspect=0;image=data:image/svg+xml,PHN2ZyB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWw6c3BhY2U9InByZXNlcnZlIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAxMjAgMTIwO2VkaXRhYmxlQ3NzUnVsZXM9Lio7IiB2aWV3Qm94PSIwIDAgMTIwIDEyMCIgeT0iMHB4IiB4PSIwcHgiIGlkPSJMYXllcl8xIiB2ZXJzaW9uPSIxLjEiPiYjeGE7PHN0eWxlIHR5cGU9InRleHQvY3NzIj4mI3hhOwkuc3Qwe2ZpbGw6IzAwMTEzNTt9JiN4YTsJLnN0MXtmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Qye2ZpbGw6I0ZGRkZGRjt9JiN4YTsJLnN0M3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDR7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0NXtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q2e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0N3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q5e2ZpbGw6I0ZGRkZGRjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDt9JiN4YTsJLnN0MTB7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O30mI3hhOwkuc3QxMXtmaWxsOiMyNjI2MjY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQuMjMzMzt9JiN4YTsJLnN0MTJ7ZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3QxM3tmaWxsLXJ1bGU6ZXZlbm9kZDtjbGlwLXJ1bGU6ZXZlbm9kZDtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7fSYjeGE7CS5zdDE0e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0MTV7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO30mI3hhOwkuc3QxNntmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDE3e2ZpbGw6IzI2MjYyNjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0MTh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTs8L3N0eWxlPiYjeGE7PHJlY3QgaGVpZ2h0PSIxMjAiIHdpZHRoPSIxMjAiIGNsYXNzPSJzdDAiLz4mI3hhOzxnPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNzEuNywxOS43VjQ4aDI4IiBjbGFzcz0ic3QxIi8+JiN4YTsJCTxwYXRoIGQ9Ik05MS4yLDM4LjVsNy41LDcuNmMxLjMsMS4zLDEuMywzLjEsMCw0LjNMOTEuMSw1OCIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTIwLDQ3LjhoMjguNHYtMjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTM4LjgsMjguM2w3LjYtNy41YzEuMy0xLjMsMy4xLTEuMyw0LjMsMGw3LjcsNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNDgsMTAwLjNWNzJIMjAiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTI4LjUsODEuNUwyMSw3My45Yy0xLjMtMS4zLTEuMy0zLjEsMC00LjNsNy42LTcuNyIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTEwMCw3MS45SDcxLjZ2MjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTgxLjIsOTEuNGwtNy42LDcuNWMtMS4zLDEuMy0zLjEsMS4zLTQuMywwbC03LjctNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7PC9nPiYjeGE7PC9zdmc+;" parent="1" vertex="1">
+                        <mxGeometry x="100" y="532.375" width="75" height="75" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="spine2" id="clab-ceos-4s4l-spine2">
+                    <mxCell style="shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;editableCssRules=\.st[0-2]$;labelBackgroundColor=none;aspect=fixed;imageAspect=0;image=data:image/svg+xml,PHN2ZyB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWw6c3BhY2U9InByZXNlcnZlIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAxMjAgMTIwO2VkaXRhYmxlQ3NzUnVsZXM9Lio7IiB2aWV3Qm94PSIwIDAgMTIwIDEyMCIgeT0iMHB4IiB4PSIwcHgiIGlkPSJMYXllcl8xIiB2ZXJzaW9uPSIxLjEiPiYjeGE7PHN0eWxlIHR5cGU9InRleHQvY3NzIj4mI3hhOwkuc3Qwe2ZpbGw6IzAwMTEzNTt9JiN4YTsJLnN0MXtmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Qye2ZpbGw6I0ZGRkZGRjt9JiN4YTsJLnN0M3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDR7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0NXtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q2e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0N3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q5e2ZpbGw6I0ZGRkZGRjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDt9JiN4YTsJLnN0MTB7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O30mI3hhOwkuc3QxMXtmaWxsOiMyNjI2MjY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQuMjMzMzt9JiN4YTsJLnN0MTJ7ZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3QxM3tmaWxsLXJ1bGU6ZXZlbm9kZDtjbGlwLXJ1bGU6ZXZlbm9kZDtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7fSYjeGE7CS5zdDE0e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0MTV7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO30mI3hhOwkuc3QxNntmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDE3e2ZpbGw6IzI2MjYyNjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0MTh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTs8L3N0eWxlPiYjeGE7PHJlY3QgaGVpZ2h0PSIxMjAiIHdpZHRoPSIxMjAiIGNsYXNzPSJzdDAiLz4mI3hhOzxnPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNzEuNywxOS43VjQ4aDI4IiBjbGFzcz0ic3QxIi8+JiN4YTsJCTxwYXRoIGQ9Ik05MS4yLDM4LjVsNy41LDcuNmMxLjMsMS4zLDEuMywzLjEsMCw0LjNMOTEuMSw1OCIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTIwLDQ3LjhoMjguNHYtMjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTM4LjgsMjguM2w3LjYtNy41YzEuMy0xLjMsMy4xLTEuMyw0LjMsMGw3LjcsNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNDgsMTAwLjNWNzJIMjAiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTI4LjUsODEuNUwyMSw3My45Yy0xLjMtMS4zLTEuMy0zLjEsMC00LjNsNy42LTcuNyIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTEwMCw3MS45SDcxLjZ2MjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTgxLjIsOTEuNGwtNy42LDcuNWMtMS4zLDEuMy0zLjEsMS4zLTQuMywwbC03LjctNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7PC9nPiYjeGE7PC9zdmc+;" parent="1" vertex="1">
+                        <mxGeometry x="352" y="532.375" width="75" height="75" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="spine3" id="clab-ceos-4s4l-spine3">
+                    <mxCell style="shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;editableCssRules=\.st[0-2]$;labelBackgroundColor=none;aspect=fixed;imageAspect=0;image=data:image/svg+xml,PHN2ZyB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWw6c3BhY2U9InByZXNlcnZlIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAxMjAgMTIwO2VkaXRhYmxlQ3NzUnVsZXM9Lio7IiB2aWV3Qm94PSIwIDAgMTIwIDEyMCIgeT0iMHB4IiB4PSIwcHgiIGlkPSJMYXllcl8xIiB2ZXJzaW9uPSIxLjEiPiYjeGE7PHN0eWxlIHR5cGU9InRleHQvY3NzIj4mI3hhOwkuc3Qwe2ZpbGw6IzAwMTEzNTt9JiN4YTsJLnN0MXtmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Qye2ZpbGw6I0ZGRkZGRjt9JiN4YTsJLnN0M3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDR7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0NXtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q2e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0N3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q5e2ZpbGw6I0ZGRkZGRjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDt9JiN4YTsJLnN0MTB7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O30mI3hhOwkuc3QxMXtmaWxsOiMyNjI2MjY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQuMjMzMzt9JiN4YTsJLnN0MTJ7ZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3QxM3tmaWxsLXJ1bGU6ZXZlbm9kZDtjbGlwLXJ1bGU6ZXZlbm9kZDtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7fSYjeGE7CS5zdDE0e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0MTV7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO30mI3hhOwkuc3QxNntmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDE3e2ZpbGw6IzI2MjYyNjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0MTh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTs8L3N0eWxlPiYjeGE7PHJlY3QgaGVpZ2h0PSIxMjAiIHdpZHRoPSIxMjAiIGNsYXNzPSJzdDAiLz4mI3hhOzxnPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNzEuNywxOS43VjQ4aDI4IiBjbGFzcz0ic3QxIi8+JiN4YTsJCTxwYXRoIGQ9Ik05MS4yLDM4LjVsNy41LDcuNmMxLjMsMS4zLDEuMywzLjEsMCw0LjNMOTEuMSw1OCIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTIwLDQ3LjhoMjguNHYtMjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTM4LjgsMjguM2w3LjYtNy41YzEuMy0xLjMsMy4xLTEuMyw0LjMsMGw3LjcsNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNDgsMTAwLjNWNzJIMjAiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTI4LjUsODEuNUwyMSw3My45Yy0xLjMtMS4zLTEuMy0zLjEsMC00LjNsNy42LTcuNyIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTEwMCw3MS45SDcxLjZ2MjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTgxLjIsOTEuNGwtNy42LDcuNWMtMS4zLDEuMy0zLjEsMS4zLTQuMywwbC03LjctNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7PC9nPiYjeGE7PC9zdmc+;" parent="1" vertex="1">
+                        <mxGeometry x="604" y="532.375" width="75" height="75" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="spine4" id="clab-ceos-4s4l-spine4">
+                    <mxCell style="shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;editableCssRules=\.st[0-2]$;labelBackgroundColor=none;aspect=fixed;imageAspect=0;image=data:image/svg+xml,PHN2ZyB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWw6c3BhY2U9InByZXNlcnZlIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAxMjAgMTIwO2VkaXRhYmxlQ3NzUnVsZXM9Lio7IiB2aWV3Qm94PSIwIDAgMTIwIDEyMCIgeT0iMHB4IiB4PSIwcHgiIGlkPSJMYXllcl8xIiB2ZXJzaW9uPSIxLjEiPiYjeGE7PHN0eWxlIHR5cGU9InRleHQvY3NzIj4mI3hhOwkuc3Qwe2ZpbGw6IzAwMTEzNTt9JiN4YTsJLnN0MXtmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Qye2ZpbGw6I0ZGRkZGRjt9JiN4YTsJLnN0M3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDR7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0NXtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q2e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0N3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q5e2ZpbGw6I0ZGRkZGRjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDt9JiN4YTsJLnN0MTB7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O30mI3hhOwkuc3QxMXtmaWxsOiMyNjI2MjY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQuMjMzMzt9JiN4YTsJLnN0MTJ7ZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3QxM3tmaWxsLXJ1bGU6ZXZlbm9kZDtjbGlwLXJ1bGU6ZXZlbm9kZDtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7fSYjeGE7CS5zdDE0e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0MTV7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO30mI3hhOwkuc3QxNntmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDE3e2ZpbGw6IzI2MjYyNjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0MTh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTs8L3N0eWxlPiYjeGE7PHJlY3QgaGVpZ2h0PSIxMjAiIHdpZHRoPSIxMjAiIGNsYXNzPSJzdDAiLz4mI3hhOzxnPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNzEuNywxOS43VjQ4aDI4IiBjbGFzcz0ic3QxIi8+JiN4YTsJCTxwYXRoIGQ9Ik05MS4yLDM4LjVsNy41LDcuNmMxLjMsMS4zLDEuMywzLjEsMCw0LjNMOTEuMSw1OCIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTIwLDQ3LjhoMjguNHYtMjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTM4LjgsMjguM2w3LjYtNy41YzEuMy0xLjMsMy4xLTEuMyw0LjMsMGw3LjcsNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNDgsMTAwLjNWNzJIMjAiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTI4LjUsODEuNUwyMSw3My45Yy0xLjMtMS4zLTEuMy0zLjEsMC00LjNsNy42LTcuNyIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTEwMCw3MS45SDcxLjZ2MjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTgxLjIsOTEuNGwtNy42LDcuNWMtMS4zLDEuMy0zLjEsMS4zLTQuMywwbC03LjctNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7PC9nPiYjeGE7PC9zdmc+;" parent="1" vertex="1">
+                        <mxGeometry x="835" y="532.375" width="75" height="75" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="leaf1" id="clab-ceos-4s4l-leaf1">
+                    <mxCell style="shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;editableCssRules=\.st[0-2]$;labelBackgroundColor=none;aspect=fixed;imageAspect=0;image=data:image/svg+xml,PHN2ZyB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWw6c3BhY2U9InByZXNlcnZlIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAxMjAgMTIwO2VkaXRhYmxlQ3NzUnVsZXM9Lio7IiB2aWV3Qm94PSIwIDAgMTIwIDEyMCIgeT0iMHB4IiB4PSIwcHgiIGlkPSJMYXllcl8xIiB2ZXJzaW9uPSIxLjEiPiYjeGE7PHN0eWxlIHR5cGU9InRleHQvY3NzIj4mI3hhOwkuc3Qwe2ZpbGw6IzAwMTEzNTt9JiN4YTsJLnN0MXtmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Qye2ZpbGw6I0ZGRkZGRjt9JiN4YTsJLnN0M3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDR7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0NXtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q2e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0N3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q5e2ZpbGw6I0ZGRkZGRjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDt9JiN4YTsJLnN0MTB7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O30mI3hhOwkuc3QxMXtmaWxsOiMyNjI2MjY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQuMjMzMzt9JiN4YTsJLnN0MTJ7ZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3QxM3tmaWxsLXJ1bGU6ZXZlbm9kZDtjbGlwLXJ1bGU6ZXZlbm9kZDtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7fSYjeGE7CS5zdDE0e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0MTV7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO30mI3hhOwkuc3QxNntmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDE3e2ZpbGw6IzI2MjYyNjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0MTh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTs8L3N0eWxlPiYjeGE7PHJlY3QgaGVpZ2h0PSIxMjAiIHdpZHRoPSIxMjAiIGNsYXNzPSJzdDAiLz4mI3hhOzxnPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNzEuNywxOS43VjQ4aDI4IiBjbGFzcz0ic3QxIi8+JiN4YTsJCTxwYXRoIGQ9Ik05MS4yLDM4LjVsNy41LDcuNmMxLjMsMS4zLDEuMywzLjEsMCw0LjNMOTEuMSw1OCIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTIwLDQ3LjhoMjguNHYtMjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTM4LjgsMjguM2w3LjYtNy41YzEuMy0xLjMsMy4xLTEuMyw0LjMsMGw3LjcsNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNDgsMTAwLjNWNzJIMjAiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTI4LjUsODEuNUwyMSw3My45Yy0xLjMtMS4zLTEuMy0zLjEsMC00LjNsNy42LTcuNyIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTEwMCw3MS45SDcxLjZ2MjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTgxLjIsOTEuNGwtNy42LDcuNWMtMS4zLDEuMy0zLjEsMS4zLTQuMywwbC03LjctNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7PC9nPiYjeGE7PC9zdmc+;" parent="1" vertex="1">
+                        <mxGeometry x="100" y="789.625" width="75" height="75" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="leaf2" id="clab-ceos-4s4l-leaf2">
+                    <mxCell style="shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;editableCssRules=\.st[0-2]$;labelBackgroundColor=none;aspect=fixed;imageAspect=0;image=data:image/svg+xml,PHN2ZyB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWw6c3BhY2U9InByZXNlcnZlIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAxMjAgMTIwO2VkaXRhYmxlQ3NzUnVsZXM9Lio7IiB2aWV3Qm94PSIwIDAgMTIwIDEyMCIgeT0iMHB4IiB4PSIwcHgiIGlkPSJMYXllcl8xIiB2ZXJzaW9uPSIxLjEiPiYjeGE7PHN0eWxlIHR5cGU9InRleHQvY3NzIj4mI3hhOwkuc3Qwe2ZpbGw6IzAwMTEzNTt9JiN4YTsJLnN0MXtmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Qye2ZpbGw6I0ZGRkZGRjt9JiN4YTsJLnN0M3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDR7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0NXtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q2e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0N3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q5e2ZpbGw6I0ZGRkZGRjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDt9JiN4YTsJLnN0MTB7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O30mI3hhOwkuc3QxMXtmaWxsOiMyNjI2MjY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQuMjMzMzt9JiN4YTsJLnN0MTJ7ZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3QxM3tmaWxsLXJ1bGU6ZXZlbm9kZDtjbGlwLXJ1bGU6ZXZlbm9kZDtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7fSYjeGE7CS5zdDE0e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0MTV7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO30mI3hhOwkuc3QxNntmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDE3e2ZpbGw6IzI2MjYyNjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0MTh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTs8L3N0eWxlPiYjeGE7PHJlY3QgaGVpZ2h0PSIxMjAiIHdpZHRoPSIxMjAiIGNsYXNzPSJzdDAiLz4mI3hhOzxnPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNzEuNywxOS43VjQ4aDI4IiBjbGFzcz0ic3QxIi8+JiN4YTsJCTxwYXRoIGQ9Ik05MS4yLDM4LjVsNy41LDcuNmMxLjMsMS4zLDEuMywzLjEsMCw0LjNMOTEuMSw1OCIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTIwLDQ3LjhoMjguNHYtMjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTM4LjgsMjguM2w3LjYtNy41YzEuMy0xLjMsMy4xLTEuMyw0LjMsMGw3LjcsNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNDgsMTAwLjNWNzJIMjAiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTI4LjUsODEuNUwyMSw3My45Yy0xLjMtMS4zLTEuMy0zLjEsMC00LjNsNy42LTcuNyIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTEwMCw3MS45SDcxLjZ2MjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTgxLjIsOTEuNGwtNy42LDcuNWMtMS4zLDEuMy0zLjEsMS4zLTQuMywwbC03LjctNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7PC9nPiYjeGE7PC9zdmc+;" parent="1" vertex="1">
+                        <mxGeometry x="352" y="789.625" width="75" height="75" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="leaf3" id="clab-ceos-4s4l-leaf3">
+                    <mxCell style="shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;editableCssRules=\.st[0-2]$;labelBackgroundColor=none;aspect=fixed;imageAspect=0;image=data:image/svg+xml,PHN2ZyB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWw6c3BhY2U9InByZXNlcnZlIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAxMjAgMTIwO2VkaXRhYmxlQ3NzUnVsZXM9Lio7IiB2aWV3Qm94PSIwIDAgMTIwIDEyMCIgeT0iMHB4IiB4PSIwcHgiIGlkPSJMYXllcl8xIiB2ZXJzaW9uPSIxLjEiPiYjeGE7PHN0eWxlIHR5cGU9InRleHQvY3NzIj4mI3hhOwkuc3Qwe2ZpbGw6IzAwMTEzNTt9JiN4YTsJLnN0MXtmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Qye2ZpbGw6I0ZGRkZGRjt9JiN4YTsJLnN0M3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDR7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0NXtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q2e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0N3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q5e2ZpbGw6I0ZGRkZGRjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDt9JiN4YTsJLnN0MTB7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O30mI3hhOwkuc3QxMXtmaWxsOiMyNjI2MjY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQuMjMzMzt9JiN4YTsJLnN0MTJ7ZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3QxM3tmaWxsLXJ1bGU6ZXZlbm9kZDtjbGlwLXJ1bGU6ZXZlbm9kZDtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7fSYjeGE7CS5zdDE0e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0MTV7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO30mI3hhOwkuc3QxNntmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDE3e2ZpbGw6IzI2MjYyNjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0MTh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTs8L3N0eWxlPiYjeGE7PHJlY3QgaGVpZ2h0PSIxMjAiIHdpZHRoPSIxMjAiIGNsYXNzPSJzdDAiLz4mI3hhOzxnPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNzEuNywxOS43VjQ4aDI4IiBjbGFzcz0ic3QxIi8+JiN4YTsJCTxwYXRoIGQ9Ik05MS4yLDM4LjVsNy41LDcuNmMxLjMsMS4zLDEuMywzLjEsMCw0LjNMOTEuMSw1OCIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTIwLDQ3LjhoMjguNHYtMjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTM4LjgsMjguM2w3LjYtNy41YzEuMy0xLjMsMy4xLTEuMyw0LjMsMGw3LjcsNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNDgsMTAwLjNWNzJIMjAiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTI4LjUsODEuNUwyMSw3My45Yy0xLjMtMS4zLTEuMy0zLjEsMC00LjNsNy42LTcuNyIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTEwMCw3MS45SDcxLjZ2MjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTgxLjIsOTEuNGwtNy42LDcuNWMtMS4zLDEuMy0zLjEsMS4zLTQuMywwbC03LjctNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7PC9nPiYjeGE7PC9zdmc+;" parent="1" vertex="1">
+                        <mxGeometry x="604" y="789.625" width="75" height="75" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="leaf4" id="clab-ceos-4s4l-leaf4">
+                    <mxCell style="shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;editableCssRules=\.st[0-2]$;labelBackgroundColor=none;aspect=fixed;imageAspect=0;image=data:image/svg+xml,PHN2ZyB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWw6c3BhY2U9InByZXNlcnZlIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAxMjAgMTIwO2VkaXRhYmxlQ3NzUnVsZXM9Lio7IiB2aWV3Qm94PSIwIDAgMTIwIDEyMCIgeT0iMHB4IiB4PSIwcHgiIGlkPSJMYXllcl8xIiB2ZXJzaW9uPSIxLjEiPiYjeGE7PHN0eWxlIHR5cGU9InRleHQvY3NzIj4mI3hhOwkuc3Qwe2ZpbGw6IzAwMTEzNTt9JiN4YTsJLnN0MXtmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Qye2ZpbGw6I0ZGRkZGRjt9JiN4YTsJLnN0M3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDR7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0NXtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q2e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0N3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q5e2ZpbGw6I0ZGRkZGRjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDt9JiN4YTsJLnN0MTB7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O30mI3hhOwkuc3QxMXtmaWxsOiMyNjI2MjY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQuMjMzMzt9JiN4YTsJLnN0MTJ7ZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3QxM3tmaWxsLXJ1bGU6ZXZlbm9kZDtjbGlwLXJ1bGU6ZXZlbm9kZDtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7fSYjeGE7CS5zdDE0e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0MTV7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO30mI3hhOwkuc3QxNntmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDE3e2ZpbGw6IzI2MjYyNjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0MTh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTs8L3N0eWxlPiYjeGE7PHJlY3QgaGVpZ2h0PSIxMjAiIHdpZHRoPSIxMjAiIGNsYXNzPSJzdDAiLz4mI3hhOzxnPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNzEuNywxOS43VjQ4aDI4IiBjbGFzcz0ic3QxIi8+JiN4YTsJCTxwYXRoIGQ9Ik05MS4yLDM4LjVsNy41LDcuNmMxLjMsMS4zLDEuMywzLjEsMCw0LjNMOTEuMSw1OCIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTIwLDQ3LjhoMjguNHYtMjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTM4LjgsMjguM2w3LjYtNy41YzEuMy0xLjMsMy4xLTEuMyw0LjMsMGw3LjcsNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNDgsMTAwLjNWNzJIMjAiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTI4LjUsODEuNUwyMSw3My45Yy0xLjMtMS4zLTEuMy0zLjEsMC00LjNsNy42LTcuNyIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTEwMCw3MS45SDcxLjZ2MjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTgxLjIsOTEuNGwtNy42LDcuNWMtMS4zLDEuMy0zLjEsMS4zLTQuMywwbC03LjctNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7PC9nPiYjeGE7PC9zdmc+;" parent="1" vertex="1">
+                        <mxGeometry x="835" y="789.625" width="75" height="75" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf1" target="clab-ceos-4s4l-spine1" id="link_id:link:clab-ceos-4s4l-leaf1:eth1:clab-ceos-4s4l-spine1:eth1">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=1;exitY=0;entryX=0.5;exitX=0.5;" parent="1" source="clab-ceos-4s4l-leaf1" target="clab-ceos-4s4l-spine1" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth1" id="label:clab-ceos-4s4l-leaf1:eth1">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="127.5" y="764.625" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth1" id="label:clab-ceos-4s4l-spine1:eth1">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="127.5" y="622.375" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf1" target="clab-ceos-4s4l-spine2" id="link_id:link:clab-ceos-4s4l-leaf1:eth2:clab-ceos-4s4l-spine2:eth1">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0.5;exitY=0.5;entryX=0;exitX=1;" parent="1" source="clab-ceos-4s4l-leaf1" target="clab-ceos-4s4l-spine2" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth2" id="label:clab-ceos-4s4l-leaf1:eth2">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="176.336691772539" y="805.6483674661827" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth1" id="label:clab-ceos-4s4l-spine2:eth1">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="330.663308227461" y="581.3516325338173" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf1" target="clab-ceos-4s4l-spine3" id="link_id:link:clab-ceos-4s4l-leaf1:eth3:clab-ceos-4s4l-spine3:eth1">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0.5;exitY=0.5;entryX=0;exitX=1;" parent="1" source="clab-ceos-4s4l-leaf1" target="clab-ceos-4s4l-spine3" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth3" id="label:clab-ceos-4s4l-leaf1:eth3">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="182.15250384977406" y="811.839495069104" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth1" id="label:clab-ceos-4s4l-spine3:eth1">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="576.8474961502259" y="575.160504930896" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf1" target="clab-ceos-4s4l-spine4" id="link_id:link:clab-ceos-4s4l-leaf1:eth4:clab-ceos-4s4l-spine4:eth1">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0.5;exitY=0.5;entryX=0;exitX=1;" parent="1" source="clab-ceos-4s4l-leaf1" target="clab-ceos-4s4l-spine4" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth4" id="label:clab-ceos-4s4l-leaf1:eth4">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="183.46418919842878" y="814.439057166188" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth1" id="label:clab-ceos-4s4l-spine4:eth1">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="806.5358108015712" y="572.560942833812" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf1" target="clab-ceos-4s4l-leaf2" id="link_id:link:clab-ceos-4s4l-leaf1:eth7:clab-ceos-4s4l-leaf2:eth7">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0.5;exitY=0.5;entryX=0;exitX=1;" parent="1" source="clab-ceos-4s4l-leaf1" target="clab-ceos-4s4l-leaf2" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth7" id="label:clab-ceos-4s4l-leaf1:eth7">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="185" y="822.125" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth7" id="label:clab-ceos-4s4l-leaf2:eth7">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="322" y="822.125" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf1" target="clab-ceos-4s4l-l4h1" id="link_id:link:clab-ceos-4s4l-leaf1:eth5:clab-ceos-4s4l-l4h1:eth1">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0;exitY=1;entryX=0.5;exitX=0.5;entryDx=0;entryDy=0;exitDx=0;exitDy=0;" parent="1" source="clab-ceos-4s4l-leaf1" edge="1">
+                        <mxGeometry relative="1" as="geometry">
+                            <mxPoint x="137.5" y="985" as="targetPoint"/>
+                        </mxGeometry>
+                    </mxCell>
+                </object>
+                <object label="eth5" id="label:clab-ceos-4s4l-leaf1:eth5">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="177.29128142460618" y="806.3476617916351" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf1" target="clab-ceos-4s4l-l4h2" id="link_id:link:clab-ceos-4s4l-leaf1:eth6:clab-ceos-4s4l-l4h2:eth1">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0;exitY=0.5;entryX=0.25;exitX=1;entryDx=0;entryDy=0;" parent="1" source="clab-ceos-4s4l-leaf1" edge="1">
+                        <mxGeometry relative="1" as="geometry">
+                            <mxPoint x="370.75" y="985" as="targetPoint"/>
+                        </mxGeometry>
+                    </mxCell>
+                </object>
+                <object label="eth6" id="label:clab-ceos-4s4l-leaf1:eth6">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="179.1668351112252" y="836.24239292261" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth1" id="label:clab-ceos-4s4l-l4h2:eth1">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="336.00316488877485" y="961.0026070773902" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf2" target="clab-ceos-4s4l-spine1" id="link_id:link:clab-ceos-4s4l-leaf2:eth1:clab-ceos-4s4l-spine1:eth2">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0.5;exitY=0.5;entryX=1;exitX=0;" parent="1" source="clab-ceos-4s4l-leaf2" target="clab-ceos-4s4l-spine1" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth1" id="label:clab-ceos-4s4l-leaf2:eth1">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="330.663308227461" y="805.6483674661827" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth2" id="label:clab-ceos-4s4l-spine1:eth2">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="176.336691772539" y="581.3516325338173" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf2" target="clab-ceos-4s4l-spine2" id="link_id:link:clab-ceos-4s4l-leaf2:eth2:clab-ceos-4s4l-spine2:eth2">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=1;exitY=0;entryX=0.5;exitX=0.5;" parent="1" source="clab-ceos-4s4l-leaf2" target="clab-ceos-4s4l-spine2" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth2" id="label:clab-ceos-4s4l-leaf2:eth2">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="379.5" y="764.625" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth2" id="label:clab-ceos-4s4l-spine2:eth2">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="379.5" y="622.375" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf2" target="clab-ceos-4s4l-spine3" id="link_id:link:clab-ceos-4s4l-leaf2:eth3:clab-ceos-4s4l-spine3:eth2">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0.5;exitY=0.5;entryX=0;exitX=1;" parent="1" source="clab-ceos-4s4l-leaf2" target="clab-ceos-4s4l-spine3" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth3" id="label:clab-ceos-4s4l-leaf2:eth3">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="428.336691772539" y="805.6483674661827" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth2" id="label:clab-ceos-4s4l-spine3:eth2">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="582.663308227461" y="581.3516325338173" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf2" target="clab-ceos-4s4l-spine4" id="link_id:link:clab-ceos-4s4l-leaf2:eth4:clab-ceos-4s4l-spine4:eth2">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0.5;exitY=0.5;entryX=0;exitX=1;" parent="1" source="clab-ceos-4s4l-leaf2" target="clab-ceos-4s4l-spine4" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth4" id="label:clab-ceos-4s4l-leaf2:eth4">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="433.3625549477893" y="810.6242697805498" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth2" id="label:clab-ceos-4s4l-spine4:eth2">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="808.6374450522108" y="576.3757302194502" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf2" target="clab-ceos-4s4l-l4h1" id="link_id:link:clab-ceos-4s4l-leaf2:eth5:clab-ceos-4s4l-l4h1:eth2">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0;exitY=0.5;entryX=0.75;exitX=1;entryDx=0;entryDy=0;" parent="1" source="clab-ceos-4s4l-leaf2" edge="1">
+                        <mxGeometry relative="1" as="geometry">
+                            <mxPoint x="156.25" y="985" as="targetPoint"/>
+                        </mxGeometry>
+                    </mxCell>
+                </object>
+                <object label="eth5" id="label:clab-ceos-4s4l-leaf2:eth5">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="424.6444714920784" y="803.6436024444362" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf2" target="clab-ceos-4s4l-l4h2" id="link_id:link:clab-ceos-4s4l-leaf2:eth6:clab-ceos-4s4l-l4h2:eth2">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0;entryX=0.5;entryDx=0;entryDy=0;" parent="1" source="clab-ceos-4s4l-leaf2" edge="1">
+                        <mxGeometry relative="1" as="geometry">
+                            <mxPoint x="389.5" y="985" as="targetPoint"/>
+                        </mxGeometry>
+                    </mxCell>
+                </object>
+                <object label="eth6" id="label:clab-ceos-4s4l-leaf2:eth6">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="426.4044912681345" y="839.7759360654777" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth2" id="label:clab-ceos-4s4l-l4h2:eth2">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="378.99550873186547" y="960.9990639345223" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf3" target="clab-ceos-4s4l-spine1" id="link_id:link:clab-ceos-4s4l-leaf3:eth1:clab-ceos-4s4l-spine1:eth3">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0.5;exitY=0.5;entryX=1;exitX=0;" parent="1" source="clab-ceos-4s4l-leaf3" target="clab-ceos-4s4l-spine1" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth1" id="label:clab-ceos-4s4l-leaf3:eth1">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="576.8474961502259" y="811.839495069104" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth3" id="label:clab-ceos-4s4l-spine1:eth3">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="182.15250384977406" y="575.160504930896" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf3" target="clab-ceos-4s4l-spine2" id="link_id:link:clab-ceos-4s4l-leaf3:eth2:clab-ceos-4s4l-spine2:eth3">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0.5;exitY=0.5;entryX=1;exitX=0;" parent="1" source="clab-ceos-4s4l-leaf3" target="clab-ceos-4s4l-spine2" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth2" id="label:clab-ceos-4s4l-leaf3:eth2">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="582.663308227461" y="805.6483674661827" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth3" id="label:clab-ceos-4s4l-spine2:eth3">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="428.336691772539" y="581.3516325338173" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf3" target="clab-ceos-4s4l-spine3" id="link_id:link:clab-ceos-4s4l-leaf3:eth3:clab-ceos-4s4l-spine3:eth3">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=1;exitY=0;entryX=0.5;exitX=0.5;" parent="1" source="clab-ceos-4s4l-leaf3" target="clab-ceos-4s4l-spine3" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth3" id="label:clab-ceos-4s4l-leaf3:eth3">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="631.5" y="764.625" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth3" id="label:clab-ceos-4s4l-spine3:eth3">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="631.5" y="622.375" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf3" target="clab-ceos-4s4l-spine4" id="link_id:link:clab-ceos-4s4l-leaf3:eth4:clab-ceos-4s4l-spine4:eth3">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0.5;exitY=0.5;entryX=0;exitX=1;" parent="1" source="clab-ceos-4s4l-leaf3" target="clab-ceos-4s4l-spine4" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth4" id="label:clab-ceos-4s4l-leaf3:eth4">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="677.1029797493374" y="803.8399864866927" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth3" id="label:clab-ceos-4s4l-spine4:eth3">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="816.8970202506626" y="583.1600135133073" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf3" target="clab-ceos-4s4l-leaf4" id="link_id:link:clab-ceos-4s4l-leaf3:eth7:clab-ceos-4s4l-leaf4:eth7">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0.5;exitY=0.5;entryX=0;exitX=1;" parent="1" source="clab-ceos-4s4l-leaf3" target="clab-ceos-4s4l-leaf4" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth7" id="label:clab-ceos-4s4l-leaf3:eth7">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="689" y="822.125" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth7" id="label:clab-ceos-4s4l-leaf4:eth7">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="805" y="822.125" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf3" target="clab-ceos-4s4l-l4h3" id="link_id:link:clab-ceos-4s4l-leaf3:eth5:clab-ceos-4s4l-l4h3:eth1">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0;exitY=1;entryX=0.5;exitX=0.5;exitDx=0;exitDy=0;entryDx=0;entryDy=0;" parent="1" source="clab-ceos-4s4l-leaf3" edge="1">
+                        <mxGeometry relative="1" as="geometry">
+                            <mxPoint x="641.5" y="991" as="targetPoint"/>
+                        </mxGeometry>
+                    </mxCell>
+                </object>
+                <object label="eth5" id="label:clab-ceos-4s4l-leaf3:eth5">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="669.935101523813" y="842.103127668532" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth1" id="label:clab-ceos-4s4l-l4h3:eth1">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="128.00489847618695" y="960.0018723314681" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf3" target="clab-ceos-4s4l-l4h4" id="link_id:link:clab-ceos-4s4l-leaf3:eth6:clab-ceos-4s4l-l4h4:eth1">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0;exitY=0.5;entryX=0.25;exitX=1;entryDx=0;entryDy=0;" parent="1" source="clab-ceos-4s4l-leaf3" edge="1">
+                        <mxGeometry relative="1" as="geometry">
+                            <mxPoint x="853.75" y="991" as="targetPoint"/>
+                        </mxGeometry>
+                    </mxCell>
+                </object>
+                <object label="eth6" id="label:clab-ceos-4s4l-leaf3:eth6">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="669.7505650735997" y="842.1109113394984" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf4" target="clab-ceos-4s4l-spine1" id="link_id:link:clab-ceos-4s4l-leaf4:eth1:clab-ceos-4s4l-spine1:eth4">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0.5;exitY=0.5;entryX=1;exitX=0;" parent="1" source="clab-ceos-4s4l-leaf4" target="clab-ceos-4s4l-spine1" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth1" id="label:clab-ceos-4s4l-leaf4:eth1">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="806.5358108015712" y="814.439057166188" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth4" id="label:clab-ceos-4s4l-spine1:eth4">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="183.46418919842878" y="572.560942833812" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf4" target="clab-ceos-4s4l-spine2" id="link_id:link:clab-ceos-4s4l-leaf4:eth2:clab-ceos-4s4l-spine2:eth4">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0.5;exitY=0.5;entryX=1;exitX=0;" parent="1" source="clab-ceos-4s4l-leaf4" target="clab-ceos-4s4l-spine2" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth2" id="label:clab-ceos-4s4l-leaf4:eth2">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="808.6374450522108" y="810.6242697805498" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth4" id="label:clab-ceos-4s4l-spine2:eth4">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="433.3625549477893" y="576.3757302194502" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf4" target="clab-ceos-4s4l-spine3" id="link_id:link:clab-ceos-4s4l-leaf4:eth3:clab-ceos-4s4l-spine3:eth4">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0.5;exitY=0.5;entryX=1;exitX=0;" parent="1" source="clab-ceos-4s4l-leaf4" target="clab-ceos-4s4l-spine3" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth3" id="label:clab-ceos-4s4l-leaf4:eth3">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="816.8970202506626" y="803.8399864866927" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth4" id="label:clab-ceos-4s4l-spine3:eth4">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="677.1029797493374" y="583.1600135133073" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf4" target="clab-ceos-4s4l-spine4" id="link_id:link:clab-ceos-4s4l-leaf4:eth4:clab-ceos-4s4l-spine4:eth4">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=1;exitY=0;entryX=0.5;exitX=0.5;" parent="1" source="clab-ceos-4s4l-leaf4" target="clab-ceos-4s4l-spine4" edge="1">
+                        <mxGeometry relative="1" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth4" id="label:clab-ceos-4s4l-leaf4:eth4">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="862.5" y="764.625" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth4" id="label:clab-ceos-4s4l-spine4:eth4">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="862.5" y="622.375" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf4" target="clab-ceos-4s4l-l4h3" id="link_id:link:clab-ceos-4s4l-leaf4:eth5:clab-ceos-4s4l-l4h3:eth2">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0;exitY=0.5;entryX=0.75;exitX=0;entryDx=0;entryDy=0;" parent="1" source="clab-ceos-4s4l-leaf4" edge="1">
+                        <mxGeometry relative="1" as="geometry">
+                            <mxPoint x="660.25" y="991" as="targetPoint"/>
+                        </mxGeometry>
+                    </mxCell>
+                </object>
+                <object label="eth5" id="label:clab-ceos-4s4l-leaf4:eth5">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="824.8381189753263" y="842.1243448526158" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth2" id="label:clab-ceos-4s4l-l4h3:eth2">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="181.46188102467372" y="960.0006551473841" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="" source="clab-ceos-4s4l-leaf4" target="clab-ceos-4s4l-l4h4" id="link_id:link:clab-ceos-4s4l-leaf4:eth6:clab-ceos-4s4l-l4h4:eth2">
+                    <mxCell style="endArrow=none;jumpStyle=gap;entryY=0;exitY=1;entryX=0.5;exitX=0.5;entryDx=0;entryDy=0;exitDx=0;exitDy=0;" parent="1" source="clab-ceos-4s4l-leaf4" edge="1">
+                        <mxGeometry relative="1" as="geometry">
+                            <mxPoint x="872.5" y="991" as="targetPoint"/>
+                        </mxGeometry>
+                    </mxCell>
+                </object>
+                <object label="eth6" id="label:clab-ceos-4s4l-leaf4:eth6">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="824.8701142737614" y="842.1245782380059" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth1" id="9">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="812.5031648887748" y="961.0026070773902" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth2" id="10">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="861.4955087318655" y="960.9990639345223" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth1" id="11">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="630.504898476187" y="960.0018723314681" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object label="eth2" id="12">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1" parent="1" vertex="1">
+                        <mxGeometry x="677.9618810246737" y="960.0006551473841" width="20" height="10" as="geometry"/>
+                    </mxCell>
+                </object>
+                <mxCell id="13" value="" style="image;html=1;image=img/lib/clip_art/computers/Server_Tower_128x128.png" vertex="1" parent="1">
+                    <mxGeometry x="100" y="980" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="" style="image;html=1;image=img/lib/clip_art/computers/Server_Tower_128x128.png" vertex="1" parent="1">
+                    <mxGeometry x="342" y="980" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="" style="image;html=1;image=img/lib/clip_art/computers/Server_Tower_128x128.png" vertex="1" parent="1">
+                    <mxGeometry x="604" y="986" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="" style="image;html=1;image=img/lib/clip_art/computers/Server_Tower_128x128.png" vertex="1" parent="1">
+                    <mxGeometry x="828.64" y="986" width="80" height="80" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
