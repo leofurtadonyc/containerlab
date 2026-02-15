@@ -1,7 +1,7 @@
 # Two-DC EVPN lab skeleton (topology only)
 # - Each DC: 4 spines + 4 leaves + 4 dual-homed hosts
-# - Each DC: 2 extra cEOS routers connected to spine1 and spine3
-# - Inter-DC: routers connected for MPLS-based DCI (EVPN-MPLS in configs later)
+# - Each DC: 2 extra cEOS routers connected to spine1 and spine3 (both routers to both spines)
+# - Inter-DC: ONLY two links: r1<->r1 and r2<->r2
 # Save as: ceos-2dc-evpn-dci.clab.yml
 name: ceos-2dc-evpn-dci
 
@@ -12,53 +12,41 @@ topology:
 
   nodes:
     # =========================
-    # DC1 (left)
+    # DC1
     # =========================
     dc1-spine1:
       kind: arista_ceos
-      binds:
-        - configs/dc1-spine1.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc1-spine1.cfg:/mnt/flash/startup-config" ]
     dc1-spine2:
       kind: arista_ceos
-      binds:
-        - configs/dc1-spine2.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc1-spine2.cfg:/mnt/flash/startup-config" ]
     dc1-spine3:
       kind: arista_ceos
-      binds:
-        - configs/dc1-spine3.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc1-spine3.cfg:/mnt/flash/startup-config" ]
     dc1-spine4:
       kind: arista_ceos
-      binds:
-        - configs/dc1-spine4.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc1-spine4.cfg:/mnt/flash/startup-config" ]
 
     dc1-leaf1:
       kind: arista_ceos
-      binds:
-        - configs/dc1-leaf1.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc1-leaf1.cfg:/mnt/flash/startup-config" ]
     dc1-leaf2:
       kind: arista_ceos
-      binds:
-        - configs/dc1-leaf2.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc1-leaf2.cfg:/mnt/flash/startup-config" ]
     dc1-leaf3:
       kind: arista_ceos
-      binds:
-        - configs/dc1-leaf3.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc1-leaf3.cfg:/mnt/flash/startup-config" ]
     dc1-leaf4:
       kind: arista_ceos
-      binds:
-        - configs/dc1-leaf4.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc1-leaf4.cfg:/mnt/flash/startup-config" ]
 
-    # DC1 DCI routers (cEOS)
     dc1-router1:
       kind: arista_ceos
-      binds:
-        - configs/dc1-router1.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc1-router1.cfg:/mnt/flash/startup-config" ]
     dc1-router2:
       kind: arista_ceos
-      binds:
-        - configs/dc1-router2.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc1-router2.cfg:/mnt/flash/startup-config" ]
 
-    # DC1 hosts (dual-homed)
     dc1-host1:
       kind: linux
       image: ghcr.io/hellt/network-multitool
@@ -108,53 +96,41 @@ topology:
         - bash -lc 'set -e; ip route replace default via 192.168.10.1 dev bond0.10'
 
     # =========================
-    # DC2 (right)
+    # DC2
     # =========================
     dc2-spine1:
       kind: arista_ceos
-      binds:
-        - configs/dc2-spine1.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc2-spine1.cfg:/mnt/flash/startup-config" ]
     dc2-spine2:
       kind: arista_ceos
-      binds:
-        - configs/dc2-spine2.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc2-spine2.cfg:/mnt/flash/startup-config" ]
     dc2-spine3:
       kind: arista_ceos
-      binds:
-        - configs/dc2-spine3.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc2-spine3.cfg:/mnt/flash/startup-config" ]
     dc2-spine4:
       kind: arista_ceos
-      binds:
-        - configs/dc2-spine4.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc2-spine4.cfg:/mnt/flash/startup-config" ]
 
     dc2-leaf1:
       kind: arista_ceos
-      binds:
-        - configs/dc2-leaf1.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc2-leaf1.cfg:/mnt/flash/startup-config" ]
     dc2-leaf2:
       kind: arista_ceos
-      binds:
-        - configs/dc2-leaf2.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc2-leaf2.cfg:/mnt/flash/startup-config" ]
     dc2-leaf3:
       kind: arista_ceos
-      binds:
-        - configs/dc2-leaf3.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc2-leaf3.cfg:/mnt/flash/startup-config" ]
     dc2-leaf4:
       kind: arista_ceos
-      binds:
-        - configs/dc2-leaf4.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc2-leaf4.cfg:/mnt/flash/startup-config" ]
 
-    # DC2 DCI routers (cEOS)
     dc2-router1:
       kind: arista_ceos
-      binds:
-        - configs/dc2-router1.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc2-router1.cfg:/mnt/flash/startup-config" ]
     dc2-router2:
       kind: arista_ceos
-      binds:
-        - configs/dc2-router2.cfg:/mnt/flash/startup-config
+      binds: [ "configs/dc2-router2.cfg:/mnt/flash/startup-config" ]
 
-    # DC2 hosts (dual-homed)
     dc2-host1:
       kind: linux
       image: ghcr.io/hellt/network-multitool
@@ -244,9 +220,11 @@ topology:
     - endpoints: ["dc1-leaf3:eth6", "dc1-host4:eth1"]
     - endpoints: ["dc1-leaf4:eth6", "dc1-host4:eth2"]
 
-    # DC1 routers to spines (directive: connected to spine1 and spine3)
+    # DC1 routers to spine1 and spine3 (both routers connected to both spines)
     - endpoints: ["dc1-router1:eth1", "dc1-spine1:eth5"]
-    - endpoints: ["dc1-router2:eth1", "dc1-spine3:eth5"]
+    - endpoints: ["dc1-router1:eth2", "dc1-spine3:eth5"]
+    - endpoints: ["dc1-router2:eth1", "dc1-spine1:eth6"]
+    - endpoints: ["dc1-router2:eth2", "dc1-spine3:eth6"]
 
     # =========================================================
     # DC2 leaf <-> spines
@@ -288,15 +266,15 @@ topology:
     - endpoints: ["dc2-leaf3:eth6", "dc2-host4:eth1"]
     - endpoints: ["dc2-leaf4:eth6", "dc2-host4:eth2"]
 
-    # DC2 routers to spines (directive: connected to spine1 and spine3)
+    # DC2 routers to spine1 and spine3 (both routers connected to both spines)
     - endpoints: ["dc2-router1:eth1", "dc2-spine1:eth5"]
-    - endpoints: ["dc2-router2:eth1", "dc2-spine3:eth5"]
+    - endpoints: ["dc2-router1:eth2", "dc2-spine3:eth5"]
+    - endpoints: ["dc2-router2:eth1", "dc2-spine1:eth6"]
+    - endpoints: ["dc2-router2:eth2", "dc2-spine3:eth6"]
 
     # =========================================================
-    # Inter-DC DCI links (routers)
+    # Inter-DC DCI links (ONLY TWO LINKS as per your real lab)
     # =========================================================
-    # As per directive #8 (and symmetric for redundancy):
-    - endpoints: ["dc1-router1:eth2", "dc2-router1:eth2"]
-    - endpoints: ["dc1-router1:eth3", "dc2-router2:eth2"]
-    - endpoints: ["dc1-router2:eth2", "dc2-router1:eth3"]
+    - endpoints: ["dc1-router1:eth3", "dc2-router1:eth3"]
     - endpoints: ["dc1-router2:eth3", "dc2-router2:eth3"]
+

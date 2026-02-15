@@ -11,6 +11,12 @@
 - clab-ceos-2dc-evpn-dci-dc1-router1
 - clab-ceos-2dc-evpn-dci-dc1-router2
 
+Hosts:
+- clab-ceos-2dc-evpn-dci-dc1-host1
+- clab-ceos-2dc-evpn-dci-dc1-host2
+- clab-ceos-2dc-evpn-dci-dc1-host3
+- clab-ceos-2dc-evpn-dci-dc1-host4
+
 # DC2 devices
 - clab-ceos-2dc-evpn-dci-dc2-leaf1
 - clab-ceos-2dc-evpn-dci-dc2-leaf2
@@ -22,6 +28,12 @@
 - clab-ceos-2dc-evpn-dci-dc2-spine4
 - clab-ceos-2dc-evpn-dci-dc2-router1
 - clab-ceos-2dc-evpn-dci-dc2-router2
+
+Hosts:
+- clab-ceos-2dc-evpn-dci-dc2-host1
+- clab-ceos-2dc-evpn-dci-dc2-host1
+- clab-ceos-2dc-evpn-dci-dc2-host1
+- clab-ceos-2dc-evpn-dci-dc2-host1
 
 # IP addressing proposal for services (used in host exec blocks)
 
