@@ -3,7 +3,7 @@ Leonardo Furtado https://github.com/leofurtadonyc
 
 # Topology
 
-![cEOS-2DC-4S4L Topology](https://github.com/leofurtadonyc/Network-Automation/blob/main/NetProvisionCLI/docs/netprovisioncli-project.png)
+![cEOS-2DC-4S4L Topology](https://github.com/leofurtadonyc/containerlab/blob/main/ceos-2dc-4s4l/ceos-2dc-4s4l.png)
 
 <a href="https://github.com/leofurtadonyc/containerlab/blob/main/ceos-2dc-4s4l/ceos-2dc-4s4l.pdf" target="_blank">Open cEOS-2DC-4S4L topology PDF</a>
 
