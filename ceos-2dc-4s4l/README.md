@@ -2,8 +2,10 @@
 Leonardo Furtado https://github.com/leofurtadonyc
 
 # Lab credentials
-User: clab
-Password: clab
+- User: clab
+- Password: clab
+
+Disclaimer: I do NOT provide Arista images for this lab, so you must bring your own image. See the "Lab instructions" section in this document for details on how to import your image.
 
 # Topology
 
@@ -126,8 +128,7 @@ Prerequisites:
 - You need a working container runtime and Containerlab itself.
 - A container runtime: Docker Desktop, OrbStack, or any Docker-compatible engine.
 - `containerlab` installed on your machine.
-
-The cEOS image available locally (this lab expects `ceos:4.35.1F`).
+- Arista image is not available locally; you must bring your own. This lab expects `ceos:4.35.1F`.
 
 If you’re on macOS, OrbStack can be a great fit because it abstracts a lot of the typical Docker-on-Mac friction (networking, filesystem performance, VM management) while still presenting a Docker-compatible CLI experience.
 
