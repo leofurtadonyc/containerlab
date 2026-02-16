@@ -1,6 +1,10 @@
 # Author
 Leonardo Furtado https://github.com/leofurtadonyc
 
+# Lab credentials
+User: clab
+Password: clab
+
 # Topology
 
 ![cEOS-2DC-4S4L Topology](https://github.com/leofurtadonyc/containerlab/blob/main/ceos-2dc-4s4l/ceos-2dc-4s4l.png)
