@@ -119,6 +119,153 @@ The leaf-to-leaf links are labeled as “ops/keepalive; NOT MLAG for ESI.” Thi
 
 Finally, the DCI is intentionally minimal. With only two links and two router pairs, some failure scenarios will create sharp edges. That is desirable for training: it forces policy discipline and service modeling. It also means that the lab is not claiming to represent a fully diverse, carrier-grade DCI. It is representing the common real-world case where the DCI starts constrained and must be engineered carefully.
 
+# Lab Instructions
+This lab is built for Containerlab. You bring the topology (`ceos-2dc-evpn-dci.clab.yml`) and the device configs (`configs/*.cfg`), and Containerlab wires everything together into a reproducible two–data-center EVPN environment.
+
+Prerequisites:
+- You need a working container runtime and Containerlab itself.
+- A container runtime: Docker Desktop, OrbStack, or any Docker-compatible engine.
+- `containerlab` installed on your machine.
+
+The cEOS image available locally (this lab expects `ceos:4.35.1F`).
+
+If you’re on macOS, OrbStack can be a great fit because it abstracts a lot of the typical Docker-on-Mac friction (networking, filesystem performance, VM management) while still presenting a Docker-compatible CLI experience.
+
+1) Install a container runtime
+
+Choose one:
+- OrbStack (recommended on macOS): install OrbStack, then ensure the docker CLI works in your terminal.
+- Docker Desktop: install Docker Desktop, start it, and confirm Docker is running.
+
+Verify:
+```
+docker version
+docker ps
+```
+
+You should see a valid client/server version and an empty (or existing) container list.
+
+2) Install Containerlab
+
+On macOS (Homebrew):
+```
+brew install containerlab
+```
+
+Verify:
+```
+containerlab version
+```
+
+If you’re on Linux, you can use your package manager or install from the official release instructions for your distro. The success criteria is simply that `containerlab` runs locally and can talk to your container runtime.
+
+3) Clone this repository
+```
+git clone <REPO_URL>
+cd <REPO_DIR>
+```
+
+You should see:
+
+- `ceos-2dc-evpn-dci.clab.yml`
+- `configs/ with all node startup configs`
+- `scripts/` with validation and failure drills (optional but recommended)
+
+4) Provide the Arista cEOS image
+
+This lab references:
+```
+kinds:
+  arista_ceos:
+    image: ceos:4.35.1F
+```
+
+You must have that image available in your local container runtime.
+
+Typical approaches:
+
+Load the image from a tarball you already have:
+
+docker import cEOS64-lab-4.35.1F.tar.xz
+
+Or tag an existing image to match what the lab expects:
+```
+docker tag <existing-image> ceos:4.35.1F
+```
+
+Validate the image exists:
+```
+docker images | grep -E "^ceos\s+4\.35\.1F"
+```
+5) Deploy the lab
+
+From the lab folder:
+```
+clab deploy -t ceos-2dc-evpn-dci.clab.yml
+```
+
+Containerlab will:
+1. Create the containers
+2. Wire all links exactly as declared
+3. Mount your startup configs into each cEOS node
+
+When it finishes, you should see the lab listed:
+```
+clab inspect -t ceos-2dc-evpn-dci.clab.yml
+```
+6) Access nodes (interactive)
+
+To open a shell/CLI on a node, you can SSH directly to the devices' names.
+
+Alternatively:
+```
+containerlab exec -t ceos-2dc-evpn-dci.clab.yml --name dc1-leaf1 --cmd "Cli"
+```
+
+Or use Docker directly (Containerlab names containers like clab-<labname>-<node>):
+```
+docker exec -it clab-ceos-2dc-evpn-dci-dc1-leaf1 Cli
+
+Linux hosts can be accessed similarly:
+```
+docker exec -it clab-ceos-2dc-evpn-dci-dc1-host1 bash
+```
+
+7) Validate the lab (recommended)
+
+If you’re using the provided scripts:
+
+```
+chmod +x scripts/*.sh
+scripts/validate-underlay.sh
+scripts/validate-evpn.sh
+scripts/validate-tenants.sh
+scripts/validate-intent.sh
+```
+
+Or run everything:
+```
+scripts/validate.sh
+```
+
+8) Tear down the lab
+
+When you’re done:
+```
+clab destroy
+```
+
+Common issues
+
+If deployment fails or nodes come up without the expected config, the fastest checks are:
+
+1. Confirm Docker runtime is healthy: `docker ps`
+2. Confirm the cEOS image exists: `docker images | grep ceos`
+3. Confirm the config binds exist on disk: `ls -l configs/`
+4. Confirm the lab name matches what scripts expect (default is `ceos-2dc-evpn-dci`)
+
+If you’re on macOS and you keep running into Docker Desktop resource limits or networking oddities, OrbStack is often the simplest way to remove that overhead and keep the lab setup “boring.”
+
 # Appendix A: What This Topology Encodes (Directly From the YAML)
 Each DC has four spines and four leaves, with each leaf connected to all spines. Each DC has four dual-homed hosts attached to leaf pairs. Each DC has two additional routers connected to spine1 and spine3 (both routers connect to both of those spines). The two DCs are connected only by two links: router1-to-router1 and router2-to-router2.
 
