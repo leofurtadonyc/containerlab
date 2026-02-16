@@ -186,7 +186,7 @@ Typical approaches:
 
 Load the image from a tarball you already have:
 
-docker import cEOS64-lab-4.35.1F.tar.xz
+`docker import cEOS64-lab-4.35.1F.tar.xz`
 
 Or tag an existing image to match what the lab expects:
 ```
@@ -222,10 +222,10 @@ Alternatively:
 containerlab exec -t ceos-2dc-evpn-dci.clab.yml --name dc1-leaf1 --cmd "Cli"
 ```
 
-Or use Docker directly (Containerlab names containers like clab-<labname>-<node>):
+Or use Docker directly (Containerlab names containers like clab-labname-node):
 ```
 docker exec -it clab-ceos-2dc-evpn-dci-dc1-leaf1 Cli
-
+```
 Linux hosts can be accessed similarly:
 ```
 docker exec -it clab-ceos-2dc-evpn-dci-dc1-host1 bash
@@ -234,7 +234,6 @@ docker exec -it clab-ceos-2dc-evpn-dci-dc1-host1 bash
 7) Validate the lab (recommended)
 
 If you’re using the provided scripts:
-
 ```
 chmod +x scripts/*.sh
 scripts/validate-underlay.sh
