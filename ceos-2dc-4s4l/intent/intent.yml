@@ -65,6 +65,7 @@ checks:
     kind: interfaces_up
     params:
       selector: {role: eos}
+      required_description_regex: ["^to-"]
 
   - name: underlay-bgp-established
     phase: underlay

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 from typing import Any
 
 from netlab.core.model import CheckResult, CheckStatus, Severity, ValidationContext
@@ -83,10 +84,49 @@ def run_checks(ctx: ValidationContext, mode: str) -> list[CheckResult]:
 
         if check.kind == "interfaces_up":
             nodes = _resolve_nodes(ctx, dict(params.get("selector", {})))
+            required_interfaces = {str(x) for x in params.get("required_interfaces", [])}
+            required_interface_regex = [str(x) for x in params.get("required_interface_regex", [])]
+            required_description_regex = [str(x) for x in params.get("required_description_regex", [])]
+            ignore_interfaces = {str(x) for x in params.get("ignore_interfaces", [])}
+            ignore_interface_regex = [str(x) for x in params.get("ignore_interface_regex", [])]
             for node in nodes:
                 data = collect_interfaces(ctx.evidence_client, node).get("data", {})
-                ok = data.get("rc", 1) == 0 and data.get("down", 0) == 0
-                out.append(_mk(check.phase, f"{check.name}::{node}", ok, sev, "interface status", data))
+                parsed = data.get("parsed", [])
+                selected = []
+                for entry in parsed:
+                    iface = entry.get("interface", "")
+                    desc = entry.get("description", "")
+
+                    if iface in ignore_interfaces:
+                        continue
+                    if any(re.search(rx, iface) for rx in ignore_interface_regex):
+                        continue
+
+                    selected_by_rule = False
+                    if required_interfaces and iface in required_interfaces:
+                        selected_by_rule = True
+                    if required_interface_regex and any(re.search(rx, iface) for rx in required_interface_regex):
+                        selected_by_rule = True
+                    if required_description_regex and any(re.search(rx, desc) for rx in required_description_regex):
+                        selected_by_rule = True
+
+                    # If no explicit scope is provided, preserve legacy behavior.
+                    if not (required_interfaces or required_interface_regex or required_description_regex):
+                        selected_by_rule = True
+
+                    if selected_by_rule:
+                        selected.append(entry)
+
+                bad = [
+                    item for item in selected if not (item.get("status") == "up" and item.get("protocol") == "up")
+                ]
+                ok = data.get("rc", 1) == 0 and (len(selected) > 0) and (len(bad) == 0)
+                evidence = {
+                    "selected_count": len(selected),
+                    "bad_count": len(bad),
+                    "bad_interfaces": [f"{i.get('interface')}:{i.get('status')}/{i.get('protocol')}" for i in bad],
+                }
+                out.append(_mk(check.phase, f"{check.name}::{node}", ok, sev, "interface status", evidence))
             continue
 
         if check.kind == "bgp_established":
