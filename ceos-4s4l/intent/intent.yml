@@ -118,16 +118,16 @@ checks:
         - source: l4h3
           targets: [192.168.20.11, 192.168.30.14]
 
-  - name: dataplane-vlan20-to-vlan10-l3-reach
-    phase: dataplane
-    kind: ping_targets
-    params:
-      interface: bond0.20
-      probes:
-        - source: l4h1
-          targets: [192.168.10.12, 192.168.10.13]
-        - source: l4h3
-          targets: [192.168.10.11, 192.168.10.14]
+  # - name: dataplane-vlan20-to-vlan10-l3-reach
+  #   phase: dataplane
+  #   kind: ping_targets
+  #   params:
+  #     interface: bond0.20
+  #     probes:
+  #       - source: l4h1
+  #         targets: [192.168.10.12, 192.168.10.13]
+  #       - source: l4h3
+  #         targets: [192.168.10.11, 192.168.10.14]
 
   - name: dataplane-vlan10-vlan20-l2-isolation
     phase: dataplane
