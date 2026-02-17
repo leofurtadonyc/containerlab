@@ -1343,3 +1343,199 @@ Source Codes:
  B E      192.168.30.0/24 [200/0]
            via VTEP 10.255.2.4 VNI 10000 router-mac 00:1c:73:0a:07:ed local-interface Vxlan1
 ```
+
+## Lab validation script (scripts/ folder)
+```
+./validate.sh
+[13:15:54] Validating lab: ceos-4s4l
+[13:15:54] Phase 0: Intent (config truth)
+[13:15:54] CHECK: Intent: leaf1 VXLAN + Anycast GW baseline
+[13:15:55] PASS : Intent: leaf1 VXLAN + Anycast GW baseline
+
+[13:15:55] CHECK: Intent: leaf1 rack-specific VLAN20 domain (VNI + GW)
+[13:15:55] PASS : Intent: leaf1 rack-specific VLAN20 domain (VNI + GW)
+
+[13:15:55] CHECK: Intent: leaf1 uses EVPN all-active multihoming (ESI-LAG)
+[13:15:56] PASS : Intent: leaf1 uses EVPN all-active multihoming (ESI-LAG)
+
+[13:15:56] CHECK: Intent: leaf2 VXLAN + Anycast GW baseline
+[13:15:56] PASS : Intent: leaf2 VXLAN + Anycast GW baseline
+
+[13:15:56] CHECK: Intent: leaf2 rack-specific VLAN20 domain (VNI + GW)
+[13:15:57] PASS : Intent: leaf2 rack-specific VLAN20 domain (VNI + GW)
+
+[13:15:57] CHECK: Intent: leaf2 uses EVPN all-active multihoming (ESI-LAG)
+[13:15:57] PASS : Intent: leaf2 uses EVPN all-active multihoming (ESI-LAG)
+
+[13:15:57] CHECK: Intent: leaf3 VXLAN + Anycast GW baseline
+[13:15:58] PASS : Intent: leaf3 VXLAN + Anycast GW baseline
+
+[13:15:58] CHECK: Intent: leaf3 rack-specific VLAN20 domain (VNI + GW)
+[13:15:58] PASS : Intent: leaf3 rack-specific VLAN20 domain (VNI + GW)
+
+[13:15:58] CHECK: Intent: leaf3 uses EVPN all-active multihoming (ESI-LAG)
+[13:15:59] PASS : Intent: leaf3 uses EVPN all-active multihoming (ESI-LAG)
+
+[13:15:59] CHECK: Intent: leaf4 VXLAN + Anycast GW baseline
+[13:15:59] PASS : Intent: leaf4 VXLAN + Anycast GW baseline
+
+[13:15:59] CHECK: Intent: leaf4 rack-specific VLAN20 domain (VNI + GW)
+[13:15:59] PASS : Intent: leaf4 rack-specific VLAN20 domain (VNI + GW)
+
+[13:15:59] CHECK: Intent: leaf4 uses EVPN all-active multihoming (ESI-LAG)
+[13:16:00] PASS : Intent: leaf4 uses EVPN all-active multihoming (ESI-LAG)
+
+[13:16:00] CHECK: Intent: spine1 has spine BGP role (underlay + EVPN)
+[13:16:01] PASS : Intent: spine1 has spine BGP role (underlay + EVPN)
+
+[13:16:01] CHECK: Intent: spine2 has spine BGP role (underlay + EVPN)
+[13:16:01] PASS : Intent: spine2 has spine BGP role (underlay + EVPN)
+
+[13:16:01] CHECK: Intent: spine3 has spine BGP role (underlay + EVPN)
+[13:16:02] PASS : Intent: spine3 has spine BGP role (underlay + EVPN)
+
+[13:16:02] CHECK: Intent: spine4 has spine BGP role (underlay + EVPN)
+[13:16:02] PASS : Intent: spine4 has spine BGP role (underlay + EVPN)
+
+[13:16:02] CHECK: Intent: VLAN20 VNI differs between racks (10200 vs 10300)
+[13:16:03] PASS : Intent: VLAN20 VNI differs between racks (10200 vs 10300)
+
+[13:16:03] ALL CHECKS PASSED
+[13:16:03] Phase 1: Underlay
+[13:16:03] CHECK: All lab containers exist
+Found 12 containers.
+[13:16:03] PASS : All lab containers exist
+
+[13:16:03] CHECK: EOS interface health on spine1
+[13:16:03] PASS : EOS interface health on spine1
+
+[13:16:03] CHECK: EOS interface health on spine2
+[13:16:03] PASS : EOS interface health on spine2
+
+[13:16:03] CHECK: EOS interface health on spine3
+[13:16:03] PASS : EOS interface health on spine3
+
+[13:16:03] CHECK: EOS interface health on spine4
+[13:16:03] PASS : EOS interface health on spine4
+
+[13:16:03] CHECK: EOS interface health on leaf1
+[13:16:04] PASS : EOS interface health on leaf1
+
+[13:16:04] CHECK: EOS interface health on leaf2
+[13:16:04] PASS : EOS interface health on leaf2
+
+[13:16:04] CHECK: EOS interface health on leaf3
+[13:16:04] PASS : EOS interface health on leaf3
+
+[13:16:04] CHECK: EOS interface health on leaf4
+[13:16:04] PASS : EOS interface health on leaf4
+
+[13:16:04] CHECK: Host bonding and VLAN subifs on l4h1
+bond0            UP             aa:c1:ab:8b:1e:85 <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> 
+bond0.10@bond0   UP             aa:c1:ab:8b:1e:85 <BROADCAST,MULTICAST,UP,LOWER_UP> 
+bond0.20@bond0   UP             aa:c1:ab:8b:1e:85 <BROADCAST,MULTICAST,UP,LOWER_UP> 
+[13:16:05] PASS : Host bonding and VLAN subifs on l4h1
+
+[13:16:05] CHECK: Host bonding and VLAN subifs on l4h2
+bond0            UP             aa:c1:ab:a6:e2:d7 <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> 
+bond0.10@bond0   UP             aa:c1:ab:a6:e2:d7 <BROADCAST,MULTICAST,UP,LOWER_UP> 
+bond0.20@bond0   UP             aa:c1:ab:a6:e2:d7 <BROADCAST,MULTICAST,UP,LOWER_UP> 
+[13:16:05] PASS : Host bonding and VLAN subifs on l4h2
+
+[13:16:05] CHECK: Host bonding and VLAN subifs on l4h3
+bond0            UP             aa:c1:ab:e2:c1:1f <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> 
+bond0.10@bond0   UP             aa:c1:ab:e2:c1:1f <BROADCAST,MULTICAST,UP,LOWER_UP> 
+bond0.20@bond0   UP             aa:c1:ab:e2:c1:1f <BROADCAST,MULTICAST,UP,LOWER_UP> 
+[13:16:05] PASS : Host bonding and VLAN subifs on l4h3
+
+[13:16:05] CHECK: Host bonding and VLAN subifs on l4h4
+bond0            UP             aa:c1:ab:82:ce:da <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> 
+bond0.10@bond0   UP             aa:c1:ab:82:ce:da <BROADCAST,MULTICAST,UP,LOWER_UP> 
+bond0.20@bond0   UP             aa:c1:ab:82:ce:da <BROADCAST,MULTICAST,UP,LOWER_UP> 
+[13:16:06] PASS : Host bonding and VLAN subifs on l4h4
+
+[13:16:06] ALL CHECKS PASSED
+[13:16:06] Phase 2: EVPN control plane
+[13:16:06] CHECK: Config-driven BGP sessions Established on spine1
+[13:16:06] PASS : Config-driven BGP sessions Established on spine1
+
+[13:16:06] CHECK: Config-driven BGP sessions Established on spine2
+[13:16:06] PASS : Config-driven BGP sessions Established on spine2
+
+[13:16:06] CHECK: Config-driven BGP sessions Established on spine3
+[13:16:07] PASS : Config-driven BGP sessions Established on spine3
+
+[13:16:07] CHECK: Config-driven BGP sessions Established on spine4
+[13:16:07] PASS : Config-driven BGP sessions Established on spine4
+
+[13:16:07] CHECK: Config-driven BGP sessions Established on leaf1
+[13:16:07] PASS : Config-driven BGP sessions Established on leaf1
+
+[13:16:07] CHECK: Config-driven BGP sessions Established on leaf2
+[13:16:08] PASS : Config-driven BGP sessions Established on leaf2
+
+[13:16:08] CHECK: Config-driven BGP sessions Established on leaf3
+[13:16:08] PASS : Config-driven BGP sessions Established on leaf3
+
+[13:16:08] CHECK: Config-driven BGP sessions Established on leaf4
+[13:16:08] PASS : Config-driven BGP sessions Established on leaf4
+
+[13:16:08] CHECK: EVPN routes present on leaf1
+[13:16:08] PASS : EVPN routes present on leaf1
+
+[13:16:08] CHECK: EVPN routes present on leaf2
+[13:16:08] PASS : EVPN routes present on leaf2
+
+[13:16:08] CHECK: EVPN routes present on leaf3
+[13:16:09] PASS : EVPN routes present on leaf3
+
+[13:16:09] CHECK: EVPN routes present on leaf4
+[13:16:09] PASS : EVPN routes present on leaf4
+
+[13:16:09] ALL CHECKS PASSED
+[13:16:09] Phase 3: Tenant dataplane / hosts
+[13:16:09] CHECK: Host VLAN10 anycast GW reachable from l4h1
+[13:16:10] PASS : Host VLAN10 anycast GW reachable from l4h1
+
+[13:16:10] CHECK: Host VLAN10 anycast GW reachable from l4h2
+[13:16:11] PASS : Host VLAN10 anycast GW reachable from l4h2
+
+[13:16:11] CHECK: Host VLAN10 anycast GW reachable from l4h3
+[13:16:12] PASS : Host VLAN10 anycast GW reachable from l4h3
+
+[13:16:12] CHECK: Host VLAN10 anycast GW reachable from l4h4
+[13:16:13] PASS : Host VLAN10 anycast GW reachable from l4h4
+
+[13:16:13] CHECK: VLAN10 mesh from l4h1
+[13:16:17] PASS : VLAN10 mesh from l4h1
+
+[13:16:17] CHECK: VLAN10 mesh from l4h3
+[13:16:20] PASS : VLAN10 mesh from l4h3
+
+[13:16:20] CHECK: Rack A GW 192.168.20.1 reachable from l4h1
+[13:16:21] PASS : Rack A GW 192.168.20.1 reachable from l4h1
+
+[13:16:21] CHECK: Rack A GW 192.168.20.1 reachable from l4h2
+[13:16:22] PASS : Rack A GW 192.168.20.1 reachable from l4h2
+
+[13:16:22] CHECK: Rack A host-to-host (20.11 <-> 20.12)
+[13:16:24] PASS : Rack A host-to-host (20.11 <-> 20.12)
+
+[13:16:24] CHECK: Rack B GW 192.168.30.1 reachable from l4h3
+[13:16:25] PASS : Rack B GW 192.168.30.1 reachable from l4h3
+
+[13:16:25] CHECK: Rack B GW 192.168.30.1 reachable from l4h4
+[13:16:27] PASS : Rack B GW 192.168.30.1 reachable from l4h4
+
+[13:16:27] CHECK: Rack B host-to-host (30.13 <-> 30.14)
+[13:16:29] PASS : Rack B host-to-host (30.13 <-> 30.14)
+
+[13:16:29] CHECK: L2 Isolation: Rack A VLAN20 does not extend to Rack B VLAN20
+[13:16:38] PASS : L2 Isolation: Rack A VLAN20 does not extend to Rack B VLAN20
+
+[13:16:38] CHECK: L2 Isolation: Rack B VLAN20 does not extend to Rack A VLAN20
+[13:16:46] PASS : L2 Isolation: Rack B VLAN20 does not extend to Rack A VLAN20
+
+[13:16:46] ALL CHECKS PASSED
+[13:16:46] Done.
+```
