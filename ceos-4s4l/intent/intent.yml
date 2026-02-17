@@ -1,0 +1,35 @@
+spines:
+  - spine1
+  - spine2
+  - spine3
+  - spine4
+leaves:
+  rackA: [leaf1, leaf2]
+  rackB: [leaf3, leaf4]
+hosts:
+  rackA: [l4h1, l4h2]
+  rackB: [l4h3, l4h4]
+
+tenant1:
+  vrf: TENANT1
+  vlan10:
+    vni: 10100
+    gw: 192.168.10.1/24
+  rackA_domain:
+    vlan: 20
+    subnet: 192.168.20.0/24
+    gw: 192.168.20.1/24
+    vni: 10200
+  rackB_domain:
+    vlan: 20
+    subnet: 192.168.30.0/24
+    gw: 192.168.30.1/24
+    vni: 10300
+  isolation:
+    type: l2
+    interface: bond0.20
+
+gnmi:
+  port: 6030
+  username: clab
+  password: clab

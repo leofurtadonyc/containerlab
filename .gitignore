@@ -17,3 +17,6 @@ Thumbs.db
 *.crt
 *.pfx
 *.env
+
+# Private content
+agent/
