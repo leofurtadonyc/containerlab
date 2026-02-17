@@ -41,6 +41,13 @@ def _print_console(summary: RunSummary) -> None:
     typer.echo(f"Exit code: {summary.exit_code}")
 
 
+def _normalized_baseline(payload: dict) -> dict:
+    # Exclude volatile fields that are expected to change on every run.
+    normalized = dict(payload)
+    normalized.pop("timestamp", None)
+    return normalized
+
+
 def _run_validate(ctx: ValidationContext, mode: str) -> RunSummary:
     summary = RunSummary()
     for result in run_checks(ctx, mode):
@@ -100,7 +107,7 @@ def drift(
     ctx = _ctx(lab, profile)
     new = collect_baseline(ctx)
 
-    state_diffs = diff_dict(old, new)
+    state_diffs = diff_dict(_normalized_baseline(old), _normalized_baseline(new))
     config_drift = compute_config_drift(ctx)
 
     summary = RunSummary()
