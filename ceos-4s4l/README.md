@@ -12,7 +12,7 @@ I do NOT provide Arista images for this lab, so you must bring your own image. S
 
 # Topology
 
-![cEOS-4S4L Topology](https://github.com/leofurtadonyc/containerlab/blob/main/ceos-2dc-4s4l/ceos-4s4l.png)
+![cEOS-4S4L Topology](https://github.com/leofurtadonyc/containerlab/blob/main/ceos-4s4l/ceos-4s4l.png)
 
 <a href="https://github.com/leofurtadonyc/containerlab/blob/main/ceos-4s4l/ceos-4s4l.pdf" target="_blank">Open cEOS-4S4L topology PDF</a>
 
