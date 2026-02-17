@@ -1,0 +1,154 @@
+version: 1
+
+gnmi:
+  port: 6030
+  username: clab
+  password: clab
+
+inventory:
+  nodes:
+    spine1: {kind: arista_ceos, roles: [eos, spine]}
+    spine2: {kind: arista_ceos, roles: [eos, spine]}
+    spine3: {kind: arista_ceos, roles: [eos, spine]}
+    spine4: {kind: arista_ceos, roles: [eos, spine]}
+    leaf1: {kind: arista_ceos, roles: [eos, leaf], groups: [rackA_leaf]}
+    leaf2: {kind: arista_ceos, roles: [eos, leaf], groups: [rackA_leaf]}
+    leaf3: {kind: arista_ceos, roles: [eos, leaf], groups: [rackB_leaf]}
+    leaf4: {kind: arista_ceos, roles: [eos, leaf], groups: [rackB_leaf]}
+    l4h1: {kind: linux, roles: [host], groups: [rackA_host]}
+    l4h2: {kind: linux, roles: [host], groups: [rackA_host]}
+    l4h3: {kind: linux, roles: [host], groups: [rackB_host]}
+    l4h4: {kind: linux, roles: [host], groups: [rackB_host]}
+
+services:
+  tenant:
+    vrf: TENANT1
+    vlan10: {vni: 10100, gw: 192.168.10.1/24}
+    rackA_vlan20: {vni: 10200, gw: 192.168.20.1/24}
+    rackB_vlan20: {vni: 10300, gw: 192.168.30.1/24}
+
+checks:
+  - name: intent-vxlan-basics
+    phase: intent
+    kind: config_contains
+    params:
+      selector: {role: leaf}
+      required: ["interface Vxlan1", "interface Vlan10"]
+
+  - name: intent-rackA-vni
+    phase: intent
+    kind: config_contains
+    params:
+      selector: {group: rackA_leaf}
+      required: ["10200"]
+
+  - name: intent-rackB-vni
+    phase: intent
+    kind: config_contains
+    params:
+      selector: {group: rackB_leaf}
+      required: ["10300"]
+
+  - name: intent-rack-vni-distinct
+    phase: intent
+    kind: intent_distinct
+    params:
+      paths: ["services.tenant.rackA_vlan20.vni", "services.tenant.rackB_vlan20.vni"]
+
+  - name: underlay-interfaces-up
+    phase: underlay
+    kind: interfaces_up
+    params:
+      selector: {role: eos}
+      required_description_regex: ["^to-"]
+
+  - name: underlay-bgp-established
+    phase: underlay
+    kind: bgp_established
+    params:
+      selector: {role: eos}
+      min_total: 1
+      require_all: true
+
+  - name: controlplane-evpn-routes
+    phase: control-plane
+    kind: evpn_routes_present
+    params:
+      selector: {role: leaf}
+      patterns: ["mac-ip", "ip-prefix"]
+      require: any
+
+  - name: dataplane-vlan10-pings
+    phase: dataplane
+    kind: ping_targets
+    params:
+      interface: bond0.10
+      probes:
+        - source: l4h1
+          targets: [192.168.10.12, 192.168.10.13, 192.168.10.14]
+        - source: l4h2
+          targets: [192.168.10.11, 192.168.10.13, 192.168.10.14]
+        - source: l4h3
+          targets: [192.168.10.11, 192.168.10.12, 192.168.10.14]
+        - source: l4h4
+          targets: [192.168.10.11, 192.168.10.12, 192.168.10.13]
+
+  - name: dataplane-rack-gateways
+    phase: dataplane
+    kind: ping_targets
+    params:
+      probes:
+        - source: l4h1
+          targets: [192.168.20.1]
+        - source: l4h2
+          targets: [192.168.20.1]
+        - source: l4h3
+          targets: [192.168.30.1]
+        - source: l4h4
+          targets: [192.168.30.1]
+
+  - name: dataplane-vlan10-to-vlan20-l3-reach
+    phase: dataplane
+    kind: ping_targets
+    params:
+      interface: bond0.10
+      probes:
+        - source: l4h1
+          targets: [192.168.20.12, 192.168.30.13]
+        - source: l4h3
+          targets: [192.168.20.11, 192.168.30.14]
+
+  # - name: dataplane-vlan20-to-vlan10-l3-reach
+  #   phase: dataplane
+  #   kind: ping_targets
+  #   params:
+  #     interface: bond0.20
+  #     probes:
+  #       - source: l4h1
+  #         targets: [192.168.10.12, 192.168.10.13]
+  #       - source: l4h3
+  #         targets: [192.168.10.11, 192.168.10.14]
+
+  - name: dataplane-vlan10-vlan20-l2-isolation
+    phase: dataplane
+    kind: l2_neighbor_absent
+    params:
+      probes:
+        - source: l4h1
+          target_ip: 192.168.20.12
+          interface: bond0.10
+        - source: l4h1
+          target_ip: 192.168.30.13
+          interface: bond0.10
+        - source: l4h3
+          target_ip: 192.168.20.11
+          interface: bond0.10
+        - source: l4h3
+          target_ip: 192.168.30.14
+          interface: bond0.10
+        - source: l4h1
+          target_ip: 192.168.10.12
+          interface: bond0.20
+        - source: l4h3
+          target_ip: 192.168.10.11
+          interface: bond0.20

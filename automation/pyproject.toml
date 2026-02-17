@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "netlab-automation"
+version = "0.1.0"
+description = "gNMI-first containerlab validation and drift toolkit"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "typer>=0.12",
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0"]
+
+[project.scripts]
+netlab = "netlab.cli:app"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

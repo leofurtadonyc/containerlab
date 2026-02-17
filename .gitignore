@@ -17,3 +17,24 @@ Thumbs.db
 *.crt
 *.pfx
 *.env
+
+# Python local env/cache
+automation/.venv/
+automation/src/**/__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+automation/src/netlab_automation.egg-info/
+
+# netlab generated outputs
+automation/artifacts/
+automation/baselines/
+
+# optional coverage outputs
+.coverage
+htmlcov/
+
+# Not interesting
+agent/
