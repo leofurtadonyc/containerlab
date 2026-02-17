@@ -38,8 +38,24 @@ class ContainerlabAdapter:
         return CmdResult(p.returncode, p.stdout.strip(), p.stderr.strip())
 
     def eos_cli(self, node: str, command: str) -> CmdResult:
-        p = subprocess.run(["docker", "exec", self.container_name(node), "Cli", "-c", command], capture_output=True, text=True)
-        return CmdResult(p.returncode, p.stdout.strip(), p.stderr.strip())
+        container = self.container_name(node)
+        p = subprocess.run(["docker", "exec", container, "Cli", "-c", command], capture_output=True, text=True)
+        first = CmdResult(p.returncode, p.stdout.strip(), p.stderr.strip())
+
+        combined = (first.stdout + "\n" + first.stderr).lower()
+        needs_enable = "privileged mode required" in combined or "% invalid input" in combined
+        if not needs_enable:
+            return first
+
+        # Retry via interactive CLI flow with enable mode.
+        script = "cat <<'EOF' | Cli\nenable\n" + command + "\nEOF"
+        p2 = subprocess.run(["docker", "exec", container, "bash", "-lc", script], capture_output=True, text=True)
+        second = CmdResult(p2.returncode, p2.stdout.strip(), p2.stderr.strip())
+
+        second_combined = (second.stdout + "\n" + second.stderr).lower()
+        if second.returncode == 0 and "privileged mode required" not in second_combined:
+            return second
+        return first
 
     def list_nodes(self) -> list[str]:
         return list(self.nodes)
