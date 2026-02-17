@@ -175,8 +175,28 @@ def run_checks(ctx: ValidationContext, mode: str) -> list[CheckResult]:
                 interface = str(probe.get("interface"))
                 ping(ctx.adapter, source, target_ip, interface=interface)
                 neigh = neigh_show(ctx.adapter, source, interface)
-                ok = target_ip not in neigh.get("out", "")
-                out.append(_mk(check.phase, f"{check.name}::{source}->{target_ip}", ok, sev, "neighbor absence", {"interface": interface}))
+                raw = neigh.get("out", "")
+                matched_lines = [
+                    line.strip()
+                    for line in raw.splitlines()
+                    if line.strip().startswith(target_ip + " ")
+                ]
+                learned_lines = [line for line in matched_lines if " lladdr " in line]
+                ok = len(learned_lines) == 0
+                out.append(
+                    _mk(
+                        check.phase,
+                        f"{check.name}::{source}->{target_ip}",
+                        ok,
+                        sev,
+                        "neighbor absence",
+                        {
+                            "interface": interface,
+                            "matched_lines": matched_lines,
+                            "learned_lines": learned_lines,
+                        },
+                    )
+                )
             continue
 
         if check.kind == "intent_distinct":
