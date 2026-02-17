@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass(slots=True)
@@ -11,38 +12,19 @@ class GnmiDefaults:
 
 
 @dataclass(slots=True)
-class RackDomain:
-    vlan: int
-    subnet: str
-    gw: str
-    vni: int
-
-
-@dataclass(slots=True)
-class TenantIntent:
+class CheckDef:
     name: str
-    vrf: str
-    vlan10_vni: int
-    vlan10_gw: str
-    rack_a: RackDomain
-    rack_b: RackDomain
-    isolation_type: str
-    isolation_interface: str
-
-
-@dataclass(slots=True)
-class DCIIntent:
-    routers_dc1: list[str] = field(default_factory=list)
-    routers_dc2: list[str] = field(default_factory=list)
-    interdc_links: list[str] = field(default_factory=list)
+    phase: str
+    kind: str
+    severity: str = "ERROR"
+    params: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
 class IntentModel:
     lab_name: str
-    spines: list[str]
-    leaves: dict[str, list[str]]
-    hosts: dict[str, list[str]]
-    tenant1: TenantIntent
     gnmi: GnmiDefaults
-    dci: DCIIntent | None = None
+    inventory: dict[str, Any]
+    services: dict[str, Any]
+    checks: list[CheckDef]
+    raw: dict[str, Any]

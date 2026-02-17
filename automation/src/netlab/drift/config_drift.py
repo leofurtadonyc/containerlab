@@ -5,15 +5,14 @@ from netlab.utils.hashing import sha256_text
 
 
 def compute_config_drift(ctx) -> list[dict]:
-    nodes = list(ctx.intent.spines) + [x for g in ctx.intent.leaves.values() for x in g]
-    if ctx.intent.dci:
-        nodes.extend(ctx.intent.dci.routers_dc1)
-        nodes.extend(ctx.intent.dci.routers_dc2)
-
     drifts = []
-    for node in nodes:
+    for node in ctx.adapter.list_nodes():
+        if ctx.adapter.node_kind(node) == "linux":
+            continue
         desired_path = Path(ctx.adapter.repo_root) / ctx.lab / "configs" / f"{node}.cfg"
-        desired = desired_path.read_text(encoding="utf-8") if desired_path.exists() else ""
+        if not desired_path.exists():
+            continue
+        desired = desired_path.read_text(encoding="utf-8")
         running = collect_running_config(ctx.evidence_client, node).get("raw", "")
         desired_hash = sha256_text(desired)
         running_hash = sha256_text(running)

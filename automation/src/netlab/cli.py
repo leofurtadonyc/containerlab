@@ -18,17 +18,7 @@ from netlab.evidence.gnmi import GnmiTransport
 from netlab.intent.loader import load_intent
 from netlab.render.report_json import write_json_report
 from netlab.render.report_md import write_markdown_report
-from netlab.validators.control_plane.bgp_evpn_up import validate as validate_cp_bgp
-from netlab.validators.control_plane.evpn_routes_present import validate as validate_cp_routes
-from netlab.validators.dataplane.l2_isolation import validate as validate_dp_iso
-from netlab.validators.dataplane.rack_subnets import validate as validate_dp_rack
-from netlab.validators.dataplane.vlan10_mesh import validate as validate_dp_mesh
-from netlab.validators.intent.anycast_gw import validate as validate_intent_gw
-from netlab.validators.intent.esi_lag import validate as validate_intent_esi
-from netlab.validators.intent.rack_local_vni import validate as validate_intent_rack
-from netlab.validators.intent.vxlan_basics import validate as validate_intent_vxlan
-from netlab.validators.underlay.bgp_underlay_up import validate as validate_ul_bgp
-from netlab.validators.underlay.interfaces_up import validate as validate_ul_if
+from netlab.validators.engine import run_checks
 
 app = typer.Typer(add_completion=False)
 
@@ -52,28 +42,9 @@ def _print_console(summary: RunSummary) -> None:
 
 
 def _run_validate(ctx: ValidationContext, mode: str) -> RunSummary:
-    phase_map = {
-        "intent": [validate_intent_vxlan, validate_intent_gw, validate_intent_rack, validate_intent_esi],
-        "underlay": [validate_ul_if, validate_ul_bgp],
-        "control-plane": [validate_cp_bgp, validate_cp_routes],
-        "dataplane": [validate_dp_mesh, validate_dp_rack, validate_dp_iso],
-    }
-    phases = ["intent", "underlay", "control-plane", "dataplane"] if mode == "all" else [mode]
     summary = RunSummary()
-    for phase in phases:
-        for validator in phase_map[phase]:
-            try:
-                summary.extend(validator(ctx))
-            except Exception as exc:
-                summary.add(
-                    CheckResult(
-                        phase=phase,
-                        name=validator.__name__,
-                        status=CheckStatus.FAIL,
-                        severity=Severity.ERROR,
-                        message=f"Validator crashed: {exc}",
-                    )
-                )
+    for result in run_checks(ctx, mode):
+        summary.add(result)
     return summary
 
 
