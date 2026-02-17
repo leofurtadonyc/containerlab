@@ -1,24 +1,306 @@
-# Default credentials to Arista switches
+#Author
+Leonardo Furtado https://github.com/leofurtadonyc
+
+#Lab credentials
+
+User: clab
+
+Password: clab 
+
+##Disclaimer
+I do NOT provide Arista images for this lab, so you must bring your own image. See the "Lab instructions" section in this document for details on how to import your image. 
+
+#Topology
+
+![cEOS-4S4L Topology](https://github.com/leofurtadonyc/containerlab/blob/main/ceos-2dc-4s4l/ceos-4s4l.png)
+
+<a href="https://github.com/leofurtadonyc/containerlab/blob/main/ceos-4s4l/ceos-4s4l.pdf" target="_blank">Open cEOS-4S4L topology PDF</a>
+
+#Executive Summary
+We are building a training-grade digital twin of a single data center Clos fabric (4 spines, 4 leaves) that behaves like a production EVPN environment: deterministic under failure, fast to provision, observable by design, and automation-friendly. The topology includes four dual-homed Linux endpoints using LACP bonding, representing servers attached redundantly across ToR pairs (leaf1/leaf2 as “Rack A” and leaf3/leaf4 as “Rack B”).
+
+This lab is intentionally designed around a common “service boundary” problem that shows up early in real networks: one VLAN must be available everywhere (shared services), while another VLAN must stay rack-local (blast-radius and governance). Concretely, this lab models VLAN 10 as stretched (192.168.10.0/24) and VLAN 20 as rack-local, implemented as 192.168.20.0/24 in Rack A and 192.168.30.0/24 in Rack B. This creates an environment where success is not “everything can talk to everything,” but rather “only the intended services are globally reachable.”
+
+Three architecture families were evaluated. A controller-driven SDN fabric (ACI-like) can improve day-0 ergonomics but imposes platform coupling and a control-plane operating model that does not match teams that want standards-first workflows and Git-driven change. A traditional VLAN-centric or L3-only fabric reduces conceptual complexity but tends to either expand the failure domain (VLAN sprawl / STP-era patterns) or shift too much complexity to applications (hard L3 boundaries everywhere). We select EVPN-VXLAN because it makes L2/L3 services explicit, supports dual-homing and anycast gateway patterns, scales operationally with ECMP, and is naturally compatible with Infrastructure-as-Code and continuous validation.
+
+This lab is the “practice field” where engineers can reproduce, break, observe, and fix failure modes in a deterministic way before those patterns exist in production. 
+
+#Overview
+The topology models a four-spine, four-leaf Clos fabric. Each leaf has uplinks to all spines, creating an ECMP-rich underlay that forces correct routing behavior and avoids single-path illusions. There are four dual-homed Linux hosts using LACP bonding (802.3ad) with VLAN subinterfaces, representing production-like server attachment and the realities of “redundancy is expected at the edge.”
+
+The key learning mechanic is the service split:
+- VLAN 10 is stretched across the entire fabric (192.168.10.0/24), representing shared services such as management reachability, shared tooling, or common platform dependencies.
+- VLAN 20 is intentionally not stretched as a single L2 domain. Rack A uses 192.168.20.0/24; Rack B uses 192.168.30.0/24. This models rack-local services (or tenant slices) that must not accidentally become global broadcast domains.
+
+The YAML is intentionally “topology-only,” with cEOS startup configurations mounted by binds. That separation is a design feature: topology stays stable, while intent (underlay, overlay, tenants, policies) evolves through config and automation.
+
+#Audience
+This README is written for two groups at once. The first group is technical: data center network engineers, NetDevOps engineers, and reliability engineers who want a realistic platform to practice design decisions, validate failure behavior, and build automation workflows around EVPN and service boundaries. The second group is business-oriented decision makers: infrastructure leaders, operations leaders, and risk/compliance stakeholders who need a coherent story for why a specific architecture family was selected, what tradeoffs it implies, and how it reduces operational risk while enabling faster delivery. 
+
+Because this is a training artifact, the story and the requirements are fictional, but the tradeoffs and engineering principles are real. 
+
+#The Challenges We’re Solving
+The business goal is to deliver a modern fabric that can onboard services quickly without turning the entire data center into a single shared failure domain. The engineering goal is to make that outcome predictable: failures should be unsurprising, changes should be reviewable, and troubleshooting should scale beyond “the one person who knows the magic incantations.” 
+
+This lab focuses on a very common early-stage failure pattern: the network starts small, and teams “temporarily” stretch VLANs everywhere because it makes connectivity easy. Over time, that temporary decision becomes permanent architecture, and the blast radius grows. Flooding, MAC churn, partial failures, and change coupling follow. The lab makes that failure mode visible by forcing you to justify which services are global (VLAN 10) and which must remain bounded (rack-local VLAN 20 modeled as distinct subnets per rack).
+
+In parallel, the lab forces correct edge behavior. Dual-homed LACP hosts are included because they are where a lot of “it’s probably the underlay” debugging goes wrong. If the attachment domain is incorrect, you can generate symptoms that look like EVPN bugs, MTU problems, or ECMP hashing issues. This topology lets you practice proving the layers in order, instead of doing ping-driven engineering.
+
+#Business Requirements and Technical Requirements
+From a business perspective, we need a network that supports fast provisioning and safe change. Shared services must remain reachable across the fabric, but rack-local services must not become global by accident. Operations must be able to validate intent after every change, and new engineers must be able to learn the system without relying on tribal knowledge. 
+
+From a technical perspective:
+- The fabric must be L3 underlay with ECMP characteristics consistent with Clos designs (each leaf uplinks to all spines). 
+- The edge must support dual-homed servers using LACP (802.3ad) while providing stable gateway semantics. 
+- The overlay must support scalable L2/L3 services without spanning-tree assumptions.
+- The design must allow service scoping: one service domain is global (VLAN 10), another is intentionally bounded per rack (VLAN 20 modeled as 20/30 subnets).
+- The lab must be automation-friendly: topology declared in YAML, configs injected from files, validations repeatable.
+
+#Options Considered
+##Option 1: EVPN-VXLAN Fabric (Selected)
+This design treats the data center as an L3 ECMP underlay with an EVPN control plane for tenant/service semantics. Leafs act as VTEPs and provide L2 and L3 services (including anycast gateway patterns), while spines provide scalable ECMP transport.
+
+Most importantly for this lab’s use-case, EVPN gives you explicit, inspectable control-plane state for “what is reachable and why.” That makes it compatible with continuous validation: you can assert invariants like “VLAN 10 is present everywhere” and “rack-local VLAN 20 does not accidentally leak as a single global domain,” and then prove it with control-plane and service-plane checks.
+
+##Option 2: Controller-driven SDN Fabric (ACI-like)
+A controller-driven approach can deliver strong day-0 workflows and centralized policy expression. In exchange, it introduces platform coupling and a specific operational model (controller availability, controller upgrades, policy compilation behavior) that may not align with teams that want standards-first EVPN workflows and Git-driven config/intent pipelines.
+
+For training, this option also reduces the learner’s exposure to the underlying distributed-system mechanics. That can be good for some audiences, but it is explicitly not the objective of this lab.
+
+##Option 3: Traditional VLAN-centric design or L3-only fabric
+A VLAN-centric approach optimizes for initial simplicity: VLANs, trunks, and “it pings.” Over time, it tends to expand the failure domain and makes troubleshooting nondeterministic under partial failures.
+
+An L3-only fabric pushes segmentation and reachability policy into routing and applications. That can be a valid end-state, but as a training target it often hides the real-world transitional state: most organizations still need selective L2 semantics for specific services, and they need a disciplined operating model to avoid accidental sprawl.
+
+#Pros and Cons
+##Option 1: EVPN-VXLAN (Selected)
+Pros: standards-based, scalable, and observable; supports dual-homing patterns; makes service boundaries explicit; compatible with IaC and repeatable validation; aligns with modern Clos + ECMP underlay designs. 
+
+Cons: requires correct conceptual model (distributed control plane); misconfigurations can create “accidental success” unless you validate invariants; dual-homing semantics must match the intended model (EVPN multihoming vs MLAG). 
+
+##Option 2: Controller-driven SDN
+Pros: strong centralized workflows and policy abstraction; potentially faster initial provisioning for teams fully bought into the platform.
+
+Cons: platform coupling; different failure modes (controller dependencies); may not match multi-team ownership or standards-first automation pipelines.
+
+##Option 3: VLAN-centric / L3-only
+Pros: easy to start; fewer moving parts initially.
+
+Cons: VLAN-centric expands failure domain and becomes hard to reason about; L3-only can force premature application changes and doesn’t naturally represent selective L2 semantics when you still need them.
+
+#How the Solution Works
+Containerlab instantiates the topology and wires links exactly as declared. cEOS nodes boot with startup configurations mounted via binds, making the lab deterministic and Git-friendly. Linux hosts execute bonding and VLAN subinterface setup at container start, which produces a realistic server attachment model without manual steps.
+
+Conceptually, the fabric is built and validated in layers:
+- Physical graph is correct (containers up, interfaces up, expected link mapping).
+- Host attachment is correct (bond0 exists, LACP is stable, VLAN subinterfaces exist).
+- Underlay routing is correct (ECMP reachability among loopbacks/VTEPs).
+- Overlay control plane is correct (EVPN adjacencies stable, expected routes present).
+
+Service intent is correct:
+- VLAN 10 behaves as “global shared service.”
+- VLAN 20 behaves as “rack-local bounded service,” with rack-local reachability and explicit L3 policy governing anything beyond rack scope.
+
+#Expected Outcomes in the Lab
+
+The lab should demonstrate that:
+- A host can lose one uplink (or one leaf in its pair) without losing connectivity, if multihoming is implemented correctly.
+- A spine failure reduces ECMP capacity but does not break correctness.
+- VLAN 10 reachability works across the entire fabric as a deliberately shared service.
+- VLAN 20 does not behave like “one big L2 domain everywhere.” Rack A and Rack B are intentionally distinct for the second VLAN/subnet, and any cross-rack communication should be governed by explicit design choices rather than default flooding behavior.
+
+#Limitations and Caveats
+This topology is a high-fidelity training environment but not a hardware-accurate replica of ASIC behavior. Convergence timing, buffering, and some data-plane corner cases will differ from physical deployments. The lab is designed to teach the architecture and operating model, not to benchmark performance. 
+
+The topology file does not include the actual device configurations. Many design choices (underlay protocol, BGP ASN plan, EVPN route-target scheme, VXLAN VNI mapping, and gateway behavior) live in the bound config files. Treat any mismatch between intent and config as a validation gap to fix.
+
+The topology includes leaf-to-leaf links labeled “for ops / keepalive usage.” If the lab uses LACP on the host side, the network side must implement a compatible multihoming model. If your intent is EVPN multihoming (ESI-LAG), configs must reflect that explicitly. If you choose MLAG instead, update the story accordingly.
+
+#Lab Instructions
+This lab is built for Containerlab. You bring the topology (ceos-4s4l.clab.yml) and the device configs (configs/*.cfg), and Containerlab wires everything together into a reproducible EVPN training environment.
+
+Prerequisites:
+- You need a working container runtime and Containerlab itself.
+- A container runtime: Docker Desktop, OrbStack, or any Docker-compatible engine.
+- `containerlab` installed on your machine.
+
+*Arista image is not available locally; you must bring your own.* This lab expects `ceos:4.35.1F`.
+
+If you’re on macOS, OrbStack can be a great fit because it abstracts a lot of the typical Docker-on-Mac friction (networking, filesystem performance, VM management) while still presenting a Docker-compatible CLI experience. 
+
+##Install a container runtime
+Choose one:
+- OrbStack (recommended on macOS): install OrbStack, then ensure the docker CLI works in your terminal.
+- Docker Desktop: install Docker Desktop, start it, and confirm Docker is running. 
+
+Verify:
+```
+docker version
+docker ps
+```
+##Install Containerlab
+On macOS (Homebrew):
+```
+brew install containerlab
+```
+Verify:
+```
+containerlab version
+```
+Clone this repository
+```
+git clone <REPO_URL>
+cd <REPO_DIR>
+```
+You should see:
+- `ceos-4s4l.clab.yml`
+- `configs/` with all node startup configs
+- `scripts/` with validation and failure drills (optional but recommended)
+
+##Provide the Arista cEOS image
+This lab references:
+```
+kinds:
+  arista_ceos:
+    image: ceos:4.35.1F
+```
+Typical approaches:
+1. Load the image from a tarball you already have:
+```
+docker import cEOS64-lab-4.35.1F.tar.xz
+```
+Or tag an existing image to match what the lab expects:
+```
+docker tag <existing-image> ceos:4.35.1F
+```
+Validate the image exists:
+```
+docker images | grep -E "^ceos\s+4\.35\.1F"
+```
+##Deploy the lab
+From the lab folder:
+```
+clab deploy -t ceos-4s4l.clab.yml
+```
+When it finishes, you should see the lab listed:
+```
+clab inspect -t ceos-4s4l.clab.yml
+```
+##Access nodes (interactive)
+To open a CLI on a node:
+```
+containerlab exec -t ceos-4s4l.clab.yml --name leaf1 --cmd "Cli"
+```
+Or use Docker directly (Containerlab names containers like clab-labname-node):
+```
+docker exec -it clab-ceos-4s4l-leaf1 Cli
+```
+Linux hosts:
+```
+docker exec -it clab-ceos-4s4l-l4h1 bash
+```
+##Validate the lab (recommended)
+If you’re using provided scripts:
+```
+chmod +x scripts/*.sh
+scripts/validate-underlay.sh
+scripts/validate-evpn.sh
+scripts/validate-tenants.sh
+scripts/validate-intent.sh
+```
+Or run everything:
+```
+scripts/validate.sh
+```
+##Tear down the lab
+When you’re done:
+```
+clab destroy
+```
+## Common issues
+
+If deployment fails or nodes come up without the expected config, the fastest checks are:
+- Confirm Docker runtime is healthy: `docker ps`
+- Confirm the cEOS image exists: `docker images | grep ceos`
+- Confirm the config binds exist on disk: `ls -l configs/`
+- Confirm the lab name matches what scripts expect (default is `ceos-4s4l`)
+
+#Appendix A: What This Topology Encodes
+This lab models a 4x4 Clos fabric: four spines and four leaves, with each leaf connected to all spines. It also includes four dual-homed Linux hosts connected to leaf pairs, plus leaf-to-leaf links intended for ops/keepalive usage.
+
+The host attachment model uses Linux bonding in 802.3ad mode with VLAN subinterfaces. VLAN 10 uses 192.168.10.0/24 across all hosts. The second VLAN is intentionally rack-scoped: hosts in the leaf1/leaf2 pair use 192.168.20.0/24, while hosts in the leaf3/leaf4 pair use 192.168.30.0/24.
+
+#Appendix B: Bring-Up and Day-2 Workflows
+
+This lab is designed to feel like a production network in one critical way: topology is stable, and behavior is driven by configuration and intent. The YAML file declares physical reality—devices, links, endpoints, and host attachment mechanics. The `configs/` directory declares network intent—underlay, overlay, tenants, policies.
+
+A practical bring-up sequence follows the same discipline used in large environments. Start by validating the physical graph, then validate host LACP and VLAN subinterfaces, then validate the underlay reachability, then validate the EVPN control plane, and only then validate service behavior. The key is to avoid “ping-driven engineering” where we jump straight to endpoint tests without proving control plane adjacency and service-state correctness first.
+
+##Repository layout expectations
+This README assumes the repository uses the following structure:
+- `ceos-4s4l.clab.yml` as the topology source of truth.
+- `configs/` containing startup configs for every cEOS node referenced by binds.
+- Optional `scripts/` for validation and failure injection helpers.
+- Optional `docs/` for deeper protocol notes and design decisions.
+
+##Bring-up flow: the path from “wires” to “services”
+The most reliable way to bring up a Clos + EVPN lab is to prove each layer before moving up the stack. Start with “containers and interfaces,” then “host bonding,” then “underlay,” then “EVPN,” then “services.” Treat drift as failure and return truth to the repository.
+
+## Day-2 workflows: how you keep this sane at scale
+Configuration changes must be reviewable. Your default operating model should be “propose → review → apply → validate,” not “SSH → edit → hope.” Validation must be repeatable, and invariants should be explicit (“VLAN 10 global; rack-local VLAN 20 bounded”).
+
+#Appendix C: Validation and Failure Drills
+This section defines what “good” looks like and how to prove it. The goal is not a pile of ping commands; the goal is confidence from layered validation: physical adjacency, control plane, service plane, and end-to-end experience. 
+
+A practical minimum drill set for this topology includes:
+- Single uplink failure on a leaf (ECMP reduces, no outage).
+- Single spine failure (fabric continues, EVPN remains stable).
+- Leaf failure in a dual-homed pair (host remains reachable via surviving leaf if multihoming is correct).
+- Service-boundary checks (VLAN 10 works globally; rack-local VLAN 20 stays bounded unless explicitly routed).
+
+#Appendix D: Extras
+Devices:
+- clab-ceos-4s4l-spine1
+- clab-ceos-4s4l-spine2
+- clab-ceos-4s4l-spine3
+- clab-ceos-4s4l-spine4
+- clab-ceos-4s4l-leaf1
+- clab-ceos-4s4l-leaf2
+- clab-ceos-4s4l-leaf3
+- clab-ceos-4s4l-leaf4 
+
+Hosts:
+- clab-ceos-4s4l-l4h1
+- clab-ceos-4s4l-l4h2
+- clab-ceos-4s4l-l4h3
+- clab-ceos-4s4l-l4h4 
+- ceos-4s4l.clab
+
+##IP addressing proposal for services (used in host exec blocks)
+VLAN 10 (stretched L2 across both racks)
+- Subnet: 192.168.10.0/24
+- Anycast GW (later, on leaves): 192.168.10.1/24
+
+Rack A second VLAN (modeled as “VLAN 20”)
+- Subnet: 192.168.20.0/24 (GW 192.168.20.1)
+- l4h1: 192.168.20.11/24
+- l4h2: 192.168.20.12/24 
+
+Rack B second VLAN (also modeled as “VLAN 20,” but intentionally different subnet for rack scoping)
+- Subnet: 192.168.30.0/24 (GW 192.168.30.1)
+- l4h3: 192.168.30.13/24
+- l4h4: 192.168.30.14/24
+
+## Default credentials to Arista switches
 - User: clab
 - Password: clab
 
-# Default credentials to Arista switches
-None. You should use docker to get into the hosts:
-
-```
-docker exec -it clab-ceos-4s4l-l4h1 bash
-docker exec -it clab-ceos-4s4l-l4h2 bash
-docker exec -it clab-ceos-4s4l-l4h3 bash
-docker exec -it clab-ceos-4s4l-l4h4 bash
-```
-
-# Scenario: “Two racks, two tenants, L2 stretch + L3 gateways everywhere”
+# Extras: “Two racks, two tenants, L2 stretch + L3 gateways everywhere”
 
 - We’ll treat (leaf1, leaf2) as Rack A and (leaf3, leaf4) as Rack B.
 - Each rack has a dual-homed server pair (our hosts), and each server is dual-homed via ESI-LAG to the rack leaf pair (all-active).
 
 # Host placement
-
 **Rack A (leaf1 + leaf2):**
 - host1 dual-homed to leaf1/leaf2
 - host2 dual-homed to leaf1/leaf2
@@ -28,7 +310,6 @@ docker exec -it clab-ceos-4s4l-l4h4 bash
 - host4 dual-homed to leaf3/leaf4
 
 # “Two VLANs per host”
-
 Each host gets two logical networks:
 - VLAN 10 = “App” (L2VNI 10100)
 - VLAN 20 = “DB” (L2VNI 10200)
@@ -40,7 +321,6 @@ On the hosts, we’ll present these as either:
 This gives us a clean way to test L2/L3 behavior per segment while keeping the "physical" Containerlab topology wiring identical.
 
 # What we’ll build in the fabric (services we can explore)
-
 ## 1) L2 bridging across racks (same VLAN, different rack)
 
 - Goal: prove EVPN L2 reachability and all-active multi-homing behavior.
@@ -54,7 +334,6 @@ What we’ll explore:
 - What happens to MAC learning when we shut one leaf link vs the other vs the whole leaf
 
 ## 2) L3 routing within a VRF (inter-VLAN routing)
-
 - Goal: route between VLAN 10 and VLAN 20 for the same tenant.
 - Create VRF TENANT1
 - Put VLAN10 SVI + VLAN20 SVI in the VRF on all leaves
@@ -67,7 +346,6 @@ What we’ll explore:
 - How “default gateway” works under EVPN with multi-homed hosts
 
 # 3) Dual-homed host behavior: all-active forwarding + failure domains
-
 This is the “why ESI exists” part.
 
 We can deliberately test:
@@ -86,7 +364,6 @@ Add TENANT2 later with VLAN110/VLAN120 and confirm:
 - No L2 leakage, no L3 route leaking unless configured
 
 # Suggested addressing (so we can run meaningful tests)
-
 ## VLAN 10 (“App”): stretched L2 across both racks
 - Subnet: 192.168.10.0/24
 - GW (anycast): 192.168.10.1
@@ -98,7 +375,6 @@ Example hosts:
 - host4: 192.168.10.14
 
 ## VLAN 20 (“DB”): also stretched or kept local depending on what we want
-
 Two good variants:
 
 **Variant A (stretched too): good for pure L2 learning exercises**
@@ -125,7 +401,6 @@ A simple “lab storyline” (what we do step-by-step)
 7) Fail one link, then fail one leaf—observe reconvergence and traffic continuity
 
 # Why this scenario matches EVPN all-active ESI (and not EVPN-MLAG)
-
 Our dual-homed hosts are the multi-homing use case. We avoid the “single logical VTEP” MLAG abstraction and instead exercise:
 
 a) EVPN Ethernet Segment (ES)
@@ -159,7 +434,6 @@ b) Cons / gotcha
     - Use an RT scheme that’s not tied to varying ASNs.
 
 # Verifying the lab
-
 ## IP addresses on hosts (i.e., host1)
 ```
 ~/labs/ceos-4s4l$ docker exec -it clab-ceos-4s4l-l4h1 bash
