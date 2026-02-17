@@ -53,7 +53,7 @@ class ContainerlabAdapter:
         second = CmdResult(p2.returncode, p2.stdout.strip(), p2.stderr.strip())
 
         second_combined = (second.stdout + "\n" + second.stderr).lower()
-        if second.returncode == 0 and "privileged mode required" not in second_combined:
+        if second.rc == 0 and "privileged mode required" not in second_combined:
             return second
         return first
 
