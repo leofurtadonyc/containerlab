@@ -1,0 +1,110 @@
+===============================================================================
+       GUIA: CONTAINERLAB + NOKIA SR OS (WSL2/DEBIAN)
+===============================================================================
+
+1. INSTALAÇÃO NATIVA (LINUX DEBIAN/UBUNTU)
+-------------------------------------------------------------------------------
+# Execute estes comandos para instalar o Docker Engine sem o Docker Desktop:
+
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+
+# Configurar permissões para rodar Docker sem sudo:
+sudo usermod -aG docker $USER
+# (Importante: Feche e abra o terminal após o comando acima)
+
+# Instalar o Containerlab:
+bash -c "$(curl -sL https://get.containerlab.dev)"
+
+
+2. COMANDOS DE OPERAÇÃO (FLUXO DE TRABALHO)
+-------------------------------------------------------------------------------
+# Carregar a imagem do roteador nokia (executar na pasta onde está o arquivo (.tar)):
+docker load -i NOME_DO_ARQUIVO.tar
+
+# Subir o laboratório:
+sudo -E containerlab deploy -t topology.yaml
+
+# Verificar status e IPs de gerência:
+sudo containerlab inspect -t topology.yaml
+
+# Abrir o gráfico de topologia no navegador (localhost:50080):
+sudo containerlab graph -t topology.yaml
+
+# Gerar arquivo para visualização no VS Code (extensão Draw.io):
+sudo containerlab graph -t topology.yaml --drawio
+
+# Destruir o laboratório e liberar memória RAM:
+sudo containerlab destroy -t topology.yaml --cleanup
+
+
+3. COMANDOS DE MANUTENÇÃO E LIMPEZA (ESSENCIAL PARA 16GB RAM)
+-------------------------------------------------------------------------------
+# LIMPAR CACHE DE MEMÓRIA DO KERNEL (Rode isso se o PC estiver lento):
+sudo sh -c "sync; echo 3 > /proc/sys/vm/drop_caches"
+
+# LIMPEZA PROFUNDA DO DOCKER (Remove lixo de memória): CUIDADO AO USAR, PARA NAO APAGAR TUDO!
+docker system prune -f
+docker network prune -f
+
+# FORÇAR PARADA (Se o Containerlab travar no terminal):
+sudo pkill -9 containerlab
+
+
+4. MAPEAMENTO DE PORTAS (LINUX vs NOKIA SR OS)
+-------------------------------------------------------------------------------
+No arquivo topology.yaml, os nomes 'eth' mapeiam para as portas do chassi:
+
+- eth1  <--->  port 1/1/c1/1
+- eth2  <--->  port 1/1/c2/1
+- eth3  <--->  port 1/1/c3/1
+
+
+5. DICAS DE CONFIGURAÇÃO ( VSCODE )
+
+Instalar o plugin containerlab
+Instalar e acessar via WSL se tiver usando o Windows
+Colocar no WSL do Linux os arquivos
+===============================================================================
+Nao esquecer de colocar a imagem do nokia na pasta para colocar no docker
+caso reinstale o sistema.
+===============================================================================
+Informações para ajuste de docker caso apresente problema de cache:
+
+docker compose down
+sudo containerlab destroy -t seamless-mpls-nokia.yaml
+
+# Limpa o cache de memória do sistema (ajuda muito no WSL)
+
+sudo sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
+--
+Add timer para apicação de configurações:
+
+export CLAB_POST_DEPLOY_TIMEOUT=120s
+sudo -E containerlab deploy -t seamless-mpls-nokia.yaml
+===============================================================================
+Configuração do WSL no windows 
+arquivo: .wslconfig na pasta do windows usuario em uso!
+
+[wsl2]
+# RAM real dedicada ao Linux (ex: se tem 32GB no PC, use 24GB)
+memory=7GB 
+
+# SWAP (Memória virtual no HD/SSD). 
+# Para labs de Nokia, recomendo deixar pelo menos o mesmo valor da RAM ou o dobro.
+swap=50GB 
+
+# Opcional: Se quiser que o arquivo de Swap fique em outro HD mais vazio (ex: drive D)
+# swapFile=D:\\wsl-swap.vhdx
+
+#  dentro do powershell:  wsl --shutdown
+       para restart do wsl
+===============================================================================

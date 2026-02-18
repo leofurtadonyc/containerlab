@@ -1,0 +1,279 @@
+{
+  "freeTextAnnotations": [
+    {
+      "id": "freeText_1768956448656_91c06db7",
+      "text": "Seamless sobre SR-MPLS",
+      "position": {
+        "x": 104,
+        "y": -71
+      },
+      "fontSize": 14,
+      "fontColor": "#FFFFFF",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1769707710165_bf220426",
+      "text": "Area 1.1.1.1",
+      "position": {
+        "x": -32,
+        "y": 62
+      },
+      "fontSize": 14,
+      "fontColor": "#ff4000",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1769707727823_c43b68a6",
+      "text": "Area 2.2.2.2",
+      "position": {
+        "x": 233,
+        "y": 60
+      },
+      "fontSize": 14,
+      "fontColor": "#ff4000",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1769707752850_f5b6bde8",
+      "text": "Area\n0.0.0.0",
+      "position": {
+        "x": 110,
+        "y": 27
+      },
+      "fontSize": 14,
+      "fontColor": "#ff4000",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true,
+      "width": 113,
+      "height": 30
+    },
+    {
+      "id": "freeText_1769708073796_b12043d2",
+      "text": "node_sid: 101\n\nLo: 10.1.1.255/32",
+      "position": {
+        "x": -145,
+        "y": 4
+      },
+      "fontSize": 10,
+      "fontColor": "#29ffc9",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1769708157645_e3750869",
+      "text": "node_sid: 102\n\nLo: 10.1.1.254/32",
+      "position": {
+        "x": -145,
+        "y": 182
+      },
+      "fontSize": 10,
+      "fontColor": "#29ffc9",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1769708668667_dc99bf35",
+      "text": "node_sid:  201\n\nLo: 10.2.2.255/32\n\n",
+      "position": {
+        "x": 349,
+        "y": -1
+      },
+      "fontSize": 10,
+      "fontColor": "#29ffc9",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    },
+    {
+      "id": "freeText_1769708727235_b588c3aa",
+      "text": "node_sid 202\n\nLo: 10.2.2.254/32",
+      "position": {
+        "x": 345,
+        "y": 158
+      },
+      "fontSize": 10,
+      "fontColor": "#29ffc9",
+      "backgroundColor": "transparent",
+      "fontWeight": "normal",
+      "fontStyle": "normal",
+      "textDecoration": "none",
+      "textAlign": "left",
+      "fontFamily": "monospace",
+      "rotation": 0,
+      "roundedBackground": true
+    }
+  ],
+  "freeShapeAnnotations": [],
+  "groupStyleAnnotations": [],
+  "networkNodeAnnotations": [],
+  "nodeAnnotations": [
+    {
+      "id": "PE-01",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": -91,
+        "y": -21
+      }
+    },
+    {
+      "id": "PE-02",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": -91,
+        "y": 161
+      }
+    },
+    {
+      "id": "OPR-AS3356",
+      "position": {
+        "x": -91,
+        "y": 231
+      },
+      "interfacePattern": "1/1/c{n}/1"
+    },
+    {
+      "id": "CLI-AS264075",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 357,
+        "y": 203
+      }
+    },
+    {
+      "id": "ABR01",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 21,
+        "y": 35
+      }
+    },
+    {
+      "id": "ABR02",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 161,
+        "y": 35
+      }
+    },
+    {
+      "id": "RR",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 91,
+        "y": 77
+      }
+    },
+    {
+      "id": "PE-03",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 273,
+        "y": -21
+      }
+    },
+    {
+      "id": "PE-04",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 273,
+        "y": 161
+      }
+    },
+    {
+      "id": "VPRN-B",
+      "position": {
+        "x": 287,
+        "y": 231
+      }
+    },
+    {
+      "id": "VPLS-B",
+      "position": {
+        "x": 217,
+        "y": 231
+      }
+    },
+    {
+      "id": "VPRN-A",
+      "position": {
+        "x": -49,
+        "y": -77
+      }
+    },
+    {
+      "id": "VPLS-A",
+      "position": {
+        "x": -147,
+        "y": -77
+      }
+    },
+    {
+      "id": "IPERF-AS3356",
+      "position": {
+        "x": -189,
+        "y": 231
+      }
+    },
+    {
+      "id": "IPERF-AS264075",
+      "position": {
+        "x": 441,
+        "y": 203
+      }
+    },
+    {
+      "id": "RADIUS-SRV",
+      "position": {
+        "x": 273,
+        "y": -91
+      }
+    }
+  ],
+  "edgeAnnotations": [],
+  "aliasEndpointAnnotations": [],
+  "viewerSettings": {}
+}
