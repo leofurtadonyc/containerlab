@@ -36,5 +36,12 @@ automation/baselines/
 .coverage
 htmlcov/
 
+# license files
+license/
+license.txt
+
+# Images
+images/
+
 # Not interesting
 agent/
