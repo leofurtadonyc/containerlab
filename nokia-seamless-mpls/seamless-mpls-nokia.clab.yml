@@ -2,7 +2,7 @@ name: nokia-seamless-mpls
 
 mgmt:
   network: clab
-  ipv4-subnet: 192.168.65.0/24
+  ipv4-subnet: 172.20.20.0/24
 
 topology:
   kinds:
@@ -15,8 +15,8 @@ topology:
     PE-01:
       kind: nokia_srsim
       memory: 4GB
-      type: SR-1
-      mgmt-ipv4: 192.168.65.101
+      type: sr-1
+      mgmt-ipv4: 172.20.20.101
       startup-config: ./configs/seamless-mpls/pe-01.partial.cfg
       components:
         - mda:
@@ -26,8 +26,8 @@ topology:
     PE-02:
       kind: nokia_srsim
       memory: 4GB
-      type: SR-1
-      mgmt-ipv4: 192.168.65.102
+      type: sr-1
+      mgmt-ipv4: 172.20.20.102
       startup-config: ./configs/seamless-mpls/pe-02.partial.cfg
       components:
         - mda:
@@ -37,8 +37,8 @@ topology:
     ABR01:
         kind: nokia_srsim
         memory: 4GB
-        type: SR-1
-        mgmt-ipv4: 192.168.65.201
+        type: sr-1
+        mgmt-ipv4: 172.20.20.201
         startup-config: ./configs/seamless-mpls/abr01.partial.cfg
         components:
         - mda:
@@ -48,8 +48,8 @@ topology:
     ABR02:
         kind: nokia_srsim
         memory: 4GB
-        type: SR-1
-        mgmt-ipv4: 192.168.65.202
+        type: sr-1
+        mgmt-ipv4: 172.20.20.202
         startup-config: ./configs/seamless-mpls/abr02.partial.cfg
         components:
         - mda:
@@ -59,8 +59,8 @@ topology:
     RR:
         kind: nokia_srsim
         memory: 4GB
-        type: SR-1
-        mgmt-ipv4: 192.168.65.200
+        type: sr-1
+        mgmt-ipv4: 172.20.20.200
         startup-config: ./configs/seamless-mpls/rr.partial.cfg
         components:
         - mda:
@@ -70,8 +70,8 @@ topology:
     PE-03:
       kind: nokia_srsim
       memory: 4GB
-      type: SR-1
-      mgmt-ipv4: 192.168.65.103
+      type: sr-1
+      mgmt-ipv4: 172.20.20.103
       startup-config: ./configs/seamless-mpls/pe-03.partial.cfg
       components:
         - mda:
@@ -81,8 +81,8 @@ topology:
     PE-04:
       kind: nokia_srsim
       memory: 4GB
-      type: SR-1
-      mgmt-ipv4: 192.168.65.104
+      type: sr-1
+      mgmt-ipv4: 172.20.20.104
       startup-config: ./configs/seamless-mpls/pe-04.partial.cfg
       components:
         - mda:
@@ -92,8 +92,8 @@ topology:
     OPR-AS3356:
       kind: nokia_srsim
       memory: 4GB
-      type: SR-1
-      mgmt-ipv4: 192.168.65.203
+      type: sr-1
+      mgmt-ipv4: 172.20.20.203
       startup-config: ./configs/seamless-mpls/opr-as3356.partial.cfg
       components:
         - mda:
@@ -103,8 +103,8 @@ topology:
     CLI-AS264075:
       kind: nokia_srsim
       memory: 4GB
-      type: SR-1
-      mgmt-ipv4: 192.168.65.204
+      type: sr-1
+      mgmt-ipv4: 172.20.20.204
       startup-config: ./configs/seamless-mpls/cli-as264075.partial.cfg
       components:
         - mda:
