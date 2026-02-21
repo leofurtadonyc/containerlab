@@ -1,0 +1,283 @@
+{
+  "freeTextAnnotations": [],
+  "freeShapeAnnotations": [],
+  "groupStyleAnnotations": [],
+  "networkNodeAnnotations": [],
+  "nodeAnnotations": [
+    {
+      "id": "CPE-A1",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 180,
+        "y": -80
+      }
+    },
+    {
+      "id": "CPE-A2",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 780,
+        "y": 120
+      }
+    },
+    {
+      "id": "CPE-B1",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 240,
+        "y": -140
+      }
+    },
+    {
+      "id": "CPE-B2",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 900,
+        "y": 220
+      }
+    },
+    {
+      "id": "CPE-C1",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 540,
+        "y": 320
+      }
+    },
+    {
+      "id": "CPE-C2",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 920,
+        "y": 700
+      }
+    },
+    {
+      "id": "NOC-R1",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 340,
+        "y": -100
+      }
+    },
+    {
+      "id": "NOC-R2",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 960,
+        "y": 340
+      }
+    },
+    {
+      "id": "PE1",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 320,
+        "y": 40
+      }
+    },
+    {
+      "id": "PE2",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 220,
+        "y": 20
+      }
+    },
+    {
+      "id": "P1",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 160,
+        "y": 160
+      }
+    },
+    {
+      "id": "P2",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 340,
+        "y": 180
+      }
+    },
+    {
+      "id": "P3",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 300,
+        "y": 280
+      }
+    },
+    {
+      "id": "P4",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 440,
+        "y": 300
+      }
+    },
+    {
+      "id": "P5",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 500,
+        "y": 220
+      }
+    },
+    {
+      "id": "P6",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 640,
+        "y": 320
+      }
+    },
+    {
+      "id": "P7",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 580,
+        "y": 400
+      }
+    },
+    {
+      "id": "P8",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 720,
+        "y": 480
+      }
+    },
+    {
+      "id": "PE3",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 720,
+        "y": 300
+      }
+    },
+    {
+      "id": "PE4",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 800,
+        "y": 360
+      }
+    },
+    {
+      "id": "CSC1-PE1",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 20,
+        "y": 280
+      }
+    },
+    {
+      "id": "CSC1-PE2",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 380,
+        "y": 500
+      }
+    },
+    {
+      "id": "CSC1-P1",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": -60,
+        "y": 460
+      }
+    },
+    {
+      "id": "CSC1-P2",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 120,
+        "y": 420
+      }
+    },
+    {
+      "id": "CSC1-P3",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 140,
+        "y": 520
+      }
+    },
+    {
+      "id": "CSC1-P4",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 220,
+        "y": 580
+      }
+    },
+    {
+      "id": "ISP1-R1",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 20,
+        "y": 400
+      }
+    },
+    {
+      "id": "ISP2-R1",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 540,
+        "y": 520
+      }
+    },
+    {
+      "id": "CSC2-PE1",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 400,
+        "y": 400
+      }
+    },
+    {
+      "id": "CSC2-PE2",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 760,
+        "y": 660
+      }
+    },
+    {
+      "id": "CSC2-P1",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 420,
+        "y": 600
+      }
+    },
+    {
+      "id": "CSC2-P2",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 520,
+        "y": 620
+      }
+    },
+    {
+      "id": "CSC2-P3",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 580,
+        "y": 700
+      }
+    },
+    {
+      "id": "CSC2-P4",
+      "interfacePattern": "1/1/c{n}/1",
+      "position": {
+        "x": 640,
+        "y": 780
+      }
+    }
+  ],
+  "edgeAnnotations": [],
+  "aliasEndpointAnnotations": [],
+  "viewerSettings": {}
+}
