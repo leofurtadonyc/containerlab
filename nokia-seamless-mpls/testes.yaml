@@ -1,0 +1,24 @@
+name: seamless-mpls-nokia
+mgmt:
+  network: clab
+  ipv4-subnet: 192.168.65.0/24
+
+topology:
+  kinds:
+    nokia_srsim:
+      image: localhost/nokia/srsim:25.10.R2
+      license: ./license.txt
+      
+  nodes:
+    VPRN-A:
+      memory: 512MB
+      kind: linux
+      image: frrouting/frr:latest
+      labels:
+        containerlab-mgmt-net-link: "false"
+      binds:
+        - configs/seamless-mpls/vprn-a.conf:/etc/frr/frr.conf
+        - configs/daemons:/etc/frr/daemons
+
+  # links:
+  #   - endpoints: ["VPRN-A:eth0", "VPRN-A:eth1"]

@@ -1,0 +1,4 @@
+teste Cleartext-Password := "123@teste"
+      Service-Type = Framed-User,
+      Framed-Protocol = PPP,
+      Framed-IP-Address = 10.0.0.100

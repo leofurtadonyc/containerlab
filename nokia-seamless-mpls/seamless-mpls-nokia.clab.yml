@@ -1,0 +1,214 @@
+name: nokia-seamless-mpls
+
+mgmt:
+  network: clab
+  ipv4-subnet: 172.20.20.0/24
+
+topology:
+  kinds:
+    nokia_srsim:
+      image: localhost/nokia/srsim:25.10.R2
+      # image: ghcr.io/nokia/srlinux:25.10.2-527
+      license: ./license.txt
+
+  nodes:
+    PE-01:
+      kind: nokia_srsim
+      memory: 4GB
+      type: sr-1
+      mgmt-ipv4: 172.20.20.101
+      startup-config: ./configs/seamless-mpls/pe-01.partial.cfg
+      components:
+        - mda:
+            - slot: 1
+              type: me12-100gb-qsfp28
+
+    PE-02:
+      kind: nokia_srsim
+      memory: 4GB
+      type: sr-1
+      mgmt-ipv4: 172.20.20.102
+      startup-config: ./configs/seamless-mpls/pe-02.partial.cfg
+      components:
+        - mda:
+            - slot: 1
+              type: me12-100gb-qsfp28
+    
+    ABR01:
+        kind: nokia_srsim
+        memory: 4GB
+        type: sr-1
+        mgmt-ipv4: 172.20.20.201
+        startup-config: ./configs/seamless-mpls/abr01.partial.cfg
+        components:
+        - mda:
+            - slot: 1
+              type: me12-100gb-qsfp28
+    
+    ABR02:
+        kind: nokia_srsim
+        memory: 4GB
+        type: sr-1
+        mgmt-ipv4: 172.20.20.202
+        startup-config: ./configs/seamless-mpls/abr02.partial.cfg
+        components:
+        - mda:
+            - slot: 1
+              type: me12-100gb-qsfp28
+    
+    RR:
+        kind: nokia_srsim
+        memory: 4GB
+        type: sr-1
+        mgmt-ipv4: 172.20.20.200
+        startup-config: ./configs/seamless-mpls/rr.partial.cfg
+        components:
+        - mda:
+            - slot: 1
+              type: me12-100gb-qsfp28
+    
+    PE-03:
+      kind: nokia_srsim
+      memory: 4GB
+      type: sr-1
+      mgmt-ipv4: 172.20.20.103
+      startup-config: ./configs/seamless-mpls/pe-03.partial.cfg
+      components:
+        - mda:
+            - slot: 1
+              type: me12-100gb-qsfp28
+
+    PE-04:
+      kind: nokia_srsim
+      memory: 4GB
+      type: sr-1
+      mgmt-ipv4: 172.20.20.104
+      startup-config: ./configs/seamless-mpls/pe-04.partial.cfg
+      components:
+        - mda:
+            - slot: 1
+              type: me12-100gb-qsfp28
+
+    OPR-AS3356:
+      kind: nokia_srsim
+      memory: 4GB
+      type: sr-1
+      mgmt-ipv4: 172.20.20.203
+      startup-config: ./configs/seamless-mpls/opr-as3356.partial.cfg
+      components:
+        - mda:
+            - slot: 1
+              type: me12-100gb-qsfp28
+    
+    CLI-AS264075:
+      kind: nokia_srsim
+      memory: 4GB
+      type: sr-1
+      mgmt-ipv4: 172.20.20.204
+      startup-config: ./configs/seamless-mpls/cli-as264075.partial.cfg
+      components:
+        - mda:
+            - slot: 1
+              type: me12-100gb-qsfp28
+    
+    VPLS-A:
+      kind: linux
+      memory: 512MB
+      image: ghcr.io/hellt/network-multitool
+      labels:
+        containerlab-mgmt-net-link: "false"
+      binds:
+        - configs/seamless-mpls/vpls-a.conf:/etc/frr/frr.conf
+        - configs/daemons:/etc/frr/daemons
+
+    VPRN-A:
+      memory: 512MB
+      kind: linux
+      image: frrouting/frr:latest
+      labels:
+        containerlab-mgmt-net-link: "false"
+      binds:
+        - configs/seamless-mpls/vprn-a.conf:/etc/frr/frr.conf
+        - configs/daemons:/etc/frr/daemons
+
+    VPLS-B:
+      kind: linux
+      memory: 512MB
+      image: frrouting/frr:latest
+      labels:
+        containerlab-mgmt-net-link: "false"
+      binds:
+        - configs/seamless-mpls/vpls-b.conf:/etc/frr/frr.conf
+        - configs/daemons:/etc/frr/daemons
+
+    VPRN-B:
+      kind: linux
+      memory: 512MB
+      image: frrouting/frr:latest
+      labels:
+        containerlab-mgmt-net-link: "false"
+      binds:
+        - configs/seamless-mpls/vprn-b.conf:/etc/frr/frr.conf
+        - configs/daemons:/etc/frr/daemons
+
+    IPERF-AS3356:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      memory: 512MB
+      exec:
+        # Configura o IP do Host no PTP (/30)
+        - ip addr add 187.16.100.2/30 dev eth1
+        - ip link set eth1 up
+        # Adiciona a rota específica para o destino final via o Gateway (Nokia)
+        - ip route replace 45.164.100.0/24 via 187.16.100.1
+        # - sleep 60
+        # - iperf3 -c 45.164.100.2 -b 10M --bidir -b 50M -M 1450 -t 600 -i 2
+        # - iperf3 -c 45.164.100.2 -u -b 10M --bidir -b 50M -t 600 -i 2
+    
+    IPERF-AS264075:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      memory: 512MB
+      exec:
+        # Configura o IP do Host no PTP (/30)
+        - ip addr add 45.164.100.2/30 dev eth1
+        - ip link set eth1 up
+        # Adiciona a rota específica para o destino final via o Gateway (Nokia)
+        - ip route replace 187.16.100.0/24 via 45.164.100.1
+        # - sleep 60
+        # - iperf3 -s
+    
+    RADIUS-SRV:
+      kind: linux
+      image: freeradius/freeradius-server:latest
+      memory: 512MB  
+      binds:
+        - radius-lab/users:/etc/freeradius/3.0/users
+    
+  links:
+      # LINKS-PE-01
+    - endpoints: ["PE-01:1/1/c1/1", "ABR01:1/1/c1/1"]
+    - endpoints: ["PE-01:1/1/c2/1", "PE-02:1/1/c1/1"]
+    - endpoints: ["PE-01:1/1/c3/1", "VPLS-A:eth1"]
+    - endpoints: ["PE-01:1/1/c4/1", "VPRN-A:eth1"]
+      # LINKS-PE-02
+    - endpoints: ["PE-02:1/1/c2/1", "ABR01:1/1/c2/1"]
+    - endpoints: ["PE-02:1/1/c3/1", "OPR-AS3356:1/1/c1/1"]
+      # LINKS-ABR01
+    - endpoints: ["ABR01:1/1/c4/1", "ABR02:1/1/c1/1"]
+    - endpoints: ["ABR01:1/1/c3/1", "RR:1/1/c2/1"]
+      # LINKS-ABR02
+    - endpoints: ["ABR02:1/1/c3/1", "PE-03:1/1/c1/1"]
+    - endpoints: ["ABR02:1/1/c4/1", "PE-04:1/1/c2/1"]
+      # LINKS-PE-03
+    - endpoints: ["PE-03:1/1/c2/1", "PE-04:1/1/c1/1"]
+      # LINKS-PE-04
+    - endpoints: ["PE-04:1/1/c3/1", "CLI-AS264075:1/1/c1/1"]
+    - endpoints: ["PE-04:1/1/c4/1", "VPLS-B:eth1"]
+    - endpoints: ["PE-04:1/1/c5/1", "VPRN-B:eth1"]
+      # LINKS-OPR-AS3356
+    - endpoints: ["OPR-AS3356:1/1/c2/1", "IPERF-AS3356:eth1"]
+      # LINKS-CLI-AS264075
+    - endpoints: ["CLI-AS264075:1/1/c2/1", "IPERF-AS264075:eth1"]
+      # LINKS-RADIUS
+    - endpoints: ["PE-03:1/1/c12/1", "RADIUS-SRV:eth1"]
