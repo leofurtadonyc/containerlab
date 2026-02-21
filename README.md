@@ -54,6 +54,7 @@ Note: more labs will come with time!
 containerlab/
 ├── ceos-4s4l/               # single-DC Clos + EVPN-VXLAN lab
 ├── ceos-2dc-4s4l/           # two-DC EVPN/DCI-focused lab
+├── nokia-sr-mpls            # A large Segment Routing / SRv6, Nokia-based lab
 ├── automation/              # Python source-of-truth automation framework
 └── README.md
 ```
