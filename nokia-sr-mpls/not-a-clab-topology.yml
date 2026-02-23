@@ -2035,7 +2035,7 @@
             - ipv6_unicast
         - neighbor: "P7"
           remote_as: 64515
-          description: "iBGP_to_P7"
+          description: "eBGP_to_P7"
           update_source: "system"
           nexthop_self: true
           allow_as_in: false
@@ -2344,7 +2344,7 @@
             - flowspec_ipv6
         - neighbor: "P8"
           remote_as: 64515
-          description: "iBGP_to_P8"
+          description: "eBGP_to_P8"
           update_source: "1/1/c6/1"
           nexthop_self: false
           allow_as_in: false
