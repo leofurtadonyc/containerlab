@@ -20,10 +20,10 @@
   - l2vpn_vpls:
       afi: "25"
       safi: "65"
-  - srte_ipv4:
+  - sr_policy_ipv4:
       afi: "1"
       safi: "73"
-  - srte_ipv6:
+  - sr_policy_ipv6:
       afi: "2"
       safi: "73"
   - bgp_ls:
@@ -429,8 +429,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -449,8 +449,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -527,8 +527,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -547,8 +547,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -632,8 +632,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -648,8 +648,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -664,8 +664,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -739,8 +739,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -755,8 +755,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -771,8 +771,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -836,8 +836,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -856,8 +856,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -872,8 +872,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -888,8 +888,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -908,8 +908,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6            
@@ -928,8 +928,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -948,8 +948,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1013,8 +1013,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1033,8 +1033,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1049,8 +1049,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1065,8 +1065,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1085,8 +1085,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6            
@@ -1105,8 +1105,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1125,8 +1125,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1190,8 +1190,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1210,8 +1210,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1226,8 +1226,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6            
@@ -1242,8 +1242,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1258,8 +1258,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1278,8 +1278,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1298,8 +1298,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1363,8 +1363,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1383,8 +1383,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1399,8 +1399,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6            
@@ -1415,8 +1415,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1431,8 +1431,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1451,8 +1451,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1471,8 +1471,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6     
@@ -1546,8 +1546,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1562,8 +1562,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1578,8 +1578,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6      
@@ -1652,8 +1652,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1668,8 +1668,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1684,8 +1684,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6            
@@ -1746,8 +1746,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1766,8 +1766,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1834,8 +1834,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1854,8 +1854,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1923,8 +1923,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -1949,8 +1949,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -2018,8 +2018,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -2044,8 +2044,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6 
@@ -2244,8 +2244,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -2260,8 +2260,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -2337,8 +2337,8 @@
             - l3vpn_ipv6
             - l2vpn_evpn
             - l2vpn_vpls
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
@@ -2353,8 +2353,8 @@
             - ipv4_unicast
             - ipv6_unicast
             - bgp_lu
-            - srte_ipv4
-            - srte_ipv6
+            - sr_policy_ipv4
+            - sr_policy_ipv6
             - bgp_ls
             - flowspec_ipv4
             - flowspec_ipv6
