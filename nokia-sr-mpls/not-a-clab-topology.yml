@@ -1,10 +1,108 @@
+- address_families:
+  - ipv4_unicast:
+      afi: "1"
+      safi: "1"
+  - ipv6_unicast:
+      afi: "2"
+      safi: "1"
+  - bgp_lu:
+      afi: "1"
+      safi: "4"
+  - l3vpn_ipv4:
+      afi: "1"
+      safi: "128"
+  - l3vpn_ipv6:
+      afi: "2"
+      safi: "128"
+  - l2vpn_evpn:
+      afi: "25"
+      safi: "70"
+  - l2vpn_vpls:
+      afi: "25"
+      safi: "65"
+  - sr_policy_ipv4:
+      afi: "1"
+      safi: "73"
+  - sr_policy_ipv6:
+      afi: "2"
+      safi: "73"
+  - bgp_ls:
+      afi: "16388"
+      safi: "71"
+  - flowspec_ipv4:
+      afi: "1"
+      safi: "133"
+  - flowspec_ipv6:
+      afi: "2"
+      safi: "133"
+
 - devices:
+  - name: "ISP1-R1"
+    type: "nokia_srsim"
+    loopback: "1.1.255.1/24"
+    interfaces:
+      - intf: "system"
+        description: "system_interface"
+        type: "loopback"
+        ipv4: "1.1.255.1/24"
+        ipv6: "2001:db8:1:255::1/128"
+      - intf: "1/1/c1/1"
+        neighbor: "CSC1-PE1_1/1/c1/1"
+        description: "To_CSC1-PE1_1/1/c1/1"
+        type: "routed"
+        ipv4: "198.51.100.1/30"
+        ipv6: "2001:db8:1::1/126"
+    bgp:
+      asn: 64512
+      router_id: "1.1.255.1"
+      neighbors:
+        - neighbor: "CSC1-PE1"
+          remote_as: 64513
+          description: "eBGP_to_CSC1-PE1"
+          update_source: "1/1/c1/1"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+
+  - name: "ISP2-R1"
+    type: "nokia_srsim"
+    loopback: "2.2.255.1/24"
+    interfaces:
+      - intf: "system"
+        description: "system_interface"
+        type: "loopback"
+        ipv4: "2.2.255.1/24"
+        ipv6: "2001:db8:2:255::1/128"
+      - intf: "1/1/c1/1"
+        neighbor: "CSC1-PE2_1/1/c1/1"
+        description: "To_CSC1-PE2_1/1/c1/1"
+        type: "routed"
+        ipv4: "203.0.113.1/30"
+        ipv6: "2001:db8:2::1/126"
+    bgp:
+      asn: 64514
+      router_id: "2.2.255.1"
+      neighbors:
+        - neighbor: "CSC1-PE2"
+          remote_as: 64513
+          description: "eBGP_to_CSC1-PE2"
+          update_source: "1/1/c1/1"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+
   - name: "CPE-A1"
     type: "nokia_srsim"
     loopback: "172.16.255.1"
     interfaces:
-      - intf: "loopback0"
-        description: "Loopback_interface"
+      - intf: "system"
+        description: "system_interface"
         type: "loopback"
         ipv4: "172.16.255.1/32"
         ipv6: "2001:db8:a:255::1/128"
@@ -18,12 +116,27 @@
         type: "routed"
         ipv4: "172.16.1.1/30"
         ipv6: "2001:db8:a:1::1/126"
+    bgp:
+      asn: 65001
+      router_id: "172.16.255.1"
+      neighbors:
+        - neighbor: "PE1"
+          remote_as: 64515
+          description: "eBGP_to_PE1"
+          update_source: "1/1/c1/1"
+          nexthop_self: false
+          allow_as_in: true
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+
   - name: "CPE-A2"
     type: "nokia_srsim"
     loopback: "172.16.255.2"
     interfaces:
-      - intf: "loopback0"
-        description: "Loopback_interface"
+      - intf: "system"
+        description: "system_interface"
         type: "loopback"
         ipv4: "172.16.255.2/32"
         ipv6: "2001:db8:a:255::2/128"
@@ -37,12 +150,27 @@
         type: "routed"
         ipv4: "172.16.1.5/30"
         ipv6: "2001:db8:a:1::5/126"
+    bgp:
+      asn: 65001
+      router_id: "172.16.255.2"
+      neighbors:
+        - neighbor: "PE3"
+          remote_as: 64515
+          description: "eBGP_to_PE3"
+          update_source: "1/1/c3/1"
+          nexthop_self: false
+          allow_as_in: true
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+
   - name: "CPE-B1"
     type: "nokia_srsim"
     loopback: "172.17.255.1"
     interfaces:
-      - intf: "loopback0"
-        description: "Loopback_interface"
+      - intf: "system"
+        description: "system_interface"
         type: "loopback"
         ipv4: "172.17.255.1/32"
         ipv6: "2001:db8:b:255::1/128"
@@ -56,12 +184,27 @@
         type: "routed"
         ipv4: "172.17.0.1/30"
         ipv6: "2001:db8:b:1::1/126"
+    bgp:
+      asn: 65002
+      router_id: "172.17.255.1"
+      neighbors:
+        - neighbor: "PE2"
+          remote_as: 64515
+          description: "eBGP_to_PE2"
+          update_source: "1/1/c1/1"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+
   - name: "CPE-B2"
     type: "nokia_srsim"
     loopback: "172.17.255.2"
     interfaces:
-      - intf: "loopback0"
-        description: "Loopback_interface"
+      - intf: "system"
+        description: "system_interface"
         type: "loopback"
         ipv4: "172.17.255.2/32"
         ipv6: "2001:db8:b:255::2/128"
@@ -75,12 +218,27 @@
         type: "routed"
         ipv4: "172.17.1.5/30"
         ipv6: "2001:db8:b:1::5/126"
+    bgp:
+      asn: 65002
+      router_id: "172.17.255.2"
+      neighbors:
+        - neighbor: "PE4"
+          remote_as: 64515
+          description: "eBGP_to_PE4"
+          update_source: "1/1/c3/1"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+
   - name: "CPE-C1"
     type: "nokia_srsim"
     loopback: "172.18.255.1"
     interfaces:
-      - intf: "loopback0"
-        description: "Loopback_interface"
+      - intf: "system"
+        description: "system_interface"
         type: "loopback"
         ipv4: "172.18.255.1/32"
         ipv6: "2001:db8:c:255::1/128"
@@ -94,12 +252,27 @@
         type: "routed"
         ipv4: "172.18.0.1/30"
         ipv6: "2001:db8:c:1::1/126"
+    bgp:
+      asn: 65003
+      router_id: "172.18.255.1"
+      neighbors:
+        - neighbor: "CSC2-PE1"
+          remote_as: 64516
+          description: "eBGP_to_CSC2-PE1"
+          update_source: "1/1/c1/1"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast 
+
   - name: "CPE-C2"
     type: "nokia_srsim"
     loopback: "172.18.255.2"
     interfaces:
-      - intf: "loopback0"
-        description: "Loopback_interface"
+      - intf: "system"
+        description: "system_interface"
         type: "loopback"
         ipv4: "172.18.255.2/32"
         ipv6: "2001:db8:c:255::2/128"
@@ -113,13 +286,27 @@
         type: "routed"
         ipv4: "172.18.0.5/30"
         ipv6: "2001:db8:c:1::5/126"
+    bgp:
+      asn: 65003
+      router_id: "172.18.255.2"
+      neighbors:
+        - neighbor: "CSC2-PE2"
+          remote_as: 64516
+          description: "eBGP_to_CSC2-PE2"
+          update_source: "1/1/c1/1"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast 
 
   - name: "NOC-R1"
     type: "nokia_srsim"
     loopback: "10.255.0.1"
     interfaces:
-      - intf: "loopback0"
-        description: "Loopback_interface"
+      - intf: "system"
+        description: "system_interface"
         type: "loopback"
         ipv4: "10.255.0.1/32"
         ipv6: "2001:db8:noc:255::1/128"
@@ -135,12 +322,27 @@
         type: "routed"
         ipv4: "10.200.1.1/24"
         ipv6: "2001:db8:noc:1::1/64"
+    bgp:
+      asn: 64515
+      router_id: "10.255.0.1"
+      neighbors:
+        - neighbor: "PE2"
+          remote_as: 64515
+          description: "iBGP_to_PE2"
+          update_source: "1/1/c5/1"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast  
+
   - name: "NOC-R2"
     type: "nokia_srsim"
     loopback: "10.255.0.2"
     interfaces:
-      - intf: "loopback0"
-        description: "Loopback_interface"
+      - intf: "system"
+        description: "system_interface"
         type: "loopback"
         ipv4: "10.255.0.2/32"
         ipv6: "2001:db8:noc:255::2/128"
@@ -156,6 +358,21 @@
         type: "routed"
         ipv4: "10.200.2.1/24"
         ipv6: "2001:db8:noc:2::1/64"
+    bgp:
+      asn: 64515
+      router_id: "10.255.0.2"
+      neighbors:
+        - neighbor: "PE4"
+          remote_as: 64515
+          description: "iBGP_to_PE4"
+          update_source: "1/1/c5/1"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast        
+
   - name: "PE1"
     type: "nokia_srsim"
     loopback: "100.65.255.11"
@@ -182,6 +399,72 @@
         type: "routed"
         ipv4: "100.65.0.1/30"
         ipv6: "2001:db8:65::a/126"
+    ospf:
+      process_id: 1
+      router_id: "100.65.255.11"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+    bgp:
+      asn: 64515
+      router_id: "100.65.255.11"
+      neighbors:
+        - neighbor: "P3"
+          remote_as: 64515
+          description: "iBGP_to_P3"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P4"
+          remote_as: 64515
+          description: "iBGP_to_P4"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "CPE-A1"
+          remote_as: 65001
+          description: "eBGP_to_CPE-A1"
+          update_source: "1/1/c1/1"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+
   - name: "PE2"
     type: "nokia_srsim"
     loopback: "100.65.255.12"
@@ -214,6 +497,72 @@
         type: "routed"
         ipv4: "100.65.0.73/30"
         ipv6: "2001:db8:65::49/126"
+    ospf:
+      process_id: 1
+      router_id: "100.65.255.12"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+    bgp:
+      asn: 64515
+      router_id: "100.65.255.12"
+      neighbors:
+        - neighbor: "P3"
+          remote_as: 64515
+          description: "iBGP_to_P3"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P4"
+          remote_as: 64515
+          description: "iBGP_to_P4"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "CPE-A2"
+          remote_as: 65001
+          description: "eBGP_to_CPE-A2"
+          update_source: "1/1/c1/1"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast            
+
   - name: "P1"
     type: "nokia_srsim"
     loopback: "100.65.255.1"
@@ -253,6 +602,74 @@
         type: "routed"
         ipv4: "100.65.0.21/30"
         ipv6: "2001:db8:65::15/126"
+    ospf:
+      process_id: 1
+      router_id: "100.65.255.1"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c4/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c5/1"
+              network_type: "point-to-point"
+    bgp:
+      asn: 64515
+      router_id: "100.65.255.1"
+      neighbors:
+        - neighbor: "P3"
+          remote_as: 64515
+          description: "iBGP_to_P3"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P4"
+          remote_as: 64515
+          description: "iBGP_to_P4"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "CSC1-PE1"
+          remote_as: 64515
+          description: "eBGP_to_CSC1-PE1"
+          update_source: "1/1/c6/1"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+
   - name: "P2"
     type: "nokia_srsim"
     loopback: "100.65.255.2"
@@ -292,6 +709,74 @@
         type: "routed"
         ipv4: "100.66.1.2/30"
         ipv6: "2001:db8:66:1::2/126"
+    ospf:
+      process_id: 1
+      router_id: "100.65.255.2"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c4/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c5/1"
+              network_type: "point-to-point"
+    bgp:
+      asn: 64515
+      router_id: "100.65.255.2"
+      neighbors:
+        - neighbor: "P3"
+          remote_as: 64515
+          description: "iBGP_to_P3"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P4"
+          remote_as: 64515
+          description: "iBGP_to_P4"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "CSC2-PE1"
+          remote_as: 64515
+          description: "eBGP_to_CSC2-PE1"
+          update_source: "1/1/c6/1"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+
   - name: "P3"
     type: "nokia_srsim"
     loopback: "100.65.255.3"
@@ -319,6 +804,156 @@
         type: "routed"
         ipv4: "100.65.0.22/30"
         ipv6: "2001:db8:65::16/126"
+    ospf:
+      process_id: 1
+      router_id: "100.65.255.3"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c4/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c5/1"
+              network_type: "point-to-point"
+    bgp:
+      asn: 64515
+      router_id: "100.65.255.3"
+      neighbors:
+        - neighbor: "PE1"
+          remote_as: 64515
+          description: "iBGP_to_PE1"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "PE2"
+          remote_as: 64515
+          description: "iBGP_to_PE2"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P1"
+          remote_as: 64515
+          description: "iBGP_to_P1"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P2"
+          remote_as: 64515
+          description: "iBGP_to_P2"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P4"
+          remote_as: 64515
+          description: "iBGP_to_P4"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6            
+        - neighbor: "P5"
+          remote_as: 64515
+          description: "iBGP_to_P5"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P6"
+          remote_as: 64515
+          description: "iBGP_to_P6"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+
   - name: "P4"
     type: "nokia_srsim"
     loopback: "100.65.255.4"
@@ -346,6 +981,156 @@
         type: "routed"
         ipv4: "100.65.0.26/30"
         ipv6: "2001:db8:65::1A/126"
+    ospf:
+      process_id: 1
+      router_id: "100.65.255.4"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c4/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c5/1"
+              network_type: "point-to-point"
+    bgp:
+      asn: 64515
+      router_id: "100.65.255.4"
+      neighbors:
+        - neighbor: "PE1"
+          remote_as: 64515
+          description: "iBGP_to_PE1"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "PE2"
+          remote_as: 64515
+          description: "iBGP_to_PE2"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P1"
+          remote_as: 64515
+          description: "iBGP_to_P1"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P2"
+          remote_as: 64515
+          description: "iBGP_to_P2"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P3"
+          remote_as: 64515
+          description: "iBGP_to_P3"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6            
+        - neighbor: "P5"
+          remote_as: 64515
+          description: "iBGP_to_P5"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P6"
+          remote_as: 64515
+          description: "iBGP_to_P6"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+
   - name: "P5"
     type: "nokia_srsim"
     loopback: "100.65.255.5"
@@ -373,6 +1158,152 @@
         type: "routed"
         ipv4: "100.65.0.45/30"
         ipv6: "2001:db8:65::2D/126"
+    ospf:
+      process_id: 1
+      router_id: "100.65.255.5"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c1/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c4/1"
+              network_type: "point-to-point"
+    bgp:
+      asn: 64515
+      router_id: "100.65.255.5"
+      neighbors:
+        - neighbor: "PE3"
+          remote_as: 64515
+          description: "iBGP_to_PE3"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "PE4"
+          remote_as: 64515
+          description: "iBGP_to_PE4"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P6"
+          remote_as: 64515
+          description: "iBGP_to_P6"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6            
+        - neighbor: "P7"
+          remote_as: 64515
+          description: "iBGP_to_P7"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P8"
+          remote_as: 64515
+          description: "iBGP_to_P8"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P3"
+          remote_as: 64515
+          description: "iBGP_to_P3"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P4"
+          remote_as: 64515
+          description: "iBGP_to_P4"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+
   - name: "P6"
     type: "nokia_srsim"
     loopback: "100.65.255.6"
@@ -400,6 +1331,152 @@
         type: "routed"
         ipv4: "100.65.0.49/30"
         ipv6: "2001:db8:65::31/126"
+    ospf:
+      process_id: 1
+      router_id: "100.65.255.6"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c1/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c4/1"
+              network_type: "point-to-point"
+    bgp:
+      asn: 64515
+      router_id: "100.65.255.6"
+      neighbors:
+        - neighbor: "PE3"
+          remote_as: 64515
+          description: "iBGP_to_PE3"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "PE4"
+          remote_as: 64515
+          description: "iBGP_to_PE4"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P5"
+          remote_as: 64515
+          description: "iBGP_to_P5"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6            
+        - neighbor: "P7"
+          remote_as: 64515
+          description: "iBGP_to_P7"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P8"
+          remote_as: 64515
+          description: "iBGP_to_P8"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P3"
+          remote_as: 64515
+          description: "iBGP_to_P3"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P4"
+          remote_as: 64515
+          description: "iBGP_to_P4"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6     
+
   - name: "P7"
     type: "nokia_srsim"
     loopback: "100.65.255.7"
@@ -439,6 +1516,74 @@
         type: "routed"
         ipv4: "100.64.1.6/30"
         ipv6: "2001:db8:64:1::6/126"
+    ospf:
+      process_id: 1
+      router_id: "100.65.255.7"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c1/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c4/1"
+              network_type: "point-to-point"
+    bgp:
+      asn: 64515
+      router_id: "100.65.255.7"
+      neighbors:
+        - neighbor: "P5"
+          remote_as: 64515
+          description: "iBGP_to_P5"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P6"
+          remote_as: 64515
+          description: "iBGP_to_P6"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "CSC1-PE1"
+          remote_as: 64515
+          description: "eBGP_to_CSC1-PE1"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6      
+
   - name: "P8"
     type: "nokia_srsim"
     loopback: "100.65.255.8"
@@ -478,6 +1623,73 @@
         type: "routed"
         ipv4: "100.66.1.6/30"
         ipv6: "2001:db8:66:1::6/126"
+    ospf:
+      process_id: 1
+      router_id: "100.65.255.8"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c1/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c4/1"
+    bgp:
+      asn: 64515
+      router_id: "100.65.255.8"
+      neighbors:
+        - neighbor: "P5"
+          remote_as: 64515
+          description: "iBGP_to_P5"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P6"
+          remote_as: 64515
+          description: "iBGP_to_P6"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "CSC2-PE1"
+          remote_as: 64515
+          description: "eBGP_to_CSC2-PE1"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6            
+
   - name: "PE3"
     type: "nokia_srsim"
     loopback: "100.65.255.13"
@@ -504,6 +1716,62 @@
         type: "routed"
         ipv4: "100.65.0.58/30"
         ipv6: "2001:db8:65::3A/126"
+    ospf:
+      process_id: 1
+      router_id: "100.65.255.13"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c4/1"
+              network_type: "point-to-point"
+    bgp:
+      asn: 64515
+      router_id: "100.65.255.13"
+      neighbors:
+        - neighbor: "P5"
+          remote_as: 64515
+          description: "iBGP_to_P5"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P6"
+          remote_as: 64515
+          description: "iBGP_to_P6"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+
   - name: "PE4"
     type: "nokia_srsim"
     loopback: "100.65.255.14"
@@ -536,6 +1804,62 @@
         type: "routed"
         ipv4: "100.65.0.76/30"
         ipv6: "2001:db8:65::4C/126"
+    ospf:
+      process_id: 1
+      router_id: "100.65.255.14"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c4/1"
+              network_type: "point-to-point"
+    bgp:
+      asn: 64515
+      router_id: "100.65.255.14"
+      neighbors:
+        - neighbor: "P5"
+          remote_as: 64515
+          description: "iBGP_to_P5"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P6"
+          remote_as: 64515
+          description: "iBGP_to_P6"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+
   - name: "CSC1-PE1"
     type: "nokia_srsim"
     loopback: "100.64.255.11"
@@ -569,6 +1893,68 @@
         type: "routed"
         ipv4: "100.64.1.1/30"
         ipv6: "2001:db8:64:1::1/126"
+    ospf:
+      process_id: 1
+      router_id: "100.64.255.11"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+    bgp:
+      asn: 64513
+      router_id: "100.64.255.11"
+      neighbors:
+        - neighbor: "CSC1-PE2"
+          remote_as: 64513
+          description: "iBGP_to_CSC1-PE2"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "ISP1-R1"
+          remote_as: 64512
+          description: "eBGP_to_ISP1-R1"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+        - neighbor: "P1"
+          remote_as: 64515
+          description: "eBGP_to_P1"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+
   - name: "CSC1-PE2"
     type: "nokia_srsim"
     loopback: "100.64.255.12"
@@ -602,6 +1988,68 @@
         type: "routed"
         ipv4: "100.64.1.5/30"
         ipv6: "2001:db8:64:1::5/126"
+    ospf:
+      process_id: 1
+      router_id: "100.64.255.12"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+    bgp:
+      asn: 64513
+      router_id: "100.64.255.12"
+      neighbors:
+        - neighbor: "CSC1-PE1"
+          remote_as: 64513
+          description: "iBGP_to_CSC1-PE1"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "ISP2-R1"
+          remote_as: 64514
+          description: "eBGP_to_ISP2-R1"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+        - neighbor: "P7"
+          remote_as: 64515
+          description: "eBGP_to_P7"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6 
+
   - name: "CSC1-P1"
     type: "nokia_srsim"
     loopback: "100.64.255.1"
@@ -623,6 +2071,18 @@
         type: "routed"
         ipv4: "100.64.0.9/30"
         ipv6: "2001:db8:64::9/126"
+    ospf:
+      process_id: 1
+      router_id: "100.64.255.1"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c1/1"
+              network_type: "point-to-point"
+
   - name: "CSC1-P2"
     type: "nokia_srsim"
     loopback: "100.64.255.2"
@@ -644,6 +2104,18 @@
         type: "routed"
         ipv4: "100.64.0.13/30"
         ipv6: "2001:db8:64::13/126"
+    ospf:
+      process_id: 1
+      router_id: "100.64.255.2"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c1/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+
   - name: "CSC1-P3"
     type: "nokia_srsim"
     loopback: "100.64.255.3"
@@ -665,6 +2137,18 @@
         type: "routed"
         ipv4: "100.64.0.17/30"
         ipv6: "2001:db8:64::11/126"
+    ospf:
+      process_id: 1
+      router_id: "100.64.255.3"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c1/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+
   - name: "CSC1-P4"
     type: "nokia_srsim"
     loopback: "100.64.255.4"
@@ -686,36 +2170,18 @@
         type: "routed"
         ipv4: "100.64.0.21/30"
         ipv6: "2001:db8:64::17/126"
-  - name: "ISP1-R1"
-    type: "nokia_srsim"
-    loopback: "1.1.255.1/24"
-    interfaces:
-      - intf: "loopback0"
-        description: "Loopback_interface"
-        type: "loopback"
-        ipv4: "1.1.255.1/24"
-        ipv6: "2001:db8:1:255::1/128"
-      - intf: "1/1/c1/1"
-        neighbor: "CSC1-PE1_1/1/c1/1"
-        description: "To_CSC1-PE1_1/1/c1/1"
-        type: "routed"
-        ipv4: "198.51.100.1/30"
-        ipv6: "2001:db8:1::1/126"
-  - name: "ISP2-R1"
-    type: "nokia_srsim"
-    loopback: "2.2.255.1/24"
-    interfaces:
-      - intf: "loopback0"
-        description: "Loopback_interface"
-        type: "loopback"
-        ipv4: "2.2.255.1/24"
-        ipv6: "2001:db8:2:255::1/128"
-      - intf: "1/1/c1/1"
-        neighbor: "CSC1-PE2_1/1/c1/1"
-        description: "To_CSC1-PE2_1/1/c1/1"
-        type: "routed"
-        ipv4: "203.0.113.1/30"
-        ipv6: "2001:db8:2::1/126"
+    ospf:
+      process_id: 1
+      router_id: "100.64.255.4"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c1/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+
   - name: "CSC2-PE1"
     type: "nokia_srsim"
     loopback: "100.66.255.11/32"
@@ -748,6 +2214,68 @@
         type: "routed"
         ipv4: "100.66.1.1/30"
         ipv6: "2001:db8:66:1::1/126"
+    ospf:
+      process_id: 1
+      router_id: "100.66.255.11"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "system"
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+    bgp:
+      asn: 64516
+      router_id: "100.66.255.11"
+      neighbors:
+        - neighbor: "CSC2-PE2"
+          remote_as: 64516
+          description: "iBGP_to_CSC2-PE2"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P2"
+          remote_as: 64515
+          description: "eBGP_to_P2"
+          update_source: "system"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "CPE-C1"
+          remote_as: 65003
+          description: "eBGP_to_CPE-C1"
+          update_source: "1/1/c1/1"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+
   - name: "CSC2-PE2"
     type: "nokia_srsim"
     loopback: "100.66.255.12"
@@ -780,6 +2308,67 @@
         type: "routed"
         ipv4: "100.66.1.5/30"
         ipv6: "2001:db8:66:1::5/126"
+    ospf:
+      process_id: 1
+      router_id: "100.66.255.12"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+    bgp:
+      asn: 64516
+      router_id: "100.66.255.12"
+      neighbors:
+        - neighbor: "CSC2-PE1"
+          remote_as: 64516
+          description: "iBGP_to_CSC2-PE1"
+          update_source: "system"
+          nexthop_self: true
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - l3vpn_ipv4
+            - l3vpn_ipv6
+            - l2vpn_evpn
+            - l2vpn_vpls
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "P8"
+          remote_as: 64515
+          description: "eBGP_to_P8"
+          update_source: "1/1/c6/1"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast
+            - bgp_lu
+            - sr_policy_ipv4
+            - sr_policy_ipv6
+            - bgp_ls
+            - flowspec_ipv4
+            - flowspec_ipv6
+        - neighbor: "CPE-C2"
+          remote_as: 65003
+          description: "eBGP_to_CPE-C2"
+          update_source: "1/1/c6/1"
+          nexthop_self: false
+          allow_as_in: false
+          as_override: false
+          enabled_afi_safi:
+            - ipv4_unicast
+            - ipv6_unicast              
+
   - name: "CSC2-P1"
     type: "nokia_srsim"
     loopback: "100.66.255.1"
@@ -801,6 +2390,17 @@
         type: "routed"
         ipv4: "100.66.0.9/30"
         ipv6: "2001:db8:66::9/126"
+    ospf:
+      process_id: 1
+      router_id: "100.66.255.11"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "1/1/c1/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+
   - name: "CSC2-P2"
     type: "nokia_srsim"
     loopback: "100.66.255.2"
@@ -822,6 +2422,17 @@
         type: "routed"
         ipv4: "100.66.0.12/30"
         ipv6: "2001:db8:66::12/126"
+    ospf:
+      process_id: 1
+      router_id: "100.66.255.2"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c1/1"
+              network_type: "point-to-point"
+
   - name: "CSC2-P3"
     type: "nokia_srsim"
     loopback: "100.66.255.3"
@@ -843,6 +2454,17 @@
         type: "routed"
         ipv4: "100.66.0.10/30"
         ipv6: "2001:db8:66::a/126"
+    ospf:
+      process_id: 1
+      router_id: "100.66.255.3"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "1/1/c2/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c1/1"
+              network_type: "point-to-point"
+
   - name: "CSC2-P4"
     type: "nokia_srsim"
     loopback: "100.66.255.4"
@@ -864,3 +2486,13 @@
         type: "routed"
         ipv4: "100.66.0.14/30"
         ipv6: "2001:db8:66::13/126"
+    ospf:
+      process_id: 1
+      router_id: "100.66.255.4"
+      areas:
+        - area_id: "0.0.0.0"
+          interfaces:
+            - intf: "1/1/c3/1"
+              network_type: "point-to-point"
+            - intf: "1/1/c1/1"
+              network_type: "point-to-point"
