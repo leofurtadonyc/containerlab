@@ -1,6 +1,13 @@
 # containerlab
 Author: Leonardo Furtado (https://github.com/leofurtadonyc/)
 
+## Disclaimer
+Lab images, vendor software, and licenses are not distributed in this repo.
+You must provide any required images, bring your own licenses as needed, and comply with vendor licensing terms.
+
+---
+
+## About this repo
 Hands-on network labs for engineers who want to **build, break, validate, and learn** modern Carrier Ethernet and Data Center networking with `containerlab`.
 
 This repository is a collaborative playground to:
@@ -85,6 +92,13 @@ Two data center scenario:
 - Inter-DC routing/DCI experimentation
 - EVPN-focused control/data-plane checks
 - Intent-driven expansion for multi-site patterns
+
+## `nokia-sr-mpls` (work in progress)
+
+- 34 Nokia SR OS devices; a heavy lab for most users
+- Three autonomous systems—two cooperating in a Carrier of Carriers/Carrier Supporting Carrier (CsC) model
+- Underlay uses Segment Routing and is transitioning to SRv6 (work in progress)
+- Various L2 and L3 overlay services, including L3VPN, VPWS with LDP, VPLS BGP, BGP EVPN, Internet access, and managed services
 
 ---
 
@@ -187,13 +201,6 @@ When proposing changes, include:
 - What behavior is expected
 - What was observed
 - How it was validated
-
----
-
-## Disclaimer
-
-Lab images and vendor software are not distributed in this repo.  
-You must provide any required images and comply with vendor licensing terms.
 
 ---
 
