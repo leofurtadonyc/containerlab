@@ -1,5 +1,7 @@
 # containerlab
-Author: Leonardo Furtado (https://github.com/leofurtadonyc/)
+Author: Leonardo Furtado
+GitHub: https://github.com/leofurtadonyc/
+LinkedIn: https://www.linkedin.com/in/leofurtadonyc/
 
 ## Disclaimer
 Lab images, vendor software, and licenses are not distributed in this repo.
@@ -47,7 +49,7 @@ This repo embraces that reality. The objective is not only to get to "green chec
 
 ## Who This Is For
 
-- Network engineers learning EVPN/VXLAN and Clos designs
+- Network engineers learning EVPN/VXLAN, Clos architectures, and Metro/Carrier Ethernet designs
 - NetDevOps practitioners building repeatable validations
 - Platform/reliability engineers validating change safety
 - Curious engineers who want a lab where experimentation is expected
@@ -96,7 +98,7 @@ Two data center scenario:
 ## `nokia-sr-mpls` (work in progress)
 
 - 34 Nokia SR OS devices; a heavy lab for most users
-- Three autonomous systems—two cooperating in a Carrier of Carriers/Carrier Supporting Carrier (CsC) model
+- Eight autonomous systems participating—two cooperating in a Carrier of Carriers/Carrier Supporting Carrier (CsC) model
 - Underlay uses Segment Routing and is transitioning to SRv6 (work in progress)
 - Various L2 and L3 overlay services, including L3VPN, VPWS with LDP, VPLS BGP, BGP EVPN, Internet access, and managed services
 
