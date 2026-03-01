@@ -1,0 +1,22 @@
+NOTICE
+
+Leonardo Furtado's Containerlab Labs
+Copyright (C) 2026 Leonardo Furtado
+
+This repository contains original works authored by Leonardo Furtado, including source code, documentation, diagrams, lab guides, and other educational materials.
+
+Unless otherwise noted:
+
+* Source code, scripts, automation, telemetry, monitoring, validation, and other software components in this repository are licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
+* Non-code materials in this repository, including documentation, diagrams, lab guides, walkthroughs, topology explanations, architecture notes, educational materials, screenshots, and other non-code media created for this repository, are licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0).
+
+License scope and exceptions are described in:
+
+* `LICENSE`
+* `LICENSE-CONTENT`
+* `README.md`
+
+Project author: Leonardo Furtado
+GitHub repository: https://github.com/leofurtadonyc/containerlab
+
+Third-party software, trademarks, logos, container images, vendor software, and external assets referenced by this repository remain the property of their respective owners and are subject to their own licenses and rights unless explicitly stated otherwise.
