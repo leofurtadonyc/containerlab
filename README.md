@@ -207,7 +207,7 @@ When proposing changes, include:
 ---
 
 # Licensing
-##Code
+## Code
 Unless otherwise noted, all source code, scripts, automation, telemetry, monitoring, validation, and other software components in this repository are licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
 
 This includes, for example:
@@ -219,7 +219,7 @@ This includes, for example:
 
 A copy of the code license is provided in the LICENSE file.
 
-##Content
+## Content
 Unless otherwise noted, all non-code materials in this repository are licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) license.
 
 This includes, for example:
@@ -233,14 +233,14 @@ This includes, for example:
 
 A copy of the content license scope notice is provided in the LICENSE-CONTENT file.
 
-##Device Configurations
+## Device Configurations
 Device configurations in this repository may fall into either licensing category depending on their purpose:
 - Instructional/reference configurations are treated as content and fall under CC BY-NC-SA 4.0
 - Executable, reusable, generated, or automation-oriented configurations are treated as code and fall under AGPL-3.0
 
 Where needed, the applicable license will be indicated in the relevant file, folder, or accompanying documentation.
 
-##Third-Party Software and Assets
+## Third-Party Software and Assets
 This repository may reference or interoperate with third-party software, container images, platforms, or assets (for example, Grafana, Prometheus, and vendor network operating systems).
 
 Such third-party components are not owned by the author of this repository and are not relicensed under this repository’s licenses unless explicitly stated.
