@@ -1,7 +1,7 @@
 # Leonardo Furtado's containerlab
-Author: Leonardo Furtado
-GitHub: https://github.com/leofurtadonyc/
-LinkedIn: https://www.linkedin.com/in/leofurtadonyc/
+- Author: Leonardo Furtado
+- GitHub: https://github.com/leofurtadonyc/
+- LinkedIn: https://www.linkedin.com/in/leofurtadonyc/
 
 <p align="center">
   <img src="assets/banner.png" alt="Leonardo Furtado's Containerlab Labs Banner" />
