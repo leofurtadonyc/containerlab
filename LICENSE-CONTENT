@@ -1,0 +1,43 @@
+LICENSE-CONTENT
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+(CC BY-NC-SA 4.0)
+
+Copyright (C) 2026 Leonardo Furtado
+
+This file applies to the non-code materials in this repository, except where otherwise noted.
+
+Covered material includes, but is not limited to:
+- documentation
+- diagrams and drawings
+- lab guides and walkthroughs
+- topology explanations
+- architecture notes
+- educational and training materials
+- reference configurations treated as instructional content
+- screenshots, images, and other non-code media created for this repository
+
+These non-code materials are licensed under the
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+
+You are free to:
+- share the material in any medium or format
+- adapt, remix, transform, and build upon the material
+
+Under the following conditions:
+- Attribution: You must give appropriate credit to Leonardo Furtado, provide a link to the license, and indicate if changes were made.
+- NonCommercial: You may not use the material for commercial purposes.
+- ShareAlike: If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original.
+
+For the full legal terms of this license, see the official license legal code:
+https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+
+Human-readable summary:
+https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+Important scope note:
+- This license does not apply to source code, scripts, automation, telemetry, monitoring, validation, or other software components in this repository, unless a specific file explicitly says otherwise.
+- Software components are licensed separately under the repository’s code license.
+- Third-party software, trademarks, logos, vendor images, and external assets referenced by this repository remain subject to their own respective licenses and rights.
+
+Project author: Leonardo Furtado
+Repository: https://github.com/leofurtadonyc/containerlab
