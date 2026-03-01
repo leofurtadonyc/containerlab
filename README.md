@@ -1,7 +1,13 @@
-# containerlab
+# Leonardo Furtado's containerlab
 Author: Leonardo Furtado
 GitHub: https://github.com/leofurtadonyc/
 LinkedIn: https://www.linkedin.com/in/leofurtadonyc/
+
+<p align="center">
+  <img src="assets/banner.png" alt="Leonardo Furtado's Containerlab Labs Banner" />
+</p>
+
+**A flagship network engineering lab platform for serious service provider, data center, transport, observability, and automation work**
 
 ## Disclaimer
 Lab images, vendor software, and licenses are not distributed in this repo.
@@ -184,26 +190,19 @@ A lot of repositories give you files. This one is being built to give you **engi
 
 That means:
 
-* **Realism over neatness**
-  Labs should reflect system behavior, not just clean diagrams.
+* **Realism over neatness**: Labs should reflect system behavior, not just clean diagrams.
 
-* **Architectures over isolated features**
-  Technologies matter more when they interact.
+* **Architectures over isolated features**: Technologies matter more when they interact.
 
-* **Evidence over intuition alone**
-  If you cannot validate it, you do not fully understand it.
+* **Evidence over intuition alone**: If you cannot validate it, you do not fully understand it.
 
-* **Observability built in**
-  Visibility is part of the design, not an afterthought.
+* **Observability built in**: Visibility is part of the design, not an afterthought.
 
-* **Automation with purpose**
-  Scripts are not decoration; they should reduce uncertainty and improve trust.
+* **Automation with purpose**: Scripts are not decoration; they should reduce uncertainty and improve trust.
 
-* **Vendor-aware, concept-first learning**
-  Vendors matter, but principles matter more.
+* **Vendor-aware, concept-first learning**: Vendors matter, but principles matter more.
 
-* **Built to evolve**
-  This is not a static archive. It is a growing engineering platform.
+* **Built to evolve**: This is not a static archive. It is a growing engineering platform.
 
 ---
 
@@ -213,7 +212,7 @@ This repository is intentionally broad and will continue expanding.
 
 It already supports — or is designed to support — a mix of scenarios such as:
 
-* service provider and carrier-grade transport environments
+* Service provider and carrier-grade transport environments
 * MPLS and label-switched architectures
 * Segment Routing and SRv6-oriented labs
 * BGP-centric routing and service models
@@ -402,20 +401,15 @@ Valuable contributions include:
 
 Before creating or submitting a Pull Request, please do the following:
 
-1. **Understand the existing lab or workflow first**
-   Make sure you understand the purpose of the lab, the intended behavior, and how your change fits into the broader design of the repository.
+1. **Understand the existing lab or workflow first**: Make sure you understand the purpose of the lab, the intended behavior, and how your change fits into the broader design of the repository.
 
-2. **Validate the change locally**
-   Test your changes in your own environment whenever possible. Do not submit untested modifications to topologies, configs, automation, dashboards, or documentation that affects technical accuracy.
+2. **Validate the change locally**: Test your changes in your own environment whenever possible. Do not submit untested modifications to topologies, configs, automation, dashboards, or documentation that affects technical accuracy.
 
-3. **Check for overlap**
-   Review existing folders, files, and documentation to avoid duplicating work, introducing conflicting approaches, or creating unnecessary drift.
+3. **Check for overlap**: Review existing folders, files, and documentation to avoid duplicating work, introducing conflicting approaches, or creating unnecessary drift.
 
-4. **Open an issue first for significant changes**
-   If your contribution is large, architectural, cross-cutting, or changes the intended direction of a lab, open an issue first to explain the idea before investing time in a Pull Request.
+4. **Open an issue first for significant changes**: If your contribution is large, architectural, cross-cutting, or changes the intended direction of a lab, open an issue first to explain the idea before investing time in a Pull Request.
 
-5. **Make sure you have the right to contribute the content**
-   Only submit material you wrote yourself or are clearly allowed to contribute. Do not submit vendor-proprietary content, licensed images, restricted software, or third-party assets that cannot be redistributed.
+5. **Make sure you have the right to contribute the content**: Only submit material you wrote yourself or are clearly allowed to contribute. Do not submit vendor-proprietary content, licensed images, restricted software, or third-party assets that cannot be redistributed.
 
 ### Git / GitHub Collaboration Workflow
 
@@ -570,10 +564,14 @@ Labs should sharpen judgment, expose tradeoffs, and make better engineers.
 
 This repository is being built for engineers who want their labs to mean something.
 
-Not just to launch containers.
+Not just to launch containers and topologies.
 Not just to memorize commands.
 Not just to say a protocol “works.”
 
 But to understand how systems behave, how designs hold up, how tooling changes outcomes, and how disciplined engineering creates confidence.
 
 If that is the kind of work you care about, this repository was built with you in mind.
+
+<p align="center">
+  <img src="assets/logo.png" alt="Leonardo Furtado's Containerlab Labs Logo" width="340" />
+</p>
