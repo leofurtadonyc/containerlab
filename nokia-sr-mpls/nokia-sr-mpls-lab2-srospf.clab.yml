@@ -16,7 +16,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.101
-      startup-config: ./configs/lab2-ospf/CPE-A1.partial.cfg
+      startup-config: ./configs/lab2-srospf/CPE-A1.partial.cfg
       labels:
         loopback-ipv4: "172.16.255.1/32"
         loopback-ipv6: "2001:db8:a:255::1/128"
@@ -30,7 +30,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.102
-      startup-config: ./configs/lab2-ospf/CPE-A2.partial.cfg
+      startup-config: ./configs/lab2-srospf/CPE-A2.partial.cfg
       labels:
         loopback-ipv4: "172.16.255.2/32"
         loopback-ipv6: "2001:db8:a:255::2/128"
@@ -44,7 +44,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.103
-      startup-config: ./configs/lab2-ospf/CPE-B1.partial.cfg
+      startup-config: ./configs/lab2-srospf/CPE-B1.partial.cfg
       labels:
         loopback-ipv4: "172.17.255.1/32"
         loopback-ipv6: "2001:db8:b:255::1/128"
@@ -58,7 +58,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.104
-      startup-config: ./configs/lab2-ospf/CPE-B2.partial.cfg
+      startup-config: ./configs/lab2-srospf/CPE-B2.partial.cfg
       labels:
         loopback-ipv4: "172.17.255.2/32"
         loopback-ipv6: "2001:db8:b:255::2/128"
@@ -72,7 +72,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.133
-      startup-config: ./configs/lab2-ospf/CPE-C1.partial.cfg
+      startup-config: ./configs/lab2-srospf/CPE-C1.partial.cfg
       labels:
         loopback-ipv4: "172.18.255.1/32"
         loopback-ipv6: "2001:db8:c:255::1/128"
@@ -86,7 +86,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.134
-      startup-config: ./configs/lab2-ospf/CPE-C2.partial.cfg
+      startup-config: ./configs/lab2-srospf/CPE-C2.partial.cfg
       labels:
         loopback-ipv4: "172.18.255.2/32"
         loopback-ipv6: "2001:db8:c:255::2/128"
@@ -100,7 +100,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.105
-      startup-config: ./configs/lab2-ospf/NOC-R1.partial.cfg
+      startup-config: ./configs/lab2-srospf/NOC-R1.partial.cfg
       labels:
         loopback-ipv4: "10.255.0.1/32"
         loopback-ipv6: "2001:db8:noc:255::1/128"
@@ -114,7 +114,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.106
-      startup-config: ./configs/lab2-ospf/NOC-R2.partial.cfg
+      startup-config: ./configs/lab2-srospf/NOC-R2.partial.cfg
       labels:
         loopback-ipv4: "10.255.0.2/32"
         loopback-ipv6: "2001:db8:noc:255::2/128"
@@ -128,7 +128,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.107
-      startup-config: ./configs/lab2-ospf/PE1.partial.cfg
+      startup-config: ./configs/lab2-srospf/PE1.partial.cfg
       labels:
         loopback-ipv4: "100.65.255.11/32"
         loopback-ipv6: "2001:db8:65:255::11/128"
@@ -142,7 +142,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.108
-      startup-config: ./configs/lab2-ospf/PE2.partial.cfg
+      startup-config: ./configs/lab2-srospf/PE2.partial.cfg
       labels:
         loopback-ipv4: "100.65.255.12/32"
         loopback-ipv6: "2001:db8:65:255::12/128"
@@ -156,7 +156,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.109
-      startup-config: ./configs/lab2-ospf/P1.partial.cfg
+      startup-config: ./configs/lab2-srospf/P1.partial.cfg
       labels:
         loopback-ipv4: "100.65.255.1/32"
         loopback-ipv6: "2001:db8:65:255::1/128"
@@ -170,7 +170,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.110
-      startup-config: ./configs/lab2-ospf/P2.partial.cfg
+      startup-config: ./configs/lab2-srospf/P2.partial.cfg
       labels:
         loopback-ipv4: "100.65.255.2/32"
         loopback-ipv6: "2001:db8:65:255::2/128"
@@ -184,7 +184,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.111
-      startup-config: ./configs/lab2-ospf/P3.partial.cfg
+      startup-config: ./configs/lab2-srospf/P3.partial.cfg
       labels:
         loopback-ipv4: "100.65.255.3/32"
         loopback-ipv6: "2001:db8:65:255::3/128"
@@ -198,7 +198,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.112
-      startup-config: ./configs/lab2-ospf/P4.partial.cfg
+      startup-config: ./configs/lab2-srospf/P4.partial.cfg
       labels:
         loopback-ipv4: "100.65.255.4/32"
         loopback-ipv6: "2001:db8:65:255::4/128"
@@ -212,7 +212,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.113
-      startup-config: ./configs/lab2-ospf/P5.partial.cfg
+      startup-config: ./configs/lab2-srospf/P5.partial.cfg
       labels:
         loopback-ipv4: "100.65.255.5/32"
         loopback-ipv6: "2001:db8:65:255::5/128"
@@ -226,7 +226,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.114
-      startup-config: ./configs/lab2-ospf/P6.partial.cfg
+      startup-config: ./configs/lab2-srospf/P6.partial.cfg
       labels:
         loopback-ipv4: "100.65.255.6/32"
         loopback-ipv6: "2001:db8:65:255::6/128"
@@ -240,7 +240,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.115
-      startup-config: ./configs/lab2-ospf/P7.partial.cfg
+      startup-config: ./configs/lab2-srospf/P7.partial.cfg
       labels:
         loopback-ipv4: "100.65.255.7/32"
         loopback-ipv6: "2001:db8:65:255::7/128"
@@ -254,7 +254,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.116
-      startup-config: ./configs/lab2-ospf/P8.partial.cfg
+      startup-config: ./configs/lab2-srospf/P8.partial.cfg
       labels:
         loopback-ipv4: "100.65.255.8/32"
         loopback-ipv6: "2001:db8:65:255::8/128"
@@ -268,7 +268,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.117
-      startup-config: ./configs/lab2-ospf/PE3.partial.cfg
+      startup-config: ./configs/lab2-srospf/PE3.partial.cfg
       labels:
         loopback-ipv4: "100.65.255.13/32"
         loopback-ipv6: "2001:db8:65:255::13/128"
@@ -282,7 +282,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.118
-      startup-config: ./configs/lab2-ospf/PE4.partial.cfg
+      startup-config: ./configs/lab2-srospf/PE4.partial.cfg
       labels:
         loopback-ipv4: "100.65.255.14/32"
         loopback-ipv6: "2001:db8:65:255::14/128"
@@ -296,7 +296,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.119
-      startup-config: ./configs/lab2-ospf/CSC1-PE1.partial.cfg
+      startup-config: ./configs/lab2-srospf/CSC1-PE1.partial.cfg
       labels:
         loopback-ipv4: "100.64.255.11/32"
         loopback-ipv6: "2001:db8:64:255::11/128"
@@ -310,7 +310,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.120
-      startup-config: ./configs/lab2-ospf/CSC1-PE2.partial.cfg
+      startup-config: ./configs/lab2-srospf/CSC1-PE2.partial.cfg
       labels:
         loopback-ipv4: "100.64.255.12/32"
         loopback-ipv6: "2001:db8:64:255::12/128"
@@ -324,7 +324,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.121
-      startup-config: ./configs/lab2-ospf/CSC1-P1.partial.cfg
+      startup-config: ./configs/lab2-srospf/CSC1-P1.partial.cfg
       labels:
         loopback-ipv4: "100.64.255.1/32"
         loopback-ipv6: "2001:db8:64:255::1/128"
@@ -338,7 +338,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.122
-      startup-config: ./configs/lab2-ospf/CSC1-P2.partial.cfg
+      startup-config: ./configs/lab2-srospf/CSC1-P2.partial.cfg
       labels:
         loopback-ipv4: "100.64.255.2/32"
         loopback-ipv6: "2001:db8:64:255::2/128"
@@ -352,7 +352,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.123
-      startup-config: ./configs/lab2-ospf/CSC1-P3.partial.cfg
+      startup-config: ./configs/lab2-srospf/CSC1-P3.partial.cfg
       labels:
         loopback-ipv4: "100.64.255.3/32"
         loopback-ipv6: "2001:db8:64:255::3/128"
@@ -366,7 +366,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.124
-      startup-config: ./configs/lab2-ospf/CSC1-P4.partial.cfg
+      startup-config: ./configs/lab2-srospf/CSC1-P4.partial.cfg
       labels:
         loopback-ipv4: "100.64.255.4/32"
         loopback-ipv6: "2001:db8:64:255::4/128"
@@ -380,7 +380,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.125
-      startup-config: ./configs/lab2-ospf/ISP1-R1.partial.cfg
+      startup-config: ./configs/lab2-srospf/ISP1-R1.partial.cfg
       labels:
         loopback-ipv4: "1.1.255.1/24"
         loopback-ipv6: "2001:db8:1:255::1/128"
@@ -394,7 +394,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.126
-      startup-config: ./configs/lab2-ospf/ISP2-R1.partial.cfg
+      startup-config: ./configs/lab2-srospf/ISP2-R1.partial.cfg
       labels:
         loopback-ipv4: "2.2.255.1/24"
         loopback-ipv6: "2001:db8:2:255::1/128"
@@ -408,7 +408,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.127
-      startup-config: ./configs/lab2-ospf/CSC2-PE1.partial.cfg
+      startup-config: ./configs/lab2-srospf/CSC2-PE1.partial.cfg
       labels:
         loopback-ipv4: "100.66.255.11/32"
         loopback-ipv6: "2001:db8:66:255::11/128"
@@ -422,7 +422,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.128
-      startup-config: ./configs/lab2-ospf/CSC2-PE2.partial.cfg
+      startup-config: ./configs/lab2-srospf/CSC2-PE2.partial.cfg
       labels:
         loopback-ipv4: "100.66.255.12/32"
         loopback-ipv6: "2001:db8:66:255::12/128"
@@ -436,7 +436,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.129
-      startup-config: ./configs/lab2-ospf/CSC2-P1.partial.cfg
+      startup-config: ./configs/lab2-srospf/CSC2-P1.partial.cfg
       labels:
         loopback-ipv4: "100.66.255.1/32"
         loopback-ipv6: "2001:db8:66:255::1/128"
@@ -450,7 +450,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.130
-      startup-config: ./configs/lab2-ospf/CSC2-P2.partial.cfg
+      startup-config: ./configs/lab2-srospf/CSC2-P2.partial.cfg
       labels:
         loopback-ipv4: "100.66.255.2/32"
         loopback-ipv6: "2001:db8:66:255::2/128"
@@ -464,7 +464,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.131
-      startup-config: ./configs/lab2-ospf/CSC2-P3.partial.cfg
+      startup-config: ./configs/lab2-srospf/CSC2-P3.partial.cfg
       labels:
         loopback-ipv4: "100.66.255.3/32"
         loopback-ipv6: "2001:db8:66:255::3/128"
@@ -478,7 +478,7 @@ topology:
       memory: 4GB
       type: sr-1
       mgmt-ipv4: 172.20.20.132
-      startup-config: ./configs/lab2-ospf/CSC2-P4.partial.cfg
+      startup-config: ./configs/lab2-srospf/CSC2-P4.partial.cfg
       labels:
         loopback-ipv4: "100.66.255.4/32"
         loopback-ipv6: "2001:db8:66:255::4/128"
