@@ -1,7 +1,13 @@
 # Leonardo Furtado's containerlab
-- Author: Leonardo Furtado
-- GitHub: https://github.com/leofurtadonyc/
-- LinkedIn: https://www.linkedin.com/in/leofurtadonyc/
+
+| Item | Details |
+|---|---|
+| Author | Leonardo Furtado |
+| GitHub | [leofurtadonyc](https://github.com/leofurtadonyc/) |
+| LinkedIn | [Leonardo Furtado](https://www.linkedin.com/in/leofurtadonyc/) |
+
+> [!IMPORTANT]
+> If you enjoy this project or find this repository useful, please consider **starring it on GitHub** and **sharing it with others and your communities**. That helps the project reach more people and keeps the work visible!
 
 <p align="center">
   <img src="assets/banner.png" alt="Leonardo Furtado's Containerlab Labs Banner" />
