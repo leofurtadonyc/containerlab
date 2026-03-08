@@ -25,10 +25,10 @@ It does not yet include:
 
 - live collector-to-backend ingestion
 - substantive live-backed inventory, topology, or policy APIs beyond the current normalized scaffolds
-- real frontend pages
+- workflow and audit-oriented frontend views beyond the current read-only product pages
 - substantive ODL integration logic
 
-This document therefore explains the intended Phase 1 flow direction honestly, including which paths are only scaffolded today.
+This document therefore explains the current flow direction honestly, including which paths are useful today and which remain scaffolded.
 
 ## Deployment And Integration Model
 
@@ -103,7 +103,7 @@ Current state:
 - the current inventory API is fed by a bounded normalized collector placeholder contract rather than live collector transport
 - the current topology API is fed by a backend-owned normalized read model that explicitly marks partial and unknown state
 - the current policy API is fed by a backend-owned normalized read model that explicitly marks support, observed, and unknown state
-- frontend implementation is still pending
+- useful frontend read-only pages now consume those stable contracts for overview, platform health, devices, topology, policies, and capabilities
 
 ## Topology Read-Model Limitations
 
@@ -171,7 +171,9 @@ Current state:
 - Prometheus scrape configuration exists
 - Grafana provisioning exists
 - placeholder dashboard families exist
-- metrics endpoints currently exist only as placeholders in the backend and collector skeletons
+- `app-api` now exposes bounded HTTP request and latency metrics
+- `gnmi-collector` now exposes bounded inventory collection, normalization, and backend-readiness metrics
+- Prometheus should actively scrape only the currently real service metrics targets and keep the remaining service targets documented as future placeholders
 
 ## ODL Integration Flow
 
@@ -253,6 +255,6 @@ Current state:
 
 - real normalized ingestion from collector to backend
 - backend persistence of inventory, topology, and policy-oriented records
-- read-only frontend product pages
+- richer frontend product pages for workflow history, audit history, and deeper read-oriented exploration
 - ODL-backed enrichment where justified
 - later dry-run and workflow-related data paths

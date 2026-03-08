@@ -27,11 +27,12 @@ The platform requires a dedicated metrics layer that is decoupled from the appli
 - dependencies: all platform services exposing `/metrics` endpoints
 
 ## Integration points
-- scrapes metrics from `app-api`, `gnmi-collector`, ODL, Grafana, Postgres exporter
+- currently scrapes metrics from `app-api` and `gnmi-collector`, plus Prometheus itself
+- keeps ODL, Grafana, and Postgres exporter targets as documented future placeholders rather than active scrape jobs
 - scraped by nothing — Grafana queries Prometheus directly
 
 ## Current status
-Initial configuration skeleton exists, including `prometheus.yml` plus `rules/`, `recording-rules/`, and `data/` directory structure.
+Initial configuration exists, including `prometheus.yml` plus `rules/`, `recording-rules/`, and `data/` directory structure, and the active scrape jobs now align with the currently real metrics endpoints in `app-api` and `gnmi-collector`.
 
 ## Planned evolution
 - refine `prometheus.yml` scrape jobs as service metrics endpoints become real

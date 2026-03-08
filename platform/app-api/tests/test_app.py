@@ -3,6 +3,7 @@ from datetime import datetime
 from fastapi.testclient import TestClient
 
 from app_api.main import app
+from app_api.metrics.state import reset_metrics_registry
 
 
 client = TestClient(app)
@@ -146,8 +147,16 @@ def test_unknown_route_returns_consistent_error_payload() -> None:
     }
 
 
-def test_metrics_endpoint_returns_prometheus_placeholder() -> None:
+def test_metrics_endpoint_returns_bounded_backend_metrics() -> None:
+    reset_metrics_registry()
+    client.get("/api/v1/health")
+    client.get("/api/v1/devices")
     response = client.get("/metrics")
 
     assert response.status_code == 200
     assert "platform_app_api_info" in response.text
+    assert "platform_app_api_http_requests_total" in response.text
+    assert 'endpoint="/api/v1/health",method="GET",status_class="2xx"' in response.text
+    assert 'endpoint="/api/v1/devices",method="GET",status_class="2xx"' in response.text
+    assert "platform_app_api_http_request_duration_seconds_count" in response.text
+    assert "platform_app_api_http_request_duration_seconds_sum" in response.text

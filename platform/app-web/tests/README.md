@@ -2,4 +2,4 @@
 
 This directory is reserved for future frontend tests.
 
-The current Phase 1 scaffold focuses on structure and placeholder views rather than a full frontend test harness.
+The current read-only foundation already includes useful API-backed product pages, but this directory still awaits a real frontend test harness.

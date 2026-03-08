@@ -33,7 +33,7 @@ The platform must observe live device state without hard-coding vendor assumptio
 - exposes `/metrics` for Prometheus scraping
 
 ## Current status
-Initial collector skeleton exists with a Python application entrypoint, an inventory-oriented runtime config scaffold, explicit adapter and mapping package layout, a Nokia-first inventory adapter scaffold, placeholder normalization and backend-delivery preparation for inventory records, improved collector metrics scaffolding, and example config scaffolding.
+Initial collector skeleton exists with a Python application entrypoint, an inventory-oriented runtime config scaffold, explicit adapter and mapping package layout, a Nokia-first inventory adapter scaffold, placeholder normalization and backend-delivery preparation for inventory records, and a bounded metrics endpoint exposing inventory target counts, collection success/failure, normalization outcomes, and backend-delivery readiness.
 
 ## Planned evolution
 - explicit normalization layers for inventory, topology, and policy-adjacent state

@@ -9,17 +9,18 @@ This document describes the observability dashboard families for the platform, t
 The platform currently has:
 
 - Grafana provisioning-from-files scaffolding
-- a provisioned Prometheus datasource skeleton
+- a provisioned Prometheus datasource
 - dashboard folder structure for the required dashboard families
-- clearly marked placeholder dashboard files for each dashboard family
+- a real platform overview dashboard backed by Prometheus scrape health plus current `app-api` and `gnmi-collector` metrics
+- clearly marked placeholder dashboard files for the dashboard families that do not yet have real backing metrics
 
 What does not exist yet:
 
-- fully implemented operational dashboards
+- fully implemented operational dashboards across all required families
 - complete service metrics across the platform
 - workflow-complete change validation dashboards
 
-This document therefore describes the intended dashboard architecture for Phase 1 and near-term follow-on work, while staying honest about the current implementation depth.
+This document therefore describes the current dashboard architecture and near-term follow-on work, while staying honest about the current implementation depth.
 
 ## Role Of Grafana
 
@@ -192,7 +193,8 @@ Dashboard design should therefore assume Prometheus-backed metrics first, with a
 
 - provisioning files exist
 - dashboard family folders exist
-- placeholder dashboards exist
+- the platform family now includes a real Prometheus-backed dashboard for the services that expose meaningful metrics today
+- placeholder dashboards still exist for families whose underlying metrics are not yet real
 - the platform observability shape is documented
 
 ### Future

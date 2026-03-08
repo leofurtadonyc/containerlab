@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document describes the major platform services, what each one owns, what each one must not own, and how the services fit together in the current Phase 1 architecture.
+This document describes the major platform services, what each one owns, what each one must not own, and how the services fit together in the current read-only foundation phase.
 
 ## Current Status
 
@@ -10,9 +10,9 @@ The platform now has service directories, service READMEs, a platform topology s
 
 What still remains incomplete:
 
-- the frontend application skeleton
-- normalized shared model and schema scaffolding
-- read-only domain APIs beyond health
+- deeper frontend product coverage for workflow and audit-oriented areas
+- deeper normalized shared model and schema implementation beyond the current scaffolding
+- read-only domain APIs beyond the current health, platform status, devices, topology, policies, and capabilities slice
 - real collector-to-backend delivery
 - bounded ODL-backed data handling
 
@@ -63,7 +63,7 @@ Current state:
 
 - FastAPI skeleton exists
 - typed health endpoint exists
-- placeholder metrics endpoint exists
+- bounded HTTP request and latency metrics now exist at `/metrics`
 - Alembic scaffolding exists
 
 ### `gnmi-collector`
@@ -91,7 +91,7 @@ What it must not own:
 Current state:
 
 - Python skeleton exists
-- metrics placeholder exists
+- bounded inventory collection, normalization, and backend-readiness metrics now exist at `/metrics`
 - Nokia-first adapter placeholder exists
 - mapping and config scaffolding exist
 
@@ -166,7 +166,8 @@ Current state:
 
 - datasource provisioning exists
 - dashboard provisioning exists
-- placeholder dashboards exist for all required dashboard families
+- a real platform dashboard exists for current `app-api`, `gnmi-collector`, and Prometheus-backed observability
+- placeholder dashboards still exist for the remaining required dashboard families
 
 ### `odl`
 
@@ -215,7 +216,9 @@ What it must not own:
 Current state:
 
 - service directory and README exist
-- implementation skeleton is still pending
+- useful read-only pages now exist for overview, platform health, devices, topology, policies, and capabilities
+- a typed API client layer now consumes stable backend contracts
+- workflow and audit views remain placeholders
 
 ## Service Relationship Summary
 
@@ -248,6 +251,7 @@ The following boundaries are non-negotiable:
 - service topology is defined
 - runtime expectations are documented
 - backend and collector skeletons exist
+- backend read-only APIs and frontend read-only pages now exist as a useful initial product slice
 - observability scaffolding exists
 - database direction is explicit
 
@@ -256,6 +260,6 @@ The following boundaries are non-negotiable:
 - richer backend domain modules
 - shared normalized model families
 - real collector-to-backend delivery
-- frontend product skeleton and read-only pages
+- workflow and audit-oriented frontend views
 - bounded ODL-backed enrichment where useful
 - later workflow and validation logic

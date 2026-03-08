@@ -13,12 +13,12 @@ router = APIRouter(tags=["metrics"])
 
 @router.get("/metrics", include_in_schema=False)
 def get_metrics() -> Response:
-    """Expose inventory-oriented placeholder metrics for the collector."""
+    """Expose bounded collector metrics for Prometheus."""
     settings = get_settings()
     inventory_flow = build_inventory_flow_snapshot()
     payload = "\n".join(
         [
-            "# HELP platform_gnmi_collector_info Phase 1 collector skeleton marker.",
+            "# HELP platform_gnmi_collector_info Collector service build information.",
             "# TYPE platform_gnmi_collector_info gauge",
             (
                 "platform_gnmi_collector_info"
@@ -32,7 +32,7 @@ def get_metrics() -> Response:
             ),
             (
                 "# HELP platform_gnmi_collector_inventory_collection_success_total "
-                "Placeholder inventory collection success count."
+                "Total successful inventory collection attempts in the current scaffold."
             ),
             "# TYPE platform_gnmi_collector_inventory_collection_success_total counter",
             (
@@ -41,12 +41,30 @@ def get_metrics() -> Response:
             ),
             (
                 "# HELP platform_gnmi_collector_inventory_collection_failure_total "
-                "Placeholder inventory collection failure count."
+                "Total failed inventory collection attempts in the current scaffold."
             ),
             "# TYPE platform_gnmi_collector_inventory_collection_failure_total counter",
             (
                 "platform_gnmi_collector_inventory_collection_failure_total "
                 f"{inventory_flow.summary.collection_failure_count}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_inventory_normalization_partial_total "
+                "Total partially normalized inventory records."
+            ),
+            "# TYPE platform_gnmi_collector_inventory_normalization_partial_total counter",
+            (
+                "platform_gnmi_collector_inventory_normalization_partial_total "
+                f"{inventory_flow.summary.normalization_partial_count}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_inventory_normalization_failure_total "
+                "Total inventory normalization failures."
+            ),
+            "# TYPE platform_gnmi_collector_inventory_normalization_failure_total counter",
+            (
+                "platform_gnmi_collector_inventory_normalization_failure_total "
+                f"{inventory_flow.summary.normalization_failure_count}"
             ),
             (
                 "# HELP platform_gnmi_collector_inventory_normalized_records "
@@ -65,6 +83,15 @@ def get_metrics() -> Response:
             (
                 "platform_gnmi_collector_inventory_backend_ready_records "
                 f"{inventory_flow.summary.backend_ready_record_count}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_inventory_backend_delivery_error_total "
+                "Total backend delivery preparation errors."
+            ),
+            "# TYPE platform_gnmi_collector_inventory_backend_delivery_error_total counter",
+            (
+                "platform_gnmi_collector_inventory_backend_delivery_error_total "
+                f"{inventory_flow.summary.backend_delivery_error_count}"
             ),
             "",
         ]

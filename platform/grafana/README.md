@@ -31,12 +31,12 @@ Operators need a time-series and event dashboard view that is decoupled from the
 - does not query the backend or Postgres directly
 
 ## Current status
-Initial provisioning skeleton exists, including datasource provisioning, dashboard provisioning, and clearly marked placeholder dashboards for the required dashboard families.
+Provisioning from files is in place, and the first real platform dashboard now exists. It visualizes Prometheus scrape health plus real `app-api` and `gnmi-collector` metrics, while the remaining dashboard families still stay as clearly marked placeholders.
 
 ## Planned evolution
 - refine provisioned Prometheus datasource settings as observability needs grow
-- replace placeholder dashboard files with real platform, topology, SR policy, change-validation, and vendor dashboards
-- add operationally meaningful panels as service metrics and normalized platform views become real
+- add real topology, SR policy, change-validation, and vendor dashboards as those underlying metrics become real
+- deepen the platform dashboard with broader service metrics only when the services expose honest observability signals
 
 ## Notes and caveats
 Grafana is observability-only. The product UI is `app-web`. Do not build operator workflows or product pages in Grafana.

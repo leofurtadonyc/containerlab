@@ -37,8 +37,17 @@ def build_inventory_flow_snapshot() -> InventoryFlowSnapshot:
         collection_failure_count=sum(
             1 for record in raw_records if record.collection_status == "failure"
         ),
+        normalization_partial_count=sum(
+            1
+            for record in normalized_records
+            if record.normalization_status == "partial"
+        ),
+        normalization_failure_count=sum(
+            1 for record in normalized_records if record.normalization_status == "failed"
+        ),
         normalized_record_count=len(normalized_records),
         backend_ready_record_count=delivery.record_count,
+        backend_delivery_error_count=0,
     )
     return InventoryFlowSnapshot(
         mode=config.mode,

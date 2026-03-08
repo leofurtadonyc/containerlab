@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document describes the high-level platform architecture, deployment model, and major component boundaries for the current Phase 1 foundation.
+This document describes the high-level platform architecture, deployment model, and major component boundaries for the current read-only foundation stage.
 
 ## Current Status
 
@@ -19,7 +19,7 @@ What remains incomplete:
 - substantive ODL integration
 - real collector-to-backend delivery
 - live-backed read-only domain APIs beyond the current health, platform status, devices, topology, policies, and capabilities scaffolds
-- real product pages backed by live APIs
+- deeper read-only product pages backed by more live operational evidence
 
 This document therefore focuses on architectural shape and service boundaries rather than final implementation depth.
 
@@ -195,6 +195,7 @@ These boundaries remain non-negotiable:
 - runtime boundaries are documented
 - backend and collector skeletons exist
 - read-only devices, topology, policies, capabilities, and platform status APIs now exist as backend-owned normalized scaffolds
+- useful read-only frontend pages now consume those stable backend contracts
 - observability scaffolding exists
 - database direction is established
 - ODL integration is documented and scaffolded, but not substantively implemented
@@ -202,7 +203,7 @@ These boundaries remain non-negotiable:
 ### Future
 
 - richer live-backed read-only product APIs
-- real frontend pages backed by backend data
+- richer frontend read views backed by deeper backend data and future history-oriented endpoints
 - bounded ODL-backed enrichment where useful
 - dry-run and validation flows later
 - one safe bounded action workflow only after read/validate maturity

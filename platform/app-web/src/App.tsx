@@ -55,11 +55,12 @@ export function App() {
       onSelect={setActiveView}
     >
       <div className="page-header">
-        <p className="eyebrow">Phase 1 Skeleton</p>
+        <p className="eyebrow">Phase 2 Read-Only Foundation</p>
         <p className="body-copy">
-          This WebUI scaffold is the operator-facing product surface. Grafana
-          remains the observability layer, and backend APIs remain the source of
-          business logic.
+          This WebUI now consumes the current read-only backend contracts for
+          overview, platform status, devices, topology, policies, and
+          capabilities. Grafana remains the observability layer, and backend APIs
+          remain the source of business logic.
         </p>
         <p className="meta-copy">Configured backend base URL: {appApiBaseUrl}</p>
       </div>

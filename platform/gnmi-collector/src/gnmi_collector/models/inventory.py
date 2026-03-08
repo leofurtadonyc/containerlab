@@ -67,8 +67,11 @@ class InventoryFlowSummary(BaseModel):
     planned_paths: int
     collection_success_count: int
     collection_failure_count: int
+    normalization_partial_count: int
+    normalization_failure_count: int
     normalized_record_count: int
     backend_ready_record_count: int
+    backend_delivery_error_count: int
 
 
 class InventoryFlowSnapshot(BaseModel):

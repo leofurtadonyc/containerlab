@@ -10,14 +10,16 @@ from gnmi_collector.services.inventory import build_inventory_flow_snapshot
 client = TestClient(app)
 
 
-def test_metrics_endpoint_returns_prometheus_placeholder() -> None:
+def test_metrics_endpoint_returns_inventory_operational_metrics() -> None:
     response = client.get("/metrics")
 
     assert response.status_code == 200
     assert "platform_gnmi_collector_info" in response.text
     assert "platform_gnmi_collector_inventory_targets" in response.text
     assert "platform_gnmi_collector_inventory_collection_success_total" in response.text
+    assert "platform_gnmi_collector_inventory_normalization_failure_total" in response.text
     assert "platform_gnmi_collector_inventory_backend_ready_records" in response.text
+    assert "platform_gnmi_collector_inventory_backend_delivery_error_total" in response.text
 
 
 def test_nokia_adapter_inventory_scaffold_is_bounded() -> None:
@@ -55,7 +57,10 @@ def test_inventory_flow_snapshot_prepares_backend_delivery() -> None:
     assert snapshot.summary.target_count == 1
     assert snapshot.summary.collection_success_count == 1
     assert snapshot.summary.collection_failure_count == 0
+    assert snapshot.summary.normalization_partial_count == 0
+    assert snapshot.summary.normalization_failure_count == 0
     assert snapshot.summary.backend_ready_record_count == 1
+    assert snapshot.summary.backend_delivery_error_count == 0
     assert snapshot.delivery.destination_service == "app-api"
     assert snapshot.delivery.delivery_status == "ready_for_backend_contract"
     assert snapshot.delivery.model_family == "inventory"

@@ -116,7 +116,7 @@ The platform must therefore keep:
 
 ## Current Status
 
-The project is currently in `Phase 1 — platform skeleton and architecture-first foundation`.
+The project is currently in `Phase 2 — read-only product foundation`.
 
 Right now, the emphasis is on:
 
@@ -130,8 +130,8 @@ Right now, the emphasis is on:
 At this stage, contributors should assume:
 
 - the architecture direction is defined
-- the platform structure is being established
-- most services are still scaffolds or placeholders
+- the platform structure is established enough to support a read-only product foundation
+- several services still expose bounded scaffolds rather than mature live behavior
 - read-only visibility comes before advanced workflows
 - broad action automation is intentionally deferred
 
@@ -142,14 +142,14 @@ At this stage, contributors should assume:
 - separate `platform/` project structure
 - service directories and README skeletons
 - documentation scaffolding
-- dashboard folder structure and provisioning layout scaffolding
+- dashboard folder structure and provisioning layout scaffolding, with an initial real platform dashboard
 - schema and shared-directory scaffolding
+- read-only inventory, topology, policy, capability, and platform status APIs
+- read-only WebUI pages backed by stable backend contracts
 
 ### Planned Later
 
-- read-only inventory, topology, policy, and health APIs
-- read-only WebUI pages backed by the backend
-- collector-to-backend normalized data flow
+- live collector-to-backend normalized data flow beyond the current bounded placeholder path
 - bounded ODL integration paths
 - dry-run workflow support
 - one narrowly scoped safe action workflow only after the read/validate foundation is solid

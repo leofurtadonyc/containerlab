@@ -18,10 +18,7 @@ scrape_configs:
           service: prometheus
           component: metrics
 
-  # These platform jobs define the intended scrape layout for Phase 1.
-  # Some targets may not expose metrics yet because their service skeletons
-  # are still placeholders. Keeping them here makes the observability shape
-  # explicit without pretending the implementations already exist.
+  # These are the currently real platform-semantic metrics targets in Phase 1.
   - job_name: app-api
     metrics_path: /metrics
     static_configs:
@@ -40,23 +37,26 @@ scrape_configs:
           service: gnmi-collector
           component: collector
 
-  - job_name: odl
-    metrics_path: /metrics
-    static_configs:
-      - targets:
-          - odl:8181
-        labels:
-          service: odl
-          component: controller
-
-  - job_name: grafana
-    metrics_path: /metrics
-    static_configs:
-      - targets:
-          - grafana:3000
-        labels:
-          service: grafana
-          component: observability
+  # These future placeholders remain documented here intentionally, but they
+  # are not scraped yet because the current platform implementation does not
+  # provide a coherent service-specific metrics contract for them.
+  # - job_name: odl
+  #   metrics_path: /metrics
+  #   static_configs:
+  #     - targets:
+  #         - odl:8181
+  #       labels:
+  #         service: odl
+  #         component: controller
+  #
+  # - job_name: grafana
+  #   metrics_path: /metrics
+  #   static_configs:
+  #     - targets:
+  #         - grafana:3000
+  #       labels:
+  #         service: grafana
+  #         component: observability
 
   # Postgres metrics should come from an exporter later rather than from the
   # database service itself. This placeholder keeps the expected topology clear.

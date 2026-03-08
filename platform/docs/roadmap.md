@@ -6,7 +6,7 @@ This document summarizes the platform's phased implementation roadmap.
 
 ## Current Status
 
-The project is still in `Phase 1 — platform skeleton and architecture-first foundation`.
+The project is now ready to move into `Phase 2 — read-only product foundation`.
 
 Most of the week's work has established:
 
@@ -17,6 +17,7 @@ Most of the week's work has established:
 - backend, collector, frontend, and database-direction scaffolding
 - normalized model and schema scaffolding
 - core architecture documents
+- a first useful read-only API, WebUI, and observability slice
 
 ## Phased Roadmap
 
@@ -34,8 +35,8 @@ Focus:
 
 Current state:
 
-- largely established as scaffolding
-- still intentionally light on deep runtime behavior
+- foundation complete enough to support a controlled transition into the next phase
+- still intentionally bounded on deep runtime behavior, live ingestion, and workflows
 
 ### Phase 2 — read-only product foundation
 
@@ -84,9 +85,9 @@ Expected focus:
 
 Based on the current repo state, the next likely work should be:
 
-1. review whether the remaining architecture docs need refinement
-2. confirm Phase 1 completion criteria against the actual tree
-3. decide intentionally whether to keep `01-CURRENT-PHASE.md` unchanged or begin a controlled move toward the next phase
+1. deepen the collector-to-backend read path beyond the current bounded placeholder integration
+2. extend read-only product coverage into workflow-history and audit-history scaffolds only when stable backend contracts exist
+3. refine read-only APIs, pages, and dashboards from bounded scaffolds into more operationally useful views without jumping to action workflows
 
 ## Boundary Reminder
 
