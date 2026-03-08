@@ -6,5 +6,11 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 8088,
+    proxy: {
+      "/api": {
+        target: process.env.VITE_DEV_API_PROXY_TARGET ?? "http://app-api:8000",
+        changeOrigin: true,
+      },
+    },
   },
 });

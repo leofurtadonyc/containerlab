@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app_api.api.errors import (
@@ -20,6 +21,16 @@ app = FastAPI(
     version=settings.app_version,
     docs_url="/docs",
     openapi_url="/openapi.json",
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:8088",
+        "http://127.0.0.1:8088",
+    ],
+    allow_credentials=False,
+    allow_methods=["GET"],
+    allow_headers=["*"],
 )
 
 app.middleware("http")(request_context_middleware)

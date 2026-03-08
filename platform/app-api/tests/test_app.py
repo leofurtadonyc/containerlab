@@ -220,3 +220,21 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert 'endpoint="/api/v1/devices",method="GET",status_class="2xx"' in response.text
     assert "platform_app_api_http_request_duration_seconds_count" in response.text
     assert "platform_app_api_http_request_duration_seconds_sum" in response.text
+
+
+def test_devices_endpoint_allows_webui_origin_via_cors(monkeypatch) -> None:
+    class StubCollectorInventoryClient:
+        def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+            return _build_live_inventory_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.devices.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
+    response = client.get(
+        "/api/v1/devices",
+        headers={"Origin": "http://localhost:8088"},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:8088"

@@ -124,8 +124,30 @@ function isErrorResponse(payload: unknown): payload is ErrorResponse {
   );
 }
 
-export const appApiBaseUrl =
-  import.meta.env.VITE_APP_API_BASE_URL ?? "http://localhost:8000";
+function resolveAppApiBaseUrl(): string {
+  const configuredBaseUrl = import.meta.env.VITE_APP_API_BASE_URL?.trim();
+  const browserFallbackBaseUrl = "";
+
+  if (!configuredBaseUrl) {
+    return browserFallbackBaseUrl;
+  }
+
+  if (typeof window === "undefined") {
+    return configuredBaseUrl;
+  }
+
+  try {
+    const configuredUrl = new URL(configuredBaseUrl);
+    if (configuredUrl.hostname === "app-api") {
+      return "";
+    }
+    return configuredBaseUrl;
+  } catch {
+    return browserFallbackBaseUrl;
+  }
+}
+
+export const appApiBaseUrl = resolveAppApiBaseUrl();
 
 export const apiClient = new ApiClient({
   baseUrl: appApiBaseUrl,
