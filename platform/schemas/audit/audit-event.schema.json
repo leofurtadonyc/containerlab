@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "platform/schemas/audit/audit-event.schema.json",
+  "title": "AuditEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "event_type", "source", "result", "occurred_at"],
+  "properties": {
+    "event_id": { "type": "string" },
+    "event_type": { "type": "string" },
+    "source": { "type": "string" },
+    "actor": { "type": "string" },
+    "target_scope": { "type": "string" },
+    "result": {
+      "type": "string",
+      "enum": ["succeeded", "failed", "partial", "unknown"]
+    },
+    "correlation_id": { "type": "string" },
+    "occurred_at": { "type": "string" }
+  }
+}

@@ -1,0 +1,1 @@
+"""Platform gNMI collector package."""

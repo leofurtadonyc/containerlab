@@ -1,0 +1,44 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": false,
+  "graphTooltip": 0,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "content": "## Platform Overview Placeholder\nThis dashboard family will answer: which platform services are healthy, which scrape targets are failing, and where the observability stack is degraded.\n\nCurrent state: provisioning skeleton only. Real service metrics and alert-driven panels will be added as the backend, collector, ODL integration, and exporters become real.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "11.0.0",
+      "title": "Dashboard Scope",
+      "type": "text"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "platform",
+    "placeholder"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Platform Overview Placeholder",
+  "uid": "platform-overview",
+  "version": 1
+}

@@ -1,0 +1,44 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": false,
+  "graphTooltip": 0,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "content": "## SR Policy Overview Placeholder\nThis dashboard family will answer: how many policies are active, degraded, or down, where policy validation is failing, and whether intended and observed policy state are drifting.\n\nCurrent state: placeholder only. Real SR policy metrics and validation views are deferred until those platform capabilities exist.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "11.0.0",
+      "title": "Dashboard Scope",
+      "type": "text"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "sr-policy",
+    "placeholder"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "SR Policy Overview Placeholder",
+  "uid": "sr-policy-overview",
+  "version": 1
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "platform/schemas/policy/policy-record.schema.json",
+  "title": "PolicyRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "policy_id",
+    "headend",
+    "endpoint",
+    "color",
+    "intent_state",
+    "observed_state",
+    "support_state",
+    "health_state"
+  ],
+  "properties": {
+    "policy_id": { "type": "string" },
+    "headend": { "type": "string" },
+    "endpoint": { "type": "string" },
+    "color": { "type": "integer" },
+    "candidate_paths": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "intent_state": { "type": "string" },
+    "observed_state": { "type": "string" },
+    "support_state": {
+      "type": "string",
+      "enum": [
+        "supported",
+        "partially_supported",
+        "unsupported",
+        "unknown",
+        "not_implemented_in_platform"
+      ]
+    },
+    "health_state": {
+      "type": "string",
+      "enum": ["healthy", "degraded", "down", "unknown"]
+    }
+  }
+}

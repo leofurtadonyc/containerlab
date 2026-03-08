@@ -1,0 +1,19 @@
+collector:
+  mode: phase_1_skeleton
+  metrics_port: 9804
+  delivery_target: http://app-api:8000
+
+targets:
+  - name: example-nokia-router
+    vendor: nokia
+    management_address: 192.0.2.10
+    port: 57400
+    username: example-user
+    password: change_me
+    insecure: true
+
+subscriptions:
+  - name: interfaces
+    path: /interfaces
+  - name: platform-state
+    path: /state

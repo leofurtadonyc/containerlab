@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "platform/schemas/capabilities/capability-record.schema.json",
+  "title": "CapabilityRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "vendor",
+    "platform",
+    "feature",
+    "support_status",
+    "implementation_status",
+    "source_of_determination"
+  ],
+  "properties": {
+    "vendor": { "type": "string" },
+    "platform": { "type": "string" },
+    "version_scope": { "type": "string" },
+    "feature": { "type": "string" },
+    "support_status": {
+      "type": "string",
+      "enum": [
+        "supported",
+        "partially_supported",
+        "unsupported",
+        "unknown",
+        "not_implemented_in_platform"
+      ]
+    },
+    "implementation_status": {
+      "type": "string",
+      "enum": ["planned", "placeholder", "partial", "implemented"]
+    },
+    "caveats": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "source_of_determination": { "type": "string" }
+  }
+}

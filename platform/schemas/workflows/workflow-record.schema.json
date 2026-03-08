@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "platform/schemas/workflows/workflow-record.schema.json",
+  "title": "WorkflowRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "workflow_id",
+    "requested_action",
+    "scope",
+    "validation_state",
+    "execution_state",
+    "rollback_state"
+  ],
+  "properties": {
+    "workflow_id": { "type": "string" },
+    "requested_action": { "type": "string" },
+    "scope": { "type": "string" },
+    "dry_run_result": { "type": "string" },
+    "validation_state": {
+      "type": "string",
+      "enum": ["not_started", "passed", "failed", "unknown"]
+    },
+    "execution_state": {
+      "type": "string",
+      "enum": ["requested", "planned", "executing", "succeeded", "failed", "unknown"]
+    },
+    "rollback_state": {
+      "type": "string",
+      "enum": ["not_requested", "rolling_back", "rolled_back", "not_applicable", "unknown"]
+    },
+    "actor": { "type": "string" },
+    "requested_at": { "type": "string" }
+  }
+}

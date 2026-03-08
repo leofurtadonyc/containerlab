@@ -1,0 +1,44 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": false,
+  "graphTooltip": 0,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "content": "## Topology Overview Placeholder\nThis dashboard family will answer: what nodes and links are visible, what topology sync timestamps exist, and where collection or normalization quality is degraded.\n\nCurrent state: placeholder only. Real topology-aware panels will follow once normalized topology data and related metrics exist.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "11.0.0",
+      "title": "Dashboard Scope",
+      "type": "text"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "topology",
+    "placeholder"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Topology Overview Placeholder",
+  "uid": "topology-overview",
+  "version": 1
+}

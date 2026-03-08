@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "platform/schemas/inventory/device-inventory.schema.json",
+  "title": "DeviceInventoryRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "device_id",
+    "vendor",
+    "platform",
+    "management_address",
+    "collector_status",
+    "capability_summary"
+  ],
+  "properties": {
+    "device_id": { "type": "string" },
+    "vendor": { "type": "string" },
+    "platform": { "type": "string" },
+    "software_version": { "type": "string" },
+    "role": { "type": "string" },
+    "management_address": { "type": "string" },
+    "collector_status": {
+      "type": "string",
+      "enum": ["ok", "degraded", "unreachable", "unknown"]
+    },
+    "capability_summary": {
+      "type": "string",
+      "enum": [
+        "supported",
+        "partially_supported",
+        "unsupported",
+        "unknown",
+        "not_implemented_in_platform"
+      ]
+    }
+  }
+}

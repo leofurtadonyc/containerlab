@@ -1,0 +1,44 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": false,
+  "graphTooltip": 0,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "content": "## Vendor Overview Placeholder\nThis dashboard family will answer: which adapter paths are healthy, where normalization errors are appearing, and which requests are unsupported for a given vendor capability set.\n\nCurrent state: placeholder only. This dashboard family must stay honest about partial implementation and must not imply multi-vendor parity that does not yet exist.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "11.0.0",
+      "title": "Dashboard Scope",
+      "type": "text"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "vendor",
+    "placeholder"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Vendor Overview Placeholder",
+  "uid": "vendor-overview",
+  "version": 1
+}

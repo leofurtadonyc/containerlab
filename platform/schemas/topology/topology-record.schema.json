@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "platform/schemas/topology/topology-record.schema.json",
+  "title": "TopologyRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["topology_id", "nodes", "links", "sync_source", "sync_status"],
+  "properties": {
+    "topology_id": { "type": "string" },
+    "nodes": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "links": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "sync_source": { "type": "string" },
+    "sync_status": {
+      "type": "string",
+      "enum": ["ok", "degraded", "failed", "unknown"]
+    },
+    "observed_at": { "type": "string" }
+  }
+}

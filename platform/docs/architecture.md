@@ -1,0 +1,200 @@
+# Platform Architecture
+
+## Purpose
+
+This document describes the high-level platform architecture, deployment model, and major component boundaries for the current Phase 1 foundation.
+
+## Current Status
+
+The platform now has:
+
+- a separate platform repository structure
+- a separate Containerlab topology for platform services
+- service READMEs and topology scaffolding
+- Prometheus and Grafana provisioning skeletons
+- backend, collector, frontend, and database-direction scaffolding
+
+What remains incomplete:
+
+- substantive ODL integration
+- real collector-to-backend delivery
+- read-only domain APIs beyond health
+- real product pages backed by live APIs
+
+This document therefore focuses on architectural shape and service boundaries rather than final implementation depth.
+
+## Deployment Model
+
+The platform is deployed separately from the labs.
+
+That means:
+
+- lab topologies live under `labs/`
+- the platform topology lives under `platform/topology.clab.yml`
+- labs and the platform are started independently
+- the default integration model is management-plane-first
+
+The platform is intended to observe and later orchestrate across labs without being embedded inside any single lab folder.
+
+## Layer Model
+
+### Network Plane
+
+This is the actual lab topology:
+
+- devices
+- links
+- routing and transport behavior
+- SR-related forwarding behavior
+
+### Controller And Protocol Plane
+
+This is where ODL may help.
+
+It is responsible only for bounded controller-side and protocol-side support where that support is genuinely useful.
+
+### Observability Plane
+
+This includes:
+
+- `prometheus`
+- `grafana`
+- service metrics endpoints
+- future exporters and alert rules
+
+### Product And Orchestration Plane
+
+This is centered on `app-api`.
+
+It owns normalized product models, API contracts, durable-state coordination, and later workflow and reconciliation logic.
+
+### Experience Plane
+
+This is centered on `app-web`.
+
+It owns the operator-facing product experience, not the underlying business logic.
+
+## Component Roles
+
+### `app-api`
+
+The backend is the platform brain.
+
+It owns:
+
+- normalized model coordination
+- durable state coordination with Postgres
+- API contracts
+- bounded integration with collector outputs
+- bounded integration with ODL outputs
+
+### `app-web`
+
+The WebUI is the product.
+
+It owns:
+
+- product navigation
+- operator views
+- API-driven presentation
+- future workflow-oriented UX
+
+It does not own business logic.
+
+### `gnmi-collector`
+
+The collector is the preferred observed-state engine.
+
+It owns:
+
+- gNMI collection
+- vendor adapter boundaries for collection
+- mapping from raw records into platform-friendly normalized forms
+- collector metrics
+
+### `postgres`
+
+Postgres is the durable application data store.
+
+It is for business and product state, not time-series metrics.
+
+### `prometheus`
+
+Prometheus is the metrics and time-series layer.
+
+It scrapes service metrics and supports alerting and recording rules. It is not the application database.
+
+### `grafana`
+
+Grafana is the observability layer.
+
+It provides dashboards and operational drilldowns. It is not the product UI and it must not absorb workflow or business logic.
+
+### `odl`
+
+ODL is a bounded helper, not the center of the system.
+
+It may contribute:
+
+- controller-side state
+- future BGP-LS, BMP, or PCEP-related leverage
+- useful protocol-adjacent inputs for the backend
+
+It must not become:
+
+- the product brain
+- the workflow engine
+- the normalized API layer
+- the only source of truth
+
+The backend remains responsible for deciding how ODL-derived records are translated and used.
+
+## ODL Boundary
+
+The ODL boundary is especially important.
+
+The intended pattern is:
+
+1. ODL exposes controller-side or protocol-side data.
+2. `app-api` queries ODL through explicit integration modules.
+3. `app-api` translates ODL-derived data into platform-friendly structures.
+4. ODL-derived records are combined with other evidence rather than treated as the whole truth.
+
+This architecture preserves:
+
+- backend ownership of business logic
+- vendor-neutral product models
+- flexibility to grow beyond ODL-centric thinking
+
+## Core Architectural Rules
+
+These boundaries remain non-negotiable:
+
+- backend as brain
+- WebUI as product
+- Prometheus as metrics layer
+- Grafana as observability layer
+- Postgres as durable application data store
+- gNMI-first observed-state collection
+- ODL as bounded helper
+- vendor-neutral product models
+- vendor-specific behavior behind adapters
+
+## Current Vs Future
+
+### Current
+
+- service topology exists
+- runtime boundaries are documented
+- backend and collector skeletons exist
+- observability scaffolding exists
+- database direction is established
+- ODL integration is documented and scaffolded, but not substantively implemented
+
+### Future
+
+- richer read-only product APIs
+- real frontend pages backed by backend data
+- bounded ODL-backed enrichment where useful
+- dry-run and validation flows later
+- one safe bounded action workflow only after read/validate maturity
