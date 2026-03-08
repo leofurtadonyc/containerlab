@@ -20,6 +20,7 @@ Operators need a product UI that is purpose-built for network operations workflo
 
 ## Runtime details
 - image: `node:22-alpine` in the current topology skeleton, pending a service-specific Dockerfile
+- startup: the current topology bootstraps `npm` dependencies at container start and runs the Vite development server from the mounted source tree until a service Dockerfile exists
 - ports: 8088 for the published WebUI endpoint
 - env vars: `APP_WEB_PORT` and `VITE_APP_API_BASE_URL` placeholders in the current topology skeleton
 - mounts: `./app-web:/app`

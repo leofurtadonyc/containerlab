@@ -68,6 +68,10 @@ topology:
       kind: linux
       # Placeholder image until the service Dockerfile is implemented.
       image: python:3.12-slim
+      cmd: >-
+        sh -lc "cd /app &&
+        python3 -m pip install --no-cache-dir -e . &&
+        uvicorn app_api.main:app --host 0.0.0.0 --port ${API_PORT:-8000}"
       ports:
         - "8000:8000"
       binds:
@@ -84,6 +88,10 @@ topology:
       kind: linux
       # Placeholder image until the service Dockerfile is implemented.
       image: node:22-alpine
+      cmd: >-
+        sh -lc "cd /app &&
+        npm install --no-fund --no-audit &&
+        npm run dev -- --host 0.0.0.0 --port ${APP_WEB_PORT:-8088}"
       ports:
         - "8088:8088"
       binds:

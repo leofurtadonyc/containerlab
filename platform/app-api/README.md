@@ -24,7 +24,8 @@ The platform requires a single authoritative source of business logic. The backe
 
 ## Runtime details
 - image: `python:3.12-slim` in the current topology skeleton, pending a service-specific Dockerfile
-- ports: 8000 for the versioned API; metrics exposure details are TBD
+- startup: the current topology bootstraps dependencies at container start and runs `uvicorn app_api.main:app` from the mounted source tree until a service Dockerfile exists
+- ports: 8000 for the versioned API and `/metrics`
 - env vars: `API_PORT`, `DATABASE_URL`, `ODL_URL`, and `PROMETHEUS_URL` placeholders in the current topology skeleton
 - mounts: `./app-api:/app`, `./shared:/app/shared`, `./schemas:/app/schemas`
 - persistence: uses Postgres
