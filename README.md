@@ -624,4 +624,3 @@ If that is the kind of work you care about, this repository was built with you i
 <p align="center">
   <img src="assets/logo.png" alt="Leonardo Furtado's Containerlab Labs Logo" width="640" />
 </p>
-```
