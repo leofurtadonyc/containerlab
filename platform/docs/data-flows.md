@@ -23,8 +23,8 @@ The current repository state includes:
 
 It does not yet include:
 
-- real collector-to-backend ingestion
-- read-only inventory or topology APIs beyond health
+- live collector-to-backend ingestion
+- substantive live-backed inventory, topology, or policy APIs beyond the current normalized scaffolds
 - real frontend pages
 - substantive ODL integration logic
 
@@ -75,7 +75,8 @@ Current state:
 
 - collector package structure exists
 - adapter and mapping scaffolding exist
-- delivery to `app-api` is still a placeholder
+- a narrow normalized inventory delivery shape now exists between the collector and the backend
+- live transport from the collector process into `app-api` is still a placeholder
 
 ## Backend To Frontend Flow
 
@@ -98,7 +99,45 @@ Boundary rules:
 Current state:
 
 - backend health and metrics endpoints exist
+- versioned read-only inventory, topology, policy, capability, and platform status endpoints now exist as scaffolds
+- the current inventory API is fed by a bounded normalized collector placeholder contract rather than live collector transport
+- the current topology API is fed by a backend-owned normalized read model that explicitly marks partial and unknown state
+- the current policy API is fed by a backend-owned normalized read model that explicitly marks support, observed, and unknown state
 - frontend implementation is still pending
+
+## Topology Read-Model Limitations
+
+The current topology read model is intentionally conservative.
+
+What is real today:
+
+- the topology API returns a stable platform-owned structure for nodes, links, source, sync status, completeness, timestamps, and notes
+- partial and unknown states are explicit in the contract
+- the backend owns the read model rather than exposing collector or controller-native shapes
+
+What remains partial:
+
+- the topology does not yet represent live adjacency discovery
+- node and link state are still mostly `unknown`
+- `observed_at` may be unset because live topology ingestion is not wired yet
+- the current graph is a bounded placeholder that demonstrates contract shape rather than operational completeness
+
+## Policy Read-Model Limitations
+
+The current policy read model is also intentionally conservative.
+
+What is real today:
+
+- the policies API returns a stable platform-owned structure for policy inventory
+- intended, observed, support, and health states are explicit
+- candidate paths are represented in a normalized form rather than as vendor-native payloads
+
+What remains partial:
+
+- the policy inventory is not yet backed by live SR policy collection or controller-derived policy state
+- support states such as `unknown` and `not_implemented_in_platform` are expected and honest in the current phase
+- candidate path data is illustrative scaffold data rather than validated operational path computation
+- no policy details, editing, validation, or workflow execution flows exist yet
 
 ## Metrics Flow
 
@@ -205,6 +244,8 @@ Current state:
 - flow directions are documented
 - platform topology and service boundaries exist
 - backend and collector skeleton endpoints exist
+- a bounded normalized inventory integration placeholder now connects the collector shape to the backend devices read path
+- backend-owned normalized topology and policy read models now exist as stable API scaffolds with explicit partial and unknown states
 - observability scaffolding exists
 - persistence direction is explicit
 

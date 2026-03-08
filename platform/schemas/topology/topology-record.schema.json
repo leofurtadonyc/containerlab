@@ -4,22 +4,91 @@
   "title": "TopologyRecord",
   "type": "object",
   "additionalProperties": false,
-  "required": ["topology_id", "nodes", "links", "sync_source", "sync_status"],
+  "required": [
+    "topology_id",
+    "topology_name",
+    "nodes",
+    "links",
+    "sync_source",
+    "sync_status",
+    "completeness",
+    "notes"
+  ],
   "properties": {
     "topology_id": { "type": "string" },
+    "topology_name": { "type": "string" },
     "nodes": {
       "type": "array",
-      "items": { "type": "object" }
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "node_id",
+          "display_name",
+          "role",
+          "state",
+          "source",
+          "attributes"
+        ],
+        "properties": {
+          "node_id": { "type": "string" },
+          "display_name": { "type": "string" },
+          "role": { "type": "string" },
+          "state": {
+            "type": "string",
+            "enum": ["up", "down", "degraded", "unknown"]
+          },
+          "source": { "type": "string" },
+          "device_id": { "type": "string" },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
     },
     "links": {
       "type": "array",
-      "items": { "type": "object" }
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "link_id",
+          "source_node_id",
+          "target_node_id",
+          "state",
+          "source",
+          "attributes"
+        ],
+        "properties": {
+          "link_id": { "type": "string" },
+          "source_node_id": { "type": "string" },
+          "target_node_id": { "type": "string" },
+          "state": {
+            "type": "string",
+            "enum": ["up", "down", "degraded", "unknown"]
+          },
+          "source": { "type": "string" },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
     },
     "sync_source": { "type": "string" },
     "sync_status": {
       "type": "string",
       "enum": ["ok", "degraded", "failed", "unknown"]
     },
-    "observed_at": { "type": "string" }
+    "completeness": {
+      "type": "string",
+      "enum": ["complete", "partial", "unknown"]
+    },
+    "observed_at": { "type": "string" },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
   }
 }

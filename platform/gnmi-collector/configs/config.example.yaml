@@ -1,19 +1,32 @@
 collector:
-  mode: phase_1_skeleton
+  mode: phase_1_inventory_scaffold
   metrics_port: 9804
-  delivery_target: http://app-api:8000
+  delivery:
+    mode: backend_http_placeholder
+    endpoint: http://app-api:8000
+
+inventory:
+  subscriptions:
+    - name: system-name
+      path: /system/name
+      cadence: poll
+    - name: platform-chassis
+      path: /platform/chassis
+      cadence: poll
+    - name: software-version
+      path: /platform/software-version
+      cadence: poll
 
 targets:
   - name: example-nokia-router
     vendor: nokia
     management_address: 192.0.2.10
     port: 57400
-    username: example-user
-    password: change_me
+    auth:
+      username: example-user
+      password: change_me
     insecure: true
-
-subscriptions:
-  - name: interfaces
-    path: /interfaces
-  - name: platform-state
-    path: /state
+    inventory_paths:
+      - /system/name
+      - /platform/chassis
+      - /platform/software-version

@@ -10,6 +10,7 @@ The platform must observe live device state without hard-coding vendor assumptio
 - gNMI subscription management
 - raw-to-normalized model transformation
 - per-vendor adapter implementations
+- inventory-oriented observed-state collection scaffolding
 - metrics endpoint for collector health
 
 ## What it does not own
@@ -32,10 +33,11 @@ The platform must observe live device state without hard-coding vendor assumptio
 - exposes `/metrics` for Prometheus scraping
 
 ## Current status
-Initial collector skeleton exists with a Python application entrypoint, placeholder metrics endpoint, explicit adapter and mapping package layout, Nokia-first adapter placeholder area, and example config scaffolding.
+Initial collector skeleton exists with a Python application entrypoint, an inventory-oriented runtime config scaffold, explicit adapter and mapping package layout, a Nokia-first inventory adapter scaffold, placeholder normalization and backend-delivery preparation for inventory records, improved collector metrics scaffolding, and example config scaffolding.
 
 ## Planned evolution
 - explicit normalization layers for inventory, topology, and policy-adjacent state
+- backend delivery contract implementation for normalized collector outputs
 - Juniper adapter structure later
 
 ## Notes and caveats

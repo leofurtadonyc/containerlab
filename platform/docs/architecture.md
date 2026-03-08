@@ -18,7 +18,7 @@ What remains incomplete:
 
 - substantive ODL integration
 - real collector-to-backend delivery
-- read-only domain APIs beyond health
+- live-backed read-only domain APIs beyond the current health, platform status, devices, topology, policies, and capabilities scaffolds
 - real product pages backed by live APIs
 
 This document therefore focuses on architectural shape and service boundaries rather than final implementation depth.
@@ -87,6 +87,13 @@ It owns:
 - API contracts
 - bounded integration with collector outputs
 - bounded integration with ODL outputs
+
+Current read-model reality:
+
+- `/api/v1/devices` is backed by a bounded normalized collector inventory placeholder contract, not by live collector transport
+- `/api/v1/topology` is backed by a backend-owned normalized topology model that explicitly marks partial and unknown knowledge
+- `/api/v1/policies` is backed by a backend-owned normalized policy inventory model that explicitly marks support, observed, and unknown states
+- these are stable product-owned contracts, but they are still Phase 1 scaffolds rather than mature operational truth
 
 ### `app-web`
 
@@ -187,13 +194,14 @@ These boundaries remain non-negotiable:
 - service topology exists
 - runtime boundaries are documented
 - backend and collector skeletons exist
+- read-only devices, topology, policies, capabilities, and platform status APIs now exist as backend-owned normalized scaffolds
 - observability scaffolding exists
 - database direction is established
 - ODL integration is documented and scaffolded, but not substantively implemented
 
 ### Future
 
-- richer read-only product APIs
+- richer live-backed read-only product APIs
 - real frontend pages backed by backend data
 - bounded ODL-backed enrichment where useful
 - dry-run and validation flows later

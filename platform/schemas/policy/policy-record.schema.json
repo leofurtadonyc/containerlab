@@ -6,25 +6,52 @@
   "additionalProperties": false,
   "required": [
     "policy_id",
+    "policy_name",
     "headend",
     "endpoint",
     "color",
+    "candidate_paths",
     "intent_state",
     "observed_state",
     "support_state",
-    "health_state"
+    "health_state",
+    "source",
+    "notes"
   ],
   "properties": {
     "policy_id": { "type": "string" },
+    "policy_name": { "type": "string" },
     "headend": { "type": "string" },
     "endpoint": { "type": "string" },
     "color": { "type": "integer" },
     "candidate_paths": {
       "type": "array",
-      "items": { "type": "object" }
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "path_state", "notes"],
+        "properties": {
+          "name": { "type": "string" },
+          "path_state": {
+            "type": "string",
+            "enum": ["active", "inactive", "unknown"]
+          },
+          "preference": { "type": "integer" },
+          "notes": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
     },
-    "intent_state": { "type": "string" },
-    "observed_state": { "type": "string" },
+    "intent_state": {
+      "type": "string",
+      "enum": ["declared", "unknown"]
+    },
+    "observed_state": {
+      "type": "string",
+      "enum": ["active", "inactive", "degraded", "unknown"]
+    },
     "support_state": {
       "type": "string",
       "enum": [
@@ -38,6 +65,11 @@
     "health_state": {
       "type": "string",
       "enum": ["healthy", "degraded", "down", "unknown"]
+    },
+    "source": { "type": "string" },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
     }
   }
 }
