@@ -1,7 +1,10 @@
-"""Bounded collector inventory integration models and placeholder client."""
+"""Bounded collector inventory integration models and live snapshot client."""
 
+import json
 from dataclasses import dataclass
 from typing import Literal
+from urllib.error import HTTPError, URLError
+from urllib.request import urlopen
 
 from pydantic import BaseModel
 
@@ -25,7 +28,7 @@ class CollectorInventoryRecord(BaseModel):
         "unknown",
         "not_implemented_in_platform",
     ]
-    normalization_status: Literal["normalized_placeholder", "partial", "failed"]
+    normalization_status: Literal["normalized_live", "partial", "failed"]
     source: Literal["gnmi"]
     source_target: str
     notes: list[str]
@@ -35,50 +38,57 @@ class CollectorInventorySnapshot(BaseModel):
     """Stable intermediate boundary for collector-backed inventory reads."""
 
     integration: Literal["gnmi_collector_inventory"]
-    status: Literal["placeholder_normalized_feed"]
+    status: Literal["live_normalized_feed", "partial_live_feed", "collector_unavailable"]
     destination_service: Literal["app-api"]
     source_endpoint: str
     records: list[CollectorInventoryRecord]
+    fetch_error: str | None = None
 
 
 @dataclass(frozen=True)
-class CollectorInventoryClientPlaceholder:
-    """Placeholder client for the normalized collector inventory boundary."""
+class CollectorInventoryClient:
+    """HTTP client for the normalized collector inventory boundary."""
 
     source_endpoint: str
 
     def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
-        """Return a stable normalized inventory snapshot for Phase 1."""
+        """Read the live normalized inventory snapshot from the collector."""
+        snapshot_url = f"{self.source_endpoint.rstrip('/')}/inventory/snapshot"
+        try:
+            with urlopen(snapshot_url, timeout=5) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+            return CollectorInventorySnapshot(
+                integration="gnmi_collector_inventory",
+                status="collector_unavailable",
+                destination_service="app-api",
+                source_endpoint=snapshot_url,
+                records=[],
+                fetch_error=str(exc),
+            )
+
+        status_map = {
+            "live_ready": "live_normalized_feed",
+            "partial": "partial_live_feed",
+            "failed": "collector_unavailable",
+        }
+        records = [
+            CollectorInventoryRecord.model_validate(record)
+            for record in payload.get("records", [])
+        ]
         return CollectorInventorySnapshot(
             integration="gnmi_collector_inventory",
-            status="placeholder_normalized_feed",
+            status=status_map.get(payload.get("delivery_status"), "collector_unavailable"),
             destination_service="app-api",
-            source_endpoint=self.source_endpoint,
-            records=[
-                CollectorInventoryRecord(
-                    device_id="example-nokia-router",
-                    vendor="nokia",
-                    platform="sros",
-                    software_version="unknown",
-                    role="unknown",
-                    management_address="192.0.2.10",
-                    collector_status="ok",
-                    capability_summary="not_implemented_in_platform",
-                    normalization_status="normalized_placeholder",
-                    source="gnmi",
-                    source_target="example-nokia-router",
-                    notes=[
-                        "Loaded through the bounded collector integration placeholder.",
-                        "Represents normalized collector-shaped inventory rather than a raw vendor payload.",
-                    ],
-                )
-            ],
+            source_endpoint=snapshot_url,
+            records=records,
+            fetch_error=None,
         )
 
 
-def get_collector_inventory_client() -> CollectorInventoryClientPlaceholder:
+def get_collector_inventory_client() -> CollectorInventoryClient:
     """Return the current collector inventory boundary client."""
     settings = get_settings()
-    return CollectorInventoryClientPlaceholder(
+    return CollectorInventoryClient(
         source_endpoint=settings.gnmi_collector_url,
     )

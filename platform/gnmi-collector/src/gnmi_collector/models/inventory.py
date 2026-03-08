@@ -42,7 +42,7 @@ class NormalizedInventoryRecord(BaseModel):
         "unknown",
         "not_implemented_in_platform",
     ]
-    normalization_status: Literal["normalized_placeholder", "partial", "failed"]
+    normalization_status: Literal["normalized_live", "partial", "failed"]
     source: Literal["gnmi"]
     source_target: str
     notes: list[str]
@@ -52,8 +52,8 @@ class BackendInventoryDeliveryEnvelope(BaseModel):
     """Normalized inventory payload prepared for future backend delivery."""
 
     destination_service: Literal["app-api"]
-    delivery_mode: Literal["backend_http_placeholder"]
-    delivery_status: Literal["ready_for_backend_contract"]
+    delivery_mode: Literal["backend_http_snapshot"]
+    delivery_status: Literal["live_ready", "partial", "failed"]
     destination_endpoint: str
     model_family: Literal["inventory"]
     record_count: int
@@ -77,7 +77,7 @@ class InventoryFlowSummary(BaseModel):
 class InventoryFlowSnapshot(BaseModel):
     """Typed end-to-end snapshot of the current inventory collection flow."""
 
-    mode: Literal["phase_1_inventory_scaffold"]
+    mode: Literal["phase_2_live_inventory"]
     config_path: str
     plans: list[InventoryCollectionPlan]
     raw_records: list[InventoryRawRecord]

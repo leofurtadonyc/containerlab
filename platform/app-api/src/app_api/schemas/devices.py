@@ -29,7 +29,7 @@ class DeviceRecord(BaseModel):
 class DevicesListResponse(ApiResponseMetadata):
     """Read-only device inventory list scaffold."""
 
-    data_status: Literal["placeholder", "integration_scaffold"]
+    data_status: Literal["placeholder", "integration_scaffold", "live", "degraded"]
     summary: str
     count: int
     items: list[DeviceRecord]

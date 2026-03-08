@@ -2,11 +2,55 @@ from datetime import datetime
 
 from fastapi.testclient import TestClient
 
+from app_api.integrations.collector.inventory import (
+    CollectorInventoryRecord,
+    CollectorInventorySnapshot,
+)
 from app_api.main import app
 from app_api.metrics.state import reset_metrics_registry
 
 
 client = TestClient(app)
+
+
+def _build_live_inventory_snapshot() -> CollectorInventorySnapshot:
+    return CollectorInventorySnapshot(
+        integration="gnmi_collector_inventory",
+        status="live_normalized_feed",
+        destination_service="app-api",
+        source_endpoint="http://gnmi-collector:9804/inventory/snapshot",
+        records=[
+            CollectorInventoryRecord(
+                device_id="PE1",
+                vendor="nokia",
+                platform="7750 SR-1",
+                software_version="B-25.10.R2",
+                role="pe",
+                management_address="172.20.20.107",
+                collector_status="ok",
+                capability_summary="partially_supported",
+                normalization_status="normalized_live",
+                source="gnmi",
+                source_target="PE1",
+                notes=["Collected live over gNMI."],
+            ),
+            CollectorInventoryRecord(
+                device_id="P1",
+                vendor="nokia",
+                platform="7750 SR-1",
+                software_version="B-25.10.R2",
+                role="p",
+                management_address="172.20.20.109",
+                collector_status="ok",
+                capability_summary="partially_supported",
+                normalization_status="normalized_live",
+                source="gnmi",
+                source_target="P1",
+                notes=["Collected live over gNMI."],
+            ),
+        ],
+        fetch_error=None,
+    )
 
 
 def test_health_endpoint_returns_typed_payload() -> None:
@@ -44,21 +88,29 @@ def test_platform_status_endpoint_returns_declared_service_scaffold() -> None:
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
-def test_devices_endpoint_returns_typed_placeholder_inventory() -> None:
+def test_devices_endpoint_returns_live_inventory(monkeypatch) -> None:
+    class StubCollectorInventoryClient:
+        def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+            return _build_live_inventory_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.devices.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
     response = client.get("/api/v1/devices", headers={"X-Request-ID": "devices-test"})
 
     assert response.status_code == 200
     payload = response.json()
 
     assert response.headers["X-Request-ID"] == "devices-test"
-    assert payload["data_status"] == "integration_scaffold"
-    assert payload["count"] == 1
-    assert "bounded normalized collector integration placeholder" in payload["summary"]
-    assert payload["items"][0]["device_id"] == "example-nokia-router"
+    assert payload["data_status"] == "live"
+    assert payload["count"] == 2
+    assert "live read-only Nokia gNMI collection" in payload["summary"]
+    assert payload["items"][0]["device_id"] == "PE1"
     assert payload["items"][0]["vendor"] == "nokia"
-    assert payload["items"][0]["management_address"] == "192.0.2.10"
+    assert payload["items"][0]["management_address"] == "172.20.20.107"
     assert payload["items"][0]["collector_status"] == "ok"
-    assert payload["items"][0]["capability_summary"] == "not_implemented_in_platform"
+    assert payload["items"][0]["capability_summary"] == "partially_supported"
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
@@ -147,7 +199,15 @@ def test_unknown_route_returns_consistent_error_payload() -> None:
     }
 
 
-def test_metrics_endpoint_returns_bounded_backend_metrics() -> None:
+def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
+    class StubCollectorInventoryClient:
+        def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+            return _build_live_inventory_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.devices.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
     reset_metrics_registry()
     client.get("/api/v1/health")
     client.get("/api/v1/devices")

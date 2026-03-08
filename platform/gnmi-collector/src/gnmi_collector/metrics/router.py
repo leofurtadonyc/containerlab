@@ -13,7 +13,7 @@ router = APIRouter(tags=["metrics"])
 
 @router.get("/metrics", include_in_schema=False)
 def get_metrics() -> Response:
-    """Expose bounded collector metrics for Prometheus."""
+    """Expose live inventory collector metrics for Prometheus."""
     settings = get_settings()
     inventory_flow = build_inventory_flow_snapshot()
     payload = "\n".join(
@@ -32,7 +32,7 @@ def get_metrics() -> Response:
             ),
             (
                 "# HELP platform_gnmi_collector_inventory_collection_success_total "
-                "Total successful inventory collection attempts in the current scaffold."
+                "Total successful live inventory collection attempts."
             ),
             "# TYPE platform_gnmi_collector_inventory_collection_success_total counter",
             (
@@ -41,7 +41,7 @@ def get_metrics() -> Response:
             ),
             (
                 "# HELP platform_gnmi_collector_inventory_collection_failure_total "
-                "Total failed inventory collection attempts in the current scaffold."
+                "Total failed live inventory collection attempts."
             ),
             "# TYPE platform_gnmi_collector_inventory_collection_failure_total counter",
             (

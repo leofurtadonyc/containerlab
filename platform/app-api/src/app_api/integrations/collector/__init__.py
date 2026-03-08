@@ -1,13 +1,13 @@
 """Collector integration boundary package."""
 
 from app_api.integrations.collector.inventory import (
-    CollectorInventoryClientPlaceholder,
+    CollectorInventoryClient,
     CollectorInventoryRecord,
     CollectorInventorySnapshot,
 )
 
 __all__ = [
-    "CollectorInventoryClientPlaceholder",
+    "CollectorInventoryClient",
     "CollectorInventoryRecord",
     "CollectorInventorySnapshot",
 ]

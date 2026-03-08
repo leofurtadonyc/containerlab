@@ -1,32 +1,46 @@
 collector:
-  mode: phase_1_inventory_scaffold
+  mode: phase_2_live_inventory
   metrics_port: 9804
   delivery:
-    mode: backend_http_placeholder
+    mode: backend_http_snapshot
     endpoint: http://app-api:8000
 
 inventory:
   subscriptions:
     - name: system-name
-      path: /system/name
+      path: /nokia-state:state/system/oper-name
       cadence: poll
     - name: platform-chassis
-      path: /platform/chassis
+      path: /nokia-state:state/system/platform
       cadence: poll
     - name: software-version
-      path: /platform/software-version
+      path: /nokia-state:state/system/version
       cadence: poll
 
 targets:
-  - name: example-nokia-router
+  - name: PE1
     vendor: nokia
-    management_address: 192.0.2.10
+    role: pe
+    management_address: 172.20.20.107
     port: 57400
     auth:
-      username: example-user
-      password: change_me
+      username: platform-ro
+      password: PlatformReadOnly1!
     insecure: true
     inventory_paths:
-      - /system/name
-      - /platform/chassis
-      - /platform/software-version
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: P1
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.109
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version

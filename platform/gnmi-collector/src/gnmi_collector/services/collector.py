@@ -1,11 +1,11 @@
-"""Collector service scaffolding."""
+"""Collector service helpers."""
 
 from gnmi_collector.adapters.nokia import NokiaSrosAdapter
 from gnmi_collector.services.inventory import build_inventory_flow_snapshot
 
 
 def describe_collection_pipeline() -> dict[str, object]:
-    """Describe the current collector skeleton honestly."""
+    """Describe the current collector pipeline honestly."""
     adapter = NokiaSrosAdapter()
     inventory_flow = build_inventory_flow_snapshot()
     return {

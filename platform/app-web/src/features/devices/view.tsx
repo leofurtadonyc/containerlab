@@ -176,7 +176,7 @@ export function DevicesView() {
                     <StatusPill value={device.capability_summary} />
                     {device.capability_summary === "not_implemented_in_platform" ? (
                       <div className="table-note">
-                        Support remains intentionally explicit in Phase 1.
+                        Support remains intentionally explicit in the current read-only phase.
                       </div>
                     ) : null}
                   </td>

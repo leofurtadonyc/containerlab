@@ -48,7 +48,7 @@ export interface DeviceRecord {
 }
 
 export interface DevicesListResponse extends ApiResponseMetadata {
-  data_status: "placeholder" | "integration_scaffold";
+  data_status: "placeholder" | "integration_scaffold" | "live" | "degraded";
   summary: string;
   count: number;
   items: DeviceRecord[];

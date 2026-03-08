@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 class CollectorDeliveryConfig(BaseModel):
     """Backend delivery configuration for normalized collector outputs."""
 
-    mode: Literal["backend_http_placeholder"]
+    mode: Literal["backend_http_snapshot"]
     endpoint: str
 
 
@@ -32,6 +32,7 @@ class GnmiTargetConfig(BaseModel):
 
     name: str
     vendor: str
+    role: str | None = None
     management_address: str
     port: int = 57400
     auth: GnmiTargetAuthConfig
@@ -40,9 +41,9 @@ class GnmiTargetConfig(BaseModel):
 
 
 class CollectorRuntimeConfig(BaseModel):
-    """Collector runtime configuration used by the Phase 1 inventory scaffold."""
+    """Collector runtime configuration used by the live inventory path."""
 
-    mode: Literal["phase_1_inventory_scaffold"]
+    mode: Literal["phase_2_live_inventory"]
     config_path: str
     metrics_port: int
     delivery: CollectorDeliveryConfig
