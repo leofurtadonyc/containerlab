@@ -21,11 +21,11 @@ Some SR policy and topology interactions may benefit from a purpose-built SDN co
 - final product truth by itself
 
 ## Runtime details
-- image: `opendaylight/opendaylight:latest` in the current topology skeleton
+- image: `opendaylight/opendaylight:0.18.2` in the current topology skeleton
 - ports: 8181 for northbound API access and 8101 for Karaf shell access
 - env vars: `ODL_ADMIN_PASSWORD` placeholder in the current topology skeleton
-- mounts: `./odl/config:/opt/opendaylight/etc`, `./odl/data:/opt/opendaylight/data`
-- persistence: bounded controller data only; ODL is not the platform system of record
+- mounts: none in the current topology skeleton; host config and data mounts can be added later with an explicit image-compatible layout and write-permissions strategy
+- persistence: container-local controller state in the current topology skeleton; ODL is not the platform system of record
 - dependencies: none at platform layer; integrates with lab topologies over the management plane
 
 ## Integration points

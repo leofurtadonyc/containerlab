@@ -23,7 +23,7 @@ The platform requires a dedicated metrics layer that is decoupled from the appli
 - ports: 9090
 - env vars: `PLATFORM_ENV` placeholder in the current topology skeleton
 - mounts: `./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml`, `./prometheus/rules:/etc/prometheus/rules`, `./prometheus/recording-rules:/etc/prometheus/recording-rules`
-- persistence: `./prometheus/data:/prometheus`
+- persistence: container-local TSDB in the current topology skeleton; host persistence can be added later with an explicit write-permissions strategy
 - dependencies: all platform services exposing `/metrics` endpoints
 
 ## Integration points

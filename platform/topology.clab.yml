@@ -6,13 +6,10 @@ topology:
   nodes:
     odl:
       kind: linux
-      image: opendaylight/opendaylight:latest
+      image: opendaylight/opendaylight:0.18.2
       ports:
         - "8181:8181" # RESTCONF and northbound API access
         - "8101:8101" # Karaf shell access
-      binds:
-        - ./odl/config:/opt/opendaylight/etc
-        - ./odl/data:/opt/opendaylight/data
       env:
         ODL_ADMIN_PASSWORD: change_me
 
@@ -25,7 +22,6 @@ topology:
         - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
         - ./prometheus/rules:/etc/prometheus/rules
         - ./prometheus/recording-rules:/etc/prometheus/recording-rules
-        - ./prometheus/data:/prometheus
       env:
         PLATFORM_ENV: dev
 
@@ -37,7 +33,6 @@ topology:
       binds:
         - ./grafana/provisioning:/etc/grafana/provisioning
         - ./grafana/dashboards:/var/lib/grafana/dashboards
-        - ./grafana/data:/var/lib/grafana
       env:
         GF_SECURITY_ADMIN_USER: admin
         GF_SECURITY_ADMIN_PASSWORD: change_me
