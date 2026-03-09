@@ -4,6 +4,7 @@ from typing import Protocol
 
 from gnmi_collector.config.models import GnmiTargetConfig
 from gnmi_collector.models.inventory import InventoryCollectionPlan, InventoryRawRecord
+from gnmi_collector.models.topology import TopologyCollectionPlan, TopologyRawRecord
 
 
 class GnmiAdapter(Protocol):
@@ -19,3 +20,9 @@ class GnmiAdapter(Protocol):
 
     def collect_inventory(self, target: GnmiTargetConfig) -> InventoryRawRecord:
         """Return a raw inventory record for one target."""
+
+    def build_topology_plan(self, target: GnmiTargetConfig) -> TopologyCollectionPlan:
+        """Build the topology-oriented collection plan for one target."""
+
+    def collect_topology(self, target: GnmiTargetConfig) -> TopologyRawRecord:
+        """Return a raw topology record for one target."""

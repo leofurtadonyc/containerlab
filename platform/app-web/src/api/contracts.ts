@@ -86,7 +86,7 @@ export interface TopologyRecord {
 }
 
 export interface TopologyResponse extends ApiResponseMetadata {
-  data_status: "normalized_scaffold";
+  data_status: "normalized_scaffold" | "live" | "degraded";
   summary: string;
   topology: TopologyRecord;
 }

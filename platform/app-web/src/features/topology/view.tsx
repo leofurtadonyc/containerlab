@@ -116,7 +116,7 @@ export function TopologyView() {
         <article className="summary-card">
           <p className="summary-label">Unknown links</p>
           <strong>{linkCounts.unknown ?? 0}</strong>
-          <p>Links that still depend on partial evidence in Phase 1.</p>
+          <p>Links that still depend on partial evidence in the current read-only phase.</p>
         </article>
       </div>
 

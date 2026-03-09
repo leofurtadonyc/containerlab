@@ -11,5 +11,5 @@ router = APIRouter(tags=["topology"])
 
 @router.get("/topology", response_model=TopologyResponse)
 def get_topology() -> TopologyResponse:
-    """Return the Phase 1 topology scaffold."""
+    """Return the current normalized topology view."""
     return build_topology_response()

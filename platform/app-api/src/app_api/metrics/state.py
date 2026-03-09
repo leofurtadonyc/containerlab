@@ -27,7 +27,11 @@ def observe_http_request(
         _request_duration_sums[duration_key] += duration_seconds
 
 
-def render_prometheus_metrics(app_version: str) -> str:
+def render_prometheus_metrics(
+    app_version: str,
+    *,
+    topology_metrics: dict[str, str | int] | None = None,
+) -> str:
     """Render backend metrics in Prometheus text format."""
     with _lock:
         request_counts = dict(_request_counts)
@@ -83,6 +87,29 @@ def render_prometheus_metrics(app_version: str) -> str:
                 "platform_app_api_http_request_duration_seconds_sum"
                 f'{{endpoint="{endpoint}",method="{method}"}} {duration_sum:.9f}'
             )
+        )
+
+    if topology_metrics is not None:
+        lines.extend(
+            [
+                "# HELP platform_app_api_topology_nodes Current normalized topology node count.",
+                "# TYPE platform_app_api_topology_nodes gauge",
+                f"platform_app_api_topology_nodes {topology_metrics['node_count']}",
+                "# HELP platform_app_api_topology_links Current normalized topology link count.",
+                "# TYPE platform_app_api_topology_links gauge",
+                f"platform_app_api_topology_links {topology_metrics['link_count']}",
+                (
+                    "# HELP platform_app_api_topology_snapshot_status "
+                    "Current topology snapshot status exposed by the backend."
+                ),
+                "# TYPE platform_app_api_topology_snapshot_status gauge",
+                (
+                    "platform_app_api_topology_snapshot_status"
+                    f'{{data_status="{topology_metrics["data_status"]}",'
+                    f'sync_status="{topology_metrics["sync_status"]}",'
+                    f'completeness="{topology_metrics["completeness"]}"}} 1'
+                ),
+            ]
         )
 
     lines.append("")

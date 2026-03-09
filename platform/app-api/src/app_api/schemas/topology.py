@@ -48,6 +48,6 @@ class TopologyRecord(BaseModel):
 class TopologyResponse(ApiResponseMetadata):
     """Read-only topology response."""
 
-    data_status: Literal["normalized_scaffold"]
+    data_status: Literal["normalized_scaffold", "live", "degraded"]
     summary: str
     topology: TopologyRecord

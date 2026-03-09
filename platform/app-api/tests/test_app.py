@@ -6,6 +6,11 @@ from app_api.integrations.collector.inventory import (
     CollectorInventoryRecord,
     CollectorInventorySnapshot,
 )
+from app_api.integrations.collector.topology import (
+    CollectorTopologyLinkRecord,
+    CollectorTopologyNodeRecord,
+    CollectorTopologySnapshot,
+)
 from app_api.main import app
 from app_api.metrics.state import reset_metrics_registry
 
@@ -48,6 +53,71 @@ def _build_live_inventory_snapshot() -> CollectorInventorySnapshot:
                 source_target="P1",
                 notes=["Collected live over gNMI."],
             ),
+        ],
+        fetch_error=None,
+    )
+
+
+def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
+    return CollectorTopologySnapshot(
+        integration="gnmi_collector_topology",
+        status="live_normalized_feed",
+        destination_service="app-api",
+        source_endpoint="http://gnmi-collector:9804/topology/snapshot",
+        topology_id="platform-observed-topology",
+        topology_name="Platform Observed Topology",
+        sync_source="gnmi_collector_topology_interface_inference",
+        sync_status="ok",
+        completeness="partial",
+        observed_at="2026-03-09T19:25:08.500000+00:00",
+        notes=[
+            "Topology links are inferred from live router interface names and current interface operational state.",
+            "The topology slice remains intentionally partial until LLDP, IGP, or bounded controller enrichment is added.",
+        ],
+        nodes=[
+            CollectorTopologyNodeRecord(
+                node_id="PE1",
+                display_name="PE1",
+                role="pe",
+                state="up",
+                source="gnmi",
+                device_id="PE1",
+                attributes={
+                    "vendor": "nokia",
+                    "platform_hint": "sros",
+                    "management_address": "172.20.20.107",
+                    "loopback_ipv4": "100.65.255.11",
+                },
+            ),
+            CollectorTopologyNodeRecord(
+                node_id="P1",
+                display_name="P1",
+                role="p",
+                state="up",
+                source="gnmi",
+                device_id="P1",
+                attributes={
+                    "vendor": "nokia",
+                    "platform_hint": "sros",
+                    "management_address": "172.20.20.109",
+                    "loopback_ipv4": "100.65.255.1",
+                },
+            ),
+        ],
+        links=[
+            CollectorTopologyLinkRecord(
+                link_id="P1--PE1",
+                source_node_id="P1",
+                target_node_id="PE1",
+                state="up",
+                source="gnmi",
+                attributes={
+                    "knowledge_state": "partial",
+                    "inference_method": "interface_name_and_oper_state",
+                    "endpoint_evidence_count": "2",
+                    "observed_interfaces": "PE1:to-P1, P1:to-PE1",
+                },
+            )
         ],
         fetch_error=None,
     )
@@ -114,30 +184,38 @@ def test_devices_endpoint_returns_live_inventory(monkeypatch) -> None:
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
-def test_topology_endpoint_returns_normalized_placeholder_topology() -> None:
+def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None:
+    class StubCollectorTopologyClient:
+        def read_topology_snapshot(self) -> CollectorTopologySnapshot:
+            return _build_live_topology_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.topology.get_collector_topology_client",
+        lambda: StubCollectorTopologyClient(),
+    )
     response = client.get("/api/v1/topology", headers={"X-Request-ID": "topology-test"})
 
     assert response.status_code == 200
     payload = response.json()
 
     assert response.headers["X-Request-ID"] == "topology-test"
-    assert payload["data_status"] == "normalized_scaffold"
+    assert payload["data_status"] == "live"
     assert payload["topology"]["topology_id"] == "platform-observed-topology"
     assert payload["topology"]["topology_name"] == "Platform Observed Topology"
-    assert payload["topology"]["sync_source"] == "normalized_platform_topology_placeholder"
-    assert payload["topology"]["sync_status"] == "unknown"
+    assert payload["topology"]["sync_source"] == "gnmi_collector_topology_interface_inference"
+    assert payload["topology"]["sync_status"] == "ok"
     assert payload["topology"]["completeness"] == "partial"
     assert len(payload["topology"]["nodes"]) == 2
     assert len(payload["topology"]["links"]) == 1
-    assert payload["topology"]["nodes"][0]["display_name"] == "Edge PE 1"
-    assert payload["topology"]["nodes"][0]["state"] == "unknown"
-    assert payload["topology"]["nodes"][0]["source"] == "collector_placeholder"
+    assert payload["topology"]["nodes"][0]["display_name"] == "PE1"
+    assert payload["topology"]["nodes"][0]["state"] == "up"
+    assert payload["topology"]["nodes"][0]["source"] == "gnmi"
     assert payload["topology"]["nodes"][0]["attributes"]["vendor"] == "nokia"
-    assert payload["topology"]["links"][0]["state"] == "unknown"
-    assert payload["topology"]["links"][0]["source"] == "platform_placeholder"
+    assert payload["topology"]["links"][0]["state"] == "up"
+    assert payload["topology"]["links"][0]["source"] == "gnmi"
     assert payload["topology"]["links"][0]["attributes"]["knowledge_state"] == "partial"
-    assert "partial and unknown knowledge explicit" in payload["summary"]
-    assert "Topology is intentionally partial in Phase 1." in payload["topology"]["notes"]
+    assert "bounded interface-based link inference" in payload["summary"]
+    assert "Topology links are inferred from live router interface names" in payload["topology"]["notes"][0]
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
@@ -204,13 +282,22 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
             return _build_live_inventory_snapshot()
 
+    class StubCollectorTopologyClient:
+        def read_topology_snapshot(self) -> CollectorTopologySnapshot:
+            return _build_live_topology_snapshot()
+
     monkeypatch.setattr(
         "app_api.services.devices.get_collector_inventory_client",
         lambda: StubCollectorInventoryClient(),
     )
+    monkeypatch.setattr(
+        "app_api.services.topology.get_collector_topology_client",
+        lambda: StubCollectorTopologyClient(),
+    )
     reset_metrics_registry()
     client.get("/api/v1/health")
     client.get("/api/v1/devices")
+    client.get("/api/v1/topology")
     response = client.get("/metrics")
 
     assert response.status_code == 200
@@ -218,8 +305,12 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert "platform_app_api_http_requests_total" in response.text
     assert 'endpoint="/api/v1/health",method="GET",status_class="2xx"' in response.text
     assert 'endpoint="/api/v1/devices",method="GET",status_class="2xx"' in response.text
+    assert 'endpoint="/api/v1/topology",method="GET",status_class="2xx"' in response.text
     assert "platform_app_api_http_request_duration_seconds_count" in response.text
     assert "platform_app_api_http_request_duration_seconds_sum" in response.text
+    assert "platform_app_api_topology_nodes 2" in response.text
+    assert "platform_app_api_topology_links 1" in response.text
+    assert 'data_status="live",sync_status="ok",completeness="partial"' in response.text
 
 
 def test_devices_endpoint_allows_webui_origin_via_cors(monkeypatch) -> None:

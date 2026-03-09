@@ -3,6 +3,10 @@
 from datetime import UTC, datetime
 
 from app_api.config.settings import get_settings
+from app_api.integrations.collector.topology import (
+    CollectorTopologySnapshot,
+    get_collector_topology_client,
+)
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.schemas.topology import (
     TopologyLinkRecord,
@@ -12,65 +16,72 @@ from app_api.schemas.topology import (
 )
 
 
-def _build_topology_snapshot() -> TopologySnapshot:
-    """Build the backend-owned normalized topology snapshot."""
-    return TopologySnapshot(
-        topology_id="platform-observed-topology",
-        topology_name="Platform Observed Topology",
-        nodes=[
-            TopologyNode(
-                node_id="edge-pe-1",
-                display_name="Edge PE 1",
-                role="provider-edge",
-                state="unknown",
-                source="collector_placeholder",
-                device_id="example-nokia-router",
-                attributes={
-                    "vendor": "nokia",
-                    "platform": "sros",
-                    "observation_scope": "inventory_seed_only",
-                },
-            ),
-            TopologyNode(
-                node_id="core-p-placeholder",
-                display_name="Core P Placeholder",
-                role="core",
-                state="unknown",
-                source="platform_placeholder",
-                attributes={
-                    "observation_scope": "topology_scaffold",
-                    "knowledge_state": "partial",
-                },
-            ),
-        ],
-        links=[
-            TopologyLink(
-                link_id="edge-pe-1--core-p-placeholder",
-                source_node_id="edge-pe-1",
-                target_node_id="core-p-placeholder",
-                state="unknown",
-                source="platform_placeholder",
-                attributes={
-                    "relation": "possible_transport_adjacency",
-                    "knowledge_state": "partial",
-                },
-            )
-        ],
-        sync_source="normalized_platform_topology_placeholder",
-        sync_status="unknown",
-        completeness="partial",
-        observed_at=None,
-        notes=[
-            "Topology is intentionally partial in Phase 1.",
-            "Unknown states are explicit until collector and controller inputs mature.",
-        ],
+def _build_topology_snapshot() -> tuple[CollectorTopologySnapshot, TopologySnapshot]:
+    """Build the backend-owned normalized topology snapshot from the collector boundary."""
+    collector_snapshot = get_collector_topology_client().read_topology_snapshot()
+    observed_at = (
+        datetime.fromisoformat(collector_snapshot.observed_at.replace("Z", "+00:00"))
+        if collector_snapshot.observed_at
+        else None
+    )
+
+    if collector_snapshot.status == "collector_unavailable":
+        return collector_snapshot, TopologySnapshot(
+            topology_id="platform-observed-topology",
+            topology_name="Platform Observed Topology",
+            nodes=[],
+            links=[],
+            sync_source="gnmi_collector_topology",
+            sync_status="failed",
+            completeness="unknown",
+            observed_at=None,
+            notes=[
+                "The backend could not load the live topology snapshot from the collector.",
+                "No raw vendor payloads are exposed through the topology API.",
+            ],
+        )
+
+    nodes = [
+        TopologyNode(
+            node_id=node.node_id,
+            display_name=node.display_name,
+            role=node.role,
+            state=node.state,
+            source=node.source,
+            device_id=node.device_id,
+            attributes=node.attributes,
+        )
+        for node in collector_snapshot.nodes
+    ]
+    links = [
+        TopologyLink(
+            link_id=link.link_id,
+            source_node_id=link.source_node_id,
+            target_node_id=link.target_node_id,
+            state=link.state,
+            source=link.source,
+            attributes=link.attributes,
+        )
+        for link in collector_snapshot.links
+    ]
+
+    return collector_snapshot, TopologySnapshot(
+        topology_id=collector_snapshot.topology_id,
+        topology_name=collector_snapshot.topology_name,
+        nodes=nodes,
+        links=links,
+        sync_source=collector_snapshot.sync_source,
+        sync_status=collector_snapshot.sync_status,
+        completeness=collector_snapshot.completeness,
+        observed_at=observed_at,
+        notes=collector_snapshot.notes,
     )
 
 
 def build_topology_response() -> TopologyResponse:
-    """Build the Phase 1 topology response from a normalized backend model."""
+    """Build the topology response from a normalized backend model."""
     settings = get_settings()
-    snapshot = _build_topology_snapshot()
+    collector_snapshot, snapshot = _build_topology_snapshot()
     topology = TopologyRecord(
         topology_id=snapshot.topology_id,
         topology_name=snapshot.topology_name,
@@ -103,15 +114,30 @@ def build_topology_response() -> TopologyResponse:
         observed_at=snapshot.observed_at,
         notes=snapshot.notes,
     )
+    if collector_snapshot.status == "live_normalized_feed":
+        data_status = "live"
+        summary = (
+            "Topology is backed by live read-only Nokia gNMI collection and bounded "
+            "interface-based link inference, with partial knowledge still explicit."
+        )
+    elif collector_snapshot.status == "partial_live_feed":
+        data_status = "degraded"
+        summary = (
+            "Topology is backed by live Nokia gNMI collection, but one or more "
+            "targets or inferred links remain partial or degraded."
+        )
+    else:
+        data_status = "degraded"
+        summary = (
+            "The backend could not load the live collector topology snapshot. "
+            "No raw vendor payloads are exposed through the topology API."
+        )
     return TopologyResponse(
         service="app-api",
         version=settings.app_version,
         phase="phase_1_skeleton",
         generated_at=datetime.now(UTC),
-        data_status="normalized_scaffold",
-        summary=(
-            "Phase 1 topology is now served from a backend-owned normalized read "
-            "model that makes partial and unknown knowledge explicit."
-        ),
+        data_status=data_status,
+        summary=summary,
         topology=topology,
     )

@@ -17,6 +17,12 @@ inventory:
       path: /nokia-state:state/system/version
       cadence: poll
 
+topology:
+  subscriptions:
+    - name: base-router-interfaces
+      path: /nokia-state:state/router[router-name=Base]/interface
+      cadence: poll
+
 targets:
   - name: CPE-A1
     vendor: nokia

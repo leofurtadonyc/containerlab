@@ -20,6 +20,14 @@ class InventorySubscriptionConfig(BaseModel):
     cadence: Literal["poll"] = "poll"
 
 
+class TopologySubscriptionConfig(BaseModel):
+    """Topology-oriented collection path definition."""
+
+    name: str
+    path: str
+    cadence: Literal["poll"] = "poll"
+
+
 class GnmiTargetAuthConfig(BaseModel):
     """Authentication settings for a gNMI target."""
 
@@ -38,14 +46,16 @@ class GnmiTargetConfig(BaseModel):
     auth: GnmiTargetAuthConfig
     insecure: bool = True
     inventory_paths: list[str] = Field(default_factory=list)
+    topology_paths: list[str] = Field(default_factory=list)
 
 
 class CollectorRuntimeConfig(BaseModel):
-    """Collector runtime configuration used by the live inventory path."""
+    """Collector runtime configuration used by the live read-side paths."""
 
     mode: Literal["phase_2_live_inventory"]
     config_path: str
     metrics_port: int
     delivery: CollectorDeliveryConfig
     inventory_subscriptions: list[InventorySubscriptionConfig]
+    topology_subscriptions: list[TopologySubscriptionConfig]
     targets: list[GnmiTargetConfig]

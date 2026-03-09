@@ -3,6 +3,7 @@
 from gnmi_collector.adapters.nokia import NokiaSrosAdapter
 from gnmi_collector.config.runtime import build_runtime_config
 from gnmi_collector.mappings.inventory import map_inventory_record
+from gnmi_collector.metrics.state import record_inventory_summary
 from gnmi_collector.models.inventory import (
     BackendInventoryDeliveryEnvelope,
     InventoryFlowSnapshot,
@@ -57,6 +58,7 @@ def build_inventory_flow_snapshot() -> InventoryFlowSnapshot:
         backend_ready_record_count=delivery.record_count,
         backend_delivery_error_count=0,
     )
+    record_inventory_summary(summary)
     return InventoryFlowSnapshot(
         mode=config.mode,
         config_path=config.config_path,
