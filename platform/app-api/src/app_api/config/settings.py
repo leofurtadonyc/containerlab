@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     api_port: int = 8000
     database_url: str = "postgresql://platform:change_me@postgres:5432/platform"
     gnmi_collector_url: str = "http://gnmi-collector:9804"
+    gnmi_collector_timeout_seconds: int = 30
     odl_url: str = "http://odl:8181"
     prometheus_url: str = "http://prometheus:9090"
 

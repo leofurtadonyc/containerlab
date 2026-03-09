@@ -50,12 +50,13 @@ class CollectorInventoryClient:
     """HTTP client for the normalized collector inventory boundary."""
 
     source_endpoint: str
+    timeout_seconds: int
 
     def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
         """Read the live normalized inventory snapshot from the collector."""
         snapshot_url = f"{self.source_endpoint.rstrip('/')}/inventory/snapshot"
         try:
-            with urlopen(snapshot_url, timeout=5) as response:
+            with urlopen(snapshot_url, timeout=self.timeout_seconds) as response:
                 payload = json.loads(response.read().decode("utf-8"))
         except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
             return CollectorInventorySnapshot(
@@ -91,4 +92,5 @@ def get_collector_inventory_client() -> CollectorInventoryClient:
     settings = get_settings()
     return CollectorInventoryClient(
         source_endpoint=settings.gnmi_collector_url,
+        timeout_seconds=settings.gnmi_collector_timeout_seconds,
     )
