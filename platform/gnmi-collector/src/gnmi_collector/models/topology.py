@@ -95,6 +95,8 @@ class TopologyFlowSummary(BaseModel):
     normalized_link_count: int
     inferred_link_count: int
     single_sided_link_count: int
+    node_state_counts: dict[str, int] = Field(default_factory=dict)
+    link_state_counts: dict[str, int] = Field(default_factory=dict)
     backend_ready_node_count: int
     backend_ready_link_count: int
     backend_delivery_error_count: int

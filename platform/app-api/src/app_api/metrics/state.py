@@ -30,7 +30,7 @@ def observe_http_request(
 def render_prometheus_metrics(
     app_version: str,
     *,
-    topology_metrics: dict[str, str | int] | None = None,
+    topology_metrics: dict[str, object] | None = None,
 ) -> str:
     """Render backend metrics in Prometheus text format."""
     with _lock:
@@ -109,6 +109,34 @@ def render_prometheus_metrics(
                     f'sync_status="{topology_metrics["sync_status"]}",'
                     f'completeness="{topology_metrics["completeness"]}"}} 1'
                 ),
+                (
+                    "# HELP platform_app_api_topology_nodes_by_state "
+                    "Current backend topology node counts by state."
+                ),
+                "# TYPE platform_app_api_topology_nodes_by_state gauge",
+                *[
+                    (
+                        "platform_app_api_topology_nodes_by_state"
+                        f'{{state="{state}"}} {count}'
+                    )
+                    for state, count in sorted(
+                        dict(topology_metrics.get("node_state_counts", {})).items()
+                    )
+                ],
+                (
+                    "# HELP platform_app_api_topology_links_by_state "
+                    "Current backend topology link counts by state."
+                ),
+                "# TYPE platform_app_api_topology_links_by_state gauge",
+                *[
+                    (
+                        "platform_app_api_topology_links_by_state"
+                        f'{{state="{state}"}} {count}'
+                    )
+                    for state, count in sorted(
+                        dict(topology_metrics.get("link_state_counts", {})).items()
+                    )
+                ],
             ]
         )
 

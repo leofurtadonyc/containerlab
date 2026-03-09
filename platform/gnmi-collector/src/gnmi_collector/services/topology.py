@@ -1,5 +1,7 @@
 """Topology-oriented collection flow helpers."""
 
+from collections import Counter
+
 from gnmi_collector.adapters.nokia import NokiaSrosAdapter
 from gnmi_collector.config.runtime import build_runtime_config
 from gnmi_collector.mappings.topology import (
@@ -24,6 +26,8 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
     raw_records = [adapter.collect_topology(target) for target in config.targets]
     normalized_nodes = map_topology_nodes(raw_records)
     normalized_links, single_sided_link_count = map_topology_links(raw_records)
+    node_state_counts = dict(Counter(node.state for node in normalized_nodes))
+    link_state_counts = dict(Counter(link.state for link in normalized_links))
     collection_success_count = sum(
         1 for record in raw_records if record.collection_status == "success"
     )
@@ -85,6 +89,8 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         normalized_link_count=len(normalized_links),
         inferred_link_count=len(normalized_links),
         single_sided_link_count=single_sided_link_count,
+        node_state_counts=node_state_counts,
+        link_state_counts=link_state_counts,
         backend_ready_node_count=delivery.node_count,
         backend_ready_link_count=delivery.link_count,
         backend_delivery_error_count=0,

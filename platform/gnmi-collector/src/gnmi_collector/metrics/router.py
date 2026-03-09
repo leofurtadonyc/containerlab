@@ -153,6 +153,34 @@ def get_metrics() -> Response:
                 f"{topology_summary.single_sided_link_count if topology_summary else 0}"
             ),
             (
+                "# HELP platform_gnmi_collector_topology_nodes_by_state "
+                "Current normalized topology node counts by state."
+            ),
+            "# TYPE platform_gnmi_collector_topology_nodes_by_state gauge",
+            *[
+                (
+                    "platform_gnmi_collector_topology_nodes_by_state"
+                    f'{{state="{state}"}} {count}'
+                )
+                for state, count in sorted(
+                    (topology_summary.node_state_counts if topology_summary else {}).items()
+                )
+            ],
+            (
+                "# HELP platform_gnmi_collector_topology_links_by_state "
+                "Current normalized topology link counts by state."
+            ),
+            "# TYPE platform_gnmi_collector_topology_links_by_state gauge",
+            *[
+                (
+                    "platform_gnmi_collector_topology_links_by_state"
+                    f'{{state="{state}"}} {count}'
+                )
+                for state, count in sorted(
+                    (topology_summary.link_state_counts if topology_summary else {}).items()
+                )
+            ],
+            (
                 "# HELP platform_gnmi_collector_topology_backend_ready_nodes "
                 "Normalized topology nodes prepared for backend delivery."
             ),

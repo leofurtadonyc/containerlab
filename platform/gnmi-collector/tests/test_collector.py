@@ -123,6 +123,8 @@ def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
 ) -> None:
     monkeypatch.setattr("gnmi_collector.adapters.nokia.sros.gNMIclient", FakeGnmiClient)
     expected_target_count = len(_targets())
+    client.get("/inventory/snapshot")
+    client.get("/topology/snapshot")
 
     response = client.get("/metrics")
 
@@ -145,6 +147,8 @@ def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
     )
     assert "platform_gnmi_collector_topology_normalized_nodes 34" in response.text
     assert "platform_gnmi_collector_topology_normalized_links 17" in response.text
+    assert 'platform_gnmi_collector_topology_nodes_by_state{state="up"} 34' in response.text
+    assert 'platform_gnmi_collector_topology_links_by_state{state="up"} 17' in response.text
 
 
 def test_inventory_snapshot_endpoint_returns_normalized_live_records(monkeypatch) -> None:
@@ -243,6 +247,8 @@ def test_topology_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> N
     assert snapshot.summary.normalized_node_count == expected_target_count
     assert snapshot.summary.normalized_link_count == expected_target_count // 2
     assert snapshot.summary.single_sided_link_count == 0
+    assert snapshot.summary.node_state_counts == {"up": expected_target_count}
+    assert snapshot.summary.link_state_counts == {"up": expected_target_count // 2}
     assert snapshot.summary.backend_ready_node_count == expected_target_count
     assert snapshot.summary.backend_ready_link_count == expected_target_count // 2
     assert snapshot.delivery.destination_service == "app-api"

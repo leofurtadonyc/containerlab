@@ -311,6 +311,8 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert "platform_app_api_topology_nodes 2" in response.text
     assert "platform_app_api_topology_links 1" in response.text
     assert 'data_status="live",sync_status="ok",completeness="partial"' in response.text
+    assert 'platform_app_api_topology_nodes_by_state{state="up"} 2' in response.text
+    assert 'platform_app_api_topology_links_by_state{state="up"} 1' in response.text
 
 
 def test_devices_endpoint_allows_webui_origin_via_cors(monkeypatch) -> None:
