@@ -5,12 +5,66 @@ import { StatusPill } from "../../components/status-pill";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
 import { usePoliciesQuery } from "./api";
 
+function buildFreshnessSummary(observedAt: string | null, generatedAt: string) {
+  if (!observedAt) {
+    return {
+      label: "Unknown",
+      detail: "The policy response does not currently include an observed timestamp.",
+    };
+  }
+
+  const observedDate = new Date(observedAt);
+  const generatedDate = new Date(generatedAt);
+
+  if (Number.isNaN(observedDate.getTime()) || Number.isNaN(generatedDate.getTime())) {
+    return {
+      label: "Unclear",
+      detail: "The policy timestamps could not be interpreted in the current browser.",
+    };
+  }
+
+  const ageMinutes = Math.max(0, Math.round((generatedDate.getTime() - observedDate.getTime()) / 60000));
+  if (ageMinutes <= 5) {
+    return {
+      label: "Fresh",
+      detail: `Observed ${ageMinutes} minute${ageMinutes === 1 ? "" : "s"} before the API response was generated.`,
+    };
+  }
+  if (ageMinutes <= 30) {
+    return {
+      label: "Aging",
+      detail: `Observed ${ageMinutes} minute${ageMinutes === 1 ? "" : "s"} before the API response was generated.`,
+    };
+  }
+  return {
+    label: "Stale",
+    detail: `Observed ${ageMinutes} minute${ageMinutes === 1 ? "" : "s"} before the API response was generated.`,
+  };
+}
+
+function describeSupportState(value: string): string {
+  switch (value) {
+    case "supported":
+      return "The bounded platform path can interpret this record shape without known support gaps.";
+    case "partially_supported":
+      return "The platform can expose useful evidence, but some policy semantics remain intentionally incomplete.";
+    case "unsupported":
+      return "The current bounded platform path does not support this policy record shape.";
+    case "not_implemented_in_platform":
+      return "The platform recognizes the state category, but this bounded read-only slice does not model it yet.";
+    default:
+      return "The current bounded slice cannot yet determine complete support semantics for this record.";
+  }
+}
+
 export function PoliciesView() {
   const { data, error, isLoading, reload } = usePoliciesQuery();
   const [healthFilter, setHealthFilter] = useState("all");
   const [supportFilter, setSupportFilter] = useState("all");
   const [observedFilter, setObservedFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [sourceRoleFilter, setSourceRoleFilter] = useState("all");
+  const [candidatePathFilter, setCandidatePathFilter] = useState("all");
   const [sortBy, setSortBy] = useState("health_then_name");
   const [searchValue, setSearchValue] = useState("");
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
@@ -19,7 +73,15 @@ export function PoliciesView() {
   const observedStateCounts = countBy(items, (policy) => policy.observed_state);
   const supportCounts = countBy(items, (policy) => policy.support_state);
   const policyTypeCounts = countBy(items, (policy) => policy.policy_type);
+  const sourceRoleCounts = countBy(items, (policy) => policy.source_target_role ?? "unknown");
+  const candidatePathPostureCounts = countBy(items, (policy) =>
+    policy.candidate_paths.length > 0 ? "with_candidate_paths" : "without_candidate_paths",
+  );
   const hasObservedPolicies = items.length > 0;
+  const freshness = useMemo(
+    () => buildFreshnessSummary(data?.observed_at ?? null, data?.generated_at ?? ""),
+    [data?.generated_at, data?.observed_at],
+  );
   const filteredPolicies = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
 
@@ -28,6 +90,13 @@ export function PoliciesView() {
       const matchesSupport = supportFilter === "all" || policy.support_state === supportFilter;
       const matchesObserved = observedFilter === "all" || policy.observed_state === observedFilter;
       const matchesType = typeFilter === "all" || policy.policy_type === typeFilter;
+      const matchesSourceRole =
+        sourceRoleFilter === "all" || (policy.source_target_role ?? "unknown") === sourceRoleFilter;
+      const matchesCandidatePaths =
+        candidatePathFilter === "all" ||
+        (candidatePathFilter === "with_candidate_paths"
+          ? policy.candidate_paths.length > 0
+          : policy.candidate_paths.length === 0);
       const matchesSearch =
         normalizedSearch.length === 0 ||
         [
@@ -48,9 +117,26 @@ export function PoliciesView() {
           .toLowerCase()
           .includes(normalizedSearch);
 
-      return matchesHealth && matchesSupport && matchesObserved && matchesType && matchesSearch;
+      return (
+        matchesHealth &&
+        matchesSupport &&
+        matchesObserved &&
+        matchesType &&
+        matchesSourceRole &&
+        matchesCandidatePaths &&
+        matchesSearch
+      );
     });
-  }, [items, healthFilter, observedFilter, searchValue, supportFilter, typeFilter]);
+  }, [
+    items,
+    candidatePathFilter,
+    healthFilter,
+    observedFilter,
+    searchValue,
+    sourceRoleFilter,
+    supportFilter,
+    typeFilter,
+  ]);
   const sortedPolicies = useMemo(() => {
     const healthOrder = { healthy: 0, degraded: 1, down: 2, unknown: 3 };
     const supportOrder = {
@@ -70,6 +156,11 @@ export function PoliciesView() {
           return left.endpoint.localeCompare(right.endpoint);
         case "source_target":
           return left.source_target.localeCompare(right.source_target);
+        case "candidate_paths_then_name":
+          return (
+            right.candidate_paths.length - left.candidate_paths.length ||
+            left.policy_name.localeCompare(right.policy_name)
+          );
         case "support_then_name":
           return (
             (supportOrder[left.support_state] ?? 99) - (supportOrder[right.support_state] ?? 99) ||
@@ -194,7 +285,23 @@ export function PoliciesView() {
                 : "The bounded live slice is healthy, but it currently contains no SR policy records."}
           </p>
         </article>
+        <article className="summary-card">
+          <p className="summary-label">Freshness</p>
+          <strong>{freshness.label}</strong>
+          <p>{freshness.detail}</p>
+        </article>
       </div>
+
+      {data.data_status === "degraded" ? (
+        <div className="callout">
+          <strong>Degraded live policy visibility remains explicit</strong>
+          <p>
+            The current policy response is available, but one or more targets returned partial or
+            degraded observations. The page continues to surface that bounded state rather than
+            hiding it behind optimistic summaries.
+          </p>
+        </div>
+      ) : null}
 
       {evidenceGapCount > 0 ? (
         <div className="callout">
@@ -231,6 +338,10 @@ export function PoliciesView() {
             <li>
               <span>Empty reason</span>
               <strong>{formatLabel(data.empty_reason)}</strong>
+            </li>
+            <li>
+              <span>Freshness posture</span>
+              <strong>{freshness.label}</strong>
             </li>
           </ul>
         </article>
@@ -287,6 +398,31 @@ export function PoliciesView() {
           </ul>
         </article>
         <article className="detail-card">
+          <h3>Observation Footprint</h3>
+          <ul className="compact-list">
+            <li>
+              <span>Source role: PE</span>
+              <strong>{sourceRoleCounts.pe ?? 0}</strong>
+            </li>
+            <li>
+              <span>Source role: P</span>
+              <strong>{sourceRoleCounts.p ?? 0}</strong>
+            </li>
+            <li>
+              <span>Unknown role</span>
+              <strong>{sourceRoleCounts.unknown ?? 0}</strong>
+            </li>
+            <li>
+              <span>With candidate paths</span>
+              <strong>{candidatePathPostureCounts.with_candidate_paths ?? 0}</strong>
+            </li>
+            <li>
+              <span>Without candidate paths</span>
+              <strong>{candidatePathPostureCounts.without_candidate_paths ?? 0}</strong>
+            </li>
+          </ul>
+        </article>
+        <article className="detail-card">
           <h3>Type And Support Mix</h3>
           <ul className="compact-list">
             <li>
@@ -304,6 +440,27 @@ export function PoliciesView() {
             <li>
               <span>Unsupported</span>
               <strong>{supportCounts.unsupported ?? 0}</strong>
+            </li>
+          </ul>
+        </article>
+        <article className="detail-card">
+          <h3>Support Semantics</h3>
+          <p>
+            Support states describe how much of the observed policy record the current bounded
+            platform path can interpret, not whether the network itself is healthy or complete.
+          </p>
+          <ul className="notes-list">
+            <li>
+              <strong>Supported:</strong> the current bounded slice can interpret the record
+              shape without known support gaps.
+            </li>
+            <li>
+              <strong>Partially supported:</strong> the page has useful evidence, but some
+              policy semantics remain intentionally incomplete.
+            </li>
+            <li>
+              <strong>Unknown or not implemented:</strong> the platform still makes those gaps
+              explicit instead of pretending the record is fully understood.
             </li>
           </ul>
         </article>
@@ -379,6 +536,29 @@ export function PoliciesView() {
           </select>
         </label>
         <label className="field-group">
+          <span>Source role</span>
+          <select
+            value={sourceRoleFilter}
+            onChange={(event) => setSourceRoleFilter(event.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="pe">PE</option>
+            <option value="p">P</option>
+            <option value="unknown">Unknown</option>
+          </select>
+        </label>
+        <label className="field-group">
+          <span>Candidate paths</span>
+          <select
+            value={candidatePathFilter}
+            onChange={(event) => setCandidatePathFilter(event.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="with_candidate_paths">With candidate paths</option>
+            <option value="without_candidate_paths">Without candidate paths</option>
+          </select>
+        </label>
+        <label className="field-group">
           <span>Sort</span>
           <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
             <option value="health_then_name">Health then name</option>
@@ -387,6 +567,7 @@ export function PoliciesView() {
             <option value="name">Name</option>
             <option value="endpoint">Endpoint</option>
             <option value="source_target">Source target</option>
+            <option value="candidate_paths_then_name">Candidate paths then name</option>
           </select>
         </label>
       </div>
@@ -485,47 +666,83 @@ export function PoliciesView() {
                   <span>Role: {selectedPolicy.source_target_role ?? "unknown"}</span>
                 </div>
                 <div className="content-grid">
-                  <div>
+                  <article>
                     <p className="summary-label">Operational Semantics</p>
-                    <ul className="compact-list">
-                      <li>
+                    <div className="key-value-list">
+                      <div className="key-value-row">
                         <span>Intent state</span>
-                        <StatusPill value={selectedPolicy.intent_state} />
-                      </li>
-                      <li>
+                        <strong>
+                          <StatusPill value={selectedPolicy.intent_state} />
+                        </strong>
+                      </div>
+                      <div className="key-value-row">
                         <span>Observed state</span>
-                        <StatusPill value={selectedPolicy.observed_state} />
-                      </li>
-                      <li>
+                        <strong>
+                          <StatusPill value={selectedPolicy.observed_state} />
+                        </strong>
+                      </div>
+                      <div className="key-value-row">
                         <span>Support state</span>
-                        <StatusPill value={selectedPolicy.support_state} />
-                      </li>
-                      <li>
+                        <strong>
+                          <StatusPill value={selectedPolicy.support_state} />
+                        </strong>
+                      </div>
+                      <div className="key-value-row">
                         <span>Health state</span>
-                        <StatusPill value={selectedPolicy.health_state} />
-                      </li>
-                    </ul>
-                  </div>
-                  <div>
+                        <strong>
+                          <StatusPill value={selectedPolicy.health_state} />
+                        </strong>
+                      </div>
+                    </div>
+                    <p className="footnote">{describeSupportState(selectedPolicy.support_state)}</p>
+                  </article>
+                  <article>
                     <p className="summary-label">Identity And Scope</p>
-                    <ul className="compact-list">
-                      <li>
+                    <div className="key-value-list">
+                      <div className="key-value-row">
                         <span>Policy ID</span>
                         <strong>{selectedPolicy.policy_id}</strong>
-                      </li>
-                      <li>
+                      </div>
+                      <div className="key-value-row">
                         <span>Headend</span>
                         <strong>{selectedPolicy.headend}</strong>
-                      </li>
-                      <li>
+                      </div>
+                      <div className="key-value-row">
                         <span>Endpoint</span>
                         <strong>{selectedPolicy.endpoint}</strong>
-                      </li>
-                      <li>
+                      </div>
+                      <div className="key-value-row">
                         <span>Color</span>
                         <strong>{selectedPolicy.color}</strong>
-                      </li>
-                    </ul>
+                      </div>
+                      <div className="key-value-row">
+                        <span>Source target</span>
+                        <strong>{selectedPolicy.source_target}</strong>
+                      </div>
+                      <div className="key-value-row">
+                        <span>Source role</span>
+                        <strong>{selectedPolicy.source_target_role ?? "unknown"}</strong>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+                <p className="summary-label">Snapshot Context</p>
+                <div className="key-value-list">
+                  <div className="key-value-row">
+                    <span>Observed timestamp</span>
+                    <strong>{formatDateTime(data.observed_at)}</strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>Generated timestamp</span>
+                    <strong>{formatDateTime(data.generated_at)}</strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>Freshness posture</span>
+                    <strong>{freshness.label}</strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>Detail mode</span>
+                    <strong>{formatLabel(data.detail_mode)}</strong>
                   </div>
                 </div>
                 <p className="summary-label">Candidate Path Evidence</p>
@@ -537,8 +754,7 @@ export function PoliciesView() {
                   <ul className="notes-list">
                     {selectedPolicy.candidate_paths.map((candidatePath) => (
                       <li key={`${selectedPolicy.policy_id}-${candidatePath.name}`}>
-                        <strong>{candidatePath.name}</strong> -{" "}
-                        {formatLabel(candidatePath.path_state)}
+                        <strong>{candidatePath.name}</strong> - {formatLabel(candidatePath.path_state)}
                         {candidatePath.preference === null ? "" : `, pref ${candidatePath.preference}`}
                         {candidatePath.notes.length > 0
                           ? `, ${candidatePath.notes.join(", ")}`
