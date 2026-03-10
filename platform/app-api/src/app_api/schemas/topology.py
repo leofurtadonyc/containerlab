@@ -45,9 +45,34 @@ class TopologyRecord(BaseModel):
     notes: list[str]
 
 
+class TopologyComparisonSummary(BaseModel):
+    """Bounded current-versus-persisted topology comparison summary."""
+
+    status: Literal["unavailable", "live_vs_latest_persisted_ready"]
+    summary: str
+    comparison_persisted_at: datetime | None = None
+    current_observed_at: datetime | None = None
+    current_node_count: int
+    persisted_node_count: int
+    current_link_count: int
+    persisted_link_count: int
+    node_count_delta: int
+    link_count_delta: int
+    added_node_count: int
+    removed_node_count: int
+    changed_node_count: int
+    added_link_count: int
+    removed_link_count: int
+    changed_link_count: int
+    notes: list[str]
+
+
 class TopologyResponse(ApiResponseMetadata):
     """Read-only topology response."""
 
     data_status: Literal["normalized_scaffold", "live", "degraded"]
+    serving_mode: Literal["live_collector", "persisted_fallback", "empty_scaffold"]
     summary: str
+    served_persisted_at: datetime | None = None
+    comparison_to_latest_persisted: TopologyComparisonSummary
     topology: TopologyRecord

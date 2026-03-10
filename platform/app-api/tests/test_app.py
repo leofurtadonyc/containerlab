@@ -731,6 +731,8 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
 
     assert response.headers["X-Request-ID"] == "topology-test"
     assert payload["data_status"] == "live"
+    assert payload["serving_mode"] == "live_collector"
+    assert payload["served_persisted_at"] is None
     assert payload["topology"]["topology_id"] == "platform-observed-topology"
     assert payload["topology"]["topology_name"] == "Platform Observed Topology"
     assert payload["topology"]["sync_source"] == "gnmi_collector_topology_interface_inference"
@@ -746,6 +748,7 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert payload["topology"]["links"][0]["source"] == "gnmi"
     assert payload["topology"]["links"][0]["attributes"]["knowledge_state"] == "partial"
     assert "bounded interface-based link inference" in payload["summary"]
+    assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
     assert "Topology links are inferred from live router interface names" in payload["topology"]["notes"][0]
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
@@ -818,10 +821,44 @@ def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None
     assert response.status_code == 200
     payload = response.json()
     assert payload["data_status"] == "degraded"
+    assert payload["serving_mode"] == "persisted_fallback"
     assert payload["topology"]["sync_source"] == "persisted_topology_snapshot"
     assert len(payload["topology"]["nodes"]) == 1
     assert len(payload["topology"]["links"]) == 1
+    assert datetime.fromisoformat(
+        payload["served_persisted_at"].replace("Z", "+00:00")
+    ) == datetime.fromisoformat("2026-03-10T00:00:00+00:00")
+    assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
     assert "latest persisted normalized topology snapshot" in payload["summary"]
+
+
+def test_topology_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorTopologyClient:
+        def read_topology_snapshot(self) -> CollectorTopologySnapshot:
+            return _build_live_topology_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.topology.get_collector_topology_client",
+        lambda: StubCollectorTopologyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.topology.load_latest_topology_snapshot",
+        _build_persisted_topology_snapshot,
+    )
+
+    response = client.get("/api/v1/topology")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["serving_mode"] == "live_collector"
+    assert payload["comparison_to_latest_persisted"]["status"] == "live_vs_latest_persisted_ready"
+    assert payload["comparison_to_latest_persisted"]["persisted_node_count"] == 1
+    assert payload["comparison_to_latest_persisted"]["current_node_count"] == 2
+    assert payload["comparison_to_latest_persisted"]["added_node_count"] == 1
+    assert payload["comparison_to_latest_persisted"]["added_link_count"] == 1
+    assert payload["comparison_to_latest_persisted"]["removed_link_count"] == 1
 
 
 def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:

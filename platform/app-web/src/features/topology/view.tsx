@@ -24,6 +24,63 @@ function getLinkEvidencePosture(link: TopologyLinkRecord): string {
   return "multi_sided";
 }
 
+function formatSignedDelta(value: number): string {
+  if (value > 0) {
+    return `+${value}`;
+  }
+  return `${value}`;
+}
+
+function describeTimeGap(start: string | null, end: string | null): string {
+  if (!start || !end) {
+    return "Not available";
+  }
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return "Timestamp could not be interpreted";
+  }
+
+  const gapSeconds = Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / 1000));
+  if (gapSeconds < 60) {
+    return `${gapSeconds}s`;
+  }
+
+  const gapMinutes = Math.round(gapSeconds / 60);
+  return `${gapMinutes}m`;
+}
+
+function describeNodeEvidence(node: TopologyNodeRecord): string {
+  const hasLoopback =
+    node.attributes.loopback_ipv4 !== undefined && node.attributes.loopback_ipv4 !== "unknown";
+  if (node.device_id && hasLoopback) {
+    return "Linked device plus loopback evidence";
+  }
+  if (node.device_id) {
+    return "Linked device evidence";
+  }
+  if (hasLoopback) {
+    return "Loopback-only evidence";
+  }
+  return "Limited node evidence";
+}
+
+function describeLinkEvidence(link: TopologyLinkRecord): string {
+  const knowledgeState = getLinkKnowledgeState(link);
+  const posture = getLinkEvidencePosture(link);
+  if (knowledgeState === "partial" && posture === "single_sided") {
+    return "Partial single-sided inference";
+  }
+  if (knowledgeState === "partial" && posture === "multi_sided") {
+    return "Partial multi-sided inference";
+  }
+  if (knowledgeState === "unknown") {
+    return "Knowledge remains unknown";
+  }
+  return "Bounded inferred link evidence";
+}
+
 function buildFreshnessSummary(observedAt: string | null, generatedAt: string) {
   if (!observedAt) {
     return {
@@ -252,6 +309,8 @@ export function TopologyView() {
     );
   }
 
+  const comparison = data.comparison_to_latest_persisted;
+
   return (
     <section>
       <div className="section-header">
@@ -267,9 +326,11 @@ export function TopologyView() {
 
       <div className="metadata-row">
         <span>Data status: {data.data_status}</span>
+        <span>Serving mode: {formatLabel(data.serving_mode)}</span>
         <span>Sync source: {topology.sync_source}</span>
         <span>Sync status: {topology.sync_status}</span>
         <span>Observed: {formatDateTime(topology.observed_at)}</span>
+        <span>Served persisted at: {formatDateTime(data.served_persisted_at)}</span>
         <span>Generated: {formatDateTime(data.generated_at)}</span>
       </div>
 
@@ -288,6 +349,22 @@ export function TopologyView() {
           <p className="summary-label">Freshness</p>
           <strong>{freshness.label}</strong>
           <p>{freshness.detail}</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Serving Mode</p>
+          <strong>{formatLabel(data.serving_mode)}</strong>
+          <p>
+            {data.serving_mode === "live_collector"
+              ? "Current topology is being served from the live collector-backed normalized read path."
+              : data.serving_mode === "persisted_fallback"
+                ? "Current topology is being served from the latest persisted normalized fallback snapshot."
+                : "No live or persisted topology snapshot could be loaded beyond the empty scaffold."}
+          </p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Comparison Status</p>
+          <strong>{formatLabel(comparison.status)}</strong>
+          <p>{comparison.summary}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Degraded Links</p>
@@ -327,6 +404,48 @@ export function TopologyView() {
               <span>Freshness posture</span>
               <strong>{freshness.label}</strong>
             </li>
+            <li>
+              <span>Serving mode</span>
+              <strong>{formatLabel(data.serving_mode)}</strong>
+            </li>
+            <li>
+              <span>Observed to generated gap</span>
+              <strong>{describeTimeGap(topology.observed_at, data.generated_at)}</strong>
+            </li>
+          </ul>
+        </article>
+        <article className="detail-card">
+          <h3>Current vs Latest Persisted</h3>
+          <p>{comparison.summary}</p>
+          <ul className="compact-list">
+            <li>
+              <span>Comparison status</span>
+              <strong>{formatLabel(comparison.status)}</strong>
+            </li>
+            <li>
+              <span>Compared persisted snapshot</span>
+              <strong>{formatDateTime(comparison.comparison_persisted_at)}</strong>
+            </li>
+            <li>
+              <span>Node delta</span>
+              <strong>{formatSignedDelta(comparison.node_count_delta)}</strong>
+            </li>
+            <li>
+              <span>Link delta</span>
+              <strong>{formatSignedDelta(comparison.link_count_delta)}</strong>
+            </li>
+            <li>
+              <span>Added / removed nodes</span>
+              <strong>
+                {comparison.added_node_count} / {comparison.removed_node_count}
+              </strong>
+            </li>
+            <li>
+              <span>Added / removed links</span>
+              <strong>
+                {comparison.added_link_count} / {comparison.removed_link_count}
+              </strong>
+            </li>
           </ul>
         </article>
         <article className="detail-card">
@@ -363,6 +482,14 @@ export function TopologyView() {
               <span>Links degraded</span>
               <strong>{linkCounts.degraded ?? 0}</strong>
             </li>
+            <li>
+              <span>Changed nodes vs persisted</span>
+              <strong>{comparison.changed_node_count}</strong>
+            </li>
+            <li>
+              <span>Changed links vs persisted</span>
+              <strong>{comparison.changed_link_count}</strong>
+            </li>
           </ul>
         </article>
         <article className="detail-card">
@@ -393,6 +520,16 @@ export function TopologyView() {
           <strong>Current limits</strong>
           <ul className="notes-list">
             {topology.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {comparison.notes.length > 0 ? (
+        <div className="callout">
+          <strong>Comparison limits</strong>
+          <ul className="notes-list">
+            {comparison.notes.map((note) => (
               <li key={note}>{note}</li>
             ))}
           </ul>
@@ -534,6 +671,10 @@ export function TopologyView() {
                   <div className="key-value-row">
                     <span>Platform hint</span>
                     <strong>{selectedNode.attributes.platform_hint ?? "Unknown"}</strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>Evidence posture</span>
+                    <strong>{describeNodeEvidence(selectedNode)}</strong>
                   </div>
                 </div>
                 <p className="summary-label">Node Evidence</p>
@@ -715,6 +856,10 @@ export function TopologyView() {
                     <strong>
                       {selectedLink.attributes.inference_method ?? "No inference method recorded"}
                     </strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>Evidence interpretation</span>
+                    <strong>{describeLinkEvidence(selectedLink)}</strong>
                   </div>
                 </div>
                 <p className="summary-label">Link Evidence</p>

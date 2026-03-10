@@ -90,9 +90,32 @@ export interface TopologyRecord {
   notes: string[];
 }
 
+export interface TopologyComparisonSummary {
+  status: "unavailable" | "live_vs_latest_persisted_ready";
+  summary: string;
+  comparison_persisted_at: string | null;
+  current_observed_at: string | null;
+  current_node_count: number;
+  persisted_node_count: number;
+  current_link_count: number;
+  persisted_link_count: number;
+  node_count_delta: number;
+  link_count_delta: number;
+  added_node_count: number;
+  removed_node_count: number;
+  changed_node_count: number;
+  added_link_count: number;
+  removed_link_count: number;
+  changed_link_count: number;
+  notes: string[];
+}
+
 export interface TopologyResponse extends ApiResponseMetadata {
   data_status: "normalized_scaffold" | "live" | "degraded";
+  serving_mode: "live_collector" | "persisted_fallback" | "empty_scaffold";
   summary: string;
+  served_persisted_at: string | null;
+  comparison_to_latest_persisted: TopologyComparisonSummary;
   topology: TopologyRecord;
 }
 
