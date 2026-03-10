@@ -14,7 +14,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## SR Policy Observability Overview\nThis dashboard summarizes the current bounded SR policy slice exposed by the platform. It focuses on real Prometheus-backed evidence: collector policy ingestion health, backend policy snapshot readiness, live-empty policy context, bounded static-policy detail when present, and API demand around the policy view.\n\nCurrent limits:\n- The live policy slice still starts with Nokia SR policy counters and only adds bounded static-policy observations where that state is actually exposed.\n- A zero-policy view can still be healthy; live-empty state is explicit and should not be confused with a placeholder response.\n- Observed policy counts and detailed policy record counts are intentionally separated because the bounded read path cannot yet derive per-policy detail for every observed type.\n- Policy persistence and policy-history metrics do not yet exist, so those panels remain intentionally out of scope.\n- Grafana remains observability-only. Policy exploration and future action flows stay in the WebUI and backend.",
+        "content": "## SR Policy Observability Overview\nThis dashboard summarizes the current bounded SR policy slice exposed by the platform. It focuses on real Prometheus-backed evidence: collector policy ingestion health, backend policy snapshot readiness, live-empty policy context, bounded static-policy detail when present, persisted policy sync evidence, and API demand around the policy view.\n\nCurrent limits:\n- The live policy slice still starts with Nokia SR policy counters and only adds bounded static-policy observations where that state is actually exposed.\n- A zero-policy view can still be healthy; live-empty state is explicit and should not be confused with a placeholder response.\n- Observed policy counts and detailed policy record counts are intentionally separated because the bounded read path cannot yet derive per-policy detail for every observed type.\n- Persisted policy sync evidence now exists, but richer per-policy validation history and drift history still do not.\n- Grafana remains observability-only. Policy exploration and future action flows stay in the WebUI and backend.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -650,6 +650,145 @@
         "x": 0,
         "y": 29
       },
+      "id": 19,
+      "panels": [],
+      "title": "Persisted Policy Sync Evidence",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 30
+      },
+      "id": 20,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"policy\"}, 0)",
+          "refId": "A"
+        }
+      ],
+      "title": "Policy Sync Age",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 8,
+        "y": 30
+      },
+      "id": 21,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_sync_runs_by_family{model_family=\"policy\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "Policy Sync Runs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 30
+      },
+      "id": 22,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_sync_runs_by_family_and_result{model_family=\"policy\"}",
+          "legendFormat": "{{result}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Persisted Policy Sync Results",
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
       "id": 17,
       "panels": [],
       "title": "Current Limits And Honest Placeholders",
@@ -660,11 +799,11 @@
         "h": 4,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 36
       },
       "id": 18,
       "options": {
-        "content": "### Policy History Status\nThe current policy path is live but transient.\n\nWhat this means right now:\n- policy counts and collection health are real and useful\n- bounded static-policy detail can appear when present, but detail coverage can still be lower than the observed policy count\n- a healthy live-empty policy view is expected when no SR policies are currently observed\n- persisted policy sync history, richer policy drift evidence, and per-policy validation history do not yet exist, so they are intentionally not faked in Grafana",
+        "content": "### Policy History Status\nThe current policy path now has bounded persisted sync evidence, but it is still not a full policy history system.\n\nWhat this means right now:\n- policy counts and collection health are real and useful\n- bounded static-policy detail can appear when present, but detail coverage can still be lower than the observed policy count\n- a healthy live-empty policy view is expected when no SR policies are currently observed\n- persisted policy sync age, counts, and result posture are now visible\n- richer policy drift evidence and per-policy validation history still do not yet exist, so they remain intentionally unfaked in Grafana",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -690,5 +829,5 @@
   "timezone": "browser",
   "title": "SR Policy Overview",
   "uid": "sr-policy-overview",
-  "version": 4
+  "version": 5
 }

@@ -15,7 +15,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## Platform Observability Overview\nThis dashboard follows the current read-only platform boundary: Prometheus scrape health, backend API responsiveness, collector-backed snapshot signals, and persisted sync-history evidence derived from bounded inventory and topology sync runs.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- Inventory and topology sync history now surfaces through persisted sync-run metrics.\n- Policy remains a live transient read-side slice, so policy history is intentionally not shown as persisted activity here.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels.",
+        "content": "## Platform Observability Overview\nThis dashboard follows the current read-only platform boundary: Prometheus scrape health, backend API responsiveness, collector-backed snapshot signals, and persisted sync-history evidence derived from bounded inventory, topology, and policy sync runs.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- Inventory, topology, and policy sync history now surface through persisted sync-run metrics.\n- Policy operational truth remains intentionally partial even though bounded policy sync evidence now exists.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -558,6 +558,132 @@
       },
       "fieldConfig": {
         "defaults": {
+          "min": 0,
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 25
+      },
+      "id": 24,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"policy\"}, 0)",
+          "refId": "A"
+        }
+      ],
+      "title": "Policy Sync Age",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 25
+      },
+      "id": 25,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_sync_runs_by_family{model_family=\"policy\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "Policy Sync Runs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 25
+      },
+      "id": 26,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_sync_runs_by_family_and_result{model_family=\"policy\"}",
+          "legendFormat": "{{result}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Persisted Policy Sync Results",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
           "min": 0
         },
         "overrides": []
@@ -566,7 +692,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 25
+        "y": 29
       },
       "id": 14,
       "options": {
@@ -607,7 +733,7 @@
         "h": 8,
         "w": 16,
         "x": 8,
-        "y": 25
+        "y": 29
       },
       "id": 15,
       "options": {
@@ -637,7 +763,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 33
+        "y": 37
       },
       "id": 16,
       "panels": [],
@@ -659,7 +785,7 @@
         "h": 5,
         "w": 6,
         "x": 0,
-        "y": 34
+        "y": 38
       },
       "id": 17,
       "options": {
@@ -701,7 +827,7 @@
         "h": 5,
         "w": 6,
         "x": 6,
-        "y": 34
+        "y": 38
       },
       "id": 18,
       "options": {
@@ -743,7 +869,7 @@
         "h": 5,
         "w": 6,
         "x": 12,
-        "y": 34
+        "y": 38
       },
       "id": 19,
       "options": {
@@ -785,7 +911,7 @@
         "h": 5,
         "w": 6,
         "x": 18,
-        "y": 34
+        "y": 38
       },
       "id": 20,
       "options": {
@@ -827,7 +953,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 39
+        "y": 43
       },
       "id": 21,
       "options": {
@@ -868,7 +994,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 39
+        "y": 43
       },
       "id": 22,
       "options": {
@@ -909,7 +1035,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 39
+        "y": 43
       },
       "id": 23,
       "options": {
@@ -972,5 +1098,5 @@
   "timezone": "browser",
   "title": "Platform Overview",
   "uid": "platform-overview",
-  "version": 3
+  "version": 4
 }

@@ -5,10 +5,32 @@ import { StatusPill } from "../../components/status-pill";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
 import { useAuditHistoryQuery } from "./api";
 
+function describeRecency(value: string, generatedAt: string): string {
+  const occurredDate = new Date(value);
+  const generatedDate = new Date(generatedAt);
+  if (Number.isNaN(occurredDate.getTime()) || Number.isNaN(generatedDate.getTime())) {
+    return "Timestamp could not be interpreted";
+  }
+
+  const ageMinutes = Math.max(
+    0,
+    Math.round((generatedDate.getTime() - occurredDate.getTime()) / 60000),
+  );
+  if (ageMinutes <= 5) {
+    return `Recent (${ageMinutes}m old)`;
+  }
+  if (ageMinutes <= 30) {
+    return `Aging (${ageMinutes}m old)`;
+  }
+  return `Stale (${ageMinutes}m old)`;
+}
+
 export function AuditView() {
   const { data, error, isLoading, reload } = useAuditHistoryQuery();
   const [searchValue, setSearchValue] = useState("");
   const [resultFilter, setResultFilter] = useState("all");
+  const [scopeFilter, setScopeFilter] = useState("all");
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const items = data?.items ?? [];
   const resultCounts = countBy(items, (item) => item.result);
   const scopeCounts = countBy(items, (item) => item.target_scope);
@@ -17,6 +39,7 @@ export function AuditView() {
 
     return items.filter((item) => {
       const matchesResult = resultFilter === "all" || item.result === resultFilter;
+      const matchesScope = scopeFilter === "all" || item.target_scope === scopeFilter;
       const matchesSearch =
         normalizedSearch.length === 0 ||
         [
@@ -30,9 +53,14 @@ export function AuditView() {
           .toLowerCase()
           .includes(normalizedSearch);
 
-      return matchesResult && matchesSearch;
+      return matchesResult && matchesScope && matchesSearch;
     });
-  }, [items, searchValue, resultFilter]);
+  }, [items, resultFilter, scopeFilter, searchValue]);
+  const latestOccurredAt = items[0]?.occurred_at ?? null;
+  const selectedEvent =
+    filteredItems.find((item) => item.event_id === selectedEventId) ??
+    filteredItems[0] ??
+    null;
 
   if (isLoading) {
     return (
@@ -107,6 +135,13 @@ export function AuditView() {
           <strong>{Object.keys(scopeCounts).length}</strong>
           <p>Distinct platform target scopes represented in current audit visibility.</p>
         </article>
+        <article className="summary-card">
+          <p className="summary-label">Latest Event</p>
+          <strong>
+            {latestOccurredAt ? describeRecency(latestOccurredAt, data.generated_at) : "None"}
+          </strong>
+          <p>How recent the newest persisted audit-style event is.</p>
+        </article>
       </div>
 
       <div className="content-grid">
@@ -130,6 +165,14 @@ export function AuditView() {
               <span>Failed</span>
               <strong>{resultCounts.failed ?? 0}</strong>
             </li>
+            <li>
+              <span>Latest event</span>
+              <strong>
+                {latestOccurredAt
+                  ? describeRecency(latestOccurredAt, data.generated_at)
+                  : "None"}
+              </strong>
+            </li>
           </ul>
         </article>
         <article className="detail-card">
@@ -150,12 +193,22 @@ export function AuditView() {
           )}
         </article>
         <article className="detail-card">
-          <h3>Why It Matters</h3>
+          <h3>Evidence Boundary</h3>
           <p>
             Audit history helps operators understand what platform-side sync activity
             was recorded and when it happened. Richer actor history, approvals, and
             change actions remain intentionally outside the current phase.
           </p>
+          <ul className="compact-list">
+            <li>
+              <span>Latest event freshness</span>
+              <strong>
+                {latestOccurredAt
+                  ? describeRecency(latestOccurredAt, data.generated_at)
+                  : "None"}
+              </strong>
+            </li>
+          </ul>
         </article>
       </div>
 
@@ -181,6 +234,19 @@ export function AuditView() {
             <option value="unknown">Unknown</option>
           </select>
         </label>
+        <label className="field-group">
+          <span>Scope</span>
+          <select
+            value={scopeFilter}
+            onChange={(event) => setScopeFilter(event.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="device_inventory_read_side">Device inventory</option>
+            <option value="topology_read_side">Topology</option>
+            <option value="policy_inventory_read_side">Policy</option>
+            <option value="platform_read_side">Platform</option>
+          </select>
+        </label>
       </div>
 
       {data.items.length === 0 ? (
@@ -194,44 +260,98 @@ export function AuditView() {
           description="Adjust the search text or result filter to widen the audit-history view."
         />
       ) : (
-        <div className="table-card">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Event</th>
-                <th>Scope</th>
-                <th>Result</th>
-                <th>Occurred</th>
-                <th>Correlation</th>
-                <th>Message</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems.map((item) => (
-                <tr key={item.event_id}>
-                  <td>
-                    <strong>{formatLabel(item.event_type)}</strong>
-                    <div className="table-note">{item.event_id}</div>
-                    <div className="table-note">
-                      {formatLabel(item.source)} • {formatLabel(item.actor)}
-                    </div>
-                  </td>
-                  <td>{formatLabel(item.target_scope)}</td>
-                  <td>
-                    <StatusPill value={item.result} />
-                  </td>
-                  <td>{formatDateTime(item.occurred_at)}</td>
-                  <td>{item.correlation_id}</td>
-                  <td>
-                    {item.message}
-                    {item.notes.length > 0 ? (
-                      <div className="table-note">{item.notes.join(" ")}</div>
-                    ) : null}
-                  </td>
+        <div className="content-grid">
+          <div className="table-card">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Scope</th>
+                  <th>Result</th>
+                  <th>Occurred</th>
+                  <th>Correlation</th>
+                  <th>Message</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredItems.map((item) => {
+                  const isSelected = selectedEvent?.event_id === item.event_id;
+                  return (
+                    <tr
+                      key={item.event_id}
+                      className={isSelected ? "table-row-selected" : undefined}
+                    >
+                      <td>
+                        <button
+                          type="button"
+                          className="table-select"
+                          onClick={() => setSelectedEventId(item.event_id)}
+                        >
+                          <strong>{formatLabel(item.event_type)}</strong>
+                          <span>{item.event_id}</span>
+                        </button>
+                        <div className="table-note">
+                          {formatLabel(item.source)} • {formatLabel(item.actor)}
+                        </div>
+                      </td>
+                      <td>{formatLabel(item.target_scope)}</td>
+                      <td>
+                        <StatusPill value={item.result} />
+                      </td>
+                      <td>{formatDateTime(item.occurred_at)}</td>
+                      <td>{item.correlation_id}</td>
+                      <td>{item.message}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {selectedEvent ? (
+            <article className="detail-card">
+              <h3>Selected Event Detail</h3>
+              <div className="key-value-list">
+                <div className="key-value-row">
+                  <span>Event</span>
+                  <strong>{formatLabel(selectedEvent.event_type)}</strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Scope</span>
+                  <strong>{formatLabel(selectedEvent.target_scope)}</strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Result</span>
+                  <strong>{formatLabel(selectedEvent.result)}</strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Occurred</span>
+                  <strong>{formatDateTime(selectedEvent.occurred_at)}</strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Freshness</span>
+                  <strong>{describeRecency(selectedEvent.occurred_at, data.generated_at)}</strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Correlation</span>
+                  <strong>{selectedEvent.correlation_id}</strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Message</span>
+                  <strong>{selectedEvent.message}</strong>
+                </div>
+              </div>
+              {selectedEvent.notes.length > 0 ? (
+                <>
+                  <p className="summary-label">Evidence Notes</p>
+                  <ul className="notes-list">
+                    {selectedEvent.notes.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </article>
+          ) : null}
         </div>
       )}
     </section>
