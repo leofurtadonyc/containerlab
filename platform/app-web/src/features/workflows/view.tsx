@@ -46,12 +46,41 @@ function formatSignedDelta(value: number): string {
   return `${value}`;
 }
 
+function formatDurationSeconds(value: number | null): string {
+  if (value === null) {
+    return "Unknown";
+  }
+  return `${value}s`;
+}
+
+function describeTimeGap(start: string | null, end: string | null): string {
+  if (!start || !end) {
+    return "Not available";
+  }
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return "Timestamp could not be interpreted";
+  }
+
+  const gapSeconds = Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / 1000));
+  if (gapSeconds < 60) {
+    return `${gapSeconds}s`;
+  }
+
+  const gapMinutes = Math.round(gapSeconds / 60);
+  return `${gapMinutes}m`;
+}
+
 export function WorkflowsView() {
   const { data, error, isLoading, reload } = useWorkflowHistoryQuery();
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [scopeFilter, setScopeFilter] = useState("all");
   const [artifactFilter, setArtifactFilter] = useState("all");
+  const [evidenceFilter, setEvidenceFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("newest_finished");
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
   const items = data?.items ?? [];
   const statusCounts = countBy(items, (item) => item.status);
@@ -63,31 +92,68 @@ export function WorkflowsView() {
   const comparisonEvidenceCount = items.filter(
     (item) => item.policy_comparison_to_previous !== null,
   ).length;
+  const policyContextCount = items.filter((item) => item.policy_snapshot_summary !== null).length;
+  const itemsWithNotesCount = items.filter((item) => item.notes.length > 0).length;
   const filteredItems = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
 
-    return items.filter((item) => {
-      const matchesStatus = statusFilter === "all" || item.status === statusFilter;
-      const matchesScope = scopeFilter === "all" || item.scope === scopeFilter;
-      const matchesArtifact =
-        artifactFilter === "all" || item.persisted_artifacts.includes(artifactFilter);
-      const matchesSearch =
-        normalizedSearch.length === 0 ||
-        [
-          item.workflow_name,
-          item.workflow_id,
-          item.scope,
-          item.source_type,
-          item.source_endpoint,
-          item.persisted_artifacts.join(" "),
-        ]
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedSearch);
+    return [...items]
+      .filter((item) => {
+        const matchesStatus = statusFilter === "all" || item.status === statusFilter;
+        const matchesScope = scopeFilter === "all" || item.scope === scopeFilter;
+        const matchesArtifact =
+          artifactFilter === "all" || item.persisted_artifacts.includes(artifactFilter);
+        const matchesEvidence =
+          evidenceFilter === "all" ||
+          (evidenceFilter === "policy_snapshot_context" &&
+            item.policy_snapshot_summary !== null) ||
+          (evidenceFilter === "policy_comparison" &&
+            item.policy_comparison_to_previous !== null) ||
+          (evidenceFilter === "notes_present" && item.notes.length > 0);
+        const matchesSearch =
+          normalizedSearch.length === 0 ||
+          [
+            item.workflow_name,
+            item.workflow_id,
+            item.scope,
+            item.source_type,
+            item.source_endpoint,
+            item.persisted_artifacts.join(" "),
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(normalizedSearch);
 
-      return matchesStatus && matchesScope && matchesArtifact && matchesSearch;
-    });
-  }, [artifactFilter, items, scopeFilter, searchValue, statusFilter]);
+        return matchesStatus && matchesScope && matchesArtifact && matchesEvidence && matchesSearch;
+      })
+      .sort((left, right) => {
+        const leftFinishedAt = new Date(left.finished_at).getTime();
+        const rightFinishedAt = new Date(right.finished_at).getTime();
+        const leftDuration =
+          getDurationSeconds(left.started_at, left.finished_at) ?? Number.NEGATIVE_INFINITY;
+        const rightDuration =
+          getDurationSeconds(right.started_at, right.finished_at) ?? Number.NEGATIVE_INFINITY;
+
+        if (sortOrder === "oldest_finished") {
+          return leftFinishedAt - rightFinishedAt;
+        }
+        if (sortOrder === "longest_duration") {
+          return rightDuration - leftDuration || rightFinishedAt - leftFinishedAt;
+        }
+        if (sortOrder === "highest_record_count") {
+          return right.record_count - left.record_count || rightFinishedAt - leftFinishedAt;
+        }
+        return rightFinishedAt - leftFinishedAt;
+      });
+  }, [
+    artifactFilter,
+    evidenceFilter,
+    items,
+    scopeFilter,
+    searchValue,
+    sortOrder,
+    statusFilter,
+  ]);
   const latestFinishedAt = items[0]?.finished_at ?? null;
   const latestObservedAt = items.find((item) => item.observed_at)?.observed_at ?? null;
   const selectedWorkflow =
@@ -188,6 +254,16 @@ export function WorkflowsView() {
           <strong>{comparisonEvidenceCount}</strong>
           <p>Sync runs that include bounded persisted policy snapshot comparison context.</p>
         </article>
+        <article className="summary-card">
+          <p className="summary-label">Policy Snapshot Context</p>
+          <strong>{policyContextCount}</strong>
+          <p>History entries that carry persisted policy snapshot evidence beyond sync status.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Entries With Notes</p>
+          <strong>{itemsWithNotesCount}</strong>
+          <p>Sync runs that include explicit backend evidence notes or caveats.</p>
+        </article>
       </div>
 
       <div className="content-grid">
@@ -214,6 +290,10 @@ export function WorkflowsView() {
             <li>
               <span>Latest finished</span>
               <strong>{describeRecency(latestFinishedAt, data.generated_at)}</strong>
+            </li>
+            <li>
+              <span>With comparison evidence</span>
+              <strong>{comparisonEvidenceCount}</strong>
             </li>
           </ul>
         </article>
@@ -249,6 +329,10 @@ export function WorkflowsView() {
             <li>
               <span>Latest persisted finish</span>
               <strong>{describeRecency(latestFinishedAt, data.generated_at)}</strong>
+            </li>
+            <li>
+              <span>Bounded policy snapshot context</span>
+              <strong>{policyContextCount}</strong>
             </li>
           </ul>
         </article>
@@ -301,6 +385,27 @@ export function WorkflowsView() {
             <option value="policy_snapshot">Policy snapshot</option>
           </select>
         </label>
+        <label className="field-group">
+          <span>Evidence</span>
+          <select
+            value={evidenceFilter}
+            onChange={(event) => setEvidenceFilter(event.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="policy_snapshot_context">Policy snapshot context</option>
+            <option value="policy_comparison">Policy comparison evidence</option>
+            <option value="notes_present">Entries with notes</option>
+          </select>
+        </label>
+        <label className="field-group">
+          <span>Sort</span>
+          <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value)}>
+            <option value="newest_finished">Newest finished first</option>
+            <option value="oldest_finished">Oldest finished first</option>
+            <option value="longest_duration">Longest duration first</option>
+            <option value="highest_record_count">Highest record count first</option>
+          </select>
+        </label>
       </div>
 
       {data.items.length === 0 ? (
@@ -311,7 +416,7 @@ export function WorkflowsView() {
       ) : filteredItems.length === 0 ? (
         <EmptyState
           title="No history matches the current filter"
-          description="Adjust the search text or status filter to widen the workflow-history view."
+          description="Adjust the search text, evidence filter, or sort controls to widen the workflow-history view."
         />
       ) : (
         <div className="content-grid">
@@ -322,6 +427,7 @@ export function WorkflowsView() {
                   <th>Workflow</th>
                   <th>Scope</th>
                   <th>Status</th>
+                  <th>Evidence</th>
                   <th>Artifacts</th>
                   <th>Record count</th>
                   <th>Observed</th>
@@ -354,6 +460,13 @@ export function WorkflowsView() {
                       <td>
                         <StatusPill value={item.status} />
                         <div className="table-note">{formatLabel(item.workflow_type)}</div>
+                      </td>
+                      <td>
+                        {item.policy_comparison_to_previous
+                          ? "Comparison ready"
+                          : item.policy_snapshot_summary
+                            ? "Snapshot context"
+                            : "Sync-only"}
                       </td>
                       <td>
                         {item.persisted_artifacts.length === 0
@@ -415,6 +528,15 @@ export function WorkflowsView() {
                   <strong>{formatDateTime(selectedWorkflow.observed_at)}</strong>
                 </div>
                 <div className="key-value-row">
+                  <span>Observed to finished gap</span>
+                  <strong>
+                    {describeTimeGap(
+                      selectedWorkflow.observed_at,
+                      selectedWorkflow.finished_at,
+                    )}
+                  </strong>
+                </div>
+                <div className="key-value-row">
                   <span>Persisted artifacts</span>
                   <strong>
                     {selectedWorkflow.persisted_artifacts.length === 0
@@ -427,6 +549,16 @@ export function WorkflowsView() {
                 <div className="key-value-row">
                   <span>Source</span>
                   <strong>{selectedWorkflow.source_endpoint}</strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Evidence posture</span>
+                  <strong>
+                    {selectedWorkflow.policy_comparison_to_previous
+                      ? "Sync run plus bounded comparison evidence"
+                      : selectedWorkflow.policy_snapshot_summary
+                        ? "Sync run plus bounded snapshot context"
+                        : "Sync-run visibility only"}
+                  </strong>
                 </div>
               </div>
               {selectedWorkflow.notes.length > 0 ? (
@@ -448,6 +580,15 @@ export function WorkflowsView() {
                       <strong>{formatDateTime(selectedWorkflow.policy_snapshot_summary.persisted_at)}</strong>
                     </div>
                     <div className="key-value-row">
+                      <span>Snapshot lag after finish</span>
+                      <strong>
+                        {describeTimeGap(
+                          selectedWorkflow.finished_at,
+                          selectedWorkflow.policy_snapshot_summary.persisted_at,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
                       <span>Observed policies</span>
                       <strong>{selectedWorkflow.policy_snapshot_summary.observed_policy_count}</strong>
                     </div>
@@ -463,6 +604,15 @@ export function WorkflowsView() {
                       <span>Empty reason</span>
                       <strong>{formatLabel(selectedWorkflow.policy_snapshot_summary.empty_reason)}</strong>
                     </div>
+                    <div className="key-value-row">
+                      <span>Observed to persisted lag</span>
+                      <strong>
+                        {describeTimeGap(
+                          selectedWorkflow.policy_snapshot_summary.observed_at,
+                          selectedWorkflow.policy_snapshot_summary.persisted_at,
+                        )}
+                      </strong>
+                    </div>
                   </div>
                 </>
               ) : null}
@@ -470,6 +620,18 @@ export function WorkflowsView() {
                 <>
                   <p className="summary-label">Policy Comparison Evidence</p>
                   <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Compared snapshots</span>
+                      <strong>
+                        {formatDateTime(
+                          selectedWorkflow.policy_comparison_to_previous.previous_persisted_at,
+                        )}{" "}
+                        {"->"}{" "}
+                        {formatDateTime(
+                          selectedWorkflow.policy_comparison_to_previous.current_persisted_at,
+                        )}
+                      </strong>
+                    </div>
                     <div className="key-value-row">
                       <span>Observed policy delta</span>
                       <strong>
@@ -495,6 +657,13 @@ export function WorkflowsView() {
                       </strong>
                     </div>
                   </div>
+                  {selectedWorkflow.policy_comparison_to_previous.notes.length > 0 ? (
+                    <ul className="notes-list">
+                      {selectedWorkflow.policy_comparison_to_previous.notes.map((note) => (
+                        <li key={note}>{note}</li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </>
               ) : null}
             </article>
