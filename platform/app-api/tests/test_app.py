@@ -18,7 +18,12 @@ from app_api.models.inventory import InventoryDevice
 from app_api.metrics.state import reset_metrics_registry
 from app_api.models.policy import PolicyInventorySnapshot
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
-from app_api.persistence.history import PersistedSyncRun, SyncRunHistorySummary
+from app_api.persistence.history import (
+    PersistedPolicySnapshotComparison,
+    PersistedPolicySnapshotSummary as PersistedPolicyHistorySummary,
+    PersistedSyncRun,
+    SyncRunHistorySummary,
+)
 from app_api.persistence.read_side import (
     PersistedInventorySnapshot,
     PersistedPolicySnapshot,
@@ -536,6 +541,34 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             started_at=datetime.fromisoformat("2026-03-10T01:30:00+00:00"),
             finished_at=datetime.fromisoformat("2026-03-10T01:30:04+00:00"),
             persisted_artifacts=["policy_snapshot"],
+            policy_snapshot_summary=PersistedPolicyHistorySummary(
+                persisted_at=datetime.fromisoformat("2026-03-10T01:30:04+00:00"),
+                observed_at=datetime.fromisoformat("2026-03-10T01:30:00+00:00"),
+                sync_source="persisted_policy_snapshot",
+                sync_status="ok",
+                completeness="partial",
+                detail_mode="static_policies_when_present",
+                empty_reason="none",
+                observed_policy_count=1,
+                active_policy_count=1,
+                detail_record_count=1,
+            ),
+            policy_comparison_to_previous=PersistedPolicySnapshotComparison(
+                current_persisted_at=datetime.fromisoformat("2026-03-10T01:30:04+00:00"),
+                previous_persisted_at=datetime.fromisoformat("2026-03-10T01:00:00+00:00"),
+                current_observed_policy_count=1,
+                previous_observed_policy_count=2,
+                current_detail_record_count=1,
+                previous_detail_record_count=2,
+                observed_policy_delta=-1,
+                detail_record_delta=-1,
+                added_policy_count=0,
+                removed_policy_count=1,
+                changed_policy_count=1,
+                notes=[
+                    "Comparison evidence remains bounded to persisted normalized policy snapshots."
+                ],
+            ),
             notes=["Policy sync completed from the bounded live path."],
         ),
         PersistedSyncRun(
@@ -963,9 +996,12 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert payload["items"][0]["workflow_name"] == "policy_snapshot_sync"
     assert payload["items"][0]["scope"] == "policy_inventory_read_side"
     assert payload["items"][0]["persisted_artifacts"] == ["policy_snapshot"]
+    assert payload["items"][0]["policy_snapshot_summary"]["observed_policy_count"] == 1
+    assert payload["items"][0]["policy_comparison_to_previous"]["removed_policy_count"] == 1
     assert payload["items"][1]["workflow_name"] == "topology_snapshot_sync"
     assert payload["items"][1]["status"] == "partial"
     assert payload["items"][1]["persisted_artifacts"] == ["topology_snapshot"]
+    assert payload["items"][1]["policy_snapshot_summary"] is None
     assert payload["items"][2]["workflow_name"] == "inventory_snapshot_sync"
     assert payload["items"][2]["status"] == "completed"
     assert datetime.fromisoformat(payload["generated_at"]) is not None
@@ -1002,8 +1038,11 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert payload["items"][0]["actor"] == "platform_system"
     assert payload["items"][0]["target_scope"] == "policy_inventory_read_side"
     assert payload["items"][0]["result"] == "succeeded"
+    assert payload["items"][0]["policy_snapshot_summary"]["detail_record_count"] == 1
+    assert payload["items"][0]["policy_comparison_to_previous"]["changed_policy_count"] == 1
     assert payload["items"][0]["correlation_id"] == "sync-policy-1"
     assert "persisted policy_snapshot" in payload["items"][0]["message"]
+    assert payload["items"][1]["policy_snapshot_summary"] is None
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 

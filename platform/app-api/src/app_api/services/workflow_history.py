@@ -3,9 +3,18 @@
 from datetime import UTC, datetime
 
 from app_api.config.settings import get_settings
-from app_api.models.workflow import WorkflowHistoryRecord
+from app_api.models.workflow import (
+    WorkflowHistoryRecord,
+    WorkflowPolicySnapshotComparison,
+    WorkflowPolicySnapshotSummary,
+)
 from app_api.persistence.history import load_sync_runs
-from app_api.schemas.workflow_history import WorkflowHistoryItem, WorkflowHistoryResponse
+from app_api.schemas.workflow_history import (
+    WorkflowHistoryItem,
+    WorkflowPolicySnapshotComparison as WorkflowPolicySnapshotComparisonResponse,
+    WorkflowPolicySnapshotSummary as WorkflowPolicySnapshotSummaryResponse,
+    WorkflowHistoryResponse,
+)
 
 
 def _map_sync_status(fetch_status: str) -> str:
@@ -43,6 +52,40 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
             started_at=sync_run.started_at,
             finished_at=sync_run.finished_at,
             persisted_artifacts=sync_run.persisted_artifacts,
+            policy_snapshot_summary=(
+                WorkflowPolicySnapshotSummary(
+                    persisted_at=sync_run.policy_snapshot_summary.persisted_at,
+                    observed_at=sync_run.policy_snapshot_summary.observed_at,
+                    sync_source=sync_run.policy_snapshot_summary.sync_source,
+                    sync_status=sync_run.policy_snapshot_summary.sync_status,
+                    completeness=sync_run.policy_snapshot_summary.completeness,
+                    detail_mode=sync_run.policy_snapshot_summary.detail_mode,
+                    empty_reason=sync_run.policy_snapshot_summary.empty_reason,
+                    observed_policy_count=sync_run.policy_snapshot_summary.observed_policy_count,
+                    active_policy_count=sync_run.policy_snapshot_summary.active_policy_count,
+                    detail_record_count=sync_run.policy_snapshot_summary.detail_record_count,
+                )
+                if sync_run.policy_snapshot_summary is not None
+                else None
+            ),
+            policy_comparison_to_previous=(
+                WorkflowPolicySnapshotComparison(
+                    current_persisted_at=sync_run.policy_comparison_to_previous.current_persisted_at,
+                    previous_persisted_at=sync_run.policy_comparison_to_previous.previous_persisted_at,
+                    current_observed_policy_count=sync_run.policy_comparison_to_previous.current_observed_policy_count,
+                    previous_observed_policy_count=sync_run.policy_comparison_to_previous.previous_observed_policy_count,
+                    current_detail_record_count=sync_run.policy_comparison_to_previous.current_detail_record_count,
+                    previous_detail_record_count=sync_run.policy_comparison_to_previous.previous_detail_record_count,
+                    observed_policy_delta=sync_run.policy_comparison_to_previous.observed_policy_delta,
+                    detail_record_delta=sync_run.policy_comparison_to_previous.detail_record_delta,
+                    added_policy_count=sync_run.policy_comparison_to_previous.added_policy_count,
+                    removed_policy_count=sync_run.policy_comparison_to_previous.removed_policy_count,
+                    changed_policy_count=sync_run.policy_comparison_to_previous.changed_policy_count,
+                    notes=sync_run.policy_comparison_to_previous.notes,
+                )
+                if sync_run.policy_comparison_to_previous is not None
+                else None
+            ),
             notes=sync_run.notes,
         )
         for sync_run in load_sync_runs()
@@ -82,6 +125,40 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                 started_at=record.started_at,
                 finished_at=record.finished_at,
                 persisted_artifacts=record.persisted_artifacts,
+                policy_snapshot_summary=(
+                    WorkflowPolicySnapshotSummaryResponse(
+                        persisted_at=record.policy_snapshot_summary.persisted_at,
+                        observed_at=record.policy_snapshot_summary.observed_at,
+                        sync_source=record.policy_snapshot_summary.sync_source,
+                        sync_status=record.policy_snapshot_summary.sync_status,
+                        completeness=record.policy_snapshot_summary.completeness,
+                        detail_mode=record.policy_snapshot_summary.detail_mode,
+                        empty_reason=record.policy_snapshot_summary.empty_reason,
+                        observed_policy_count=record.policy_snapshot_summary.observed_policy_count,
+                        active_policy_count=record.policy_snapshot_summary.active_policy_count,
+                        detail_record_count=record.policy_snapshot_summary.detail_record_count,
+                    )
+                    if record.policy_snapshot_summary is not None
+                    else None
+                ),
+                policy_comparison_to_previous=(
+                    WorkflowPolicySnapshotComparisonResponse(
+                        current_persisted_at=record.policy_comparison_to_previous.current_persisted_at,
+                        previous_persisted_at=record.policy_comparison_to_previous.previous_persisted_at,
+                        current_observed_policy_count=record.policy_comparison_to_previous.current_observed_policy_count,
+                        previous_observed_policy_count=record.policy_comparison_to_previous.previous_observed_policy_count,
+                        current_detail_record_count=record.policy_comparison_to_previous.current_detail_record_count,
+                        previous_detail_record_count=record.policy_comparison_to_previous.previous_detail_record_count,
+                        observed_policy_delta=record.policy_comparison_to_previous.observed_policy_delta,
+                        detail_record_delta=record.policy_comparison_to_previous.detail_record_delta,
+                        added_policy_count=record.policy_comparison_to_previous.added_policy_count,
+                        removed_policy_count=record.policy_comparison_to_previous.removed_policy_count,
+                        changed_policy_count=record.policy_comparison_to_previous.changed_policy_count,
+                        notes=record.policy_comparison_to_previous.notes,
+                    )
+                    if record.policy_comparison_to_previous is not None
+                    else None
+                ),
                 notes=record.notes,
             )
             for record in records

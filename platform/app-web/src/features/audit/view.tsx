@@ -25,6 +25,13 @@ function describeRecency(value: string, generatedAt: string): string {
   return `Stale (${ageMinutes}m old)`;
 }
 
+function formatSignedDelta(value: number): string {
+  if (value > 0) {
+    return `+${value}`;
+  }
+  return `${value}`;
+}
+
 export function AuditView() {
   const { data, error, isLoading, reload } = useAuditHistoryQuery();
   const [searchValue, setSearchValue] = useState("");
@@ -34,6 +41,9 @@ export function AuditView() {
   const items = data?.items ?? [];
   const resultCounts = countBy(items, (item) => item.result);
   const scopeCounts = countBy(items, (item) => item.target_scope);
+  const comparisonEvidenceCount = items.filter(
+    (item) => item.policy_comparison_to_previous !== null,
+  ).length;
   const filteredItems = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
 
@@ -141,6 +151,11 @@ export function AuditView() {
             {latestOccurredAt ? describeRecency(latestOccurredAt, data.generated_at) : "None"}
           </strong>
           <p>How recent the newest persisted audit-style event is.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Policy Comparison Evidence</p>
+          <strong>{comparisonEvidenceCount}</strong>
+          <p>Audit-style events that include bounded persisted policy snapshot comparison context.</p>
         </article>
       </div>
 
@@ -348,6 +363,60 @@ export function AuditView() {
                       <li key={note}>{note}</li>
                     ))}
                   </ul>
+                </>
+              ) : null}
+              {selectedEvent.policy_snapshot_summary ? (
+                <>
+                  <p className="summary-label">Policy Snapshot Context</p>
+                  <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Persisted at</span>
+                      <strong>{formatDateTime(selectedEvent.policy_snapshot_summary.persisted_at)}</strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Observed policies</span>
+                      <strong>{selectedEvent.policy_snapshot_summary.observed_policy_count}</strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Detailed records</span>
+                      <strong>{selectedEvent.policy_snapshot_summary.detail_record_count}</strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Detail mode</span>
+                      <strong>{formatLabel(selectedEvent.policy_snapshot_summary.detail_mode)}</strong>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+              {selectedEvent.policy_comparison_to_previous ? (
+                <>
+                  <p className="summary-label">Policy Comparison Evidence</p>
+                  <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Observed policy delta</span>
+                      <strong>
+                        {formatSignedDelta(
+                          selectedEvent.policy_comparison_to_previous.observed_policy_delta,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Detailed record delta</span>
+                      <strong>
+                        {formatSignedDelta(
+                          selectedEvent.policy_comparison_to_previous.detail_record_delta,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Added / removed / changed</span>
+                      <strong>
+                        {selectedEvent.policy_comparison_to_previous.added_policy_count} /{" "}
+                        {selectedEvent.policy_comparison_to_previous.removed_policy_count} /{" "}
+                        {selectedEvent.policy_comparison_to_previous.changed_policy_count}
+                      </strong>
+                    </div>
+                  </div>
                 </>
               ) : null}
             </article>

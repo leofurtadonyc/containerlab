@@ -211,6 +211,8 @@ export interface WorkflowHistoryItem {
   started_at: string;
   finished_at: string;
   persisted_artifacts: string[];
+  policy_snapshot_summary: PolicyHistorySnapshotRecord | null;
+  policy_comparison_to_previous: PolicyHistoryComparison | null;
   notes: string[];
 }
 
@@ -231,6 +233,8 @@ export interface AuditHistoryItem {
   correlation_id: string;
   occurred_at: string;
   message: string;
+  policy_snapshot_summary: PolicyHistorySnapshotRecord | null;
+  policy_comparison_to_previous: PolicyHistoryComparison | null;
   notes: string[];
 }
 

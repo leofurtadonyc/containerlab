@@ -3,9 +3,18 @@
 from datetime import UTC, datetime
 
 from app_api.config.settings import get_settings
-from app_api.models.audit import AuditEventRecord
+from app_api.models.audit import (
+    AuditEventRecord,
+    AuditPolicySnapshotComparison,
+    AuditPolicySnapshotSummary,
+)
 from app_api.persistence.history import load_sync_runs
-from app_api.schemas.audit_history import AuditHistoryItem, AuditHistoryResponse
+from app_api.schemas.audit_history import (
+    AuditHistoryItem,
+    AuditHistoryResponse,
+    AuditPolicySnapshotComparison as AuditPolicySnapshotComparisonResponse,
+    AuditPolicySnapshotSummary as AuditPolicySnapshotSummaryResponse,
+)
 
 
 def _map_result(fetch_status: str) -> str:
@@ -38,6 +47,25 @@ def _build_message(model_family: str, fetch_status: str, persisted_artifacts: li
     return f"Platform recorded a {result} {model_family} read-side sync."
 
 
+def _build_policy_snapshot_note(
+    sync_run,
+) -> list[str]:
+    """Return bounded policy snapshot context notes for one audit event."""
+    if sync_run.policy_snapshot_summary is None:
+        return []
+    notes = [
+        (
+            "Policy snapshot context reflects the normalized snapshot persisted by this "
+            "sync run, not operator intent or execution semantics."
+        )
+    ]
+    if sync_run.policy_comparison_to_previous is not None:
+        notes.append(
+            "Comparison evidence reflects the current persisted policy snapshot against the immediately previous persisted policy snapshot."
+        )
+    return notes
+
+
 def build_audit_history_response() -> AuditHistoryResponse:
     """Build the bounded audit-style history response from persisted sync runs."""
     settings = get_settings()
@@ -56,7 +84,41 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 sync_run.fetch_status,
                 sync_run.persisted_artifacts,
             ),
-            notes=sync_run.notes,
+            policy_snapshot_summary=(
+                AuditPolicySnapshotSummary(
+                    persisted_at=sync_run.policy_snapshot_summary.persisted_at,
+                    observed_at=sync_run.policy_snapshot_summary.observed_at,
+                    sync_source=sync_run.policy_snapshot_summary.sync_source,
+                    sync_status=sync_run.policy_snapshot_summary.sync_status,
+                    completeness=sync_run.policy_snapshot_summary.completeness,
+                    detail_mode=sync_run.policy_snapshot_summary.detail_mode,
+                    empty_reason=sync_run.policy_snapshot_summary.empty_reason,
+                    observed_policy_count=sync_run.policy_snapshot_summary.observed_policy_count,
+                    active_policy_count=sync_run.policy_snapshot_summary.active_policy_count,
+                    detail_record_count=sync_run.policy_snapshot_summary.detail_record_count,
+                )
+                if sync_run.policy_snapshot_summary is not None
+                else None
+            ),
+            policy_comparison_to_previous=(
+                AuditPolicySnapshotComparison(
+                    current_persisted_at=sync_run.policy_comparison_to_previous.current_persisted_at,
+                    previous_persisted_at=sync_run.policy_comparison_to_previous.previous_persisted_at,
+                    current_observed_policy_count=sync_run.policy_comparison_to_previous.current_observed_policy_count,
+                    previous_observed_policy_count=sync_run.policy_comparison_to_previous.previous_observed_policy_count,
+                    current_detail_record_count=sync_run.policy_comparison_to_previous.current_detail_record_count,
+                    previous_detail_record_count=sync_run.policy_comparison_to_previous.previous_detail_record_count,
+                    observed_policy_delta=sync_run.policy_comparison_to_previous.observed_policy_delta,
+                    detail_record_delta=sync_run.policy_comparison_to_previous.detail_record_delta,
+                    added_policy_count=sync_run.policy_comparison_to_previous.added_policy_count,
+                    removed_policy_count=sync_run.policy_comparison_to_previous.removed_policy_count,
+                    changed_policy_count=sync_run.policy_comparison_to_previous.changed_policy_count,
+                    notes=sync_run.policy_comparison_to_previous.notes,
+                )
+                if sync_run.policy_comparison_to_previous is not None
+                else None
+            ),
+            notes=[*sync_run.notes, *_build_policy_snapshot_note(sync_run)],
         )
         for sync_run in load_sync_runs()
     ]
@@ -91,6 +153,40 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 correlation_id=record.correlation_id,
                 occurred_at=record.occurred_at,
                 message=record.message,
+                policy_snapshot_summary=(
+                    AuditPolicySnapshotSummaryResponse(
+                        persisted_at=record.policy_snapshot_summary.persisted_at,
+                        observed_at=record.policy_snapshot_summary.observed_at,
+                        sync_source=record.policy_snapshot_summary.sync_source,
+                        sync_status=record.policy_snapshot_summary.sync_status,
+                        completeness=record.policy_snapshot_summary.completeness,
+                        detail_mode=record.policy_snapshot_summary.detail_mode,
+                        empty_reason=record.policy_snapshot_summary.empty_reason,
+                        observed_policy_count=record.policy_snapshot_summary.observed_policy_count,
+                        active_policy_count=record.policy_snapshot_summary.active_policy_count,
+                        detail_record_count=record.policy_snapshot_summary.detail_record_count,
+                    )
+                    if record.policy_snapshot_summary is not None
+                    else None
+                ),
+                policy_comparison_to_previous=(
+                    AuditPolicySnapshotComparisonResponse(
+                        current_persisted_at=record.policy_comparison_to_previous.current_persisted_at,
+                        previous_persisted_at=record.policy_comparison_to_previous.previous_persisted_at,
+                        current_observed_policy_count=record.policy_comparison_to_previous.current_observed_policy_count,
+                        previous_observed_policy_count=record.policy_comparison_to_previous.previous_observed_policy_count,
+                        current_detail_record_count=record.policy_comparison_to_previous.current_detail_record_count,
+                        previous_detail_record_count=record.policy_comparison_to_previous.previous_detail_record_count,
+                        observed_policy_delta=record.policy_comparison_to_previous.observed_policy_delta,
+                        detail_record_delta=record.policy_comparison_to_previous.detail_record_delta,
+                        added_policy_count=record.policy_comparison_to_previous.added_policy_count,
+                        removed_policy_count=record.policy_comparison_to_previous.removed_policy_count,
+                        changed_policy_count=record.policy_comparison_to_previous.changed_policy_count,
+                        notes=record.policy_comparison_to_previous.notes,
+                    )
+                    if record.policy_comparison_to_previous is not None
+                    else None
+                ),
                 notes=record.notes,
             )
             for record in records

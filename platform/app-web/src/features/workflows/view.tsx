@@ -39,6 +39,13 @@ function getDurationSeconds(startedAt: string, finishedAt: string): number | nul
   return Math.max(0, Math.round((finishedDate.getTime() - startedDate.getTime()) / 1000));
 }
 
+function formatSignedDelta(value: number): string {
+  if (value > 0) {
+    return `+${value}`;
+  }
+  return `${value}`;
+}
+
 export function WorkflowsView() {
   const { data, error, isLoading, reload } = useWorkflowHistoryQuery();
   const [searchValue, setSearchValue] = useState("");
@@ -53,6 +60,9 @@ export function WorkflowsView() {
     items.flatMap((item) => item.persisted_artifacts),
     (artifact) => artifact,
   );
+  const comparisonEvidenceCount = items.filter(
+    (item) => item.policy_comparison_to_previous !== null,
+  ).length;
   const filteredItems = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
 
@@ -172,6 +182,11 @@ export function WorkflowsView() {
           <p className="summary-label">Latest Finished Sync</p>
           <strong>{describeRecency(latestFinishedAt, data.generated_at)}</strong>
           <p>How recent the newest persisted workflow-history evidence is.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Policy Comparison Evidence</p>
+          <strong>{comparisonEvidenceCount}</strong>
+          <p>Sync runs that include bounded persisted policy snapshot comparison context.</p>
         </article>
       </div>
 
@@ -422,6 +437,64 @@ export function WorkflowsView() {
                       <li key={note}>{note}</li>
                     ))}
                   </ul>
+                </>
+              ) : null}
+              {selectedWorkflow.policy_snapshot_summary ? (
+                <>
+                  <p className="summary-label">Policy Snapshot Context</p>
+                  <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Persisted at</span>
+                      <strong>{formatDateTime(selectedWorkflow.policy_snapshot_summary.persisted_at)}</strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Observed policies</span>
+                      <strong>{selectedWorkflow.policy_snapshot_summary.observed_policy_count}</strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Detailed records</span>
+                      <strong>{selectedWorkflow.policy_snapshot_summary.detail_record_count}</strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Detail mode</span>
+                      <strong>{formatLabel(selectedWorkflow.policy_snapshot_summary.detail_mode)}</strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Empty reason</span>
+                      <strong>{formatLabel(selectedWorkflow.policy_snapshot_summary.empty_reason)}</strong>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+              {selectedWorkflow.policy_comparison_to_previous ? (
+                <>
+                  <p className="summary-label">Policy Comparison Evidence</p>
+                  <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Observed policy delta</span>
+                      <strong>
+                        {formatSignedDelta(
+                          selectedWorkflow.policy_comparison_to_previous.observed_policy_delta,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Detailed record delta</span>
+                      <strong>
+                        {formatSignedDelta(
+                          selectedWorkflow.policy_comparison_to_previous.detail_record_delta,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Added / removed / changed</span>
+                      <strong>
+                        {selectedWorkflow.policy_comparison_to_previous.added_policy_count} /{" "}
+                        {selectedWorkflow.policy_comparison_to_previous.removed_policy_count} /{" "}
+                        {selectedWorkflow.policy_comparison_to_previous.changed_policy_count}
+                      </strong>
+                    </div>
+                  </div>
                 </>
               ) : null}
             </article>

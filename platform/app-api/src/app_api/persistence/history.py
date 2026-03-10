@@ -5,11 +5,16 @@ from datetime import datetime
 from logging import getLogger
 
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from app_api.persistence.session import create_session
-from app_api.persistence.tables import SyncRunTable
+from app_api.persistence.tables import (
+    PolicyCandidatePathTable,
+    PolicyRecordTable,
+    PolicySnapshotTable,
+    SyncRunTable,
+)
 
 logger = getLogger(__name__)
 
@@ -27,6 +32,40 @@ class PersistedSyncRun(BaseModel):
     started_at: datetime
     finished_at: datetime
     persisted_artifacts: list[str] = Field(default_factory=list)
+    policy_snapshot_summary: "PersistedPolicySnapshotSummary | None" = None
+    policy_comparison_to_previous: "PersistedPolicySnapshotComparison | None" = None
+    notes: list[str] = Field(default_factory=list)
+
+
+class PersistedPolicySnapshotSummary(BaseModel):
+    """Bounded persisted policy snapshot context for history surfaces."""
+
+    persisted_at: datetime
+    observed_at: datetime | None = None
+    sync_source: str
+    sync_status: str
+    completeness: str
+    detail_mode: str
+    empty_reason: str
+    observed_policy_count: int
+    active_policy_count: int
+    detail_record_count: int
+
+
+class PersistedPolicySnapshotComparison(BaseModel):
+    """Bounded current-versus-previous comparison for one persisted policy snapshot."""
+
+    current_persisted_at: datetime
+    previous_persisted_at: datetime
+    current_observed_policy_count: int
+    previous_observed_policy_count: int
+    current_detail_record_count: int
+    previous_detail_record_count: int
+    observed_policy_delta: int
+    detail_record_delta: int
+    added_policy_count: int
+    removed_policy_count: int
+    changed_policy_count: int
     notes: list[str] = Field(default_factory=list)
 
 
@@ -53,6 +92,138 @@ def _map_history_result(fetch_status: str) -> str:
     }.get(fetch_status, "unknown")
 
 
+def _load_policy_snapshot_record_signatures(
+    session,
+    *,
+    snapshot_id: str,
+) -> dict[str, tuple[object, ...]]:
+    """Load bounded normalized signatures for one persisted policy snapshot."""
+    policy_rows = session.scalars(
+        select(PolicyRecordTable)
+        .where(PolicyRecordTable.snapshot_id == snapshot_id)
+        .order_by(PolicyRecordTable.policy_id.asc())
+    ).all()
+    if not policy_rows:
+        return {}
+    policy_record_ids = [row.id for row in policy_rows]
+    candidate_rows = session.scalars(
+        select(PolicyCandidatePathTable)
+        .where(PolicyCandidatePathTable.policy_record_id.in_(policy_record_ids))
+        .order_by(
+            PolicyCandidatePathTable.policy_record_id.asc(),
+            PolicyCandidatePathTable.preference.desc().nullslast(),
+            PolicyCandidatePathTable.name.asc(),
+        )
+    ).all()
+    candidates_by_policy_record_id: dict[int, list[PolicyCandidatePathTable]] = {}
+    for row in candidate_rows:
+        candidates_by_policy_record_id.setdefault(row.policy_record_id, []).append(row)
+    signatures: dict[str, tuple[object, ...]] = {}
+    for row in policy_rows:
+        signatures[row.policy_id] = (
+            row.policy_name,
+            row.policy_type,
+            row.headend,
+            row.endpoint,
+            row.color,
+            row.source_target,
+            row.source_target_role,
+            row.intent_state,
+            row.observed_state,
+            row.support_state,
+            row.health_state,
+            tuple(
+                (
+                    candidate.name,
+                    candidate.path_state,
+                    candidate.preference,
+                    tuple(candidate.notes),
+                )
+                for candidate in candidates_by_policy_record_id.get(row.id, [])
+            ),
+        )
+    return signatures
+
+
+def _build_policy_snapshot_summary(
+    session,
+    *,
+    snapshot: PolicySnapshotTable,
+) -> PersistedPolicySnapshotSummary:
+    """Build bounded persisted policy snapshot context for one sync run."""
+    detail_record_count = session.scalar(
+        select(func.count(PolicyRecordTable.id)).where(PolicyRecordTable.snapshot_id == snapshot.id)
+    )
+    return PersistedPolicySnapshotSummary(
+        persisted_at=snapshot.persisted_at,
+        observed_at=snapshot.observed_at,
+        sync_source=snapshot.sync_source,
+        sync_status=snapshot.sync_status,
+        completeness=snapshot.completeness,
+        detail_mode=snapshot.detail_mode,
+        empty_reason=snapshot.empty_reason,
+        observed_policy_count=snapshot.observed_policy_count,
+        active_policy_count=snapshot.active_policy_count,
+        detail_record_count=int(detail_record_count or 0),
+    )
+
+
+def _build_policy_snapshot_comparison(
+    session,
+    *,
+    snapshot: PolicySnapshotTable,
+) -> PersistedPolicySnapshotComparison | None:
+    """Build bounded comparison evidence against the immediately previous snapshot."""
+    previous_snapshot = session.scalar(
+        select(PolicySnapshotTable)
+        .where(PolicySnapshotTable.persisted_at < snapshot.persisted_at)
+        .order_by(PolicySnapshotTable.persisted_at.desc())
+        .limit(1)
+    )
+    if previous_snapshot is None:
+        return None
+    current_signatures = _load_policy_snapshot_record_signatures(session, snapshot_id=snapshot.id)
+    previous_signatures = _load_policy_snapshot_record_signatures(
+        session, snapshot_id=previous_snapshot.id
+    )
+    current_policy_ids = set(current_signatures)
+    previous_policy_ids = set(previous_signatures)
+    added_policy_ids = current_policy_ids - previous_policy_ids
+    removed_policy_ids = previous_policy_ids - current_policy_ids
+    changed_policy_ids = {
+        policy_id
+        for policy_id in current_policy_ids & previous_policy_ids
+        if current_signatures[policy_id] != previous_signatures[policy_id]
+    }
+    current_detail_record_count = len(current_signatures)
+    previous_detail_record_count = len(previous_signatures)
+    notes = [
+        "This comparison is derived from the current persisted normalized policy snapshot and the immediately previous persisted normalized policy snapshot.",
+        "Added, removed, and changed counts only reflect policies that have bounded normalized detail records in those snapshots.",
+    ]
+    if (
+        snapshot.observed_policy_count > current_detail_record_count
+        or previous_snapshot.observed_policy_count > previous_detail_record_count
+    ):
+        notes.append(
+            "Observed policy totals may be higher than detailed record totals when the bounded read path cannot derive per-policy detail for every observed policy type."
+        )
+    return PersistedPolicySnapshotComparison(
+        current_persisted_at=snapshot.persisted_at,
+        previous_persisted_at=previous_snapshot.persisted_at,
+        current_observed_policy_count=snapshot.observed_policy_count,
+        previous_observed_policy_count=previous_snapshot.observed_policy_count,
+        current_detail_record_count=current_detail_record_count,
+        previous_detail_record_count=previous_detail_record_count,
+        observed_policy_delta=snapshot.observed_policy_count - previous_snapshot.observed_policy_count,
+        detail_record_delta=current_detail_record_count - previous_detail_record_count,
+        added_policy_count=len(added_policy_ids),
+        removed_policy_count=len(removed_policy_ids),
+        changed_policy_count=len(changed_policy_ids),
+        notes=notes,
+    )
+
+
 def load_sync_runs(limit: int = 50) -> list[PersistedSyncRun]:
     """Load recent persisted sync runs for read-only history endpoints."""
     try:
@@ -76,6 +247,15 @@ def load_sync_runs(limit: int = 50) -> list[PersistedSyncRun]:
                     persisted_artifacts.append("topology_snapshot")
                 if row.policy_snapshot is not None:
                     persisted_artifacts.append("policy_snapshot")
+                policy_snapshot_summary = None
+                policy_comparison_to_previous = None
+                if row.policy_snapshot is not None:
+                    policy_snapshot_summary = _build_policy_snapshot_summary(
+                        session, snapshot=row.policy_snapshot
+                    )
+                    policy_comparison_to_previous = _build_policy_snapshot_comparison(
+                        session, snapshot=row.policy_snapshot
+                    )
                 items.append(
                     PersistedSyncRun(
                         sync_run_id=row.id,
@@ -88,6 +268,8 @@ def load_sync_runs(limit: int = 50) -> list[PersistedSyncRun]:
                         started_at=row.started_at,
                         finished_at=row.finished_at,
                         persisted_artifacts=persisted_artifacts,
+                        policy_snapshot_summary=policy_snapshot_summary,
+                        policy_comparison_to_previous=policy_comparison_to_previous,
                         notes=row.notes,
                     )
                 )
