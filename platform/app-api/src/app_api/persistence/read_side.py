@@ -5,13 +5,18 @@ from logging import getLogger
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app_api.integrations.collector.inventory import CollectorInventorySnapshot
 from app_api.integrations.collector.policies import CollectorPolicySnapshot
 from app_api.integrations.collector.topology import CollectorTopologySnapshot
 from app_api.models.inventory import InventoryDevice
-from app_api.models.policy import CandidatePath, PolicyInventoryRecord, PolicyInventorySnapshot
+from app_api.models.policy import (
+    CandidatePath,
+    PolicyHistorySnapshotRecord,
+    PolicyInventoryRecord,
+    PolicyInventorySnapshot,
+)
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.persistence.session import create_session
 from app_api.persistence.tables import (
@@ -48,6 +53,13 @@ class PersistedPolicySnapshot(BaseModel):
 
     persisted_at: datetime
     snapshot: PolicyInventorySnapshot
+
+
+class PersistedPolicySnapshotSummary(BaseModel):
+    """Bounded summary of one persisted policy snapshot."""
+
+    persisted_at: datetime
+    snapshot: PolicyHistorySnapshotRecord
 
 
 def persist_inventory_snapshot(
@@ -374,13 +386,14 @@ def persist_policy_snapshot(
         logger.exception("Failed to persist bounded policy snapshot.")
 
 
-def load_latest_policy_snapshot() -> PersistedPolicySnapshot | None:
-    """Load the latest persisted bounded policy snapshot, if any."""
+def _load_policy_snapshot_at_offset(offset: int) -> PersistedPolicySnapshot | None:
+    """Load one persisted bounded policy snapshot at the requested recency offset."""
     try:
         with create_session() as session:
             snapshot = session.scalar(
                 select(PolicySnapshotTable)
                 .order_by(PolicySnapshotTable.persisted_at.desc())
+                .offset(offset)
                 .limit(1)
             )
             if snapshot is None:
@@ -459,3 +472,56 @@ def load_latest_policy_snapshot() -> PersistedPolicySnapshot | None:
     except Exception:
         logger.exception("Failed to load latest persisted policy snapshot.")
         return None
+
+
+def load_latest_policy_snapshot() -> PersistedPolicySnapshot | None:
+    """Load the latest persisted bounded policy snapshot, if any."""
+    return _load_policy_snapshot_at_offset(offset=0)
+
+
+def load_previous_policy_snapshot() -> PersistedPolicySnapshot | None:
+    """Load the previous persisted bounded policy snapshot, if any."""
+    return _load_policy_snapshot_at_offset(offset=1)
+
+
+def load_recent_policy_snapshot_summaries(limit: int = 3) -> list[PersistedPolicySnapshotSummary]:
+    """Load a short bounded window of recent persisted policy snapshot summaries."""
+    try:
+        with create_session() as session:
+            snapshots = session.scalars(
+                select(PolicySnapshotTable)
+                .order_by(PolicySnapshotTable.persisted_at.desc())
+                .limit(limit)
+            ).all()
+            snapshot_ids = [snapshot.id for snapshot in snapshots]
+            if not snapshot_ids:
+                return []
+            counts_by_snapshot_id = {snapshot_id: 0 for snapshot_id in snapshot_ids}
+            for snapshot_id, count in session.execute(
+                select(PolicyRecordTable.snapshot_id, func.count(PolicyRecordTable.id))
+                .where(PolicyRecordTable.snapshot_id.in_(snapshot_ids))
+                .group_by(PolicyRecordTable.snapshot_id)
+            ):
+                counts_by_snapshot_id[snapshot_id] = int(count)
+            return [
+                PersistedPolicySnapshotSummary(
+                    persisted_at=snapshot.persisted_at,
+                    snapshot=PolicyHistorySnapshotRecord(
+                        persisted_at=snapshot.persisted_at,
+                        observed_at=snapshot.observed_at,
+                        data_status=snapshot.data_status,
+                        sync_source=snapshot.sync_source,
+                        sync_status=snapshot.sync_status,
+                        completeness=snapshot.completeness,
+                        detail_mode=snapshot.detail_mode,
+                        empty_reason=snapshot.empty_reason,
+                        observed_policy_count=snapshot.observed_policy_count,
+                        active_policy_count=snapshot.active_policy_count,
+                        detail_record_count=counts_by_snapshot_id.get(snapshot.id, 0),
+                    ),
+                )
+                for snapshot in snapshots
+            ]
+    except Exception:
+        logger.exception("Failed to load recent persisted policy snapshot summaries.")
+        return []

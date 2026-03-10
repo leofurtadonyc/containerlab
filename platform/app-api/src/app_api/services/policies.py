@@ -9,13 +9,24 @@ from app_api.integrations.collector.policies import (
     get_collector_policy_client,
 )
 from app_api.metrics.state import cache_policy_metrics
-from app_api.models.policy import CandidatePath, PolicyInventoryRecord, PolicyInventorySnapshot
+from app_api.models.policy import (
+    CandidatePath,
+    PolicyHistoryComparison,
+    PolicyHistoryWindow,
+    PolicyInventoryRecord,
+    PolicyInventorySnapshot,
+)
 from app_api.persistence.read_side import (
     load_latest_policy_snapshot,
+    load_previous_policy_snapshot,
+    load_recent_policy_snapshot_summaries,
     persist_policy_snapshot,
 )
 from app_api.schemas.policies import (
     CandidatePathRecord,
+    PolicyHistoryComparisonResponse,
+    PolicyHistorySnapshotResponseRecord,
+    PolicyHistoryWindowResponse,
     PoliciesListResponse,
     PolicyRecord,
 )
@@ -131,10 +142,127 @@ def _build_policy_inventory() -> tuple[
     return collector_snapshot, snapshot, None
 
 
+def _policy_record_signature(policy: PolicyInventoryRecord) -> tuple[object, ...]:
+    """Return a bounded normalized signature for current-versus-previous comparison."""
+    return (
+        policy.policy_name,
+        policy.policy_type,
+        policy.headend,
+        policy.endpoint,
+        policy.color,
+        policy.source_target,
+        policy.source_target_role,
+        policy.intent_state,
+        policy.observed_state,
+        policy.support_state,
+        policy.health_state,
+        tuple(
+            (
+                candidate_path.name,
+                candidate_path.path_state,
+                candidate_path.preference,
+                tuple(candidate_path.notes),
+            )
+            for candidate_path in policy.candidate_paths
+        ),
+    )
+
+
+def _build_policy_history_window() -> PolicyHistoryWindow:
+    """Build a bounded persisted history/comparison view for policy snapshots."""
+    recent_snapshots = load_recent_policy_snapshot_summaries(limit=3)
+    if not recent_snapshots:
+        return PolicyHistoryWindow(
+            status="unavailable",
+            summary=(
+                "No persisted normalized policy snapshots are currently available for "
+                "bounded policy history or comparison."
+            ),
+        )
+
+    if len(recent_snapshots) == 1:
+        return PolicyHistoryWindow(
+            status="current_only",
+            summary=(
+                "One persisted normalized policy snapshot is currently available, so "
+                "bounded current-versus-previous policy comparison is not yet available."
+            ),
+            recent_snapshots=[entry.snapshot for entry in recent_snapshots],
+        )
+
+    current_snapshot = load_latest_policy_snapshot()
+    previous_snapshot = load_previous_policy_snapshot()
+    if current_snapshot is None or previous_snapshot is None:
+        return PolicyHistoryWindow(
+            status="current_only",
+            summary=(
+                "Recent persisted policy snapshot summaries are available, but the "
+                "bounded comparison view could not load both full snapshots."
+            ),
+            recent_snapshots=[entry.snapshot for entry in recent_snapshots],
+        )
+
+    current_records = {record.policy_id: record for record in current_snapshot.snapshot.records}
+    previous_records = {record.policy_id: record for record in previous_snapshot.snapshot.records}
+    current_policy_ids = set(current_records)
+    previous_policy_ids = set(previous_records)
+    added_policy_ids = current_policy_ids - previous_policy_ids
+    removed_policy_ids = previous_policy_ids - current_policy_ids
+    shared_policy_ids = current_policy_ids & previous_policy_ids
+    changed_policy_ids = {
+        policy_id
+        for policy_id in shared_policy_ids
+        if _policy_record_signature(current_records[policy_id])
+        != _policy_record_signature(previous_records[policy_id])
+    }
+    comparison_notes = [
+        "This comparison is derived from the latest two persisted normalized policy snapshots.",
+        (
+            "Added, removed, and changed counts only reflect policies that currently have "
+            "bounded normalized detail records."
+        ),
+    ]
+    if (
+        current_snapshot.snapshot.observed_policy_count > len(current_snapshot.snapshot.records)
+        or previous_snapshot.snapshot.observed_policy_count > len(previous_snapshot.snapshot.records)
+    ):
+        comparison_notes.append(
+            "Observed policy totals may be higher than detailed record totals when the bounded read path cannot derive per-policy detail for every observed policy type."
+        )
+    return PolicyHistoryWindow(
+        status="comparison_ready",
+        summary=(
+            "Recent persisted normalized policy snapshots are available for bounded "
+            "current-versus-previous comparison."
+        ),
+        recent_snapshots=[entry.snapshot for entry in recent_snapshots],
+        comparison_to_previous=PolicyHistoryComparison(
+            current_persisted_at=current_snapshot.persisted_at,
+            previous_persisted_at=previous_snapshot.persisted_at,
+            current_observed_policy_count=current_snapshot.snapshot.observed_policy_count,
+            previous_observed_policy_count=previous_snapshot.snapshot.observed_policy_count,
+            current_detail_record_count=len(current_snapshot.snapshot.records),
+            previous_detail_record_count=len(previous_snapshot.snapshot.records),
+            observed_policy_delta=(
+                current_snapshot.snapshot.observed_policy_count
+                - previous_snapshot.snapshot.observed_policy_count
+            ),
+            detail_record_delta=(
+                len(current_snapshot.snapshot.records) - len(previous_snapshot.snapshot.records)
+            ),
+            added_policy_count=len(added_policy_ids),
+            removed_policy_count=len(removed_policy_ids),
+            changed_policy_count=len(changed_policy_ids),
+            notes=comparison_notes,
+        ),
+    )
+
+
 def build_policies_list_response() -> PoliciesListResponse:
     """Build the policy inventory response from the live collector boundary."""
     settings = get_settings()
     collector_snapshot, snapshot, persisted_at = _build_policy_inventory()
+    history = _build_policy_history_window()
     items = [
         PolicyRecord(
             policy_id=policy.policy_id,
@@ -247,5 +375,43 @@ def build_policies_list_response() -> PoliciesListResponse:
         srv6_binding_sid_count=snapshot.srv6_binding_sid_count,
         count=len(items),
         notes=snapshot.notes,
+        history=PolicyHistoryWindowResponse(
+            status=history.status,
+            summary=history.summary,
+            recent_snapshots=[
+                PolicyHistorySnapshotResponseRecord(
+                    persisted_at=entry.persisted_at,
+                    observed_at=entry.observed_at,
+                    data_status=entry.data_status,
+                    sync_source=entry.sync_source,
+                    sync_status=entry.sync_status,
+                    completeness=entry.completeness,
+                    detail_mode=entry.detail_mode,
+                    empty_reason=entry.empty_reason,
+                    observed_policy_count=entry.observed_policy_count,
+                    active_policy_count=entry.active_policy_count,
+                    detail_record_count=entry.detail_record_count,
+                )
+                for entry in history.recent_snapshots
+            ],
+            comparison_to_previous=(
+                PolicyHistoryComparisonResponse(
+                    current_persisted_at=history.comparison_to_previous.current_persisted_at,
+                    previous_persisted_at=history.comparison_to_previous.previous_persisted_at,
+                    current_observed_policy_count=history.comparison_to_previous.current_observed_policy_count,
+                    previous_observed_policy_count=history.comparison_to_previous.previous_observed_policy_count,
+                    current_detail_record_count=history.comparison_to_previous.current_detail_record_count,
+                    previous_detail_record_count=history.comparison_to_previous.previous_detail_record_count,
+                    observed_policy_delta=history.comparison_to_previous.observed_policy_delta,
+                    detail_record_delta=history.comparison_to_previous.detail_record_delta,
+                    added_policy_count=history.comparison_to_previous.added_policy_count,
+                    removed_policy_count=history.comparison_to_previous.removed_policy_count,
+                    changed_policy_count=history.comparison_to_previous.changed_policy_count,
+                    notes=history.comparison_to_previous.notes,
+                )
+                if history.comparison_to_previous is not None
+                else None
+            ),
+        ),
         items=items,
     )

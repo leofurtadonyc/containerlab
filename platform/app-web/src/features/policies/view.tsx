@@ -68,6 +68,13 @@ function formatRoleCoverage(roleCounts: Record<string, number>): string {
     .join(" • ");
 }
 
+function formatSignedDelta(value: number): string {
+  if (value > 0) {
+    return `+${value}`;
+  }
+  return `${value}`;
+}
+
 export function PoliciesView() {
   const { data, error, isLoading, reload } = usePoliciesQuery();
   const [healthFilter, setHealthFilter] = useState("all");
@@ -232,6 +239,8 @@ export function PoliciesView() {
     );
   }
 
+  const comparison = data.history.comparison_to_previous;
+
   return (
     <section>
       <div className="section-header">
@@ -307,6 +316,11 @@ export function PoliciesView() {
           <p className="summary-label">Freshness</p>
           <strong>{freshness.label}</strong>
           <p>{freshness.detail}</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">History Status</p>
+          <strong>{formatLabel(data.history.status)}</strong>
+          <p>{data.history.summary}</p>
         </article>
       </div>
 
@@ -496,6 +510,78 @@ export function PoliciesView() {
               explicit instead of pretending the record is fully understood.
             </li>
           </ul>
+        </article>
+        <article className="detail-card">
+          <h3>Persisted Comparison</h3>
+          <p>{data.history.summary}</p>
+          {comparison ? (
+            <>
+              <ul className="compact-list">
+                <li>
+                  <span>Current / previous persisted</span>
+                  <strong>
+                    {formatDateTime(comparison.current_persisted_at)} /{" "}
+                    {formatDateTime(comparison.previous_persisted_at)}
+                  </strong>
+                </li>
+                <li>
+                  <span>Observed policy delta</span>
+                  <strong>{formatSignedDelta(comparison.observed_policy_delta)}</strong>
+                </li>
+                <li>
+                  <span>Detailed record delta</span>
+                  <strong>{formatSignedDelta(comparison.detail_record_delta)}</strong>
+                </li>
+                <li>
+                  <span>Added / removed detailed policies</span>
+                  <strong>
+                    {comparison.added_policy_count} / {comparison.removed_policy_count}
+                  </strong>
+                </li>
+                <li>
+                  <span>Changed detailed policies</span>
+                  <strong>{comparison.changed_policy_count}</strong>
+                </li>
+              </ul>
+              {comparison.notes.length > 0 ? (
+                <ul className="notes-list">
+                  {comparison.notes.map((note) => (
+                    <li key={note}>{note}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </>
+          ) : (
+            <p className="footnote">
+              Bounded comparison is only available once at least two persisted normalized policy
+              snapshots exist.
+            </p>
+          )}
+        </article>
+        <article className="detail-card">
+          <h3>Recent Persisted Snapshots</h3>
+          {data.history.recent_snapshots.length > 0 ? (
+            <ul className="notes-list">
+              {data.history.recent_snapshots.map((entry) => (
+                <li key={entry.persisted_at}>
+                  <strong>{formatDateTime(entry.persisted_at)}</strong>
+                  {" • "}
+                  {formatLabel(entry.data_status)}
+                  {" • observed "}
+                  {entry.observed_policy_count}
+                  {" • detail "}
+                  {entry.detail_record_count}
+                  {" • "}
+                  {formatLabel(entry.detail_mode)}
+                  {entry.observed_at ? ` • observed at ${formatDateTime(entry.observed_at)}` : ""}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="footnote">
+              No persisted normalized policy snapshots are currently available for this bounded view.
+            </p>
+          )}
         </article>
       </div>
 

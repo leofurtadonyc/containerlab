@@ -43,6 +43,58 @@ class PolicyRecord(BaseModel):
     notes: list[str]
 
 
+class PolicyHistorySnapshotResponseRecord(BaseModel):
+    """Bounded summary of one persisted policy snapshot."""
+
+    persisted_at: datetime
+    observed_at: datetime | None = None
+    data_status: Literal["live", "degraded"]
+    sync_source: str
+    sync_status: Literal["ok", "degraded", "failed", "unknown"]
+    completeness: Literal["complete", "partial", "unknown"]
+    detail_mode: Literal[
+        "counters_only",
+        "static_policies_when_present",
+        "mixed",
+        "unknown",
+    ]
+    empty_reason: Literal[
+        "none",
+        "no_policies_observed",
+        "per_policy_details_unavailable",
+        "collector_unavailable",
+    ]
+    observed_policy_count: int
+    active_policy_count: int
+    detail_record_count: int
+
+
+class PolicyHistoryComparisonResponse(BaseModel):
+    """Bounded comparison of the latest two persisted policy snapshots."""
+
+    current_persisted_at: datetime
+    previous_persisted_at: datetime
+    current_observed_policy_count: int
+    previous_observed_policy_count: int
+    current_detail_record_count: int
+    previous_detail_record_count: int
+    observed_policy_delta: int
+    detail_record_delta: int
+    added_policy_count: int
+    removed_policy_count: int
+    changed_policy_count: int
+    notes: list[str]
+
+
+class PolicyHistoryWindowResponse(BaseModel):
+    """Bounded persisted history window for policy comparison support."""
+
+    status: Literal["unavailable", "current_only", "comparison_ready"]
+    summary: str
+    recent_snapshots: list[PolicyHistorySnapshotResponseRecord]
+    comparison_to_previous: PolicyHistoryComparisonResponse | None = None
+
+
 class PoliciesListResponse(ApiResponseMetadata):
     """Read-only policy inventory list response."""
 
@@ -79,4 +131,5 @@ class PoliciesListResponse(ApiResponseMetadata):
     srv6_binding_sid_count: int
     count: int
     notes: list[str]
+    history: PolicyHistoryWindowResponse
     items: list[PolicyRecord]

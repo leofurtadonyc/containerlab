@@ -22,6 +22,7 @@ from app_api.persistence.history import PersistedSyncRun, SyncRunHistorySummary
 from app_api.persistence.read_side import (
     PersistedInventorySnapshot,
     PersistedPolicySnapshot,
+    PersistedPolicySnapshotSummary,
     PersistedTopologySnapshot,
 )
 
@@ -53,6 +54,14 @@ def _disable_read_side_persistence(monkeypatch) -> None:
     monkeypatch.setattr(
         "app_api.services.policies.load_latest_policy_snapshot",
         lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_previous_policy_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_recent_policy_snapshot_summaries",
+        lambda limit=3: [],
     )
 
 
@@ -390,6 +399,130 @@ def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
     )
 
 
+def _build_previous_persisted_policy_snapshot() -> PersistedPolicySnapshot:
+    return PersistedPolicySnapshot(
+        persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+        snapshot=PolicyInventorySnapshot(
+            sync_source="persisted_policy_snapshot",
+            sync_status="ok",
+            completeness="partial",
+            detail_mode="static_policies_when_present",
+            empty_reason="none",
+            observed_at=datetime.fromisoformat("2026-03-09T23:29:00+00:00"),
+            observed_target_count=2,
+            policy_capable_target_count=2,
+            observed_target_role_counts={"p": 1, "pe": 1},
+            policy_capable_target_role_counts={"p": 1, "pe": 1},
+            observed_policy_count=2,
+            active_policy_count=1,
+            static_policy_count=2,
+            static_local_policy_count=1,
+            static_non_local_policy_count=1,
+            bgp_policy_count=0,
+            ttm_preference_count=28,
+            binding_sid_count=0,
+            srv6_binding_sid_count=0,
+            notes=["Served from the previous persisted policy snapshot."],
+            records=[
+                {
+                    "policy_id": "persisted-policy-1",
+                    "policy_name": "persisted-static-policy",
+                    "policy_type": "static_local",
+                    "headend": "PE1",
+                    "endpoint": "192.0.2.11",
+                    "color": 100,
+                    "source_target": "PE1",
+                    "source_target_role": "pe",
+                    "candidate_paths": [
+                        {
+                            "name": "primary",
+                            "path_state": "inactive",
+                            "preference": 200,
+                            "notes": ["persisted candidate path"],
+                        }
+                    ],
+                    "intent_state": "declared",
+                    "observed_state": "inactive",
+                    "support_state": "partially_supported",
+                    "health_state": "degraded",
+                    "source": "gnmi",
+                    "notes": ["Persisted from the previous bounded policy read path."],
+                },
+                {
+                    "policy_id": "persisted-policy-2",
+                    "policy_name": "persisted-static-policy-removed",
+                    "policy_type": "static_non_local",
+                    "headend": "P1",
+                    "endpoint": "198.51.100.1",
+                    "color": 200,
+                    "source_target": "P1",
+                    "source_target_role": "p",
+                    "candidate_paths": [],
+                    "intent_state": "declared",
+                    "observed_state": "inactive",
+                    "support_state": "partially_supported",
+                    "health_state": "degraded",
+                    "source": "gnmi",
+                    "notes": ["Persisted from the previous bounded policy read path."],
+                },
+            ],
+        ),
+    )
+
+
+def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSummary]:
+    return [
+        PersistedPolicySnapshotSummary(
+            persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+            snapshot={
+                "persisted_at": datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+                "observed_at": datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+                "data_status": "degraded",
+                "sync_source": "persisted_policy_snapshot",
+                "sync_status": "degraded",
+                "completeness": "partial",
+                "detail_mode": "static_policies_when_present",
+                "empty_reason": "none",
+                "observed_policy_count": 1,
+                "active_policy_count": 1,
+                "detail_record_count": 1,
+            },
+        ),
+        PersistedPolicySnapshotSummary(
+            persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+            snapshot={
+                "persisted_at": datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+                "observed_at": datetime.fromisoformat("2026-03-09T23:29:00+00:00"),
+                "data_status": "live",
+                "sync_source": "persisted_policy_snapshot",
+                "sync_status": "ok",
+                "completeness": "partial",
+                "detail_mode": "static_policies_when_present",
+                "empty_reason": "none",
+                "observed_policy_count": 2,
+                "active_policy_count": 1,
+                "detail_record_count": 2,
+            },
+        ),
+        PersistedPolicySnapshotSummary(
+            persisted_at=datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
+            snapshot={
+                "persisted_at": datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
+                "observed_at": datetime.fromisoformat("2026-03-09T22:59:00+00:00"),
+                "data_status": "live",
+                "sync_source": "persisted_policy_snapshot",
+                "sync_status": "ok",
+                "completeness": "partial",
+                "detail_mode": "counters_only",
+                "empty_reason": "per_policy_details_unavailable",
+                "observed_policy_count": 2,
+                "active_policy_count": 0,
+                "detail_record_count": 0,
+            },
+        ),
+    ]
+
+
 def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
     return [
         PersistedSyncRun(
@@ -667,6 +800,19 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
         "app_api.services.policies.get_collector_policy_client",
         lambda: StubCollectorPolicyClient(),
     )
+    monkeypatch.setattr("app_api.services.policies.persist_policy_snapshot", lambda **kwargs: None)
+    monkeypatch.setattr(
+        "app_api.services.policies.load_recent_policy_snapshot_summaries",
+        lambda limit=3: _build_recent_policy_snapshot_summaries()[:limit],
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_latest_policy_snapshot",
+        _build_persisted_policy_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_previous_policy_snapshot",
+        _build_previous_persisted_policy_snapshot,
+    )
     response = client.get("/api/v1/policies", headers={"X-Request-ID": "policies-test"})
 
     assert response.status_code == 200
@@ -700,6 +846,13 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["static_local_policy_count"] == 1
     assert payload["static_non_local_policy_count"] == 1
     assert payload["ttm_preference_count"] == 476
+    assert payload["history"]["status"] == "comparison_ready"
+    assert len(payload["history"]["recent_snapshots"]) == 3
+    assert payload["history"]["comparison_to_previous"]["observed_policy_delta"] == -1
+    assert payload["history"]["comparison_to_previous"]["detail_record_delta"] == -1
+    assert payload["history"]["comparison_to_previous"]["added_policy_count"] == 0
+    assert payload["history"]["comparison_to_previous"]["removed_policy_count"] == 1
+    assert payload["history"]["comparison_to_previous"]["changed_policy_count"] == 1
     assert "bounded static-policy observations" in payload["summary"]
     assert payload["items"][0]["policy_type"] == "static_local"
     assert payload["items"][0]["source_target"] == "PE1"
@@ -707,6 +860,8 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
 
 
 def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
     class StubCollectorPolicyClient:
         def read_policy_snapshot(self) -> CollectorPolicySnapshot:
             return _build_live_empty_policy_snapshot()
@@ -725,6 +880,7 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     assert payload["empty_reason"] == "no_policies_observed"
     assert payload["ttm_preference_count"] == 476
     assert payload["observed_target_role_counts"]["p"] == 16
+    assert payload["history"]["status"] == "unavailable"
     assert "stable counter footprint and target-role coverage" in payload["summary"]
 
 
@@ -767,6 +923,14 @@ def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) 
         "app_api.services.policies.load_latest_policy_snapshot",
         _build_persisted_policy_snapshot,
     )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_recent_policy_snapshot_summaries",
+        lambda limit=3: _build_recent_policy_snapshot_summaries()[:limit],
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_previous_policy_snapshot",
+        _build_previous_persisted_policy_snapshot,
+    )
 
     response = client.get("/api/v1/policies")
 
@@ -777,6 +941,7 @@ def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) 
     assert payload["sync_source"] == "persisted_policy_snapshot"
     assert payload["detail_mode"] == "static_policies_when_present"
     assert "latest persisted normalized policy snapshot" in payload["summary"]
+    assert payload["history"]["status"] == "comparison_ready"
     assert payload["items"][0]["policy_id"] == "persisted-policy-1"
 
 
