@@ -14,7 +14,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## SR Policy Observability Overview\nThis dashboard summarizes the current bounded SR policy slice exposed by the platform. It focuses on real Prometheus-backed evidence: collector policy ingestion health, backend policy snapshot readiness, live-empty policy context, and API demand around the policy view.\n\nCurrent limits:\n- The live policy slice is currently bounded to Nokia SR policy counters rather than full per-policy truth.\n- A zero-policy view can still be healthy; live-empty state is explicit and should not be confused with a placeholder response.\n- Policy persistence and policy-history metrics do not yet exist, so those panels remain intentionally out of scope.\n- Grafana remains observability-only. Policy exploration and future action flows stay in the WebUI and backend.",
+        "content": "## SR Policy Observability Overview\nThis dashboard summarizes the current bounded SR policy slice exposed by the platform. It focuses on real Prometheus-backed evidence: collector policy ingestion health, backend policy snapshot readiness, live-empty policy context, bounded static-policy detail when present, and API demand around the policy view.\n\nCurrent limits:\n- The live policy slice still starts with Nokia SR policy counters and only adds bounded static-policy observations where that state is actually exposed.\n- A zero-policy view can still be healthy; live-empty state is explicit and should not be confused with a placeholder response.\n- Observed policy counts and detailed policy record counts are intentionally separated because the bounded read path cannot yet derive per-policy detail for every observed type.\n- Policy persistence and policy-history metrics do not yet exist, so those panels remain intentionally out of scope.\n- Grafana remains observability-only. Policy exploration and future action flows stay in the WebUI and backend.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -472,22 +472,12 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_gnmi_collector_policy_active_policies",
-          "legendFormat": "active",
+          "expr": "platform_app_api_policy_records_by_type",
+          "legendFormat": "{{type}}",
           "refId": "A"
-        },
-        {
-          "expr": "platform_gnmi_collector_policy_static_policies",
-          "legendFormat": "static",
-          "refId": "B"
-        },
-        {
-          "expr": "platform_gnmi_collector_policy_bgp_policies",
-          "legendFormat": "bgp",
-          "refId": "C"
         }
       ],
-      "title": "Observed Policy Type Mix",
+      "title": "Detailed Policy Record Type Mix",
       "type": "bargauge"
     },
     {
@@ -510,7 +500,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "reqps"
+          "min": 0
         },
         "overrides": []
       },
@@ -571,35 +561,37 @@
       },
       "id": 15,
       "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom"
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "showUnfilled": true
       },
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "sum(rate(platform_app_api_http_requests_total{endpoint=\"/api/v1/policies\"}[5m]))",
-          "legendFormat": "policies api request rate",
+          "expr": "platform_app_api_policy_observed_policy_count",
+          "legendFormat": "observed policies",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(platform_app_api_http_requests_total{endpoint=\"/api/v1/workflow-history\"}[5m]))",
-          "legendFormat": "workflow-history request rate",
+          "expr": "platform_app_api_policy_records",
+          "legendFormat": "detailed policy records",
           "refId": "B"
         },
         {
-          "expr": "sum(rate(platform_app_api_http_requests_total{endpoint=\"/api/v1/audit-history\"}[5m]))",
-          "legendFormat": "audit-history request rate",
+          "expr": "platform_gnmi_collector_policy_backend_ready_policies",
+          "legendFormat": "collector backend-ready records",
           "refId": "C"
         }
       ],
-      "title": "Policy and History Endpoint Demand",
-      "type": "timeseries"
+      "title": "Observed vs Detailed Policy Counts",
+      "type": "bargauge"
     },
     {
       "datasource": {
@@ -672,7 +664,7 @@
       },
       "id": 18,
       "options": {
-        "content": "### Policy History Status\nThe current policy path is live but transient.\n\nWhat this means right now:\n- policy counts and collection health are real and useful\n- a healthy live-empty policy view is expected when no SR policies are currently observed\n- persisted policy sync history, richer policy drift evidence, and per-policy validation history do not yet exist, so they are intentionally not faked in Grafana",
+        "content": "### Policy History Status\nThe current policy path is live but transient.\n\nWhat this means right now:\n- policy counts and collection health are real and useful\n- bounded static-policy detail can appear when present, but detail coverage can still be lower than the observed policy count\n- a healthy live-empty policy view is expected when no SR policies are currently observed\n- persisted policy sync history, richer policy drift evidence, and per-policy validation history do not yet exist, so they are intentionally not faked in Grafana",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -698,5 +690,5 @@
   "timezone": "browser",
   "title": "SR Policy Overview",
   "uid": "sr-policy-overview",
-  "version": 3
+  "version": 4
 }

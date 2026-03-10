@@ -223,6 +223,10 @@ section h2 {
   margin-bottom: 8px;
 }
 
+.compact-list li strong {
+  text-align: right;
+}
+
 .notes-list li {
   margin-bottom: 8px;
 }
@@ -318,6 +322,25 @@ section h2 {
   font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.data-row-selected td {
+  background: rgba(37, 50, 75, 0.38);
+}
+
+.table-select {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.table-select:hover strong,
+.table-select:focus-visible strong {
+  color: #8fb3ff;
 }
 
 .table-note {
