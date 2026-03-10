@@ -1,4 +1,4 @@
-"""Bounded persistence helpers for inventory and topology read-side snapshots."""
+"""Bounded persistence helpers for inventory, topology, and policy read-side snapshots."""
 
 from datetime import UTC, datetime
 from logging import getLogger
@@ -8,13 +8,18 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 
 from app_api.integrations.collector.inventory import CollectorInventorySnapshot
+from app_api.integrations.collector.policies import CollectorPolicySnapshot
 from app_api.integrations.collector.topology import CollectorTopologySnapshot
 from app_api.models.inventory import InventoryDevice
+from app_api.models.policy import CandidatePath, PolicyInventoryRecord, PolicyInventorySnapshot
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.persistence.session import create_session
 from app_api.persistence.tables import (
     InventoryRecordTable,
     InventorySnapshotTable,
+    PolicyCandidatePathTable,
+    PolicyRecordTable,
+    PolicySnapshotTable,
     SyncRunTable,
     TopologyLinkTable,
     TopologyNodeTable,
@@ -36,6 +41,13 @@ class PersistedTopologySnapshot(BaseModel):
 
     persisted_at: datetime
     snapshot: TopologySnapshot
+
+
+class PersistedPolicySnapshot(BaseModel):
+    """Latest persisted policy snapshot recovered from Postgres."""
+
+    persisted_at: datetime
+    snapshot: PolicyInventorySnapshot
 
 
 def persist_inventory_snapshot(
@@ -267,4 +279,169 @@ def load_latest_topology_snapshot() -> PersistedTopologySnapshot | None:
             )
     except Exception:
         logger.exception("Failed to load latest persisted topology snapshot.")
+        return None
+
+
+def persist_policy_snapshot(
+    *,
+    collector_snapshot: CollectorPolicySnapshot,
+    snapshot: PolicyInventorySnapshot,
+    data_status: str,
+) -> None:
+    """Persist one bounded normalized policy snapshot and matching sync run."""
+    if collector_snapshot.status == "collector_unavailable":
+        return
+
+    current_time = datetime.now(UTC)
+    sync_run_id = str(uuid4())
+    snapshot_id = str(uuid4())
+    notes = [
+        "Persisted from the bounded collector-backed policy read path.",
+        "Policy and candidate-path records remain normalized platform-owned policy state rather than raw vendor payloads.",
+    ]
+    try:
+        with create_session() as session:
+            sync_run = SyncRunTable(
+                id=sync_run_id,
+                model_family="policy",
+                source_type=collector_snapshot.integration,
+                source_endpoint=collector_snapshot.source_endpoint,
+                fetch_status=collector_snapshot.status,
+                record_count=len(snapshot.records),
+                observed_at=snapshot.observed_at,
+                started_at=current_time,
+                finished_at=current_time,
+                notes=notes,
+            )
+            persisted_snapshot = PolicySnapshotTable(
+                id=snapshot_id,
+                sync_run_id=sync_run_id,
+                data_status=data_status,
+                sync_source=snapshot.sync_source,
+                sync_status=snapshot.sync_status,
+                completeness=snapshot.completeness,
+                detail_mode=snapshot.detail_mode,
+                empty_reason=snapshot.empty_reason,
+                observed_at=snapshot.observed_at,
+                persisted_at=current_time,
+                observed_target_count=snapshot.observed_target_count,
+                policy_capable_target_count=snapshot.policy_capable_target_count,
+                observed_policy_count=snapshot.observed_policy_count,
+                active_policy_count=snapshot.active_policy_count,
+                static_policy_count=snapshot.static_policy_count,
+                bgp_policy_count=snapshot.bgp_policy_count,
+                notes=snapshot.notes,
+            )
+            persisted_snapshot.records = [
+                PolicyRecordTable(
+                    policy_id=policy.policy_id,
+                    policy_name=policy.policy_name,
+                    policy_type=policy.policy_type,
+                    headend=policy.headend,
+                    endpoint=policy.endpoint,
+                    color=policy.color,
+                    source_target=policy.source_target,
+                    source_target_role=policy.source_target_role,
+                    intent_state=policy.intent_state,
+                    observed_state=policy.observed_state,
+                    support_state=policy.support_state,
+                    health_state=policy.health_state,
+                    source=policy.source,
+                    notes=policy.notes,
+                    candidate_paths=[
+                        PolicyCandidatePathTable(
+                            name=path.name,
+                            path_state=path.path_state,
+                            preference=path.preference,
+                            notes=path.notes,
+                        )
+                        for path in policy.candidate_paths
+                    ],
+                )
+                for policy in snapshot.records
+            ]
+            session.add(sync_run)
+            session.add(persisted_snapshot)
+            session.commit()
+    except Exception:
+        logger.exception("Failed to persist bounded policy snapshot.")
+
+
+def load_latest_policy_snapshot() -> PersistedPolicySnapshot | None:
+    """Load the latest persisted bounded policy snapshot, if any."""
+    try:
+        with create_session() as session:
+            snapshot = session.scalar(
+                select(PolicySnapshotTable)
+                .order_by(PolicySnapshotTable.persisted_at.desc())
+                .limit(1)
+            )
+            if snapshot is None:
+                return None
+            policy_rows = session.scalars(
+                select(PolicyRecordTable)
+                .where(PolicyRecordTable.snapshot_id == snapshot.id)
+                .order_by(PolicyRecordTable.policy_name.asc(), PolicyRecordTable.policy_id.asc())
+            ).all()
+            policy_ids = [row.id for row in policy_rows]
+            candidate_rows = session.scalars(
+                select(PolicyCandidatePathTable)
+                .where(PolicyCandidatePathTable.policy_record_id.in_(policy_ids))
+                .order_by(
+                    PolicyCandidatePathTable.policy_record_id.asc(),
+                    PolicyCandidatePathTable.preference.desc().nullslast(),
+                    PolicyCandidatePathTable.name.asc(),
+                )
+            ).all() if policy_ids else []
+            candidates_by_policy_id: dict[int, list[PolicyCandidatePathTable]] = {}
+            for row in candidate_rows:
+                candidates_by_policy_id.setdefault(row.policy_record_id, []).append(row)
+            return PersistedPolicySnapshot(
+                persisted_at=snapshot.persisted_at,
+                snapshot=PolicyInventorySnapshot(
+                    sync_source=snapshot.sync_source,
+                    sync_status=snapshot.sync_status,
+                    completeness=snapshot.completeness,
+                    detail_mode=snapshot.detail_mode,
+                    empty_reason=snapshot.empty_reason,
+                    observed_at=snapshot.observed_at,
+                    observed_target_count=snapshot.observed_target_count,
+                    policy_capable_target_count=snapshot.policy_capable_target_count,
+                    observed_policy_count=snapshot.observed_policy_count,
+                    active_policy_count=snapshot.active_policy_count,
+                    static_policy_count=snapshot.static_policy_count,
+                    bgp_policy_count=snapshot.bgp_policy_count,
+                    notes=snapshot.notes,
+                    records=[
+                        PolicyInventoryRecord(
+                            policy_id=row.policy_id,
+                            policy_name=row.policy_name,
+                            policy_type=row.policy_type,
+                            headend=row.headend,
+                            endpoint=row.endpoint,
+                            color=row.color,
+                            source_target=row.source_target,
+                            source_target_role=row.source_target_role,
+                            candidate_paths=[
+                                CandidatePath(
+                                    name=candidate.name,
+                                    path_state=candidate.path_state,
+                                    preference=candidate.preference,
+                                    notes=candidate.notes,
+                                )
+                                for candidate in candidates_by_policy_id.get(row.id, [])
+                            ],
+                            intent_state=row.intent_state,
+                            observed_state=row.observed_state,
+                            support_state=row.support_state,
+                            health_state=row.health_state,
+                            source=row.source,
+                            notes=row.notes,
+                        )
+                        for row in policy_rows
+                    ],
+                ),
+            )
+    except Exception:
+        logger.exception("Failed to load latest persisted policy snapshot.")
         return None

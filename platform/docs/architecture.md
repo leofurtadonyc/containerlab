@@ -13,7 +13,7 @@ The platform now has:
 - service READMEs and topology scaffolding
 - Prometheus and Grafana provisioning skeletons
 - backend, collector, frontend, and database-direction scaffolding
-- a first bounded persistence-backed read-side slice for inventory and topology snapshots
+- a first bounded persistence-backed read-side slice for inventory, topology, and policy snapshots
 
 What remains incomplete:
 
@@ -94,8 +94,8 @@ Current read-model reality:
 - `/api/v1/devices` is backed by a bounded normalized live collector inventory path
 - `/api/v1/topology` is backed by a backend-owned normalized live topology model that explicitly marks partial and unknown knowledge
 - `/api/v1/policies` is backed by a backend-owned normalized live policy inventory model that explicitly marks support, observed, and unknown states
-- inventory and topology snapshots are now persisted in Postgres along with sync-run records, and the API can fall back to the latest persisted normalized snapshot when the collector path is temporarily unavailable
-- policy inventory remains transient at the backend read-side today; it is served from the current collector-backed slice and is not yet persisted
+- inventory, topology, and policy snapshots are now persisted in Postgres along with sync-run records, and the API can fall back to the latest persisted normalized snapshot when the collector path is temporarily unavailable
+- policy persistence remains intentionally bounded to normalized snapshot history and candidate-path records rather than a broader durable policy domain model
 - backend metrics remain transient in-memory service state for Prometheus scraping; they are not durable application records
 - these are stable product-owned contracts, but they remain bounded read-side slices rather than mature operational truth
 
@@ -133,8 +133,9 @@ Current persistence boundary:
 
 - normalized inventory snapshots are persisted
 - normalized topology snapshots are persisted
+- normalized policy snapshots and candidate-path records are persisted
 - sync-run history for those persisted read-side writes is persisted
-- policy, workflow, audit, and broader intent/history domains are not yet persisted in this phase
+- workflow, audit, and broader intent/history domains are not yet persisted in this phase
 - the current topology still lacks a host-mounted Postgres data directory, so persisted state is durable within the running deployment but not yet hardened across full reprovisioning
 
 ### `prometheus`
@@ -209,13 +210,13 @@ These boundaries remain non-negotiable:
 - read-only devices, topology, policies, capabilities, and platform status APIs now exist as backend-owned normalized bounded live contracts
 - useful read-only frontend pages now consume those stable backend contracts
 - observability scaffolding exists
-- database direction is established and bounded persistence is now real for inventory/topology snapshots plus sync-run history
+- database direction is established and bounded persistence is now real for inventory/topology/policy snapshots plus sync-run history
 - ODL integration is documented and scaffolded, but not substantively implemented
 
 ### Future
 
 - richer live-backed read-only product APIs
-- broader durable read-side coverage beyond the current inventory/topology snapshot slice
+- broader durable read-side coverage beyond the current inventory/topology/policy snapshot slice
 - richer frontend read views backed by deeper backend data and future history-oriented endpoints
 - bounded ODL-backed enrichment where useful
 - dry-run and validation flows later

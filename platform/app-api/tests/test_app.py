@@ -15,10 +15,12 @@ from app_api.integrations.collector.topology import (
 from app_api.main import app
 from app_api.models.inventory import InventoryDevice
 from app_api.metrics.state import reset_metrics_registry
+from app_api.models.policy import PolicyInventorySnapshot
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.persistence.history import PersistedSyncRun, SyncRunHistorySummary
 from app_api.persistence.read_side import (
     PersistedInventorySnapshot,
+    PersistedPolicySnapshot,
     PersistedTopologySnapshot,
 )
 
@@ -41,6 +43,14 @@ def _disable_read_side_persistence(monkeypatch) -> None:
     )
     monkeypatch.setattr(
         "app_api.services.topology.load_latest_topology_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.persist_policy_snapshot",
+        lambda **kwargs: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_latest_policy_snapshot",
         lambda: None,
     )
 
@@ -311,8 +321,68 @@ def _build_persisted_topology_snapshot() -> PersistedTopologySnapshot:
     )
 
 
+def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
+    return PersistedPolicySnapshot(
+        persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+        snapshot=PolicyInventorySnapshot(
+            sync_source="persisted_policy_snapshot",
+            sync_status="degraded",
+            completeness="partial",
+            detail_mode="static_policies_when_present",
+            empty_reason="none",
+            observed_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+            observed_target_count=2,
+            policy_capable_target_count=2,
+            observed_policy_count=1,
+            active_policy_count=1,
+            static_policy_count=1,
+            bgp_policy_count=0,
+            notes=["Served from the latest persisted policy snapshot."],
+            records=[
+                {
+                    "policy_id": "persisted-policy-1",
+                    "policy_name": "persisted-static-policy",
+                    "policy_type": "static_local",
+                    "headend": "PE1",
+                    "endpoint": "192.0.2.11",
+                    "color": 100,
+                    "source_target": "PE1",
+                    "source_target_role": "pe",
+                    "candidate_paths": [
+                        {
+                            "name": "primary",
+                            "path_state": "active",
+                            "preference": 200,
+                            "notes": ["persisted candidate path"],
+                        }
+                    ],
+                    "intent_state": "declared",
+                    "observed_state": "active",
+                    "support_state": "partially_supported",
+                    "health_state": "healthy",
+                    "source": "gnmi",
+                    "notes": ["Persisted from the bounded policy read path."],
+                }
+            ],
+        ),
+    )
+
+
 def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
     return [
+        PersistedSyncRun(
+            sync_run_id="sync-policy-1",
+            model_family="policy",
+            source_type="gnmi_collector_policy",
+            source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+            fetch_status="live_normalized_feed",
+            record_count=1,
+            observed_at=datetime.fromisoformat("2026-03-10T01:30:00+00:00"),
+            started_at=datetime.fromisoformat("2026-03-10T01:30:00+00:00"),
+            finished_at=datetime.fromisoformat("2026-03-10T01:30:04+00:00"),
+            persisted_artifacts=["policy_snapshot"],
+            notes=["Policy sync completed from the bounded live path."],
+        ),
         PersistedSyncRun(
             sync_run_id="sync-topology-1",
             model_family="topology",
@@ -344,15 +414,17 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
 
 def _build_sync_run_history_summary() -> SyncRunHistorySummary:
     return SyncRunHistorySummary(
-        total_count=2,
-        counts_by_model_family={"inventory": 1, "topology": 1},
-        counts_by_result={"completed": 1, "partial": 1},
+        total_count=3,
+        counts_by_model_family={"inventory": 1, "topology": 1, "policy": 1},
+        counts_by_result={"completed": 2, "partial": 1},
         counts_by_model_family_and_result={
             "inventory": {"completed": 1},
+            "policy": {"completed": 1},
             "topology": {"partial": 1},
         },
         latest_finished_at_by_model_family={
             "inventory": datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
+            "policy": datetime.fromisoformat("2026-03-10T01:30:04+00:00"),
             "topology": datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
         },
     )
@@ -583,6 +655,51 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     assert "no SR policies are currently observed" in payload["summary"]
 
 
+def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) -> None:
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return CollectorPolicySnapshot(
+                integration="gnmi_collector_policy",
+                status="collector_unavailable",
+                destination_service="app-api",
+                source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+                sync_source="gnmi_collector_policy",
+                sync_status="failed",
+                completeness="unknown",
+                detail_mode="unknown",
+                observed_at=None,
+                observed_target_count=0,
+                policy_capable_target_count=0,
+                policy_count=0,
+                active_policy_count=0,
+                static_policy_count=0,
+                bgp_policy_count=0,
+                notes=[],
+                records=[],
+                fetch_error="collector down",
+            )
+
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_latest_policy_snapshot",
+        _build_persisted_policy_snapshot,
+    )
+
+    response = client.get("/api/v1/policies")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_status"] == "degraded"
+    assert payload["count"] == 1
+    assert payload["sync_source"] == "persisted_policy_snapshot"
+    assert payload["detail_mode"] == "static_policies_when_present"
+    assert "latest persisted normalized policy snapshot" in payload["summary"]
+    assert payload["items"][0]["policy_id"] == "persisted-policy-1"
+
+
 def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) -> None:
     monkeypatch.setattr(
         "app_api.services.workflow_history.load_sync_runs",
@@ -595,14 +712,17 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     payload = response.json()
     assert response.headers["X-Request-ID"] == "workflow-test"
     assert payload["data_status"] == "persisted_activity_history"
-    assert payload["count"] == 2
+    assert payload["count"] == 3
     assert "platform-side read-only sync activity" in payload["summary"]
     assert payload["items"][0]["workflow_type"] == "read_side_sync"
-    assert payload["items"][0]["workflow_name"] == "topology_snapshot_sync"
-    assert payload["items"][0]["status"] == "partial"
-    assert payload["items"][0]["persisted_artifacts"] == ["topology_snapshot"]
-    assert payload["items"][1]["workflow_name"] == "inventory_snapshot_sync"
-    assert payload["items"][1]["status"] == "completed"
+    assert payload["items"][0]["workflow_name"] == "policy_snapshot_sync"
+    assert payload["items"][0]["scope"] == "policy_inventory_read_side"
+    assert payload["items"][0]["persisted_artifacts"] == ["policy_snapshot"]
+    assert payload["items"][1]["workflow_name"] == "topology_snapshot_sync"
+    assert payload["items"][1]["status"] == "partial"
+    assert payload["items"][1]["persisted_artifacts"] == ["topology_snapshot"]
+    assert payload["items"][2]["workflow_name"] == "inventory_snapshot_sync"
+    assert payload["items"][2]["status"] == "completed"
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
@@ -630,14 +750,15 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     payload = response.json()
     assert response.headers["X-Request-ID"] == "audit-test"
     assert payload["data_status"] == "persisted_activity_history"
-    assert payload["count"] == 2
+    assert payload["count"] == 3
     assert "platform-recorded read-side sync events" in payload["summary"]
     assert payload["items"][0]["event_type"] == "read_side_sync_recorded"
     assert payload["items"][0]["source"] == "app-api"
     assert payload["items"][0]["actor"] == "platform_system"
-    assert payload["items"][0]["result"] == "partial"
-    assert payload["items"][0]["correlation_id"] == "sync-topology-1"
-    assert "persisted topology_snapshot" in payload["items"][0]["message"]
+    assert payload["items"][0]["target_scope"] == "policy_inventory_read_side"
+    assert payload["items"][0]["result"] == "succeeded"
+    assert payload["items"][0]["correlation_id"] == "sync-policy-1"
+    assert "persisted policy_snapshot" in payload["items"][0]["message"]
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
@@ -747,10 +868,11 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert "platform_app_api_policy_capable_targets 34" in response.text
     assert 'platform_app_api_policy_records_by_observed_state{state="active"} 1' in response.text
     assert 'platform_app_api_policy_records_by_type{type="static_local"} 1' in response.text
-    assert "platform_app_api_sync_runs_total 2" in response.text
+    assert "platform_app_api_sync_runs_total 3" in response.text
     assert 'platform_app_api_sync_runs_by_family{model_family="inventory"} 1' in response.text
+    assert 'platform_app_api_sync_runs_by_family{model_family="policy"} 1' in response.text
     assert 'platform_app_api_sync_runs_by_family{model_family="topology"} 1' in response.text
-    assert 'platform_app_api_sync_runs_by_result{result="completed"} 1' in response.text
+    assert 'platform_app_api_sync_runs_by_result{result="completed"} 2' in response.text
     assert 'platform_app_api_sync_runs_by_result{result="partial"} 1' in response.text
     assert (
         'platform_app_api_sync_runs_by_family_and_result{model_family="topology",'

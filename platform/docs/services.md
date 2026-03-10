@@ -6,7 +6,7 @@ This document describes the major platform services, what each one owns, what ea
 
 ## Current Status
 
-The platform now has service directories, service READMEs, a platform topology skeleton, observability scaffolding, a backend skeleton, a collector skeleton, and bounded Postgres-backed read-side persistence for inventory and topology snapshots.
+The platform now has service directories, service READMEs, a platform topology skeleton, observability scaffolding, a backend skeleton, a collector skeleton, and bounded Postgres-backed read-side persistence for inventory, topology, and policy snapshots.
 
 What still remains incomplete:
 
@@ -65,8 +65,8 @@ Current state:
 - typed health endpoint exists
 - bounded HTTP request and latency metrics now exist at `/metrics`
 - live bounded inventory, topology, and policy integrations now exist from the collector boundary into backend read paths
-- Alembic-managed persistence now exists for normalized inventory snapshots, normalized topology snapshots, and sync-run history
-- devices and topology can fall back to the latest persisted normalized snapshot when the collector boundary is temporarily unavailable
+- Alembic-managed persistence now exists for normalized inventory snapshots, normalized topology snapshots, normalized policy snapshots, and sync-run history
+- devices, topology, and policy can fall back to the latest persisted normalized snapshot when the collector boundary is temporarily unavailable
 
 ### `gnmi-collector`
 
@@ -120,7 +120,7 @@ Current state:
 - init SQL bootstrap exists
 - migration direction is documented
 - Alembic ownership lives in `app-api`
-- the first bounded persisted schema now exists for inventory snapshots, topology snapshots, and sync-run records
+- the first bounded persisted schema now exists for inventory snapshots, topology snapshots, policy snapshots, candidate-path records, and sync-run records
 - current durability is deployment-local because a host-mounted Postgres data directory is not yet configured
 
 ### `prometheus`

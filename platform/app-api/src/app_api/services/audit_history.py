@@ -22,6 +22,7 @@ def _map_scope(model_family: str) -> str:
     return {
         "inventory": "device_inventory_read_side",
         "topology": "topology_read_side",
+        "policy": "policy_inventory_read_side",
     }.get(model_family, "platform_read_side")
 
 
@@ -63,7 +64,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
         data_status = "persisted_activity_history"
         summary = (
             "Audit history currently reflects platform-recorded read-side sync events "
-            "derived from persisted inventory and topology activity. It does not yet "
+            "derived from persisted inventory, topology, and policy activity. It does not yet "
             "represent full operator workflow or approval history."
         )
     else:

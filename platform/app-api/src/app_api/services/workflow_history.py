@@ -22,6 +22,7 @@ def _map_scope(model_family: str) -> str:
     return {
         "inventory": "device_inventory_read_side",
         "topology": "topology_read_side",
+        "policy": "policy_inventory_read_side",
     }.get(model_family, "platform_read_side")
 
 
@@ -50,7 +51,7 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
         data_status = "persisted_activity_history"
         summary = (
             "Workflow history currently reflects platform-side read-only sync activity "
-            "derived from persisted inventory and topology sync runs. It does not "
+            "derived from persisted inventory, topology, and policy sync runs. It does not "
             "represent operator-submitted change workflows."
         )
     else:

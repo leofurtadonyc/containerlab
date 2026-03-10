@@ -32,7 +32,7 @@ The platform requires persistent, queryable application state that is separate f
 - Postgres does not expose state directly to Grafana or any other service
 
 ## Current status
-Initial database direction exists, including a minimal init SQL bootstrap script under `init/`, platform-level migration notes under `migrations/`, Alembic ownership under `app-api`, and the first bounded application schema for normalized inventory snapshots, normalized topology snapshots, and sync-run history under `platform_app`.
+Initial database direction exists, including a minimal init SQL bootstrap script under `init/`, platform-level migration notes under `migrations/`, Alembic ownership under `app-api`, and the first bounded application schema for normalized inventory snapshots, normalized topology snapshots, normalized policy snapshots, candidate-path records, and sync-run history under `platform_app`.
 
 ## Planned evolution
 - expand `init/` only where database bootstrap concerns belong there
@@ -42,4 +42,4 @@ Initial database direction exists, including a minimal init SQL bootstrap script
 
 ## Notes and caveats
 Postgres is the application state store. It is not a metrics database. Keep schema normalized and migration-managed from the start.
-Current durability is bounded: persisted inventory/topology snapshots and sync-run history survive normal service reads and restarts within the running deployment, but they are not yet hardened across full platform reprovisioning because host-backed Postgres data persistence is still pending.
+Current durability is bounded: persisted inventory/topology/policy snapshots and sync-run history survive normal service reads and restarts within the running deployment, but they are not yet hardened across full platform reprovisioning because host-backed Postgres data persistence is still pending.

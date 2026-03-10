@@ -62,6 +62,7 @@ def load_sync_runs(limit: int = 50) -> list[PersistedSyncRun]:
                 .options(
                     selectinload(SyncRunTable.inventory_snapshot),
                     selectinload(SyncRunTable.topology_snapshot),
+                    selectinload(SyncRunTable.policy_snapshot),
                 )
                 .order_by(SyncRunTable.finished_at.desc())
                 .limit(limit)
@@ -73,6 +74,8 @@ def load_sync_runs(limit: int = 50) -> list[PersistedSyncRun]:
                     persisted_artifacts.append("inventory_snapshot")
                 if row.topology_snapshot is not None:
                     persisted_artifacts.append("topology_snapshot")
+                if row.policy_snapshot is not None:
+                    persisted_artifacts.append("policy_snapshot")
                 items.append(
                     PersistedSyncRun(
                         sync_run_id=row.id,

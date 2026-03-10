@@ -32,6 +32,10 @@ class SyncRunTable(Base):
         back_populates="sync_run",
         cascade="all, delete-orphan",
     )
+    policy_snapshot: Mapped["PolicySnapshotTable | None"] = relationship(
+        back_populates="sync_run",
+        cascade="all, delete-orphan",
+    )
 
 
 class InventorySnapshotTable(Base):
@@ -154,3 +158,89 @@ class TopologyLinkTable(Base):
     attributes: Mapped[dict[str, str]] = mapped_column(JSON, nullable=False, default=dict)
 
     snapshot: Mapped[TopologySnapshotTable] = relationship(back_populates="links")
+
+
+class PolicySnapshotTable(Base):
+    """One persisted normalized policy snapshot."""
+
+    __tablename__ = "policy_snapshots"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    sync_run_id: Mapped[str] = mapped_column(
+        ForeignKey("platform_app.sync_runs.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    data_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    sync_source: Mapped[str] = mapped_column(String(255), nullable=False)
+    sync_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    completeness: Mapped[str] = mapped_column(String(32), nullable=False)
+    detail_mode: Mapped[str] = mapped_column(String(64), nullable=False)
+    empty_reason: Mapped[str] = mapped_column(String(64), nullable=False)
+    observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    persisted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    observed_target_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    policy_capable_target_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    observed_policy_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    active_policy_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    static_policy_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    bgp_policy_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    notes: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+
+    sync_run: Mapped[SyncRunTable] = relationship(back_populates="policy_snapshot")
+    records: Mapped[list["PolicyRecordTable"]] = relationship(
+        back_populates="snapshot",
+        cascade="all, delete-orphan",
+    )
+
+
+class PolicyRecordTable(Base):
+    """One normalized policy record within a persisted snapshot."""
+
+    __tablename__ = "policy_records"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    snapshot_id: Mapped[str] = mapped_column(
+        ForeignKey("platform_app.policy_snapshots.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    policy_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    policy_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    policy_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    headend: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    endpoint: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    color: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    source_target: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    source_target_role: Mapped[str | None] = mapped_column(String(64), index=True)
+    intent_state: Mapped[str] = mapped_column(String(32), nullable=False)
+    observed_state: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    support_state: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    health_state: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    source: Mapped[str] = mapped_column(String(32), nullable=False)
+    notes: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+
+    snapshot: Mapped[PolicySnapshotTable] = relationship(back_populates="records")
+    candidate_paths: Mapped[list["PolicyCandidatePathTable"]] = relationship(
+        back_populates="policy_record",
+        cascade="all, delete-orphan",
+    )
+
+
+class PolicyCandidatePathTable(Base):
+    """One normalized candidate path within a persisted policy record."""
+
+    __tablename__ = "policy_candidate_paths"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    policy_record_id: Mapped[int] = mapped_column(
+        ForeignKey("platform_app.policy_records.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    path_state: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    preference: Mapped[int | None] = mapped_column(Integer)
+    notes: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+
+    policy_record: Mapped[PolicyRecordTable] = relationship(back_populates="candidate_paths")

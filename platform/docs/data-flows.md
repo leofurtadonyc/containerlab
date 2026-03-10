@@ -37,12 +37,12 @@ Persisted today:
 
 - normalized inventory snapshots written by `app-api` to Postgres
 - normalized topology snapshots, node records, and link records written by `app-api` to Postgres
-- sync-run records for those bounded inventory and topology persistence writes
+- normalized policy snapshots, policy records, and candidate-path records written by `app-api` to Postgres
+- sync-run records for those bounded inventory, topology, and policy persistence writes
 
 Transient today:
 
 - live collector responses fetched over HTTP from `gnmi-collector`
-- policy inventory served from the current bounded live collector slice
 - in-memory metrics caches inside `app-api` and `gnmi-collector`
 - frontend UI state in `app-web`
 
@@ -124,7 +124,7 @@ Current state:
 - the current topology API is fed by a backend-owned normalized live read model that explicitly marks partial and unknown state
 - the current policy API is fed by a backend-owned normalized live read model that explicitly marks support, observed, and unknown state
 - inventory and topology may be served from the latest persisted normalized snapshot if the live collector boundary is temporarily unavailable
-- policy remains a transient read-side view at the backend boundary today and is not yet backed by Postgres persistence
+- policy may now also be served from the latest persisted normalized policy snapshot if the live collector boundary is temporarily unavailable
 - useful frontend read-only pages now consume those stable contracts for overview, platform health, devices, topology, policies, and capabilities
 
 ## Topology Read-Model Limitations
@@ -153,11 +153,12 @@ What is real today:
 - the policies API returns a stable platform-owned structure for policy inventory
 - intended, observed, support, and health states are explicit
 - candidate paths are represented in a normalized form rather than as vendor-native payloads
-- the backend exposes current live policy observations, but it does not yet persist policy inventory to Postgres
+- the backend exposes current live policy observations and now persists bounded normalized policy snapshots plus candidate-path records to Postgres
 
 What remains partial:
 
 - the policy inventory is backed only by a bounded live SR policy counter slice rather than full per-policy or controller-derived state
+- persisted policy support is intentionally limited to bounded normalized snapshot history rather than a final durable policy database design
 - support states such as `unknown` and `not_implemented_in_platform` are expected and honest in the current phase
 - candidate path data remains absent or bounded rather than validated operational path computation
 - no policy details, editing, validation, or workflow execution flows exist yet
@@ -242,9 +243,10 @@ Current state:
 - init SQL bootstrap exists
 - Alembic scaffolding exists
 - the backend now persists bounded normalized inventory snapshots, normalized topology snapshots, and sync-run records
-- devices and topology can fall back to the latest persisted normalized snapshot if the live collector boundary is temporarily unavailable
+- the backend now persists bounded normalized policy snapshots and candidate-path records alongside those existing inventory/topology snapshots
+- devices, topology, and policy can fall back to the latest persisted normalized snapshot if the live collector boundary is temporarily unavailable
 - the current persisted slice is deployment-local because the topology has not yet added a host-mounted Postgres data directory
-- policy inventory, workflow history, audit history, and broader intent models remain transient or unimplemented rather than durably stored
+- workflow history, audit history, and broader intent models remain transient or unimplemented rather than durably stored
 - broader domain persistence logic is still pending
 
 ## Flow Summary By Consumer
@@ -276,11 +278,11 @@ Current state:
 - bounded normalized inventory, topology, and policy integrations now connect the collector shape to the backend read paths
 - backend-owned normalized topology and policy read models now exist as stable live API slices with explicit partial and unknown states
 - observability scaffolding exists
-- bounded persistence direction is explicit and now partially implemented for inventory and topology snapshots, while policy remains transient at the current read-side boundary
+- bounded persistence direction is explicit and now partially implemented for inventory, topology, and policy snapshots
 
 ### Future
 
-- backend persistence of inventory, topology, and policy-oriented records
+- deeper backend persistence of policy-oriented history and broader domain records beyond the current bounded snapshot slice
 - harder durability across full platform reprovisioning
 - richer frontend product pages for workflow history, audit history, and deeper read-oriented exploration
 - ODL-backed enrichment where justified

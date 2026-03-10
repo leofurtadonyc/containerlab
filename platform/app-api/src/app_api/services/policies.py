@@ -10,6 +10,10 @@ from app_api.integrations.collector.policies import (
 )
 from app_api.metrics.state import cache_policy_metrics
 from app_api.models.policy import CandidatePath, PolicyInventoryRecord, PolicyInventorySnapshot
+from app_api.persistence.read_side import (
+    load_latest_policy_snapshot,
+    persist_policy_snapshot,
+)
 from app_api.schemas.policies import (
     CandidatePathRecord,
     PoliciesListResponse,
@@ -17,7 +21,9 @@ from app_api.schemas.policies import (
 )
 
 
-def _build_policy_inventory() -> tuple[CollectorPolicySnapshot, PolicyInventorySnapshot]:
+def _build_policy_inventory() -> tuple[
+    CollectorPolicySnapshot, PolicyInventorySnapshot, datetime | None
+]:
     """Build the backend-owned normalized policy inventory snapshot."""
     collector_snapshot = get_collector_policy_client().read_policy_snapshot()
     observed_at = (
@@ -27,6 +33,9 @@ def _build_policy_inventory() -> tuple[CollectorPolicySnapshot, PolicyInventoryS
     )
 
     if collector_snapshot.status == "collector_unavailable":
+        persisted_snapshot = load_latest_policy_snapshot()
+        if persisted_snapshot is not None:
+            return collector_snapshot, persisted_snapshot.snapshot, persisted_snapshot.persisted_at
         return collector_snapshot, PolicyInventorySnapshot(
             sync_source="gnmi_collector_policy",
             sync_status="failed",
@@ -45,9 +54,9 @@ def _build_policy_inventory() -> tuple[CollectorPolicySnapshot, PolicyInventoryS
                 "No raw vendor payloads are exposed through the policies API.",
             ],
             records=[],
-        )
+        ), None
 
-    return collector_snapshot, PolicyInventorySnapshot(
+    snapshot = PolicyInventorySnapshot(
         sync_source=collector_snapshot.sync_source,
         sync_status=collector_snapshot.sync_status,
         completeness=collector_snapshot.completeness,
@@ -98,12 +107,20 @@ def _build_policy_inventory() -> tuple[CollectorPolicySnapshot, PolicyInventoryS
             for record in collector_snapshot.records
         ],
     )
+    persist_policy_snapshot(
+        collector_snapshot=collector_snapshot,
+        snapshot=snapshot,
+        data_status=(
+            "live" if collector_snapshot.status == "live_normalized_feed" else "degraded"
+        ),
+    )
+    return collector_snapshot, snapshot, None
 
 
 def build_policies_list_response() -> PoliciesListResponse:
     """Build the policy inventory response from the live collector boundary."""
     settings = get_settings()
-    collector_snapshot, snapshot = _build_policy_inventory()
+    collector_snapshot, snapshot, persisted_at = _build_policy_inventory()
     items = [
         PolicyRecord(
             policy_id=policy.policy_id,
@@ -160,10 +177,16 @@ def build_policies_list_response() -> PoliciesListResponse:
         )
     else:
         data_status = "degraded"
-        summary = (
-            "The backend could not load the live collector policy snapshot. "
-            "No raw vendor payloads are exposed through the policies API."
-        )
+        if persisted_at is not None:
+            summary = (
+                "The backend could not load the live collector policy snapshot, so "
+                "the latest persisted normalized policy snapshot is being served."
+            )
+        else:
+            summary = (
+                "The backend could not load the live collector policy snapshot. "
+                "No raw vendor payloads are exposed through the policies API."
+            )
     cache_policy_metrics(
         record_count=len(items),
         active_policy_count=snapshot.active_policy_count,

@@ -392,7 +392,7 @@ def render_prometheus_metrics(
         )
 
     if history_metrics is not None:
-        history_families = {"inventory", "topology"}
+        history_families = {"inventory", "topology", "policy"}
         history_results = {"completed", "partial", "failed", "unknown"}
         counts_by_model_family = dict(history_metrics.get("counts_by_model_family", {}))
         counts_by_result = dict(history_metrics.get("counts_by_result", {}))
