@@ -15,6 +15,19 @@ from app_api.persistence.read_side import (
 from app_api.schemas.devices import DeviceRecord, DevicesListResponse
 
 
+def _describe_capability_summary(value: str) -> str:
+    """Explain the current device capability posture briefly."""
+    return {
+        "supported": "The current read-only platform slice can support this device posture without known capability gaps.",
+        "partially_supported": "The platform can expose useful read-only data for this device, but some deeper semantics remain intentionally bounded.",
+        "unsupported": "The current platform slice does not support this device capability posture.",
+        "not_implemented_in_platform": "The platform recognizes this capability category, but does not implement it yet.",
+    }.get(
+        value,
+        "The current platform slice does not yet have enough evidence to classify this device capability posture more precisely.",
+    )
+
+
 def _build_inventory_devices() -> tuple[
     CollectorInventorySnapshot, list[InventoryDevice], datetime | None
 ]:
@@ -63,6 +76,7 @@ def build_devices_list_response() -> DevicesListResponse:
             management_address=device.management_address,
             collector_status=device.collector_status,
             capability_summary=device.capability_summary,
+            capability_detail=_describe_capability_summary(device.capability_summary),
         )
         for device in inventory_devices
     ]

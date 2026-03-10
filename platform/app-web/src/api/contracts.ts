@@ -49,6 +49,7 @@ export interface DeviceRecord {
     | "unsupported"
     | "unknown"
     | "not_implemented_in_platform";
+  capability_detail: string;
 }
 
 export interface DevicesListResponse extends ApiResponseMetadata {
@@ -196,6 +197,13 @@ export interface CapabilityRecord {
   vendor: string;
   platform: string;
   version_scope: string | null;
+  domain:
+    | "inventory"
+    | "topology"
+    | "policy"
+    | "platform_health"
+    | "workflow_history"
+    | "audit_history";
   feature: string;
   support_status:
     | "supported"
@@ -204,13 +212,17 @@ export interface CapabilityRecord {
     | "unknown"
     | "not_implemented_in_platform";
   implementation_status: "planned" | "placeholder" | "partial" | "implemented";
+  availability_scope: string;
+  status_detail: string;
   caveats: string[];
   source_of_determination: string;
 }
 
 export interface CapabilitiesListResponse extends ApiResponseMetadata {
-  data_status: "placeholder";
+  data_status: "placeholder" | "bounded_matrix";
   summary: string;
   count: number;
+  support_counts: Record<string, number>;
+  implementation_counts: Record<string, number>;
   items: CapabilityRecord[];
 }

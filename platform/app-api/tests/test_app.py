@@ -522,6 +522,7 @@ def test_devices_endpoint_returns_live_inventory(monkeypatch) -> None:
     assert payload["items"][0]["management_address"] == "172.20.20.107"
     assert payload["items"][0]["collector_status"] == "ok"
     assert payload["items"][0]["capability_summary"] == "partially_supported"
+    assert "useful read-only data" in payload["items"][0]["capability_detail"]
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
@@ -806,7 +807,7 @@ def test_audit_history_endpoint_handles_empty_persisted_history(monkeypatch) -> 
     assert "No persisted platform audit-style sync events" in payload["summary"]
 
 
-def test_capabilities_endpoint_returns_typed_placeholder_capabilities() -> None:
+def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
     response = client.get(
         "/api/v1/capabilities",
         headers={"X-Request-ID": "capabilities-test"},
@@ -816,13 +817,21 @@ def test_capabilities_endpoint_returns_typed_placeholder_capabilities() -> None:
     payload = response.json()
 
     assert response.headers["X-Request-ID"] == "capabilities-test"
-    assert payload["data_status"] == "placeholder"
-    assert payload["count"] == 2
-    assert "Unsupported, unknown, and partial states remain explicit" in payload["summary"]
+    assert payload["data_status"] == "bounded_matrix"
+    assert payload["count"] == 8
+    assert "not-implemented states are now explicit" in payload["summary"]
     assert payload["items"][0]["feature"] == "device_inventory"
-    assert payload["items"][0]["support_status"] == "unknown"
-    assert payload["items"][0]["implementation_status"] == "placeholder"
+    assert payload["items"][0]["domain"] == "inventory"
+    assert payload["items"][0]["support_status"] == "supported"
+    assert payload["items"][0]["implementation_status"] == "implemented"
+    assert "stable backend-owned contract" in payload["items"][0]["status_detail"]
+    assert payload["support_counts"]["partially_supported"] == 5
+    assert payload["support_counts"]["unknown"] == 1
+    assert payload["support_counts"]["not_implemented_in_platform"] == 1
+    assert payload["implementation_counts"]["partial"] == 5
     assert payload["items"][1]["feature"] == "topology_observation"
+    assert payload["items"][3]["feature"] == "bgp_signaled_policy_detail"
+    assert payload["items"][7]["vendor"] == "juniper"
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 

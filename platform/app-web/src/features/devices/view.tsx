@@ -9,14 +9,18 @@ export function DevicesView() {
   const { data, error, isLoading, reload } = useDevicesQuery();
   const [searchValue, setSearchValue] = useState("");
   const [collectorFilter, setCollectorFilter] = useState("all");
+  const [capabilityFilter, setCapabilityFilter] = useState("all");
   const items = data?.items ?? [];
   const collectorCounts = countBy(items, (device) => device.collector_status);
+  const capabilityCounts = countBy(items, (device) => device.capability_summary);
   const filteredItems = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
 
     return items.filter((device) => {
       const matchesCollector =
         collectorFilter === "all" || device.collector_status === collectorFilter;
+      const matchesCapability =
+        capabilityFilter === "all" || device.capability_summary === capabilityFilter;
       const matchesSearch =
         normalizedSearch.length === 0 ||
         [
@@ -30,9 +34,9 @@ export function DevicesView() {
           .toLowerCase()
           .includes(normalizedSearch);
 
-      return matchesCollector && matchesSearch;
+      return matchesCollector && matchesCapability && matchesSearch;
     });
-  }, [collectorFilter, items, searchValue]);
+  }, [capabilityFilter, collectorFilter, items, searchValue]);
 
   if (isLoading) {
     return (
@@ -98,13 +102,14 @@ export function DevicesView() {
         <article className="summary-card">
           <p className="summary-label">Capability Gaps</p>
           <strong>
-            {
-              data.items.filter(
-                (device) => device.capability_summary === "not_implemented_in_platform",
-              ).length
-            }
+            {capabilityCounts.not_implemented_in_platform ?? 0}
           </strong>
           <p>Devices where support is intentionally not yet implemented.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Partially Supported</p>
+          <strong>{capabilityCounts.partially_supported ?? 0}</strong>
+          <p>Devices with useful read-only coverage but bounded deeper semantics.</p>
         </article>
       </div>
 
@@ -128,6 +133,20 @@ export function DevicesView() {
             <option value="degraded">Degraded</option>
             <option value="unreachable">Unreachable</option>
             <option value="unknown">Unknown</option>
+          </select>
+        </label>
+        <label className="field-group">
+          <span>Capability posture</span>
+          <select
+            value={capabilityFilter}
+            onChange={(event) => setCapabilityFilter(event.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="supported">Supported</option>
+            <option value="partially_supported">Partially supported</option>
+            <option value="unsupported">Unsupported</option>
+            <option value="unknown">Unknown</option>
+            <option value="not_implemented_in_platform">Not implemented</option>
           </select>
         </label>
       </div>
@@ -174,11 +193,7 @@ export function DevicesView() {
                   </td>
                   <td>
                     <StatusPill value={device.capability_summary} />
-                    {device.capability_summary === "not_implemented_in_platform" ? (
-                      <div className="table-note">
-                        Support remains intentionally explicit in the current read-only phase.
-                      </div>
-                    ) : null}
+                    <div className="table-note">{device.capability_detail}</div>
                   </td>
                 </tr>
               ))}

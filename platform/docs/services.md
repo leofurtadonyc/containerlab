@@ -69,6 +69,7 @@ Current state:
 - devices, topology, and policy can fall back to the latest persisted normalized snapshot when the collector boundary is temporarily unavailable
 - workflow-history and audit-history currently expose bounded views derived from persisted sync-run activity rather than full workflow or audit tables
 - `/api/v1/platform/status` now includes one bounded ODL-backed controller capability probe derived from RESTCONF YANG-library and operations discovery, while the backend remains the owner of the normalized product response
+- `/api/v1/capabilities` now exposes a bounded capability matrix that makes supported, partially-supported, unknown, and not-implemented states explicit across the current Nokia-first read-only product slice without implying Juniper parity
 
 ### `gnmi-collector`
 

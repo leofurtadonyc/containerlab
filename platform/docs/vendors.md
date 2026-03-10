@@ -71,7 +71,7 @@ This rule prevents fake feature parity and keeps both APIs and UI behavior hones
 
 - Nokia-first direction is documented
 - vendor-neutral model families exist as scaffolding
-- capability schemas exist as scaffolding
+- the capability matrix now makes current Nokia-first supported, partially-supported, unknown, and not-implemented states explicit in backend contracts and the WebUI
 - Nokia adapter placeholder exists in the collector
 
 ### Future

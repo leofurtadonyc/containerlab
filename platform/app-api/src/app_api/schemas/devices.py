@@ -8,7 +8,7 @@ from app_api.schemas.common import ApiResponseMetadata
 
 
 class DeviceRecord(BaseModel):
-    """Vendor-neutral device inventory record for Phase 1 APIs."""
+    """Vendor-neutral device inventory record for Phase 2 APIs."""
 
     device_id: str
     vendor: str
@@ -24,6 +24,7 @@ class DeviceRecord(BaseModel):
         "unknown",
         "not_implemented_in_platform",
     ]
+    capability_detail: str
 
 
 class DevicesListResponse(ApiResponseMetadata):

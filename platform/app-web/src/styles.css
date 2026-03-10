@@ -343,6 +343,10 @@ section h2 {
   color: #8fb3ff;
 }
 
+.table-row-selected {
+  background: rgba(37, 50, 75, 0.45);
+}
+
 .table-note {
   margin-top: 4px;
   font-size: 0.82rem;
