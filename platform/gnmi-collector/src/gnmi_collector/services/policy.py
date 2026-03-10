@@ -33,6 +33,14 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
     partial_collection_count = sum(
         1 for record in raw_records if record.collection_status == "partial"
     )
+    normalized_policy_record_count = len(normalized_records)
+
+    if normalized_policy_record_count == 0:
+        detail_mode = "counters_only"
+    elif normalized_policy_record_count < aggregated_counts["policy_count"]:
+        detail_mode = "mixed"
+    else:
+        detail_mode = "static_policies_when_present"
 
     if collection_failure_count == 0 and partial_collection_count == 0:
         delivery_status = "live_ready"
@@ -46,10 +54,19 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
 
     notes = [
         "Policy inventory is currently bounded to live Nokia SR policy counters collected over gNMI.",
-        "Per-policy SR intent details remain out of scope until a deeper vendor-neutral path is added.",
+        "When static-policy state is exposed, the collector now derives bounded per-policy observations without claiming full SR policy truth.",
+        "BGP-signaled SR policy detail remains out of scope until a deeper vendor-neutral path is added.",
     ]
     if aggregated_counts["policy_count"] == 0:
         notes.append("No SR policies are currently observed across the configured Nokia targets.")
+    elif normalized_policy_record_count == 0:
+        notes.append(
+            "Policy counters indicate SR policies are present, but the current platform path could not derive bounded per-policy detail records."
+        )
+    elif normalized_policy_record_count < aggregated_counts["policy_count"]:
+        notes.append(
+            "Only a subset of the observed policy count currently has bounded per-policy detail records; unsupported policy types remain explicit."
+        )
     if collection_failure_count > 0:
         notes.append(
             "One or more policy targets could not be collected, so degraded and unknown states remain explicit."
@@ -64,6 +81,7 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
         sync_source="gnmi_collector_policy_sr_counters",
         sync_status=sync_status,
         completeness="partial",
+        detail_mode=detail_mode,
         observed_at=derive_policy_observed_at(raw_records),
         observed_target_count=aggregated_counts["observed_target_count"],
         policy_capable_target_count=aggregated_counts["policy_capable_target_count"],
@@ -86,6 +104,7 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
         active_policy_count=aggregated_counts["active_policy_count"],
         static_policy_count=aggregated_counts["static_policy_count"],
         bgp_policy_count=aggregated_counts["bgp_policy_count"],
+        normalized_policy_record_count=normalized_policy_record_count,
         backend_ready_policy_count=delivery.policy_count,
         backend_delivery_error_count=0,
     )

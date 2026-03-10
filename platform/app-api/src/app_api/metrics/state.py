@@ -29,16 +29,20 @@ class CachedPolicyMetrics:
     """Latest policy snapshot metrics cached for scrape-safe exposition."""
 
     record_count: int = 0
+    observed_policy_count: int = 0
     active_policy_count: int = 0
     static_policy_count: int = 0
     bgp_policy_count: int = 0
     observed_target_count: int = 0
     policy_capable_target_count: int = 0
+    observed_state_counts: dict[str, int] = field(default_factory=dict)
     health_state_counts: dict[str, int] = field(default_factory=dict)
     support_state_counts: dict[str, int] = field(default_factory=dict)
+    policy_type_counts: dict[str, int] = field(default_factory=dict)
     data_status: str = "unknown"
     sync_status: str = "unknown"
     completeness: str = "unknown"
+    detail_mode: str = "unknown"
 
 
 _cached_topology_metrics = CachedTopologyMetrics()
@@ -95,32 +99,40 @@ def get_cached_topology_metrics() -> CachedTopologyMetrics:
 def cache_policy_metrics(
     *,
     record_count: int,
+    observed_policy_count: int,
     active_policy_count: int,
     static_policy_count: int,
     bgp_policy_count: int,
     observed_target_count: int,
     policy_capable_target_count: int,
+    observed_state_counts: dict[str, int],
     health_state_counts: dict[str, int],
     support_state_counts: dict[str, int],
+    policy_type_counts: dict[str, int],
     data_status: str,
     sync_status: str,
     completeness: str,
+    detail_mode: str,
 ) -> None:
     """Store the latest policy metrics for bounded scrape exposition."""
     global _cached_policy_metrics
     with _lock:
         _cached_policy_metrics = CachedPolicyMetrics(
             record_count=record_count,
+            observed_policy_count=observed_policy_count,
             active_policy_count=active_policy_count,
             static_policy_count=static_policy_count,
             bgp_policy_count=bgp_policy_count,
             observed_target_count=observed_target_count,
             policy_capable_target_count=policy_capable_target_count,
+            observed_state_counts=dict(observed_state_counts),
             health_state_counts=dict(health_state_counts),
             support_state_counts=dict(support_state_counts),
+            policy_type_counts=dict(policy_type_counts),
             data_status=data_status,
             sync_status=sync_status,
             completeness=completeness,
+            detail_mode=detail_mode,
         )
 
 
@@ -251,6 +263,15 @@ def render_prometheus_metrics(
                 "# HELP platform_app_api_policy_records Current normalized policy record count.",
                 "# TYPE platform_app_api_policy_records gauge",
                 f"platform_app_api_policy_records {policy_metrics['record_count']}",
+                (
+                    "# HELP platform_app_api_policy_observed_policy_count "
+                    "Aggregate SR policy count observed by the current bounded live slice."
+                ),
+                "# TYPE platform_app_api_policy_observed_policy_count gauge",
+                (
+                    "platform_app_api_policy_observed_policy_count "
+                    f"{policy_metrics['observed_policy_count']}"
+                ),
                 "# HELP platform_app_api_policy_active_records Current active policy count.",
                 "# TYPE platform_app_api_policy_active_records gauge",
                 f"platform_app_api_policy_active_records {policy_metrics['active_policy_count']}",
@@ -284,8 +305,29 @@ def render_prometheus_metrics(
                     "platform_app_api_policy_snapshot_status"
                     f'{{data_status="{policy_metrics["data_status"]}",'
                     f'sync_status="{policy_metrics["sync_status"]}",'
-                    f'completeness="{policy_metrics["completeness"]}"}} 1'
+                    f'completeness="{policy_metrics["completeness"]}",'
+                    f'detail_mode="{policy_metrics["detail_mode"]}"}} 1'
                 ),
+                (
+                    "# HELP platform_app_api_policy_records_by_observed_state "
+                    "Current normalized policy record counts by observed state."
+                ),
+                "# TYPE platform_app_api_policy_records_by_observed_state gauge",
+                *[
+                    (
+                        "platform_app_api_policy_records_by_observed_state"
+                        f'{{state="{state}"}} {count}'
+                    )
+                    for state, count in sorted(
+                        {
+                            "active": 0,
+                            "inactive": 0,
+                            "degraded": 0,
+                            "unknown": 0,
+                            **dict(policy_metrics.get("observed_state_counts", {})),
+                        }.items()
+                    )
+                ],
                 (
                     "# HELP platform_app_api_policy_records_by_health "
                     "Current normalized policy record counts by health state."
@@ -324,6 +366,25 @@ def render_prometheus_metrics(
                             "unknown": 0,
                             "not_implemented_in_platform": 0,
                             **dict(policy_metrics.get("support_state_counts", {})),
+                        }.items()
+                    )
+                ],
+                (
+                    "# HELP platform_app_api_policy_records_by_type "
+                    "Current normalized policy record counts by policy type."
+                ),
+                "# TYPE platform_app_api_policy_records_by_type gauge",
+                *[
+                    (
+                        "platform_app_api_policy_records_by_type"
+                        f'{{type="{policy_type}"}} {count}'
+                    )
+                    for policy_type, count in sorted(
+                        {
+                            "static_local": 0,
+                            "static_non_local": 0,
+                            "unknown": 0,
+                            **dict(policy_metrics.get("policy_type_counts", {})),
                         }.items()
                     )
                 ],

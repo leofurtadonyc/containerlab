@@ -78,6 +78,7 @@ export function PoliciesView() {
         <span>Sync source: {data.sync_source}</span>
         <span>Sync status: {data.sync_status}</span>
         <span>Completeness: {data.completeness}</span>
+        <span>Detail mode: {data.detail_mode}</span>
         <span>Count: {data.count}</span>
         <span>Observed: {formatDateTime(data.observed_at)}</span>
         <span>Generated: {formatDateTime(data.generated_at)}</span>
@@ -103,10 +104,10 @@ export function PoliciesView() {
         </article>
         <article className="summary-card">
           <p className="summary-label">Observed Policies</p>
-          <strong>{data.count}</strong>
+          <strong>{data.observed_policy_count}</strong>
           <p>
-            Static: {data.static_policy_count} • BGP: {data.bgp_policy_count} • Degraded:{" "}
-            {healthCounts.degraded ?? 0}
+            Detail records: {data.count} • Static: {data.static_policy_count} • BGP:{" "}
+            {data.bgp_policy_count}
           </p>
         </article>
         <article className="summary-card">
@@ -114,8 +115,10 @@ export function PoliciesView() {
           <strong>{hasObservedPolicies ? "Observed" : "Live Empty"}</strong>
           <p>
             {hasObservedPolicies
-              ? "The bounded live slice has policy records to inspect."
-              : "The bounded live slice is healthy, but it currently contains no SR policy records."}
+              ? "The bounded live slice has per-policy records to inspect."
+              : data.empty_reason === "per_policy_details_unavailable"
+                ? "Policies are counted, but the current bounded path could not derive per-policy detail records."
+                : "The bounded live slice is healthy, but it currently contains no SR policy records."}
           </p>
         </article>
       </div>
@@ -137,6 +140,14 @@ export function PoliciesView() {
               <span>Explicit completeness</span>
               <StatusPill value={data.completeness} />
             </li>
+            <li>
+              <span>Detail mode</span>
+              <strong>{data.detail_mode}</strong>
+            </li>
+            <li>
+              <span>Empty reason</span>
+              <strong>{data.empty_reason}</strong>
+            </li>
           </ul>
         </article>
         <article className="detail-card">
@@ -151,14 +162,18 @@ export function PoliciesView() {
               <strong>{data.policy_capable_target_count}</strong>
             </li>
             <li>
+              <span>Observed policies</span>
+              <strong>{data.observed_policy_count}</strong>
+            </li>
+            <li>
               <span>Active policies</span>
-              <strong>{data.active_policy_count}</strong>
+              <strong>
+                {data.active_policy_count}
+              </strong>
             </li>
             <li>
               <span>Static / BGP policies</span>
-              <strong>
-                {data.static_policy_count} / {data.bgp_policy_count}
-              </strong>
+              <strong>{data.static_policy_count} / {data.bgp_policy_count}</strong>
             </li>
           </ul>
         </article>
@@ -222,8 +237,16 @@ export function PoliciesView() {
 
       {data.items.length === 0 ? (
         <EmptyState
-          title="No SR policies currently observed"
-          description={`The live policy slice observed ${data.observed_target_count} targets and ${data.policy_capable_target_count} policy-capable nodes, but no SR policy records are currently present in the lab.`}
+          title={
+            data.empty_reason === "per_policy_details_unavailable"
+              ? "Per-policy details are not currently available"
+              : "No SR policies currently observed"
+          }
+          description={
+            data.empty_reason === "per_policy_details_unavailable"
+              ? `The live policy slice counted ${data.observed_policy_count} observed policies across ${data.observed_target_count} targets, but the current bounded detail path could not derive per-policy records for the observed policy types.`
+              : `The live policy slice observed ${data.observed_target_count} targets and ${data.policy_capable_target_count} policy-capable nodes, but no SR policy records are currently present in the lab.`
+          }
         />
       ) : filteredPolicies.length === 0 ? (
         <EmptyState
@@ -236,6 +259,8 @@ export function PoliciesView() {
             <thead>
               <tr>
                 <th>Policy</th>
+                <th>Type</th>
+                <th>Observed On</th>
                 <th>Headend</th>
                 <th>Endpoint</th>
                 <th>Intent</th>
@@ -253,6 +278,11 @@ export function PoliciesView() {
                       {policy.policy_id} • color {policy.color} •{" "}
                       {policy.candidate_paths.length} candidate paths
                     </div>
+                  </td>
+                  <td>{policy.policy_type}</td>
+                  <td>
+                    {policy.source_target}
+                    <div className="table-note">{policy.source_target_role ?? "unknown role"}</div>
                   </td>
                   <td>{policy.headend}</td>
                   <td>{policy.endpoint}</td>

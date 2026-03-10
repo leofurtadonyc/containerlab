@@ -101,9 +101,12 @@ export interface CandidatePathRecord {
 export interface PolicyRecord {
   policy_id: string;
   policy_name: string;
+  policy_type: "static_local" | "static_non_local" | "unknown";
   headend: string;
   endpoint: string;
   color: number;
+  source_target: string;
+  source_target_role: string | null;
   candidate_paths: CandidatePathRecord[];
   intent_state: "declared" | "unknown";
   observed_state: "active" | "inactive" | "degraded" | "unknown";
@@ -124,9 +127,16 @@ export interface PoliciesListResponse extends ApiResponseMetadata {
   sync_source: string;
   sync_status: "ok" | "degraded" | "failed" | "unknown";
   completeness: "complete" | "partial" | "unknown";
+  detail_mode: "counters_only" | "static_policies_when_present" | "mixed" | "unknown";
+  empty_reason:
+    | "none"
+    | "no_policies_observed"
+    | "per_policy_details_unavailable"
+    | "collector_unavailable";
   observed_at: string | null;
   observed_target_count: number;
   policy_capable_target_count: number;
+  observed_policy_count: number;
   active_policy_count: number;
   static_policy_count: number;
   bgp_policy_count: number;

@@ -20,9 +20,12 @@ class PolicyInventoryRecord(BaseModel):
 
     policy_id: str
     policy_name: str
+    policy_type: Literal["static_local", "static_non_local", "unknown"]
     headend: str
     endpoint: str
     color: int
+    source_target: str
+    source_target_role: str | None = None
     candidate_paths: list[CandidatePath]
     intent_state: Literal["declared", "unknown"]
     observed_state: Literal["active", "inactive", "degraded", "unknown"]
@@ -44,9 +47,22 @@ class PolicyInventorySnapshot(BaseModel):
     sync_source: str
     sync_status: Literal["ok", "degraded", "failed", "unknown"]
     completeness: Literal["complete", "partial", "unknown"]
+    detail_mode: Literal[
+        "counters_only",
+        "static_policies_when_present",
+        "mixed",
+        "unknown",
+    ]
+    empty_reason: Literal[
+        "none",
+        "no_policies_observed",
+        "per_policy_details_unavailable",
+        "collector_unavailable",
+    ]
     observed_at: datetime | None = None
     observed_target_count: int
     policy_capable_target_count: int
+    observed_policy_count: int
     active_policy_count: int
     static_policy_count: int
     bgp_policy_count: int

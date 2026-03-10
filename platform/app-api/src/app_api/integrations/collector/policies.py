@@ -25,9 +25,12 @@ class CollectorPolicyRecord(BaseModel):
 
     policy_id: str
     policy_name: str
+    policy_type: Literal["static_local", "static_non_local", "unknown"]
     headend: str
     endpoint: str
     color: int
+    source_target: str
+    source_target_role: str | None = None
     candidate_paths: list[CollectorPolicyCandidatePathRecord] = Field(default_factory=list)
     intent_state: Literal["declared", "unknown"]
     observed_state: Literal["active", "inactive", "degraded", "unknown"]
@@ -53,6 +56,12 @@ class CollectorPolicySnapshot(BaseModel):
     sync_source: str
     sync_status: Literal["ok", "degraded", "failed", "unknown"]
     completeness: Literal["complete", "partial", "unknown"]
+    detail_mode: Literal[
+        "counters_only",
+        "static_policies_when_present",
+        "mixed",
+        "unknown",
+    ]
     observed_at: str | None = None
     observed_target_count: int
     policy_capable_target_count: int
@@ -87,6 +96,7 @@ class CollectorPolicyClient:
                 sync_source="gnmi_collector_policy",
                 sync_status="failed",
                 completeness="unknown",
+                detail_mode="unknown",
                 observed_at=None,
                 observed_target_count=0,
                 policy_capable_target_count=0,
@@ -112,6 +122,7 @@ class CollectorPolicyClient:
             sync_source=payload.get("sync_source", "gnmi_collector_policy"),
             sync_status=payload.get("sync_status", "unknown"),
             completeness=payload.get("completeness", "unknown"),
+            detail_mode=payload.get("detail_mode", "unknown"),
             observed_at=payload.get("observed_at"),
             observed_target_count=payload.get("observed_target_count", 0),
             policy_capable_target_count=payload.get("policy_capable_target_count", 0),

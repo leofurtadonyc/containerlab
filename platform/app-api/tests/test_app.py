@@ -159,6 +159,88 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
         sync_source="gnmi_collector_policy_sr_counters",
         sync_status="ok",
         completeness="partial",
+        detail_mode="static_policies_when_present",
+        observed_at="2026-03-09T19:25:08.500000+00:00",
+        observed_target_count=34,
+        policy_capable_target_count=34,
+        policy_count=2,
+        active_policy_count=1,
+        static_policy_count=2,
+        bgp_policy_count=0,
+        notes=[
+            "Policy inventory is currently bounded to live Nokia SR policy counters collected over gNMI.",
+            "When static-policy state is exposed, the collector now derives bounded per-policy observations without claiming full SR policy truth.",
+        ],
+        records=[
+            {
+                "policy_id": "PE1:static_local:192.0.2.11:100",
+                "policy_name": "sr-static-PE1-192.0.2.11-100",
+                "policy_type": "static_local",
+                "headend": "PE1",
+                "endpoint": "192.0.2.11",
+                "color": 100,
+                "source_target": "PE1",
+                "source_target_role": "pe",
+                "candidate_paths": [
+                    {
+                        "name": "primary",
+                        "path_state": "active",
+                        "preference": 200,
+                        "notes": ["protocol origin: static", "validation state: valid"],
+                    }
+                ],
+                "intent_state": "declared",
+                "observed_state": "active",
+                "support_state": "partially_supported",
+                "health_state": "healthy",
+                "source": "gnmi",
+                "notes": [
+                    "Observed from Nokia static-policy state on PE1 over gNMI.",
+                    "This remains a bounded static-policy read slice rather than full SR policy truth.",
+                ],
+            },
+            {
+                "policy_id": "P1:static_non_local:198.51.100.1:200",
+                "policy_name": "sr-static-P1-198.51.100.1-200",
+                "policy_type": "static_non_local",
+                "headend": "100.64.0.1",
+                "endpoint": "198.51.100.1",
+                "color": 200,
+                "source_target": "P1",
+                "source_target_role": "p",
+                "candidate_paths": [
+                    {
+                        "name": "secondary",
+                        "path_state": "inactive",
+                        "preference": 150,
+                        "notes": ["validation state: valid"],
+                    }
+                ],
+                "intent_state": "declared",
+                "observed_state": "inactive",
+                "support_state": "partially_supported",
+                "health_state": "degraded",
+                "source": "gnmi",
+                "notes": [
+                    "Observed from Nokia static-policy state on P1 over gNMI.",
+                    "This remains a bounded static-policy read slice rather than full SR policy truth.",
+                ],
+            },
+        ],
+        fetch_error=None,
+    )
+
+
+def _build_live_empty_policy_snapshot() -> CollectorPolicySnapshot:
+    return CollectorPolicySnapshot(
+        integration="gnmi_collector_policy",
+        status="live_normalized_feed",
+        destination_service="app-api",
+        source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+        sync_source="gnmi_collector_policy_sr_counters",
+        sync_status="ok",
+        completeness="partial",
+        detail_mode="counters_only",
         observed_at="2026-03-09T19:25:08.500000+00:00",
         observed_target_count=34,
         policy_capable_target_count=34,
@@ -466,15 +548,39 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
 
     assert response.headers["X-Request-ID"] == "policies-test"
     assert payload["data_status"] == "live"
-    assert payload["count"] == 0
+    assert payload["count"] == 2
     assert payload["sync_source"] == "gnmi_collector_policy_sr_counters"
     assert payload["sync_status"] == "ok"
     assert payload["completeness"] == "partial"
+    assert payload["detail_mode"] == "static_policies_when_present"
+    assert payload["empty_reason"] == "none"
     assert payload["observed_target_count"] == 34
     assert payload["policy_capable_target_count"] == 34
-    assert "no SR policies are currently observed" in payload["summary"]
-    assert "No SR policies are currently observed" in payload["notes"][1]
+    assert payload["observed_policy_count"] == 2
+    assert "bounded static-policy observations" in payload["summary"]
+    assert payload["items"][0]["policy_type"] == "static_local"
+    assert payload["items"][0]["source_target"] == "PE1"
     assert datetime.fromisoformat(payload["generated_at"]) is not None
+
+
+def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return _build_live_empty_policy_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    response = client.get("/api/v1/policies")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_status"] == "live"
+    assert payload["count"] == 0
+    assert payload["observed_policy_count"] == 0
+    assert payload["empty_reason"] == "no_policies_observed"
+    assert "no SR policies are currently observed" in payload["summary"]
 
 
 def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) -> None:
@@ -635,9 +741,12 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert 'data_status="live",sync_status="ok",completeness="partial"' in response.text
     assert 'platform_app_api_topology_nodes_by_state{state="up"} 2' in response.text
     assert 'platform_app_api_topology_links_by_state{state="up"} 1' in response.text
-    assert "platform_app_api_policy_records 0" in response.text
+    assert "platform_app_api_policy_records 2" in response.text
+    assert "platform_app_api_policy_observed_policy_count 2" in response.text
     assert "platform_app_api_policy_observed_targets 34" in response.text
     assert "platform_app_api_policy_capable_targets 34" in response.text
+    assert 'platform_app_api_policy_records_by_observed_state{state="active"} 1' in response.text
+    assert 'platform_app_api_policy_records_by_type{type="static_local"} 1' in response.text
     assert "platform_app_api_sync_runs_total 2" in response.text
     assert 'platform_app_api_sync_runs_by_family{model_family="inventory"} 1' in response.text
     assert 'platform_app_api_sync_runs_by_family{model_family="topology"} 1' in response.text

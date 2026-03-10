@@ -49,25 +49,82 @@ class FakeGnmiClient:
         host = self.target[0]
         device_name = _target_name_by_host()[host]
         if any("segment-routing/sr-policies" in item for item in path):
+            static_policy_payload = []
+            static_local_policies = 0
+            active_static_local_policies = 0
+            static_non_local_policies = 0
+            if device_name == "PE1":
+                static_local_policies = 1
+                active_static_local_policies = 1
+                static_policy_payload = [
+                    {
+                        "nokia-state:policy-name": "sr-static-PE1-192.0.2.11-100",
+                        "nokia-state:endpoint": "192.0.2.11",
+                        "nokia-state:color": 100,
+                        "nokia-state:head-end": "local",
+                        "nokia-state:candidate-path": [
+                            {
+                                "nokia-state:candidate-path-name": "primary",
+                                "nokia-state:preference": 200,
+                                "nokia-state:active": True,
+                                "nokia-state:protocol-origin": "static",
+                                "nokia-state:validation-state": "valid",
+                            },
+                            {
+                                "nokia-state:candidate-path-name": "backup",
+                                "nokia-state:preference": 100,
+                                "nokia-state:active": False,
+                                "nokia-state:validation-state": "valid",
+                            },
+                        ],
+                    }
+                ]
+            elif device_name == "P1":
+                static_non_local_policies = 1
+                static_policy_payload = [
+                    {
+                        "nokia-state:policy-name": "sr-static-P1-198.51.100.1-200",
+                        "nokia-state:endpoint": "198.51.100.1",
+                        "nokia-state:color": 200,
+                        "nokia-state:head-end": "100.64.0.1",
+                        "nokia-state:admin-state": "enable",
+                        "nokia-state:candidate-path": [
+                            {
+                                "nokia-state:name": "secondary",
+                                "nokia-state:preference": 150,
+                                "nokia-state:active": False,
+                                "nokia-state:validation-state": "valid",
+                            }
+                        ],
+                    }
+                ]
+            updates = [
+                {
+                    "path": "state/router[router-name=Base]/segment-routing/sr-policies",
+                    "val": {
+                        "nokia-state:ttm-preferences": 14,
+                        "nokia-state:binding-sids-allocated": 0,
+                        "nokia-state:srv6-binding-sids-allocated": 0,
+                        "nokia-state:static-local-policies": static_local_policies,
+                        "nokia-state:active-static-local-policies": active_static_local_policies,
+                        "nokia-state:static-non-local-policies": static_non_local_policies,
+                        "nokia-state:bgp-policies": 0,
+                        "nokia-state:active-bgp-policies": 0,
+                    },
+                }
+            ]
+            if any("static-policy" in item for item in path):
+                static_policy_update = {
+                    "path": "state/router[router-name=Base]/segment-routing/sr-policies/static-policy"
+                }
+                if static_policy_payload:
+                    static_policy_update["val"] = static_policy_payload
+                updates.append(static_policy_update)
             return {
                 "notification": [
                     {
                         "timestamp": 1773094131368820265,
-                        "update": [
-                            {
-                                "path": "state/router[router-name=Base]/segment-routing/sr-policies",
-                                "val": {
-                                    "nokia-state:ttm-preferences": 14,
-                                    "nokia-state:binding-sids-allocated": 0,
-                                    "nokia-state:srv6-binding-sids-allocated": 0,
-                                    "nokia-state:static-local-policies": 0,
-                                    "nokia-state:active-static-local-policies": 0,
-                                    "nokia-state:static-non-local-policies": 0,
-                                    "nokia-state:bgp-policies": 0,
-                                    "nokia-state:active-bgp-policies": 0,
-                                },
-                            }
-                        ],
+                        "update": updates,
                     }
                 ]
             }
@@ -144,6 +201,10 @@ def test_runtime_config_loads_live_nokia_targets() -> None:
         config.policy_subscriptions[0].path
         == "/nokia-state:state/router[router-name=Base]/segment-routing/sr-policies"
     )
+    assert (
+        config.policy_subscriptions[1].path
+        == "/nokia-state:state/router[router-name=Base]/segment-routing/sr-policies/static-policy"
+    )
 
 
 def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
@@ -181,7 +242,7 @@ def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
     assert f"platform_gnmi_collector_policy_targets {expected_target_count}" in response.text
     assert f"platform_gnmi_collector_policy_observed_targets {expected_target_count}" in response.text
     assert f"platform_gnmi_collector_policy_capable_targets {expected_target_count}" in response.text
-    assert "platform_gnmi_collector_policy_observed_policies 0" in response.text
+    assert "platform_gnmi_collector_policy_observed_policies 2" in response.text
 
 
 def test_inventory_snapshot_endpoint_returns_normalized_live_records(monkeypatch) -> None:
@@ -227,8 +288,10 @@ def test_policy_snapshot_endpoint_returns_live_policy_observations(monkeypatch) 
     assert payload["sync_source"] == "gnmi_collector_policy_sr_counters"
     assert payload["observed_target_count"] == expected_target_count
     assert payload["policy_capable_target_count"] == expected_target_count
-    assert payload["policy_count"] == 0
-    assert payload["records"] == []
+    assert payload["policy_count"] == 2
+    assert payload["detail_mode"] == "static_policies_when_present"
+    assert len(payload["records"]) == 2
+    assert payload["records"][0]["policy_type"] == "static_local"
 
 
 def test_nokia_adapter_collects_live_inventory_and_topology(monkeypatch) -> None:
@@ -257,6 +320,8 @@ def test_nokia_adapter_collects_live_inventory_and_topology(monkeypatch) -> None
     assert topology_record.raw_interfaces[0].interface_name == "system"
     assert policy_record.collection_status == "success"
     assert policy_record.sr_policy_counts["ttm-preferences"] == 14
+    if target.name == "PE1":
+        assert len(policy_record.raw_policies) == 1
 
 
 def test_inventory_mapping_returns_normalized_live_record(monkeypatch) -> None:
@@ -324,8 +389,9 @@ def test_policy_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> Non
     assert snapshot.summary.partial_collection_count == 0
     assert snapshot.summary.observed_target_count == expected_target_count
     assert snapshot.summary.policy_capable_target_count == expected_target_count
-    assert snapshot.summary.observed_policy_count == 0
-    assert snapshot.summary.active_policy_count == 0
+    assert snapshot.summary.observed_policy_count == 2
+    assert snapshot.summary.active_policy_count == 1
+    assert snapshot.summary.normalized_policy_record_count == 2
     assert snapshot.delivery.destination_service == "app-api"
     assert snapshot.delivery.delivery_status == "live_ready"
     assert snapshot.delivery.model_family == "policy_inventory"

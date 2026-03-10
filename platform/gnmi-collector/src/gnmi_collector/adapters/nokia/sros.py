@@ -35,6 +35,35 @@ class NokiaSrosAdapter:
         ) as client:
             return client.get(path=paths, encoding="json_ietf")
 
+    def _extract_policy_payloads(self, value: object) -> list[dict[str, object]]:
+        """Extract likely static-policy payload dictionaries from a subtree value."""
+        payloads: list[dict[str, object]] = []
+
+        def normalized_keys(node: dict[str, object]) -> set[str]:
+            return {key.split(":", 1)[-1] for key in node}
+
+        def looks_like_policy(node: dict[str, object]) -> bool:
+            keys = normalized_keys(node)
+            return bool(
+                {"policy-name", "endpoint", "color", "head-end"} & keys
+                or "candidate-path" in keys
+            )
+
+        def walk(node: object) -> None:
+            if isinstance(node, dict):
+                if looks_like_policy(node):
+                    payloads.append(node)
+                    return
+                for child in node.values():
+                    walk(child)
+                return
+            if isinstance(node, list):
+                for item in node:
+                    walk(item)
+
+        walk(value)
+        return payloads
+
     def build_inventory_plan(self, target: GnmiTargetConfig) -> InventoryCollectionPlan:
         """Build the Nokia-specific plan for inventory collection."""
         return InventoryCollectionPlan(
@@ -203,7 +232,7 @@ class NokiaSrosAdapter:
         )
 
     def collect_policy(self, target: GnmiTargetConfig) -> PolicyRawRecord:
-        """Collect live bounded SR policy counters from a Nokia SR OS target."""
+        """Collect live bounded SR policy counters and static-policy detail when present."""
         try:
             result = self._get_paths(target, target.policy_paths)
         except Exception as exc:
@@ -227,17 +256,24 @@ class NokiaSrosAdapter:
             observed_at = datetime.fromtimestamp(max(timestamps) / 1_000_000_000, tz=UTC)
 
         sr_policy_counts: dict[str, int] = {}
+        raw_policies: list[dict[str, object]] = []
         for notification in result.get("notification", []):
             for update in notification.get("update", []):
                 value = update.get("val")
+                path = str(update.get("path", ""))
                 if isinstance(value, dict):
-                    sr_policy_counts.update(
-                        {
-                            key.split(":", 1)[-1]: int(count)
-                            for key, count in value.items()
-                            if isinstance(count, int)
-                        }
-                    )
+                    if path.endswith("segment-routing/sr-policies"):
+                        sr_policy_counts.update(
+                            {
+                                key.split(":", 1)[-1]: int(count)
+                                for key, count in value.items()
+                                if isinstance(count, int)
+                            }
+                        )
+                    if "static-policy" in path:
+                        raw_policies.extend(self._extract_policy_payloads(value))
+                elif isinstance(value, list) and "static-policy" in path:
+                    raw_policies.extend(self._extract_policy_payloads(value))
 
         missing_fields = []
         if not sr_policy_counts:
@@ -257,4 +293,5 @@ class NokiaSrosAdapter:
             ),
             observed_at=observed_at,
             sr_policy_counts=sr_policy_counts,
+            raw_policies=raw_policies,
         )

@@ -28,6 +28,9 @@ policies:
     - name: base-router-sr-policy-counters
       path: /nokia-state:state/router[router-name=Base]/segment-routing/sr-policies
       cadence: poll
+    - name: base-router-static-policies
+      path: /nokia-state:state/router[router-name=Base]/segment-routing/sr-policies/static-policy
+      cadence: poll
 
 targets:
   - name: CPE-A1

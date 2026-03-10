@@ -27,6 +27,7 @@ class PolicyRawRecord(BaseModel):
     collection_error: str | None = None
     observed_at: datetime | None = None
     sr_policy_counts: dict[str, int] = Field(default_factory=dict)
+    raw_policies: list[dict[str, object]] = Field(default_factory=list)
 
 
 class NormalizedPolicyCandidatePathRecord(BaseModel):
@@ -43,9 +44,12 @@ class NormalizedPolicyRecord(BaseModel):
 
     policy_id: str
     policy_name: str
+    policy_type: Literal["static_local", "static_non_local", "unknown"]
     headend: str
     endpoint: str
     color: int
+    source_target: str
+    source_target_role: str | None = None
     candidate_paths: list[NormalizedPolicyCandidatePathRecord] = Field(default_factory=list)
     intent_state: Literal["declared", "unknown"]
     observed_state: Literal["active", "inactive", "degraded", "unknown"]
@@ -72,6 +76,12 @@ class BackendPolicyDeliveryEnvelope(BaseModel):
     sync_source: str
     sync_status: Literal["ok", "degraded", "failed", "unknown"]
     completeness: Literal["complete", "partial", "unknown"]
+    detail_mode: Literal[
+        "counters_only",
+        "static_policies_when_present",
+        "mixed",
+        "unknown",
+    ]
     observed_at: datetime | None = None
     observed_target_count: int
     policy_capable_target_count: int
@@ -97,6 +107,7 @@ class PolicyFlowSummary(BaseModel):
     active_policy_count: int
     static_policy_count: int
     bgp_policy_count: int
+    normalized_policy_record_count: int
     backend_ready_policy_count: int
     backend_delivery_error_count: int
 

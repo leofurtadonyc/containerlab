@@ -31,9 +31,12 @@ def _build_policy_inventory() -> tuple[CollectorPolicySnapshot, PolicyInventoryS
             sync_source="gnmi_collector_policy",
             sync_status="failed",
             completeness="unknown",
+            detail_mode="unknown",
+            empty_reason="collector_unavailable",
             observed_at=None,
             observed_target_count=0,
             policy_capable_target_count=0,
+            observed_policy_count=0,
             active_policy_count=0,
             static_policy_count=0,
             bgp_policy_count=0,
@@ -48,9 +51,20 @@ def _build_policy_inventory() -> tuple[CollectorPolicySnapshot, PolicyInventoryS
         sync_source=collector_snapshot.sync_source,
         sync_status=collector_snapshot.sync_status,
         completeness=collector_snapshot.completeness,
+        detail_mode=collector_snapshot.detail_mode,
+        empty_reason=(
+            "no_policies_observed"
+            if collector_snapshot.policy_count == 0
+            else (
+                "per_policy_details_unavailable"
+                if collector_snapshot.policy_count > 0 and not collector_snapshot.records
+                else "none"
+            )
+        ),
         observed_at=observed_at,
         observed_target_count=collector_snapshot.observed_target_count,
         policy_capable_target_count=collector_snapshot.policy_capable_target_count,
+        observed_policy_count=collector_snapshot.policy_count,
         active_policy_count=collector_snapshot.active_policy_count,
         static_policy_count=collector_snapshot.static_policy_count,
         bgp_policy_count=collector_snapshot.bgp_policy_count,
@@ -59,9 +73,12 @@ def _build_policy_inventory() -> tuple[CollectorPolicySnapshot, PolicyInventoryS
             PolicyInventoryRecord(
                 policy_id=record.policy_id,
                 policy_name=record.policy_name,
+                policy_type=record.policy_type,
                 headend=record.headend,
                 endpoint=record.endpoint,
                 color=record.color,
+                source_target=record.source_target,
+                source_target_role=record.source_target_role,
                 candidate_paths=[
                     CandidatePath(
                         name=path.name,
@@ -91,9 +108,12 @@ def build_policies_list_response() -> PoliciesListResponse:
         PolicyRecord(
             policy_id=policy.policy_id,
             policy_name=policy.policy_name,
+            policy_type=policy.policy_type,
             headend=policy.headend,
             endpoint=policy.endpoint,
             color=policy.color,
+            source_target=policy.source_target,
+            source_target_role=policy.source_target_role,
             candidate_paths=[
                 CandidatePathRecord(
                     name=path.name,
@@ -114,21 +134,29 @@ def build_policies_list_response() -> PoliciesListResponse:
     ]
     if collector_snapshot.status == "live_normalized_feed":
         data_status = "live"
-        if collector_snapshot.policy_count == 0:
+        if snapshot.empty_reason == "no_policies_observed":
             summary = (
-                "Policy inventory is backed by live Nokia SR policy counters, and no "
-                "SR policies are currently observed across the configured targets."
+                "Policy inventory is backed by live Nokia SR policy counters and "
+                "bounded static-policy visibility, and no SR policies are currently "
+                "observed across the configured targets."
+            )
+        elif snapshot.empty_reason == "per_policy_details_unavailable":
+            summary = (
+                "Policy counters indicate SR policies are present, but the current "
+                "bounded platform path could not derive per-policy detail records for "
+                "the observed policy types."
             )
         else:
             summary = (
-                "Policy inventory is backed by live Nokia SR policy counters and "
-                "normalized collector metadata from the configured targets."
+                "Policy inventory is backed by live Nokia SR policy counters plus "
+                "bounded static-policy observations from the configured targets."
             )
     elif collector_snapshot.status == "partial_live_feed":
         data_status = "degraded"
         summary = (
-            "Policy inventory is backed by live Nokia SR policy counters, but one "
-            "or more targets returned partial or degraded policy observations."
+            "Policy inventory is backed by live Nokia SR policy counters and bounded "
+            "static-policy observations, but one or more targets returned partial or "
+            "degraded policy visibility."
         )
     else:
         data_status = "degraded"
@@ -143,11 +171,15 @@ def build_policies_list_response() -> PoliciesListResponse:
         bgp_policy_count=snapshot.bgp_policy_count,
         observed_target_count=snapshot.observed_target_count,
         policy_capable_target_count=snapshot.policy_capable_target_count,
+        observed_policy_count=snapshot.observed_policy_count,
+        observed_state_counts=dict(Counter(policy.observed_state for policy in items)),
         health_state_counts=dict(Counter(policy.health_state for policy in items)),
         support_state_counts=dict(Counter(policy.support_state for policy in items)),
+        policy_type_counts=dict(Counter(policy.policy_type for policy in items)),
         data_status=data_status,
         sync_status=snapshot.sync_status,
         completeness=snapshot.completeness,
+        detail_mode=snapshot.detail_mode,
     )
     return PoliciesListResponse(
         service="app-api",
@@ -159,9 +191,12 @@ def build_policies_list_response() -> PoliciesListResponse:
         sync_source=snapshot.sync_source,
         sync_status=snapshot.sync_status,
         completeness=snapshot.completeness,
+        detail_mode=snapshot.detail_mode,
+        empty_reason=snapshot.empty_reason,
         observed_at=snapshot.observed_at,
         observed_target_count=snapshot.observed_target_count,
         policy_capable_target_count=snapshot.policy_capable_target_count,
+        observed_policy_count=snapshot.observed_policy_count,
         active_policy_count=snapshot.active_policy_count,
         static_policy_count=snapshot.static_policy_count,
         bgp_policy_count=snapshot.bgp_policy_count,
