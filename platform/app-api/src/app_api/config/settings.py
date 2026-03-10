@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     gnmi_collector_url: str = "http://gnmi-collector:9804"
     gnmi_collector_timeout_seconds: int = 30
     odl_url: str = "http://odl:8181"
+    odl_username: str = "admin"
+    odl_password: str = "admin"
+    odl_timeout_seconds: int = 3
     prometheus_url: str = "http://prometheus:9090"
 
     model_config = SettingsConfigDict(

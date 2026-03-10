@@ -17,7 +17,7 @@ The platform now has:
 
 What remains incomplete:
 
-- substantive ODL integration
+- broad or deeper ODL-backed enrichment beyond the current bounded platform-health capability probe
 - durable persistence for every intended product domain
 - richer live-backed read-only domain APIs beyond the current health, platform status, devices, topology, policies, and capabilities slice
 - deeper read-only product pages backed by more live operational evidence
@@ -162,6 +162,7 @@ It may contribute:
 - controller-side state
 - future BGP-LS, BMP, or PCEP-related leverage
 - useful protocol-adjacent inputs for the backend
+- bounded controller capability discovery for the platform status path
 
 It must not become:
 
@@ -182,6 +183,12 @@ The intended pattern is:
 2. `app-api` queries ODL through explicit integration modules.
 3. `app-api` translates ODL-derived data into platform-friendly structures.
 4. ODL-derived records are combined with other evidence rather than treated as the whole truth.
+
+Current bounded reality:
+
+- `app-api` now performs one small RESTCONF read against ODL's YANG library and operations inventory
+- that controller result is normalized into platform-owned platform-status fields
+- the enrichment is limited to controller reachability and capability hints; it does not replace collector-backed topology or policy views
 
 This architecture preserves:
 
@@ -214,13 +221,13 @@ These boundaries remain non-negotiable:
 - useful read-only frontend pages now consume those stable backend contracts
 - observability scaffolding exists
 - database direction is established and bounded persistence is now real for inventory/topology/policy snapshots plus sync-run history
-- ODL integration is documented and scaffolded, but not substantively implemented
+- ODL integration is documented and now implemented only as one bounded platform-health enrichment path
 
 ### Future
 
 - richer live-backed read-only product APIs
 - broader durable read-side coverage beyond the current inventory/topology/policy snapshot slice
 - richer frontend read views backed by deeper backend data and future history-oriented endpoints
-- bounded ODL-backed enrichment where useful
+- bounded ODL-backed enrichment beyond the current platform-health probe where useful
 - dry-run and validation flows later
 - one safe bounded action workflow only after read/validate maturity

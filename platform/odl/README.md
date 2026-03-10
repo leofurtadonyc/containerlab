@@ -34,7 +34,7 @@ Some SR policy and topology interactions may benefit from a purpose-built SDN co
 - ODL does not call the backend; the backend pulls from ODL
 
 ## Current status
-Topology-level service presence exists and the backend now has an explicit ODL integration skeleton location. No substantive controller integration is implemented yet.
+Topology-level service presence exists and the backend now has a bounded live ODL read enrichment on the Platform Health path: `app-api` performs a small RESTCONF capability probe against the controller's YANG library and operations inventory, then exposes that result as backend-owned platform status data. ODL still does not own topology, policy, or workflow truth.
 
 ## Planned evolution
 - documented bounded role in the platform topology
@@ -44,3 +44,4 @@ Topology-level service presence exists and the backend now has an explicit ODL i
 
 ## Notes and caveats
 ODL must remain a bounded helper. All operator-facing product logic lives in the backend and WebUI. If ODL capabilities are unavailable, the platform degrades gracefully.
+The current bounded read enrichment is intentionally narrow: it only checks controller reachability and exposed capability hints. It does not treat ODL as the primary source for topology, policy, or reconciliation decisions.

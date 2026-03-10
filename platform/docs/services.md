@@ -14,7 +14,7 @@ What still remains incomplete:
 - deeper normalized shared model and schema implementation beyond the current scaffolding
 - read-only domain APIs beyond the current health, platform status, devices, topology, policies, workflow history, audit history, and capabilities slice
 - durable persistence for every intended product domain
-- bounded ODL-backed data handling
+- broader ODL-backed data handling beyond the current bounded platform-health probe
 
 This document therefore focuses on boundaries and intended roles more than deep implementation detail.
 
@@ -68,6 +68,7 @@ Current state:
 - Alembic-managed persistence now exists for normalized inventory snapshots, normalized topology snapshots, normalized policy snapshots, candidate-path records, and sync-run history
 - devices, topology, and policy can fall back to the latest persisted normalized snapshot when the collector boundary is temporarily unavailable
 - workflow-history and audit-history currently expose bounded views derived from persisted sync-run activity rather than full workflow or audit tables
+- `/api/v1/platform/status` now includes one bounded ODL-backed controller capability probe derived from RESTCONF YANG-library and operations discovery, while the backend remains the owner of the normalized product response
 
 ### `gnmi-collector`
 
@@ -198,7 +199,8 @@ Current state:
 
 - topology-level service presence exists
 - README and runtime boundary documentation exist
-- no substantive integration module is implemented yet
+- a bounded RESTCONF-backed controller capability probe now exists for the Platform Health path
+- broader topology, policy, and workflow-oriented controller integration remains intentionally out of scope
 
 ### `app-web`
 

@@ -11,5 +11,5 @@ router = APIRouter(tags=["platform"])
 
 @router.get("/platform/status", response_model=PlatformStatusResponse)
 def get_platform_status() -> PlatformStatusResponse:
-    """Return the Phase 1 platform status scaffold."""
+    """Return the Phase 2 platform status response."""
     return build_platform_status_response()

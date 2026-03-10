@@ -21,7 +21,11 @@ export interface PlatformComponentStatus {
   name: string;
   role: string;
   lifecycle_state: "declared";
-  observation_state: "not_checked";
+  observation_state: "not_checked" | "ok" | "degraded" | "unreachable" | "unknown";
+  observation_source: string | null;
+  observation_summary: string | null;
+  observed_capabilities: string[];
+  notes: string[];
 }
 
 export interface PlatformStatusResponse extends ApiResponseMetadata {

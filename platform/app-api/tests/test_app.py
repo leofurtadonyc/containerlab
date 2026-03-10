@@ -6,6 +6,7 @@ from app_api.integrations.collector.inventory import (
     CollectorInventoryRecord,
     CollectorInventorySnapshot,
 )
+from app_api.integrations.odl import OdlControllerObservation
 from app_api.integrations.collector.policies import CollectorPolicySnapshot
 from app_api.integrations.collector.topology import (
     CollectorTopologyLinkRecord,
@@ -444,7 +445,27 @@ def test_health_endpoint_returns_typed_payload() -> None:
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
-def test_platform_status_endpoint_returns_declared_service_scaffold() -> None:
+def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -> None:
+    class StubOdlClient:
+        def read_controller_observation(self) -> OdlControllerObservation:
+            return OdlControllerObservation(
+                observation_state="ok",
+                observed_source="odl_restconf_capability_probe",
+                observation_summary=(
+                    "ODL RESTCONF is reachable and contributes one bounded "
+                    "controller capability probe."
+                ),
+                observed_capabilities=["restconf", "yang_library", "netconf_operations"],
+                notes=[
+                    "Observed 35 YANG modules and 55 RESTCONF operations from the running controller.",
+                    "No bounded controller-side evidence was observed yet for controller topology models, bgp helpers, bmp helpers, pcep helpers.",
+                ],
+            )
+
+    monkeypatch.setattr(
+        "app_api.services.platform.get_odl_client",
+        lambda: StubOdlClient(),
+    )
     response = client.get(
         "/api/v1/platform/status",
         headers={"X-Request-ID": "platform-status-test"},
@@ -457,11 +478,22 @@ def test_platform_status_endpoint_returns_declared_service_scaffold() -> None:
     assert payload["status"] == "ok"
     assert payload["service"] == "app-api"
     assert payload["topology_name"] == "platform"
-    assert "live dependency checks are not implemented yet" in payload["summary"]
+    assert "bounded ODL RESTCONF capability probe" in payload["summary"]
     assert len(payload["components"]) == 7
     assert payload["components"][0]["name"] == "app-api"
     assert payload["components"][0]["lifecycle_state"] == "declared"
     assert payload["components"][0]["observation_state"] == "not_checked"
+    odl_component = payload["components"][-1]
+    assert odl_component["name"] == "odl"
+    assert odl_component["observation_state"] == "ok"
+    assert odl_component["observation_source"] == "odl_restconf_capability_probe"
+    assert "bounded controller capability probe" in odl_component["observation_summary"]
+    assert odl_component["observed_capabilities"] == [
+        "restconf",
+        "yang_library",
+        "netconf_operations",
+    ]
+    assert len(odl_component["notes"]) == 2
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 

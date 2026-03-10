@@ -36,6 +36,13 @@ export function PlatformHealthView() {
     );
   }
 
+  const observedCount = data.components.filter(
+    (component) => component.observation_state !== "not_checked",
+  ).length;
+  const degradedCount = data.components.filter((component) =>
+    ["degraded", "unreachable", "unknown"].includes(component.observation_state),
+  ).length;
+
   return (
     <section>
       <div className="section-header">
@@ -57,6 +64,24 @@ export function PlatformHealthView() {
 
       <p className="callout">{data.summary}</p>
 
+      <div className="summary-grid">
+        <article className="summary-card">
+          <p className="summary-label">Declared Components</p>
+          <strong>{data.components.length}</strong>
+          <p>Platform services represented in the current topology contract.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Observed Components</p>
+          <strong>{observedCount}</strong>
+          <p>Components with a bounded live observation on this product page.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Degraded Observations</p>
+          <strong>{degradedCount}</strong>
+          <p>Live checks that currently need operator attention.</p>
+        </article>
+      </div>
+
       <div className="table-card">
         <table className="data-table">
           <thead>
@@ -65,6 +90,8 @@ export function PlatformHealthView() {
               <th>Role</th>
               <th>Lifecycle</th>
               <th>Observation</th>
+              <th>Observed Source</th>
+              <th>Observation Detail</th>
             </tr>
           </thead>
           <tbody>
@@ -77,6 +104,32 @@ export function PlatformHealthView() {
                 </td>
                 <td>
                   <StatusPill value={component.observation_state} />
+                </td>
+                <td>{component.observation_source ?? "Not checked"}</td>
+                <td>
+                  {component.observation_summary ? (
+                    <div>
+                      <p className="table-note">{component.observation_summary}</p>
+                      {component.observed_capabilities.length > 0 ? (
+                        <p className="table-note">
+                          Capabilities:{" "}
+                          {component.observed_capabilities
+                            .join(", ")
+                            .split("_")
+                            .join(" ")}
+                        </p>
+                      ) : null}
+                      {component.notes.length > 0 ? (
+                        <ul className="notes-list">
+                          {component.notes.map((note) => (
+                            <li key={note}>{note}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <span className="meta-copy">No live observation yet.</span>
+                  )}
                 </td>
               </tr>
             ))}
