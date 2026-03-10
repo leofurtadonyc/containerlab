@@ -95,11 +95,32 @@ class PolicyHistoryWindowResponse(BaseModel):
     comparison_to_previous: PolicyHistoryComparisonResponse | None = None
 
 
+class PolicyCurrentComparisonResponse(BaseModel):
+    """Bounded comparison between the current response and latest persisted snapshot."""
+
+    status: Literal["unavailable", "current_vs_latest_persisted_ready"]
+    summary: str
+    comparison_persisted_at: datetime | None = None
+    current_observed_at: datetime | None = None
+    current_observed_policy_count: int
+    persisted_observed_policy_count: int
+    current_detail_record_count: int
+    persisted_detail_record_count: int
+    observed_policy_delta: int
+    detail_record_delta: int
+    added_policy_count: int
+    removed_policy_count: int
+    changed_policy_count: int
+    notes: list[str]
+
+
 class PoliciesListResponse(ApiResponseMetadata):
     """Read-only policy inventory list response."""
 
     data_status: Literal["live", "degraded"]
+    serving_mode: Literal["live_collector", "persisted_fallback", "empty_scaffold"]
     summary: str
+    served_persisted_at: datetime | None = None
     sync_source: str
     sync_status: Literal["ok", "degraded", "failed", "unknown"]
     completeness: Literal["complete", "partial", "unknown"]
@@ -131,5 +152,6 @@ class PoliciesListResponse(ApiResponseMetadata):
     srv6_binding_sid_count: int
     count: int
     notes: list[str]
+    comparison_to_latest_persisted: PolicyCurrentComparisonResponse
     history: PolicyHistoryWindowResponse
     items: list[PolicyRecord]

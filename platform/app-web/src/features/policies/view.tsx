@@ -75,6 +75,26 @@ function formatSignedDelta(value: number): string {
   return `${value}`;
 }
 
+function describeTimeGap(start: string | null, end: string | null): string {
+  if (!start || !end) {
+    return "Not available";
+  }
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return "Timestamp could not be interpreted";
+  }
+
+  const gapSeconds = Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / 1000));
+  if (gapSeconds < 60) {
+    return `${gapSeconds}s`;
+  }
+
+  const gapMinutes = Math.round(gapSeconds / 60);
+  return `${gapMinutes}m`;
+}
+
 export function PoliciesView() {
   const { data, error, isLoading, reload } = usePoliciesQuery();
   const [healthFilter, setHealthFilter] = useState("all");
@@ -240,6 +260,7 @@ export function PoliciesView() {
   }
 
   const comparison = data.history.comparison_to_previous;
+  const currentComparison = data.comparison_to_latest_persisted;
 
   return (
     <section>
@@ -256,12 +277,14 @@ export function PoliciesView() {
 
       <div className="metadata-row">
         <span>Data status: {data.data_status}</span>
+        <span>Serving mode: {formatLabel(data.serving_mode)}</span>
         <span>Sync source: {data.sync_source}</span>
         <span>Sync status: {data.sync_status}</span>
         <span>Completeness: {data.completeness}</span>
         <span>Detail mode: {formatLabel(data.detail_mode)}</span>
         <span>Detail records: {data.count}</span>
         <span>Observed: {formatDateTime(data.observed_at)}</span>
+        <span>Served persisted at: {formatDateTime(data.served_persisted_at)}</span>
         <span>Generated: {formatDateTime(data.generated_at)}</span>
       </div>
 
@@ -318,6 +341,22 @@ export function PoliciesView() {
           <p>{freshness.detail}</p>
         </article>
         <article className="summary-card">
+          <p className="summary-label">Serving Mode</p>
+          <strong>{formatLabel(data.serving_mode)}</strong>
+          <p>
+            {data.serving_mode === "live_collector"
+              ? "Current policy state is being served from the live collector-backed normalized read path."
+              : data.serving_mode === "persisted_fallback"
+                ? "Current policy state is being served from the latest persisted normalized fallback snapshot."
+                : "No live or persisted policy snapshot could be loaded beyond the empty scaffold."}
+          </p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Current vs Latest Persisted</p>
+          <strong>{formatLabel(currentComparison.status)}</strong>
+          <p>{currentComparison.summary}</p>
+        </article>
+        <article className="summary-card">
           <p className="summary-label">History Status</p>
           <strong>{formatLabel(data.history.status)}</strong>
           <p>{data.history.summary}</p>
@@ -335,6 +374,18 @@ export function PoliciesView() {
         </div>
       ) : null}
 
+      {data.serving_mode === "persisted_fallback" ? (
+        <div className="callout">
+          <strong>Persisted fallback remains explicit</strong>
+          <p>
+            The live collector policy path is currently unavailable, so this page is showing the
+            latest persisted normalized policy snapshot from{" "}
+            {formatDateTime(data.served_persisted_at)} instead of pretending the current live lab
+            posture is known.
+          </p>
+        </div>
+      ) : null}
+
       {evidenceGapCount > 0 ? (
         <div className="callout">
           <strong>Evidence gap remains explicit</strong>
@@ -342,6 +393,17 @@ export function PoliciesView() {
             The platform currently observes {data.observed_policy_count} policies but only has{" "}
             {data.count} detailed records. This is expected when the current bounded path can count
             policy presence but not derive stable per-policy detail for every observed type.
+          </p>
+        </div>
+      ) : null}
+
+      {currentComparison.status === "current_vs_latest_persisted_ready" ? (
+        <div className="callout">
+          <strong>Bounded current-versus-persisted comparison is available</strong>
+          <p>
+            The current policy response can be compared with the latest persisted normalized policy
+            snapshot from {formatDateTime(currentComparison.comparison_persisted_at)}. This remains
+            bounded normalized policy evidence, not full drift analysis.
           </p>
         </div>
       ) : null}
@@ -374,6 +436,14 @@ export function PoliciesView() {
             <li>
               <span>Freshness posture</span>
               <strong>{freshness.label}</strong>
+            </li>
+            <li>
+              <span>Serving mode</span>
+              <strong>{formatLabel(data.serving_mode)}</strong>
+            </li>
+            <li>
+              <span>Observed to generated gap</span>
+              <strong>{describeTimeGap(data.observed_at, data.generated_at)}</strong>
             </li>
           </ul>
         </article>
@@ -414,6 +484,45 @@ export function PoliciesView() {
               </strong>
             </li>
           </ul>
+        </article>
+        <article className="detail-card">
+          <h3>Current vs Latest Persisted</h3>
+          <p>{currentComparison.summary}</p>
+          <ul className="compact-list">
+            <li>
+              <span>Comparison status</span>
+              <strong>{formatLabel(currentComparison.status)}</strong>
+            </li>
+            <li>
+              <span>Compared persisted snapshot</span>
+              <strong>{formatDateTime(currentComparison.comparison_persisted_at)}</strong>
+            </li>
+            <li>
+              <span>Observed policy delta</span>
+              <strong>{formatSignedDelta(currentComparison.observed_policy_delta)}</strong>
+            </li>
+            <li>
+              <span>Detailed record delta</span>
+              <strong>{formatSignedDelta(currentComparison.detail_record_delta)}</strong>
+            </li>
+            <li>
+              <span>Added / removed detailed policies</span>
+              <strong>
+                {currentComparison.added_policy_count} / {currentComparison.removed_policy_count}
+              </strong>
+            </li>
+            <li>
+              <span>Changed detailed policies</span>
+              <strong>{currentComparison.changed_policy_count}</strong>
+            </li>
+          </ul>
+          {currentComparison.notes.length > 0 ? (
+            <ul className="notes-list">
+              {currentComparison.notes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+          ) : null}
         </article>
         <article className="detail-card">
           <h3>State Distribution</h3>
@@ -848,6 +957,10 @@ export function PoliciesView() {
                 <p className="summary-label">Snapshot Context</p>
                 <div className="key-value-list">
                   <div className="key-value-row">
+                    <span>Serving mode</span>
+                    <strong>{formatLabel(data.serving_mode)}</strong>
+                  </div>
+                  <div className="key-value-row">
                     <span>Observed timestamp</span>
                     <strong>{formatDateTime(data.observed_at)}</strong>
                   </div>
@@ -856,12 +969,24 @@ export function PoliciesView() {
                     <strong>{formatDateTime(data.generated_at)}</strong>
                   </div>
                   <div className="key-value-row">
+                    <span>Served persisted at</span>
+                    <strong>{formatDateTime(data.served_persisted_at)}</strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>Observed to generated gap</span>
+                    <strong>{describeTimeGap(data.observed_at, data.generated_at)}</strong>
+                  </div>
+                  <div className="key-value-row">
                     <span>Freshness posture</span>
                     <strong>{freshness.label}</strong>
                   </div>
                   <div className="key-value-row">
                     <span>Detail mode</span>
                     <strong>{formatLabel(data.detail_mode)}</strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>Current comparison status</span>
+                    <strong>{formatLabel(currentComparison.status)}</strong>
                   </div>
                 </div>
                 <p className="summary-label">Candidate Path Evidence</p>

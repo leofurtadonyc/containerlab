@@ -890,6 +890,8 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
 
     assert response.headers["X-Request-ID"] == "policies-test"
     assert payload["data_status"] == "live"
+    assert payload["serving_mode"] == "live_collector"
+    assert payload["served_persisted_at"] is None
     assert payload["count"] == 2
     assert payload["sync_source"] == "gnmi_collector_policy_sr_counters"
     assert payload["sync_status"] == "ok"
@@ -923,6 +925,8 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["history"]["comparison_to_previous"]["added_policy_count"] == 0
     assert payload["history"]["comparison_to_previous"]["removed_policy_count"] == 1
     assert payload["history"]["comparison_to_previous"]["changed_policy_count"] == 1
+    assert payload["comparison_to_latest_persisted"]["status"] == "current_vs_latest_persisted_ready"
+    assert payload["comparison_to_latest_persisted"]["persisted_observed_policy_count"] == 1
     assert "bounded static-policy observations" in payload["summary"]
     assert payload["items"][0]["policy_type"] == "static_local"
     assert payload["items"][0]["source_target"] == "PE1"
@@ -945,11 +949,13 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["data_status"] == "live"
+    assert payload["serving_mode"] == "live_collector"
     assert payload["count"] == 0
     assert payload["observed_policy_count"] == 0
     assert payload["empty_reason"] == "no_policies_observed"
     assert payload["ttm_preference_count"] == 476
     assert payload["observed_target_role_counts"]["p"] == 16
+    assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
     assert payload["history"]["status"] == "unavailable"
     assert "stable counter footprint and target-role coverage" in payload["summary"]
 
@@ -1007,9 +1013,14 @@ def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) 
     assert response.status_code == 200
     payload = response.json()
     assert payload["data_status"] == "degraded"
+    assert payload["serving_mode"] == "persisted_fallback"
     assert payload["count"] == 1
     assert payload["sync_source"] == "persisted_policy_snapshot"
     assert payload["detail_mode"] == "static_policies_when_present"
+    assert datetime.fromisoformat(
+        payload["served_persisted_at"].replace("Z", "+00:00")
+    ) == datetime.fromisoformat("2026-03-10T00:00:00+00:00")
+    assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
     assert "latest persisted normalized policy snapshot" in payload["summary"]
     assert payload["history"]["status"] == "comparison_ready"
     assert payload["items"][0]["policy_id"] == "persisted-policy-1"

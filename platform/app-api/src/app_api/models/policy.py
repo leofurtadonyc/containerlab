@@ -127,3 +127,22 @@ class PolicyHistoryWindow(BaseModel):
     summary: str
     recent_snapshots: list[PolicyHistorySnapshotRecord] = Field(default_factory=list)
     comparison_to_previous: PolicyHistoryComparison | None = None
+
+
+class PolicyCurrentComparison(BaseModel):
+    """Bounded comparison between the current response and latest persisted snapshot."""
+
+    status: Literal["unavailable", "current_vs_latest_persisted_ready"]
+    summary: str
+    comparison_persisted_at: datetime | None = None
+    current_observed_at: datetime | None = None
+    current_observed_policy_count: int
+    persisted_observed_policy_count: int
+    current_detail_record_count: int
+    persisted_detail_record_count: int
+    observed_policy_delta: int
+    detail_record_delta: int
+    added_policy_count: int
+    removed_policy_count: int
+    changed_policy_count: int
+    notes: list[str] = Field(default_factory=list)

@@ -11,6 +11,7 @@ from app_api.integrations.collector.policies import (
 from app_api.metrics.state import cache_policy_metrics
 from app_api.models.policy import (
     CandidatePath,
+    PolicyCurrentComparison,
     PolicyHistoryComparison,
     PolicyHistoryWindow,
     PolicyInventoryRecord,
@@ -24,6 +25,7 @@ from app_api.persistence.read_side import (
 )
 from app_api.schemas.policies import (
     CandidatePathRecord,
+    PolicyCurrentComparisonResponse,
     PolicyHistoryComparisonResponse,
     PolicyHistorySnapshotResponseRecord,
     PolicyHistoryWindowResponse,
@@ -258,11 +260,96 @@ def _build_policy_history_window() -> PolicyHistoryWindow:
     )
 
 
+def _build_current_policy_comparison(
+    *,
+    current_snapshot: PolicyInventorySnapshot,
+    comparison_snapshot,
+    comparison_persisted_at: datetime | None,
+) -> PolicyCurrentComparison:
+    """Build bounded current-versus-latest-persisted policy comparison evidence."""
+    current_records = {record.policy_id: record for record in current_snapshot.records}
+    if comparison_snapshot is None or comparison_persisted_at is None:
+        return PolicyCurrentComparison(
+            status="unavailable",
+            summary=(
+                "No persisted normalized policy snapshot is currently available for "
+                "bounded comparison with the current policy response."
+            ),
+            comparison_persisted_at=None,
+            current_observed_at=current_snapshot.observed_at,
+            current_observed_policy_count=current_snapshot.observed_policy_count,
+            persisted_observed_policy_count=0,
+            current_detail_record_count=len(current_snapshot.records),
+            persisted_detail_record_count=0,
+            observed_policy_delta=0,
+            detail_record_delta=0,
+            added_policy_count=0,
+            removed_policy_count=0,
+            changed_policy_count=0,
+            notes=[
+                "Comparison becomes available only when the backend already has a persisted normalized policy snapshot to compare against the current response.",
+            ],
+        )
+    persisted_records = {record.policy_id: record for record in comparison_snapshot.records}
+    current_policy_ids = set(current_records)
+    persisted_policy_ids = set(persisted_records)
+    added_policy_ids = current_policy_ids - persisted_policy_ids
+    removed_policy_ids = persisted_policy_ids - current_policy_ids
+    changed_policy_ids = {
+        policy_id
+        for policy_id in current_policy_ids & persisted_policy_ids
+        if _policy_record_signature(current_records[policy_id])
+        != _policy_record_signature(persisted_records[policy_id])
+    }
+    notes = [
+        "This comparison reflects the current policy response against the latest persisted normalized policy snapshot.",
+        "Added, removed, and changed counts only reflect policies that currently have bounded normalized detail records.",
+    ]
+    if (
+        current_snapshot.observed_policy_count > len(current_snapshot.records)
+        or comparison_snapshot.observed_policy_count > len(comparison_snapshot.records)
+    ):
+        notes.append(
+            "Observed policy totals may be higher than detailed record totals when the bounded read path cannot derive per-policy detail for every observed policy type."
+        )
+    return PolicyCurrentComparison(
+        status="current_vs_latest_persisted_ready",
+        summary=(
+            "Bounded comparison is available between the current policy response and "
+            "the latest persisted normalized policy snapshot."
+        ),
+        comparison_persisted_at=comparison_persisted_at,
+        current_observed_at=current_snapshot.observed_at,
+        current_observed_policy_count=current_snapshot.observed_policy_count,
+        persisted_observed_policy_count=comparison_snapshot.observed_policy_count,
+        current_detail_record_count=len(current_snapshot.records),
+        persisted_detail_record_count=len(comparison_snapshot.records),
+        observed_policy_delta=(
+            current_snapshot.observed_policy_count - comparison_snapshot.observed_policy_count
+        ),
+        detail_record_delta=len(current_snapshot.records) - len(comparison_snapshot.records),
+        added_policy_count=len(added_policy_ids),
+        removed_policy_count=len(removed_policy_ids),
+        changed_policy_count=len(changed_policy_ids),
+        notes=notes,
+    )
+
+
 def build_policies_list_response() -> PoliciesListResponse:
     """Build the policy inventory response from the live collector boundary."""
     settings = get_settings()
     collector_snapshot, snapshot, persisted_at = _build_policy_inventory()
+    latest_persisted_snapshot = load_latest_policy_snapshot()
     history = _build_policy_history_window()
+    current_comparison = _build_current_policy_comparison(
+        current_snapshot=snapshot,
+        comparison_snapshot=(
+            latest_persisted_snapshot.snapshot if latest_persisted_snapshot is not None else None
+        ),
+        comparison_persisted_at=(
+            latest_persisted_snapshot.persisted_at if latest_persisted_snapshot is not None else None
+        ),
+    )
     items = [
         PolicyRecord(
             policy_id=policy.policy_id,
@@ -293,6 +380,7 @@ def build_policies_list_response() -> PoliciesListResponse:
     ]
     if collector_snapshot.status == "live_normalized_feed":
         data_status = "live"
+        serving_mode = "live_collector"
         if snapshot.empty_reason == "no_policies_observed":
             summary = (
                 "Policy inventory is backed by live Nokia SR policy counters and "
@@ -313,6 +401,7 @@ def build_policies_list_response() -> PoliciesListResponse:
             )
     elif collector_snapshot.status == "partial_live_feed":
         data_status = "degraded"
+        serving_mode = "live_collector"
         summary = (
             "Policy inventory is backed by live Nokia SR policy counters and bounded "
             "static-policy observations, but one or more targets returned partial or "
@@ -321,11 +410,34 @@ def build_policies_list_response() -> PoliciesListResponse:
     else:
         data_status = "degraded"
         if persisted_at is not None:
+            serving_mode = "persisted_fallback"
+            current_comparison = PolicyCurrentComparison(
+                status="unavailable",
+                summary=(
+                    "Live collector policy data is unavailable, so the current response "
+                    "already reflects the latest persisted normalized policy snapshot."
+                ),
+                comparison_persisted_at=persisted_at,
+                current_observed_at=snapshot.observed_at,
+                current_observed_policy_count=snapshot.observed_policy_count,
+                persisted_observed_policy_count=snapshot.observed_policy_count,
+                current_detail_record_count=len(snapshot.records),
+                persisted_detail_record_count=len(snapshot.records),
+                observed_policy_delta=0,
+                detail_record_delta=0,
+                added_policy_count=0,
+                removed_policy_count=0,
+                changed_policy_count=0,
+                notes=[
+                    "Comparison is not shown here because the current policy response is already the persisted fallback snapshot.",
+                ],
+            )
             summary = (
                 "The backend could not load the live collector policy snapshot, so "
                 "the latest persisted normalized policy snapshot is being served."
             )
         else:
+            serving_mode = "empty_scaffold"
             summary = (
                 "The backend could not load the live collector policy snapshot. "
                 "No raw vendor payloads are exposed through the policies API."
@@ -353,7 +465,9 @@ def build_policies_list_response() -> PoliciesListResponse:
         phase="phase_2_read_only_foundation",
         generated_at=datetime.now(UTC),
         data_status=data_status,
+        serving_mode=serving_mode,
         summary=summary,
+        served_persisted_at=persisted_at,
         sync_source=snapshot.sync_source,
         sync_status=snapshot.sync_status,
         completeness=snapshot.completeness,
@@ -375,6 +489,22 @@ def build_policies_list_response() -> PoliciesListResponse:
         srv6_binding_sid_count=snapshot.srv6_binding_sid_count,
         count=len(items),
         notes=snapshot.notes,
+        comparison_to_latest_persisted=PolicyCurrentComparisonResponse(
+            status=current_comparison.status,
+            summary=current_comparison.summary,
+            comparison_persisted_at=current_comparison.comparison_persisted_at,
+            current_observed_at=current_comparison.current_observed_at,
+            current_observed_policy_count=current_comparison.current_observed_policy_count,
+            persisted_observed_policy_count=current_comparison.persisted_observed_policy_count,
+            current_detail_record_count=current_comparison.current_detail_record_count,
+            persisted_detail_record_count=current_comparison.persisted_detail_record_count,
+            observed_policy_delta=current_comparison.observed_policy_delta,
+            detail_record_delta=current_comparison.detail_record_delta,
+            added_policy_count=current_comparison.added_policy_count,
+            removed_policy_count=current_comparison.removed_policy_count,
+            changed_policy_count=current_comparison.changed_policy_count,
+            notes=current_comparison.notes,
+        ),
         history=PolicyHistoryWindowResponse(
             status=history.status,
             summary=history.summary,

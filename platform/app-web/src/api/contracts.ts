@@ -189,9 +189,28 @@ export interface PolicyHistoryWindow {
   comparison_to_previous: PolicyHistoryComparison | null;
 }
 
+export interface PolicyCurrentComparison {
+  status: "unavailable" | "current_vs_latest_persisted_ready";
+  summary: string;
+  comparison_persisted_at: string | null;
+  current_observed_at: string | null;
+  current_observed_policy_count: number;
+  persisted_observed_policy_count: number;
+  current_detail_record_count: number;
+  persisted_detail_record_count: number;
+  observed_policy_delta: number;
+  detail_record_delta: number;
+  added_policy_count: number;
+  removed_policy_count: number;
+  changed_policy_count: number;
+  notes: string[];
+}
+
 export interface PoliciesListResponse extends ApiResponseMetadata {
   data_status: "live" | "degraded";
+  serving_mode: "live_collector" | "persisted_fallback" | "empty_scaffold";
   summary: string;
+  served_persisted_at: string | null;
   sync_source: string;
   sync_status: "ok" | "degraded" | "failed" | "unknown";
   completeness: "complete" | "partial" | "unknown";
@@ -217,6 +236,7 @@ export interface PoliciesListResponse extends ApiResponseMetadata {
   srv6_binding_sid_count: number;
   count: number;
   notes: string[];
+  comparison_to_latest_persisted: PolicyCurrentComparison;
   history: PolicyHistoryWindow;
   items: PolicyRecord[];
 }
