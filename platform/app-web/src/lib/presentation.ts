@@ -1,5 +1,5 @@
 export function formatLabel(value: string): string {
-  return value.replaceAll("_", " ");
+  return value.split("_").join(" ");
 }
 
 export function formatDateTime(value: string | null): string {

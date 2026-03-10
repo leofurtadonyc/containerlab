@@ -16,7 +16,7 @@ from app_api.main import app
 from app_api.models.inventory import InventoryDevice
 from app_api.metrics.state import reset_metrics_registry
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
-from app_api.persistence.history import PersistedSyncRun
+from app_api.persistence.history import PersistedSyncRun, SyncRunHistorySummary
 from app_api.persistence.read_side import (
     PersistedInventorySnapshot,
     PersistedTopologySnapshot,
@@ -258,6 +258,22 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             notes=["Inventory sync completed from the bounded live path."],
         ),
     ]
+
+
+def _build_sync_run_history_summary() -> SyncRunHistorySummary:
+    return SyncRunHistorySummary(
+        total_count=2,
+        counts_by_model_family={"inventory": 1, "topology": 1},
+        counts_by_result={"completed": 1, "partial": 1},
+        counts_by_model_family_and_result={
+            "inventory": {"completed": 1},
+            "topology": {"partial": 1},
+        },
+        latest_finished_at_by_model_family={
+            "inventory": datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
+            "topology": datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
+        },
+    )
 
 
 def test_health_endpoint_returns_typed_payload() -> None:
@@ -594,6 +610,10 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         "app_api.services.policies.get_collector_policy_client",
         lambda: StubCollectorPolicyClient(),
     )
+    monkeypatch.setattr(
+        "app_api.metrics.router.summarize_sync_run_history",
+        _build_sync_run_history_summary,
+    )
     reset_metrics_registry()
     client.get("/api/v1/health")
     client.get("/api/v1/devices")
@@ -618,6 +638,19 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert "platform_app_api_policy_records 0" in response.text
     assert "platform_app_api_policy_observed_targets 34" in response.text
     assert "platform_app_api_policy_capable_targets 34" in response.text
+    assert "platform_app_api_sync_runs_total 2" in response.text
+    assert 'platform_app_api_sync_runs_by_family{model_family="inventory"} 1' in response.text
+    assert 'platform_app_api_sync_runs_by_family{model_family="topology"} 1' in response.text
+    assert 'platform_app_api_sync_runs_by_result{result="completed"} 1' in response.text
+    assert 'platform_app_api_sync_runs_by_result{result="partial"} 1' in response.text
+    assert (
+        'platform_app_api_sync_runs_by_family_and_result{model_family="topology",'
+        'result="partial"} 1'
+    ) in response.text
+    assert (
+        'platform_app_api_sync_run_latest_finished_at_seconds{model_family="inventory"} '
+        in response.text
+    )
 
 
 def test_devices_endpoint_allows_webui_origin_via_cors(monkeypatch) -> None:

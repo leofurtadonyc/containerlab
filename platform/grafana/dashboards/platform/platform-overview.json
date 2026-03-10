@@ -15,7 +15,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## Platform Observability Overview\nThis dashboard shows the first real platform metrics now exposed by Prometheus: scrape health for the implemented services, backend request volume and latency, and the collector's inventory-flow metrics.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels here.\n- Collector metrics are inventory-oriented Phase 1 scaffolds, not full telemetry coverage.",
+        "content": "## Platform Observability Overview\nThis dashboard follows the current read-only platform boundary: Prometheus scrape health, backend API responsiveness, collector-backed snapshot signals, and persisted sync-history evidence derived from bounded inventory and topology sync runs.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- Inventory and topology sync history now surfaces through persisted sync-run metrics.\n- Policy remains a live transient read-side slice, so policy history is intentionally not shown as persisted activity here.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -77,7 +77,7 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 8,
+        "w": 6,
         "x": 0,
         "y": 6
       },
@@ -148,8 +148,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 8,
-        "x": 8,
+        "w": 6,
+        "x": 6,
         "y": 6
       },
       "id": 4,
@@ -219,8 +219,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 8,
-        "x": 16,
+        "w": 6,
+        "x": 12,
         "y": 6
       },
       "id": 5,
@@ -255,6 +255,48 @@
       },
       "fieldConfig": {
         "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 6
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_sync_runs_total",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent Persisted Sync Runs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
           "unit": "reqps"
         },
         "overrides": []
@@ -265,7 +307,7 @@
         "x": 0,
         "y": 11
       },
-      "id": 6,
+      "id": 7,
       "options": {
         "legend": {
           "displayMode": "table",
@@ -304,7 +346,7 @@
         "x": 12,
         "y": 11
       },
-      "id": 7,
+      "id": 8,
       "options": {
         "legend": {
           "displayMode": "table",
@@ -334,9 +376,9 @@
         "x": 0,
         "y": 19
       },
-      "id": 8,
+      "id": 9,
       "panels": [],
-      "title": "Collector Inventory Signals",
+      "title": "Read-Side Sync History",
       "type": "row"
     },
     {
@@ -346,7 +388,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "min": 0
+          "min": 0,
+          "unit": "s"
         },
         "overrides": []
       },
@@ -354,48 +397,6 @@
         "h": 5,
         "w": 6,
         "x": 0,
-        "y": 20
-      },
-      "id": 9,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "value_and_name"
-      },
-      "pluginVersion": "11.0.0",
-      "targets": [
-        {
-          "expr": "platform_gnmi_collector_inventory_targets",
-          "refId": "A"
-        }
-      ],
-      "title": "Configured Inventory Targets",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "reqps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 6,
         "y": 20
       },
       "id": 10,
@@ -416,11 +417,11 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "sum(rate(platform_gnmi_collector_inventory_collection_success_total[5m]))",
+          "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"inventory\"}, 0)",
           "refId": "A"
         }
       ],
-      "title": "Inventory Collection Success Rate",
+      "title": "Inventory Sync Age",
       "type": "stat"
     },
     {
@@ -430,14 +431,15 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "reqps"
+          "min": 0,
+          "unit": "s"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 5,
         "w": 6,
-        "x": 12,
+        "x": 6,
         "y": 20
       },
       "id": 11,
@@ -458,11 +460,11 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "sum(rate(platform_gnmi_collector_inventory_collection_failure_total[5m]))",
+          "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"topology\"}, 0)",
           "refId": "A"
         }
       ],
-      "title": "Inventory Collection Failure Rate",
+      "title": "Topology Sync Age",
       "type": "stat"
     },
     {
@@ -479,7 +481,7 @@
       "gridPos": {
         "h": 5,
         "w": 6,
-        "x": 18,
+        "x": 12,
         "y": 20
       },
       "id": 12,
@@ -500,11 +502,11 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_gnmi_collector_inventory_backend_ready_records",
+          "expr": "platform_app_api_sync_runs_by_family{model_family=\"inventory\"}",
           "refId": "A"
         }
       ],
-      "title": "Backend-Ready Inventory Records",
+      "title": "Inventory Sync Runs",
       "type": "stat"
     },
     {
@@ -514,47 +516,40 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "reqps"
+          "min": 0
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 25
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 20
       },
       "id": 13,
       "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom"
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "textMode": "value_and_name"
       },
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "sum(rate(platform_gnmi_collector_inventory_collection_success_total[5m]))",
-          "legendFormat": "success",
+          "expr": "platform_app_api_sync_runs_by_family{model_family=\"topology\"}",
           "refId": "A"
-        },
-        {
-          "expr": "sum(rate(platform_gnmi_collector_inventory_collection_failure_total[5m]))",
-          "legendFormat": "failure",
-          "refId": "B"
-        },
-        {
-          "expr": "sum(rate(platform_gnmi_collector_inventory_normalization_failure_total[5m]))",
-          "legendFormat": "normalization failure",
-          "refId": "C"
         }
       ],
-      "title": "Collector Inventory Outcome Rates",
-      "type": "timeseries"
+      "title": "Topology Sync Runs",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -569,11 +564,52 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
+        "w": 8,
+        "x": 0,
         "y": 25
       },
       "id": 14,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_sync_runs_by_result",
+          "legendFormat": "{{result}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent Sync Results",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 25
+      },
+      "id": 15,
       "options": {
         "legend": {
           "displayMode": "table",
@@ -587,17 +623,334 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_gnmi_collector_inventory_normalized_records",
-          "legendFormat": "normalized records",
+          "expr": "sum by (endpoint) (rate(platform_app_api_http_requests_total{endpoint=~\"/api/v1/(devices|topology|policies|workflow-history|audit-history)\"}[5m]))",
+          "legendFormat": "{{endpoint}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Read-Only API Demand",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 33
+      },
+      "id": 16,
+      "panels": [],
+      "title": "Current Read-Side Snapshot Signals",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 34
+      },
+      "id": 17,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_topology_nodes",
+          "refId": "A"
+        }
+      ],
+      "title": "Observed Topology Nodes",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 34
+      },
+      "id": 18,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_topology_links",
+          "refId": "A"
+        }
+      ],
+      "title": "Observed Topology Links",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 34
+      },
+      "id": 19,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_policy_observed_targets",
+          "refId": "A"
+        }
+      ],
+      "title": "Policy Observed Targets",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 34
+      },
+      "id": 20,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_policy_active_records",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Policies",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 39
+      },
+      "id": 21,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_topology_nodes_by_state",
+          "legendFormat": "{{state}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Topology Node States",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 39
+      },
+      "id": 22,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_policy_records_by_support_state",
+          "legendFormat": "{{state}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Policy Support Posture",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 39
+      },
+      "id": 23,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "sum(rate(platform_gnmi_collector_inventory_collection_success_total[5m]))",
+          "legendFormat": "inventory success",
           "refId": "A"
         },
         {
-          "expr": "platform_gnmi_collector_inventory_backend_ready_records",
-          "legendFormat": "backend ready",
+          "expr": "sum(rate(platform_gnmi_collector_topology_collection_success_total[5m]))",
+          "legendFormat": "topology success",
           "refId": "B"
+        },
+        {
+          "expr": "sum(rate(platform_gnmi_collector_topology_collection_partial_total[5m]))",
+          "legendFormat": "topology partial",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(rate(platform_gnmi_collector_policy_collection_success_total[5m]))",
+          "legendFormat": "policy success",
+          "refId": "D"
+        },
+        {
+          "expr": "sum(rate(platform_gnmi_collector_policy_collection_partial_total[5m]))",
+          "legendFormat": "policy partial",
+          "refId": "E"
         }
       ],
-      "title": "Collector Inventory Readiness",
+      "title": "Collector Read-Side Outcome Rates",
       "type": "timeseries"
     }
   ],
@@ -607,7 +960,7 @@
   "tags": [
     "platform",
     "metrics",
-    "phase1"
+    "phase2"
   ],
   "templating": {
     "list": []
@@ -619,5 +972,5 @@
   "timezone": "browser",
   "title": "Platform Overview",
   "uid": "platform-overview",
-  "version": 2
+  "version": 3
 }

@@ -135,6 +135,7 @@ def render_prometheus_metrics(
     *,
     topology_metrics: dict[str, object] | None = None,
     policy_metrics: dict[str, object] | None = None,
+    history_metrics: dict[str, object] | None = None,
 ) -> str:
     """Render backend metrics in Prometheus text format."""
     with _lock:
@@ -324,6 +325,78 @@ def render_prometheus_metrics(
                             "not_implemented_in_platform": 0,
                             **dict(policy_metrics.get("support_state_counts", {})),
                         }.items()
+                    )
+                ],
+            ]
+        )
+
+    if history_metrics is not None:
+        history_families = {"inventory", "topology"}
+        history_results = {"completed", "partial", "failed", "unknown"}
+        counts_by_model_family = dict(history_metrics.get("counts_by_model_family", {}))
+        counts_by_result = dict(history_metrics.get("counts_by_result", {}))
+        counts_by_model_family_and_result = dict(
+            history_metrics.get("counts_by_model_family_and_result", {})
+        )
+        latest_finished_at_by_model_family = dict(
+            history_metrics.get("latest_finished_at_by_model_family", {})
+        )
+        lines.extend(
+            [
+                "# HELP platform_app_api_sync_runs_total Recent persisted sync-run count.",
+                "# TYPE platform_app_api_sync_runs_total gauge",
+                f"platform_app_api_sync_runs_total {history_metrics['total_count']}",
+                (
+                    "# HELP platform_app_api_sync_runs_by_family "
+                    "Recent persisted sync-run counts by model family."
+                ),
+                "# TYPE platform_app_api_sync_runs_by_family gauge",
+                *[
+                    (
+                        "platform_app_api_sync_runs_by_family"
+                        f'{{model_family="{model_family}"}} '
+                        f"{counts_by_model_family.get(model_family, 0)}"
+                    )
+                    for model_family in sorted(history_families)
+                ],
+                (
+                    "# HELP platform_app_api_sync_runs_by_result "
+                    "Recent persisted sync-run counts by result."
+                ),
+                "# TYPE platform_app_api_sync_runs_by_result gauge",
+                *[
+                    (
+                        "platform_app_api_sync_runs_by_result"
+                        f'{{result="{result}"}} {counts_by_result.get(result, 0)}'
+                    )
+                    for result in sorted(history_results)
+                ],
+                (
+                    "# HELP platform_app_api_sync_runs_by_family_and_result "
+                    "Recent persisted sync-run counts by model family and result."
+                ),
+                "# TYPE platform_app_api_sync_runs_by_family_and_result gauge",
+                *[
+                    (
+                        "platform_app_api_sync_runs_by_family_and_result"
+                        f'{{model_family="{model_family}",result="{result}"}} '
+                        f"{dict(counts_by_model_family_and_result.get(model_family, {})).get(result, 0)}"
+                    )
+                    for model_family in sorted(history_families)
+                    for result in sorted(history_results)
+                ],
+                (
+                    "# HELP platform_app_api_sync_run_latest_finished_at_seconds "
+                    "Unix timestamp of the latest persisted sync-run finish time by model family."
+                ),
+                "# TYPE platform_app_api_sync_run_latest_finished_at_seconds gauge",
+                *[
+                    (
+                        "platform_app_api_sync_run_latest_finished_at_seconds"
+                        f'{{model_family="{model_family}"}} {finished_at.timestamp():.3f}'
+                    )
+                    for model_family, finished_at in sorted(
+                        latest_finished_at_by_model_family.items()
                     )
                 ],
             ]

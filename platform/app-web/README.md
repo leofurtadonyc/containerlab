@@ -32,7 +32,7 @@ Operators need a product UI that is purpose-built for network operations workflo
 - does not talk to Prometheus, Postgres, ODL, or the gNMI collector directly
 
 ## Current status
-The frontend now has a Vite + React + TypeScript scaffold, a feature-oriented `src/` layout, a typed API client layer for stable read-only backend contracts, and useful read-oriented product pages for overview, platform health, devices, topology, policies, and capabilities. Those pages handle loading, error, empty, partial, and unsupported-support states explicitly, while workflow and audit areas remain placeholders.
+The frontend now has a Vite + React + TypeScript scaffold, a feature-oriented `src/` layout, a typed API client layer for stable read-only backend contracts, and useful read-oriented product pages for overview, platform health, devices, topology, policies, workflow history, audit history, and capabilities. Those pages handle loading, error, empty, partial, and unsupported-support states explicitly, while execution workflow controls and richer audit semantics remain out of scope for the current phase.
 
 ## Planned evolution
 - richer read-oriented pages backed by deeper backend APIs as those contracts become real

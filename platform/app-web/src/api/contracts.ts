@@ -135,6 +135,49 @@ export interface PoliciesListResponse extends ApiResponseMetadata {
   items: PolicyRecord[];
 }
 
+export interface WorkflowHistoryItem {
+  workflow_id: string;
+  workflow_type: "read_side_sync";
+  workflow_name: string;
+  scope: string;
+  status: "completed" | "partial" | "failed" | "unknown";
+  source_type: string;
+  source_endpoint: string;
+  record_count: number;
+  observed_at: string | null;
+  started_at: string;
+  finished_at: string;
+  persisted_artifacts: string[];
+  notes: string[];
+}
+
+export interface WorkflowHistoryResponse extends ApiResponseMetadata {
+  data_status: "persisted_activity_history" | "empty";
+  summary: string;
+  count: number;
+  items: WorkflowHistoryItem[];
+}
+
+export interface AuditHistoryItem {
+  event_id: string;
+  event_type: "read_side_sync_recorded";
+  source: "app-api";
+  actor: "platform_system";
+  target_scope: string;
+  result: "succeeded" | "failed" | "partial" | "unknown";
+  correlation_id: string;
+  occurred_at: string;
+  message: string;
+  notes: string[];
+}
+
+export interface AuditHistoryResponse extends ApiResponseMetadata {
+  data_status: "persisted_activity_history" | "empty";
+  summary: string;
+  count: number;
+  items: AuditHistoryItem[];
+}
+
 export interface CapabilityRecord {
   vendor: string;
   platform: string;

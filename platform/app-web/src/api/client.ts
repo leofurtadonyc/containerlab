@@ -1,10 +1,12 @@
 import type {
+  AuditHistoryResponse,
   CapabilitiesListResponse,
   DevicesListResponse,
   ErrorResponse,
   PlatformStatusResponse,
   PoliciesListResponse,
   TopologyResponse,
+  WorkflowHistoryResponse,
 } from "./contracts";
 
 export interface ApiClientConfig {
@@ -45,6 +47,14 @@ export class ApiClient {
 
   async getPolicies(): Promise<PoliciesListResponse> {
     return this.request<PoliciesListResponse>("/api/v1/policies");
+  }
+
+  async getWorkflowHistory(): Promise<WorkflowHistoryResponse> {
+    return this.request<WorkflowHistoryResponse>("/api/v1/workflow-history");
+  }
+
+  async getAuditHistory(): Promise<AuditHistoryResponse> {
+    return this.request<AuditHistoryResponse>("/api/v1/audit-history");
   }
 
   async getCapabilities(): Promise<CapabilitiesListResponse> {

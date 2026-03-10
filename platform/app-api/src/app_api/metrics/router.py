@@ -8,6 +8,7 @@ from app_api.metrics.state import (
     get_cached_topology_metrics,
     render_prometheus_metrics,
 )
+from app_api.persistence.history import summarize_sync_run_history
 
 
 PROMETHEUS_CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
@@ -21,6 +22,7 @@ def get_metrics() -> Response:
     settings = get_settings()
     topology = get_cached_topology_metrics()
     policies = get_cached_policy_metrics()
+    sync_history = summarize_sync_run_history()
     payload = render_prometheus_metrics(
         settings.app_version,
         topology_metrics={
@@ -44,6 +46,17 @@ def get_metrics() -> Response:
             "data_status": policies.data_status,
             "sync_status": policies.sync_status,
             "completeness": policies.completeness,
+        },
+        history_metrics={
+            "total_count": sync_history.total_count,
+            "counts_by_model_family": sync_history.counts_by_model_family,
+            "counts_by_result": sync_history.counts_by_result,
+            "counts_by_model_family_and_result": (
+                sync_history.counts_by_model_family_and_result
+            ),
+            "latest_finished_at_by_model_family": (
+                sync_history.latest_finished_at_by_model_family
+            ),
         },
     )
     return Response(content=payload, media_type=PROMETHEUS_CONTENT_TYPE)

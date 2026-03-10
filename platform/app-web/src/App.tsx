@@ -58,9 +58,10 @@ export function App() {
         <p className="eyebrow">Phase 2 Read-Only Foundation</p>
         <p className="body-copy">
           This WebUI now consumes the current read-only backend contracts for
-          overview, platform status, devices, topology, policies, and
-          capabilities. Grafana remains the observability layer, and backend APIs
-          remain the source of business logic.
+          overview, platform status, devices, topology, policies, workflow
+          history, audit history, and capabilities. Grafana remains the
+          observability layer, and backend APIs remain the source of business
+          logic.
         </p>
         <p className="meta-copy">Configured backend base URL: {appApiBaseUrl}</p>
       </div>
