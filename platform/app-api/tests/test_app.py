@@ -6,6 +6,7 @@ from app_api.integrations.collector.inventory import (
     CollectorInventoryRecord,
     CollectorInventorySnapshot,
 )
+from app_api.integrations.collector.policies import CollectorPolicySnapshot
 from app_api.integrations.collector.topology import (
     CollectorTopologyLinkRecord,
     CollectorTopologyNodeRecord,
@@ -123,6 +124,31 @@ def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
     )
 
 
+def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
+    return CollectorPolicySnapshot(
+        integration="gnmi_collector_policy",
+        status="live_normalized_feed",
+        destination_service="app-api",
+        source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+        sync_source="gnmi_collector_policy_sr_counters",
+        sync_status="ok",
+        completeness="partial",
+        observed_at="2026-03-09T19:25:08.500000+00:00",
+        observed_target_count=34,
+        policy_capable_target_count=34,
+        policy_count=0,
+        active_policy_count=0,
+        static_policy_count=0,
+        bgp_policy_count=0,
+        notes=[
+            "Policy inventory is currently bounded to live Nokia SR policy counters collected over gNMI.",
+            "No SR policies are currently observed across the configured Nokia targets.",
+        ],
+        records=[],
+        fetch_error=None,
+    )
+
+
 def test_health_endpoint_returns_typed_payload() -> None:
     response = client.get("/api/v1/health", headers={"X-Request-ID": "health-test"})
 
@@ -219,25 +245,30 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
-def test_policies_endpoint_returns_normalized_policy_inventory() -> None:
+def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return _build_live_policy_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
     response = client.get("/api/v1/policies", headers={"X-Request-ID": "policies-test"})
 
     assert response.status_code == 200
     payload = response.json()
 
     assert response.headers["X-Request-ID"] == "policies-test"
-    assert payload["data_status"] == "normalized_scaffold"
-    assert payload["count"] == 2
-    assert "explicit support, observed, and unknown states" in payload["summary"]
-    assert payload["items"][0]["policy_id"] == "sr-policy-edge-pe-1-to-core"
-    assert payload["items"][0]["intent_state"] == "declared"
-    assert payload["items"][0]["observed_state"] == "unknown"
-    assert payload["items"][0]["support_state"] == "not_implemented_in_platform"
-    assert payload["items"][0]["health_state"] == "unknown"
-    assert payload["items"][0]["candidate_paths"][0]["path_state"] == "unknown"
-    assert payload["items"][1]["intent_state"] == "unknown"
-    assert payload["items"][1]["support_state"] == "unknown"
-    assert payload["items"][1]["health_state"] == "degraded"
+    assert payload["data_status"] == "live"
+    assert payload["count"] == 0
+    assert payload["sync_source"] == "gnmi_collector_policy_sr_counters"
+    assert payload["sync_status"] == "ok"
+    assert payload["completeness"] == "partial"
+    assert payload["observed_target_count"] == 34
+    assert payload["policy_capable_target_count"] == 34
+    assert "no SR policies are currently observed" in payload["summary"]
+    assert "No SR policies are currently observed" in payload["notes"][1]
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
@@ -286,6 +317,10 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         def read_topology_snapshot(self) -> CollectorTopologySnapshot:
             return _build_live_topology_snapshot()
 
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return _build_live_policy_snapshot()
+
     monkeypatch.setattr(
         "app_api.services.devices.get_collector_inventory_client",
         lambda: StubCollectorInventoryClient(),
@@ -294,10 +329,15 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         "app_api.services.topology.get_collector_topology_client",
         lambda: StubCollectorTopologyClient(),
     )
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
     reset_metrics_registry()
     client.get("/api/v1/health")
     client.get("/api/v1/devices")
     client.get("/api/v1/topology")
+    client.get("/api/v1/policies")
     response = client.get("/metrics")
 
     assert response.status_code == 200
@@ -306,6 +346,7 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert 'endpoint="/api/v1/health",method="GET",status_class="2xx"' in response.text
     assert 'endpoint="/api/v1/devices",method="GET",status_class="2xx"' in response.text
     assert 'endpoint="/api/v1/topology",method="GET",status_class="2xx"' in response.text
+    assert 'endpoint="/api/v1/policies",method="GET",status_class="2xx"' in response.text
     assert "platform_app_api_http_request_duration_seconds_count" in response.text
     assert "platform_app_api_http_request_duration_seconds_sum" in response.text
     assert "platform_app_api_topology_nodes 2" in response.text
@@ -313,6 +354,9 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert 'data_status="live",sync_status="ok",completeness="partial"' in response.text
     assert 'platform_app_api_topology_nodes_by_state{state="up"} 2' in response.text
     assert 'platform_app_api_topology_links_by_state{state="up"} 1' in response.text
+    assert "platform_app_api_policy_records 0" in response.text
+    assert "platform_app_api_policy_observed_targets 34" in response.text
+    assert "platform_app_api_policy_capable_targets 34" in response.text
 
 
 def test_devices_endpoint_allows_webui_origin_via_cors(monkeypatch) -> None:

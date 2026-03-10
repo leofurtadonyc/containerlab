@@ -11,5 +11,5 @@ router = APIRouter(tags=["policies"])
 
 @router.get("/policies", response_model=PoliciesListResponse)
 def list_policies() -> PoliciesListResponse:
-    """Return the Phase 1 policy inventory scaffold."""
+    """Return the current normalized policy inventory view."""
     return build_policies_list_response()

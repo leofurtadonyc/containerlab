@@ -5,6 +5,7 @@ from gnmi_collector.config.runtime import build_runtime_config
 from gnmi_collector.main import app
 from gnmi_collector.mappings.inventory import map_inventory_record
 from gnmi_collector.services.inventory import build_inventory_flow_snapshot
+from gnmi_collector.services.policy import build_policy_flow_snapshot
 from gnmi_collector.services.topology import build_topology_flow_snapshot
 
 
@@ -47,6 +48,29 @@ class FakeGnmiClient:
         del encoding
         host = self.target[0]
         device_name = _target_name_by_host()[host]
+        if any("segment-routing/sr-policies" in item for item in path):
+            return {
+                "notification": [
+                    {
+                        "timestamp": 1773094131368820265,
+                        "update": [
+                            {
+                                "path": "state/router[router-name=Base]/segment-routing/sr-policies",
+                                "val": {
+                                    "nokia-state:ttm-preferences": 14,
+                                    "nokia-state:binding-sids-allocated": 0,
+                                    "nokia-state:srv6-binding-sids-allocated": 0,
+                                    "nokia-state:static-local-policies": 0,
+                                    "nokia-state:active-static-local-policies": 0,
+                                    "nokia-state:static-non-local-policies": 0,
+                                    "nokia-state:bgp-policies": 0,
+                                    "nokia-state:active-bgp-policies": 0,
+                                },
+                            }
+                        ],
+                    }
+                ]
+            }
         if any("router[router-name=Base]/interface" in item for item in path):
             peer_name = _paired_peer_by_host()[host]
             return {
@@ -116,6 +140,10 @@ def test_runtime_config_loads_live_nokia_targets() -> None:
     }
     assert config.inventory_subscriptions[0].path == "/nokia-state:state/system/oper-name"
     assert config.topology_subscriptions[0].path == "/nokia-state:state/router[router-name=Base]/interface"
+    assert (
+        config.policy_subscriptions[0].path
+        == "/nokia-state:state/router[router-name=Base]/segment-routing/sr-policies"
+    )
 
 
 def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
@@ -125,6 +153,7 @@ def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
     expected_target_count = len(_targets())
     client.get("/inventory/snapshot")
     client.get("/topology/snapshot")
+    client.get("/policies/snapshot")
 
     response = client.get("/metrics")
 
@@ -149,6 +178,10 @@ def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
     assert "platform_gnmi_collector_topology_normalized_links 17" in response.text
     assert 'platform_gnmi_collector_topology_nodes_by_state{state="up"} 34' in response.text
     assert 'platform_gnmi_collector_topology_links_by_state{state="up"} 17' in response.text
+    assert f"platform_gnmi_collector_policy_targets {expected_target_count}" in response.text
+    assert f"platform_gnmi_collector_policy_observed_targets {expected_target_count}" in response.text
+    assert f"platform_gnmi_collector_policy_capable_targets {expected_target_count}" in response.text
+    assert "platform_gnmi_collector_policy_observed_policies 0" in response.text
 
 
 def test_inventory_snapshot_endpoint_returns_normalized_live_records(monkeypatch) -> None:
@@ -180,6 +213,24 @@ def test_topology_snapshot_endpoint_returns_normalized_live_records(monkeypatch)
     assert payload["completeness"] == "partial"
 
 
+def test_policy_snapshot_endpoint_returns_live_policy_observations(monkeypatch) -> None:
+    monkeypatch.setattr("gnmi_collector.adapters.nokia.sros.gNMIclient", FakeGnmiClient)
+    expected_target_count = len(_targets())
+
+    response = client.get("/policies/snapshot")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["delivery_mode"] == "backend_http_snapshot"
+    assert payload["delivery_status"] == "live_ready"
+    assert payload["model_family"] == "policy_inventory"
+    assert payload["sync_source"] == "gnmi_collector_policy_sr_counters"
+    assert payload["observed_target_count"] == expected_target_count
+    assert payload["policy_capable_target_count"] == expected_target_count
+    assert payload["policy_count"] == 0
+    assert payload["records"] == []
+
+
 def test_nokia_adapter_collects_live_inventory_and_topology(monkeypatch) -> None:
     monkeypatch.setattr("gnmi_collector.adapters.nokia.sros.gNMIclient", FakeGnmiClient)
     config = build_runtime_config()
@@ -187,20 +238,25 @@ def test_nokia_adapter_collects_live_inventory_and_topology(monkeypatch) -> None
     target = config.targets[0]
 
     assert adapter.vendor_name == "nokia"
-    assert "topology" in adapter.describe().lower()
+    assert "policy" in adapter.describe().lower()
     inventory_plan = adapter.build_inventory_plan(target)
     topology_plan = adapter.build_topology_plan(target)
+    policy_plan = adapter.build_policy_plan(target)
     inventory_record = adapter.collect_inventory(target)
     topology_record = adapter.collect_topology(target)
+    policy_record = adapter.collect_policy(target)
 
     assert inventory_plan.target_name == target.name
     assert topology_plan.topology_paths == target.topology_paths
+    assert policy_plan.policy_paths == target.policy_paths
     assert inventory_record.vendor == "nokia"
     assert inventory_record.platform_hint == "sros"
     assert inventory_record.collection_status == "success"
     assert inventory_record.raw_data["system_name"] == target.name
     assert topology_record.collection_status == "success"
     assert topology_record.raw_interfaces[0].interface_name == "system"
+    assert policy_record.collection_status == "success"
+    assert policy_record.sr_policy_counts["ttm-preferences"] == 14
 
 
 def test_inventory_mapping_returns_normalized_live_record(monkeypatch) -> None:
@@ -254,3 +310,22 @@ def test_topology_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> N
     assert snapshot.delivery.destination_service == "app-api"
     assert snapshot.delivery.delivery_status == "live_ready"
     assert snapshot.delivery.model_family == "topology"
+
+
+def test_policy_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> None:
+    monkeypatch.setattr("gnmi_collector.adapters.nokia.sros.gNMIclient", FakeGnmiClient)
+    snapshot = build_policy_flow_snapshot()
+    expected_target_count = len(_targets())
+
+    assert snapshot.mode == "phase_2_live_inventory"
+    assert snapshot.summary.target_count == expected_target_count
+    assert snapshot.summary.collection_success_count == expected_target_count
+    assert snapshot.summary.collection_failure_count == 0
+    assert snapshot.summary.partial_collection_count == 0
+    assert snapshot.summary.observed_target_count == expected_target_count
+    assert snapshot.summary.policy_capable_target_count == expected_target_count
+    assert snapshot.summary.observed_policy_count == 0
+    assert snapshot.summary.active_policy_count == 0
+    assert snapshot.delivery.destination_service == "app-api"
+    assert snapshot.delivery.delivery_status == "live_ready"
+    assert snapshot.delivery.model_family == "policy_inventory"

@@ -3,7 +3,12 @@
 from datetime import UTC, datetime
 
 from app_api.config.settings import get_settings
-from app_api.models.policy import CandidatePath, PolicyInventoryRecord
+from app_api.integrations.collector.policies import (
+    CollectorPolicySnapshot,
+    get_collector_policy_client,
+)
+from app_api.metrics.state import cache_policy_metrics
+from app_api.models.policy import CandidatePath, PolicyInventoryRecord, PolicyInventorySnapshot
 from app_api.schemas.policies import (
     CandidatePathRecord,
     PoliciesListResponse,
@@ -11,59 +16,76 @@ from app_api.schemas.policies import (
 )
 
 
-def _build_policy_inventory() -> list[PolicyInventoryRecord]:
-    """Build the backend-owned normalized policy inventory scaffold."""
-    return [
-        PolicyInventoryRecord(
-            policy_id="sr-policy-edge-pe-1-to-core",
-            policy_name="Edge PE 1 to Core",
-            headend="edge-pe-1",
-            endpoint="core-p-placeholder",
-            color=100,
-            candidate_paths=[
-                CandidatePath(
-                    name="primary",
-                    path_state="unknown",
-                    preference=100,
-                    notes=[
-                        "Candidate path structure is scaffolded before controller-backed path data exists."
-                    ],
-                )
-            ],
-            intent_state="declared",
-            observed_state="unknown",
-            support_state="not_implemented_in_platform",
-            health_state="unknown",
-            source="platform_policy_placeholder",
+def _build_policy_inventory() -> tuple[CollectorPolicySnapshot, PolicyInventorySnapshot]:
+    """Build the backend-owned normalized policy inventory snapshot."""
+    collector_snapshot = get_collector_policy_client().read_policy_snapshot()
+    observed_at = (
+        datetime.fromisoformat(collector_snapshot.observed_at.replace("Z", "+00:00"))
+        if collector_snapshot.observed_at
+        else None
+    )
+
+    if collector_snapshot.status == "collector_unavailable":
+        return collector_snapshot, PolicyInventorySnapshot(
+            sync_source="gnmi_collector_policy",
+            sync_status="failed",
+            completeness="unknown",
+            observed_at=None,
+            observed_target_count=0,
+            policy_capable_target_count=0,
+            active_policy_count=0,
+            static_policy_count=0,
+            bgp_policy_count=0,
             notes=[
-                "Policy inventory is intentionally read-only in Phase 1.",
-                "Support and observed state remain explicit until deeper SR policy integration exists.",
+                "The backend could not load the live policy snapshot from the collector.",
+                "No raw vendor payloads are exposed through the policies API.",
             ],
-        ),
-        PolicyInventoryRecord(
-            policy_id="sr-policy-edge-pe-1-to-remote",
-            policy_name="Edge PE 1 to Remote",
-            headend="edge-pe-1",
-            endpoint="remote-site-placeholder",
-            color=200,
-            candidate_paths=[],
-            intent_state="unknown",
-            observed_state="inactive",
-            support_state="unknown",
-            health_state="degraded",
-            source="platform_policy_placeholder",
-            notes=[
-                "This placeholder record demonstrates incomplete knowledge handling.",
-                "No vendor-native SR policy payload is exposed through the API contract.",
-            ],
-        ),
-    ]
+            records=[],
+        )
+
+    return collector_snapshot, PolicyInventorySnapshot(
+        sync_source=collector_snapshot.sync_source,
+        sync_status=collector_snapshot.sync_status,
+        completeness=collector_snapshot.completeness,
+        observed_at=observed_at,
+        observed_target_count=collector_snapshot.observed_target_count,
+        policy_capable_target_count=collector_snapshot.policy_capable_target_count,
+        active_policy_count=collector_snapshot.active_policy_count,
+        static_policy_count=collector_snapshot.static_policy_count,
+        bgp_policy_count=collector_snapshot.bgp_policy_count,
+        notes=collector_snapshot.notes,
+        records=[
+            PolicyInventoryRecord(
+                policy_id=record.policy_id,
+                policy_name=record.policy_name,
+                headend=record.headend,
+                endpoint=record.endpoint,
+                color=record.color,
+                candidate_paths=[
+                    CandidatePath(
+                        name=path.name,
+                        path_state=path.path_state,
+                        preference=path.preference,
+                        notes=path.notes,
+                    )
+                    for path in record.candidate_paths
+                ],
+                intent_state=record.intent_state,
+                observed_state=record.observed_state,
+                support_state=record.support_state,
+                health_state=record.health_state,
+                source=record.source,
+                notes=record.notes,
+            )
+            for record in collector_snapshot.records
+        ],
+    )
 
 
 def build_policies_list_response() -> PoliciesListResponse:
-    """Build the Phase 1 policy inventory response from a normalized backend model."""
+    """Build the policy inventory response from the live collector boundary."""
     settings = get_settings()
-    policies = _build_policy_inventory()
+    collector_snapshot, snapshot = _build_policy_inventory()
     items = [
         PolicyRecord(
             policy_id=policy.policy_id,
@@ -87,18 +109,60 @@ def build_policies_list_response() -> PoliciesListResponse:
             source=policy.source,
             notes=policy.notes,
         )
-        for policy in policies
+        for policy in snapshot.records
     ]
+    if collector_snapshot.status == "live_normalized_feed":
+        data_status = "live"
+        if collector_snapshot.policy_count == 0:
+            summary = (
+                "Policy inventory is backed by live Nokia SR policy counters, and no "
+                "SR policies are currently observed across the configured targets."
+            )
+        else:
+            summary = (
+                "Policy inventory is backed by live Nokia SR policy counters and "
+                "normalized collector metadata from the configured targets."
+            )
+    elif collector_snapshot.status == "partial_live_feed":
+        data_status = "degraded"
+        summary = (
+            "Policy inventory is backed by live Nokia SR policy counters, but one "
+            "or more targets returned partial or degraded policy observations."
+        )
+    else:
+        data_status = "degraded"
+        summary = (
+            "The backend could not load the live collector policy snapshot. "
+            "No raw vendor payloads are exposed through the policies API."
+        )
+    cache_policy_metrics(
+        record_count=len(items),
+        active_policy_count=snapshot.active_policy_count,
+        static_policy_count=snapshot.static_policy_count,
+        bgp_policy_count=snapshot.bgp_policy_count,
+        observed_target_count=snapshot.observed_target_count,
+        policy_capable_target_count=snapshot.policy_capable_target_count,
+        data_status=data_status,
+        sync_status=snapshot.sync_status,
+        completeness=snapshot.completeness,
+    )
     return PoliciesListResponse(
         service="app-api",
         version=settings.app_version,
         phase="phase_1_skeleton",
         generated_at=datetime.now(UTC),
-        data_status="normalized_scaffold",
-        summary=(
-            "Phase 1 policy inventory is served from a backend-owned normalized read "
-            "model with explicit support, observed, and unknown states."
-        ),
+        data_status=data_status,
+        summary=summary,
+        sync_source=snapshot.sync_source,
+        sync_status=snapshot.sync_status,
+        completeness=snapshot.completeness,
+        observed_at=snapshot.observed_at,
+        observed_target_count=snapshot.observed_target_count,
+        policy_capable_target_count=snapshot.policy_capable_target_count,
+        active_policy_count=snapshot.active_policy_count,
+        static_policy_count=snapshot.static_policy_count,
+        bgp_policy_count=snapshot.bgp_policy_count,
         count=len(items),
+        notes=snapshot.notes,
         items=items,
     )

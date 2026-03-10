@@ -4,6 +4,7 @@ from typing import Protocol
 
 from gnmi_collector.config.models import GnmiTargetConfig
 from gnmi_collector.models.inventory import InventoryCollectionPlan, InventoryRawRecord
+from gnmi_collector.models.policy import PolicyCollectionPlan, PolicyRawRecord
 from gnmi_collector.models.topology import TopologyCollectionPlan, TopologyRawRecord
 
 
@@ -26,3 +27,9 @@ class GnmiAdapter(Protocol):
 
     def collect_topology(self, target: GnmiTargetConfig) -> TopologyRawRecord:
         """Return a raw topology record for one target."""
+
+    def build_policy_plan(self, target: GnmiTargetConfig) -> PolicyCollectionPlan:
+        """Build the policy-oriented collection plan for one target."""
+
+    def collect_policy(self, target: GnmiTargetConfig) -> PolicyRawRecord:
+        """Return a raw policy record for one target."""

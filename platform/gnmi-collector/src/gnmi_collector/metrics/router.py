@@ -20,6 +20,7 @@ def get_metrics() -> Response:
     snapshot = get_metrics_snapshot()
     inventory_summary = snapshot.inventory
     topology_summary = snapshot.topology
+    policy_summary = snapshot.policy
     target_count = len(config.targets)
     payload = "\n".join(
         [
@@ -206,6 +207,108 @@ def get_metrics() -> Response:
             (
                 "platform_gnmi_collector_topology_backend_delivery_error_total "
                 f"{topology_summary.backend_delivery_error_count if topology_summary else 0}"
+            ),
+            "# HELP platform_gnmi_collector_policy_targets Configured policy targets.",
+            "# TYPE platform_gnmi_collector_policy_targets gauge",
+            f"platform_gnmi_collector_policy_targets {target_count}",
+            (
+                "# HELP platform_gnmi_collector_policy_collection_success_total "
+                "Total successful live policy collection attempts."
+            ),
+            "# TYPE platform_gnmi_collector_policy_collection_success_total counter",
+            (
+                "platform_gnmi_collector_policy_collection_success_total "
+                f"{policy_summary.collection_success_count if policy_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_policy_collection_failure_total "
+                "Total failed live policy collection attempts."
+            ),
+            "# TYPE platform_gnmi_collector_policy_collection_failure_total counter",
+            (
+                "platform_gnmi_collector_policy_collection_failure_total "
+                f"{policy_summary.collection_failure_count if policy_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_policy_collection_partial_total "
+                "Total partially collected live policy records."
+            ),
+            "# TYPE platform_gnmi_collector_policy_collection_partial_total counter",
+            (
+                "platform_gnmi_collector_policy_collection_partial_total "
+                f"{policy_summary.partial_collection_count if policy_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_policy_observed_targets "
+                "Targets that returned bounded live policy observations."
+            ),
+            "# TYPE platform_gnmi_collector_policy_observed_targets gauge",
+            (
+                "platform_gnmi_collector_policy_observed_targets "
+                f"{policy_summary.observed_target_count if policy_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_policy_capable_targets "
+                "Targets exposing SR policy capability counters."
+            ),
+            "# TYPE platform_gnmi_collector_policy_capable_targets gauge",
+            (
+                "platform_gnmi_collector_policy_capable_targets "
+                f"{policy_summary.policy_capable_target_count if policy_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_policy_observed_policies "
+                "Bounded live SR policy count observed across all targets."
+            ),
+            "# TYPE platform_gnmi_collector_policy_observed_policies gauge",
+            (
+                "platform_gnmi_collector_policy_observed_policies "
+                f"{policy_summary.observed_policy_count if policy_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_policy_active_policies "
+                "Active bounded SR policies observed across all targets."
+            ),
+            "# TYPE platform_gnmi_collector_policy_active_policies gauge",
+            (
+                "platform_gnmi_collector_policy_active_policies "
+                f"{policy_summary.active_policy_count if policy_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_policy_static_policies "
+                "Static SR policies observed across all targets."
+            ),
+            "# TYPE platform_gnmi_collector_policy_static_policies gauge",
+            (
+                "platform_gnmi_collector_policy_static_policies "
+                f"{policy_summary.static_policy_count if policy_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_policy_bgp_policies "
+                "BGP SR policies observed across all targets."
+            ),
+            "# TYPE platform_gnmi_collector_policy_bgp_policies gauge",
+            (
+                "platform_gnmi_collector_policy_bgp_policies "
+                f"{policy_summary.bgp_policy_count if policy_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_policy_backend_ready_policies "
+                "Normalized policy records prepared for backend delivery."
+            ),
+            "# TYPE platform_gnmi_collector_policy_backend_ready_policies gauge",
+            (
+                "platform_gnmi_collector_policy_backend_ready_policies "
+                f"{policy_summary.backend_ready_policy_count if policy_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_policy_backend_delivery_error_total "
+                "Total policy backend delivery preparation errors."
+            ),
+            "# TYPE platform_gnmi_collector_policy_backend_delivery_error_total counter",
+            (
+                "platform_gnmi_collector_policy_backend_delivery_error_total "
+                f"{policy_summary.backend_delivery_error_count if policy_summary else 0}"
             ),
             "",
         ]

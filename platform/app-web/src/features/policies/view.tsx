@@ -63,7 +63,7 @@ export function PoliciesView() {
         <div>
           <h2>Policies</h2>
           <p>
-            Policy inventory is read from the current backend-owned contract.
+            Policy inventory is read from the live backend contract.
             Workflow execution stays out of scope for this phase.
           </p>
         </div>
@@ -71,7 +71,11 @@ export function PoliciesView() {
       </div>
 
       <div className="metadata-row">
+        <span>Sync source: {data.sync_source}</span>
+        <span>Sync status: {data.sync_status}</span>
+        <span>Completeness: {data.completeness}</span>
         <span>Count: {data.count}</span>
+        <span>Observed: {formatDateTime(data.observed_at)}</span>
         <span>Generated: {formatDateTime(data.generated_at)}</span>
       </div>
 
@@ -79,27 +83,39 @@ export function PoliciesView() {
 
       <div className="summary-grid">
         <article className="summary-card">
-          <p className="summary-label">Healthy</p>
-          <strong>{healthCounts.healthy ?? 0}</strong>
-          <p>Policies with healthy observed posture.</p>
+          <p className="summary-label">Observed Targets</p>
+          <strong>{data.observed_target_count}</strong>
+          <p>Targets that returned bounded live SR policy observations.</p>
         </article>
         <article className="summary-card">
-          <p className="summary-label">Degraded</p>
-          <strong>{healthCounts.degraded ?? 0}</strong>
-          <p>Policies that need operator attention.</p>
+          <p className="summary-label">Policy-Capable Targets</p>
+          <strong>{data.policy_capable_target_count}</strong>
+          <p>Targets exposing live SR policy capability counters.</p>
         </article>
         <article className="summary-card">
-          <p className="summary-label">Unsupported in platform</p>
-          <strong>
-            {
-              data.items.filter(
-                (policy) => policy.support_state === "not_implemented_in_platform",
-              ).length
-            }
-          </strong>
-          <p>Policies whose support path is intentionally not built yet.</p>
+          <p className="summary-label">Active Policies</p>
+          <strong>{data.active_policy_count}</strong>
+          <p>Active SR policies observed in the current live slice.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Observed Policies</p>
+          <strong>{data.count}</strong>
+          <p>
+            Static: {data.static_policy_count} • BGP: {data.bgp_policy_count} • Degraded:{" "}
+            {healthCounts.degraded ?? 0}
+          </p>
         </article>
       </div>
+
+      {data.notes.length > 0 ? (
+        <div className="table-card">
+          <ul className="detail-list">
+            {data.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="toolbar">
         <label className="field-group">
@@ -127,8 +143,8 @@ export function PoliciesView() {
 
       {data.items.length === 0 ? (
         <EmptyState
-          title="No policies declared"
-          description="The policy read model is available, but no policy records are present."
+          title="No SR policies currently observed"
+          description={`The live policy slice observed ${data.observed_target_count} targets and ${data.policy_capable_target_count} policy-capable nodes, but no SR policy records are currently present in the lab.`}
         />
       ) : filteredPolicies.length === 0 ? (
         <EmptyState

@@ -119,9 +119,19 @@ export interface PolicyRecord {
 }
 
 export interface PoliciesListResponse extends ApiResponseMetadata {
-  data_status: "normalized_scaffold";
+  data_status: "live" | "degraded";
   summary: string;
+  sync_source: string;
+  sync_status: "ok" | "degraded" | "failed" | "unknown";
+  completeness: "complete" | "partial" | "unknown";
+  observed_at: string | null;
+  observed_target_count: number;
+  policy_capable_target_count: number;
+  active_policy_count: number;
+  static_policy_count: number;
+  bgp_policy_count: number;
   count: number;
+  notes: string[];
   items: PolicyRecord[];
 }
 

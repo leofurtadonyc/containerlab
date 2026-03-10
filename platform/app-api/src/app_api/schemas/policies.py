@@ -1,5 +1,6 @@
 """Typed schemas for policy inventory responses."""
 
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel
@@ -42,7 +43,17 @@ class PolicyRecord(BaseModel):
 class PoliciesListResponse(ApiResponseMetadata):
     """Read-only policy inventory list response."""
 
-    data_status: Literal["normalized_scaffold"]
+    data_status: Literal["live", "degraded"]
     summary: str
+    sync_source: str
+    sync_status: Literal["ok", "degraded", "failed", "unknown"]
+    completeness: Literal["complete", "partial", "unknown"]
+    observed_at: datetime | None = None
+    observed_target_count: int
+    policy_capable_target_count: int
+    active_policy_count: int
+    static_policy_count: int
+    bgp_policy_count: int
     count: int
+    notes: list[str]
     items: list[PolicyRecord]

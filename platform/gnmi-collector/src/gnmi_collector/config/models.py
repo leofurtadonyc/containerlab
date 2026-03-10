@@ -28,6 +28,14 @@ class TopologySubscriptionConfig(BaseModel):
     cadence: Literal["poll"] = "poll"
 
 
+class PolicySubscriptionConfig(BaseModel):
+    """Policy-oriented collection path definition."""
+
+    name: str
+    path: str
+    cadence: Literal["poll"] = "poll"
+
+
 class GnmiTargetAuthConfig(BaseModel):
     """Authentication settings for a gNMI target."""
 
@@ -47,6 +55,7 @@ class GnmiTargetConfig(BaseModel):
     insecure: bool = True
     inventory_paths: list[str] = Field(default_factory=list)
     topology_paths: list[str] = Field(default_factory=list)
+    policy_paths: list[str] = Field(default_factory=list)
 
 
 class CollectorRuntimeConfig(BaseModel):
@@ -58,4 +67,5 @@ class CollectorRuntimeConfig(BaseModel):
     delivery: CollectorDeliveryConfig
     inventory_subscriptions: list[InventorySubscriptionConfig]
     topology_subscriptions: list[TopologySubscriptionConfig]
+    policy_subscriptions: list[PolicySubscriptionConfig]
     targets: list[GnmiTargetConfig]

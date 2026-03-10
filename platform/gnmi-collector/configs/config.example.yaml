@@ -23,6 +23,12 @@ topology:
       path: /nokia-state:state/router[router-name=Base]/interface
       cadence: poll
 
+policies:
+  subscriptions:
+    - name: base-router-sr-policy-counters
+      path: /nokia-state:state/router[router-name=Base]/segment-routing/sr-policies
+      cadence: poll
+
 targets:
   - name: CPE-A1
     vendor: nokia

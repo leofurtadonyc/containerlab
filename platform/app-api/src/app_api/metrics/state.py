@@ -1,6 +1,7 @@
 """In-memory metrics state for the backend service."""
 
 from collections import Counter, defaultdict
+from dataclasses import dataclass, field
 from threading import Lock
 
 
@@ -8,6 +9,38 @@ _lock = Lock()
 _request_counts: Counter[tuple[str, str, str]] = Counter()
 _request_duration_counts: Counter[tuple[str, str]] = Counter()
 _request_duration_sums: dict[tuple[str, str], float] = defaultdict(float)
+
+
+@dataclass(frozen=True)
+class CachedTopologyMetrics:
+    """Latest topology snapshot metrics cached for scrape-safe exposition."""
+
+    node_count: int = 0
+    link_count: int = 0
+    data_status: str = "unknown"
+    sync_status: str = "unknown"
+    completeness: str = "unknown"
+    node_state_counts: dict[str, int] = field(default_factory=dict)
+    link_state_counts: dict[str, int] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class CachedPolicyMetrics:
+    """Latest policy snapshot metrics cached for scrape-safe exposition."""
+
+    record_count: int = 0
+    active_policy_count: int = 0
+    static_policy_count: int = 0
+    bgp_policy_count: int = 0
+    observed_target_count: int = 0
+    policy_capable_target_count: int = 0
+    data_status: str = "unknown"
+    sync_status: str = "unknown"
+    completeness: str = "unknown"
+
+
+_cached_topology_metrics = CachedTopologyMetrics()
+_cached_policy_metrics = CachedPolicyMetrics()
 
 
 def observe_http_request(
@@ -27,10 +60,75 @@ def observe_http_request(
         _request_duration_sums[duration_key] += duration_seconds
 
 
+def cache_topology_metrics(
+    *,
+    node_count: int,
+    link_count: int,
+    data_status: str,
+    sync_status: str,
+    completeness: str,
+    node_state_counts: dict[str, int],
+    link_state_counts: dict[str, int],
+) -> None:
+    """Store the latest topology metrics for bounded scrape exposition."""
+    global _cached_topology_metrics
+    with _lock:
+        _cached_topology_metrics = CachedTopologyMetrics(
+            node_count=node_count,
+            link_count=link_count,
+            data_status=data_status,
+            sync_status=sync_status,
+            completeness=completeness,
+            node_state_counts=dict(node_state_counts),
+            link_state_counts=dict(link_state_counts),
+        )
+
+
+def get_cached_topology_metrics() -> CachedTopologyMetrics:
+    """Return the latest cached topology metrics."""
+    with _lock:
+        return _cached_topology_metrics
+
+
+def cache_policy_metrics(
+    *,
+    record_count: int,
+    active_policy_count: int,
+    static_policy_count: int,
+    bgp_policy_count: int,
+    observed_target_count: int,
+    policy_capable_target_count: int,
+    data_status: str,
+    sync_status: str,
+    completeness: str,
+) -> None:
+    """Store the latest policy metrics for bounded scrape exposition."""
+    global _cached_policy_metrics
+    with _lock:
+        _cached_policy_metrics = CachedPolicyMetrics(
+            record_count=record_count,
+            active_policy_count=active_policy_count,
+            static_policy_count=static_policy_count,
+            bgp_policy_count=bgp_policy_count,
+            observed_target_count=observed_target_count,
+            policy_capable_target_count=policy_capable_target_count,
+            data_status=data_status,
+            sync_status=sync_status,
+            completeness=completeness,
+        )
+
+
+def get_cached_policy_metrics() -> CachedPolicyMetrics:
+    """Return the latest cached policy metrics."""
+    with _lock:
+        return _cached_policy_metrics
+
+
 def render_prometheus_metrics(
     app_version: str,
     *,
     topology_metrics: dict[str, object] | None = None,
+    policy_metrics: dict[str, object] | None = None,
 ) -> str:
     """Render backend metrics in Prometheus text format."""
     with _lock:
@@ -140,13 +238,60 @@ def render_prometheus_metrics(
             ]
         )
 
+    if policy_metrics is not None:
+        lines.extend(
+            [
+                "# HELP platform_app_api_policy_records Current normalized policy record count.",
+                "# TYPE platform_app_api_policy_records gauge",
+                f"platform_app_api_policy_records {policy_metrics['record_count']}",
+                "# HELP platform_app_api_policy_active_records Current active policy count.",
+                "# TYPE platform_app_api_policy_active_records gauge",
+                f"platform_app_api_policy_active_records {policy_metrics['active_policy_count']}",
+                "# HELP platform_app_api_policy_static_records Current static policy count.",
+                "# TYPE platform_app_api_policy_static_records gauge",
+                f"platform_app_api_policy_static_records {policy_metrics['static_policy_count']}",
+                "# HELP platform_app_api_policy_bgp_records Current BGP policy count.",
+                "# TYPE platform_app_api_policy_bgp_records gauge",
+                f"platform_app_api_policy_bgp_records {policy_metrics['bgp_policy_count']}",
+                (
+                    "# HELP platform_app_api_policy_observed_targets "
+                    "Targets included in the current policy snapshot."
+                ),
+                "# TYPE platform_app_api_policy_observed_targets gauge",
+                f"platform_app_api_policy_observed_targets {policy_metrics['observed_target_count']}",
+                (
+                    "# HELP platform_app_api_policy_capable_targets "
+                    "Targets exposing bounded SR policy capability counters."
+                ),
+                "# TYPE platform_app_api_policy_capable_targets gauge",
+                (
+                    "platform_app_api_policy_capable_targets "
+                    f"{policy_metrics['policy_capable_target_count']}"
+                ),
+                (
+                    "# HELP platform_app_api_policy_snapshot_status "
+                    "Current policy snapshot status exposed by the backend."
+                ),
+                "# TYPE platform_app_api_policy_snapshot_status gauge",
+                (
+                    "platform_app_api_policy_snapshot_status"
+                    f'{{data_status="{policy_metrics["data_status"]}",'
+                    f'sync_status="{policy_metrics["sync_status"]}",'
+                    f'completeness="{policy_metrics["completeness"]}"}} 1'
+                ),
+            ]
+        )
+
     lines.append("")
     return "\n".join(lines)
 
 
 def reset_metrics_registry() -> None:
     """Reset in-memory metrics for tests."""
+    global _cached_topology_metrics, _cached_policy_metrics
     with _lock:
         _request_counts.clear()
         _request_duration_counts.clear()
         _request_duration_sums.clear()
+        _cached_topology_metrics = CachedTopologyMetrics()
+        _cached_policy_metrics = CachedPolicyMetrics()

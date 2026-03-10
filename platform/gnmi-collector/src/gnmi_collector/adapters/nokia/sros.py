@@ -7,6 +7,7 @@ from pygnmi.client import gNMIclient
 
 from gnmi_collector.config.models import GnmiTargetConfig
 from gnmi_collector.models.inventory import InventoryCollectionPlan, InventoryRawRecord
+from gnmi_collector.models.policy import PolicyCollectionPlan, PolicyRawRecord
 from gnmi_collector.models.topology import (
     TopologyCollectionPlan,
     TopologyObservedInterface,
@@ -22,7 +23,7 @@ class NokiaSrosAdapter:
 
     def describe(self) -> str:
         """Describe the current adapter scope honestly."""
-        return "Phase 2 Nokia SR OS live inventory and topology adapter"
+        return "Phase 2 Nokia SR OS live inventory, topology, and policy adapter"
 
     def _get_paths(self, target: GnmiTargetConfig, paths: list[str]) -> dict:
         """Execute one gNMI get against the target for the requested paths."""
@@ -190,4 +191,70 @@ class NokiaSrosAdapter:
             ),
             observed_at=observed_at,
             raw_interfaces=interfaces,
+        )
+
+    def build_policy_plan(self, target: GnmiTargetConfig) -> PolicyCollectionPlan:
+        """Build the Nokia-specific plan for bounded policy collection."""
+        return PolicyCollectionPlan(
+            target_name=target.name,
+            vendor=target.vendor,
+            management_address=target.management_address,
+            policy_paths=target.policy_paths,
+        )
+
+    def collect_policy(self, target: GnmiTargetConfig) -> PolicyRawRecord:
+        """Collect live bounded SR policy counters from a Nokia SR OS target."""
+        try:
+            result = self._get_paths(target, target.policy_paths)
+        except Exception as exc:
+            return PolicyRawRecord(
+                target_name=target.name,
+                vendor=target.vendor,
+                platform_hint="sros",
+                role=target.role,
+                management_address=target.management_address,
+                collection_status="failure",
+                collection_error=str(exc),
+            )
+
+        timestamps = [
+            notification.get("timestamp")
+            for notification in result.get("notification", [])
+            if notification.get("timestamp") is not None
+        ]
+        observed_at = None
+        if timestamps:
+            observed_at = datetime.fromtimestamp(max(timestamps) / 1_000_000_000, tz=UTC)
+
+        sr_policy_counts: dict[str, int] = {}
+        for notification in result.get("notification", []):
+            for update in notification.get("update", []):
+                value = update.get("val")
+                if isinstance(value, dict):
+                    sr_policy_counts.update(
+                        {
+                            key.split(":", 1)[-1]: int(count)
+                            for key, count in value.items()
+                            if isinstance(count, int)
+                        }
+                    )
+
+        missing_fields = []
+        if not sr_policy_counts:
+            missing_fields.append("sr_policy_counts")
+
+        return PolicyRawRecord(
+            target_name=target.name,
+            vendor=target.vendor,
+            platform_hint="sros",
+            role=target.role,
+            management_address=target.management_address,
+            collection_status="partial" if missing_fields else "success",
+            collection_error=(
+                "Missing policy fields: " + ", ".join(missing_fields)
+                if missing_fields
+                else None
+            ),
+            observed_at=observed_at,
+            sr_policy_counts=sr_policy_counts,
         )

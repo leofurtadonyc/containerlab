@@ -11,6 +11,7 @@ from gnmi_collector.config.models import (
     GnmiTargetAuthConfig,
     GnmiTargetConfig,
     InventorySubscriptionConfig,
+    PolicySubscriptionConfig,
     TopologySubscriptionConfig,
 )
 from gnmi_collector.config.settings import get_settings
@@ -56,14 +57,30 @@ def _build_topology_subscriptions(document: dict[str, Any]) -> list[TopologySubs
     ]
 
 
+def _build_policy_subscriptions(document: dict[str, Any]) -> list[PolicySubscriptionConfig]:
+    """Build typed policy subscription definitions from the config document."""
+    policies = document.get("policies", {})
+    subscriptions = policies.get("subscriptions", [])
+    return [
+        PolicySubscriptionConfig(
+            name=item["name"],
+            path=item["path"],
+            cadence=item.get("cadence", "poll"),
+        )
+        for item in subscriptions
+    ]
+
+
 def _build_targets(
     document: dict[str, Any],
     inventory_subscriptions: list[InventorySubscriptionConfig],
     topology_subscriptions: list[TopologySubscriptionConfig],
+    policy_subscriptions: list[PolicySubscriptionConfig],
 ) -> list[GnmiTargetConfig]:
     """Build typed live target definitions from the config document."""
     default_inventory_paths = [item.path for item in inventory_subscriptions]
     default_topology_paths = [item.path for item in topology_subscriptions]
+    default_policy_paths = [item.path for item in policy_subscriptions]
     targets = document.get("targets", [])
     return [
         GnmiTargetConfig(
@@ -79,6 +96,7 @@ def _build_targets(
             insecure=item.get("insecure", True),
             inventory_paths=item.get("inventory_paths", default_inventory_paths),
             topology_paths=item.get("topology_paths", default_topology_paths),
+            policy_paths=item.get("policy_paths", default_policy_paths),
         )
         for item in targets
     ]
@@ -90,6 +108,7 @@ def build_runtime_config() -> CollectorRuntimeConfig:
     document = _load_config_document(settings.gnmi_config_path)
     inventory_subscriptions = _build_inventory_subscriptions(document)
     topology_subscriptions = _build_topology_subscriptions(document)
+    policy_subscriptions = _build_policy_subscriptions(document)
     collector = document.get("collector", {})
     delivery = collector.get("delivery", {})
 
@@ -103,5 +122,11 @@ def build_runtime_config() -> CollectorRuntimeConfig:
         ),
         inventory_subscriptions=inventory_subscriptions,
         topology_subscriptions=topology_subscriptions,
-        targets=_build_targets(document, inventory_subscriptions, topology_subscriptions),
+        policy_subscriptions=policy_subscriptions,
+        targets=_build_targets(
+            document,
+            inventory_subscriptions,
+            topology_subscriptions,
+            policy_subscriptions,
+        ),
     )

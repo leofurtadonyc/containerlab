@@ -5,6 +5,11 @@ from app_api.integrations.collector.inventory import (
     CollectorInventoryRecord,
     CollectorInventorySnapshot,
 )
+from app_api.integrations.collector.policies import (
+    CollectorPolicyClient,
+    CollectorPolicyRecord,
+    CollectorPolicySnapshot,
+)
 from app_api.integrations.collector.topology import (
     CollectorTopologyClient,
     CollectorTopologyLinkRecord,
@@ -16,6 +21,9 @@ __all__ = [
     "CollectorInventoryClient",
     "CollectorInventoryRecord",
     "CollectorInventorySnapshot",
+    "CollectorPolicyClient",
+    "CollectorPolicyRecord",
+    "CollectorPolicySnapshot",
     "CollectorTopologyClient",
     "CollectorTopologyLinkRecord",
     "CollectorTopologyNodeRecord",

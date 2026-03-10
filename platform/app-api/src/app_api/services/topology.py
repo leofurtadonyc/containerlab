@@ -1,5 +1,6 @@
 """Topology service helpers."""
 
+from collections import Counter
 from datetime import UTC, datetime
 
 from app_api.config.settings import get_settings
@@ -7,6 +8,7 @@ from app_api.integrations.collector.topology import (
     CollectorTopologySnapshot,
     get_collector_topology_client,
 )
+from app_api.metrics.state import cache_topology_metrics
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.schemas.topology import (
     TopologyLinkRecord,
@@ -132,6 +134,15 @@ def build_topology_response() -> TopologyResponse:
             "The backend could not load the live collector topology snapshot. "
             "No raw vendor payloads are exposed through the topology API."
         )
+    cache_topology_metrics(
+        node_count=len(topology.nodes),
+        link_count=len(topology.links),
+        data_status=data_status,
+        sync_status=topology.sync_status,
+        completeness=topology.completeness,
+        node_state_counts=dict(Counter(node.state for node in topology.nodes)),
+        link_state_counts=dict(Counter(link.state for link in topology.links)),
+    )
     return TopologyResponse(
         service="app-api",
         version=settings.app_version,
