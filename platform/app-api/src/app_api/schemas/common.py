@@ -7,11 +7,11 @@ from pydantic import BaseModel, Field
 
 
 class ApiResponseMetadata(BaseModel):
-    """Common response metadata for Phase 1 read-only endpoints."""
+    """Common response metadata for Phase 2 read-only endpoints."""
 
     service: Literal["app-api"]
     version: str
-    phase: Literal["phase_1_skeleton"]
+    phase: Literal["phase_2_read_only_foundation"]
     generated_at: datetime
 
 

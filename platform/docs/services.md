@@ -10,9 +10,9 @@ The platform now has service directories, service READMEs, a platform topology s
 
 What still remains incomplete:
 
-- deeper frontend product coverage for workflow and audit-oriented areas
+- deeper workflow and audit semantics beyond the current bounded sync-visibility product views
 - deeper normalized shared model and schema implementation beyond the current scaffolding
-- read-only domain APIs beyond the current health, platform status, devices, topology, policies, and capabilities slice
+- read-only domain APIs beyond the current health, platform status, devices, topology, policies, workflow history, audit history, and capabilities slice
 - durable persistence for every intended product domain
 - bounded ODL-backed data handling
 
@@ -171,7 +171,8 @@ Current state:
 
 - datasource provisioning exists
 - dashboard provisioning exists
-- a real platform dashboard exists for current `app-api`, `gnmi-collector`, and Prometheus-backed observability
+- real platform, topology, and SR policy dashboards now exist for current `app-api`, `gnmi-collector`, and Prometheus-backed observability
+- those dashboards now surface richer Week 3 evidence such as sync freshness, persisted sync results, topology agreement signals, and honest live-empty policy context where available
 - placeholder dashboards still exist for the remaining required dashboard families
 
 ### `odl`
@@ -221,9 +222,9 @@ What it must not own:
 Current state:
 
 - service directory and README exist
-- useful read-only pages now exist for overview, platform health, devices, topology, policies, and capabilities
+- useful read-only pages now exist for overview, platform health, devices, topology, policies, workflow history, audit history, and capabilities
 - a typed API client layer now consumes stable backend contracts
-- workflow and audit views remain placeholders
+- workflow and audit views now surface bounded platform-side sync visibility rather than remaining placeholders
 
 ## Service Relationship Summary
 

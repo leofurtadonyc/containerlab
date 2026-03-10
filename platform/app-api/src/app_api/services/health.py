@@ -12,6 +12,6 @@ def build_health_response() -> HealthResponse:
         status="ok",
         service="app-api",
         version=settings.app_version,
-        phase="phase_1_skeleton",
+        phase="phase_2_read_only_foundation",
         generated_at=datetime.now(UTC),
     )

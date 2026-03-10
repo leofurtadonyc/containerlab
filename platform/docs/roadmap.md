@@ -6,7 +6,7 @@ This document summarizes the platform's phased implementation roadmap.
 
 ## Current Status
 
-The project is now ready to move into `Phase 2 — read-only product foundation`.
+The project is currently in `Phase 2 — read-only product foundation`.
 
 Most of the week's work has established:
 
@@ -17,7 +17,9 @@ Most of the week's work has established:
 - backend, collector, frontend, and database-direction scaffolding
 - normalized model and schema scaffolding
 - core architecture documents
-- a first useful read-only API, WebUI, and observability slice
+- a useful read-only API, WebUI, and observability slice
+- bounded persistence for inventory and topology snapshots plus sync-run history
+- bounded workflow-history and audit-history visibility derived from persisted sync activity
 
 ## Phased Roadmap
 
@@ -35,7 +37,7 @@ Focus:
 
 Current state:
 
-- foundation complete enough to support a controlled transition into the next phase
+- foundation complete and preserved as the base for the current phase
 - still intentionally bounded on deep runtime behavior, live ingestion, and workflows
 
 ### Phase 2 — read-only product foundation
@@ -85,9 +87,9 @@ Expected focus:
 
 Based on the current repo state, the next likely work should be:
 
-1. deepen the collector-to-backend read path beyond the current bounded placeholder integration
-2. extend read-only product coverage into workflow-history and audit-history scaffolds only when stable backend contracts exist
-3. refine read-only APIs, pages, and dashboards from bounded scaffolds into more operationally useful views without jumping to action workflows
+1. deepen the live policy path beyond SR policy counters into richer but still vendor-neutral per-policy observations without crossing into write behavior
+2. extend the bounded persistence approach from inventory and topology into the most useful next read-side slice only where the normalized model is already stable
+3. deepen workflow-history and audit-history beyond sync-derived platform activity only when honest backend history sources exist
 
 ## Boundary Reminder
 

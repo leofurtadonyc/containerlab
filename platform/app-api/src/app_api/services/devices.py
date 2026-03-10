@@ -93,7 +93,7 @@ def build_devices_list_response() -> DevicesListResponse:
     return DevicesListResponse(
         service="app-api",
         version=settings.app_version,
-        phase="phase_1_skeleton",
+        phase="phase_2_read_only_foundation",
         generated_at=datetime.now(UTC),
         data_status=data_status,
         summary=summary,

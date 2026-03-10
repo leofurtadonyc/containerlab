@@ -7,17 +7,17 @@ from app_api.schemas.platform import PlatformComponentStatus, PlatformStatusResp
 
 
 def build_platform_status_response() -> PlatformStatusResponse:
-    """Build the Phase 1 platform status scaffold."""
+    """Build the bounded platform status response for the current phase."""
     settings = get_settings()
     return PlatformStatusResponse(
         status="ok",
         service="app-api",
         version=settings.app_version,
-        phase="phase_1_skeleton",
+        phase="phase_2_read_only_foundation",
         generated_at=datetime.now(UTC),
         topology_name="platform",
         summary=(
-            "Phase 1 declared platform service inventory only; live dependency "
+            "Phase 2 declared platform service inventory only; live dependency "
             "checks are not implemented yet."
         ),
         components=[

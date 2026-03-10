@@ -286,7 +286,7 @@ def test_health_endpoint_returns_typed_payload() -> None:
     assert payload["status"] == "ok"
     assert payload["service"] == "app-api"
     assert payload["version"] == "0.1.0"
-    assert payload["phase"] == "phase_1_skeleton"
+    assert payload["phase"] == "phase_2_read_only_foundation"
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 

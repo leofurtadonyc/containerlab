@@ -62,7 +62,7 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
     return WorkflowHistoryResponse(
         service="app-api",
         version=settings.app_version,
-        phase="phase_1_skeleton",
+        phase="phase_2_read_only_foundation",
         generated_at=datetime.now(UTC),
         data_status=data_status,
         summary=summary,

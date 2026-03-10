@@ -1,7 +1,7 @@
 export interface ApiResponseMetadata {
   service: "app-api";
   version: string;
-  phase: "phase_1_skeleton";
+  phase: "phase_2_read_only_foundation";
   generated_at: string;
 }
 

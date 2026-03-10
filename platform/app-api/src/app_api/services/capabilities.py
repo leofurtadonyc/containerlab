@@ -7,7 +7,7 @@ from app_api.schemas.capabilities import CapabilityRecord, CapabilitiesListRespo
 
 
 def build_capabilities_list_response() -> CapabilitiesListResponse:
-    """Build the Phase 1 capability scaffold."""
+    """Build the bounded capability placeholder response for the current phase."""
     settings = get_settings()
     items = [
         CapabilityRecord(
@@ -30,7 +30,7 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
             support_status="unknown",
             implementation_status="placeholder",
             caveats=[
-                "Topology support is represented as a platform contract only in Phase 1."
+                "Topology support is represented as a platform contract only in the current bounded read-only phase."
             ],
             source_of_determination="platform_placeholder",
         ),
@@ -38,11 +38,11 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
     return CapabilitiesListResponse(
         service="app-api",
         version=settings.app_version,
-        phase="phase_1_skeleton",
+        phase="phase_2_read_only_foundation",
         generated_at=datetime.now(UTC),
         data_status="placeholder",
         summary=(
-            "Phase 1 placeholder capability matrix. Unsupported, unknown, and partial "
+            "Phase 2 placeholder capability matrix. Unsupported, unknown, and partial "
             "states remain explicit until real platform evidence exists."
         ),
         count=len(items),
