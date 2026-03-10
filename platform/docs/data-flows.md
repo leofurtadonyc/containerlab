@@ -46,6 +46,13 @@ Transient today:
 - in-memory metrics caches inside `app-api` and `gnmi-collector`
 - frontend UI state in `app-web`
 
+Fallback behavior today:
+
+- devices use the live collector-backed read path first and fall back to the latest persisted normalized inventory snapshot only when that live path is unavailable
+- topology uses the live collector-backed read path first and falls back to the latest persisted normalized topology snapshot only when that live path is unavailable
+- policy uses the live collector-backed read path first and falls back to the latest persisted normalized policy snapshot only when that live path is unavailable
+- workflow-history and audit-history are read from persisted sync-run activity, but they still do not represent a full workflow engine or user-action audit log
+
 Important current limitation:
 
 - the Postgres service does not yet have a host-mounted data directory in the current topology, so persisted state survives normal in-deployment reads and fallback behavior, but it is not yet hardened across full reprovisioning of the platform lab
@@ -245,6 +252,7 @@ Current state:
 - the backend now persists bounded normalized inventory snapshots, normalized topology snapshots, and sync-run records
 - the backend now persists bounded normalized policy snapshots and candidate-path records alongside those existing inventory/topology snapshots
 - devices, topology, and policy can fall back to the latest persisted normalized snapshot if the live collector boundary is temporarily unavailable
+- workflow-history and audit-history currently read persisted sync-run activity rather than separate durable workflow or audit tables
 - the current persisted slice is deployment-local because the topology has not yet added a host-mounted Postgres data directory
 - workflow history, audit history, and broader intent models remain transient or unimplemented rather than durably stored
 - broader domain persistence logic is still pending
@@ -279,6 +287,7 @@ Current state:
 - backend-owned normalized topology and policy read models now exist as stable live API slices with explicit partial and unknown states
 - observability scaffolding exists
 - bounded persistence direction is explicit and now partially implemented for inventory, topology, and policy snapshots
+- persisted sync-run activity now supports bounded read-side history views, while live collector reads remain the primary source for current observed state
 
 ### Future
 

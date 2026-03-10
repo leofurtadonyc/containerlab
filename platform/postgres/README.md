@@ -43,3 +43,4 @@ Initial database direction exists, including a minimal init SQL bootstrap script
 ## Notes and caveats
 Postgres is the application state store. It is not a metrics database. Keep schema normalized and migration-managed from the start.
 Current durability is bounded: persisted inventory/topology/policy snapshots and sync-run history survive normal service reads and restarts within the running deployment, but they are not yet hardened across full platform reprovisioning because host-backed Postgres data persistence is still pending.
+The current history views exposed by `app-api` are still derived mainly from persisted sync-run activity. They should not yet be read as proof that full workflow or user-action audit domains are durably modeled in Postgres.

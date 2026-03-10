@@ -28,7 +28,7 @@ The platform requires a single authoritative source of business logic. The backe
 - ports: 8000 for the versioned API and `/metrics`
 - env vars: `API_PORT`, `DATABASE_URL`, `ODL_URL`, and `PROMETHEUS_URL` placeholders in the current topology skeleton
 - mounts: `./app-api:/app`, `./shared:/app/shared`, `./schemas:/app/schemas`
-- persistence: writes bounded normalized inventory, topology, and policy snapshots plus sync-run records to Postgres
+- persistence: writes bounded normalized inventory, topology, and policy snapshots, bounded policy candidate-path records, and sync-run records to Postgres
 - dependencies: Postgres, `gnmi-collector`, and optional ODL integration
 
 ## Integration points
@@ -38,7 +38,7 @@ The platform requires a single authoritative source of business logic. The backe
 - exposes `/metrics` for Prometheus
 
 ## Current status
-Initial backend skeleton exists with a FastAPI application entrypoint, a versioned `/api/v1/...` route structure, typed read-only `/api/v1/health`, `/api/v1/platform/status`, `/api/v1/devices`, `/api/v1/topology`, `/api/v1/policies`, and `/api/v1/capabilities` endpoints, consistent error response scaffolding, live bounded collector-backed inventory, topology, and policy read paths, bounded in-memory HTTP request and latency metrics at `/metrics`, package structure for routers, services, repositories, models, schemas, integrations, adapters, metrics, and config, plus the first real Alembic-managed persistence slice for normalized inventory snapshots, normalized topology snapshots, normalized policy snapshots, and sync-run history.
+Initial backend skeleton exists with a FastAPI application entrypoint, a versioned `/api/v1/...` route structure, typed read-only `/api/v1/health`, `/api/v1/platform/status`, `/api/v1/devices`, `/api/v1/topology`, `/api/v1/policies`, and `/api/v1/capabilities` endpoints, consistent error response scaffolding, live bounded collector-backed inventory, topology, and policy read paths, bounded in-memory HTTP request and latency metrics at `/metrics`, package structure for routers, services, repositories, models, schemas, integrations, adapters, metrics, and config, plus the first real Alembic-managed persistence slice for normalized inventory snapshots, normalized topology snapshots, normalized policy snapshots, bounded policy candidate-path records, and sync-run history.
 
 ## Planned evolution
 - refine read-only inventory, topology, capability, and policy-oriented APIs from current scaffolds into deeper collector-backed, controller-backed, and model-backed endpoints
@@ -49,5 +49,7 @@ Initial backend skeleton exists with a FastAPI application entrypoint, a version
 The backend is the only service that writes to Postgres. Keep it as the single source of truth for application state.
 The current topology and policy read models are intentionally bounded and honest: they provide stable product-owned contracts, but they do not yet claim live operational completeness, deep path computation, or workflow-grade policy semantics.
 Inventory, topology, and policy now persist normalized snapshot records and sync-run history in Postgres, and the API may fall back to the latest persisted snapshot when the live collector path is temporarily unavailable.
+Live collector-backed reads remain the primary source for current observed state; persistence strengthens bounded fallback behavior and sync-derived history rather than replacing those live reads.
 The current backend metrics path remains transient and in-memory for scrape safety. Those metrics are observability signals, not durable product records.
+Workflow-history and audit-history are currently bounded views derived from persisted sync-run activity, not separate durable workflow or user-action audit domains.
 The current topology does not yet mount a host-backed Postgres data directory, so persisted read-side state is durable within the running deployment but not yet hardened across full platform reprovisioning.

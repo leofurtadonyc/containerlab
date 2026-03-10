@@ -103,7 +103,9 @@ Current bounded reality:
 
 - normalized inventory snapshots are now persisted
 - normalized topology snapshots and sync-run history are now persisted
-- policy, workflow, audit, and broader durable state remain partial or unimplemented
+- normalized policy snapshots and bounded candidate-path records are now persisted
+- workflow-history and audit-history currently derive from persisted sync-run activity rather than separate durable workflow or audit domains
+- broader durable workflow, audit, and intent state remain partial or unimplemented
 - the current topology still lacks host-backed Postgres data storage, so persistence is real within the running deployment but not yet hardened across full reprovisioning
 
 ## Vendor Strategy
@@ -154,11 +156,11 @@ At this stage, contributors should assume:
 - schema and shared-directory scaffolding
 - read-only inventory, topology, policy, capability, and platform status APIs
 - read-only WebUI pages backed by stable backend contracts
-- bounded Postgres-backed persistence for inventory and topology snapshots plus sync-run history
+- bounded Postgres-backed persistence for inventory, topology, and policy snapshots plus sync-run history
 
 ### Planned Later
 
-- broader durable read-side persistence beyond the current inventory/topology snapshot slice
+- broader durable read-side persistence beyond the current inventory/topology/policy snapshot slice
 - bounded ODL integration paths
 - dry-run workflow support
 - one narrowly scoped safe action workflow only after the read/validate foundation is solid

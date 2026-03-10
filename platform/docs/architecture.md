@@ -94,8 +94,10 @@ Current read-model reality:
 - `/api/v1/devices` is backed by a bounded normalized live collector inventory path
 - `/api/v1/topology` is backed by a backend-owned normalized live topology model that explicitly marks partial and unknown knowledge
 - `/api/v1/policies` is backed by a backend-owned normalized live policy inventory model that explicitly marks support, observed, and unknown states
+- live collector-backed reads remain the primary path for devices, topology, and policy
 - inventory, topology, and policy snapshots are now persisted in Postgres along with sync-run records, and the API can fall back to the latest persisted normalized snapshot when the collector path is temporarily unavailable
 - policy persistence remains intentionally bounded to normalized snapshot history and candidate-path records rather than a broader durable policy domain model
+- workflow-history and audit-history remain bounded views derived from persisted sync-run activity rather than independently persisted workflow or audit domains
 - backend metrics remain transient in-memory service state for Prometheus scraping; they are not durable application records
 - these are stable product-owned contracts, but they remain bounded read-side slices rather than mature operational truth
 
@@ -135,7 +137,8 @@ Current persistence boundary:
 - normalized topology snapshots are persisted
 - normalized policy snapshots and candidate-path records are persisted
 - sync-run history for those persisted read-side writes is persisted
-- workflow, audit, and broader intent/history domains are not yet persisted in this phase
+- workflow-history and audit-history are currently derived from persisted sync-run activity rather than separate workflow or audit tables
+- workflow, audit, and broader intent/history domains are not yet independently persisted in this phase
 - the current topology still lacks a host-mounted Postgres data directory, so persisted state is durable within the running deployment but not yet hardened across full reprovisioning
 
 ### `prometheus`

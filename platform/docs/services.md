@@ -65,8 +65,9 @@ Current state:
 - typed health endpoint exists
 - bounded HTTP request and latency metrics now exist at `/metrics`
 - live bounded inventory, topology, and policy integrations now exist from the collector boundary into backend read paths
-- Alembic-managed persistence now exists for normalized inventory snapshots, normalized topology snapshots, normalized policy snapshots, and sync-run history
+- Alembic-managed persistence now exists for normalized inventory snapshots, normalized topology snapshots, normalized policy snapshots, candidate-path records, and sync-run history
 - devices, topology, and policy can fall back to the latest persisted normalized snapshot when the collector boundary is temporarily unavailable
+- workflow-history and audit-history currently expose bounded views derived from persisted sync-run activity rather than full workflow or audit tables
 
 ### `gnmi-collector`
 
