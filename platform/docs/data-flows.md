@@ -23,8 +23,7 @@ The current repository state includes:
 
 It does not yet include:
 
-- live collector-to-backend ingestion
-- substantive live-backed inventory, topology, or policy APIs beyond the current normalized scaffolds
+- durable persistence for every intended product domain
 - workflow and audit-oriented frontend views beyond the current read-only product pages
 - substantive ODL integration logic
 
@@ -75,8 +74,8 @@ Current state:
 
 - collector package structure exists
 - adapter and mapping scaffolding exist
-- a narrow normalized inventory delivery shape now exists between the collector and the backend
-- live transport from the collector process into `app-api` is still a placeholder
+- narrow normalized inventory, topology, and policy delivery shapes now exist between the collector and the backend
+- live transport from the collector process into `app-api` now exists for those bounded read-side slices
 
 ## Backend To Frontend Flow
 
@@ -100,9 +99,9 @@ Current state:
 
 - backend health and metrics endpoints exist
 - versioned read-only inventory, topology, policy, capability, and platform status endpoints now exist as scaffolds
-- the current inventory API is fed by a bounded normalized collector placeholder contract rather than live collector transport
-- the current topology API is fed by a backend-owned normalized read model that explicitly marks partial and unknown state
-- the current policy API is fed by a backend-owned normalized read model that explicitly marks support, observed, and unknown state
+- the current inventory API is fed by a bounded normalized live collector contract
+- the current topology API is fed by a backend-owned normalized live read model that explicitly marks partial and unknown state
+- the current policy API is fed by a backend-owned normalized live read model that explicitly marks support, observed, and unknown state
 - useful frontend read-only pages now consume those stable contracts for overview, platform health, devices, topology, policies, and capabilities
 
 ## Topology Read-Model Limitations
@@ -114,13 +113,13 @@ What is real today:
 - the topology API returns a stable platform-owned structure for nodes, links, source, sync status, completeness, timestamps, and notes
 - partial and unknown states are explicit in the contract
 - the backend owns the read model rather than exposing collector or controller-native shapes
+- the backend now persists bounded normalized topology snapshots and can fall back to the latest persisted snapshot when live collection is unavailable
 
 What remains partial:
 
-- the topology does not yet represent live adjacency discovery
-- node and link state are still mostly `unknown`
-- `observed_at` may be unset because live topology ingestion is not wired yet
-- the current graph is a bounded placeholder that demonstrates contract shape rather than operational completeness
+- the topology does not yet represent full adjacency discovery
+- the graph remains a bounded live slice rather than comprehensive operational truth
+- persisted topology support is intentionally limited to normalized snapshot history rather than a final topology database design
 
 ## Policy Read-Model Limitations
 
@@ -134,9 +133,9 @@ What is real today:
 
 What remains partial:
 
-- the policy inventory is not yet backed by live SR policy collection or controller-derived policy state
+- the policy inventory is backed only by a bounded live SR policy counter slice rather than full per-policy or controller-derived state
 - support states such as `unknown` and `not_implemented_in_platform` are expected and honest in the current phase
-- candidate path data is illustrative scaffold data rather than validated operational path computation
+- candidate path data remains absent or bounded rather than validated operational path computation
 - no policy details, editing, validation, or workflow execution flows exist yet
 
 ## Metrics Flow
@@ -218,7 +217,9 @@ Current state:
 
 - init SQL bootstrap exists
 - Alembic scaffolding exists
-- real domain persistence logic is still pending
+- the backend now persists bounded normalized inventory snapshots, normalized topology snapshots, and sync-run records
+- devices and topology can fall back to the latest persisted normalized snapshot if the live collector boundary is temporarily unavailable
+- broader domain persistence logic is still pending
 
 ## Flow Summary By Consumer
 
@@ -246,10 +247,10 @@ Current state:
 - flow directions are documented
 - platform topology and service boundaries exist
 - backend and collector skeleton endpoints exist
-- a bounded normalized inventory integration placeholder now connects the collector shape to the backend devices read path
-- backend-owned normalized topology and policy read models now exist as stable API scaffolds with explicit partial and unknown states
+- bounded normalized inventory, topology, and policy integrations now connect the collector shape to the backend read paths
+- backend-owned normalized topology and policy read models now exist as stable live API slices with explicit partial and unknown states
 - observability scaffolding exists
-- persistence direction is explicit
+- bounded persistence direction is explicit and now partially implemented for inventory and topology snapshots
 
 ### Future
 

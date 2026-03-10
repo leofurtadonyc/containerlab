@@ -23,6 +23,12 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    def get_sqlalchemy_database_url(self) -> str:
+        """Return a SQLAlchemy URL compatible with the installed PostgreSQL driver."""
+        if self.database_url.startswith("postgresql://"):
+            return self.database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+        return self.database_url
+
 
 @lru_cache
 def get_settings() -> Settings:

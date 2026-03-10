@@ -13,10 +13,35 @@ from app_api.integrations.collector.topology import (
     CollectorTopologySnapshot,
 )
 from app_api.main import app
+from app_api.models.inventory import InventoryDevice
 from app_api.metrics.state import reset_metrics_registry
+from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
+from app_api.persistence.read_side import (
+    PersistedInventorySnapshot,
+    PersistedTopologySnapshot,
+)
 
 
 client = TestClient(app)
+
+
+def _disable_read_side_persistence(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app_api.services.devices.persist_inventory_snapshot",
+        lambda **kwargs: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.devices.load_latest_inventory_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.topology.persist_topology_snapshot",
+        lambda **kwargs: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.topology.load_latest_topology_snapshot",
+        lambda: None,
+    )
 
 
 def _build_live_inventory_snapshot() -> CollectorInventorySnapshot:
@@ -149,6 +174,60 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
     )
 
 
+def _build_persisted_inventory_snapshot() -> PersistedInventorySnapshot:
+    return PersistedInventorySnapshot(
+        persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+        devices=[
+            InventoryDevice(
+                device_id="PE1",
+                vendor="nokia",
+                platform="7750 SR-1",
+                software_version="B-25.10.R2",
+                role="pe",
+                management_address="172.20.20.107",
+                collector_status="ok",
+                capability_summary="partially_supported",
+            )
+        ],
+    )
+
+
+def _build_persisted_topology_snapshot() -> PersistedTopologySnapshot:
+    return PersistedTopologySnapshot(
+        persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+        snapshot=TopologySnapshot(
+            topology_id="platform-observed-topology",
+            topology_name="Platform Observed Topology",
+            nodes=[
+                TopologyNode(
+                    node_id="PE1",
+                    display_name="PE1",
+                    role="pe",
+                    state="up",
+                    source="gnmi",
+                    device_id="PE1",
+                    attributes={"vendor": "nokia"},
+                )
+            ],
+            links=[
+                TopologyLink(
+                    link_id="PE1--P1",
+                    source_node_id="PE1",
+                    target_node_id="P1",
+                    state="degraded",
+                    source="gnmi",
+                    attributes={"knowledge_state": "partial"},
+                )
+            ],
+            sync_source="persisted_topology_snapshot",
+            sync_status="degraded",
+            completeness="partial",
+            observed_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+            notes=["Served from the latest persisted topology snapshot."],
+        ),
+    )
+
+
 def test_health_endpoint_returns_typed_payload() -> None:
     response = client.get("/api/v1/health", headers={"X-Request-ID": "health-test"})
 
@@ -185,6 +264,8 @@ def test_platform_status_endpoint_returns_declared_service_scaffold() -> None:
 
 
 def test_devices_endpoint_returns_live_inventory(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
     class StubCollectorInventoryClient:
         def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
             return _build_live_inventory_snapshot()
@@ -211,6 +292,8 @@ def test_devices_endpoint_returns_live_inventory(monkeypatch) -> None:
 
 
 def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
     class StubCollectorTopologyClient:
         def read_topology_snapshot(self) -> CollectorTopologySnapshot:
             return _build_live_topology_snapshot()
@@ -243,6 +326,80 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert "bounded interface-based link inference" in payload["summary"]
     assert "Topology links are inferred from live router interface names" in payload["topology"]["notes"][0]
     assert datetime.fromisoformat(payload["generated_at"]) is not None
+
+
+def test_devices_endpoint_falls_back_to_persisted_inventory(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorInventoryClient:
+        def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+            return CollectorInventorySnapshot(
+                integration="gnmi_collector_inventory",
+                status="collector_unavailable",
+                destination_service="app-api",
+                source_endpoint="http://gnmi-collector:9804/inventory/snapshot",
+                records=[],
+                fetch_error="collector down",
+            )
+
+    monkeypatch.setattr(
+        "app_api.services.devices.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.devices.load_latest_inventory_snapshot",
+        _build_persisted_inventory_snapshot,
+    )
+
+    response = client.get("/api/v1/devices")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_status"] == "degraded"
+    assert payload["count"] == 1
+    assert "latest persisted normalized inventory snapshot" in payload["summary"]
+    assert payload["items"][0]["device_id"] == "PE1"
+
+
+def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorTopologyClient:
+        def read_topology_snapshot(self) -> CollectorTopologySnapshot:
+            return CollectorTopologySnapshot(
+                integration="gnmi_collector_topology",
+                status="collector_unavailable",
+                destination_service="app-api",
+                source_endpoint="http://gnmi-collector:9804/topology/snapshot",
+                topology_id="platform-observed-topology",
+                topology_name="Platform Observed Topology",
+                sync_source="gnmi_collector_topology",
+                sync_status="failed",
+                completeness="unknown",
+                notes=[],
+                nodes=[],
+                links=[],
+                fetch_error="collector down",
+            )
+
+    monkeypatch.setattr(
+        "app_api.services.topology.get_collector_topology_client",
+        lambda: StubCollectorTopologyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.topology.load_latest_topology_snapshot",
+        _build_persisted_topology_snapshot,
+    )
+
+    response = client.get("/api/v1/topology")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_status"] == "degraded"
+    assert payload["topology"]["sync_source"] == "persisted_topology_snapshot"
+    assert len(payload["topology"]["nodes"]) == 1
+    assert len(payload["topology"]["links"]) == 1
+    assert "latest persisted normalized topology snapshot" in payload["summary"]
 
 
 def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
@@ -309,6 +466,8 @@ def test_unknown_route_returns_consistent_error_payload() -> None:
 
 
 def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
     class StubCollectorInventoryClient:
         def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
             return _build_live_inventory_snapshot()
@@ -360,6 +519,8 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
 
 
 def test_devices_endpoint_allows_webui_origin_via_cors(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
     class StubCollectorInventoryClient:
         def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
             return _build_live_inventory_snapshot()

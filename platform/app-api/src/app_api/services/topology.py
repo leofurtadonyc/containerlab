@@ -10,6 +10,10 @@ from app_api.integrations.collector.topology import (
 )
 from app_api.metrics.state import cache_topology_metrics
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
+from app_api.persistence.read_side import (
+    load_latest_topology_snapshot,
+    persist_topology_snapshot,
+)
 from app_api.schemas.topology import (
     TopologyLinkRecord,
     TopologyNodeRecord,
@@ -18,7 +22,9 @@ from app_api.schemas.topology import (
 )
 
 
-def _build_topology_snapshot() -> tuple[CollectorTopologySnapshot, TopologySnapshot]:
+def _build_topology_snapshot() -> tuple[
+    CollectorTopologySnapshot, TopologySnapshot, datetime | None
+]:
     """Build the backend-owned normalized topology snapshot from the collector boundary."""
     collector_snapshot = get_collector_topology_client().read_topology_snapshot()
     observed_at = (
@@ -28,6 +34,9 @@ def _build_topology_snapshot() -> tuple[CollectorTopologySnapshot, TopologySnaps
     )
 
     if collector_snapshot.status == "collector_unavailable":
+        persisted_snapshot = load_latest_topology_snapshot()
+        if persisted_snapshot is not None:
+            return collector_snapshot, persisted_snapshot.snapshot, persisted_snapshot.persisted_at
         return collector_snapshot, TopologySnapshot(
             topology_id="platform-observed-topology",
             topology_name="Platform Observed Topology",
@@ -41,7 +50,7 @@ def _build_topology_snapshot() -> tuple[CollectorTopologySnapshot, TopologySnaps
                 "The backend could not load the live topology snapshot from the collector.",
                 "No raw vendor payloads are exposed through the topology API.",
             ],
-        )
+        ), None
 
     nodes = [
         TopologyNode(
@@ -67,7 +76,7 @@ def _build_topology_snapshot() -> tuple[CollectorTopologySnapshot, TopologySnaps
         for link in collector_snapshot.links
     ]
 
-    return collector_snapshot, TopologySnapshot(
+    snapshot = TopologySnapshot(
         topology_id=collector_snapshot.topology_id,
         topology_name=collector_snapshot.topology_name,
         nodes=nodes,
@@ -78,12 +87,20 @@ def _build_topology_snapshot() -> tuple[CollectorTopologySnapshot, TopologySnaps
         observed_at=observed_at,
         notes=collector_snapshot.notes,
     )
+    persist_topology_snapshot(
+        collector_snapshot=collector_snapshot,
+        snapshot=snapshot,
+        data_status=(
+            "live" if collector_snapshot.status == "live_normalized_feed" else "degraded"
+        ),
+    )
+    return collector_snapshot, snapshot, None
 
 
 def build_topology_response() -> TopologyResponse:
     """Build the topology response from a normalized backend model."""
     settings = get_settings()
-    collector_snapshot, snapshot = _build_topology_snapshot()
+    collector_snapshot, snapshot, persisted_at = _build_topology_snapshot()
     topology = TopologyRecord(
         topology_id=snapshot.topology_id,
         topology_name=snapshot.topology_name,
@@ -130,10 +147,16 @@ def build_topology_response() -> TopologyResponse:
         )
     else:
         data_status = "degraded"
-        summary = (
-            "The backend could not load the live collector topology snapshot. "
-            "No raw vendor payloads are exposed through the topology API."
-        )
+        if snapshot.nodes and persisted_at is not None:
+            summary = (
+                "The backend could not load the live collector topology snapshot, so "
+                "the latest persisted normalized topology snapshot is being served."
+            )
+        else:
+            summary = (
+                "The backend could not load the live collector topology snapshot. "
+                "No raw vendor payloads are exposed through the topology API."
+            )
     cache_topology_metrics(
         node_count=len(topology.nodes),
         link_count=len(topology.links),

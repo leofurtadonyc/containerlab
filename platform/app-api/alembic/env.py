@@ -5,10 +5,15 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from app_api.config.settings import get_settings
 from app_api.models.base import target_metadata
+from app_api.persistence import tables as persistence_tables
+
+del persistence_tables
 
 
 config = context.config
+config.set_main_option("sqlalchemy.url", get_settings().get_sqlalchemy_database_url())
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

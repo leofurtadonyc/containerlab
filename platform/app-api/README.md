@@ -38,13 +38,14 @@ The platform requires a single authoritative source of business logic. The backe
 - exposes `/metrics` for Prometheus
 
 ## Current status
-Initial backend skeleton exists with a FastAPI application entrypoint, a versioned `/api/v1/...` route structure, typed read-only `/api/v1/health`, `/api/v1/platform/status`, `/api/v1/devices`, `/api/v1/topology`, `/api/v1/policies`, and `/api/v1/capabilities` endpoints, consistent error response scaffolding, a bounded collector inventory integration placeholder feeding the devices read path through normalized inventory-shaped records, a backend-owned normalized topology read model feeding the topology API with explicit partial and unknown states, a backend-owned normalized policy inventory read model feeding the policies API with explicit support and unknown states, bounded in-memory HTTP request and latency metrics at `/metrics`, package structure for routers, services, repositories, models, schemas, integrations, adapters, metrics, and config, plus Alembic migration scaffolding for future schema evolution and a bounded ODL integration skeleton location.
+Initial backend skeleton exists with a FastAPI application entrypoint, a versioned `/api/v1/...` route structure, typed read-only `/api/v1/health`, `/api/v1/platform/status`, `/api/v1/devices`, `/api/v1/topology`, `/api/v1/policies`, and `/api/v1/capabilities` endpoints, consistent error response scaffolding, live bounded collector-backed inventory, topology, and policy read paths, bounded in-memory HTTP request and latency metrics at `/metrics`, package structure for routers, services, repositories, models, schemas, integrations, adapters, metrics, and config, plus the first real Alembic-managed persistence slice for normalized inventory snapshots, normalized topology snapshots, and sync-run history.
 
 ## Planned evolution
 - refine read-only inventory, topology, capability, and policy-oriented APIs from current scaffolds into deeper collector-backed, controller-backed, and model-backed endpoints
-- normalized internal model and schema scaffolding
+- deepen the bounded persistence layer from the initial inventory/topology snapshot slice into broader read-side and intent history where justified
 - bounded ODL integration module
 
 ## Notes and caveats
 The backend is the only service that writes to Postgres. Keep it as the single source of truth for application state.
-The current topology and policy read models are intentionally honest scaffolds: they provide stable product-owned contracts, but they do not yet claim live operational completeness, deep path computation, or workflow-grade policy semantics.
+The current topology and policy read models are intentionally bounded and honest: they provide stable product-owned contracts, but they do not yet claim live operational completeness, deep path computation, or workflow-grade policy semantics.
+Inventory and topology now persist normalized snapshot records and sync-run history in Postgres, and the API may fall back to the latest persisted snapshot when the live collector path is temporarily unavailable.
