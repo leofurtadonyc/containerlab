@@ -57,6 +57,17 @@ function describeSupportState(value: string): string {
   }
 }
 
+function formatRoleCoverage(roleCounts: Record<string, number>): string {
+  const entries = Object.entries(roleCounts).filter(([, count]) => count > 0);
+  if (entries.length === 0) {
+    return "No role coverage is currently available.";
+  }
+  return entries
+    .sort(([leftRole], [rightRole]) => leftRole.localeCompare(rightRole))
+    .map(([role, count]) => `${formatLabel(role)}: ${count}`)
+    .join(" • ");
+}
+
 export function PoliciesView() {
   const { data, error, isLoading, reload } = usePoliciesQuery();
   const [healthFilter, setHealthFilter] = useState("all");
@@ -73,7 +84,6 @@ export function PoliciesView() {
   const observedStateCounts = countBy(items, (policy) => policy.observed_state);
   const supportCounts = countBy(items, (policy) => policy.support_state);
   const policyTypeCounts = countBy(items, (policy) => policy.policy_type);
-  const sourceRoleCounts = countBy(items, (policy) => policy.source_target_role ?? "unknown");
   const candidatePathPostureCounts = countBy(items, (policy) =>
     policy.candidate_paths.length > 0 ? "with_candidate_paths" : "without_candidate_paths",
   );
@@ -252,12 +262,12 @@ export function PoliciesView() {
         <article className="summary-card">
           <p className="summary-label">Observed Targets</p>
           <strong>{data.observed_target_count}</strong>
-          <p>Targets that returned bounded live SR policy observations.</p>
+          <p>{formatRoleCoverage(data.observed_target_role_counts)}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Policy-Capable Targets</p>
           <strong>{data.policy_capable_target_count}</strong>
-          <p>Targets exposing live SR policy capability counters.</p>
+          <p>{formatRoleCoverage(data.policy_capable_target_role_counts)}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Detail Coverage</p>
@@ -270,8 +280,16 @@ export function PoliciesView() {
           <p className="summary-label">Observed Policies</p>
           <strong>{data.observed_policy_count}</strong>
           <p>
-            Active: {data.active_policy_count} • Static: {data.static_policy_count} • BGP:{" "}
-            {data.bgp_policy_count}
+            Active: {data.active_policy_count} • Static local: {data.static_local_policy_count} •
+            Static non-local: {data.static_non_local_policy_count} • BGP: {data.bgp_policy_count}
+          </p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Counter Footprint</p>
+          <strong>{data.ttm_preference_count}</strong>
+          <p>
+            TTM preferences • Binding SIDs: {data.binding_sid_count} • SRv6 binding SIDs:{" "}
+            {data.srv6_binding_sid_count}
           </p>
         </article>
         <article className="summary-card">
@@ -357,6 +375,14 @@ export function PoliciesView() {
               <strong>{data.policy_capable_target_count}</strong>
             </li>
             <li>
+              <span>Observed target roles</span>
+              <strong>{formatRoleCoverage(data.observed_target_role_counts)}</strong>
+            </li>
+            <li>
+              <span>Policy-capable roles</span>
+              <strong>{formatRoleCoverage(data.policy_capable_target_role_counts)}</strong>
+            </li>
+            <li>
               <span>Observed policies</span>
               <strong>{data.observed_policy_count}</strong>
             </li>
@@ -367,8 +393,11 @@ export function PoliciesView() {
               </strong>
             </li>
             <li>
-              <span>Static / BGP policies</span>
-              <strong>{data.static_policy_count} / {data.bgp_policy_count}</strong>
+              <span>Static local / non-local / BGP</span>
+              <strong>
+                {data.static_local_policy_count} / {data.static_non_local_policy_count} /{" "}
+                {data.bgp_policy_count}
+              </strong>
             </li>
           </ul>
         </article>
@@ -401,16 +430,16 @@ export function PoliciesView() {
           <h3>Observation Footprint</h3>
           <ul className="compact-list">
             <li>
-              <span>Source role: PE</span>
-              <strong>{sourceRoleCounts.pe ?? 0}</strong>
+              <span>TTM preferences</span>
+              <strong>{data.ttm_preference_count}</strong>
             </li>
             <li>
-              <span>Source role: P</span>
-              <strong>{sourceRoleCounts.p ?? 0}</strong>
+              <span>Binding SIDs allocated</span>
+              <strong>{data.binding_sid_count}</strong>
             </li>
             <li>
-              <span>Unknown role</span>
-              <strong>{sourceRoleCounts.unknown ?? 0}</strong>
+              <span>SRv6 binding SIDs allocated</span>
+              <strong>{data.srv6_binding_sid_count}</strong>
             </li>
             <li>
               <span>With candidate paths</span>
@@ -426,12 +455,16 @@ export function PoliciesView() {
           <h3>Type And Support Mix</h3>
           <ul className="compact-list">
             <li>
-              <span>Static local</span>
+              <span>Detailed static local</span>
               <strong>{policyTypeCounts.static_local ?? 0}</strong>
             </li>
             <li>
-              <span>Static non-local</span>
+              <span>Detailed static non-local</span>
               <strong>{policyTypeCounts.static_non_local ?? 0}</strong>
+            </li>
+            <li>
+              <span>Observed static total</span>
+              <strong>{data.static_policy_count}</strong>
             </li>
             <li>
               <span>Partially supported</span>

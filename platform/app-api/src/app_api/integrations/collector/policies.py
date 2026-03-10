@@ -65,10 +65,17 @@ class CollectorPolicySnapshot(BaseModel):
     observed_at: str | None = None
     observed_target_count: int
     policy_capable_target_count: int
+    observed_target_role_counts: dict[str, int] = Field(default_factory=dict)
+    policy_capable_target_role_counts: dict[str, int] = Field(default_factory=dict)
     policy_count: int
     active_policy_count: int
     static_policy_count: int
+    static_local_policy_count: int
+    static_non_local_policy_count: int
     bgp_policy_count: int
+    ttm_preference_count: int
+    binding_sid_count: int
+    srv6_binding_sid_count: int
     notes: list[str] = Field(default_factory=list)
     records: list[CollectorPolicyRecord] = Field(default_factory=list)
     fetch_error: str | None = None
@@ -100,10 +107,17 @@ class CollectorPolicyClient:
                 observed_at=None,
                 observed_target_count=0,
                 policy_capable_target_count=0,
+                observed_target_role_counts={},
+                policy_capable_target_role_counts={},
                 policy_count=0,
                 active_policy_count=0,
                 static_policy_count=0,
+                static_local_policy_count=0,
+                static_non_local_policy_count=0,
                 bgp_policy_count=0,
+                ttm_preference_count=0,
+                binding_sid_count=0,
+                srv6_binding_sid_count=0,
                 notes=[],
                 records=[],
                 fetch_error=str(exc),
@@ -126,10 +140,17 @@ class CollectorPolicyClient:
             observed_at=payload.get("observed_at"),
             observed_target_count=payload.get("observed_target_count", 0),
             policy_capable_target_count=payload.get("policy_capable_target_count", 0),
+            observed_target_role_counts=payload.get("observed_target_role_counts", {}),
+            policy_capable_target_role_counts=payload.get("policy_capable_target_role_counts", {}),
             policy_count=payload.get("policy_count", 0),
             active_policy_count=payload.get("active_policy_count", 0),
             static_policy_count=payload.get("static_policy_count", 0),
+            static_local_policy_count=payload.get("static_local_policy_count", 0),
+            static_non_local_policy_count=payload.get("static_non_local_policy_count", 0),
             bgp_policy_count=payload.get("bgp_policy_count", 0),
+            ttm_preference_count=payload.get("ttm_preference_count", 0),
+            binding_sid_count=payload.get("binding_sid_count", 0),
+            srv6_binding_sid_count=payload.get("srv6_binding_sid_count", 0),
             notes=payload.get("notes", []),
             records=[
                 CollectorPolicyRecord.model_validate(record)

@@ -141,10 +141,17 @@ export interface PoliciesListResponse extends ApiResponseMetadata {
   observed_at: string | null;
   observed_target_count: number;
   policy_capable_target_count: number;
+  observed_target_role_counts: Record<string, number>;
+  policy_capable_target_role_counts: Record<string, number>;
   observed_policy_count: number;
   active_policy_count: number;
   static_policy_count: number;
+  static_local_policy_count: number;
+  static_non_local_policy_count: number;
   bgp_policy_count: number;
+  ttm_preference_count: number;
+  binding_sid_count: number;
+  srv6_binding_sid_count: number;
   count: number;
   notes: string[];
   items: PolicyRecord[];

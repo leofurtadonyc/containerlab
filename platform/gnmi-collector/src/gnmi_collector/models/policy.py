@@ -85,10 +85,17 @@ class BackendPolicyDeliveryEnvelope(BaseModel):
     observed_at: datetime | None = None
     observed_target_count: int
     policy_capable_target_count: int
+    observed_target_role_counts: dict[str, int] = Field(default_factory=dict)
+    policy_capable_target_role_counts: dict[str, int] = Field(default_factory=dict)
     policy_count: int
     active_policy_count: int
     static_policy_count: int
+    static_local_policy_count: int
+    static_non_local_policy_count: int
     bgp_policy_count: int
+    ttm_preference_count: int
+    binding_sid_count: int
+    srv6_binding_sid_count: int
     records: list[NormalizedPolicyRecord] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 
@@ -103,10 +110,17 @@ class PolicyFlowSummary(BaseModel):
     partial_collection_count: int
     observed_target_count: int
     policy_capable_target_count: int
+    observed_target_role_counts: dict[str, int] = Field(default_factory=dict)
+    policy_capable_target_role_counts: dict[str, int] = Field(default_factory=dict)
     observed_policy_count: int
     active_policy_count: int
     static_policy_count: int
+    static_local_policy_count: int
+    static_non_local_policy_count: int
     bgp_policy_count: int
+    ttm_preference_count: int
+    binding_sid_count: int
+    srv6_binding_sid_count: int
     normalized_policy_record_count: int
     backend_ready_policy_count: int
     backend_delivery_error_count: int

@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app_api.schemas.common import ApiResponseMetadata
 
@@ -66,10 +66,17 @@ class PoliciesListResponse(ApiResponseMetadata):
     observed_at: datetime | None = None
     observed_target_count: int
     policy_capable_target_count: int
+    observed_target_role_counts: dict[str, int] = Field(default_factory=dict)
+    policy_capable_target_role_counts: dict[str, int] = Field(default_factory=dict)
     observed_policy_count: int
     active_policy_count: int
     static_policy_count: int
+    static_local_policy_count: int
+    static_non_local_policy_count: int
     bgp_policy_count: int
+    ttm_preference_count: int
+    binding_sid_count: int
+    srv6_binding_sid_count: int
     count: int
     notes: list[str]
     items: list[PolicyRecord]

@@ -57,6 +57,10 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
         "When static-policy state is exposed, the collector now derives bounded per-policy observations without claiming full SR policy truth.",
         "BGP-signaled SR policy detail remains out of scope until a deeper vendor-neutral path is added.",
     ]
+    if aggregated_counts["ttm_preference_count"] > 0:
+        notes.append(
+            "Stable SR policy resource counters remain visible even when no per-policy detail records are currently observed."
+        )
     if aggregated_counts["policy_count"] == 0:
         notes.append("No SR policies are currently observed across the configured Nokia targets.")
     elif normalized_policy_record_count == 0:
@@ -85,10 +89,17 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
         observed_at=derive_policy_observed_at(raw_records),
         observed_target_count=aggregated_counts["observed_target_count"],
         policy_capable_target_count=aggregated_counts["policy_capable_target_count"],
+        observed_target_role_counts=aggregated_counts["observed_target_role_counts"],
+        policy_capable_target_role_counts=aggregated_counts["policy_capable_target_role_counts"],
         policy_count=aggregated_counts["policy_count"],
         active_policy_count=aggregated_counts["active_policy_count"],
         static_policy_count=aggregated_counts["static_policy_count"],
+        static_local_policy_count=aggregated_counts["static_local_policy_count"],
+        static_non_local_policy_count=aggregated_counts["static_non_local_policy_count"],
         bgp_policy_count=aggregated_counts["bgp_policy_count"],
+        ttm_preference_count=aggregated_counts["ttm_preference_count"],
+        binding_sid_count=aggregated_counts["binding_sid_count"],
+        srv6_binding_sid_count=aggregated_counts["srv6_binding_sid_count"],
         records=normalized_records,
         notes=notes,
     )
@@ -100,10 +111,17 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
         partial_collection_count=partial_collection_count,
         observed_target_count=aggregated_counts["observed_target_count"],
         policy_capable_target_count=aggregated_counts["policy_capable_target_count"],
+        observed_target_role_counts=aggregated_counts["observed_target_role_counts"],
+        policy_capable_target_role_counts=aggregated_counts["policy_capable_target_role_counts"],
         observed_policy_count=aggregated_counts["policy_count"],
         active_policy_count=aggregated_counts["active_policy_count"],
         static_policy_count=aggregated_counts["static_policy_count"],
+        static_local_policy_count=aggregated_counts["static_local_policy_count"],
+        static_non_local_policy_count=aggregated_counts["static_non_local_policy_count"],
         bgp_policy_count=aggregated_counts["bgp_policy_count"],
+        ttm_preference_count=aggregated_counts["ttm_preference_count"],
+        binding_sid_count=aggregated_counts["binding_sid_count"],
+        srv6_binding_sid_count=aggregated_counts["srv6_binding_sid_count"],
         normalized_policy_record_count=normalized_policy_record_count,
         backend_ready_policy_count=delivery.policy_count,
         backend_delivery_error_count=0,

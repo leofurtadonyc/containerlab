@@ -45,10 +45,17 @@ def _build_policy_inventory() -> tuple[
             observed_at=None,
             observed_target_count=0,
             policy_capable_target_count=0,
+            observed_target_role_counts={},
+            policy_capable_target_role_counts={},
             observed_policy_count=0,
             active_policy_count=0,
             static_policy_count=0,
+            static_local_policy_count=0,
+            static_non_local_policy_count=0,
             bgp_policy_count=0,
+            ttm_preference_count=0,
+            binding_sid_count=0,
+            srv6_binding_sid_count=0,
             notes=[
                 "The backend could not load the live policy snapshot from the collector.",
                 "No raw vendor payloads are exposed through the policies API.",
@@ -73,10 +80,17 @@ def _build_policy_inventory() -> tuple[
         observed_at=observed_at,
         observed_target_count=collector_snapshot.observed_target_count,
         policy_capable_target_count=collector_snapshot.policy_capable_target_count,
+        observed_target_role_counts=collector_snapshot.observed_target_role_counts,
+        policy_capable_target_role_counts=collector_snapshot.policy_capable_target_role_counts,
         observed_policy_count=collector_snapshot.policy_count,
         active_policy_count=collector_snapshot.active_policy_count,
         static_policy_count=collector_snapshot.static_policy_count,
+        static_local_policy_count=collector_snapshot.static_local_policy_count,
+        static_non_local_policy_count=collector_snapshot.static_non_local_policy_count,
         bgp_policy_count=collector_snapshot.bgp_policy_count,
+        ttm_preference_count=collector_snapshot.ttm_preference_count,
+        binding_sid_count=collector_snapshot.binding_sid_count,
+        srv6_binding_sid_count=collector_snapshot.srv6_binding_sid_count,
         notes=collector_snapshot.notes,
         records=[
             PolicyInventoryRecord(
@@ -154,8 +168,9 @@ def build_policies_list_response() -> PoliciesListResponse:
         if snapshot.empty_reason == "no_policies_observed":
             summary = (
                 "Policy inventory is backed by live Nokia SR policy counters and "
-                "bounded static-policy visibility, and no SR policies are currently "
-                "observed across the configured targets."
+                "bounded static-policy visibility. No SR policies are currently "
+                "observed, but stable counter footprint and target-role coverage "
+                "remain visible across the configured targets."
             )
         elif snapshot.empty_reason == "per_policy_details_unavailable":
             summary = (
@@ -219,10 +234,17 @@ def build_policies_list_response() -> PoliciesListResponse:
         observed_at=snapshot.observed_at,
         observed_target_count=snapshot.observed_target_count,
         policy_capable_target_count=snapshot.policy_capable_target_count,
+        observed_target_role_counts=snapshot.observed_target_role_counts,
+        policy_capable_target_role_counts=snapshot.policy_capable_target_role_counts,
         observed_policy_count=snapshot.observed_policy_count,
         active_policy_count=snapshot.active_policy_count,
         static_policy_count=snapshot.static_policy_count,
+        static_local_policy_count=snapshot.static_local_policy_count,
+        static_non_local_policy_count=snapshot.static_non_local_policy_count,
         bgp_policy_count=snapshot.bgp_policy_count,
+        ttm_preference_count=snapshot.ttm_preference_count,
+        binding_sid_count=snapshot.binding_sid_count,
+        srv6_binding_sid_count=snapshot.srv6_binding_sid_count,
         count=len(items),
         notes=snapshot.notes,
         items=items,

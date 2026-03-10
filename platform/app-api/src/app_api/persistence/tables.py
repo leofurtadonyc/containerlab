@@ -181,10 +181,21 @@ class PolicySnapshotTable(Base):
     persisted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     observed_target_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     policy_capable_target_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    observed_target_role_counts: Mapped[dict[str, int]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
+    policy_capable_target_role_counts: Mapped[dict[str, int]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
     observed_policy_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     active_policy_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     static_policy_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    static_local_policy_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    static_non_local_policy_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     bgp_policy_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    ttm_preference_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    binding_sid_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    srv6_binding_sid_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     notes: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
 
     sync_run: Mapped[SyncRunTable] = relationship(back_populates="policy_snapshot")

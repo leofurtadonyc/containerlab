@@ -1,5 +1,6 @@
 """Mapping helpers for bounded live policy inventory."""
 
+from collections import Counter
 from datetime import UTC, datetime
 
 from gnmi_collector.models.policy import (
@@ -232,29 +233,50 @@ def summarize_policy_counts(raw_records: list[PolicyRawRecord]) -> dict[str, int
     counts = {
         "observed_target_count": 0,
         "policy_capable_target_count": 0,
+        "observed_target_role_counts": {},
+        "policy_capable_target_role_counts": {},
         "policy_count": 0,
         "active_policy_count": 0,
         "static_policy_count": 0,
+        "static_local_policy_count": 0,
+        "static_non_local_policy_count": 0,
         "bgp_policy_count": 0,
+        "ttm_preference_count": 0,
+        "binding_sid_count": 0,
+        "srv6_binding_sid_count": 0,
     }
+    observed_role_counts: Counter[str] = Counter()
+    policy_capable_role_counts: Counter[str] = Counter()
     for record in raw_records:
         if record.collection_status == "failure":
             continue
         counts["observed_target_count"] += 1
-        if record.sr_policy_counts.get("ttm-preferences", 0) > 0:
+        role_name = record.role or "unknown"
+        observed_role_counts[role_name] += 1
+        ttm_preferences = record.sr_policy_counts.get("ttm-preferences", 0)
+        if ttm_preferences > 0:
             counts["policy_capable_target_count"] += 1
+            policy_capable_role_counts[role_name] += 1
+        counts["ttm_preference_count"] += ttm_preferences
+        counts["binding_sid_count"] += record.sr_policy_counts.get("binding-sids-allocated", 0)
+        counts["srv6_binding_sid_count"] += record.sr_policy_counts.get(
+            "srv6-binding-sids-allocated", 0
+        )
+        static_local_policies = record.sr_policy_counts.get("static-local-policies", 0)
+        static_non_local_policies = record.sr_policy_counts.get("static-non-local-policies", 0)
         counts["policy_count"] += (
-            record.sr_policy_counts.get("static-local-policies", 0)
-            + record.sr_policy_counts.get("static-non-local-policies", 0)
+            static_local_policies
+            + static_non_local_policies
             + record.sr_policy_counts.get("bgp-policies", 0)
         )
         counts["active_policy_count"] += (
             record.sr_policy_counts.get("active-static-local-policies", 0)
             + record.sr_policy_counts.get("active-bgp-policies", 0)
         )
-        counts["static_policy_count"] += (
-            record.sr_policy_counts.get("static-local-policies", 0)
-            + record.sr_policy_counts.get("static-non-local-policies", 0)
-        )
+        counts["static_policy_count"] += static_local_policies + static_non_local_policies
+        counts["static_local_policy_count"] += static_local_policies
+        counts["static_non_local_policy_count"] += static_non_local_policies
         counts["bgp_policy_count"] += record.sr_policy_counts.get("bgp-policies", 0)
+    counts["observed_target_role_counts"] = dict(sorted(observed_role_counts.items()))
+    counts["policy_capable_target_role_counts"] = dict(sorted(policy_capable_role_counts.items()))
     return counts

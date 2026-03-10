@@ -174,10 +174,17 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
         observed_at="2026-03-09T19:25:08.500000+00:00",
         observed_target_count=34,
         policy_capable_target_count=34,
+        observed_target_role_counts={"cpe": 6, "isp": 2, "noc": 2, "p": 16, "pe": 8},
+        policy_capable_target_role_counts={"cpe": 6, "isp": 2, "noc": 2, "p": 16, "pe": 8},
         policy_count=2,
         active_policy_count=1,
         static_policy_count=2,
+        static_local_policy_count=1,
+        static_non_local_policy_count=1,
         bgp_policy_count=0,
+        ttm_preference_count=476,
+        binding_sid_count=0,
+        srv6_binding_sid_count=0,
         notes=[
             "Policy inventory is currently bounded to live Nokia SR policy counters collected over gNMI.",
             "When static-policy state is exposed, the collector now derives bounded per-policy observations without claiming full SR policy truth.",
@@ -255,10 +262,17 @@ def _build_live_empty_policy_snapshot() -> CollectorPolicySnapshot:
         observed_at="2026-03-09T19:25:08.500000+00:00",
         observed_target_count=34,
         policy_capable_target_count=34,
+        observed_target_role_counts={"cpe": 6, "isp": 2, "noc": 2, "p": 16, "pe": 8},
+        policy_capable_target_role_counts={"cpe": 6, "isp": 2, "noc": 2, "p": 16, "pe": 8},
         policy_count=0,
         active_policy_count=0,
         static_policy_count=0,
+        static_local_policy_count=0,
+        static_non_local_policy_count=0,
         bgp_policy_count=0,
+        ttm_preference_count=476,
+        binding_sid_count=0,
+        srv6_binding_sid_count=0,
         notes=[
             "Policy inventory is currently bounded to live Nokia SR policy counters collected over gNMI.",
             "No SR policies are currently observed across the configured Nokia targets.",
@@ -334,10 +348,17 @@ def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
             observed_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
             observed_target_count=2,
             policy_capable_target_count=2,
+            observed_target_role_counts={"p": 1, "pe": 1},
+            policy_capable_target_role_counts={"p": 1, "pe": 1},
             observed_policy_count=1,
             active_policy_count=1,
             static_policy_count=1,
+            static_local_policy_count=1,
+            static_non_local_policy_count=0,
             bgp_policy_count=0,
+            ttm_preference_count=28,
+            binding_sid_count=0,
+            srv6_binding_sid_count=0,
             notes=["Served from the latest persisted policy snapshot."],
             records=[
                 {
@@ -661,7 +682,24 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["empty_reason"] == "none"
     assert payload["observed_target_count"] == 34
     assert payload["policy_capable_target_count"] == 34
+    assert payload["observed_target_role_counts"] == {
+        "cpe": 6,
+        "isp": 2,
+        "noc": 2,
+        "p": 16,
+        "pe": 8,
+    }
+    assert payload["policy_capable_target_role_counts"] == {
+        "cpe": 6,
+        "isp": 2,
+        "noc": 2,
+        "p": 16,
+        "pe": 8,
+    }
     assert payload["observed_policy_count"] == 2
+    assert payload["static_local_policy_count"] == 1
+    assert payload["static_non_local_policy_count"] == 1
+    assert payload["ttm_preference_count"] == 476
     assert "bounded static-policy observations" in payload["summary"]
     assert payload["items"][0]["policy_type"] == "static_local"
     assert payload["items"][0]["source_target"] == "PE1"
@@ -685,7 +723,9 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     assert payload["count"] == 0
     assert payload["observed_policy_count"] == 0
     assert payload["empty_reason"] == "no_policies_observed"
-    assert "no SR policies are currently observed" in payload["summary"]
+    assert payload["ttm_preference_count"] == 476
+    assert payload["observed_target_role_counts"]["p"] == 16
+    assert "stable counter footprint and target-role coverage" in payload["summary"]
 
 
 def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) -> None:
@@ -703,10 +743,17 @@ def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) 
                 observed_at=None,
                 observed_target_count=0,
                 policy_capable_target_count=0,
+                observed_target_role_counts={},
+                policy_capable_target_role_counts={},
                 policy_count=0,
                 active_policy_count=0,
                 static_policy_count=0,
+                static_local_policy_count=0,
+                static_non_local_policy_count=0,
                 bgp_policy_count=0,
+                ttm_preference_count=0,
+                binding_sid_count=0,
+                srv6_binding_sid_count=0,
                 notes=[],
                 records=[],
                 fetch_error="collector down",
