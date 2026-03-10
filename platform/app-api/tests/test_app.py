@@ -16,6 +16,7 @@ from app_api.main import app
 from app_api.models.inventory import InventoryDevice
 from app_api.metrics.state import reset_metrics_registry
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
+from app_api.persistence.history import PersistedSyncRun
 from app_api.persistence.read_side import (
     PersistedInventorySnapshot,
     PersistedTopologySnapshot,
@@ -228,6 +229,37 @@ def _build_persisted_topology_snapshot() -> PersistedTopologySnapshot:
     )
 
 
+def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
+    return [
+        PersistedSyncRun(
+            sync_run_id="sync-topology-1",
+            model_family="topology",
+            source_type="gnmi_collector_topology",
+            source_endpoint="http://gnmi-collector:9804/topology/snapshot",
+            fetch_status="partial_live_feed",
+            record_count=3,
+            observed_at=datetime.fromisoformat("2026-03-10T01:00:00+00:00"),
+            started_at=datetime.fromisoformat("2026-03-10T01:00:00+00:00"),
+            finished_at=datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
+            persisted_artifacts=["topology_snapshot"],
+            notes=["Topology sync remained intentionally partial."],
+        ),
+        PersistedSyncRun(
+            sync_run_id="sync-inventory-1",
+            model_family="inventory",
+            source_type="gnmi_collector_inventory",
+            source_endpoint="http://gnmi-collector:9804/inventory/snapshot",
+            fetch_status="live_normalized_feed",
+            record_count=34,
+            observed_at=None,
+            started_at=datetime.fromisoformat("2026-03-10T00:30:00+00:00"),
+            finished_at=datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
+            persisted_artifacts=["inventory_snapshot"],
+            notes=["Inventory sync completed from the bounded live path."],
+        ),
+    ]
+
+
 def test_health_endpoint_returns_typed_payload() -> None:
     response = client.get("/api/v1/health", headers={"X-Request-ID": "health-test"})
 
@@ -427,6 +459,76 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert "no SR policies are currently observed" in payload["summary"]
     assert "No SR policies are currently observed" in payload["notes"][1]
     assert datetime.fromisoformat(payload["generated_at"]) is not None
+
+
+def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app_api.services.workflow_history.load_sync_runs",
+        _build_persisted_sync_runs,
+    )
+
+    response = client.get("/api/v1/workflow-history", headers={"X-Request-ID": "workflow-test"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert response.headers["X-Request-ID"] == "workflow-test"
+    assert payload["data_status"] == "persisted_activity_history"
+    assert payload["count"] == 2
+    assert "platform-side read-only sync activity" in payload["summary"]
+    assert payload["items"][0]["workflow_type"] == "read_side_sync"
+    assert payload["items"][0]["workflow_name"] == "topology_snapshot_sync"
+    assert payload["items"][0]["status"] == "partial"
+    assert payload["items"][0]["persisted_artifacts"] == ["topology_snapshot"]
+    assert payload["items"][1]["workflow_name"] == "inventory_snapshot_sync"
+    assert payload["items"][1]["status"] == "completed"
+    assert datetime.fromisoformat(payload["generated_at"]) is not None
+
+
+def test_workflow_history_endpoint_handles_empty_persisted_history(monkeypatch) -> None:
+    monkeypatch.setattr("app_api.services.workflow_history.load_sync_runs", lambda: [])
+
+    response = client.get("/api/v1/workflow-history")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_status"] == "empty"
+    assert payload["count"] == 0
+    assert "No persisted platform-side sync activity" in payload["summary"]
+
+
+def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_sync_runs",
+        _build_persisted_sync_runs,
+    )
+
+    response = client.get("/api/v1/audit-history", headers={"X-Request-ID": "audit-test"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert response.headers["X-Request-ID"] == "audit-test"
+    assert payload["data_status"] == "persisted_activity_history"
+    assert payload["count"] == 2
+    assert "platform-recorded read-side sync events" in payload["summary"]
+    assert payload["items"][0]["event_type"] == "read_side_sync_recorded"
+    assert payload["items"][0]["source"] == "app-api"
+    assert payload["items"][0]["actor"] == "platform_system"
+    assert payload["items"][0]["result"] == "partial"
+    assert payload["items"][0]["correlation_id"] == "sync-topology-1"
+    assert "persisted topology_snapshot" in payload["items"][0]["message"]
+    assert datetime.fromisoformat(payload["generated_at"]) is not None
+
+
+def test_audit_history_endpoint_handles_empty_persisted_history(monkeypatch) -> None:
+    monkeypatch.setattr("app_api.services.audit_history.load_sync_runs", lambda: [])
+
+    response = client.get("/api/v1/audit-history")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_status"] == "empty"
+    assert payload["count"] == 0
+    assert "No persisted platform audit-style sync events" in payload["summary"]
 
 
 def test_capabilities_endpoint_returns_typed_placeholder_capabilities() -> None:
