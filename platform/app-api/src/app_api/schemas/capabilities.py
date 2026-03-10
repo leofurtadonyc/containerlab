@@ -30,6 +30,24 @@ class CapabilityRecord(BaseModel):
         "not_implemented_in_platform",
     ]
     implementation_status: Literal["planned", "placeholder", "partial", "implemented"]
+    delivery_tier: Literal[
+        "delivered_read_only",
+        "bounded_partial_read_only",
+        "future_roadmap",
+        "out_of_scope",
+    ]
+    evidence_basis: Literal[
+        "live_validated",
+        "persisted_validated",
+        "platform_probe",
+        "design_review",
+        "roadmap_only",
+    ]
+    vendor_posture: Literal[
+        "current_nokia_focus",
+        "future_juniper_target",
+        "future_multi_vendor_candidate",
+    ]
     availability_scope: str
     status_detail: str
     caveats: list[str]
@@ -44,4 +62,7 @@ class CapabilitiesListResponse(ApiResponseMetadata):
     count: int
     support_counts: dict[str, int] = Field(default_factory=dict)
     implementation_counts: dict[str, int] = Field(default_factory=dict)
+    delivery_tier_counts: dict[str, int] = Field(default_factory=dict)
+    evidence_basis_counts: dict[str, int] = Field(default_factory=dict)
+    vendor_counts: dict[str, int] = Field(default_factory=dict)
     items: list[CapabilityRecord]

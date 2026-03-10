@@ -1117,20 +1117,26 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
 
     assert response.headers["X-Request-ID"] == "capabilities-test"
     assert payload["data_status"] == "bounded_matrix"
-    assert payload["count"] == 8
-    assert "not-implemented states are now explicit" in payload["summary"]
+    assert payload["count"] == 11
+    assert "delivery tier, and evidence basis are explicit" in payload["summary"]
     assert payload["items"][0]["feature"] == "device_inventory"
     assert payload["items"][0]["domain"] == "inventory"
     assert payload["items"][0]["support_status"] == "supported"
     assert payload["items"][0]["implementation_status"] == "implemented"
+    assert payload["items"][0]["delivery_tier"] == "delivered_read_only"
+    assert payload["items"][0]["evidence_basis"] == "live_validated"
     assert "stable backend-owned contract" in payload["items"][0]["status_detail"]
-    assert payload["support_counts"]["partially_supported"] == 5
+    assert payload["support_counts"]["partially_supported"] == 8
     assert payload["support_counts"]["unknown"] == 1
     assert payload["support_counts"]["not_implemented_in_platform"] == 1
-    assert payload["implementation_counts"]["partial"] == 5
+    assert payload["implementation_counts"]["partial"] == 8
+    assert payload["delivery_tier_counts"]["bounded_partial_read_only"] == 8
+    assert payload["evidence_basis_counts"]["persisted_validated"] == 4
+    assert payload["vendor_counts"]["nokia"] == 10
     assert payload["items"][1]["feature"] == "topology_observation"
-    assert payload["items"][3]["feature"] == "bgp_signaled_policy_detail"
-    assert payload["items"][7]["vendor"] == "juniper"
+    assert payload["items"][2]["feature"] == "topology_persisted_comparison"
+    assert payload["items"][6]["feature"] == "bgp_signaled_policy_detail"
+    assert payload["items"][10]["vendor"] == "juniper"
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 

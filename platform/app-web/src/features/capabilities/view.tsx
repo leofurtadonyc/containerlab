@@ -20,26 +20,62 @@ function describeSupportState(value: string): string {
   }
 }
 
+function describeDeliveryTier(value: string): string {
+  switch (value) {
+    case "delivered_read_only":
+      return "Delivered now as a stable bounded read-only slice.";
+    case "bounded_partial_read_only":
+      return "Delivered now, but intentionally bounded and explicit about remaining gaps.";
+    case "future_roadmap":
+      return "Included to make the roadmap explicit, not to imply delivered support.";
+    default:
+      return "Outside the current delivered Phase 2 product slice.";
+  }
+}
+
+function describeEvidenceBasis(value: string): string {
+  switch (value) {
+    case "live_validated":
+      return "Backed by the current live normalized read path.";
+    case "persisted_validated":
+      return "Backed by persisted normalized records or snapshot comparison evidence.";
+    case "platform_probe":
+      return "Backed by one bounded platform-side probe rather than a full domain read path.";
+    case "roadmap_only":
+      return "Roadmap-only architecture direction with no delivered implementation yet.";
+    default:
+      return "Based on bounded design review rather than delivered runtime validation.";
+  }
+}
+
 export function CapabilitiesView() {
   const { data, error, isLoading, reload } = useCapabilitiesQuery();
+  const [vendorFilter, setVendorFilter] = useState("all");
   const [supportFilter, setSupportFilter] = useState("all");
   const [domainFilter, setDomainFilter] = useState("all");
   const [implementationFilter, setImplementationFilter] = useState("all");
+  const [deliveryTierFilter, setDeliveryTierFilter] = useState("all");
   const [searchValue, setSearchValue] = useState("");
   const [selectedCapabilityKey, setSelectedCapabilityKey] = useState<string | null>(null);
   const items = data?.items ?? [];
+  const vendorCounts = countBy(items, (capability) => capability.vendor);
   const supportCounts = countBy(items, (capability) => capability.support_status);
   const domainCounts = countBy(items, (capability) => capability.domain);
   const implementationCounts = countBy(items, (capability) => capability.implementation_status);
+  const deliveryTierCounts = countBy(items, (capability) => capability.delivery_tier);
+  const evidenceBasisCounts = countBy(items, (capability) => capability.evidence_basis);
   const filteredCapabilities = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
 
     return items.filter((capability) => {
+      const matchesVendor = vendorFilter === "all" || capability.vendor === vendorFilter;
       const matchesSupport =
         supportFilter === "all" || capability.support_status === supportFilter;
       const matchesDomain = domainFilter === "all" || capability.domain === domainFilter;
       const matchesImplementation =
         implementationFilter === "all" || capability.implementation_status === implementationFilter;
+      const matchesDeliveryTier =
+        deliveryTierFilter === "all" || capability.delivery_tier === deliveryTierFilter;
       const matchesSearch =
         normalizedSearch.length === 0 ||
         [
@@ -47,6 +83,9 @@ export function CapabilitiesView() {
           capability.platform,
           capability.domain,
           capability.feature,
+          capability.delivery_tier,
+          capability.evidence_basis,
+          capability.vendor_posture,
           capability.availability_scope,
           capability.status_detail,
           capability.source_of_determination,
@@ -55,9 +94,24 @@ export function CapabilitiesView() {
           .toLowerCase()
           .includes(normalizedSearch);
 
-      return matchesSupport && matchesDomain && matchesImplementation && matchesSearch;
+      return (
+        matchesVendor &&
+        matchesSupport &&
+        matchesDomain &&
+        matchesImplementation &&
+        matchesDeliveryTier &&
+        matchesSearch
+      );
     });
-  }, [domainFilter, implementationFilter, items, searchValue, supportFilter]);
+  }, [
+    deliveryTierFilter,
+    domainFilter,
+    implementationFilter,
+    items,
+    searchValue,
+    supportFilter,
+    vendorFilter,
+  ]);
   const selectedCapability =
     filteredCapabilities.find(
       (capability) =>
@@ -117,6 +171,16 @@ export function CapabilitiesView() {
 
       <div className="summary-grid">
         <article className="summary-card">
+          <p className="summary-label">Nokia Focus Entries</p>
+          <strong>{data.vendor_counts.nokia ?? vendorCounts.nokia ?? 0}</strong>
+          <p>Current delivered or planned records tied to the present Nokia-first platform focus.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Juniper Roadmap Entries</p>
+          <strong>{data.vendor_counts.juniper ?? vendorCounts.juniper ?? 0}</strong>
+          <p>Future-target records kept explicit without implying delivered parity.</p>
+        </article>
+        <article className="summary-card">
           <p className="summary-label">Supported</p>
           <strong>{data.support_counts.supported ?? supportCounts.supported ?? 0}</strong>
           <p>Capabilities the platform can currently claim as supported.</p>
@@ -142,6 +206,24 @@ export function CapabilitiesView() {
           </strong>
           <p>Explicit roadmap items that remain outside delivered platform support.</p>
         </article>
+        <article className="summary-card">
+          <p className="summary-label">Delivered Read-Only</p>
+          <strong>
+            {data.delivery_tier_counts.delivered_read_only ??
+              deliveryTierCounts.delivered_read_only ??
+              0}
+          </strong>
+          <p>Stable read-only slices the platform can claim as delivered today.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Bounded Partial Read-Only</p>
+          <strong>
+            {data.delivery_tier_counts.bounded_partial_read_only ??
+              deliveryTierCounts.bounded_partial_read_only ??
+              0}
+          </strong>
+          <p>Delivered slices that stay intentionally explicit about gaps and limits.</p>
+        </article>
       </div>
 
       <div className="toolbar">
@@ -152,6 +234,14 @@ export function CapabilitiesView() {
             onChange={(event) => setSearchValue(event.target.value)}
             placeholder="vendor, platform, feature, or source"
           />
+        </label>
+        <label className="field-group">
+          <span>Vendor</span>
+          <select value={vendorFilter} onChange={(event) => setVendorFilter(event.target.value)}>
+            <option value="all">All</option>
+            <option value="nokia">Nokia</option>
+            <option value="juniper">Juniper</option>
+          </select>
         </label>
         <label className="field-group">
           <span>Support state</span>
@@ -195,6 +285,19 @@ export function CapabilitiesView() {
             <option value="placeholder">Placeholder</option>
           </select>
         </label>
+        <label className="field-group">
+          <span>Delivery tier</span>
+          <select
+            value={deliveryTierFilter}
+            onChange={(event) => setDeliveryTierFilter(event.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="delivered_read_only">Delivered read-only</option>
+            <option value="bounded_partial_read_only">Bounded partial read-only</option>
+            <option value="future_roadmap">Future roadmap</option>
+            <option value="out_of_scope">Out of scope</option>
+          </select>
+        </label>
       </div>
 
       {data.support_counts.not_implemented_in_platform ? (
@@ -211,6 +314,10 @@ export function CapabilitiesView() {
         <article className="detail-card">
           <p className="summary-label">Current Matrix Posture</p>
           <ul className="compact-list">
+            <li>
+              <span>Vendors represented</span>
+              <strong>{Object.keys(vendorCounts).length}</strong>
+            </li>
             <li>
               <span>Domains represented</span>
               <strong>{Object.keys(domainCounts).length}</strong>
@@ -235,6 +342,14 @@ export function CapabilitiesView() {
                 {data.implementation_counts.planned ?? implementationCounts.planned ?? 0}
               </strong>
             </li>
+            <li>
+              <span>Roadmap-only delivery tiers</span>
+              <strong>
+                {data.delivery_tier_counts.future_roadmap ??
+                  deliveryTierCounts.future_roadmap ??
+                  0}
+              </strong>
+            </li>
           </ul>
         </article>
         <article className="detail-card">
@@ -249,6 +364,50 @@ export function CapabilitiesView() {
             make a stronger claim. `not implemented` marks roadmap intent without
             implying parity.
           </p>
+          <p>
+            `delivery tier` answers whether the slice is delivered now, delivered but
+            intentionally bounded, or still roadmap-only. `evidence basis` answers
+            whether the claim is backed by live reads, persisted evidence, a bounded
+            platform probe, or only design/roadmap review.
+          </p>
+        </article>
+        <article className="detail-card">
+          <p className="summary-label">Evidence Basis Mix</p>
+          <ul className="compact-list">
+            <li>
+              <span>Live validated</span>
+              <strong>
+                {data.evidence_basis_counts.live_validated ??
+                  evidenceBasisCounts.live_validated ??
+                  0}
+              </strong>
+            </li>
+            <li>
+              <span>Persisted validated</span>
+              <strong>
+                {data.evidence_basis_counts.persisted_validated ??
+                  evidenceBasisCounts.persisted_validated ??
+                  0}
+              </strong>
+            </li>
+            <li>
+              <span>Platform probe</span>
+              <strong>
+                {data.evidence_basis_counts.platform_probe ??
+                  evidenceBasisCounts.platform_probe ??
+                  0}
+              </strong>
+            </li>
+            <li>
+              <span>Design or roadmap only</span>
+              <strong>
+                {(data.evidence_basis_counts.design_review ?? evidenceBasisCounts.design_review ?? 0) +
+                  (data.evidence_basis_counts.roadmap_only ??
+                    evidenceBasisCounts.roadmap_only ??
+                    0)}
+              </strong>
+            </li>
+          </ul>
         </article>
       </div>
 
@@ -273,6 +432,7 @@ export function CapabilitiesView() {
                   <th>Feature</th>
                   <th>Support</th>
                   <th>Implementation</th>
+                  <th>Delivery tier</th>
                   <th>Source</th>
                 </tr>
               </thead>
@@ -312,6 +472,7 @@ export function CapabilitiesView() {
                       <td>
                         <StatusPill value={capability.implementation_status} />
                       </td>
+                      <td>{formatLabel(capability.delivery_tier)}</td>
                       <td>{capability.source_of_determination}</td>
                     </tr>
                   );
@@ -346,6 +507,18 @@ export function CapabilitiesView() {
                   <strong>{formatLabel(selectedCapability.implementation_status)}</strong>
                 </div>
                 <div className="key-value-row">
+                  <span>Delivery tier</span>
+                  <strong>{formatLabel(selectedCapability.delivery_tier)}</strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Evidence basis</span>
+                  <strong>{formatLabel(selectedCapability.evidence_basis)}</strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Vendor posture</span>
+                  <strong>{formatLabel(selectedCapability.vendor_posture)}</strong>
+                </div>
+                <div className="key-value-row">
                   <span>Availability Scope</span>
                   <strong>{selectedCapability.availability_scope}</strong>
                 </div>
@@ -356,6 +529,14 @@ export function CapabilitiesView() {
                 <div className="key-value-row">
                   <span>Support Meaning</span>
                   <strong>{describeSupportState(selectedCapability.support_status)}</strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Delivery Meaning</span>
+                  <strong>{describeDeliveryTier(selectedCapability.delivery_tier)}</strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Evidence Meaning</span>
+                  <strong>{describeEvidenceBasis(selectedCapability.evidence_basis)}</strong>
                 </div>
                 <div className="key-value-row">
                   <span>Source</span>

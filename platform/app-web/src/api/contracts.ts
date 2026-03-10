@@ -307,6 +307,21 @@ export interface CapabilityRecord {
     | "unknown"
     | "not_implemented_in_platform";
   implementation_status: "planned" | "placeholder" | "partial" | "implemented";
+  delivery_tier:
+    | "delivered_read_only"
+    | "bounded_partial_read_only"
+    | "future_roadmap"
+    | "out_of_scope";
+  evidence_basis:
+    | "live_validated"
+    | "persisted_validated"
+    | "platform_probe"
+    | "design_review"
+    | "roadmap_only";
+  vendor_posture:
+    | "current_nokia_focus"
+    | "future_juniper_target"
+    | "future_multi_vendor_candidate";
   availability_scope: string;
   status_detail: string;
   caveats: string[];
@@ -319,5 +334,8 @@ export interface CapabilitiesListResponse extends ApiResponseMetadata {
   count: number;
   support_counts: Record<string, number>;
   implementation_counts: Record<string, number>;
+  delivery_tier_counts: Record<string, number>;
+  evidence_basis_counts: Record<string, number>;
+  vendor_counts: Record<string, number>;
   items: CapabilityRecord[];
 }
