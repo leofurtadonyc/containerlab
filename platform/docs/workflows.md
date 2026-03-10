@@ -6,11 +6,11 @@ This document describes the workflow direction for the platform and the safety r
 
 ## Current Status
 
-Workflows are not the primary implementation target in Phase 1.
+Workflows are not the primary implementation target in the current Phase 2 read-only foundation.
 
 Current reality:
 
-- the platform is focused on structure, documentation, read-oriented scaffolding, and normalized model direction
+- the platform is focused on read-only product usefulness, bounded history visibility, and honest evidence rather than change execution
 - broad action workflows are intentionally deferred
 - no workflow engine has been implemented yet
 
@@ -24,12 +24,21 @@ The workflow path must remain staged.
 
 Focus:
 
+- structure and architecture foundation
+- service and topology scaffolding
+- normalized model direction
+
+### Phase 2
+
+Focus:
+
 - read-only visibility
 - inventory and topology understanding
 - policy visibility
 - health visibility
+- bounded workflow-history and audit-history visibility derived from sync activity
 
-### Phase 2
+### Phase 3
 
 Focus:
 
@@ -37,7 +46,7 @@ Focus:
 - validation-only operations
 - preview and diff views
 
-### Phase 3
+### Phase 4
 
 Focus:
 
@@ -78,6 +87,7 @@ Workflow ownership does not belong to:
 
 - workflow model direction is documented
 - placeholder dashboard family exists for change validation observability
+- bounded workflow-history and audit-history product views now exist, but they are derived from persisted sync activity rather than an execution workflow engine
 - no actual dry-run or action workflow implementation exists
 
 ### Future

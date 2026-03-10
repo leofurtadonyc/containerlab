@@ -175,7 +175,7 @@ Current state:
 - datasource provisioning exists
 - dashboard provisioning exists
 - real platform, topology, and SR policy dashboards now exist for current `app-api`, `gnmi-collector`, and Prometheus-backed observability
-- those dashboards now surface richer Week 3 evidence such as sync freshness, persisted sync results, topology agreement signals, and honest live-empty policy context where available
+- those dashboards now surface richer current evidence such as sync freshness, persisted sync results, topology agreement signals, bounded persisted policy sync evidence, and honest live-empty policy context where available
 - placeholder dashboards still exist for the remaining required dashboard families
 
 ### `odl`

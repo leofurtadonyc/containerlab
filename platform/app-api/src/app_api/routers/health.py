@@ -11,5 +11,5 @@ router = APIRouter(tags=["health"])
 
 @router.get("/health", response_model=HealthResponse)
 def get_health() -> HealthResponse:
-    """Return a minimal typed health response for Phase 1."""
+    """Return a minimal typed health response for Phase 2."""
     return build_health_response()

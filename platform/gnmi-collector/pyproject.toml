@@ -1,7 +1,7 @@
 [project]
 name = "platform-gnmi-collector"
 version = "0.1.0"
-description = "Phase 1 gNMI collector skeleton for the platform."
+description = "Phase 2 gNMI collector foundation for the platform."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

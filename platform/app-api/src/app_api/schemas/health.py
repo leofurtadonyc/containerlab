@@ -6,6 +6,6 @@ from app_api.schemas.common import ApiResponseMetadata
 
 
 class HealthResponse(ApiResponseMetadata):
-    """Minimal Phase 1 health contract."""
+    """Minimal Phase 2 health contract."""
 
     status: Literal["ok"]

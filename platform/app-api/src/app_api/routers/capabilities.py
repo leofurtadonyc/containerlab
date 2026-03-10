@@ -11,5 +11,5 @@ router = APIRouter(tags=["capabilities"])
 
 @router.get("/capabilities", response_model=CapabilitiesListResponse)
 def list_capabilities() -> CapabilitiesListResponse:
-    """Return the Phase 1 capability scaffold."""
+    """Return the Phase 2 bounded capability matrix."""
     return build_capabilities_list_response()

@@ -11,5 +11,5 @@ router = APIRouter(tags=["devices"])
 
 @router.get("/devices", response_model=DevicesListResponse)
 def list_devices() -> DevicesListResponse:
-    """Return the Phase 1 device inventory scaffold."""
+    """Return the Phase 2 device inventory response."""
     return build_devices_list_response()

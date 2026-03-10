@@ -1,7 +1,7 @@
 [project]
 name = "platform-app-api"
 version = "0.1.0"
-description = "Phase 1 backend skeleton for the platform app-api service."
+description = "Phase 2 read-only backend foundation for the platform app-api service."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
