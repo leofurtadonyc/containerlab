@@ -24,7 +24,7 @@ The platform requires persistent, queryable application state that is separate f
 - ports: 5432
 - env vars: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
 - mounts: `./postgres/init:/docker-entrypoint-initdb.d`
-- persistence: the current topology skeleton only binds init scripts; durable data storage is still to be refined
+- persistence: the current topology binds init scripts and now stores bounded application data in the running Postgres container, but a host-mounted data directory is still not configured
 - dependencies: none
 
 ## Integration points
@@ -42,3 +42,4 @@ Initial database direction exists, including a minimal init SQL bootstrap script
 
 ## Notes and caveats
 Postgres is the application state store. It is not a metrics database. Keep schema normalized and migration-managed from the start.
+Current durability is bounded: persisted inventory/topology snapshots and sync-run history survive normal service reads and restarts within the running deployment, but they are not yet hardened across full platform reprovisioning because host-backed Postgres data persistence is still pending.

@@ -28,7 +28,7 @@ The platform requires a single authoritative source of business logic. The backe
 - ports: 8000 for the versioned API and `/metrics`
 - env vars: `API_PORT`, `DATABASE_URL`, `ODL_URL`, and `PROMETHEUS_URL` placeholders in the current topology skeleton
 - mounts: `./app-api:/app`, `./shared:/app/shared`, `./schemas:/app/schemas`
-- persistence: uses Postgres
+- persistence: writes bounded normalized inventory and topology snapshots plus sync-run records to Postgres; policy remains transient at the backend read-side today
 - dependencies: Postgres, `gnmi-collector`, and optional ODL integration
 
 ## Integration points
@@ -49,3 +49,5 @@ Initial backend skeleton exists with a FastAPI application entrypoint, a version
 The backend is the only service that writes to Postgres. Keep it as the single source of truth for application state.
 The current topology and policy read models are intentionally bounded and honest: they provide stable product-owned contracts, but they do not yet claim live operational completeness, deep path computation, or workflow-grade policy semantics.
 Inventory and topology now persist normalized snapshot records and sync-run history in Postgres, and the API may fall back to the latest persisted snapshot when the live collector path is temporarily unavailable.
+The current backend metrics path remains transient and in-memory for scrape safety. Those metrics are observability signals, not durable product records.
+The current topology does not yet mount a host-backed Postgres data directory, so persisted read-side state is durable within the running deployment but not yet hardened across full platform reprovisioning.

@@ -99,6 +99,13 @@ Postgres is the durable application database.
 
 It is intended to store platform state such as normalized records, workflow history, audit history, capability records, and other application data that should not live in Prometheus.
 
+Current bounded reality:
+
+- normalized inventory snapshots are now persisted
+- normalized topology snapshots and sync-run history are now persisted
+- policy, workflow, audit, and broader durable state remain partial or unimplemented
+- the current topology still lacks host-backed Postgres data storage, so persistence is real within the running deployment but not yet hardened across full reprovisioning
+
 ## Vendor Strategy
 
 The current architecture stance is:
@@ -126,12 +133,13 @@ Right now, the emphasis is on:
 - topology skeletons
 - provisioning skeletons
 - backend, frontend, collector, and schema scaffolding
+- honest distinction between durable read-side truth and transient read-side behavior
 
 At this stage, contributors should assume:
 
 - the architecture direction is defined
 - the platform structure is established enough to support a read-only product foundation
-- several services still expose bounded scaffolds rather than mature live behavior
+- several services still expose bounded live slices and partial persistence rather than mature end-state behavior
 - read-only visibility comes before advanced workflows
 - broad action automation is intentionally deferred
 
@@ -146,10 +154,11 @@ At this stage, contributors should assume:
 - schema and shared-directory scaffolding
 - read-only inventory, topology, policy, capability, and platform status APIs
 - read-only WebUI pages backed by stable backend contracts
+- bounded Postgres-backed persistence for inventory and topology snapshots plus sync-run history
 
 ### Planned Later
 
-- live collector-to-backend normalized data flow beyond the current bounded placeholder path
+- broader durable read-side persistence beyond the current inventory/topology snapshot slice
 - bounded ODL integration paths
 - dry-run workflow support
 - one narrowly scoped safe action workflow only after the read/validate foundation is solid

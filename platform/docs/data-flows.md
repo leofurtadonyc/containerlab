@@ -29,6 +29,27 @@ It does not yet include:
 
 This document therefore explains the current flow direction honestly, including which paths are useful today and which remain scaffolded.
 
+## Persisted Vs Transient
+
+At the current stage, the platform uses both durable and transient read-side behavior.
+
+Persisted today:
+
+- normalized inventory snapshots written by `app-api` to Postgres
+- normalized topology snapshots, node records, and link records written by `app-api` to Postgres
+- sync-run records for those bounded inventory and topology persistence writes
+
+Transient today:
+
+- live collector responses fetched over HTTP from `gnmi-collector`
+- policy inventory served from the current bounded live collector slice
+- in-memory metrics caches inside `app-api` and `gnmi-collector`
+- frontend UI state in `app-web`
+
+Important current limitation:
+
+- the Postgres service does not yet have a host-mounted data directory in the current topology, so persisted state survives normal in-deployment reads and fallback behavior, but it is not yet hardened across full reprovisioning of the platform lab
+
 ## Deployment And Integration Model
 
 The platform and the labs are deployed separately.
@@ -98,10 +119,12 @@ Boundary rules:
 Current state:
 
 - backend health and metrics endpoints exist
-- versioned read-only inventory, topology, policy, capability, and platform status endpoints now exist as scaffolds
+- versioned read-only inventory, topology, policy, capability, and platform status endpoints now exist as bounded live product contracts
 - the current inventory API is fed by a bounded normalized live collector contract
 - the current topology API is fed by a backend-owned normalized live read model that explicitly marks partial and unknown state
 - the current policy API is fed by a backend-owned normalized live read model that explicitly marks support, observed, and unknown state
+- inventory and topology may be served from the latest persisted normalized snapshot if the live collector boundary is temporarily unavailable
+- policy remains a transient read-side view at the backend boundary today and is not yet backed by Postgres persistence
 - useful frontend read-only pages now consume those stable contracts for overview, platform health, devices, topology, policies, and capabilities
 
 ## Topology Read-Model Limitations
@@ -130,6 +153,7 @@ What is real today:
 - the policies API returns a stable platform-owned structure for policy inventory
 - intended, observed, support, and health states are explicit
 - candidate paths are represented in a normalized form rather than as vendor-native payloads
+- the backend exposes current live policy observations, but it does not yet persist policy inventory to Postgres
 
 What remains partial:
 
@@ -219,6 +243,8 @@ Current state:
 - Alembic scaffolding exists
 - the backend now persists bounded normalized inventory snapshots, normalized topology snapshots, and sync-run records
 - devices and topology can fall back to the latest persisted normalized snapshot if the live collector boundary is temporarily unavailable
+- the current persisted slice is deployment-local because the topology has not yet added a host-mounted Postgres data directory
+- policy inventory, workflow history, audit history, and broader intent models remain transient or unimplemented rather than durably stored
 - broader domain persistence logic is still pending
 
 ## Flow Summary By Consumer
@@ -250,12 +276,12 @@ Current state:
 - bounded normalized inventory, topology, and policy integrations now connect the collector shape to the backend read paths
 - backend-owned normalized topology and policy read models now exist as stable live API slices with explicit partial and unknown states
 - observability scaffolding exists
-- bounded persistence direction is explicit and now partially implemented for inventory and topology snapshots
+- bounded persistence direction is explicit and now partially implemented for inventory and topology snapshots, while policy remains transient at the current read-side boundary
 
 ### Future
 
-- real normalized ingestion from collector to backend
 - backend persistence of inventory, topology, and policy-oriented records
+- harder durability across full platform reprovisioning
 - richer frontend product pages for workflow history, audit history, and deeper read-oriented exploration
 - ODL-backed enrichment where justified
 - later dry-run and workflow-related data paths

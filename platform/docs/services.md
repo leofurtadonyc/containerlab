@@ -6,14 +6,14 @@ This document describes the major platform services, what each one owns, what ea
 
 ## Current Status
 
-The platform now has service directories, service READMEs, a platform topology skeleton, observability scaffolding, a backend skeleton, a collector skeleton, and Postgres migration direction.
+The platform now has service directories, service READMEs, a platform topology skeleton, observability scaffolding, a backend skeleton, a collector skeleton, and bounded Postgres-backed read-side persistence for inventory and topology snapshots.
 
 What still remains incomplete:
 
 - deeper frontend product coverage for workflow and audit-oriented areas
 - deeper normalized shared model and schema implementation beyond the current scaffolding
 - read-only domain APIs beyond the current health, platform status, devices, topology, policies, and capabilities slice
-- real collector-to-backend delivery
+- durable persistence for every intended product domain
 - bounded ODL-backed data handling
 
 This document therefore focuses on boundaries and intended roles more than deep implementation detail.
@@ -64,7 +64,9 @@ Current state:
 - FastAPI skeleton exists
 - typed health endpoint exists
 - bounded HTTP request and latency metrics now exist at `/metrics`
-- Alembic scaffolding exists
+- live bounded inventory, topology, and policy integrations now exist from the collector boundary into backend read paths
+- Alembic-managed persistence now exists for normalized inventory snapshots, normalized topology snapshots, and sync-run history
+- devices and topology can fall back to the latest persisted normalized snapshot when the collector boundary is temporarily unavailable
 
 ### `gnmi-collector`
 
@@ -91,8 +93,9 @@ What it must not own:
 Current state:
 
 - Python skeleton exists
-- bounded inventory collection, normalization, and backend-readiness metrics now exist at `/metrics`
-- Nokia-first adapter placeholder exists
+- bounded live inventory, topology, and policy snapshot delivery now exists for `app-api`
+- bounded inventory, topology, and policy collection and backend-readiness metrics now exist at `/metrics`
+- Nokia-first adapter path exists
 - mapping and config scaffolding exist
 
 ### `postgres`
@@ -116,7 +119,9 @@ Current state:
 
 - init SQL bootstrap exists
 - migration direction is documented
-- Alembic scaffolding is owned by `app-api`
+- Alembic ownership lives in `app-api`
+- the first bounded persisted schema now exists for inventory snapshots, topology snapshots, and sync-run records
+- current durability is deployment-local because a host-mounted Postgres data directory is not yet configured
 
 ### `prometheus`
 
@@ -253,13 +258,14 @@ The following boundaries are non-negotiable:
 - backend and collector skeletons exist
 - backend read-only APIs and frontend read-only pages now exist as a useful initial product slice
 - observability scaffolding exists
-- database direction is explicit
+- live collector-to-backend read delivery is real for the current bounded slices
+- database direction is explicit and partially implemented
 
 ### Future
 
 - richer backend domain modules
 - shared normalized model families
-- real collector-to-backend delivery
+- broader durable domain persistence
 - workflow and audit-oriented frontend views
 - bounded ODL-backed enrichment where useful
 - later workflow and validation logic

@@ -13,12 +13,13 @@ The platform now has:
 - service READMEs and topology scaffolding
 - Prometheus and Grafana provisioning skeletons
 - backend, collector, frontend, and database-direction scaffolding
+- a first bounded persistence-backed read-side slice for inventory and topology snapshots
 
 What remains incomplete:
 
 - substantive ODL integration
-- real collector-to-backend delivery
-- live-backed read-only domain APIs beyond the current health, platform status, devices, topology, policies, and capabilities scaffolds
+- durable persistence for every intended product domain
+- richer live-backed read-only domain APIs beyond the current health, platform status, devices, topology, policies, and capabilities slice
 - deeper read-only product pages backed by more live operational evidence
 
 This document therefore focuses on architectural shape and service boundaries rather than final implementation depth.
@@ -90,10 +91,13 @@ It owns:
 
 Current read-model reality:
 
-- `/api/v1/devices` is backed by a bounded normalized collector inventory placeholder contract, not by live collector transport
-- `/api/v1/topology` is backed by a backend-owned normalized topology model that explicitly marks partial and unknown knowledge
-- `/api/v1/policies` is backed by a backend-owned normalized policy inventory model that explicitly marks support, observed, and unknown states
-- these are stable product-owned contracts, but they are still Phase 1 scaffolds rather than mature operational truth
+- `/api/v1/devices` is backed by a bounded normalized live collector inventory path
+- `/api/v1/topology` is backed by a backend-owned normalized live topology model that explicitly marks partial and unknown knowledge
+- `/api/v1/policies` is backed by a backend-owned normalized live policy inventory model that explicitly marks support, observed, and unknown states
+- inventory and topology snapshots are now persisted in Postgres along with sync-run records, and the API can fall back to the latest persisted normalized snapshot when the collector path is temporarily unavailable
+- policy inventory remains transient at the backend read-side today; it is served from the current collector-backed slice and is not yet persisted
+- backend metrics remain transient in-memory service state for Prometheus scraping; they are not durable application records
+- these are stable product-owned contracts, but they remain bounded read-side slices rather than mature operational truth
 
 ### `app-web`
 
@@ -124,6 +128,14 @@ It owns:
 Postgres is the durable application data store.
 
 It is for business and product state, not time-series metrics.
+
+Current persistence boundary:
+
+- normalized inventory snapshots are persisted
+- normalized topology snapshots are persisted
+- sync-run history for those persisted read-side writes is persisted
+- policy, workflow, audit, and broader intent/history domains are not yet persisted in this phase
+- the current topology still lacks a host-mounted Postgres data directory, so persisted state is durable within the running deployment but not yet hardened across full reprovisioning
 
 ### `prometheus`
 
@@ -194,15 +206,16 @@ These boundaries remain non-negotiable:
 - service topology exists
 - runtime boundaries are documented
 - backend and collector skeletons exist
-- read-only devices, topology, policies, capabilities, and platform status APIs now exist as backend-owned normalized scaffolds
+- read-only devices, topology, policies, capabilities, and platform status APIs now exist as backend-owned normalized bounded live contracts
 - useful read-only frontend pages now consume those stable backend contracts
 - observability scaffolding exists
-- database direction is established
+- database direction is established and bounded persistence is now real for inventory/topology snapshots plus sync-run history
 - ODL integration is documented and scaffolded, but not substantively implemented
 
 ### Future
 
 - richer live-backed read-only product APIs
+- broader durable read-side coverage beyond the current inventory/topology snapshot slice
 - richer frontend read views backed by deeper backend data and future history-oriented endpoints
 - bounded ODL-backed enrichment where useful
 - dry-run and validation flows later

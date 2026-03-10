@@ -6,7 +6,7 @@ This directory documents the database migration direction for the platform.
 
 The durable application database is PostgreSQL.
 
-Migration ownership lives with the backend service under `platform/app-api/alembic/`, where Alembic scaffolding now exists.
+Migration ownership lives with the backend service under `platform/app-api/alembic/`, where the first real bounded migration now exists.
 
 This `platform/postgres/migrations/` directory remains useful for:
 
@@ -14,14 +14,15 @@ This `platform/postgres/migrations/` directory remains useful for:
 - holding database-specific notes
 - keeping platform-level persistence intent visible
 
-## Phase 1 status
+## Current status
 
 At this stage:
 
 - the database direction is established
 - a minimal init SQL script exists under `platform/postgres/init/`
-- Alembic scaffolding exists under `platform/app-api/alembic/`
-- no production schema has been fully implemented yet
+- Alembic migrations exist under `platform/app-api/alembic/`
+- the first bounded production schema now exists for normalized inventory snapshots, normalized topology snapshots, and sync-run records
+- policy, workflow, audit, and broader intent-oriented persistence remain intentionally outside the current implemented slice
 
 ## Expected schema domains
 
@@ -47,3 +48,7 @@ It must not become:
 - the metrics store
 - a raw vendor blob dump
 - a replacement for Prometheus
+
+Current caveat:
+
+- the current topology does not yet mount a host-backed Postgres data directory, so persistence is real within the running deployment but not yet hardened across full platform reprovisioning

@@ -24,16 +24,16 @@ The platform must observe live device state without hard-coding vendor assumptio
 - ports: 9804 for metrics; additional runtime ports are TBD
 - env vars: `COLLECTOR_METRICS_PORT`, `APP_API_URL`, and `GNMI_CONFIG_PATH` placeholders in the current topology skeleton
 - mounts: `./gnmi-collector/configs:/app/configs`, `./shared:/app/shared`
-- persistence: none — stateless observer
+- persistence: none — stateless observer; all durable read-side storage is owned by `app-api` through Postgres
 - dependencies: `app-api`
 
 ## Integration points
 - subscribes to gNMI streams on lab device management interfaces
-- will send normalized outputs to `app-api` through a bounded integration path
+- sends normalized outputs to `app-api` through bounded inventory, topology, and policy snapshot routes
 - exposes `/metrics` for Prometheus scraping
 
 ## Current status
-Initial collector skeleton exists with a Python application entrypoint, an inventory-oriented runtime config scaffold, explicit adapter and mapping package layout, a Nokia-first inventory adapter scaffold, placeholder normalization and backend-delivery preparation for inventory records, and a bounded metrics endpoint exposing inventory target counts, collection success/failure, normalization outcomes, and backend-delivery readiness.
+The collector now exposes bounded live normalized inventory, topology, and policy snapshot routes for `app-api`, a Python application entrypoint, explicit adapter and mapping package layout, a Nokia-first gNMI collection path, and a bounded metrics endpoint exposing inventory, topology, and policy collection health plus backend-readiness signals.
 
 ## Planned evolution
 - explicit normalization layers for inventory, topology, and policy-adjacent state
@@ -42,3 +42,4 @@ Initial collector skeleton exists with a Python application entrypoint, an inven
 
 ## Notes and caveats
 The collector is Nokia-first but must not be Nokia-bound. All vendor-specific normalization logic must live in named adapter modules. The core collector pipeline must remain vendor-neutral.
+The collector is intentionally transient. It provides current observed-state slices and observability signals, but it does not become the durable system of record.
