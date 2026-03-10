@@ -12,6 +12,7 @@ The platform currently has:
 - a provisioned Prometheus datasource
 - dashboard folder structure for the required dashboard families
 - a real platform overview dashboard backed by Prometheus scrape health plus current `app-api` and `gnmi-collector` metrics
+- real topology and SR policy overview dashboards backed by current Prometheus metrics for those bounded live slices
 - clearly marked placeholder dashboard files for the dashboard families that do not yet have real backing metrics
 
 What does not exist yet:
@@ -193,7 +194,7 @@ Dashboard design should therefore assume Prometheus-backed metrics first, with a
 
 - provisioning files exist
 - dashboard family folders exist
-- the platform family now includes a real Prometheus-backed dashboard for the services that expose meaningful metrics today
+- the platform, topology, and SR policy families now include real Prometheus-backed dashboards for the services that expose meaningful metrics today
 - placeholder dashboards still exist for families whose underlying metrics are not yet real
 - the platform observability shape is documented
 

@@ -34,6 +34,8 @@ class CachedPolicyMetrics:
     bgp_policy_count: int = 0
     observed_target_count: int = 0
     policy_capable_target_count: int = 0
+    health_state_counts: dict[str, int] = field(default_factory=dict)
+    support_state_counts: dict[str, int] = field(default_factory=dict)
     data_status: str = "unknown"
     sync_status: str = "unknown"
     completeness: str = "unknown"
@@ -98,6 +100,8 @@ def cache_policy_metrics(
     bgp_policy_count: int,
     observed_target_count: int,
     policy_capable_target_count: int,
+    health_state_counts: dict[str, int],
+    support_state_counts: dict[str, int],
     data_status: str,
     sync_status: str,
     completeness: str,
@@ -112,6 +116,8 @@ def cache_policy_metrics(
             bgp_policy_count=bgp_policy_count,
             observed_target_count=observed_target_count,
             policy_capable_target_count=policy_capable_target_count,
+            health_state_counts=dict(health_state_counts),
+            support_state_counts=dict(support_state_counts),
             data_status=data_status,
             sync_status=sync_status,
             completeness=completeness,
@@ -279,6 +285,47 @@ def render_prometheus_metrics(
                     f'sync_status="{policy_metrics["sync_status"]}",'
                     f'completeness="{policy_metrics["completeness"]}"}} 1'
                 ),
+                (
+                    "# HELP platform_app_api_policy_records_by_health "
+                    "Current normalized policy record counts by health state."
+                ),
+                "# TYPE platform_app_api_policy_records_by_health gauge",
+                *[
+                    (
+                        "platform_app_api_policy_records_by_health"
+                        f'{{state="{state}"}} {count}'
+                    )
+                    for state, count in sorted(
+                        {
+                            "healthy": 0,
+                            "degraded": 0,
+                            "down": 0,
+                            "unknown": 0,
+                            **dict(policy_metrics.get("health_state_counts", {})),
+                        }.items()
+                    )
+                ],
+                (
+                    "# HELP platform_app_api_policy_records_by_support_state "
+                    "Current normalized policy record counts by support state."
+                ),
+                "# TYPE platform_app_api_policy_records_by_support_state gauge",
+                *[
+                    (
+                        "platform_app_api_policy_records_by_support_state"
+                        f'{{state="{state}"}} {count}'
+                    )
+                    for state, count in sorted(
+                        {
+                            "supported": 0,
+                            "partially_supported": 0,
+                            "unsupported": 0,
+                            "unknown": 0,
+                            "not_implemented_in_platform": 0,
+                            **dict(policy_metrics.get("support_state_counts", {})),
+                        }.items()
+                    )
+                ],
             ]
         )
 

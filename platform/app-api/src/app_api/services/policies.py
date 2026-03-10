@@ -1,5 +1,6 @@
 """Policy inventory service helpers."""
 
+from collections import Counter
 from datetime import UTC, datetime
 
 from app_api.config.settings import get_settings
@@ -142,6 +143,8 @@ def build_policies_list_response() -> PoliciesListResponse:
         bgp_policy_count=snapshot.bgp_policy_count,
         observed_target_count=snapshot.observed_target_count,
         policy_capable_target_count=snapshot.policy_capable_target_count,
+        health_state_counts=dict(Counter(policy.health_state for policy in items)),
+        support_state_counts=dict(Counter(policy.support_state for policy in items)),
         data_status=data_status,
         sync_status=snapshot.sync_status,
         completeness=snapshot.completeness,

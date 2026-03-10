@@ -39,6 +39,8 @@ def get_metrics() -> Response:
             "bgp_policy_count": policies.bgp_policy_count,
             "observed_target_count": policies.observed_target_count,
             "policy_capable_target_count": policies.policy_capable_target_count,
+            "health_state_counts": policies.health_state_counts,
+            "support_state_counts": policies.support_state_counts,
             "data_status": policies.data_status,
             "sync_status": policies.sync_status,
             "completeness": policies.completeness,

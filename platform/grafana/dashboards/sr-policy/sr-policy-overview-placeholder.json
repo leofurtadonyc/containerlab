@@ -6,21 +6,549 @@
   "graphTooltip": 0,
   "panels": [
     {
-      "collapsed": false,
       "gridPos": {
-        "h": 8,
+        "h": 5,
         "w": 24,
         "x": 0,
         "y": 0
       },
       "id": 1,
       "options": {
-        "content": "## SR Policy Overview Placeholder\nThis dashboard family will answer: how many policies are active, degraded, or down, where policy validation is failing, and whether intended and observed policy state are drifting.\n\nCurrent state: placeholder only. Real SR policy metrics and validation views are deferred until those platform capabilities exist.",
+        "content": "## SR Policy Observability Overview\nThis dashboard summarizes the current bounded SR policy slice exposed by the platform. It focuses on real Prometheus-backed evidence: collector policy ingestion health, backend policy snapshot readiness, and the currently observed policy counts carried into the product.\n\nCurrent limits:\n- The live policy slice is currently bounded to Nokia SR policy counters rather than full per-policy truth.\n- A zero-policy view can still be healthy; live-empty state is explicit and should not be confused with a placeholder response.\n- Grafana remains observability-only. Policy exploration and future action flows stay in the WebUI and backend.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
       "title": "Dashboard Scope",
       "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 2,
+      "panels": [],
+      "title": "Policy Health Signals",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "Down"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "Up"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 6
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "max(up{job=\"app-api\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "App API Scrape Health",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "Down"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "Up"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 4,
+        "y": 6
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "max(up{job=\"gnmi-collector\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Collector Scrape Health",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 6
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_gnmi_collector_policy_observed_targets",
+          "refId": "A"
+        }
+      ],
+      "title": "Observed Targets",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 12,
+        "y": 6
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_gnmi_collector_policy_capable_targets",
+          "refId": "A"
+        }
+      ],
+      "title": "Policy-Capable Targets",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 16,
+        "y": 6
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_gnmi_collector_policy_observed_policies",
+          "refId": "A"
+        }
+      ],
+      "title": "Observed Policies",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 20,
+        "y": 6
+      },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_policy_active_records",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Policies",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 11
+      },
+      "id": 9,
+      "panels": [],
+      "title": "Policy Distribution",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "id": 10,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_policy_records_by_health",
+          "legendFormat": "{{state}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Policy Health Distribution",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "id": 11,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_policy_records_by_support_state",
+          "legendFormat": "{{state}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Policy Support Posture",
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 12,
+      "panels": [],
+      "title": "Policy Sync and Delivery Signals",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 21
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "sum(rate(platform_gnmi_collector_policy_collection_success_total[5m]))",
+          "legendFormat": "success",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(platform_gnmi_collector_policy_collection_failure_total[5m]))",
+          "legendFormat": "failure",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(rate(platform_gnmi_collector_policy_collection_partial_total[5m]))",
+          "legendFormat": "partial",
+          "refId": "C"
+        }
+      ],
+      "title": "Policy Collection Outcomes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 21
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "sum(rate(platform_app_api_http_request_duration_seconds_sum{endpoint=\"/api/v1/policies\"}[5m])) / clamp_min(sum(rate(platform_app_api_http_request_duration_seconds_count{endpoint=\"/api/v1/policies\"}[5m])), 0.000001)",
+          "legendFormat": "policies api avg duration",
+          "refId": "A"
+        },
+        {
+          "expr": "platform_gnmi_collector_policy_backend_ready_policies",
+          "legendFormat": "backend-ready policy records",
+          "refId": "B"
+        },
+        {
+          "expr": "platform_app_api_policy_observed_targets",
+          "legendFormat": "backend observed targets",
+          "refId": "C"
+        }
+      ],
+      "title": "Policy API and Delivery Readiness",
+      "type": "timeseries"
     }
   ],
   "refresh": "30s",
@@ -28,7 +556,8 @@
   "style": "dark",
   "tags": [
     "sr-policy",
-    "placeholder"
+    "metrics",
+    "phase2"
   ],
   "templating": {
     "list": []
@@ -38,7 +567,7 @@
     "to": "now"
   },
   "timezone": "browser",
-  "title": "SR Policy Overview Placeholder",
+  "title": "SR Policy Overview",
   "uid": "sr-policy-overview",
-  "version": 1
+  "version": 2
 }

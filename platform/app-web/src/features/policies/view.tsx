@@ -11,6 +11,9 @@ export function PoliciesView() {
   const [searchValue, setSearchValue] = useState("");
   const items = data?.items ?? [];
   const healthCounts = countBy(items, (policy) => policy.health_state);
+  const observedStateCounts = countBy(items, (policy) => policy.observed_state);
+  const supportCounts = countBy(items, (policy) => policy.support_state);
+  const hasObservedPolicies = items.length > 0;
   const filteredPolicies = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
 
@@ -71,6 +74,7 @@ export function PoliciesView() {
       </div>
 
       <div className="metadata-row">
+        <span>Data status: {data.data_status}</span>
         <span>Sync source: {data.sync_source}</span>
         <span>Sync status: {data.sync_status}</span>
         <span>Completeness: {data.completeness}</span>
@@ -105,11 +109,86 @@ export function PoliciesView() {
             {healthCounts.degraded ?? 0}
           </p>
         </article>
+        <article className="summary-card">
+          <p className="summary-label">Current Posture</p>
+          <strong>{hasObservedPolicies ? "Observed" : "Live Empty"}</strong>
+          <p>
+            {hasObservedPolicies
+              ? "The bounded live slice has policy records to inspect."
+              : "The bounded live slice is healthy, but it currently contains no SR policy records."}
+          </p>
+        </article>
+      </div>
+
+      <div className="content-grid">
+        <article className="detail-card">
+          <h3>Operational Readout</h3>
+          <p>{data.summary}</p>
+          <ul className="compact-list">
+            <li>
+              <span>Backend policy status</span>
+              <StatusPill value={data.data_status} />
+            </li>
+            <li>
+              <span>Policy sync status</span>
+              <StatusPill value={data.sync_status} />
+            </li>
+            <li>
+              <span>Explicit completeness</span>
+              <StatusPill value={data.completeness} />
+            </li>
+          </ul>
+        </article>
+        <article className="detail-card">
+          <h3>Current Evidence</h3>
+          <ul className="compact-list">
+            <li>
+              <span>Observed targets</span>
+              <strong>{data.observed_target_count}</strong>
+            </li>
+            <li>
+              <span>Policy-capable targets</span>
+              <strong>{data.policy_capable_target_count}</strong>
+            </li>
+            <li>
+              <span>Active policies</span>
+              <strong>{data.active_policy_count}</strong>
+            </li>
+            <li>
+              <span>Static / BGP policies</span>
+              <strong>
+                {data.static_policy_count} / {data.bgp_policy_count}
+              </strong>
+            </li>
+          </ul>
+        </article>
+        <article className="detail-card">
+          <h3>State Distribution</h3>
+          <ul className="compact-list">
+            <li>
+              <span>Observed active</span>
+              <strong>{observedStateCounts.active ?? 0}</strong>
+            </li>
+            <li>
+              <span>Observed degraded</span>
+              <strong>{observedStateCounts.degraded ?? 0}</strong>
+            </li>
+            <li>
+              <span>Health degraded</span>
+              <strong>{healthCounts.degraded ?? 0}</strong>
+            </li>
+            <li>
+              <span>Support unknown</span>
+              <strong>{supportCounts.unknown ?? 0}</strong>
+            </li>
+          </ul>
+        </article>
       </div>
 
       {data.notes.length > 0 ? (
-        <div className="table-card">
-          <ul className="detail-list">
+        <div className="callout">
+          <strong>Current limits</strong>
+          <ul className="notes-list">
             {data.notes.map((note) => (
               <li key={note}>{note}</li>
             ))}
