@@ -14,7 +14,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## Topology Observability Overview\nThis dashboard summarizes the current live topology slice exposed by the platform. It focuses on bounded, real evidence: topology node and link counts, state distributions, inference quality, backend-versus-collector agreement, and persisted sync-history freshness for the topology read side.\n\nCurrent limits:\n- The topology model is live and useful, but intentionally partial.\n- Links are inferred from interface naming and operational state rather than LLDP, IGP, or ODL enrichment.\n- Partial knowledge remains explicit through degraded links, single-sided links, and partial sync-history results.",
+        "content": "## Topology Observability Overview\nThis dashboard summarizes the current live topology slice exposed by the platform. It focuses on bounded, real evidence: topology node and link counts, state distributions, inference quality, backend-versus-collector agreement, and persisted sync-history freshness for the topology read side.\n\nCurrent limits:\n- The topology model is live and useful, but intentionally partial.\n- Links are inferred from interface naming and operational state rather than LLDP, IGP, or ODL enrichment.\n- Comparison panels here show aggregate delivery and agreement posture, not protocol-derived drift truth.\n- Partial knowledge remains explicit through degraded links, single-sided links, and partial sync-history results.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -33,6 +33,185 @@
       "panels": [],
       "title": "Topology Health Signals",
       "type": "row"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 38
+      },
+      "id": 19,
+      "panels": [],
+      "title": "Bounded Comparison Evidence",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 39
+      },
+      "id": 20,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_sync_runs_by_family{model_family=\"topology\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "Topology Sync Runs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 39
+      },
+      "id": 21,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_topology_nodes - platform_gnmi_collector_topology_normalized_nodes",
+          "refId": "A"
+        }
+      ],
+      "title": "Backend vs Collector Node Delta",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 39
+      },
+      "id": 22,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_topology_links - platform_gnmi_collector_topology_normalized_links",
+          "refId": "A"
+        }
+      ],
+      "title": "Backend vs Collector Link Delta",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "max": 1,
+          "min": 0,
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 39
+      },
+      "id": 23,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_gnmi_collector_topology_single_sided_links / clamp_min(platform_gnmi_collector_topology_normalized_links, 1)",
+          "refId": "A"
+        }
+      ],
+      "title": "Single-Sided Link Share",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -717,5 +896,5 @@
   "timezone": "browser",
   "title": "Topology Overview",
   "uid": "topology-overview",
-  "version": 3
+  "version": 4
 }

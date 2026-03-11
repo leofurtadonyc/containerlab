@@ -15,7 +15,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## Platform Observability Overview\nThis dashboard follows the current read-only platform boundary: Prometheus scrape health, backend API responsiveness, collector-backed snapshot signals, and persisted sync-history evidence derived from bounded inventory, topology, and policy sync runs.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- Inventory, topology, and policy sync history now surface through persisted sync-run metrics.\n- Policy operational truth remains intentionally partial even though bounded policy sync evidence now exists.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels.",
+        "content": "## Platform Observability Overview\nThis dashboard follows the current read-only platform boundary: Prometheus scrape health, backend API responsiveness, collector-backed snapshot signals, bounded persisted sync-history evidence, and a small amount of honest live-versus-persisted or backend-versus-collector comparison context where those metrics already exist.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- Inventory, topology, and policy sync history now surface through persisted sync-run metrics.\n- Comparison panels here show bounded aggregate deltas only; they are not drift engines or product truth.\n- Policy operational truth remains intentionally partial even though bounded policy sync evidence now exists.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -34,6 +34,166 @@
       "panels": [],
       "title": "Platform Health Signals",
       "type": "row"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 51
+      },
+      "id": 27,
+      "panels": [],
+      "title": "Bounded Comparison Evidence",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 52
+      },
+      "id": 28,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"inventory\"}, 0)",
+          "legendFormat": "inventory age",
+          "refId": "A"
+        },
+        {
+          "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"topology\"}, 0)",
+          "legendFormat": "topology age",
+          "refId": "B"
+        },
+        {
+          "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"policy\"}, 0)",
+          "legendFormat": "policy age",
+          "refId": "C"
+        }
+      ],
+      "title": "Read-Side Freshness Comparison",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 52
+      },
+      "id": 29,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_topology_nodes - platform_gnmi_collector_topology_normalized_nodes",
+          "legendFormat": "node delta",
+          "refId": "A"
+        },
+        {
+          "expr": "platform_app_api_topology_links - platform_gnmi_collector_topology_normalized_links",
+          "legendFormat": "link delta",
+          "refId": "B"
+        }
+      ],
+      "title": "Topology Backend vs Collector Delta",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 52
+      },
+      "id": 30,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_policy_observed_policy_count - platform_app_api_policy_records",
+          "legendFormat": "observed vs detailed gap",
+          "refId": "A"
+        },
+        {
+          "expr": "platform_app_api_policy_capable_targets - platform_app_api_policy_observed_targets",
+          "legendFormat": "capable vs observed target gap",
+          "refId": "B"
+        },
+        {
+          "expr": "platform_app_api_policy_observed_policy_count - platform_gnmi_collector_policy_observed_policies",
+          "legendFormat": "backend vs collector policy delta",
+          "refId": "C"
+        }
+      ],
+      "title": "Policy Evidence Gap Summary",
+      "type": "bargauge"
     },
     {
       "datasource": {
@@ -1098,5 +1258,5 @@
   "timezone": "browser",
   "title": "Platform Overview",
   "uid": "platform-overview",
-  "version": 4
+  "version": 5
 }

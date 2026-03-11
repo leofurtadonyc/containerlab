@@ -14,12 +14,187 @@
       },
       "id": 1,
       "options": {
-        "content": "## SR Policy Observability Overview\nThis dashboard summarizes the current bounded SR policy slice exposed by the platform. It focuses on real Prometheus-backed evidence: collector policy ingestion health, backend policy snapshot readiness, live-empty policy context, bounded static-policy detail when present, persisted policy sync evidence, and API demand around the policy view.\n\nCurrent limits:\n- The live policy slice still starts with Nokia SR policy counters and only adds bounded static-policy observations where that state is actually exposed.\n- A zero-policy view can still be healthy; live-empty state is explicit and should not be confused with a placeholder response.\n- Observed policy counts and detailed policy record counts are intentionally separated because the bounded read path cannot yet derive per-policy detail for every observed type.\n- Persisted policy sync evidence now exists, but richer per-policy validation history and drift history still do not.\n- Grafana remains observability-only. Policy exploration and future action flows stay in the WebUI and backend.",
+        "content": "## SR Policy Observability Overview\nThis dashboard summarizes the current bounded SR policy slice exposed by the platform. It focuses on real Prometheus-backed evidence: collector policy ingestion health, backend policy snapshot readiness, live-empty policy context, bounded static-policy detail when present, persisted policy sync evidence, and API demand around the policy view.\n\nCurrent limits:\n- The live policy slice still starts with Nokia SR policy counters and only adds bounded static-policy observations where that state is actually exposed.\n- A zero-policy view can still be healthy; live-empty state is explicit and should not be confused with a placeholder response.\n- Observed policy counts and detailed policy record counts are intentionally separated because the bounded read path cannot yet derive per-policy detail for every observed type.\n- Comparison panels here show bounded aggregate evidence gaps only; they are not policy drift validation or pre-change intelligence.\n- Persisted policy sync evidence now exists, but richer per-policy validation history and drift history still do not.\n- Grafana remains observability-only. Policy exploration and future action flows stay in the WebUI and backend.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
       "title": "Dashboard Scope",
       "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "id": 23,
+      "panels": [],
+      "title": "Bounded Comparison Evidence",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 41
+      },
+      "id": 24,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_policy_capable_targets - platform_app_api_policy_observed_targets",
+          "refId": "A"
+        }
+      ],
+      "title": "Target Coverage Gap",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 41
+      },
+      "id": 25,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_policy_observed_policy_count - platform_app_api_policy_records",
+          "refId": "A"
+        }
+      ],
+      "title": "Observed vs Detailed Gap",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 41
+      },
+      "id": 26,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_policy_observed_targets - platform_gnmi_collector_policy_observed_targets",
+          "refId": "A"
+        }
+      ],
+      "title": "Backend vs Collector Target Delta",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 41
+      },
+      "id": 27,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_policy_observed_policy_count - platform_gnmi_collector_policy_observed_policies",
+          "refId": "A"
+        }
+      ],
+      "title": "Backend vs Collector Policy Delta",
+      "type": "stat"
     },
     {
       "collapsed": false,
@@ -829,5 +1004,5 @@
   "timezone": "browser",
   "title": "SR Policy Overview",
   "uid": "sr-policy-overview",
-  "version": 5
+  "version": 6
 }
