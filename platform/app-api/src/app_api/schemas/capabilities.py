@@ -54,6 +54,31 @@ class CapabilityRecord(BaseModel):
     source_of_determination: str
 
 
+class DryRunReadinessPrerequisite(BaseModel):
+    """One bounded prerequisite used to assess future dry-run readiness."""
+
+    prerequisite: Literal[
+        "inventory_read_model",
+        "topology_comparison_evidence",
+        "policy_comparison_evidence",
+        "workflow_audit_visibility",
+        "capability_matrix_precision",
+    ]
+    status: Literal["ready", "partial", "not_ready"]
+    current_evidence: str
+    blocking_gaps: list[str]
+
+
+class DryRunReadinessSummary(BaseModel):
+    """Bounded non-executing summary of dry-run-readiness prerequisites."""
+
+    status: Literal["foundation_strengthening", "bounded_readiness_support"]
+    summary: str
+    readiness_scope: str
+    notes: list[str]
+    prerequisites: list[DryRunReadinessPrerequisite]
+
+
 class CapabilitiesListResponse(ApiResponseMetadata):
     """Read-only capability matrix response."""
 
@@ -65,4 +90,5 @@ class CapabilitiesListResponse(ApiResponseMetadata):
     delivery_tier_counts: dict[str, int] = Field(default_factory=dict)
     evidence_basis_counts: dict[str, int] = Field(default_factory=dict)
     vendor_counts: dict[str, int] = Field(default_factory=dict)
+    dry_run_readiness: DryRunReadinessSummary
     items: list[CapabilityRecord]

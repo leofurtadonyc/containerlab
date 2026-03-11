@@ -4,7 +4,12 @@ from datetime import UTC, datetime
 from typing import Iterable
 
 from app_api.config.settings import get_settings
-from app_api.schemas.capabilities import CapabilityRecord, CapabilitiesListResponse
+from app_api.schemas.capabilities import (
+    CapabilityRecord,
+    CapabilitiesListResponse,
+    DryRunReadinessPrerequisite,
+    DryRunReadinessSummary,
+)
 
 
 def _count_values(values: Iterable[str]) -> dict[str, int]:
@@ -12,6 +17,81 @@ def _count_values(values: Iterable[str]) -> dict[str, int]:
     for value in values:
         counts[value] = counts.get(value, 0) + 1
     return counts
+
+
+def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
+    """Return one bounded non-executing summary of dry-run-readiness prerequisites."""
+    prerequisites = [
+        DryRunReadinessPrerequisite(
+            prerequisite="inventory_read_model",
+            status="ready",
+            current_evidence=(
+                "Inventory already has a stable live normalized read path and backend-owned "
+                "Phase 2 API contract."
+            ),
+            blocking_gaps=[],
+        ),
+        DryRunReadinessPrerequisite(
+            prerequisite="topology_comparison_evidence",
+            status="partial",
+            current_evidence=(
+                "Topology now exposes bounded current-versus-latest-persisted comparison "
+                "evidence and serving-mode context."
+            ),
+            blocking_gaps=[
+                "Topology remains intentionally partial and should not yet be treated as full protocol-derived truth.",
+            ],
+        ),
+        DryRunReadinessPrerequisite(
+            prerequisite="policy_comparison_evidence",
+            status="partial",
+            current_evidence=(
+                "Policy now exposes bounded persisted comparison evidence plus explicit "
+                "live-empty, detail-limited, and persisted-fallback semantics."
+            ),
+            blocking_gaps=[
+                "Policy coverage remains bounded and is not yet broad enough for full pre-change policy validation.",
+            ],
+        ),
+        DryRunReadinessPrerequisite(
+            prerequisite="workflow_audit_visibility",
+            status="partial",
+            current_evidence=(
+                "Workflow-history and audit-history now expose bounded persisted sync "
+                "activity and policy snapshot comparison context."
+            ),
+            blocking_gaps=[
+                "No requested, planned, approved, or executed workflow lifecycle records exist yet.",
+            ],
+        ),
+        DryRunReadinessPrerequisite(
+            prerequisite="capability_matrix_precision",
+            status="ready",
+            current_evidence=(
+                "The capability matrix now distinguishes delivery tier, evidence basis, "
+                "and vendor posture for the current product slice."
+            ),
+            blocking_gaps=[],
+        ),
+    ]
+    return DryRunReadinessSummary(
+        status="bounded_readiness_support",
+        summary=(
+            "The Phase 2 foundation is now strong enough to expose bounded dry-run-readiness "
+            "prerequisites, but no dry-run API, execution preview, or validation workflow "
+            "exists yet."
+        ),
+        readiness_scope=(
+            "This readiness summary is descriptive only. It exists to show which prerequisite "
+            "read-side foundations are already present for future dry-run work."
+        ),
+        notes=[
+            "Readiness support is not dry-run functionality.",
+            "The current platform still lacks requested or planned workflow records, dry-run outputs, approvals, rollback handling, and execution semantics.",
+            "Any future dry-run work must build on these bounded prerequisites without overstating policy or topology truth.",
+        ],
+        prerequisites=prerequisites,
+    )
 
 
 def build_capabilities_list_response() -> CapabilitiesListResponse:
@@ -309,5 +389,6 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
         delivery_tier_counts=_count_values(item.delivery_tier for item in items),
         evidence_basis_counts=_count_values(item.evidence_basis for item in items),
         vendor_counts=_count_values(item.vendor for item in items),
+        dry_run_readiness=_build_dry_run_readiness_summary(),
         items=items,
     )

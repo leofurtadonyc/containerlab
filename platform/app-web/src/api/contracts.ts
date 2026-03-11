@@ -328,6 +328,26 @@ export interface CapabilityRecord {
   source_of_determination: string;
 }
 
+export interface DryRunReadinessPrerequisite {
+  prerequisite:
+    | "inventory_read_model"
+    | "topology_comparison_evidence"
+    | "policy_comparison_evidence"
+    | "workflow_audit_visibility"
+    | "capability_matrix_precision";
+  status: "ready" | "partial" | "not_ready";
+  current_evidence: string;
+  blocking_gaps: string[];
+}
+
+export interface DryRunReadinessSummary {
+  status: "foundation_strengthening" | "bounded_readiness_support";
+  summary: string;
+  readiness_scope: string;
+  notes: string[];
+  prerequisites: DryRunReadinessPrerequisite[];
+}
+
 export interface CapabilitiesListResponse extends ApiResponseMetadata {
   data_status: "placeholder" | "bounded_matrix";
   summary: string;
@@ -337,5 +357,6 @@ export interface CapabilitiesListResponse extends ApiResponseMetadata {
   delivery_tier_counts: Record<string, number>;
   evidence_basis_counts: Record<string, number>;
   vendor_counts: Record<string, number>;
+  dry_run_readiness?: DryRunReadinessSummary;
   items: CapabilityRecord[];
 }

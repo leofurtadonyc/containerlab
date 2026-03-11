@@ -1133,6 +1133,13 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
     assert payload["delivery_tier_counts"]["bounded_partial_read_only"] == 8
     assert payload["evidence_basis_counts"]["persisted_validated"] == 4
     assert payload["vendor_counts"]["nokia"] == 10
+    assert payload["dry_run_readiness"]["status"] == "bounded_readiness_support"
+    assert "no dry-run API" in payload["dry_run_readiness"]["summary"]
+    assert len(payload["dry_run_readiness"]["prerequisites"]) == 5
+    assert payload["dry_run_readiness"]["prerequisites"][0]["prerequisite"] == "inventory_read_model"
+    assert payload["dry_run_readiness"]["prerequisites"][0]["status"] == "ready"
+    assert payload["dry_run_readiness"]["prerequisites"][1]["status"] == "partial"
+    assert "Readiness support is not dry-run functionality." in payload["dry_run_readiness"]["notes"]
     assert payload["items"][1]["feature"] == "topology_observation"
     assert payload["items"][2]["feature"] == "topology_persisted_comparison"
     assert payload["items"][6]["feature"] == "bgp_signaled_policy_detail"

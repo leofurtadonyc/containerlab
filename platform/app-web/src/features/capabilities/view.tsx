@@ -5,6 +5,19 @@ import { StatusPill } from "../../components/status-pill";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
 import { useCapabilitiesQuery } from "./api";
 
+const FALLBACK_DRY_RUN_READINESS = {
+  status: "foundation_strengthening",
+  summary:
+    "Dry-run-readiness support is not available from the current backend response.",
+  readiness_scope:
+    "This WebUI view is falling back safely because the running backend has not exposed the bounded readiness summary yet.",
+  notes: [
+    "The capabilities page remains usable even when this newer readiness metadata has not been rolled out.",
+    "This fallback does not imply any dry-run functionality.",
+  ],
+  prerequisites: [],
+} as const;
+
 function describeSupportState(value: string): string {
   switch (value) {
     case "supported":
@@ -45,6 +58,15 @@ function describeEvidenceBasis(value: string): string {
       return "Roadmap-only architecture direction with no delivered implementation yet.";
     default:
       return "Based on bounded design review rather than delivered runtime validation.";
+  }
+}
+
+function describeDryRunReadinessStatus(value: string): string {
+  switch (value) {
+    case "bounded_readiness_support":
+      return "The read-only foundation is strong enough to expose bounded prerequisite readiness for future dry-run work.";
+    default:
+      return "The current read-only foundation still needs more strengthening before even bounded dry-run readiness should be exposed.";
   }
 }
 
@@ -149,6 +171,8 @@ export function CapabilitiesView() {
     );
   }
 
+  const dryRunReadiness = data.dry_run_readiness ?? FALLBACK_DRY_RUN_READINESS;
+
   return (
     <section>
       <div className="section-header">
@@ -170,6 +194,11 @@ export function CapabilitiesView() {
       <p className="callout">{data.summary}</p>
 
       <div className="summary-grid">
+        <article className="summary-card">
+          <p className="summary-label">Dry-Run Readiness</p>
+          <strong>{formatLabel(dryRunReadiness.status)}</strong>
+          <p>{describeDryRunReadinessStatus(dryRunReadiness.status)}</p>
+        </article>
         <article className="summary-card">
           <p className="summary-label">Nokia Focus Entries</p>
           <strong>{data.vendor_counts.nokia ?? vendorCounts.nokia ?? 0}</strong>
@@ -310,7 +339,44 @@ export function CapabilitiesView() {
         </div>
       ) : null}
 
+      <div className="callout">
+        <strong>Dry-run readiness remains descriptive only</strong>
+        <p>
+          {dryRunReadiness.summary} This section is preparation metadata, not a
+          preview engine, action API, or validation workflow.
+        </p>
+      </div>
+
       <div className="content-grid">
+        <article className="detail-card">
+          <p className="summary-label">Dry-Run Readiness Prerequisites</p>
+          <p>{dryRunReadiness.readiness_scope}</p>
+          {dryRunReadiness.prerequisites.length > 0 ? (
+            <ul className="compact-list">
+              {dryRunReadiness.prerequisites.map((prerequisite) => (
+                <li key={prerequisite.prerequisite}>
+                  <span>
+                    {formatLabel(prerequisite.prerequisite)}:{" "}
+                    {formatLabel(prerequisite.status)}
+                  </span>
+                  <strong>{prerequisite.current_evidence}</strong>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No bounded readiness prerequisites are available from the current response yet.</p>
+          )}
+          {dryRunReadiness.notes.length > 0 ? (
+            <>
+              <p className="summary-label">Readiness Notes</p>
+              <ul className="notes-list">
+                {dryRunReadiness.notes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+        </article>
         <article className="detail-card">
           <p className="summary-label">Current Matrix Posture</p>
           <ul className="compact-list">
@@ -543,6 +609,22 @@ export function CapabilitiesView() {
                   <strong>{selectedCapability.source_of_determination}</strong>
                 </div>
               </div>
+              {dryRunReadiness.prerequisites.some(
+                (prerequisite) => prerequisite.blocking_gaps.length > 0,
+              ) ? (
+                <>
+                  <p className="summary-label">Readiness Gaps</p>
+                  <ul className="notes-list">
+                    {dryRunReadiness.prerequisites.flatMap((prerequisite) =>
+                      prerequisite.blocking_gaps.map((gap) => (
+                        <li key={`${prerequisite.prerequisite}-${gap}`}>
+                          {formatLabel(prerequisite.prerequisite)}: {gap}
+                        </li>
+                      )),
+                    )}
+                  </ul>
+                </>
+              ) : null}
               {selectedCapability.caveats.length > 0 ? (
                 <>
                   <p className="summary-label">Caveats</p>
