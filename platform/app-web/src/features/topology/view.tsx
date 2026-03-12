@@ -31,6 +31,30 @@ function formatSignedDelta(value: number): string {
   return `${value}`;
 }
 
+function getServingModeReadout(
+  servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold",
+): { label: string; detail: string } {
+  if (servingMode === "live_collector") {
+    return {
+      label: "Live collector",
+      detail:
+        "Current topology is being served from the live collector-backed normalized read path.",
+    };
+  }
+  if (servingMode === "persisted_fallback") {
+    return {
+      label: "Persisted fallback",
+      detail:
+        "Current topology is being served from the latest persisted normalized topology snapshot because the live collector path is unavailable.",
+    };
+  }
+  return {
+    label: "Empty scaffold",
+    detail:
+      "Neither a live collector snapshot nor a persisted fallback snapshot could be loaded beyond the empty scaffold.",
+  };
+}
+
 function describeTimeGap(start: string | null, end: string | null): string {
   if (!start || !end) {
     return "Not available";
@@ -49,6 +73,56 @@ function describeTimeGap(start: string | null, end: string | null): string {
 
   const gapMinutes = Math.round(gapSeconds / 60);
   return `${gapMinutes}m`;
+}
+
+function describeComparisonReadout(
+  status: "unavailable" | "live_vs_latest_persisted_ready",
+  servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold",
+): { label: string; detail: string } {
+  if (status === "live_vs_latest_persisted_ready") {
+    return {
+      label: "Comparison ready",
+      detail:
+        "Bounded normalized comparison is available between the current topology response and the latest persisted topology snapshot.",
+    };
+  }
+  if (servingMode === "persisted_fallback") {
+    return {
+      label: "Fallback serving",
+      detail:
+        "Comparison is unavailable here because the current response already reflects the persisted fallback snapshot.",
+    };
+  }
+  return {
+    label: "Comparison unavailable",
+    detail:
+      "The backend does not currently have the extra persisted topology evidence needed for a bounded comparison.",
+  };
+}
+
+function describeInferenceReadout(
+  singleSidedLinkCount: number,
+  linkCount: number,
+  knowledgeCounts: Record<string, number>,
+): { label: string; detail: string } {
+  if (linkCount === 0) {
+    return {
+      label: "No inferred links",
+      detail: "No normalized link evidence is currently available in this topology response.",
+    };
+  }
+  if (singleSidedLinkCount === 0 && (knowledgeCounts.partial ?? 0) === 0) {
+    return {
+      label: "Stronger evidence",
+      detail:
+        "Current link evidence is still bounded, but it does not currently show any single-sided or explicitly partial inferred links.",
+    };
+  }
+  return {
+    label: "Bounded inference",
+    detail:
+      "Link evidence remains bounded and inference-based. Single-sided and partial counts help show how much of the graph is still interpretive rather than fully observed.",
+  };
 }
 
 function describeNodeEvidence(node: TopologyNodeRecord): string {
@@ -310,6 +384,13 @@ export function TopologyView() {
   }
 
   const comparison = data.comparison_to_latest_persisted;
+  const servingMode = getServingModeReadout(data.serving_mode);
+  const comparisonReadout = describeComparisonReadout(comparison.status, data.serving_mode);
+  const inferenceReadout = describeInferenceReadout(
+    singleSidedLinkCount,
+    topology.links.length,
+    knowledgeCounts,
+  );
 
   return (
     <section>
@@ -352,19 +433,13 @@ export function TopologyView() {
         </article>
         <article className="summary-card">
           <p className="summary-label">Serving Mode</p>
-          <strong>{formatLabel(data.serving_mode)}</strong>
-          <p>
-            {data.serving_mode === "live_collector"
-              ? "Current topology is being served from the live collector-backed normalized read path."
-              : data.serving_mode === "persisted_fallback"
-                ? "Current topology is being served from the latest persisted normalized fallback snapshot."
-                : "No live or persisted topology snapshot could be loaded beyond the empty scaffold."}
-          </p>
+          <strong>{servingMode.label}</strong>
+          <p>{servingMode.detail}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Comparison Status</p>
-          <strong>{formatLabel(comparison.status)}</strong>
-          <p>{comparison.summary}</p>
+          <strong>{comparisonReadout.label}</strong>
+          <p>{comparisonReadout.detail}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Degraded Links</p>
@@ -381,11 +456,21 @@ export function TopologyView() {
           <strong>{observedLoopbackCount}</strong>
           <p>Nodes with a live loopback carried into the normalized topology view.</p>
         </article>
+        <article className="summary-card">
+          <p className="summary-label">Inference Posture</p>
+          <strong>{inferenceReadout.label}</strong>
+          <p>{inferenceReadout.detail}</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Observed to Generated</p>
+          <strong>{describeTimeGap(topology.observed_at, data.generated_at)}</strong>
+          <p>How far the current observed timestamp lags behind API generation.</p>
+        </article>
       </div>
 
       <div className="content-grid">
         <article className="detail-card">
-          <h3>Operational Readout</h3>
+          <h3>Trust Readout</h3>
           <p>{data.summary}</p>
           <ul className="compact-list">
             <li>
@@ -406,11 +491,59 @@ export function TopologyView() {
             </li>
             <li>
               <span>Serving mode</span>
-              <strong>{formatLabel(data.serving_mode)}</strong>
+              <strong>{servingMode.label}</strong>
             </li>
             <li>
               <span>Observed to generated gap</span>
               <strong>{describeTimeGap(topology.observed_at, data.generated_at)}</strong>
+            </li>
+            <li>
+              <span>Comparison posture</span>
+              <strong>{comparisonReadout.label}</strong>
+            </li>
+            <li>
+              <span>Link evidence posture</span>
+              <strong>{inferenceReadout.label}</strong>
+            </li>
+          </ul>
+        </article>
+        <article className="detail-card">
+          <h3>Evidence Basis</h3>
+          <p>
+            The current topology response is a backend-owned normalized view. Nodes come
+            from collector-backed device evidence, while links may still be inferred from
+            bounded interface observations.
+          </p>
+          <ul className="compact-list">
+            <li>
+              <span>Primary evidence basis</span>
+              <strong>
+                {data.serving_mode === "live_collector"
+                  ? "Live collector-backed normalized topology"
+                  : data.serving_mode === "persisted_fallback"
+                    ? "Persisted normalized topology snapshot"
+                    : "Empty scaffold only"}
+              </strong>
+            </li>
+            <li>
+              <span>Inference method</span>
+              <strong>
+                {links[0]?.attributes.inference_method
+                  ? formatLabel(links[0].attributes.inference_method)
+                  : "No link inference recorded"}
+              </strong>
+            </li>
+            <li>
+              <span>Partial knowledge links</span>
+              <strong>{knowledgeCounts.partial ?? 0}</strong>
+            </li>
+            <li>
+              <span>Single-sided inferred links</span>
+              <strong>{singleSidedLinkCount}</strong>
+            </li>
+            <li>
+              <span>Comparison-ready snapshot</span>
+              <strong>{formatDateTime(comparison.comparison_persisted_at)}</strong>
             </li>
           </ul>
         </article>
@@ -425,6 +558,12 @@ export function TopologyView() {
             <li>
               <span>Compared persisted snapshot</span>
               <strong>{formatDateTime(comparison.comparison_persisted_at)}</strong>
+            </li>
+            <li>
+              <span>Observed to compared snapshot gap</span>
+              <strong>
+                {describeTimeGap(comparison.comparison_persisted_at, comparison.current_observed_at)}
+              </strong>
             </li>
             <li>
               <span>Node delta</span>
@@ -464,7 +603,7 @@ export function TopologyView() {
           )}
         </article>
         <article className="detail-card">
-          <h3>State Distribution</h3>
+          <h3>State and Change Distribution</h3>
           <ul className="compact-list">
             <li>
               <span>Nodes up</span>
@@ -490,6 +629,14 @@ export function TopologyView() {
               <span>Changed links vs persisted</span>
               <strong>{comparison.changed_link_count}</strong>
             </li>
+            <li>
+              <span>Persisted node count</span>
+              <strong>{comparison.persisted_node_count}</strong>
+            </li>
+            <li>
+              <span>Persisted link count</span>
+              <strong>{comparison.persisted_link_count}</strong>
+            </li>
           </ul>
         </article>
         <article className="detail-card">
@@ -511,8 +658,24 @@ export function TopologyView() {
               <span>Knowledge: unknown</span>
               <strong>{knowledgeCounts.unknown ?? 0}</strong>
             </li>
+            <li>
+              <span>Total link evidence endpoints</span>
+              <strong>
+                {links.reduce((total, link) => total + getLinkEvidenceCount(link), 0)}
+              </strong>
+            </li>
           </ul>
         </article>
+      </div>
+
+      <div className="callout">
+        <strong>How to read this page</strong>
+        <p>
+          Live collector data remains the primary current truth source. Persisted fallback
+          snapshots keep the page usable when live collection is unavailable. Comparison
+          summaries show bounded normalized differences only and should not be read as
+          path-validation, controller truth, or drift verdicts.
+        </p>
       </div>
 
       {topology.notes.length > 0 ? (
