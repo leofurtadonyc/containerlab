@@ -20,7 +20,7 @@ Most of the week's work has established:
 - a useful read-only API, WebUI, and observability slice
 - bounded persistence for inventory, topology, and policy snapshots plus sync-run history
 - bounded workflow-history and audit-history visibility derived from persisted sync activity
-- sharper capability semantics plus one descriptive dry-run-readiness prerequisite summary
+- sharper capability semantics plus a stricter descriptive dry-run-planning-readiness assessment
 - stronger platform, topology, and SR policy dashboards with bounded freshness, agreement, and evidence-gap cues where real metrics exist
 
 ## Stricter Phase 2 Readiness Assessment
@@ -124,4 +124,4 @@ Phase transitions should not happen just because files exist.
 
 They should happen only when the foundational architecture is both present and honest enough to support the next class of work without drift.
 
-The project is getting closer to the prerequisites for later dry-run planning, but it should still remain fully in `Phase 2 — read-only product foundation` until actual workflow-model, dry-run API, preview or diff, and validation-result contracts become real.
+The project now supports stricter future dry-run planning assessment, but it should still remain fully in `Phase 2 — read-only product foundation` until actual workflow-model, dry-run API, preview or diff, validation-result, and workflow-audit relationship contracts become real.
