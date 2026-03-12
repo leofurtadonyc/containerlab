@@ -75,6 +75,30 @@ function formatSignedDelta(value: number): string {
   return `${value}`;
 }
 
+function getServingModeReadout(
+  servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold",
+): { label: string; detail: string } {
+  if (servingMode === "live_collector") {
+    return {
+      label: "Live collector",
+      detail:
+        "Current policy state is being served from the live collector-backed normalized read path.",
+    };
+  }
+  if (servingMode === "persisted_fallback") {
+    return {
+      label: "Persisted fallback",
+      detail:
+        "Current policy state is being served from the latest persisted normalized policy snapshot because the live collector path is unavailable.",
+    };
+  }
+  return {
+    label: "Empty scaffold",
+    detail:
+      "Neither a live collector snapshot nor a persisted fallback snapshot could be loaded beyond the empty scaffold.",
+  };
+}
+
 function describeTimeGap(start: string | null, end: string | null): string {
   if (!start || !end) {
     return "Not available";
@@ -93,6 +117,120 @@ function describeTimeGap(start: string | null, end: string | null): string {
 
   const gapMinutes = Math.round(gapSeconds / 60);
   return `${gapMinutes}m`;
+}
+
+function getDetailModeReadout(
+  detailMode: "counters_only" | "static_policies_when_present" | "mixed" | "unknown",
+): { label: string; detail: string } {
+  switch (detailMode) {
+    case "counters_only":
+      return {
+        label: "Counters only",
+        detail:
+          "The bounded slice can show aggregate policy presence and footprint, but not stable per-policy detail records.",
+      };
+    case "static_policies_when_present":
+      return {
+        label: "Static detail when present",
+        detail:
+          "The bounded slice can expose per-policy records when supported static policy evidence is present.",
+      };
+    case "mixed":
+      return {
+        label: "Mixed detail",
+        detail:
+          "The current response includes both aggregate counters and bounded per-policy detail where the normalized path supports it.",
+      };
+    default:
+      return {
+        label: "Unknown detail mode",
+        detail:
+          "The backend did not provide enough detail-mode context to describe how policy evidence was derived.",
+      };
+  }
+}
+
+function getEmptyReasonReadout(
+  emptyReason: "none" | "no_policies_observed" | "per_policy_details_unavailable" | "collector_unavailable",
+): { label: string; detail: string } {
+  switch (emptyReason) {
+    case "no_policies_observed":
+      return {
+        label: "Live empty",
+        detail:
+          "The bounded live slice is healthy enough to observe targets, but it currently contains no SR policy records.",
+      };
+    case "per_policy_details_unavailable":
+      return {
+        label: "Detail limited",
+        detail:
+          "Policies are being counted, but the current bounded path could not derive stable per-policy detail records for the observed types.",
+      };
+    case "collector_unavailable":
+      return {
+        label: "Collector unavailable",
+        detail:
+          "The collector path is unavailable, so the page cannot claim current live policy truth from collector-backed evidence.",
+      };
+    default:
+      return {
+        label: "No empty-state qualifier",
+        detail: "Current policy evidence includes bounded detail without an empty-state qualifier.",
+      };
+  }
+}
+
+function getCurrentPostureReadout(
+  hasObservedPolicies: boolean,
+  emptyReason: "none" | "no_policies_observed" | "per_policy_details_unavailable" | "collector_unavailable",
+  servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold",
+): { label: string; detail: string } {
+  if (servingMode === "persisted_fallback") {
+    return {
+      label: "Persisted fallback",
+      detail:
+        "The page is currently usable through the latest persisted normalized snapshot rather than current live collector evidence.",
+    };
+  }
+  if (servingMode === "empty_scaffold") {
+    return {
+      label: "Empty scaffold",
+      detail:
+        "Neither live collector evidence nor persisted fallback evidence is currently available for a meaningful policy readout.",
+    };
+  }
+  if (hasObservedPolicies) {
+    return {
+      label: "Observed detail",
+      detail: "The bounded current slice has per-policy records that can be inspected individually.",
+    };
+  }
+  return getEmptyReasonReadout(emptyReason);
+}
+
+function getCurrentComparisonReadout(
+  status: "unavailable" | "current_vs_latest_persisted_ready",
+  servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold",
+): { label: string; detail: string } {
+  if (status === "current_vs_latest_persisted_ready") {
+    return {
+      label: "Comparison ready",
+      detail:
+        "Bounded normalized comparison is available between the current policy response and the latest persisted policy snapshot.",
+    };
+  }
+  if (servingMode === "persisted_fallback") {
+    return {
+      label: "Fallback serving",
+      detail:
+        "Current-versus-persisted comparison is unavailable here because the current response already reflects the persisted fallback snapshot.",
+    };
+  }
+  return {
+    label: "Comparison unavailable",
+    detail:
+      "The backend does not currently have the extra persisted policy evidence needed for a bounded comparison.",
+  };
 }
 
 export function PoliciesView() {
@@ -223,11 +361,6 @@ export function PoliciesView() {
       ? Math.round((data.count / data.observed_policy_count) * 100)
       : 0;
   const evidenceGapCount = data ? Math.max(data.observed_policy_count - data.count, 0) : 0;
-  const currentPosture = hasObservedPolicies
-    ? "Observed Detail"
-    : data?.empty_reason === "per_policy_details_unavailable"
-      ? "Detail Limited"
-      : "Live Empty";
 
   if (isLoading) {
     return (
@@ -261,6 +394,18 @@ export function PoliciesView() {
 
   const comparison = data.history.comparison_to_previous;
   const currentComparison = data.comparison_to_latest_persisted;
+  const servingMode = getServingModeReadout(data.serving_mode);
+  const detailMode = getDetailModeReadout(data.detail_mode);
+  const emptyReason = getEmptyReasonReadout(data.empty_reason);
+  const currentPosture = getCurrentPostureReadout(
+    hasObservedPolicies,
+    data.empty_reason,
+    data.serving_mode,
+  );
+  const comparisonReadout = getCurrentComparisonReadout(
+    currentComparison.status,
+    data.serving_mode,
+  );
 
   return (
     <section>
@@ -326,14 +471,8 @@ export function PoliciesView() {
         </article>
         <article className="summary-card">
           <p className="summary-label">Current Posture</p>
-          <strong>{currentPosture}</strong>
-          <p>
-            {hasObservedPolicies
-              ? "The bounded live slice has per-policy records to inspect."
-              : data.empty_reason === "per_policy_details_unavailable"
-                ? "Policies are counted, but the current bounded path could not derive per-policy detail records."
-                : "The bounded live slice is healthy, but it currently contains no SR policy records."}
-          </p>
+          <strong>{currentPosture.label}</strong>
+          <p>{currentPosture.detail}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Freshness</p>
@@ -342,24 +481,28 @@ export function PoliciesView() {
         </article>
         <article className="summary-card">
           <p className="summary-label">Serving Mode</p>
-          <strong>{formatLabel(data.serving_mode)}</strong>
-          <p>
-            {data.serving_mode === "live_collector"
-              ? "Current policy state is being served from the live collector-backed normalized read path."
-              : data.serving_mode === "persisted_fallback"
-                ? "Current policy state is being served from the latest persisted normalized fallback snapshot."
-                : "No live or persisted policy snapshot could be loaded beyond the empty scaffold."}
-          </p>
+          <strong>{servingMode.label}</strong>
+          <p>{servingMode.detail}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Current vs Latest Persisted</p>
-          <strong>{formatLabel(currentComparison.status)}</strong>
-          <p>{currentComparison.summary}</p>
+          <strong>{comparisonReadout.label}</strong>
+          <p>{comparisonReadout.detail}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">History Status</p>
           <strong>{formatLabel(data.history.status)}</strong>
           <p>{data.history.summary}</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Detail Mode</p>
+          <strong>{detailMode.label}</strong>
+          <p>{detailMode.detail}</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Observed to Generated</p>
+          <strong>{describeTimeGap(data.observed_at, data.generated_at)}</strong>
+          <p>How far the current observed timestamp lags behind API generation.</p>
         </article>
       </div>
 
@@ -382,6 +525,30 @@ export function PoliciesView() {
             latest persisted normalized policy snapshot from{" "}
             {formatDateTime(data.served_persisted_at)} instead of pretending the current live lab
             posture is known.
+          </p>
+        </div>
+      ) : null}
+
+      {data.serving_mode === "live_collector" &&
+      !hasObservedPolicies &&
+      data.empty_reason === "no_policies_observed" ? (
+        <div className="callout">
+          <strong>Live-empty policy posture remains explicit</strong>
+          <p>
+            The page is receiving live collector-backed policy evidence, but that bounded live
+            slice currently shows no SR policy records. This does not imply the policy feature is
+            unavailable, only that no policy records are presently observed.
+          </p>
+        </div>
+      ) : null}
+
+      {data.empty_reason === "per_policy_details_unavailable" ? (
+        <div className="callout">
+          <strong>Detail-limited policy posture remains explicit</strong>
+          <p>
+            Aggregate policy presence is available, but this bounded Phase 2 path cannot yet derive
+            stable per-policy detail for every observed type. The page keeps that coverage gap
+            visible instead of implying full per-policy truth.
           </p>
         </div>
       ) : null}
@@ -410,7 +577,7 @@ export function PoliciesView() {
 
       <div className="content-grid">
         <article className="detail-card">
-          <h3>Operational Readout</h3>
+          <h3>Trust Readout</h3>
           <p>{data.summary}</p>
           <ul className="compact-list">
             <li>
@@ -427,11 +594,11 @@ export function PoliciesView() {
             </li>
             <li>
               <span>Detail mode</span>
-              <strong>{formatLabel(data.detail_mode)}</strong>
+              <strong>{detailMode.label}</strong>
             </li>
             <li>
               <span>Empty reason</span>
-              <strong>{formatLabel(data.empty_reason)}</strong>
+              <strong>{emptyReason.label}</strong>
             </li>
             <li>
               <span>Freshness posture</span>
@@ -439,11 +606,55 @@ export function PoliciesView() {
             </li>
             <li>
               <span>Serving mode</span>
-              <strong>{formatLabel(data.serving_mode)}</strong>
+              <strong>{servingMode.label}</strong>
             </li>
             <li>
               <span>Observed to generated gap</span>
               <strong>{describeTimeGap(data.observed_at, data.generated_at)}</strong>
+            </li>
+            <li>
+              <span>Current posture</span>
+              <strong>{currentPosture.label}</strong>
+            </li>
+            <li>
+              <span>Comparison posture</span>
+              <strong>{comparisonReadout.label}</strong>
+            </li>
+          </ul>
+        </article>
+        <article className="detail-card">
+          <h3>Evidence Basis</h3>
+          <p>
+            The current policy response is a backend-owned normalized read model. It may reflect
+            live collector evidence, a persisted fallback snapshot, or an explicitly partial
+            current slice where counts are available but full per-policy detail is not.
+          </p>
+          <ul className="compact-list">
+            <li>
+              <span>Primary evidence basis</span>
+              <strong>
+                {data.serving_mode === "live_collector"
+                  ? "Live collector-backed normalized policy state"
+                  : data.serving_mode === "persisted_fallback"
+                    ? "Persisted normalized policy snapshot"
+                    : "Empty scaffold only"}
+              </strong>
+            </li>
+            <li>
+              <span>Current posture</span>
+              <strong>{currentPosture.label}</strong>
+            </li>
+            <li>
+              <span>Detail mode</span>
+              <strong>{detailMode.label}</strong>
+            </li>
+            <li>
+              <span>Empty-state qualifier</span>
+              <strong>{emptyReason.label}</strong>
+            </li>
+            <li>
+              <span>Current comparison posture</span>
+              <strong>{comparisonReadout.label}</strong>
             </li>
           </ul>
         </article>
@@ -491,11 +702,17 @@ export function PoliciesView() {
           <ul className="compact-list">
             <li>
               <span>Comparison status</span>
-              <strong>{formatLabel(currentComparison.status)}</strong>
+              <strong>{comparisonReadout.label}</strong>
             </li>
             <li>
               <span>Compared persisted snapshot</span>
               <strong>{formatDateTime(currentComparison.comparison_persisted_at)}</strong>
+            </li>
+            <li>
+              <span>Observed to compared snapshot gap</span>
+              <strong>
+                {describeTimeGap(currentComparison.comparison_persisted_at, currentComparison.current_observed_at)}
+              </strong>
             </li>
             <li>
               <span>Observed policy delta</span>
@@ -504,6 +721,20 @@ export function PoliciesView() {
             <li>
               <span>Detailed record delta</span>
               <strong>{formatSignedDelta(currentComparison.detail_record_delta)}</strong>
+            </li>
+            <li>
+              <span>Current / persisted observed policies</span>
+              <strong>
+                {currentComparison.current_observed_policy_count} /{" "}
+                {currentComparison.persisted_observed_policy_count}
+              </strong>
+            </li>
+            <li>
+              <span>Current / persisted detail records</span>
+              <strong>
+                {currentComparison.current_detail_record_count} /{" "}
+                {currentComparison.persisted_detail_record_count}
+              </strong>
             </li>
             <li>
               <span>Added / removed detailed policies</span>
@@ -621,7 +852,7 @@ export function PoliciesView() {
           </ul>
         </article>
         <article className="detail-card">
-          <h3>Persisted Comparison</h3>
+          <h3>Persisted History And Comparison</h3>
           <p>{data.history.summary}</p>
           {comparison ? (
             <>
@@ -692,6 +923,16 @@ export function PoliciesView() {
             </p>
           )}
         </article>
+      </div>
+
+      <div className="callout">
+        <strong>How to read this page</strong>
+        <p>
+          Live collector data remains the primary current truth source. Persisted fallback
+          snapshots keep the page usable when live collection is unavailable. Comparison summaries
+          and recent snapshots show bounded normalized evidence only and should not be read as full
+          policy-history, drift analysis, or workflow state.
+        </p>
       </div>
 
       {data.notes.length > 0 ? (
