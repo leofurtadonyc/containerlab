@@ -53,6 +53,15 @@ Fallback behavior today:
 - policy uses the live collector-backed read path first and falls back to the latest persisted normalized policy snapshot only when that live path is unavailable
 - workflow-history and audit-history are read from persisted sync-run activity, but they still do not represent a full workflow engine or user-action audit log
 
+Current truth labels today:
+
+- `live` means the response is primarily backed by the active collector-to-backend read path
+- `persisted_fallback` means the live collector path could not be used and the response is serving the latest persisted normalized snapshot
+- `inferred` currently describes bounded topology knowledge that is derived from interface-state interpretation rather than protocol-derived adjacency truth
+- `partial` means the platform is intentionally exposing bounded read-side knowledge rather than claiming full operational truth
+- `unavailable` means the backend does not currently have the additional persisted evidence required to build a bounded comparison view
+- `stale` is currently a frontend interpretation used mainly by workflow-history and audit-history pages to describe the age of persisted sync-derived evidence relative to page generation time
+
 Important current limitation:
 
 - the Postgres service does not yet have a host-mounted data directory in the current topology, so persisted state survives normal in-deployment reads and fallback behavior, but it is not yet hardened across full reprovisioning of the platform lab
@@ -127,12 +136,38 @@ Current state:
 
 - backend health and metrics endpoints exist
 - versioned read-only inventory, topology, policy, capability, and platform status endpoints now exist as bounded live product contracts
-- the current inventory API is fed by a bounded normalized live collector contract
-- the current topology API is fed by a backend-owned normalized live read model that explicitly marks partial and unknown state
-- the current policy API is fed by a backend-owned normalized live read model that explicitly marks support, observed, and unknown state
+- the current inventory API is fed by a bounded normalized live collector contract and now also exposes explicit serving-mode plus current-versus-latest-persisted comparison semantics where a persisted inventory snapshot exists
+- the current topology API is fed by a backend-owned normalized live read model that explicitly marks partial and unknown state and now also exposes explicit serving-mode plus current-versus-latest-persisted topology comparison semantics
+- the current policy API is fed by a backend-owned normalized live read model that explicitly marks support, observed, and unknown state and now also exposes explicit serving-mode plus current-versus-latest-persisted policy comparison semantics
 - inventory and topology may be served from the latest persisted normalized snapshot if the live collector boundary is temporarily unavailable
 - policy may now also be served from the latest persisted normalized policy snapshot if the live collector boundary is temporarily unavailable
 - useful frontend read-only pages now consume those stable contracts for overview, platform health, devices, topology, policies, and capabilities
+- workflow-history and audit-history pages now interpret persisted sync-derived evidence using bounded recency and comparison cues, but those remain product-facing explanations rather than workflow, audit-forensics, or validation conclusions
+
+Current comparison semantics:
+
+- devices compare the current normalized inventory response against the latest persisted normalized inventory snapshot when one exists and the current response is still live-backed
+- topology compares the current normalized topology response against the latest persisted normalized topology snapshot when one exists and the current response is still live-backed
+- policies compare the current normalized policy response against the latest persisted normalized policy snapshot, and may also compare the latest persisted policy snapshot against the immediately previous persisted policy snapshot for bounded history support
+- workflow-history and audit-history may attach bounded inventory, topology, and policy snapshot context plus immediate previous-snapshot comparison evidence where those persisted sync-run records exist
+- none of these comparisons currently claim policy correctness, topology validity, intended-versus-observed reconciliation, or automated remediation guidance
+
+## Inventory Read-Model Limitations
+
+The current inventory read model is intentionally conservative.
+
+What is real today:
+
+- the devices API returns a stable platform-owned structure for device identity, platform, role, management address, collector status, and capability posture
+- live collector-backed inventory remains the primary read path
+- the backend now persists bounded normalized inventory snapshots and can fall back to the latest persisted snapshot when live collection is unavailable
+- the devices response can now distinguish live collection, persisted fallback, and comparison-unavailable versus comparison-ready states explicitly
+
+What remains partial:
+
+- the inventory slice does not yet represent intended device state, validated lifecycle state, or controller-derived truth
+- persisted inventory support is intentionally limited to bounded normalized snapshot comparison rather than a final durable device domain model
+- inventory comparison counts remain explanatory summaries over normalized device attributes rather than drift judgments or operator recommendations
 
 ## Topology Read-Model Limitations
 
@@ -144,12 +179,14 @@ What is real today:
 - partial and unknown states are explicit in the contract
 - the backend owns the read model rather than exposing collector or controller-native shapes
 - the backend now persists bounded normalized topology snapshots and can fall back to the latest persisted snapshot when live collection is unavailable
+- the topology response can now distinguish live collection, persisted fallback, and comparison-unavailable versus comparison-ready states explicitly
 
 What remains partial:
 
 - the topology does not yet represent full adjacency discovery
 - the graph remains a bounded live slice rather than comprehensive operational truth
 - persisted topology support is intentionally limited to normalized snapshot history rather than a final topology database design
+- comparison counts describe bounded normalized node and link differences, not protocol-adjacency validation, path computation, or controller truth
 
 ## Policy Read-Model Limitations
 
@@ -161,6 +198,7 @@ What is real today:
 - intended, observed, support, and health states are explicit
 - candidate paths are represented in a normalized form rather than as vendor-native payloads
 - the backend exposes current live policy observations and now persists bounded normalized policy snapshots plus candidate-path records to Postgres
+- the policy response can now distinguish live collection, persisted fallback, and comparison-unavailable versus comparison-ready states explicitly, both for current-versus-latest-persisted and bounded persisted-versus-previous history views
 
 What remains partial:
 
@@ -169,6 +207,7 @@ What remains partial:
 - support states such as `unknown` and `not_implemented_in_platform` are expected and honest in the current phase
 - candidate path data remains absent or bounded rather than validated operational path computation
 - no policy details, editing, validation, or workflow execution flows exist yet
+- comparison counts remain explanatory summaries over normalized policy observations rather than a drift verdict, validation result, or action recommendation
 
 ## Metrics Flow
 
@@ -252,6 +291,7 @@ Current state:
 - the backend now persists bounded normalized inventory snapshots, normalized topology snapshots, and sync-run records
 - the backend now persists bounded normalized policy snapshots and candidate-path records alongside those existing inventory/topology snapshots
 - devices, topology, and policy can fall back to the latest persisted normalized snapshot if the live collector boundary is temporarily unavailable
+- devices, topology, and policy can also expose bounded current-versus-latest-persisted comparison summaries when both current live-backed state and an earlier persisted normalized snapshot exist
 - workflow-history and audit-history currently read persisted sync-run activity rather than separate durable workflow or audit tables
 - the current persisted slice is deployment-local because the topology has not yet added a host-mounted Postgres data directory
 - workflow history, audit history, and broader intent models remain transient or unimplemented rather than durably stored
@@ -284,7 +324,7 @@ Current state:
 - platform topology and service boundaries exist
 - backend and collector skeleton endpoints exist
 - bounded normalized inventory, topology, and policy integrations now connect the collector shape to the backend read paths
-- backend-owned normalized topology and policy read models now exist as stable live API slices with explicit partial and unknown states
+- backend-owned normalized inventory, topology, and policy read models now exist as stable live API slices with explicit live, persisted-fallback, partial, unknown, and bounded comparison semantics where supported
 - observability scaffolding exists
 - bounded persistence direction is explicit and now partially implemented for inventory, topology, and policy snapshots
 - persisted sync-run activity now supports bounded read-side history views, while live collector reads remain the primary source for current observed state

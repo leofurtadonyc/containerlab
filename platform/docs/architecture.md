@@ -96,10 +96,21 @@ Current read-model reality:
 - `/api/v1/policies` is backed by a backend-owned normalized live policy inventory model that explicitly marks support, observed, and unknown states
 - live collector-backed reads remain the primary path for devices, topology, and policy
 - inventory, topology, and policy snapshots are now persisted in Postgres along with sync-run records, and the API can fall back to the latest persisted normalized snapshot when the collector path is temporarily unavailable
+- `/api/v1/devices`, `/api/v1/topology`, and `/api/v1/policies` now expose explicit serving-mode and bounded comparison semantics so operators can distinguish live collector reads, persisted fallback responses, and current-versus-latest-persisted comparison-ready responses without implying a drift engine
 - policy persistence remains intentionally bounded to normalized snapshot history and candidate-path records rather than a broader durable policy domain model
 - workflow-history and audit-history remain bounded views derived from persisted sync-run activity rather than independently persisted workflow or audit domains
 - backend metrics remain transient in-memory service state for Prometheus scraping; they are not durable application records
 - these are stable product-owned contracts, but they remain bounded read-side slices rather than mature operational truth
+
+Current truth and comparison semantics:
+
+- `live` means the current response is primarily backed by the active collector-to-backend read path
+- `persisted_fallback` means the live collector path is currently unavailable and the response is serving the latest persisted normalized snapshot instead
+- `inferred` currently applies most directly to parts of topology, where normalized links are derived from bounded interface-state interpretation rather than protocol-derived adjacency truth
+- `partial` means the contract is intentionally exposing bounded platform knowledge rather than claiming complete operational truth
+- `unavailable` means the backend does not currently have the additional persisted evidence required to produce a bounded comparison view
+- comparison-ready summaries describe current normalized state against the latest persisted normalized snapshot, or one persisted snapshot against the immediately previous persisted snapshot, but they do not express validation conclusions, drift decisions, or action recommendations
+- `stale` is currently a product-facing interpretation used mainly by the workflow-history and audit-history pages to describe recency of persisted sync-derived evidence; it is not a claim that the platform has proven a configuration or protocol mismatch
 
 ### `app-web`
 
@@ -113,6 +124,12 @@ It owns:
 - future workflow-oriented UX
 
 It does not own business logic.
+
+Current truth-presentation reality:
+
+- the WebUI surfaces backend-owned serving-mode, comparison, recency, and evidence-boundary semantics
+- the WebUI may describe evidence as recent, aging, stale, partial, inferred, or unavailable where the backend contract and timestamps support that interpretation
+- those labels remain explanatory operator cues rather than workflow decisions, policy validation outcomes, or drift verdicts
 
 ### `gnmi-collector`
 
@@ -218,6 +235,7 @@ These boundaries remain non-negotiable:
 - runtime boundaries are documented
 - backend and collector skeletons exist
 - read-only devices, topology, policies, capabilities, and platform status APIs now exist as backend-owned normalized bounded live contracts
+- those read APIs now also expose clearer live-versus-persisted and comparison-friendly semantics where honest persisted support exists, especially for inventory, topology, and policy
 - useful read-only frontend pages now consume those stable backend contracts
 - observability scaffolding exists
 - database direction is established and bounded persistence is now real for inventory/topology/policy snapshots plus sync-run history
