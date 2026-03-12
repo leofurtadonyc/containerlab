@@ -19,10 +19,14 @@ from app_api.metrics.state import reset_metrics_registry
 from app_api.models.policy import PolicyInventorySnapshot
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.persistence.history import (
+    PersistedInventorySnapshotComparison,
+    PersistedInventorySnapshotSummary,
     PersistedPolicySnapshotComparison,
     PersistedPolicySnapshotSummary as PersistedPolicyHistorySummary,
     PersistedSyncRun,
     SyncRunHistorySummary,
+    PersistedTopologySnapshotComparison,
+    PersistedTopologySnapshotSummary,
 )
 from app_api.persistence.read_side import (
     PersistedInventorySnapshot,
@@ -582,6 +586,35 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             started_at=datetime.fromisoformat("2026-03-10T01:00:00+00:00"),
             finished_at=datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
             persisted_artifacts=["topology_snapshot"],
+            topology_snapshot_summary=PersistedTopologySnapshotSummary(
+                persisted_at=datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
+                observed_at=datetime.fromisoformat("2026-03-10T01:00:00+00:00"),
+                topology_name="Platform Observed Topology",
+                sync_source="gnmi_collector_topology_interface_inference",
+                sync_status="degraded",
+                completeness="partial",
+                node_count=2,
+                link_count=1,
+                node_state_counts={"up": 2},
+                link_state_counts={"up": 1},
+            ),
+            topology_comparison_to_previous=PersistedTopologySnapshotComparison(
+                current_persisted_at=datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
+                previous_persisted_at=datetime.fromisoformat("2026-03-10T00:30:00+00:00"),
+                current_node_count=2,
+                previous_node_count=1,
+                current_link_count=1,
+                previous_link_count=0,
+                node_count_delta=1,
+                link_count_delta=1,
+                added_node_count=1,
+                removed_node_count=0,
+                changed_node_count=0,
+                added_link_count=1,
+                removed_link_count=0,
+                changed_link_count=0,
+                notes=["Topology comparison evidence remains bounded to persisted normalized snapshots."],
+            ),
             notes=["Topology sync remained intentionally partial."],
         ),
         PersistedSyncRun(
@@ -595,6 +628,28 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             started_at=datetime.fromisoformat("2026-03-10T00:30:00+00:00"),
             finished_at=datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
             persisted_artifacts=["inventory_snapshot"],
+            inventory_snapshot_summary=PersistedInventorySnapshotSummary(
+                persisted_at=datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
+                observed_at=None,
+                sync_source="gnmi_collector_inventory",
+                sync_status="live_normalized_feed",
+                data_status="live",
+                device_count=34,
+                role_counts={"p": 16, "pe": 8, "cpe": 6, "noc": 2, "isp": 2},
+                collector_status_counts={"ok": 34},
+                capability_summary_counts={"partially_supported": 34},
+            ),
+            inventory_comparison_to_previous=PersistedInventorySnapshotComparison(
+                current_persisted_at=datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
+                previous_persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+                current_device_count=34,
+                previous_device_count=33,
+                device_count_delta=1,
+                added_device_count=1,
+                removed_device_count=0,
+                changed_device_count=2,
+                notes=["Inventory comparison evidence remains bounded to persisted normalized snapshots."],
+            ),
             notes=["Inventory sync completed from the bounded live path."],
         ),
     ]
@@ -1049,9 +1104,16 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert payload["items"][1]["workflow_name"] == "topology_snapshot_sync"
     assert payload["items"][1]["status"] == "partial"
     assert payload["items"][1]["persisted_artifacts"] == ["topology_snapshot"]
+    assert payload["items"][1]["topology_snapshot_summary"]["node_count"] == 2
+    assert payload["items"][1]["topology_comparison_to_previous"]["added_link_count"] == 1
     assert payload["items"][1]["policy_snapshot_summary"] is None
     assert payload["items"][2]["workflow_name"] == "inventory_snapshot_sync"
     assert payload["items"][2]["status"] == "completed"
+    assert payload["items"][2]["inventory_snapshot_summary"]["device_count"] == 34
+    assert payload["items"][2]["inventory_snapshot_summary"]["collector_status_counts"] == {
+        "ok": 34
+    }
+    assert payload["items"][2]["inventory_comparison_to_previous"]["changed_device_count"] == 2
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
@@ -1090,7 +1152,11 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert payload["items"][0]["policy_comparison_to_previous"]["changed_policy_count"] == 1
     assert payload["items"][0]["correlation_id"] == "sync-policy-1"
     assert "persisted policy_snapshot" in payload["items"][0]["message"]
+    assert payload["items"][1]["topology_snapshot_summary"]["topology_name"] == "Platform Observed Topology"
+    assert payload["items"][1]["topology_comparison_to_previous"]["node_count_delta"] == 1
     assert payload["items"][1]["policy_snapshot_summary"] is None
+    assert payload["items"][2]["inventory_snapshot_summary"]["role_counts"]["pe"] == 8
+    assert payload["items"][2]["inventory_comparison_to_previous"]["added_device_count"] == 1
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 

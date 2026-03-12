@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import type { WorkflowHistoryItem } from "../../api/contracts";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
@@ -73,6 +74,147 @@ function describeTimeGap(start: string | null, end: string | null): string {
   return `${gapMinutes}m`;
 }
 
+function getAgeMinutes(value: string | null, generatedAt: string): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const observedDate = new Date(value);
+  const generatedDate = new Date(generatedAt);
+  if (Number.isNaN(observedDate.getTime()) || Number.isNaN(generatedDate.getTime())) {
+    return null;
+  }
+
+  return Math.max(0, Math.round((generatedDate.getTime() - observedDate.getTime()) / 60000));
+}
+
+function getRecencyBucket(
+  value: string | null,
+  generatedAt: string,
+): "recent" | "aging" | "stale" | "unknown" {
+  const ageMinutes = getAgeMinutes(value, generatedAt);
+  if (ageMinutes === null) {
+    return "unknown";
+  }
+  if (ageMinutes <= 5) {
+    return "recent";
+  }
+  if (ageMinutes <= 30) {
+    return "aging";
+  }
+  return "stale";
+}
+
+function matchesRecencyFilter(
+  value: string | null,
+  generatedAt: string,
+  recencyFilter: string,
+): boolean {
+  if (recencyFilter === "all") {
+    return true;
+  }
+  if (recencyFilter === "with_observed_input") {
+    return value !== null;
+  }
+  if (recencyFilter === "without_observed_input") {
+    return value === null;
+  }
+  return getRecencyBucket(value, generatedAt) === recencyFilter;
+}
+
+function getWorkflowEvidenceLabel(item: WorkflowHistoryItem): string {
+  if (item.inventory_comparison_to_previous) {
+    return "Inventory comparison";
+  }
+  if (item.topology_comparison_to_previous) {
+    return "Topology comparison";
+  }
+  if (item.policy_comparison_to_previous) {
+    return "Policy comparison";
+  }
+  if (item.inventory_snapshot_summary) {
+    return "Inventory snapshot";
+  }
+  if (item.topology_snapshot_summary) {
+    return "Topology snapshot";
+  }
+  if (item.policy_snapshot_summary) {
+    return "Policy snapshot";
+  }
+  return "Sync-only";
+}
+
+function getWorkflowEvidencePosture(item: WorkflowHistoryItem): string {
+  if (item.inventory_comparison_to_previous) {
+    return "Sync run plus bounded inventory comparison evidence";
+  }
+  if (item.topology_comparison_to_previous) {
+    return "Sync run plus bounded topology comparison evidence";
+  }
+  if (item.policy_comparison_to_previous) {
+    return "Sync run plus bounded policy comparison evidence";
+  }
+  if (item.inventory_snapshot_summary) {
+    return "Sync run plus bounded inventory snapshot context";
+  }
+  if (item.topology_snapshot_summary) {
+    return "Sync run plus bounded topology snapshot context";
+  }
+  if (item.policy_snapshot_summary) {
+    return "Sync run plus bounded policy snapshot context";
+  }
+  return "Sync-run visibility only";
+}
+
+function matchesWorkflowEvidenceFilter(
+  item: WorkflowHistoryItem,
+  evidenceFilter: string,
+): boolean {
+  if (evidenceFilter === "all") {
+    return true;
+  }
+  if (evidenceFilter === "inventory_snapshot_context") {
+    return item.inventory_snapshot_summary !== null;
+  }
+  if (evidenceFilter === "inventory_comparison") {
+    return item.inventory_comparison_to_previous !== null;
+  }
+  if (evidenceFilter === "topology_snapshot_context") {
+    return item.topology_snapshot_summary !== null;
+  }
+  if (evidenceFilter === "topology_comparison") {
+    return item.topology_comparison_to_previous !== null;
+  }
+  if (evidenceFilter === "policy_snapshot_context") {
+    return item.policy_snapshot_summary !== null;
+  }
+  if (evidenceFilter === "policy_comparison") {
+    return item.policy_comparison_to_previous !== null;
+  }
+  if (evidenceFilter === "notes_present") {
+    return item.notes.length > 0;
+  }
+  return false;
+}
+
+function getWorkflowEvidenceWeight(item: WorkflowHistoryItem): number {
+  if (
+    item.inventory_comparison_to_previous ||
+    item.topology_comparison_to_previous ||
+    item.policy_comparison_to_previous
+  ) {
+    return 3;
+  }
+  if (
+    item.inventory_snapshot_summary ||
+    item.topology_snapshot_summary ||
+    item.policy_snapshot_summary
+  ) {
+    return 2;
+  }
+  return 1;
+}
+
 export function WorkflowsView() {
   const { data, error, isLoading, reload } = useWorkflowHistoryQuery();
   const [searchValue, setSearchValue] = useState("");
@@ -80,6 +222,7 @@ export function WorkflowsView() {
   const [scopeFilter, setScopeFilter] = useState("all");
   const [artifactFilter, setArtifactFilter] = useState("all");
   const [evidenceFilter, setEvidenceFilter] = useState("all");
+  const [recencyFilter, setRecencyFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest_finished");
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
   const items = data?.items ?? [];
@@ -90,10 +233,36 @@ export function WorkflowsView() {
     (artifact) => artifact,
   );
   const comparisonEvidenceCount = items.filter(
-    (item) => item.policy_comparison_to_previous !== null,
+    (item) =>
+      item.inventory_comparison_to_previous !== null ||
+      item.topology_comparison_to_previous !== null ||
+      item.policy_comparison_to_previous !== null,
   ).length;
+  const inventoryContextCount = items.filter(
+    (item) => item.inventory_snapshot_summary !== null,
+  ).length;
+  const topologyContextCount = items.filter((item) => item.topology_snapshot_summary !== null).length;
   const policyContextCount = items.filter((item) => item.policy_snapshot_summary !== null).length;
   const itemsWithNotesCount = items.filter((item) => item.notes.length > 0).length;
+  const recentFinishedCount = items.filter(
+    (item) => getRecencyBucket(item.finished_at, data?.generated_at ?? "") === "recent",
+  ).length;
+  const agingFinishedCount = items.filter(
+    (item) => getRecencyBucket(item.finished_at, data?.generated_at ?? "") === "aging",
+  ).length;
+  const staleFinishedCount = items.filter(
+    (item) => getRecencyBucket(item.finished_at, data?.generated_at ?? "") === "stale",
+  ).length;
+  const withObservedInputCount = items.filter((item) => item.observed_at !== null).length;
+  const inventoryComparisonCount = items.filter(
+    (item) => item.inventory_comparison_to_previous !== null,
+  ).length;
+  const topologyComparisonCount = items.filter(
+    (item) => item.topology_comparison_to_previous !== null,
+  ).length;
+  const policyComparisonCount = items.filter(
+    (item) => item.policy_comparison_to_previous !== null,
+  ).length;
   const filteredItems = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
 
@@ -103,13 +272,12 @@ export function WorkflowsView() {
         const matchesScope = scopeFilter === "all" || item.scope === scopeFilter;
         const matchesArtifact =
           artifactFilter === "all" || item.persisted_artifacts.includes(artifactFilter);
-        const matchesEvidence =
-          evidenceFilter === "all" ||
-          (evidenceFilter === "policy_snapshot_context" &&
-            item.policy_snapshot_summary !== null) ||
-          (evidenceFilter === "policy_comparison" &&
-            item.policy_comparison_to_previous !== null) ||
-          (evidenceFilter === "notes_present" && item.notes.length > 0);
+        const matchesEvidence = matchesWorkflowEvidenceFilter(item, evidenceFilter);
+        const matchesRecency = matchesRecencyFilter(
+          item.finished_at,
+          data?.generated_at ?? "",
+          recencyFilter,
+        );
         const matchesSearch =
           normalizedSearch.length === 0 ||
           [
@@ -124,7 +292,14 @@ export function WorkflowsView() {
             .toLowerCase()
             .includes(normalizedSearch);
 
-        return matchesStatus && matchesScope && matchesArtifact && matchesEvidence && matchesSearch;
+        return (
+          matchesStatus &&
+          matchesScope &&
+          matchesArtifact &&
+          matchesEvidence &&
+          matchesRecency &&
+          matchesSearch
+        );
       })
       .sort((left, right) => {
         const leftFinishedAt = new Date(left.finished_at).getTime();
@@ -133,9 +308,17 @@ export function WorkflowsView() {
           getDurationSeconds(left.started_at, left.finished_at) ?? Number.NEGATIVE_INFINITY;
         const rightDuration =
           getDurationSeconds(right.started_at, right.finished_at) ?? Number.NEGATIVE_INFINITY;
+        const leftEvidenceWeight = getWorkflowEvidenceWeight(left);
+        const rightEvidenceWeight = getWorkflowEvidenceWeight(right);
 
         if (sortOrder === "oldest_finished") {
           return leftFinishedAt - rightFinishedAt;
+        }
+        if (sortOrder === "scope_then_newest") {
+          return left.scope.localeCompare(right.scope) || rightFinishedAt - leftFinishedAt;
+        }
+        if (sortOrder === "richest_evidence") {
+          return rightEvidenceWeight - leftEvidenceWeight || rightFinishedAt - leftFinishedAt;
         }
         if (sortOrder === "longest_duration") {
           return rightDuration - leftDuration || rightFinishedAt - leftFinishedAt;
@@ -149,6 +332,8 @@ export function WorkflowsView() {
     artifactFilter,
     evidenceFilter,
     items,
+    data?.generated_at,
+    recencyFilter,
     scopeFilter,
     searchValue,
     sortOrder,
@@ -250,9 +435,29 @@ export function WorkflowsView() {
           <p>How recent the newest persisted workflow-history evidence is.</p>
         </article>
         <article className="summary-card">
-          <p className="summary-label">Policy Comparison Evidence</p>
+          <p className="summary-label">Recent Syncs</p>
+          <strong>{recentFinishedCount}</strong>
+          <p>Sync runs whose latest finish evidence is still recent in this generated view.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Stale Syncs</p>
+          <strong>{staleFinishedCount}</strong>
+          <p>Sync runs whose latest finish evidence is already stale in this generated view.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Comparison Evidence</p>
           <strong>{comparisonEvidenceCount}</strong>
-          <p>Sync runs that include bounded persisted policy snapshot comparison context.</p>
+          <p>Sync runs that include bounded inventory, topology, or policy comparison context.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Inventory Snapshot Context</p>
+          <strong>{inventoryContextCount}</strong>
+          <p>History entries that carry persisted inventory evidence beyond sync status.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Topology Snapshot Context</p>
+          <strong>{topologyContextCount}</strong>
+          <p>History entries that carry persisted topology evidence beyond sync status.</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Policy Snapshot Context</p>
@@ -331,8 +536,47 @@ export function WorkflowsView() {
               <strong>{describeRecency(latestFinishedAt, data.generated_at)}</strong>
             </li>
             <li>
-              <span>Bounded policy snapshot context</span>
-              <strong>{policyContextCount}</strong>
+              <span>Bounded snapshot context</span>
+              <strong>
+                {inventoryContextCount + topologyContextCount + policyContextCount}
+              </strong>
+            </li>
+            <li>
+              <span>Recent / aging / stale</span>
+              <strong>
+                {recentFinishedCount} / {agingFinishedCount} / {staleFinishedCount}
+              </strong>
+            </li>
+            <li>
+              <span>Entries with observed input</span>
+              <strong>{withObservedInputCount}</strong>
+            </li>
+          </ul>
+        </article>
+        <article className="detail-card">
+          <h3>Cross-Domain Evidence</h3>
+          <p>
+            Comparison-ready entries remain bounded to persisted normalized snapshot pairs.
+            Snapshot-context entries indicate richer read-side evidence, not workflow actions.
+          </p>
+          <ul className="compact-list">
+            <li>
+              <span>Inventory context / comparison</span>
+              <strong>
+                {inventoryContextCount} / {inventoryComparisonCount}
+              </strong>
+            </li>
+            <li>
+              <span>Topology context / comparison</span>
+              <strong>
+                {topologyContextCount} / {topologyComparisonCount}
+              </strong>
+            </li>
+            <li>
+              <span>Policy context / comparison</span>
+              <strong>
+                {policyContextCount} / {policyComparisonCount}
+              </strong>
             </li>
           </ul>
         </article>
@@ -392,9 +636,27 @@ export function WorkflowsView() {
             onChange={(event) => setEvidenceFilter(event.target.value)}
           >
             <option value="all">All</option>
+            <option value="inventory_snapshot_context">Inventory snapshot context</option>
+            <option value="inventory_comparison">Inventory comparison evidence</option>
+            <option value="topology_snapshot_context">Topology snapshot context</option>
+            <option value="topology_comparison">Topology comparison evidence</option>
             <option value="policy_snapshot_context">Policy snapshot context</option>
             <option value="policy_comparison">Policy comparison evidence</option>
             <option value="notes_present">Entries with notes</option>
+          </select>
+        </label>
+        <label className="field-group">
+          <span>Recency</span>
+          <select
+            value={recencyFilter}
+            onChange={(event) => setRecencyFilter(event.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="recent">Recent finishes</option>
+            <option value="aging">Aging finishes</option>
+            <option value="stale">Stale finishes</option>
+            <option value="with_observed_input">With observed input</option>
+            <option value="without_observed_input">Without observed input</option>
           </select>
         </label>
         <label className="field-group">
@@ -402,6 +664,8 @@ export function WorkflowsView() {
           <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value)}>
             <option value="newest_finished">Newest finished first</option>
             <option value="oldest_finished">Oldest finished first</option>
+            <option value="scope_then_newest">Scope then newest</option>
+            <option value="richest_evidence">Richest evidence first</option>
             <option value="longest_duration">Longest duration first</option>
             <option value="highest_record_count">Highest record count first</option>
           </select>
@@ -462,11 +726,7 @@ export function WorkflowsView() {
                         <div className="table-note">{formatLabel(item.workflow_type)}</div>
                       </td>
                       <td>
-                        {item.policy_comparison_to_previous
-                          ? "Comparison ready"
-                          : item.policy_snapshot_summary
-                            ? "Snapshot context"
-                            : "Sync-only"}
+                        {getWorkflowEvidenceLabel(item)}
                       </td>
                       <td>
                         {item.persisted_artifacts.length === 0
@@ -480,7 +740,8 @@ export function WorkflowsView() {
                       <td>
                         {formatDateTime(item.finished_at)}
                         <div className="table-note">
-                          Started: {formatDateTime(item.started_at)}
+                          {describeRecency(item.finished_at, data.generated_at)} • Started:{" "}
+                          {formatDateTime(item.started_at)}
                         </div>
                       </td>
                     </tr>
@@ -551,14 +812,16 @@ export function WorkflowsView() {
                   <strong>{selectedWorkflow.source_endpoint}</strong>
                 </div>
                 <div className="key-value-row">
+                  <span>Source type</span>
+                  <strong>{formatLabel(selectedWorkflow.source_type)}</strong>
+                </div>
+                <div className="key-value-row">
                   <span>Evidence posture</span>
-                  <strong>
-                    {selectedWorkflow.policy_comparison_to_previous
-                      ? "Sync run plus bounded comparison evidence"
-                      : selectedWorkflow.policy_snapshot_summary
-                        ? "Sync run plus bounded snapshot context"
-                        : "Sync-run visibility only"}
-                  </strong>
+                  <strong>{getWorkflowEvidencePosture(selectedWorkflow)}</strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Observed input freshness</span>
+                  <strong>{describeRecency(selectedWorkflow.observed_at, data.generated_at)}</strong>
                 </div>
               </div>
               {selectedWorkflow.notes.length > 0 ? (
@@ -569,6 +832,240 @@ export function WorkflowsView() {
                       <li key={note}>{note}</li>
                     ))}
                   </ul>
+                </>
+              ) : null}
+              {selectedWorkflow.inventory_snapshot_summary ? (
+                <>
+                  <p className="summary-label">Inventory Snapshot Context</p>
+                  <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Persisted at</span>
+                      <strong>
+                        {formatDateTime(selectedWorkflow.inventory_snapshot_summary.persisted_at)}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Device count</span>
+                      <strong>{selectedWorkflow.inventory_snapshot_summary.device_count}</strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Snapshot lag after finish</span>
+                      <strong>
+                        {describeTimeGap(
+                          selectedWorkflow.finished_at,
+                          selectedWorkflow.inventory_snapshot_summary.persisted_at,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Snapshot data status</span>
+                      <strong>
+                        {formatLabel(selectedWorkflow.inventory_snapshot_summary.data_status)}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Role distribution</span>
+                      <strong>
+                        {Object.entries(selectedWorkflow.inventory_snapshot_summary.role_counts)
+                          .map(([role, count]) => `${formatLabel(role)} ${count}`)
+                          .join(", ") || "None"}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Collector status distribution</span>
+                      <strong>
+                        {Object.entries(
+                          selectedWorkflow.inventory_snapshot_summary.collector_status_counts,
+                        )
+                          .map(([status, count]) => `${formatLabel(status)} ${count}`)
+                          .join(", ") || "None"}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Observed to persisted lag</span>
+                      <strong>
+                        {describeTimeGap(
+                          selectedWorkflow.inventory_snapshot_summary.observed_at,
+                          selectedWorkflow.inventory_snapshot_summary.persisted_at,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Capability summary distribution</span>
+                      <strong>
+                        {Object.entries(
+                          selectedWorkflow.inventory_snapshot_summary.capability_summary_counts,
+                        )
+                          .map(([status, count]) => `${formatLabel(status)} ${count}`)
+                          .join(", ") || "None"}
+                      </strong>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+              {selectedWorkflow.inventory_comparison_to_previous ? (
+                <>
+                  <p className="summary-label">Inventory Comparison Evidence</p>
+                  <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Compared snapshots</span>
+                      <strong>
+                        {formatDateTime(
+                          selectedWorkflow.inventory_comparison_to_previous.previous_persisted_at,
+                        )}{" "}
+                        {"->"}{" "}
+                        {formatDateTime(
+                          selectedWorkflow.inventory_comparison_to_previous.current_persisted_at,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Device count delta</span>
+                      <strong>
+                        {formatSignedDelta(
+                          selectedWorkflow.inventory_comparison_to_previous.device_count_delta,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Added / removed / changed</span>
+                      <strong>
+                        {selectedWorkflow.inventory_comparison_to_previous.added_device_count} /{" "}
+                        {selectedWorkflow.inventory_comparison_to_previous.removed_device_count} /{" "}
+                        {selectedWorkflow.inventory_comparison_to_previous.changed_device_count}
+                      </strong>
+                    </div>
+                  </div>
+                  {selectedWorkflow.inventory_comparison_to_previous.notes.length > 0 ? (
+                    <ul className="notes-list">
+                      {selectedWorkflow.inventory_comparison_to_previous.notes.map((note) => (
+                        <li key={note}>{note}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </>
+              ) : null}
+              {selectedWorkflow.topology_snapshot_summary ? (
+                <>
+                  <p className="summary-label">Topology Snapshot Context</p>
+                  <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Persisted at</span>
+                      <strong>
+                        {formatDateTime(selectedWorkflow.topology_snapshot_summary.persisted_at)}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Topology</span>
+                      <strong>{selectedWorkflow.topology_snapshot_summary.topology_name}</strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Snapshot lag after finish</span>
+                      <strong>
+                        {describeTimeGap(
+                          selectedWorkflow.finished_at,
+                          selectedWorkflow.topology_snapshot_summary.persisted_at,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Nodes / links</span>
+                      <strong>
+                        {selectedWorkflow.topology_snapshot_summary.node_count} /{" "}
+                        {selectedWorkflow.topology_snapshot_summary.link_count}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Completeness</span>
+                      <strong>
+                        {formatLabel(selectedWorkflow.topology_snapshot_summary.completeness)}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Node states</span>
+                      <strong>
+                        {Object.entries(selectedWorkflow.topology_snapshot_summary.node_state_counts)
+                          .map(([state, count]) => `${formatLabel(state)} ${count}`)
+                          .join(", ") || "None"}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Link states</span>
+                      <strong>
+                        {Object.entries(selectedWorkflow.topology_snapshot_summary.link_state_counts)
+                          .map(([state, count]) => `${formatLabel(state)} ${count}`)
+                          .join(", ") || "None"}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Observed to persisted lag</span>
+                      <strong>
+                        {describeTimeGap(
+                          selectedWorkflow.topology_snapshot_summary.observed_at,
+                          selectedWorkflow.topology_snapshot_summary.persisted_at,
+                        )}
+                      </strong>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+              {selectedWorkflow.topology_comparison_to_previous ? (
+                <>
+                  <p className="summary-label">Topology Comparison Evidence</p>
+                  <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Compared snapshots</span>
+                      <strong>
+                        {formatDateTime(
+                          selectedWorkflow.topology_comparison_to_previous.previous_persisted_at,
+                        )}{" "}
+                        {"->"}{" "}
+                        {formatDateTime(
+                          selectedWorkflow.topology_comparison_to_previous.current_persisted_at,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Node / link delta</span>
+                      <strong>
+                        {formatSignedDelta(
+                          selectedWorkflow.topology_comparison_to_previous.node_count_delta,
+                        )}{" "}
+                        /{" "}
+                        {formatSignedDelta(
+                          selectedWorkflow.topology_comparison_to_previous.link_count_delta,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Added nodes / links</span>
+                      <strong>
+                        {selectedWorkflow.topology_comparison_to_previous.added_node_count} /{" "}
+                        {selectedWorkflow.topology_comparison_to_previous.added_link_count}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Removed nodes / links</span>
+                      <strong>
+                        {selectedWorkflow.topology_comparison_to_previous.removed_node_count} /{" "}
+                        {selectedWorkflow.topology_comparison_to_previous.removed_link_count}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Changed nodes / links</span>
+                      <strong>
+                        {selectedWorkflow.topology_comparison_to_previous.changed_node_count} /{" "}
+                        {selectedWorkflow.topology_comparison_to_previous.changed_link_count}
+                      </strong>
+                    </div>
+                  </div>
+                  {selectedWorkflow.topology_comparison_to_previous.notes.length > 0 ? (
+                    <ul className="notes-list">
+                      {selectedWorkflow.topology_comparison_to_previous.notes.map((note) => (
+                        <li key={note}>{note}</li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </>
               ) : null}
               {selectedWorkflow.policy_snapshot_summary ? (

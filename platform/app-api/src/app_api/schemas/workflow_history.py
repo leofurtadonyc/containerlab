@@ -23,6 +23,69 @@ class WorkflowPolicySnapshotSummary(BaseModel):
     detail_record_count: int
 
 
+class WorkflowInventorySnapshotSummary(BaseModel):
+    """Bounded persisted inventory snapshot context attached to a workflow history item."""
+
+    persisted_at: datetime
+    observed_at: datetime | None = None
+    sync_source: str
+    sync_status: str
+    data_status: str
+    device_count: int
+    role_counts: dict[str, int]
+    collector_status_counts: dict[str, int]
+    capability_summary_counts: dict[str, int]
+
+
+class WorkflowInventorySnapshotComparison(BaseModel):
+    """Bounded current-versus-previous inventory snapshot comparison evidence."""
+
+    current_persisted_at: datetime
+    previous_persisted_at: datetime
+    current_device_count: int
+    previous_device_count: int
+    device_count_delta: int
+    added_device_count: int
+    removed_device_count: int
+    changed_device_count: int
+    notes: list[str]
+
+
+class WorkflowTopologySnapshotSummary(BaseModel):
+    """Bounded persisted topology snapshot context attached to a workflow history item."""
+
+    persisted_at: datetime
+    observed_at: datetime | None = None
+    topology_name: str
+    sync_source: str
+    sync_status: str
+    completeness: str
+    node_count: int
+    link_count: int
+    node_state_counts: dict[str, int]
+    link_state_counts: dict[str, int]
+
+
+class WorkflowTopologySnapshotComparison(BaseModel):
+    """Bounded current-versus-previous topology snapshot comparison evidence."""
+
+    current_persisted_at: datetime
+    previous_persisted_at: datetime
+    current_node_count: int
+    previous_node_count: int
+    current_link_count: int
+    previous_link_count: int
+    node_count_delta: int
+    link_count_delta: int
+    added_node_count: int
+    removed_node_count: int
+    changed_node_count: int
+    added_link_count: int
+    removed_link_count: int
+    changed_link_count: int
+    notes: list[str]
+
+
 class WorkflowPolicySnapshotComparison(BaseModel):
     """Bounded current-versus-previous policy snapshot comparison evidence."""
 
@@ -55,6 +118,10 @@ class WorkflowHistoryItem(BaseModel):
     started_at: datetime
     finished_at: datetime
     persisted_artifacts: list[str]
+    inventory_snapshot_summary: WorkflowInventorySnapshotSummary | None = None
+    inventory_comparison_to_previous: WorkflowInventorySnapshotComparison | None = None
+    topology_snapshot_summary: WorkflowTopologySnapshotSummary | None = None
+    topology_comparison_to_previous: WorkflowTopologySnapshotComparison | None = None
     policy_snapshot_summary: WorkflowPolicySnapshotSummary | None = None
     policy_comparison_to_previous: WorkflowPolicySnapshotComparison | None = None
     notes: list[str]

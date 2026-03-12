@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import type { AuditHistoryItem } from "../../api/contracts";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
@@ -52,22 +53,180 @@ function describeTimeGap(start: string | null, end: string | null): string {
   return `${gapMinutes}m`;
 }
 
+function getAgeMinutes(value: string | null, generatedAt: string): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const occurredDate = new Date(value);
+  const generatedDate = new Date(generatedAt);
+  if (Number.isNaN(occurredDate.getTime()) || Number.isNaN(generatedDate.getTime())) {
+    return null;
+  }
+
+  return Math.max(0, Math.round((generatedDate.getTime() - occurredDate.getTime()) / 60000));
+}
+
+function getRecencyBucket(
+  value: string | null,
+  generatedAt: string,
+): "recent" | "aging" | "stale" | "unknown" {
+  const ageMinutes = getAgeMinutes(value, generatedAt);
+  if (ageMinutes === null) {
+    return "unknown";
+  }
+  if (ageMinutes <= 5) {
+    return "recent";
+  }
+  if (ageMinutes <= 30) {
+    return "aging";
+  }
+  return "stale";
+}
+
+function matchesRecencyFilter(
+  value: string | null,
+  generatedAt: string,
+  recencyFilter: string,
+): boolean {
+  if (recencyFilter === "all") {
+    return true;
+  }
+  return getRecencyBucket(value, generatedAt) === recencyFilter;
+}
+
+function getAuditEvidenceLabel(item: AuditHistoryItem): string {
+  if (item.inventory_comparison_to_previous) {
+    return "Inventory comparison";
+  }
+  if (item.topology_comparison_to_previous) {
+    return "Topology comparison";
+  }
+  if (item.policy_comparison_to_previous) {
+    return "Policy comparison";
+  }
+  if (item.inventory_snapshot_summary) {
+    return "Inventory snapshot";
+  }
+  if (item.topology_snapshot_summary) {
+    return "Topology snapshot";
+  }
+  if (item.policy_snapshot_summary) {
+    return "Policy snapshot";
+  }
+  return "Sync-only";
+}
+
+function getAuditEvidencePosture(item: AuditHistoryItem): string {
+  if (item.inventory_comparison_to_previous) {
+    return "Audit event plus bounded inventory comparison evidence";
+  }
+  if (item.topology_comparison_to_previous) {
+    return "Audit event plus bounded topology comparison evidence";
+  }
+  if (item.policy_comparison_to_previous) {
+    return "Audit event plus bounded policy comparison evidence";
+  }
+  if (item.inventory_snapshot_summary) {
+    return "Audit event plus bounded inventory snapshot context";
+  }
+  if (item.topology_snapshot_summary) {
+    return "Audit event plus bounded topology snapshot context";
+  }
+  if (item.policy_snapshot_summary) {
+    return "Audit event plus bounded policy snapshot context";
+  }
+  return "Audit visibility only";
+}
+
+function matchesAuditEvidenceFilter(item: AuditHistoryItem, evidenceFilter: string): boolean {
+  if (evidenceFilter === "all") {
+    return true;
+  }
+  if (evidenceFilter === "inventory_snapshot_context") {
+    return item.inventory_snapshot_summary !== null;
+  }
+  if (evidenceFilter === "inventory_comparison") {
+    return item.inventory_comparison_to_previous !== null;
+  }
+  if (evidenceFilter === "topology_snapshot_context") {
+    return item.topology_snapshot_summary !== null;
+  }
+  if (evidenceFilter === "topology_comparison") {
+    return item.topology_comparison_to_previous !== null;
+  }
+  if (evidenceFilter === "policy_snapshot_context") {
+    return item.policy_snapshot_summary !== null;
+  }
+  if (evidenceFilter === "policy_comparison") {
+    return item.policy_comparison_to_previous !== null;
+  }
+  if (evidenceFilter === "notes_present") {
+    return item.notes.length > 0;
+  }
+  return false;
+}
+
+function getAuditEvidenceWeight(item: AuditHistoryItem): number {
+  if (
+    item.inventory_comparison_to_previous ||
+    item.topology_comparison_to_previous ||
+    item.policy_comparison_to_previous
+  ) {
+    return 3;
+  }
+  if (
+    item.inventory_snapshot_summary ||
+    item.topology_snapshot_summary ||
+    item.policy_snapshot_summary
+  ) {
+    return 2;
+  }
+  return 1;
+}
+
 export function AuditView() {
   const { data, error, isLoading, reload } = useAuditHistoryQuery();
   const [searchValue, setSearchValue] = useState("");
   const [resultFilter, setResultFilter] = useState("all");
   const [scopeFilter, setScopeFilter] = useState("all");
   const [evidenceFilter, setEvidenceFilter] = useState("all");
+  const [recencyFilter, setRecencyFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest_occurred");
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const items = data?.items ?? [];
   const resultCounts = countBy(items, (item) => item.result);
   const scopeCounts = countBy(items, (item) => item.target_scope);
   const comparisonEvidenceCount = items.filter(
-    (item) => item.policy_comparison_to_previous !== null,
+    (item) =>
+      item.inventory_comparison_to_previous !== null ||
+      item.topology_comparison_to_previous !== null ||
+      item.policy_comparison_to_previous !== null,
   ).length;
+  const inventoryContextCount = items.filter(
+    (item) => item.inventory_snapshot_summary !== null,
+  ).length;
+  const topologyContextCount = items.filter((item) => item.topology_snapshot_summary !== null).length;
   const policyContextCount = items.filter((item) => item.policy_snapshot_summary !== null).length;
   const itemsWithNotesCount = items.filter((item) => item.notes.length > 0).length;
+  const recentEventCount = items.filter(
+    (item) => getRecencyBucket(item.occurred_at, data?.generated_at ?? "") === "recent",
+  ).length;
+  const agingEventCount = items.filter(
+    (item) => getRecencyBucket(item.occurred_at, data?.generated_at ?? "") === "aging",
+  ).length;
+  const staleEventCount = items.filter(
+    (item) => getRecencyBucket(item.occurred_at, data?.generated_at ?? "") === "stale",
+  ).length;
+  const inventoryComparisonCount = items.filter(
+    (item) => item.inventory_comparison_to_previous !== null,
+  ).length;
+  const topologyComparisonCount = items.filter(
+    (item) => item.topology_comparison_to_previous !== null,
+  ).length;
+  const policyComparisonCount = items.filter(
+    (item) => item.policy_comparison_to_previous !== null,
+  ).length;
   const filteredItems = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
 
@@ -75,13 +234,12 @@ export function AuditView() {
       .filter((item) => {
         const matchesResult = resultFilter === "all" || item.result === resultFilter;
         const matchesScope = scopeFilter === "all" || item.target_scope === scopeFilter;
-        const matchesEvidence =
-          evidenceFilter === "all" ||
-          (evidenceFilter === "policy_snapshot_context" &&
-            item.policy_snapshot_summary !== null) ||
-          (evidenceFilter === "policy_comparison" &&
-            item.policy_comparison_to_previous !== null) ||
-          (evidenceFilter === "notes_present" && item.notes.length > 0);
+        const matchesEvidence = matchesAuditEvidenceFilter(item, evidenceFilter);
+        const matchesRecency = matchesRecencyFilter(
+          item.occurred_at,
+          data?.generated_at ?? "",
+          recencyFilter,
+        );
         const matchesSearch =
           normalizedSearch.length === 0 ||
           [
@@ -94,15 +252,19 @@ export function AuditView() {
             .join(" ")
             .toLowerCase()
             .includes(normalizedSearch);
-
-        return matchesResult && matchesScope && matchesEvidence && matchesSearch;
+        return matchesResult && matchesScope && matchesEvidence && matchesRecency && matchesSearch;
       })
       .sort((left, right) => {
         const leftOccurredAt = new Date(left.occurred_at).getTime();
         const rightOccurredAt = new Date(right.occurred_at).getTime();
+        const leftEvidenceWeight = getAuditEvidenceWeight(left);
+        const rightEvidenceWeight = getAuditEvidenceWeight(right);
 
         if (sortOrder === "oldest_occurred") {
           return leftOccurredAt - rightOccurredAt;
+        }
+        if (sortOrder === "richest_evidence") {
+          return rightEvidenceWeight - leftEvidenceWeight || rightOccurredAt - leftOccurredAt;
         }
         if (sortOrder === "scope_then_newest") {
           return (
@@ -115,7 +277,16 @@ export function AuditView() {
         }
         return rightOccurredAt - leftOccurredAt;
       });
-  }, [evidenceFilter, items, resultFilter, scopeFilter, searchValue, sortOrder]);
+  }, [
+    data?.generated_at,
+    evidenceFilter,
+    items,
+    recencyFilter,
+    resultFilter,
+    scopeFilter,
+    searchValue,
+    sortOrder,
+  ]);
   const latestOccurredAt = items[0]?.occurred_at ?? null;
   const selectedEvent =
     filteredItems.find((item) => item.event_id === selectedEventId) ??
@@ -203,9 +374,29 @@ export function AuditView() {
           <p>How recent the newest persisted audit-style event is.</p>
         </article>
         <article className="summary-card">
-          <p className="summary-label">Policy Comparison Evidence</p>
+          <p className="summary-label">Recent Events</p>
+          <strong>{recentEventCount}</strong>
+          <p>Audit-style events whose occurrence time is still recent in this generated view.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Stale Events</p>
+          <strong>{staleEventCount}</strong>
+          <p>Audit-style events whose occurrence time is already stale in this generated view.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Comparison Evidence</p>
           <strong>{comparisonEvidenceCount}</strong>
-          <p>Audit-style events that include bounded persisted policy snapshot comparison context.</p>
+          <p>Audit events that include bounded inventory, topology, or policy comparison context.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Inventory Snapshot Context</p>
+          <strong>{inventoryContextCount}</strong>
+          <p>Events that include bounded persisted inventory evidence beyond plain audit messaging.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Topology Snapshot Context</p>
+          <strong>{topologyContextCount}</strong>
+          <p>Events that include bounded persisted topology evidence beyond plain audit messaging.</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Policy Snapshot Context</p>
@@ -288,8 +479,43 @@ export function AuditView() {
               </strong>
             </li>
             <li>
-              <span>Bounded policy snapshot context</span>
-              <strong>{policyContextCount}</strong>
+              <span>Bounded snapshot context</span>
+              <strong>
+                {inventoryContextCount + topologyContextCount + policyContextCount}
+              </strong>
+            </li>
+            <li>
+              <span>Recent / aging / stale</span>
+              <strong>
+                {recentEventCount} / {agingEventCount} / {staleEventCount}
+              </strong>
+            </li>
+          </ul>
+        </article>
+        <article className="detail-card">
+          <h3>Cross-Domain Evidence</h3>
+          <p>
+            Comparison-ready audit entries remain bounded to persisted normalized snapshot pairs.
+            They show what the platform recorded, not who approved or executed change actions.
+          </p>
+          <ul className="compact-list">
+            <li>
+              <span>Inventory context / comparison</span>
+              <strong>
+                {inventoryContextCount} / {inventoryComparisonCount}
+              </strong>
+            </li>
+            <li>
+              <span>Topology context / comparison</span>
+              <strong>
+                {topologyContextCount} / {topologyComparisonCount}
+              </strong>
+            </li>
+            <li>
+              <span>Policy context / comparison</span>
+              <strong>
+                {policyContextCount} / {policyComparisonCount}
+              </strong>
             </li>
           </ul>
         </article>
@@ -337,9 +563,25 @@ export function AuditView() {
             onChange={(event) => setEvidenceFilter(event.target.value)}
           >
             <option value="all">All</option>
+            <option value="inventory_snapshot_context">Inventory snapshot context</option>
+            <option value="inventory_comparison">Inventory comparison evidence</option>
+            <option value="topology_snapshot_context">Topology snapshot context</option>
+            <option value="topology_comparison">Topology comparison evidence</option>
             <option value="policy_snapshot_context">Policy snapshot context</option>
             <option value="policy_comparison">Policy comparison evidence</option>
             <option value="notes_present">Entries with notes</option>
+          </select>
+        </label>
+        <label className="field-group">
+          <span>Recency</span>
+          <select
+            value={recencyFilter}
+            onChange={(event) => setRecencyFilter(event.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="recent">Recent events</option>
+            <option value="aging">Aging events</option>
+            <option value="stale">Stale events</option>
           </select>
         </label>
         <label className="field-group">
@@ -347,6 +589,7 @@ export function AuditView() {
           <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value)}>
             <option value="newest_occurred">Newest occurred first</option>
             <option value="oldest_occurred">Oldest occurred first</option>
+            <option value="richest_evidence">Richest evidence first</option>
             <option value="scope_then_newest">Scope then newest</option>
             <option value="message_a_z">Message A-Z</option>
           </select>
@@ -404,14 +647,15 @@ export function AuditView() {
                         <StatusPill value={item.result} />
                       </td>
                       <td>
-                        {item.policy_comparison_to_previous
-                          ? "Comparison ready"
-                          : item.policy_snapshot_summary
-                            ? "Snapshot context"
-                            : "Sync-only"}
+                        {getAuditEvidenceLabel(item)}
                       </td>
                       <td>{formatDateTime(item.occurred_at)}</td>
-                      <td>{item.correlation_id}</td>
+                      <td>
+                        {item.correlation_id}
+                        <div className="table-note">
+                          {describeRecency(item.occurred_at, data.generated_at)}
+                        </div>
+                      </td>
                       <td>{item.message}</td>
                     </tr>
                   );
@@ -452,14 +696,14 @@ export function AuditView() {
                   <strong>{selectedEvent.message}</strong>
                 </div>
                 <div className="key-value-row">
-                  <span>Evidence posture</span>
+                  <span>Source</span>
                   <strong>
-                    {selectedEvent.policy_comparison_to_previous
-                      ? "Audit event plus bounded comparison evidence"
-                      : selectedEvent.policy_snapshot_summary
-                        ? "Audit event plus bounded snapshot context"
-                        : "Audit visibility only"}
+                    {formatLabel(selectedEvent.source)} / {formatLabel(selectedEvent.actor)}
                   </strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Evidence posture</span>
+                  <strong>{getAuditEvidencePosture(selectedEvent)}</strong>
                 </div>
               </div>
               {selectedEvent.notes.length > 0 ? (
@@ -470,6 +714,230 @@ export function AuditView() {
                       <li key={note}>{note}</li>
                     ))}
                   </ul>
+                </>
+              ) : null}
+              {selectedEvent.inventory_snapshot_summary ? (
+                <>
+                  <p className="summary-label">Inventory Snapshot Context</p>
+                  <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Persisted at</span>
+                      <strong>
+                        {formatDateTime(selectedEvent.inventory_snapshot_summary.persisted_at)}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Device count</span>
+                      <strong>{selectedEvent.inventory_snapshot_summary.device_count}</strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Occurred to persisted gap</span>
+                      <strong>
+                        {describeTimeGap(
+                          selectedEvent.occurred_at,
+                          selectedEvent.inventory_snapshot_summary.persisted_at,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Snapshot data status</span>
+                      <strong>
+                        {formatLabel(selectedEvent.inventory_snapshot_summary.data_status)}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Role distribution</span>
+                      <strong>
+                        {Object.entries(selectedEvent.inventory_snapshot_summary.role_counts)
+                          .map(([role, count]) => `${formatLabel(role)} ${count}`)
+                          .join(", ") || "None"}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Collector status distribution</span>
+                      <strong>
+                        {Object.entries(
+                          selectedEvent.inventory_snapshot_summary.collector_status_counts,
+                        )
+                          .map(([status, count]) => `${formatLabel(status)} ${count}`)
+                          .join(", ") || "None"}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Observed to persisted lag</span>
+                      <strong>
+                        {describeTimeGap(
+                          selectedEvent.inventory_snapshot_summary.observed_at,
+                          selectedEvent.inventory_snapshot_summary.persisted_at,
+                        )}
+                      </strong>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+              {selectedEvent.inventory_comparison_to_previous ? (
+                <>
+                  <p className="summary-label">Inventory Comparison Evidence</p>
+                  <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Compared snapshots</span>
+                      <strong>
+                        {formatDateTime(
+                          selectedEvent.inventory_comparison_to_previous.previous_persisted_at,
+                        )}{" "}
+                        {"->"}{" "}
+                        {formatDateTime(
+                          selectedEvent.inventory_comparison_to_previous.current_persisted_at,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Device count delta</span>
+                      <strong>
+                        {formatSignedDelta(
+                          selectedEvent.inventory_comparison_to_previous.device_count_delta,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Added / removed / changed</span>
+                      <strong>
+                        {selectedEvent.inventory_comparison_to_previous.added_device_count} /{" "}
+                        {selectedEvent.inventory_comparison_to_previous.removed_device_count} /{" "}
+                        {selectedEvent.inventory_comparison_to_previous.changed_device_count}
+                      </strong>
+                    </div>
+                  </div>
+                  {selectedEvent.inventory_comparison_to_previous.notes.length > 0 ? (
+                    <ul className="notes-list">
+                      {selectedEvent.inventory_comparison_to_previous.notes.map((note) => (
+                        <li key={note}>{note}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </>
+              ) : null}
+              {selectedEvent.topology_snapshot_summary ? (
+                <>
+                  <p className="summary-label">Topology Snapshot Context</p>
+                  <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Persisted at</span>
+                      <strong>
+                        {formatDateTime(selectedEvent.topology_snapshot_summary.persisted_at)}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Topology</span>
+                      <strong>{selectedEvent.topology_snapshot_summary.topology_name}</strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Occurred to persisted gap</span>
+                      <strong>
+                        {describeTimeGap(
+                          selectedEvent.occurred_at,
+                          selectedEvent.topology_snapshot_summary.persisted_at,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Nodes / links</span>
+                      <strong>
+                        {selectedEvent.topology_snapshot_summary.node_count} /{" "}
+                        {selectedEvent.topology_snapshot_summary.link_count}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Completeness</span>
+                      <strong>
+                        {formatLabel(selectedEvent.topology_snapshot_summary.completeness)}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Node states</span>
+                      <strong>
+                        {Object.entries(selectedEvent.topology_snapshot_summary.node_state_counts)
+                          .map(([state, count]) => `${formatLabel(state)} ${count}`)
+                          .join(", ") || "None"}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Link states</span>
+                      <strong>
+                        {Object.entries(selectedEvent.topology_snapshot_summary.link_state_counts)
+                          .map(([state, count]) => `${formatLabel(state)} ${count}`)
+                          .join(", ") || "None"}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Observed to persisted lag</span>
+                      <strong>
+                        {describeTimeGap(
+                          selectedEvent.topology_snapshot_summary.observed_at,
+                          selectedEvent.topology_snapshot_summary.persisted_at,
+                        )}
+                      </strong>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+              {selectedEvent.topology_comparison_to_previous ? (
+                <>
+                  <p className="summary-label">Topology Comparison Evidence</p>
+                  <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Compared snapshots</span>
+                      <strong>
+                        {formatDateTime(
+                          selectedEvent.topology_comparison_to_previous.previous_persisted_at,
+                        )}{" "}
+                        {"->"}{" "}
+                        {formatDateTime(
+                          selectedEvent.topology_comparison_to_previous.current_persisted_at,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Node / link delta</span>
+                      <strong>
+                        {formatSignedDelta(
+                          selectedEvent.topology_comparison_to_previous.node_count_delta,
+                        )}{" "}
+                        /{" "}
+                        {formatSignedDelta(
+                          selectedEvent.topology_comparison_to_previous.link_count_delta,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Added nodes / links</span>
+                      <strong>
+                        {selectedEvent.topology_comparison_to_previous.added_node_count} /{" "}
+                        {selectedEvent.topology_comparison_to_previous.added_link_count}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Removed nodes / links</span>
+                      <strong>
+                        {selectedEvent.topology_comparison_to_previous.removed_node_count} /{" "}
+                        {selectedEvent.topology_comparison_to_previous.removed_link_count}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Changed nodes / links</span>
+                      <strong>
+                        {selectedEvent.topology_comparison_to_previous.changed_node_count} /{" "}
+                        {selectedEvent.topology_comparison_to_previous.changed_link_count}
+                      </strong>
+                    </div>
+                  </div>
+                  {selectedEvent.topology_comparison_to_previous.notes.length > 0 ? (
+                    <ul className="notes-list">
+                      {selectedEvent.topology_comparison_to_previous.notes.map((note) => (
+                        <li key={note}>{note}</li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </>
               ) : null}
               {selectedEvent.policy_snapshot_summary ? (

@@ -10,10 +10,15 @@ from sqlalchemy.orm import selectinload
 
 from app_api.persistence.session import create_session
 from app_api.persistence.tables import (
+    InventoryRecordTable,
+    InventorySnapshotTable,
     PolicyCandidatePathTable,
     PolicyRecordTable,
     PolicySnapshotTable,
     SyncRunTable,
+    TopologyLinkTable,
+    TopologyNodeTable,
+    TopologySnapshotTable,
 )
 
 logger = getLogger(__name__)
@@ -32,8 +37,75 @@ class PersistedSyncRun(BaseModel):
     started_at: datetime
     finished_at: datetime
     persisted_artifacts: list[str] = Field(default_factory=list)
+    inventory_snapshot_summary: "PersistedInventorySnapshotSummary | None" = None
+    inventory_comparison_to_previous: "PersistedInventorySnapshotComparison | None" = None
+    topology_snapshot_summary: "PersistedTopologySnapshotSummary | None" = None
+    topology_comparison_to_previous: "PersistedTopologySnapshotComparison | None" = None
     policy_snapshot_summary: "PersistedPolicySnapshotSummary | None" = None
     policy_comparison_to_previous: "PersistedPolicySnapshotComparison | None" = None
+    notes: list[str] = Field(default_factory=list)
+
+
+class PersistedInventorySnapshotSummary(BaseModel):
+    """Bounded persisted inventory snapshot context for history surfaces."""
+
+    persisted_at: datetime
+    observed_at: datetime | None = None
+    sync_source: str
+    sync_status: str
+    data_status: str
+    device_count: int
+    role_counts: dict[str, int] = Field(default_factory=dict)
+    collector_status_counts: dict[str, int] = Field(default_factory=dict)
+    capability_summary_counts: dict[str, int] = Field(default_factory=dict)
+
+
+class PersistedInventorySnapshotComparison(BaseModel):
+    """Bounded current-versus-previous comparison for one persisted inventory snapshot."""
+
+    current_persisted_at: datetime
+    previous_persisted_at: datetime
+    current_device_count: int
+    previous_device_count: int
+    device_count_delta: int
+    added_device_count: int
+    removed_device_count: int
+    changed_device_count: int
+    notes: list[str] = Field(default_factory=list)
+
+
+class PersistedTopologySnapshotSummary(BaseModel):
+    """Bounded persisted topology snapshot context for history surfaces."""
+
+    persisted_at: datetime
+    observed_at: datetime | None = None
+    topology_name: str
+    sync_source: str
+    sync_status: str
+    completeness: str
+    node_count: int
+    link_count: int
+    node_state_counts: dict[str, int] = Field(default_factory=dict)
+    link_state_counts: dict[str, int] = Field(default_factory=dict)
+
+
+class PersistedTopologySnapshotComparison(BaseModel):
+    """Bounded current-versus-previous comparison for one persisted topology snapshot."""
+
+    current_persisted_at: datetime
+    previous_persisted_at: datetime
+    current_node_count: int
+    previous_node_count: int
+    current_link_count: int
+    previous_link_count: int
+    node_count_delta: int
+    link_count_delta: int
+    added_node_count: int
+    removed_node_count: int
+    changed_node_count: int
+    added_link_count: int
+    removed_link_count: int
+    changed_link_count: int
     notes: list[str] = Field(default_factory=list)
 
 
@@ -90,6 +162,244 @@ def _map_history_result(fetch_status: str) -> str:
         "partial_live_feed": "partial",
         "collector_unavailable": "failed",
     }.get(fetch_status, "unknown")
+
+
+def _load_inventory_record_signatures(
+    session,
+    *,
+    snapshot_id: str,
+) -> dict[str, tuple[object, ...]]:
+    """Load bounded normalized signatures for one persisted inventory snapshot."""
+    rows = session.scalars(
+        select(InventoryRecordTable)
+        .where(InventoryRecordTable.snapshot_id == snapshot_id)
+        .order_by(InventoryRecordTable.device_id.asc())
+    ).all()
+    return {
+        row.device_id: (
+            row.vendor,
+            row.platform,
+            row.software_version,
+            row.role,
+            row.management_address,
+            row.collector_status,
+            row.capability_summary,
+        )
+        for row in rows
+    }
+
+
+def _load_topology_node_signatures(
+    session,
+    *,
+    snapshot_id: str,
+) -> dict[str, tuple[object, ...]]:
+    """Load bounded normalized node signatures for one persisted topology snapshot."""
+    rows = session.scalars(
+        select(TopologyNodeTable)
+        .where(TopologyNodeTable.snapshot_id == snapshot_id)
+        .order_by(TopologyNodeTable.node_id.asc())
+    ).all()
+    return {
+        row.node_id: (
+            row.display_name,
+            row.role,
+            row.state,
+            row.source,
+            row.device_id,
+            tuple(sorted((row.attributes or {}).items())),
+        )
+        for row in rows
+    }
+
+
+def _load_topology_link_signatures(
+    session,
+    *,
+    snapshot_id: str,
+) -> dict[str, tuple[object, ...]]:
+    """Load bounded normalized link signatures for one persisted topology snapshot."""
+    rows = session.scalars(
+        select(TopologyLinkTable)
+        .where(TopologyLinkTable.snapshot_id == snapshot_id)
+        .order_by(TopologyLinkTable.link_id.asc())
+    ).all()
+    return {
+        row.link_id: (
+            row.source_node_id,
+            row.target_node_id,
+            row.state,
+            row.source,
+            tuple(sorted((row.attributes or {}).items())),
+        )
+        for row in rows
+    }
+
+
+def _build_inventory_snapshot_summary(
+    session,
+    *,
+    snapshot: InventorySnapshotTable,
+) -> PersistedInventorySnapshotSummary:
+    """Build bounded persisted inventory snapshot context for one sync run."""
+    role_counts: Counter[str] = Counter()
+    collector_status_counts: Counter[str] = Counter()
+    capability_summary_counts: Counter[str] = Counter()
+    rows = session.scalars(
+        select(InventoryRecordTable).where(InventoryRecordTable.snapshot_id == snapshot.id)
+    ).all()
+    for row in rows:
+        role_counts[row.role or "unknown"] += 1
+        collector_status_counts[row.collector_status] += 1
+        capability_summary_counts[row.capability_summary] += 1
+    return PersistedInventorySnapshotSummary(
+        persisted_at=snapshot.persisted_at,
+        observed_at=snapshot.sync_run.observed_at if snapshot.sync_run is not None else None,
+        sync_source=snapshot.sync_run.source_type if snapshot.sync_run is not None else "unknown",
+        sync_status=snapshot.sync_run.fetch_status if snapshot.sync_run is not None else "unknown",
+        data_status=snapshot.data_status,
+        device_count=snapshot.record_count,
+        role_counts=dict(role_counts),
+        collector_status_counts=dict(collector_status_counts),
+        capability_summary_counts=dict(capability_summary_counts),
+    )
+
+
+def _build_inventory_snapshot_comparison(
+    session,
+    *,
+    snapshot: InventorySnapshotTable,
+) -> PersistedInventorySnapshotComparison | None:
+    """Build bounded comparison evidence against the immediately previous inventory snapshot."""
+    previous_snapshot = session.scalar(
+        select(InventorySnapshotTable)
+        .where(InventorySnapshotTable.persisted_at < snapshot.persisted_at)
+        .order_by(InventorySnapshotTable.persisted_at.desc())
+        .limit(1)
+    )
+    if previous_snapshot is None:
+        return None
+    current_signatures = _load_inventory_record_signatures(session, snapshot_id=snapshot.id)
+    previous_signatures = _load_inventory_record_signatures(
+        session, snapshot_id=previous_snapshot.id
+    )
+    current_device_ids = set(current_signatures)
+    previous_device_ids = set(previous_signatures)
+    added_device_ids = current_device_ids - previous_device_ids
+    removed_device_ids = previous_device_ids - current_device_ids
+    changed_device_ids = {
+        device_id
+        for device_id in current_device_ids & previous_device_ids
+        if current_signatures[device_id] != previous_signatures[device_id]
+    }
+    return PersistedInventorySnapshotComparison(
+        current_persisted_at=snapshot.persisted_at,
+        previous_persisted_at=previous_snapshot.persisted_at,
+        current_device_count=snapshot.record_count,
+        previous_device_count=previous_snapshot.record_count,
+        device_count_delta=snapshot.record_count - previous_snapshot.record_count,
+        added_device_count=len(added_device_ids),
+        removed_device_count=len(removed_device_ids),
+        changed_device_count=len(changed_device_ids),
+        notes=[
+            "This comparison is derived from the current persisted normalized inventory snapshot and the immediately previous persisted normalized inventory snapshot.",
+            "Changed device counts reflect device IDs present in both snapshots with changed normalized inventory attributes.",
+        ],
+    )
+
+
+def _build_topology_snapshot_summary(
+    session,
+    *,
+    snapshot: TopologySnapshotTable,
+) -> PersistedTopologySnapshotSummary:
+    """Build bounded persisted topology snapshot context for one sync run."""
+    node_state_counts: Counter[str] = Counter()
+    link_state_counts: Counter[str] = Counter()
+    node_rows = session.scalars(
+        select(TopologyNodeTable).where(TopologyNodeTable.snapshot_id == snapshot.id)
+    ).all()
+    link_rows = session.scalars(
+        select(TopologyLinkTable).where(TopologyLinkTable.snapshot_id == snapshot.id)
+    ).all()
+    for row in node_rows:
+        node_state_counts[row.state] += 1
+    for row in link_rows:
+        link_state_counts[row.state] += 1
+    return PersistedTopologySnapshotSummary(
+        persisted_at=snapshot.persisted_at,
+        observed_at=snapshot.observed_at,
+        topology_name=snapshot.topology_name,
+        sync_source=snapshot.sync_source,
+        sync_status=snapshot.sync_status,
+        completeness=snapshot.completeness,
+        node_count=snapshot.node_count,
+        link_count=snapshot.link_count,
+        node_state_counts=dict(node_state_counts),
+        link_state_counts=dict(link_state_counts),
+    )
+
+
+def _build_topology_snapshot_comparison(
+    session,
+    *,
+    snapshot: TopologySnapshotTable,
+) -> PersistedTopologySnapshotComparison | None:
+    """Build bounded comparison evidence against the immediately previous topology snapshot."""
+    previous_snapshot = session.scalar(
+        select(TopologySnapshotTable)
+        .where(TopologySnapshotTable.persisted_at < snapshot.persisted_at)
+        .order_by(TopologySnapshotTable.persisted_at.desc())
+        .limit(1)
+    )
+    if previous_snapshot is None:
+        return None
+    current_node_signatures = _load_topology_node_signatures(session, snapshot_id=snapshot.id)
+    previous_node_signatures = _load_topology_node_signatures(
+        session, snapshot_id=previous_snapshot.id
+    )
+    current_link_signatures = _load_topology_link_signatures(session, snapshot_id=snapshot.id)
+    previous_link_signatures = _load_topology_link_signatures(
+        session, snapshot_id=previous_snapshot.id
+    )
+    current_node_ids = set(current_node_signatures)
+    previous_node_ids = set(previous_node_signatures)
+    current_link_ids = set(current_link_signatures)
+    previous_link_ids = set(previous_link_signatures)
+    added_node_ids = current_node_ids - previous_node_ids
+    removed_node_ids = previous_node_ids - current_node_ids
+    changed_node_ids = {
+        node_id
+        for node_id in current_node_ids & previous_node_ids
+        if current_node_signatures[node_id] != previous_node_signatures[node_id]
+    }
+    added_link_ids = current_link_ids - previous_link_ids
+    removed_link_ids = previous_link_ids - current_link_ids
+    changed_link_ids = {
+        link_id
+        for link_id in current_link_ids & previous_link_ids
+        if current_link_signatures[link_id] != previous_link_signatures[link_id]
+    }
+    return PersistedTopologySnapshotComparison(
+        current_persisted_at=snapshot.persisted_at,
+        previous_persisted_at=previous_snapshot.persisted_at,
+        current_node_count=snapshot.node_count,
+        previous_node_count=previous_snapshot.node_count,
+        current_link_count=snapshot.link_count,
+        previous_link_count=previous_snapshot.link_count,
+        node_count_delta=snapshot.node_count - previous_snapshot.node_count,
+        link_count_delta=snapshot.link_count - previous_snapshot.link_count,
+        added_node_count=len(added_node_ids),
+        removed_node_count=len(removed_node_ids),
+        changed_node_count=len(changed_node_ids),
+        added_link_count=len(added_link_ids),
+        removed_link_count=len(removed_link_ids),
+        changed_link_count=len(changed_link_ids),
+        notes=[
+            "This comparison is derived from the current persisted normalized topology snapshot and the immediately previous persisted normalized topology snapshot.",
+            "Changed node and link counts reflect normalized snapshot signatures rather than protocol-derived topology truth.",
+        ],
+    )
 
 
 def _load_policy_snapshot_record_signatures(
@@ -247,8 +557,26 @@ def load_sync_runs(limit: int = 50) -> list[PersistedSyncRun]:
                     persisted_artifacts.append("topology_snapshot")
                 if row.policy_snapshot is not None:
                     persisted_artifacts.append("policy_snapshot")
+                inventory_snapshot_summary = None
+                inventory_comparison_to_previous = None
+                topology_snapshot_summary = None
+                topology_comparison_to_previous = None
                 policy_snapshot_summary = None
                 policy_comparison_to_previous = None
+                if row.inventory_snapshot is not None:
+                    inventory_snapshot_summary = _build_inventory_snapshot_summary(
+                        session, snapshot=row.inventory_snapshot
+                    )
+                    inventory_comparison_to_previous = _build_inventory_snapshot_comparison(
+                        session, snapshot=row.inventory_snapshot
+                    )
+                if row.topology_snapshot is not None:
+                    topology_snapshot_summary = _build_topology_snapshot_summary(
+                        session, snapshot=row.topology_snapshot
+                    )
+                    topology_comparison_to_previous = _build_topology_snapshot_comparison(
+                        session, snapshot=row.topology_snapshot
+                    )
                 if row.policy_snapshot is not None:
                     policy_snapshot_summary = _build_policy_snapshot_summary(
                         session, snapshot=row.policy_snapshot
@@ -268,6 +596,10 @@ def load_sync_runs(limit: int = 50) -> list[PersistedSyncRun]:
                         started_at=row.started_at,
                         finished_at=row.finished_at,
                         persisted_artifacts=persisted_artifacts,
+                        inventory_snapshot_summary=inventory_snapshot_summary,
+                        inventory_comparison_to_previous=inventory_comparison_to_previous,
+                        topology_snapshot_summary=topology_snapshot_summary,
+                        topology_comparison_to_previous=topology_comparison_to_previous,
                         policy_snapshot_summary=policy_snapshot_summary,
                         policy_comparison_to_previous=policy_comparison_to_previous,
                         notes=row.notes,

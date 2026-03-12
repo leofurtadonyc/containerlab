@@ -18,8 +18,10 @@ Most of the week's work has established:
 - normalized model and schema scaffolding
 - core architecture documents
 - a useful read-only API, WebUI, and observability slice
-- bounded persistence for inventory and topology snapshots plus sync-run history
+- bounded persistence for inventory, topology, and policy snapshots plus sync-run history
 - bounded workflow-history and audit-history visibility derived from persisted sync activity
+- sharper capability semantics plus one descriptive dry-run-readiness prerequisite summary
+- stronger platform, topology, and SR policy dashboards with bounded freshness, agreement, and evidence-gap cues where real metrics exist
 
 ## Phased Roadmap
 
@@ -87,12 +89,14 @@ Expected focus:
 
 Based on the current repo state, the next likely work should be:
 
-1. deepen the live policy path beyond SR policy counters into richer but still vendor-neutral per-policy observations without crossing into write behavior
-2. extend the bounded persistence approach from inventory and topology into the most useful next read-side slice only where the normalized model is already stable
-3. deepen workflow-history and audit-history beyond sync-derived platform activity only when honest backend history sources exist
+1. deepen workflow-history and audit-history beyond sync-derived platform activity only when additional honest backend history sources exist
+2. deepen the policy slice further only where stable Nokia evidence supports richer bounded read-only truth without crossing into write behavior
+3. broaden durable read-side, dashboard, and capability evidence carefully only where normalized models and operator questions are already stable, especially around richer comparison and readiness signals without implying dry-run implementation
 
 ## Boundary Reminder
 
 Phase transitions should not happen just because files exist.
 
 They should happen only when the foundational architecture is both present and honest enough to support the next class of work without drift.
+
+The project is getting closer to the prerequisites for later dry-run planning, but it should still remain fully in `Phase 2 — read-only product foundation` until actual workflow-model, dry-run API, preview or diff, and validation-result contracts become real.

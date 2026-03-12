@@ -42,11 +42,19 @@ Focus:
 
 Focus:
 
+- bounded ODL-backed enrichment where it adds read-only product value
+- deeper controller-side visibility through backend-owned boundaries
+- no dry-run or action semantics yet
+
+### Phase 4
+
+Focus:
+
 - dry-run support
 - validation-only operations
 - preview and diff views
 
-### Phase 4
+### Phase 5
 
 Focus:
 
@@ -88,6 +96,7 @@ Workflow ownership does not belong to:
 - workflow model direction is documented
 - placeholder dashboard family exists for change validation observability
 - bounded workflow-history and audit-history product views now exist, but they are derived from persisted sync activity rather than an execution workflow engine
+- the project is approaching some prerequisites for later dry-run planning, but only as descriptive readiness support rather than actual workflow functionality
 - no actual dry-run or action workflow implementation exists
 
 ### Future

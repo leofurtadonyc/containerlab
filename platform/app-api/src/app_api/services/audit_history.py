@@ -5,15 +5,23 @@ from datetime import UTC, datetime
 from app_api.config.settings import get_settings
 from app_api.models.audit import (
     AuditEventRecord,
+    AuditInventorySnapshotComparison,
+    AuditInventorySnapshotSummary,
     AuditPolicySnapshotComparison,
     AuditPolicySnapshotSummary,
+    AuditTopologySnapshotComparison,
+    AuditTopologySnapshotSummary,
 )
 from app_api.persistence.history import load_sync_runs
 from app_api.schemas.audit_history import (
     AuditHistoryItem,
     AuditHistoryResponse,
+    AuditInventorySnapshotComparison as AuditInventorySnapshotComparisonResponse,
+    AuditInventorySnapshotSummary as AuditInventorySnapshotSummaryResponse,
     AuditPolicySnapshotComparison as AuditPolicySnapshotComparisonResponse,
     AuditPolicySnapshotSummary as AuditPolicySnapshotSummaryResponse,
+    AuditTopologySnapshotComparison as AuditTopologySnapshotComparisonResponse,
+    AuditTopologySnapshotSummary as AuditTopologySnapshotSummaryResponse,
 )
 
 
@@ -66,6 +74,44 @@ def _build_policy_snapshot_note(
     return notes
 
 
+def _build_inventory_snapshot_note(
+    sync_run,
+) -> list[str]:
+    """Return bounded inventory snapshot context notes for one audit event."""
+    if sync_run.inventory_snapshot_summary is None:
+        return []
+    notes = [
+        (
+            "Inventory snapshot context reflects the normalized inventory snapshot persisted "
+            "by this sync run, not raw vendor payloads or operator intent."
+        )
+    ]
+    if sync_run.inventory_comparison_to_previous is not None:
+        notes.append(
+            "Comparison evidence reflects the current persisted inventory snapshot against the immediately previous persisted inventory snapshot."
+        )
+    return notes
+
+
+def _build_topology_snapshot_note(
+    sync_run,
+) -> list[str]:
+    """Return bounded topology snapshot context notes for one audit event."""
+    if sync_run.topology_snapshot_summary is None:
+        return []
+    notes = [
+        (
+            "Topology snapshot context reflects the normalized topology snapshot persisted "
+            "by this sync run, not controller topology truth or a drift engine."
+        )
+    ]
+    if sync_run.topology_comparison_to_previous is not None:
+        notes.append(
+            "Comparison evidence reflects the current persisted topology snapshot against the immediately previous persisted topology snapshot."
+        )
+    return notes
+
+
 def build_audit_history_response() -> AuditHistoryResponse:
     """Build the bounded audit-style history response from persisted sync runs."""
     settings = get_settings()
@@ -83,6 +129,73 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 sync_run.model_family,
                 sync_run.fetch_status,
                 sync_run.persisted_artifacts,
+            ),
+            inventory_snapshot_summary=(
+                AuditInventorySnapshotSummary(
+                    persisted_at=sync_run.inventory_snapshot_summary.persisted_at,
+                    observed_at=sync_run.inventory_snapshot_summary.observed_at,
+                    sync_source=sync_run.inventory_snapshot_summary.sync_source,
+                    sync_status=sync_run.inventory_snapshot_summary.sync_status,
+                    data_status=sync_run.inventory_snapshot_summary.data_status,
+                    device_count=sync_run.inventory_snapshot_summary.device_count,
+                    role_counts=sync_run.inventory_snapshot_summary.role_counts,
+                    collector_status_counts=sync_run.inventory_snapshot_summary.collector_status_counts,
+                    capability_summary_counts=sync_run.inventory_snapshot_summary.capability_summary_counts,
+                )
+                if sync_run.inventory_snapshot_summary is not None
+                else None
+            ),
+            inventory_comparison_to_previous=(
+                AuditInventorySnapshotComparison(
+                    current_persisted_at=sync_run.inventory_comparison_to_previous.current_persisted_at,
+                    previous_persisted_at=sync_run.inventory_comparison_to_previous.previous_persisted_at,
+                    current_device_count=sync_run.inventory_comparison_to_previous.current_device_count,
+                    previous_device_count=sync_run.inventory_comparison_to_previous.previous_device_count,
+                    device_count_delta=sync_run.inventory_comparison_to_previous.device_count_delta,
+                    added_device_count=sync_run.inventory_comparison_to_previous.added_device_count,
+                    removed_device_count=sync_run.inventory_comparison_to_previous.removed_device_count,
+                    changed_device_count=sync_run.inventory_comparison_to_previous.changed_device_count,
+                    notes=sync_run.inventory_comparison_to_previous.notes,
+                )
+                if sync_run.inventory_comparison_to_previous is not None
+                else None
+            ),
+            topology_snapshot_summary=(
+                AuditTopologySnapshotSummary(
+                    persisted_at=sync_run.topology_snapshot_summary.persisted_at,
+                    observed_at=sync_run.topology_snapshot_summary.observed_at,
+                    topology_name=sync_run.topology_snapshot_summary.topology_name,
+                    sync_source=sync_run.topology_snapshot_summary.sync_source,
+                    sync_status=sync_run.topology_snapshot_summary.sync_status,
+                    completeness=sync_run.topology_snapshot_summary.completeness,
+                    node_count=sync_run.topology_snapshot_summary.node_count,
+                    link_count=sync_run.topology_snapshot_summary.link_count,
+                    node_state_counts=sync_run.topology_snapshot_summary.node_state_counts,
+                    link_state_counts=sync_run.topology_snapshot_summary.link_state_counts,
+                )
+                if sync_run.topology_snapshot_summary is not None
+                else None
+            ),
+            topology_comparison_to_previous=(
+                AuditTopologySnapshotComparison(
+                    current_persisted_at=sync_run.topology_comparison_to_previous.current_persisted_at,
+                    previous_persisted_at=sync_run.topology_comparison_to_previous.previous_persisted_at,
+                    current_node_count=sync_run.topology_comparison_to_previous.current_node_count,
+                    previous_node_count=sync_run.topology_comparison_to_previous.previous_node_count,
+                    current_link_count=sync_run.topology_comparison_to_previous.current_link_count,
+                    previous_link_count=sync_run.topology_comparison_to_previous.previous_link_count,
+                    node_count_delta=sync_run.topology_comparison_to_previous.node_count_delta,
+                    link_count_delta=sync_run.topology_comparison_to_previous.link_count_delta,
+                    added_node_count=sync_run.topology_comparison_to_previous.added_node_count,
+                    removed_node_count=sync_run.topology_comparison_to_previous.removed_node_count,
+                    changed_node_count=sync_run.topology_comparison_to_previous.changed_node_count,
+                    added_link_count=sync_run.topology_comparison_to_previous.added_link_count,
+                    removed_link_count=sync_run.topology_comparison_to_previous.removed_link_count,
+                    changed_link_count=sync_run.topology_comparison_to_previous.changed_link_count,
+                    notes=sync_run.topology_comparison_to_previous.notes,
+                )
+                if sync_run.topology_comparison_to_previous is not None
+                else None
             ),
             policy_snapshot_summary=(
                 AuditPolicySnapshotSummary(
@@ -118,7 +231,12 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 if sync_run.policy_comparison_to_previous is not None
                 else None
             ),
-            notes=[*sync_run.notes, *_build_policy_snapshot_note(sync_run)],
+            notes=[
+                *sync_run.notes,
+                *_build_inventory_snapshot_note(sync_run),
+                *_build_topology_snapshot_note(sync_run),
+                *_build_policy_snapshot_note(sync_run),
+            ],
         )
         for sync_run in load_sync_runs()
     ]
@@ -153,6 +271,73 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 correlation_id=record.correlation_id,
                 occurred_at=record.occurred_at,
                 message=record.message,
+                inventory_snapshot_summary=(
+                    AuditInventorySnapshotSummaryResponse(
+                        persisted_at=record.inventory_snapshot_summary.persisted_at,
+                        observed_at=record.inventory_snapshot_summary.observed_at,
+                        sync_source=record.inventory_snapshot_summary.sync_source,
+                        sync_status=record.inventory_snapshot_summary.sync_status,
+                        data_status=record.inventory_snapshot_summary.data_status,
+                        device_count=record.inventory_snapshot_summary.device_count,
+                        role_counts=record.inventory_snapshot_summary.role_counts,
+                        collector_status_counts=record.inventory_snapshot_summary.collector_status_counts,
+                        capability_summary_counts=record.inventory_snapshot_summary.capability_summary_counts,
+                    )
+                    if record.inventory_snapshot_summary is not None
+                    else None
+                ),
+                inventory_comparison_to_previous=(
+                    AuditInventorySnapshotComparisonResponse(
+                        current_persisted_at=record.inventory_comparison_to_previous.current_persisted_at,
+                        previous_persisted_at=record.inventory_comparison_to_previous.previous_persisted_at,
+                        current_device_count=record.inventory_comparison_to_previous.current_device_count,
+                        previous_device_count=record.inventory_comparison_to_previous.previous_device_count,
+                        device_count_delta=record.inventory_comparison_to_previous.device_count_delta,
+                        added_device_count=record.inventory_comparison_to_previous.added_device_count,
+                        removed_device_count=record.inventory_comparison_to_previous.removed_device_count,
+                        changed_device_count=record.inventory_comparison_to_previous.changed_device_count,
+                        notes=record.inventory_comparison_to_previous.notes,
+                    )
+                    if record.inventory_comparison_to_previous is not None
+                    else None
+                ),
+                topology_snapshot_summary=(
+                    AuditTopologySnapshotSummaryResponse(
+                        persisted_at=record.topology_snapshot_summary.persisted_at,
+                        observed_at=record.topology_snapshot_summary.observed_at,
+                        topology_name=record.topology_snapshot_summary.topology_name,
+                        sync_source=record.topology_snapshot_summary.sync_source,
+                        sync_status=record.topology_snapshot_summary.sync_status,
+                        completeness=record.topology_snapshot_summary.completeness,
+                        node_count=record.topology_snapshot_summary.node_count,
+                        link_count=record.topology_snapshot_summary.link_count,
+                        node_state_counts=record.topology_snapshot_summary.node_state_counts,
+                        link_state_counts=record.topology_snapshot_summary.link_state_counts,
+                    )
+                    if record.topology_snapshot_summary is not None
+                    else None
+                ),
+                topology_comparison_to_previous=(
+                    AuditTopologySnapshotComparisonResponse(
+                        current_persisted_at=record.topology_comparison_to_previous.current_persisted_at,
+                        previous_persisted_at=record.topology_comparison_to_previous.previous_persisted_at,
+                        current_node_count=record.topology_comparison_to_previous.current_node_count,
+                        previous_node_count=record.topology_comparison_to_previous.previous_node_count,
+                        current_link_count=record.topology_comparison_to_previous.current_link_count,
+                        previous_link_count=record.topology_comparison_to_previous.previous_link_count,
+                        node_count_delta=record.topology_comparison_to_previous.node_count_delta,
+                        link_count_delta=record.topology_comparison_to_previous.link_count_delta,
+                        added_node_count=record.topology_comparison_to_previous.added_node_count,
+                        removed_node_count=record.topology_comparison_to_previous.removed_node_count,
+                        changed_node_count=record.topology_comparison_to_previous.changed_node_count,
+                        added_link_count=record.topology_comparison_to_previous.added_link_count,
+                        removed_link_count=record.topology_comparison_to_previous.removed_link_count,
+                        changed_link_count=record.topology_comparison_to_previous.changed_link_count,
+                        notes=record.topology_comparison_to_previous.notes,
+                    )
+                    if record.topology_comparison_to_previous is not None
+                    else None
+                ),
                 policy_snapshot_summary=(
                     AuditPolicySnapshotSummaryResponse(
                         persisted_at=record.policy_snapshot_summary.persisted_at,

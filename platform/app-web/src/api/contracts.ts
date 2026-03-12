@@ -167,6 +167,61 @@ export interface PolicyHistorySnapshotRecord {
   detail_record_count: number;
 }
 
+export interface InventoryHistorySnapshotRecord {
+  persisted_at: string;
+  observed_at: string | null;
+  sync_source: string;
+  sync_status: string;
+  data_status: "live" | "degraded";
+  device_count: number;
+  role_counts: Record<string, number>;
+  collector_status_counts: Record<string, number>;
+  capability_summary_counts: Record<string, number>;
+}
+
+export interface InventoryHistoryComparison {
+  current_persisted_at: string;
+  previous_persisted_at: string;
+  current_device_count: number;
+  previous_device_count: number;
+  device_count_delta: number;
+  added_device_count: number;
+  removed_device_count: number;
+  changed_device_count: number;
+  notes: string[];
+}
+
+export interface TopologyHistorySnapshotRecord {
+  persisted_at: string;
+  observed_at: string | null;
+  topology_name: string;
+  sync_source: string;
+  sync_status: "ok" | "degraded" | "failed" | "unknown";
+  completeness: "complete" | "partial" | "unknown";
+  node_count: number;
+  link_count: number;
+  node_state_counts: Record<string, number>;
+  link_state_counts: Record<string, number>;
+}
+
+export interface TopologyHistoryComparison {
+  current_persisted_at: string;
+  previous_persisted_at: string;
+  current_node_count: number;
+  previous_node_count: number;
+  current_link_count: number;
+  previous_link_count: number;
+  node_count_delta: number;
+  link_count_delta: number;
+  added_node_count: number;
+  removed_node_count: number;
+  changed_node_count: number;
+  added_link_count: number;
+  removed_link_count: number;
+  changed_link_count: number;
+  notes: string[];
+}
+
 export interface PolicyHistoryComparison {
   current_persisted_at: string;
   previous_persisted_at: string;
@@ -254,6 +309,10 @@ export interface WorkflowHistoryItem {
   started_at: string;
   finished_at: string;
   persisted_artifacts: string[];
+  inventory_snapshot_summary: InventoryHistorySnapshotRecord | null;
+  inventory_comparison_to_previous: InventoryHistoryComparison | null;
+  topology_snapshot_summary: TopologyHistorySnapshotRecord | null;
+  topology_comparison_to_previous: TopologyHistoryComparison | null;
   policy_snapshot_summary: PolicyHistorySnapshotRecord | null;
   policy_comparison_to_previous: PolicyHistoryComparison | null;
   notes: string[];
@@ -276,6 +335,10 @@ export interface AuditHistoryItem {
   correlation_id: string;
   occurred_at: string;
   message: string;
+  inventory_snapshot_summary: InventoryHistorySnapshotRecord | null;
+  inventory_comparison_to_previous: InventoryHistoryComparison | null;
+  topology_snapshot_summary: TopologyHistorySnapshotRecord | null;
+  topology_comparison_to_previous: TopologyHistoryComparison | null;
   policy_snapshot_summary: PolicyHistorySnapshotRecord | null;
   policy_comparison_to_previous: PolicyHistoryComparison | null;
   notes: string[];

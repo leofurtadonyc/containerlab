@@ -13,7 +13,7 @@ The platform currently has:
 - dashboard folder structure for the required dashboard families
 - a real platform overview dashboard backed by Prometheus scrape health plus current `app-api` and `gnmi-collector` metrics
 - real topology and SR policy overview dashboards backed by current Prometheus metrics for those bounded live slices
-- the platform and SR policy dashboards now surface bounded persisted policy sync evidence where those backend metrics honestly exist
+- the platform, topology, and SR policy dashboards now surface bounded persisted sync evidence plus clearer aggregate freshness, agreement, and evidence-gap cues where those backend and collector metrics honestly exist
 - clearly marked placeholder dashboard files for the dashboard families that do not yet have real backing metrics
 
 What does not exist yet:
@@ -89,6 +89,7 @@ Expected emphasis over time:
 - scrape target state
 - platform request and latency indicators as they become real
 - persisted inventory, topology, and policy sync freshness and result posture where those metrics exist
+- bounded cross-slice freshness and agreement cues where those aggregate metrics exist
 
 ### Topology
 
@@ -106,6 +107,7 @@ Expected emphasis over time:
 - link state summaries
 - sync timestamps
 - integration quality signals
+- bounded backend-versus-collector aggregate agreement cues where those metrics exist
 
 ### SR Policy
 
@@ -124,6 +126,7 @@ Expected emphasis over time:
 - validation-related metrics
 - drift or mismatch indicators
 - persisted policy sync freshness and result posture where that evidence exists
+- bounded target-coverage and observed-versus-detailed evidence-gap cues where those aggregate metrics exist
 
 ### Change Validation
 
@@ -197,7 +200,7 @@ Dashboard design should therefore assume Prometheus-backed metrics first, with a
 
 - provisioning files exist
 - dashboard family folders exist
-- the platform, topology, and SR policy families now include real Prometheus-backed dashboards for the services that expose meaningful metrics today, with the platform and SR policy families now also surfacing bounded persisted policy sync evidence
+- the platform, topology, and SR policy families now include real Prometheus-backed dashboards for the services that expose meaningful metrics today, with those dashboards now also surfacing bounded freshness, agreement, and evidence-gap cues where the supporting signals are real
 - placeholder dashboards still exist for families whose underlying metrics are not yet real
 - the platform observability shape is documented
 
