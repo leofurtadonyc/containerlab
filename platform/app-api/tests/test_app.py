@@ -1231,8 +1231,8 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
 
     assert response.headers["X-Request-ID"] == "capabilities-test"
     assert payload["data_status"] == "bounded_matrix"
-    assert payload["count"] == 11
-    assert "delivery tier, and evidence basis are explicit" in payload["summary"]
+    assert payload["count"] == 13
+    assert "evidence basis, and vendor posture are explicit" in payload["summary"]
     assert payload["items"][0]["feature"] == "device_inventory"
     assert payload["items"][0]["domain"] == "inventory"
     assert payload["items"][0]["support_status"] == "supported"
@@ -1240,13 +1240,20 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
     assert payload["items"][0]["delivery_tier"] == "delivered_read_only"
     assert payload["items"][0]["evidence_basis"] == "live_validated"
     assert "stable backend-owned contract" in payload["items"][0]["status_detail"]
+    assert payload["domain_counts"]["policy"] == 5
+    assert payload["domain_counts"]["topology"] == 3
     assert payload["support_counts"]["partially_supported"] == 8
     assert payload["support_counts"]["unknown"] == 1
-    assert payload["support_counts"]["not_implemented_in_platform"] == 1
+    assert payload["support_counts"]["not_implemented_in_platform"] == 3
     assert payload["implementation_counts"]["partial"] == 8
+    assert payload["implementation_counts"]["planned"] == 4
     assert payload["delivery_tier_counts"]["bounded_partial_read_only"] == 8
+    assert payload["delivery_tier_counts"]["future_roadmap"] == 4
     assert payload["evidence_basis_counts"]["persisted_validated"] == 4
     assert payload["vendor_counts"]["nokia"] == 10
+    assert payload["vendor_counts"]["juniper"] == 3
+    assert payload["vendor_posture_counts"]["current_nokia_focus"] == 10
+    assert payload["vendor_posture_counts"]["future_juniper_target"] == 3
     assert payload["dry_run_readiness"]["status"] == "bounded_readiness_support"
     assert "no dry-run API" in payload["dry_run_readiness"]["summary"]
     assert len(payload["dry_run_readiness"]["prerequisites"]) == 5
@@ -1258,6 +1265,8 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
     assert payload["items"][2]["feature"] == "topology_persisted_comparison"
     assert payload["items"][6]["feature"] == "bgp_signaled_policy_detail"
     assert payload["items"][10]["vendor"] == "juniper"
+    assert payload["items"][11]["domain"] == "topology"
+    assert payload["items"][12]["domain"] == "policy"
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 

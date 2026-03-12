@@ -437,11 +437,13 @@ export interface CapabilitiesListResponse extends ApiResponseMetadata {
   data_status: "placeholder" | "bounded_matrix";
   summary: string;
   count: number;
+  domain_counts: Record<string, number>;
   support_counts: Record<string, number>;
   implementation_counts: Record<string, number>;
   delivery_tier_counts: Record<string, number>;
   evidence_basis_counts: Record<string, number>;
   vendor_counts: Record<string, number>;
+  vendor_posture_counts: Record<string, number>;
   dry_run_readiness?: DryRunReadinessSummary;
   items: CapabilityRecord[];
 }

@@ -85,10 +85,12 @@ class CapabilitiesListResponse(ApiResponseMetadata):
     data_status: Literal["placeholder", "bounded_matrix"]
     summary: str
     count: int
+    domain_counts: dict[str, int] = Field(default_factory=dict)
     support_counts: dict[str, int] = Field(default_factory=dict)
     implementation_counts: dict[str, int] = Field(default_factory=dict)
     delivery_tier_counts: dict[str, int] = Field(default_factory=dict)
     evidence_basis_counts: dict[str, int] = Field(default_factory=dict)
     vendor_counts: dict[str, int] = Field(default_factory=dict)
+    vendor_posture_counts: dict[str, int] = Field(default_factory=dict)
     dry_run_readiness: DryRunReadinessSummary
     items: list[CapabilityRecord]

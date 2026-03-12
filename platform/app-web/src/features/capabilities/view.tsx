@@ -61,6 +61,30 @@ function describeEvidenceBasis(value: string): string {
   }
 }
 
+function describeVendorPosture(value: string): string {
+  switch (value) {
+    case "current_nokia_focus":
+      return "Represents the current Nokia-first delivery focus in the Phase 2 platform slice.";
+    case "future_juniper_target":
+      return "Represents the next planned vendor expansion target only, not delivered Juniper support.";
+    default:
+      return "Represents future-ready structure intended to stay vendor-safe without implying parity.";
+  }
+}
+
+function describeImplementationState(value: string): string {
+  switch (value) {
+    case "implemented":
+      return "The platform has delivered this bounded read-only capability today.";
+    case "partial":
+      return "The platform delivers useful behavior here, but the slice still has explicit limits.";
+    case "planned":
+      return "The platform structure accounts for this area, but no delivered implementation exists yet.";
+    default:
+      return "The platform keeps this area visible as a placeholder without claiming delivered behavior.";
+  }
+}
+
 function describeDryRunReadinessStatus(value: string): string {
   switch (value) {
     case "bounded_readiness_support":
@@ -86,6 +110,9 @@ export function CapabilitiesView() {
   const implementationCounts = countBy(items, (capability) => capability.implementation_status);
   const deliveryTierCounts = countBy(items, (capability) => capability.delivery_tier);
   const evidenceBasisCounts = countBy(items, (capability) => capability.evidence_basis);
+  const vendorPostureCounts = countBy(items, (capability) => capability.vendor_posture);
+  const [evidenceBasisFilter, setEvidenceBasisFilter] = useState("all");
+  const [vendorPostureFilter, setVendorPostureFilter] = useState("all");
   const filteredCapabilities = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
 
@@ -98,6 +125,10 @@ export function CapabilitiesView() {
         implementationFilter === "all" || capability.implementation_status === implementationFilter;
       const matchesDeliveryTier =
         deliveryTierFilter === "all" || capability.delivery_tier === deliveryTierFilter;
+      const matchesEvidenceBasis =
+        evidenceBasisFilter === "all" || capability.evidence_basis === evidenceBasisFilter;
+      const matchesVendorPosture =
+        vendorPostureFilter === "all" || capability.vendor_posture === vendorPostureFilter;
       const matchesSearch =
         normalizedSearch.length === 0 ||
         [
@@ -111,6 +142,7 @@ export function CapabilitiesView() {
           capability.availability_scope,
           capability.status_detail,
           capability.source_of_determination,
+          ...capability.caveats,
         ]
           .join(" ")
           .toLowerCase()
@@ -122,17 +154,21 @@ export function CapabilitiesView() {
         matchesDomain &&
         matchesImplementation &&
         matchesDeliveryTier &&
+        matchesEvidenceBasis &&
+        matchesVendorPosture &&
         matchesSearch
       );
     });
   }, [
     deliveryTierFilter,
     domainFilter,
+    evidenceBasisFilter,
     implementationFilter,
     items,
     searchValue,
     supportFilter,
     vendorFilter,
+    vendorPostureFilter,
   ]);
   const selectedCapability =
     filteredCapabilities.find(
@@ -172,6 +208,8 @@ export function CapabilitiesView() {
   }
 
   const dryRunReadiness = data.dry_run_readiness ?? FALLBACK_DRY_RUN_READINESS;
+  const domainSummaryCounts = data.domain_counts ?? domainCounts;
+  const vendorPostureSummaryCounts = data.vendor_posture_counts ?? vendorPostureCounts;
 
   return (
     <section>
@@ -200,13 +238,13 @@ export function CapabilitiesView() {
           <p>{describeDryRunReadinessStatus(dryRunReadiness.status)}</p>
         </article>
         <article className="summary-card">
-          <p className="summary-label">Nokia Focus Entries</p>
-          <strong>{data.vendor_counts.nokia ?? vendorCounts.nokia ?? 0}</strong>
-          <p>Current delivered or planned records tied to the present Nokia-first platform focus.</p>
+          <p className="summary-label">Current Nokia Focus</p>
+          <strong>{vendorPostureSummaryCounts.current_nokia_focus ?? 0}</strong>
+          <p>Records aligned to the current Nokia-first delivered platform focus.</p>
         </article>
         <article className="summary-card">
-          <p className="summary-label">Juniper Roadmap Entries</p>
-          <strong>{data.vendor_counts.juniper ?? vendorCounts.juniper ?? 0}</strong>
+          <p className="summary-label">Future Juniper Target</p>
+          <strong>{vendorPostureSummaryCounts.future_juniper_target ?? 0}</strong>
           <p>Future-target records kept explicit without implying delivered parity.</p>
         </article>
         <article className="summary-card">
@@ -252,6 +290,22 @@ export function CapabilitiesView() {
               0}
           </strong>
           <p>Delivered slices that stay intentionally explicit about gaps and limits.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Live Validated</p>
+          <strong>
+            {data.evidence_basis_counts.live_validated ??
+              evidenceBasisCounts.live_validated ??
+              0}
+          </strong>
+          <p>Claims backed by the current live normalized read paths.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Roadmap Only</p>
+          <strong>
+            {data.evidence_basis_counts.roadmap_only ?? evidenceBasisCounts.roadmap_only ?? 0}
+          </strong>
+          <p>Future-facing structure that remains explicit without implying implementation.</p>
         </article>
       </div>
 
@@ -327,6 +381,32 @@ export function CapabilitiesView() {
             <option value="out_of_scope">Out of scope</option>
           </select>
         </label>
+        <label className="field-group">
+          <span>Evidence basis</span>
+          <select
+            value={evidenceBasisFilter}
+            onChange={(event) => setEvidenceBasisFilter(event.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="live_validated">Live validated</option>
+            <option value="persisted_validated">Persisted validated</option>
+            <option value="platform_probe">Platform probe</option>
+            <option value="design_review">Design review</option>
+            <option value="roadmap_only">Roadmap only</option>
+          </select>
+        </label>
+        <label className="field-group">
+          <span>Vendor posture</span>
+          <select
+            value={vendorPostureFilter}
+            onChange={(event) => setVendorPostureFilter(event.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="current_nokia_focus">Current Nokia focus</option>
+            <option value="future_juniper_target">Future Juniper target</option>
+            <option value="future_multi_vendor_candidate">Future multi-vendor candidate</option>
+          </select>
+        </label>
       </div>
 
       {data.support_counts.not_implemented_in_platform ? (
@@ -335,6 +415,17 @@ export function CapabilitiesView() {
           <p>
             This matrix makes roadmap gaps explicit so operators do not mistake
             architecture direction for delivered multi-vendor feature parity.
+          </p>
+        </div>
+      ) : null}
+
+      {(vendorPostureSummaryCounts.future_juniper_target ?? 0) > 0 ? (
+        <div className="callout">
+          <strong>Future vendor structure remains explicit without implying parity</strong>
+          <p>
+            Juniper-target records exist to keep the capability model structurally ready for the
+            next expansion step, but they remain clearly roadmap-only and should not be read as
+            delivered Juniper support.
           </p>
         </div>
       ) : null}
@@ -416,6 +507,10 @@ export function CapabilitiesView() {
                   0}
               </strong>
             </li>
+            <li>
+              <span>Future Juniper target entries</span>
+              <strong>{vendorPostureSummaryCounts.future_juniper_target ?? 0}</strong>
+            </li>
           </ul>
         </article>
         <article className="detail-card">
@@ -475,6 +570,36 @@ export function CapabilitiesView() {
             </li>
           </ul>
         </article>
+        <article className="detail-card">
+          <p className="summary-label">Vendor Posture Mix</p>
+          <ul className="compact-list">
+            <li>
+              <span>Current Nokia focus</span>
+              <strong>{vendorPostureSummaryCounts.current_nokia_focus ?? 0}</strong>
+            </li>
+            <li>
+              <span>Future Juniper target</span>
+              <strong>{vendorPostureSummaryCounts.future_juniper_target ?? 0}</strong>
+            </li>
+            <li>
+              <span>Future multi-vendor candidate</span>
+              <strong>{vendorPostureSummaryCounts.future_multi_vendor_candidate ?? 0}</strong>
+            </li>
+          </ul>
+        </article>
+        <article className="detail-card">
+          <p className="summary-label">Domain Coverage</p>
+          <ul className="compact-list">
+            {Object.entries(domainSummaryCounts)
+              .sort(([left], [right]) => left.localeCompare(right))
+              .map(([domain, count]) => (
+                <li key={domain}>
+                  <span>{formatLabel(domain)}</span>
+                  <strong>{count}</strong>
+                </li>
+              ))}
+          </ul>
+        </article>
       </div>
 
       {data.items.length === 0 ? (
@@ -499,7 +624,7 @@ export function CapabilitiesView() {
                   <th>Support</th>
                   <th>Implementation</th>
                   <th>Delivery tier</th>
-                  <th>Source</th>
+                  <th>Evidence</th>
                 </tr>
               </thead>
               <tbody>
@@ -524,6 +649,7 @@ export function CapabilitiesView() {
                           <strong>{capability.vendor}</strong>
                           <span>{capability.platform}</span>
                         </button>
+                        <div className="table-note">{formatLabel(capability.vendor_posture)}</div>
                       </td>
                       <td>{formatLabel(capability.domain)}</td>
                       <td>
@@ -539,7 +665,10 @@ export function CapabilitiesView() {
                         <StatusPill value={capability.implementation_status} />
                       </td>
                       <td>{formatLabel(capability.delivery_tier)}</td>
-                      <td>{capability.source_of_determination}</td>
+                      <td>
+                        {formatLabel(capability.evidence_basis)}
+                        <div className="table-note">{capability.source_of_determination}</div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -563,6 +692,10 @@ export function CapabilitiesView() {
                 <div className="key-value-row">
                   <span>Feature</span>
                   <strong>{formatLabel(selectedCapability.feature)}</strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Version scope</span>
+                  <strong>{selectedCapability.version_scope ?? "Not scoped further"}</strong>
                 </div>
                 <div className="key-value-row">
                   <span>Support</span>
@@ -603,6 +736,14 @@ export function CapabilitiesView() {
                 <div className="key-value-row">
                   <span>Evidence Meaning</span>
                   <strong>{describeEvidenceBasis(selectedCapability.evidence_basis)}</strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Vendor Posture Meaning</span>
+                  <strong>{describeVendorPosture(selectedCapability.vendor_posture)}</strong>
+                </div>
+                <div className="key-value-row">
+                  <span>Implementation Meaning</span>
+                  <strong>{describeImplementationState(selectedCapability.implementation_status)}</strong>
                 </div>
                 <div className="key-value-row">
                   <span>Source</span>

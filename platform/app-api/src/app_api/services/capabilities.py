@@ -370,6 +370,58 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
             ],
             source_of_determination="vendor_roadmap",
         ),
+        CapabilityRecord(
+            vendor="juniper",
+            platform="junos",
+            version_scope="planned next expansion",
+            domain="topology",
+            feature="topology_observation",
+            support_status="not_implemented_in_platform",
+            implementation_status="planned",
+            delivery_tier="future_roadmap",
+            evidence_basis="roadmap_only",
+            vendor_posture="future_juniper_target",
+            availability_scope=(
+                "Architecture target only; no Juniper topology adapter, normalized "
+                "read path, or persisted comparison support exists today."
+            ),
+            status_detail=(
+                "The platform is structured to expand toward Juniper topology visibility "
+                "next, but no delivered Juniper topology read-only support should be "
+                "inferred yet."
+            ),
+            caveats=[
+                "This record exists to make the next vendor target explicit without implying parity.",
+                "No Juniper topology ingestion, persistence, or controller-backed enrichment is implemented.",
+            ],
+            source_of_determination="vendor_roadmap",
+        ),
+        CapabilityRecord(
+            vendor="juniper",
+            platform="junos",
+            version_scope="planned next expansion",
+            domain="policy",
+            feature="policy_counter_visibility",
+            support_status="not_implemented_in_platform",
+            implementation_status="planned",
+            delivery_tier="future_roadmap",
+            evidence_basis="roadmap_only",
+            vendor_posture="future_juniper_target",
+            availability_scope=(
+                "Architecture target only; no Juniper policy collector mapping or "
+                "backend-owned normalized policy read path exists today."
+            ),
+            status_detail=(
+                "The platform keeps Juniper policy visibility explicit as a future target, "
+                "but no Juniper policy capability, counter, or detail support should be "
+                "read as implemented yet."
+            ),
+            caveats=[
+                "This is future-ready structure only and does not imply Juniper policy parity.",
+                "No Juniper policy comparison, history, or workflow support is implemented.",
+            ],
+            source_of_determination="vendor_roadmap",
+        ),
     ]
     return CapabilitiesListResponse(
         service="app-api",
@@ -379,16 +431,18 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
         data_status="bounded_matrix",
         summary=(
             "Phase 2 bounded capability matrix. Support state, implementation status, "
-            "delivery tier, and evidence basis are explicit across the current "
-            "Nokia-first read-only product slice, while future Juniper expansion "
-            "remains roadmap-only rather than implied parity."
+            "delivery tier, evidence basis, and vendor posture are explicit across the "
+            "current Nokia-first read-only product slice, while future Juniper expansion "
+            "remains structurally visible but roadmap-only rather than implied parity."
         ),
         count=len(items),
+        domain_counts=_count_values(item.domain for item in items),
         support_counts=_count_values(item.support_status for item in items),
         implementation_counts=_count_values(item.implementation_status for item in items),
         delivery_tier_counts=_count_values(item.delivery_tier for item in items),
         evidence_basis_counts=_count_values(item.evidence_basis for item in items),
         vendor_counts=_count_values(item.vendor for item in items),
+        vendor_posture_counts=_count_values(item.vendor_posture for item in items),
         dry_run_readiness=_build_dry_run_readiness_summary(),
         items=items,
     )
