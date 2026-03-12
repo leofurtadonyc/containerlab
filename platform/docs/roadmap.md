@@ -23,6 +23,31 @@ Most of the week's work has established:
 - sharper capability semantics plus one descriptive dry-run-readiness prerequisite summary
 - stronger platform, topology, and SR policy dashboards with bounded freshness, agreement, and evidence-gap cues where real metrics exist
 
+## Stricter Phase 2 Readiness Assessment
+
+The current evidence now supports **future dry-run planning assessment only**, not dry-run implementation and not a phase transition.
+
+Current maturity by area:
+
+- model maturity: mixed, because inventory is strong enough to inform future planning but topology and policy still remain intentionally partial read-side truths
+- history maturity: blocked, because workflow-history and audit-history remain sync-derived and snapshot-bounded rather than durable workflow lifecycle records
+- comparison maturity: mixed, because bounded current-versus-persisted and persisted-versus-previous comparison support now exists for inventory, topology, policy, and sync history, but those comparisons are still explanatory rather than validation-grade
+- capability maturity: strong for planning, because support state, implementation status, delivery tier, evidence basis, and vendor posture are now explicit enough to guide future planning safely
+
+Strongest blockers before any future dry-run phase:
+
+- no durable workflow lifecycle model yet for requested, planned, dry-run, validation, approval, execution, success, failure, or rollback stages
+- no dry-run API contract, preview payload, diff schema, or validation-result model yet
+- topology and policy truth remain too partial for workflow-grade pre-change intelligence
+- history remains platform-sync-derived rather than workflow-grade and operator-action-aware
+
+Bounded next steps for readiness only:
+
+- define the future workflow lifecycle and stage vocabulary in docs and schemas before any API implementation
+- specify dry-run-oriented preview, diff, and validation-result contracts only after read-side evidence boundaries are documented more strictly
+- deepen policy and topology truth only where live evidence and stable normalized models already justify it
+- preserve `Phase 2 — read-only product foundation` until workflow records, dry-run contracts, and validation outputs are all real
+
 ## Phased Roadmap
 
 ### Phase 1 — platform skeleton and architecture-first foundation

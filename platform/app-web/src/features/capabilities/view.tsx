@@ -1,12 +1,15 @@
 import { useMemo, useState } from "react";
 
+import type { DryRunReadinessSummary } from "../../api/contracts";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
 import { useCapabilitiesQuery } from "./api";
 
-const FALLBACK_DRY_RUN_READINESS = {
+const FALLBACK_DRY_RUN_READINESS: DryRunReadinessSummary = {
   status: "foundation_strengthening",
+  planning_readiness: "more_foundation_needed",
+  phase_recommendation: "remain_phase_2_read_only_foundation",
   summary:
     "Dry-run-readiness support is not available from the current backend response.",
   readiness_scope:
@@ -15,8 +18,15 @@ const FALLBACK_DRY_RUN_READINESS = {
     "The capabilities page remains usable even when this newer readiness metadata has not been rolled out.",
     "This fallback does not imply any dry-run functionality.",
   ],
+  strongest_blockers: [
+    "No stricter readiness assessment is available from the current backend response.",
+  ],
+  bounded_next_steps: [
+    "Keep the platform in Phase 2 until the backend exposes a stricter readiness assessment.",
+  ],
+  assessment_areas: [],
   prerequisites: [],
-} as const;
+};
 
 function describeSupportState(value: string): string {
   switch (value) {
@@ -92,6 +102,42 @@ function describeDryRunReadinessStatus(value: string): string {
     default:
       return "The current read-only foundation still needs more strengthening before even bounded dry-run readiness should be exposed.";
   }
+}
+
+function describePlanningReadiness(value: string): string {
+  switch (value) {
+    case "readiness_planning_supported":
+      return "The current read-only foundation is strong enough to support stricter future dry-run planning, but not implementation.";
+    default:
+      return "The current read-only foundation still needs more strengthening before even bounded dry-run planning should be treated as credible.";
+  }
+}
+
+function describeAssessmentAreaStatus(value: string): string {
+  switch (value) {
+    case "strong_for_planning":
+      return "This area is strong enough to support future planning discussions.";
+    case "mixed":
+      return "This area has useful foundations but still retains important blockers or truth gaps.";
+    default:
+      return "This area is still a hard blocker for any credible dry-run phase planning.";
+  }
+}
+
+function normalizeDryRunReadiness(
+  value: Partial<DryRunReadinessSummary> | undefined,
+): DryRunReadinessSummary {
+  return {
+    ...FALLBACK_DRY_RUN_READINESS,
+    ...value,
+    notes: value?.notes ?? FALLBACK_DRY_RUN_READINESS.notes,
+    strongest_blockers:
+      value?.strongest_blockers ?? FALLBACK_DRY_RUN_READINESS.strongest_blockers,
+    bounded_next_steps:
+      value?.bounded_next_steps ?? FALLBACK_DRY_RUN_READINESS.bounded_next_steps,
+    assessment_areas: value?.assessment_areas ?? FALLBACK_DRY_RUN_READINESS.assessment_areas,
+    prerequisites: value?.prerequisites ?? FALLBACK_DRY_RUN_READINESS.prerequisites,
+  };
 }
 
 export function CapabilitiesView() {
@@ -207,7 +253,7 @@ export function CapabilitiesView() {
     );
   }
 
-  const dryRunReadiness = data.dry_run_readiness ?? FALLBACK_DRY_RUN_READINESS;
+  const dryRunReadiness = normalizeDryRunReadiness(data.dry_run_readiness);
   const domainSummaryCounts = data.domain_counts ?? domainCounts;
   const vendorPostureSummaryCounts = data.vendor_posture_counts ?? vendorPostureCounts;
 
@@ -236,6 +282,11 @@ export function CapabilitiesView() {
           <p className="summary-label">Dry-Run Readiness</p>
           <strong>{formatLabel(dryRunReadiness.status)}</strong>
           <p>{describeDryRunReadinessStatus(dryRunReadiness.status)}</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Planning Readiness</p>
+          <strong>{formatLabel(dryRunReadiness.planning_readiness)}</strong>
+          <p>{describePlanningReadiness(dryRunReadiness.planning_readiness)}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Current Nokia Focus</p>
@@ -438,7 +489,58 @@ export function CapabilitiesView() {
         </p>
       </div>
 
+      <div className="callout">
+        <strong>Phase recommendation remains unchanged</strong>
+        <p>
+          {formatLabel(dryRunReadiness.phase_recommendation)} remains the only current
+          recommendation. Planning readiness does not justify a phase jump, dry-run API work, or
+          any workflow implementation yet.
+        </p>
+      </div>
+
       <div className="content-grid">
+        <article className="detail-card">
+          <p className="summary-label">Assessment Areas</p>
+          {dryRunReadiness.assessment_areas.length > 0 ? (
+            <ul className="notes-list">
+              {dryRunReadiness.assessment_areas.map((assessment) => (
+                <li key={assessment.area}>
+                  <strong>
+                    {formatLabel(assessment.area)}: {formatLabel(assessment.status)}
+                  </strong>
+                  {" - "}
+                  {assessment.summary}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No stricter assessment areas are available from the current backend response yet.</p>
+          )}
+        </article>
+        <article className="detail-card">
+          <p className="summary-label">Strongest Blockers</p>
+          {dryRunReadiness.strongest_blockers.length > 0 ? (
+            <ul className="notes-list">
+              {dryRunReadiness.strongest_blockers.map((blocker) => (
+                <li key={blocker}>{blocker}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>No blockers were provided in the current readiness summary.</p>
+          )}
+        </article>
+        <article className="detail-card">
+          <p className="summary-label">Bounded Next Steps</p>
+          {dryRunReadiness.bounded_next_steps.length > 0 ? (
+            <ul className="notes-list">
+              {dryRunReadiness.bounded_next_steps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>No bounded next steps are available from the current readiness summary.</p>
+          )}
+        </article>
         <article className="detail-card">
           <p className="summary-label">Dry-Run Readiness Prerequisites</p>
           <p>{dryRunReadiness.readiness_scope}</p>
@@ -598,6 +700,20 @@ export function CapabilitiesView() {
                   <strong>{count}</strong>
                 </li>
               ))}
+          </ul>
+        </article>
+        <article className="detail-card">
+          <p className="summary-label">Assessment Status Meaning</p>
+          <ul className="notes-list">
+            <li>
+              <strong>Strong for planning:</strong> {describeAssessmentAreaStatus("strong_for_planning")}
+            </li>
+            <li>
+              <strong>Mixed:</strong> {describeAssessmentAreaStatus("mixed")}
+            </li>
+            <li>
+              <strong>Blocked:</strong> {describeAssessmentAreaStatus("blocked")}
+            </li>
           </ul>
         </article>
       </div>
@@ -760,6 +876,20 @@ export function CapabilitiesView() {
                       prerequisite.blocking_gaps.map((gap) => (
                         <li key={`${prerequisite.prerequisite}-${gap}`}>
                           {formatLabel(prerequisite.prerequisite)}: {gap}
+                        </li>
+                      )),
+                    )}
+                  </ul>
+                </>
+              ) : null}
+              {dryRunReadiness.assessment_areas.some((assessment) => assessment.strongest_gaps.length > 0) ? (
+                <>
+                  <p className="summary-label">Assessment Gaps</p>
+                  <ul className="notes-list">
+                    {dryRunReadiness.assessment_areas.flatMap((assessment) =>
+                      assessment.strongest_gaps.map((gap) => (
+                        <li key={`${assessment.area}-${gap}`}>
+                          {formatLabel(assessment.area)}: {gap}
                         </li>
                       )),
                     )}

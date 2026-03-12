@@ -99,6 +99,29 @@ Workflow ownership does not belong to:
 - the project is approaching some prerequisites for later dry-run planning, but only as descriptive readiness support rather than actual workflow functionality
 - no actual dry-run or action workflow implementation exists
 
+## Stricter Planning Readiness
+
+The platform is now strong enough to support **stricter future dry-run planning assessment**, but not strong enough to justify any dry-run implementation work yet.
+
+Why planning readiness is now supportable:
+
+- inventory, topology, policy, capability, and sync-derived history now expose clearer bounded evidence and comparison semantics
+- capability metadata now makes support status, delivery tier, evidence basis, and vendor posture explicit enough to guide future planning without implying parity
+- the WebUI and docs can now present readiness boundaries and blockers honestly rather than only as roadmap prose
+
+Why implementation readiness is still blocked:
+
+- no durable workflow lifecycle records exist yet for requested, planned, dry-run-complete, approved, executing, succeeded, failed, or rollback stages
+- no dry-run API, preview, diff, or validation-result contracts exist yet
+- topology and policy truth remain intentionally partial and should not yet be used as workflow-grade pre-change intelligence
+- workflow-history and audit-history remain sync-derived visibility rather than workflow-grade audit relationships
+
+Current conclusion:
+
+- use the current foundation to plan later workflow contracts more carefully
+- do not treat that planning readiness as a phase transition
+- keep the platform fully in `Phase 2 — read-only product foundation`
+
 ### Future
 
 - workflow model scaffolding

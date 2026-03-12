@@ -69,13 +69,32 @@ class DryRunReadinessPrerequisite(BaseModel):
     blocking_gaps: list[str]
 
 
+class DryRunReadinessAssessmentArea(BaseModel):
+    """Stricter evidence-based readiness assessment for one foundation area."""
+
+    area: Literal[
+        "model_maturity",
+        "history_maturity",
+        "comparison_maturity",
+        "capability_maturity",
+    ]
+    status: Literal["strong_for_planning", "mixed", "blocked"]
+    summary: str
+    strongest_gaps: list[str]
+
+
 class DryRunReadinessSummary(BaseModel):
     """Bounded non-executing summary of dry-run-readiness prerequisites."""
 
     status: Literal["foundation_strengthening", "bounded_readiness_support"]
+    planning_readiness: Literal["readiness_planning_supported", "more_foundation_needed"]
+    phase_recommendation: Literal["remain_phase_2_read_only_foundation"]
     summary: str
     readiness_scope: str
     notes: list[str]
+    strongest_blockers: list[str]
+    bounded_next_steps: list[str]
+    assessment_areas: list[DryRunReadinessAssessmentArea]
     prerequisites: list[DryRunReadinessPrerequisite]
 
 

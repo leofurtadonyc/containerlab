@@ -425,11 +425,27 @@ export interface DryRunReadinessPrerequisite {
   blocking_gaps: string[];
 }
 
+export interface DryRunReadinessAssessmentArea {
+  area:
+    | "model_maturity"
+    | "history_maturity"
+    | "comparison_maturity"
+    | "capability_maturity";
+  status: "strong_for_planning" | "mixed" | "blocked";
+  summary: string;
+  strongest_gaps: string[];
+}
+
 export interface DryRunReadinessSummary {
   status: "foundation_strengthening" | "bounded_readiness_support";
+  planning_readiness: "readiness_planning_supported" | "more_foundation_needed";
+  phase_recommendation: "remain_phase_2_read_only_foundation";
   summary: string;
   readiness_scope: string;
   notes: string[];
+  strongest_blockers: string[];
+  bounded_next_steps: string[];
+  assessment_areas: DryRunReadinessAssessmentArea[];
   prerequisites: DryRunReadinessPrerequisite[];
 }
 

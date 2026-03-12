@@ -7,6 +7,7 @@ from app_api.config.settings import get_settings
 from app_api.schemas.capabilities import (
     CapabilityRecord,
     CapabilitiesListResponse,
+    DryRunReadinessAssessmentArea,
     DryRunReadinessPrerequisite,
     DryRunReadinessSummary,
 )
@@ -74,22 +75,91 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
             blocking_gaps=[],
         ),
     ]
+    assessment_areas = [
+        DryRunReadinessAssessmentArea(
+            area="model_maturity",
+            status="mixed",
+            summary=(
+                "Inventory is stable enough to support future planning, but topology and "
+                "policy still remain intentionally partial read-side models."
+            ),
+            strongest_gaps=[
+                "Topology still depends on bounded inferred link evidence rather than protocol-derived adjacency truth.",
+                "Policy truth remains bounded to counters, static-policy detail when present, and partial comparison support rather than full per-policy operational truth.",
+            ],
+        ),
+        DryRunReadinessAssessmentArea(
+            area="history_maturity",
+            status="blocked",
+            summary=(
+                "History visibility is useful for sync-derived evidence, but it is not yet a "
+                "workflow lifecycle or operator-action history foundation."
+            ),
+            strongest_gaps=[
+                "No requested, planned, dry-run-complete, approved, executing, succeeded, failed, or rollback workflow records exist yet.",
+                "Workflow-history and audit-history remain derived from persisted sync runs rather than a workflow-grade durable state model.",
+            ],
+        ),
+        DryRunReadinessAssessmentArea(
+            area="comparison_maturity",
+            status="mixed",
+            summary=(
+                "The platform now has honest bounded comparison support for inventory, topology, "
+                "policy, and persisted snapshot history, but those comparisons are still narrow "
+                "and explanatory rather than validation-grade."
+            ),
+            strongest_gaps=[
+                "Current comparisons are aggregate and normalized, not preview, diff, intent-reconciliation, or validation outputs.",
+                "Comparison support still depends on bounded persisted evidence and does not yet cover a workflow-grade change model.",
+            ],
+        ),
+        DryRunReadinessAssessmentArea(
+            area="capability_maturity",
+            status="strong_for_planning",
+            summary=(
+                "Capability-awareness is now explicit enough to support stricter future dry-run "
+                "planning because support status, delivery tier, evidence basis, and vendor posture "
+                "are all exposed clearly."
+            ),
+            strongest_gaps=[
+                "The matrix remains descriptive and does not yet drive dry-run eligibility, preview behavior, or validation outcomes.",
+                "Future-ready Juniper structure exists, but no Juniper adapter behavior is implemented.",
+            ],
+        ),
+    ]
     return DryRunReadinessSummary(
         status="bounded_readiness_support",
+        planning_readiness="readiness_planning_supported",
+        phase_recommendation="remain_phase_2_read_only_foundation",
         summary=(
-            "The Phase 2 foundation is now strong enough to expose bounded dry-run-readiness "
-            "prerequisites, but no dry-run API, execution preview, or validation workflow "
-            "exists yet."
+            "The Phase 2 foundation is now strong enough to support stricter future dry-run "
+            "planning assessment, but not strong enough to justify dry-run implementation or "
+            "a phase transition."
         ),
         readiness_scope=(
-            "This readiness summary is descriptive only. It exists to show which prerequisite "
-            "read-side foundations are already present for future dry-run work."
+            "This readiness summary is descriptive only. It exists to show which bounded "
+            "read-side foundations are mature enough to inform later dry-run planning and "
+            "which blockers still prevent any workflow-phase move."
         ),
         notes=[
             "Readiness support is not dry-run functionality.",
             "The current platform still lacks requested or planned workflow records, dry-run outputs, approvals, rollback handling, and execution semantics.",
             "Any future dry-run work must build on these bounded prerequisites without overstating policy or topology truth.",
+            "Planning readiness does not mean implementation readiness.",
         ],
+        strongest_blockers=[
+            "No durable workflow lifecycle model exists yet for requested, planned, dry-run, validation, approval, execution, or rollback stages.",
+            "No dry-run API contract, preview payload, diff model, or validation-result schema exists yet.",
+            "Topology and policy truth remain intentionally partial, which is still too weak for workflow-grade pre-change intelligence.",
+            "History remains sync-derived and snapshot-bounded rather than workflow-grade and user-action-aware.",
+        ],
+        bounded_next_steps=[
+            "Define the future workflow lifecycle model and stage vocabulary in docs and schemas before any API implementation.",
+            "Specify dry-run-oriented preview, diff, and validation-result contracts only after the bounded read-side evidence model is documented more strictly.",
+            "Deepen policy and topology truth only where live evidence and stable normalized models already justify it.",
+            "Preserve the current Phase 2 boundary until workflow records, dry-run contracts, and validation outputs are all real rather than descriptive.",
+        ],
+        assessment_areas=assessment_areas,
         prerequisites=prerequisites,
     )
 
