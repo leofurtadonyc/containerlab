@@ -1,5 +1,6 @@
 """Typed schemas for device inventory responses."""
 
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel
@@ -27,10 +28,34 @@ class DeviceRecord(BaseModel):
     capability_detail: str
 
 
+class InventoryComparisonSummary(BaseModel):
+    """Bounded comparison between current inventory response and latest persisted snapshot."""
+
+    status: Literal["unavailable", "live_vs_latest_persisted_ready"]
+    summary: str
+    comparison_persisted_at: datetime | None = None
+    current_device_count: int
+    persisted_device_count: int
+    device_count_delta: int
+    added_device_count: int
+    removed_device_count: int
+    changed_device_count: int
+    current_role_counts: dict[str, int]
+    persisted_role_counts: dict[str, int]
+    current_collector_status_counts: dict[str, int]
+    persisted_collector_status_counts: dict[str, int]
+    current_capability_summary_counts: dict[str, int]
+    persisted_capability_summary_counts: dict[str, int]
+    notes: list[str]
+
+
 class DevicesListResponse(ApiResponseMetadata):
     """Read-only device inventory list scaffold."""
 
     data_status: Literal["placeholder", "integration_scaffold", "live", "degraded"]
+    serving_mode: Literal["live_collector", "persisted_fallback", "empty_scaffold"]
     summary: str
+    served_persisted_at: datetime | None = None
+    comparison_to_latest_persisted: InventoryComparisonSummary
     count: int
     items: list[DeviceRecord]

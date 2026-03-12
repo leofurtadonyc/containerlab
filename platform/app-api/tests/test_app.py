@@ -308,11 +308,11 @@ def _build_persisted_inventory_snapshot() -> PersistedInventorySnapshot:
                 device_id="PE1",
                 vendor="nokia",
                 platform="7750 SR-1",
-                software_version="B-25.10.R2",
+                software_version="B-25.10.R1",
                 role="pe",
                 management_address="172.20.20.107",
-                collector_status="ok",
-                capability_summary="partially_supported",
+                collector_status="degraded",
+                capability_summary="unknown",
             )
         ],
     )
@@ -757,8 +757,11 @@ def test_devices_endpoint_returns_live_inventory(monkeypatch) -> None:
 
     assert response.headers["X-Request-ID"] == "devices-test"
     assert payload["data_status"] == "live"
+    assert payload["serving_mode"] == "live_collector"
+    assert payload["served_persisted_at"] is None
     assert payload["count"] == 2
     assert "live read-only Nokia gNMI collection" in payload["summary"]
+    assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
     assert payload["items"][0]["device_id"] == "PE1"
     assert payload["items"][0]["vendor"] == "nokia"
     assert payload["items"][0]["management_address"] == "172.20.20.107"
@@ -836,9 +839,54 @@ def test_devices_endpoint_falls_back_to_persisted_inventory(monkeypatch) -> None
     assert response.status_code == 200
     payload = response.json()
     assert payload["data_status"] == "degraded"
+    assert payload["serving_mode"] == "persisted_fallback"
     assert payload["count"] == 1
+    assert datetime.fromisoformat(
+        payload["served_persisted_at"].replace("Z", "+00:00")
+    ) == datetime.fromisoformat("2026-03-10T00:00:00+00:00")
+    assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
+    assert payload["comparison_to_latest_persisted"]["current_device_count"] == 1
     assert "latest persisted normalized inventory snapshot" in payload["summary"]
     assert payload["items"][0]["device_id"] == "PE1"
+
+
+def test_devices_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorInventoryClient:
+        def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+            return _build_live_inventory_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.devices.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.devices.load_latest_inventory_snapshot",
+        _build_persisted_inventory_snapshot,
+    )
+
+    response = client.get("/api/v1/devices")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["serving_mode"] == "live_collector"
+    assert payload["comparison_to_latest_persisted"]["status"] == "live_vs_latest_persisted_ready"
+    assert payload["comparison_to_latest_persisted"]["persisted_device_count"] == 1
+    assert payload["comparison_to_latest_persisted"]["current_device_count"] == 2
+    assert payload["comparison_to_latest_persisted"]["added_device_count"] == 1
+    assert payload["comparison_to_latest_persisted"]["removed_device_count"] == 0
+    assert payload["comparison_to_latest_persisted"]["changed_device_count"] == 1
+    assert payload["comparison_to_latest_persisted"]["current_role_counts"] == {
+        "p": 1,
+        "pe": 1,
+    }
+    assert payload["comparison_to_latest_persisted"]["persisted_collector_status_counts"] == {
+        "degraded": 1
+    }
+    assert payload["comparison_to_latest_persisted"]["persisted_capability_summary_counts"] == {
+        "unknown": 1
+    }
 
 
 def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None:

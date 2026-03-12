@@ -52,9 +52,31 @@ export interface DeviceRecord {
   capability_detail: string;
 }
 
+export interface InventoryCurrentComparison {
+  status: "unavailable" | "live_vs_latest_persisted_ready";
+  summary: string;
+  comparison_persisted_at: string | null;
+  current_device_count: number;
+  persisted_device_count: number;
+  device_count_delta: number;
+  added_device_count: number;
+  removed_device_count: number;
+  changed_device_count: number;
+  current_role_counts: Record<string, number>;
+  persisted_role_counts: Record<string, number>;
+  current_collector_status_counts: Record<string, number>;
+  persisted_collector_status_counts: Record<string, number>;
+  current_capability_summary_counts: Record<string, number>;
+  persisted_capability_summary_counts: Record<string, number>;
+  notes: string[];
+}
+
 export interface DevicesListResponse extends ApiResponseMetadata {
   data_status: "placeholder" | "integration_scaffold" | "live" | "degraded";
+  serving_mode: "live_collector" | "persisted_fallback" | "empty_scaffold";
   summary: string;
+  served_persisted_at: string | null;
+  comparison_to_latest_persisted: InventoryCurrentComparison;
   count: number;
   items: DeviceRecord[];
 }
