@@ -15,7 +15,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## Platform Observability Overview\nThis dashboard follows the current read-only platform boundary: Prometheus scrape health, backend API responsiveness, collector-backed snapshot signals, bounded persisted sync-history evidence, and a small amount of honest live-versus-persisted or backend-versus-collector comparison context where those metrics already exist.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- Inventory, topology, and policy sync history now surface through persisted sync-run metrics.\n- Comparison panels here show bounded aggregate deltas only; they are not drift engines or product truth.\n- Policy operational truth remains intentionally partial even though bounded policy sync evidence now exists.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels.",
+        "content": "## Platform Observability Overview\nThis dashboard follows the current read-only platform boundary: Prometheus scrape health, backend API responsiveness, collector-backed snapshot signals, bounded persisted sync-history evidence, and a small amount of honest live-versus-persisted or backend-versus-collector comparison context where those metrics already exist.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- Inventory, topology, and policy sync history now surface through persisted sync-run metrics.\n- Cross-slice posture panels show freshness, persisted sync result mix, and current topology or policy snapshot labels where those backend metrics already exist.\n- Comparison panels here show bounded aggregate deltas only; they are not drift engines or product truth.\n- Policy operational truth remains intentionally partial even though bounded policy sync evidence now exists.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -1238,6 +1238,142 @@
       ],
       "title": "Collector Read-Side Outcome Rates",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 60
+      },
+      "id": 31,
+      "panels": [],
+      "title": "Cross-Slice Snapshot Posture",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 61
+      },
+      "id": 32,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_sync_runs_by_family_and_result",
+          "legendFormat": "{{model_family}} • {{result}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Persisted Sync Result Posture by Slice",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 61
+      },
+      "id": 33,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_topology_snapshot_status",
+          "legendFormat": "{{data_status}} • {{sync_status}} • {{completeness}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Topology Snapshot Labels",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 61
+      },
+      "id": 34,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_policy_snapshot_status",
+          "legendFormat": "{{data_status}} • {{sync_status}} • {{completeness}} • {{detail_mode}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Policy Snapshot Labels",
+      "type": "bargauge"
     }
   ],
   "refresh": "30s",
@@ -1258,5 +1394,5 @@
   "timezone": "browser",
   "title": "Platform Overview",
   "uid": "platform-overview",
-  "version": 5
+  "version": 6
 }

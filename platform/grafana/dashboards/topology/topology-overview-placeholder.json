@@ -14,7 +14,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## Topology Observability Overview\nThis dashboard summarizes the current live topology slice exposed by the platform. It focuses on bounded, real evidence: topology node and link counts, state distributions, inference quality, backend-versus-collector agreement, and persisted sync-history freshness for the topology read side.\n\nCurrent limits:\n- The topology model is live and useful, but intentionally partial.\n- Links are inferred from interface naming and operational state rather than LLDP, IGP, or ODL enrichment.\n- Comparison panels here show aggregate delivery and agreement posture, not protocol-derived drift truth.\n- Partial knowledge remains explicit through degraded links, single-sided links, and partial sync-history results.",
+        "content": "## Topology Observability Overview\nThis dashboard summarizes the current live topology slice exposed by the platform. It focuses on bounded, real evidence: topology node and link counts, state distributions, inference quality, backend-versus-collector agreement, persisted sync-history freshness, and delivery coverage posture for the topology read side.\n\nCurrent limits:\n- The topology model is live and useful, but intentionally partial.\n- Links are inferred from interface naming and operational state rather than LLDP, IGP, or ODL enrichment.\n- Comparison panels here show aggregate delivery and agreement posture, not protocol-derived drift truth.\n- Partial knowledge remains explicit through degraded links, single-sided links, backend-ready coverage ratios, and partial sync-history results.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -876,6 +876,154 @@
       ],
       "title": "Topology API and Delivery Readiness",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 45
+      },
+      "id": 24,
+      "panels": [],
+      "title": "Topology Evidence Posture",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "max": 1,
+          "min": 0,
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 46
+      },
+      "id": 25,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_gnmi_collector_topology_backend_ready_nodes / clamp_min(platform_gnmi_collector_topology_normalized_nodes, 1)",
+          "legendFormat": "node delivery coverage",
+          "refId": "A"
+        },
+        {
+          "expr": "platform_gnmi_collector_topology_backend_ready_links / clamp_min(platform_gnmi_collector_topology_normalized_links, 1)",
+          "legendFormat": "link delivery coverage",
+          "refId": "B"
+        }
+      ],
+      "title": "Collector-to-Backend Delivery Coverage",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 46
+      },
+      "id": 26,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_gnmi_collector_topology_single_sided_links",
+          "legendFormat": "single-sided links",
+          "refId": "A"
+        },
+        {
+          "expr": "clamp_min(platform_gnmi_collector_topology_normalized_links - platform_gnmi_collector_topology_single_sided_links, 0)",
+          "legendFormat": "other inferred links",
+          "refId": "B"
+        }
+      ],
+      "title": "Link Evidence Posture",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 46
+      },
+      "id": 27,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_topology_snapshot_status",
+          "legendFormat": "{{data_status}} • {{sync_status}} • {{completeness}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Topology Snapshot Labels",
+      "type": "bargauge"
     }
   ],
   "refresh": "30s",
@@ -896,5 +1044,5 @@
   "timezone": "browser",
   "title": "Topology Overview",
   "uid": "topology-overview",
-  "version": 4
+  "version": 5
 }
