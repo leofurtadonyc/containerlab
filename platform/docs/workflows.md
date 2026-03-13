@@ -225,6 +225,17 @@ planning slice into blockers that must be fixed before concrete planning can
 continue, blockers that are important but not currently blocking, and later
 phase concerns.
 
+## Bounded Next-Step Plan
+
+The platform now also has a bounded next-step planning document in:
+
+- `platform/schemas/workflows/bounded-next-step-plan.md`
+
+That document converts the revealed blocker set into a disciplined next-step
+order, identifies which blockers can still be closed honestly inside `Phase 2`,
+which can only be narrowed, and which must remain later-phase concerns until a
+future reassessment explicitly justifies deeper workflow-owned planning.
+
 ## Phase 2 Reuse Mapping
 
 The platform now also has an evidence-based reuse mapping document in:
