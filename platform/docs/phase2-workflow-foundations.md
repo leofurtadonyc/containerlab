@@ -105,7 +105,8 @@ They do not imply readiness to transition now.
 3. Preserve comparison support as explanatory evidence only until stronger workflow-owned validation and diff artifacts exist.
 4. Do not relabel sync-derived workflow-history or audit-history into workflow lifecycle or workflow audit truth; keep them as supporting evidence only.
 5. Use the existing Phase 2 workflow-planning docs under `platform/schemas/workflows/` and `platform/docs/` as the design baseline before writing any Phase 4 implementation code.
-6. Respect the documented order in [agent/sdn/16-implementation-order.md](agent/sdn/16-implementation-order.md) and [agent/sdn/35-build-order-enforcement-rules.md](agent/sdn/35-build-order-enforcement-rules.md): dry-run and workflow scaffolding comes after the read-only foundation, not instead of it.
+6. Use [platform/schemas/workflows/workflow-owned-state-prerequisites.md](platform/schemas/workflows/workflow-owned-state-prerequisites.md) as the concrete ownership, storage, API-sequencing, and audit-linkage checklist before any workflow-owned entity design turns into migrations or endpoints.
+7. Respect the documented order in [agent/sdn/16-implementation-order.md](agent/sdn/16-implementation-order.md) and [agent/sdn/35-build-order-enforcement-rules.md](agent/sdn/35-build-order-enforcement-rules.md): dry-run and workflow scaffolding comes after the read-only foundation, not instead of it.
 
 ## Non-Transition Reminder
 

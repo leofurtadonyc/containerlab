@@ -102,6 +102,9 @@ During this planning-only window, do not:
 
 Even with a planning-only go, the following remain hard prerequisites before implementation should begin later.
 
+The concrete ownership and sequencing plan for those prerequisites is documented
+in [platform/schemas/workflows/workflow-owned-state-prerequisites.md](platform/schemas/workflows/workflow-owned-state-prerequisites.md).
+
 - durable workflow lifecycle records must exist
 - workflow-owned request, preview, diff, validation-result, and audit-linkage contracts must become implemented backend surfaces rather than design docs only
 - topology and policy truth must become strong enough for bounded pre-change reasoning in the targeted workflow slice

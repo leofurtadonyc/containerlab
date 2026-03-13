@@ -125,6 +125,19 @@ Phase 2 history and readiness structures map only partially onto those future co
 
 It does not introduce storage design, workflow APIs, or implementation behavior.
 
+## Workflow-Owned State Prerequisites
+
+The platform now also has a design-only implementation-prerequisite document in:
+
+- `platform/schemas/workflows/workflow-owned-state-prerequisites.md`
+
+That document defines the ownership boundaries and prerequisite sequencing for
+future workflow-owned state across storage, API introduction order, audit
+linkage, and workflow-state persistence.
+
+It does not introduce workflow behavior, dry-run APIs, approvals, rollback
+behavior, or any phase change.
+
 ## Validation And Blocker Contract Design
 
 The platform now also has design-only validation and blocker contract documents under:
