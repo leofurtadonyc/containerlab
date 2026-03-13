@@ -16,6 +16,7 @@ from app_api.models.policy import (
     PolicyHistoryWindow,
     PolicyInventoryRecord,
     PolicyInventorySnapshot,
+    PolicyTargetFootprint,
 )
 from app_api.persistence.read_side import (
     load_latest_policy_snapshot,
@@ -31,6 +32,7 @@ from app_api.schemas.policies import (
     PolicyHistoryWindowResponse,
     PoliciesListResponse,
     PolicyRecord,
+    PolicyTargetFootprintRecord,
 )
 from app_api.schemas.common import EvidenceConfidenceSummary
 
@@ -74,6 +76,7 @@ def _build_policy_inventory() -> tuple[
                 "The backend could not load the live policy snapshot from the collector.",
                 "No raw vendor payloads are exposed through the policies API.",
             ],
+            target_footprints=[],
             records=[],
         ), None
 
@@ -106,6 +109,26 @@ def _build_policy_inventory() -> tuple[
         binding_sid_count=collector_snapshot.binding_sid_count,
         srv6_binding_sid_count=collector_snapshot.srv6_binding_sid_count,
         notes=collector_snapshot.notes,
+        target_footprints=[
+            PolicyTargetFootprint(
+                target_name=footprint.target_name,
+                target_role=footprint.target_role,
+                collection_status=footprint.collection_status,
+                policy_capable=footprint.policy_capable,
+                observed_policy_count=footprint.observed_policy_count,
+                active_policy_count=footprint.active_policy_count,
+                static_policy_count=footprint.static_policy_count,
+                static_local_policy_count=footprint.static_local_policy_count,
+                static_non_local_policy_count=footprint.static_non_local_policy_count,
+                bgp_policy_count=footprint.bgp_policy_count,
+                ttm_preference_count=footprint.ttm_preference_count,
+                binding_sid_count=footprint.binding_sid_count,
+                srv6_binding_sid_count=footprint.srv6_binding_sid_count,
+                detail_record_count=footprint.detail_record_count,
+                notes=footprint.notes,
+            )
+            for footprint in collector_snapshot.target_footprints
+        ],
         records=[
             PolicyInventoryRecord(
                 policy_id=record.policy_id,
@@ -495,8 +518,8 @@ def build_policies_list_response() -> PoliciesListResponse:
             summary = (
                 "Policy inventory is backed by live Nokia SR policy counters and "
                 "bounded static-policy visibility. No SR policies are currently "
-                "observed, but stable counter footprint and target-role coverage "
-                "remain visible across the configured targets."
+                "observed, but stable per-target policy counter footprint and "
+                "target-role coverage remain visible across the configured targets."
             )
         elif snapshot.empty_reason == "per_policy_details_unavailable":
             summary = (
@@ -607,6 +630,26 @@ def build_policies_list_response() -> PoliciesListResponse:
         srv6_binding_sid_count=snapshot.srv6_binding_sid_count,
         count=len(items),
         notes=snapshot.notes,
+        target_footprints=[
+            PolicyTargetFootprintRecord(
+                target_name=footprint.target_name,
+                target_role=footprint.target_role,
+                collection_status=footprint.collection_status,
+                policy_capable=footprint.policy_capable,
+                observed_policy_count=footprint.observed_policy_count,
+                active_policy_count=footprint.active_policy_count,
+                static_policy_count=footprint.static_policy_count,
+                static_local_policy_count=footprint.static_local_policy_count,
+                static_non_local_policy_count=footprint.static_non_local_policy_count,
+                bgp_policy_count=footprint.bgp_policy_count,
+                ttm_preference_count=footprint.ttm_preference_count,
+                binding_sid_count=footprint.binding_sid_count,
+                srv6_binding_sid_count=footprint.srv6_binding_sid_count,
+                detail_record_count=footprint.detail_record_count,
+                notes=footprint.notes,
+            )
+            for footprint in snapshot.target_footprints
+        ],
         comparison_to_latest_persisted=PolicyCurrentComparisonResponse(
             status=current_comparison.status,
             summary=current_comparison.summary,

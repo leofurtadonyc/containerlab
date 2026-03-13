@@ -43,6 +43,26 @@ class PolicyRecord(BaseModel):
     notes: list[str]
 
 
+class PolicyTargetFootprintRecord(BaseModel):
+    """Vendor-neutral per-target policy footprint."""
+
+    target_name: str
+    target_role: str | None = None
+    collection_status: Literal["success", "failure", "partial"]
+    policy_capable: bool
+    observed_policy_count: int
+    active_policy_count: int
+    static_policy_count: int
+    static_local_policy_count: int
+    static_non_local_policy_count: int
+    bgp_policy_count: int
+    ttm_preference_count: int
+    binding_sid_count: int
+    srv6_binding_sid_count: int
+    detail_record_count: int
+    notes: list[str]
+
+
 class PolicyHistorySnapshotResponseRecord(BaseModel):
     """Bounded summary of one persisted policy snapshot."""
 
@@ -153,6 +173,7 @@ class PoliciesListResponse(ApiResponseMetadata):
     srv6_binding_sid_count: int
     count: int
     notes: list[str]
+    target_footprints: list[PolicyTargetFootprintRecord]
     comparison_to_latest_persisted: PolicyCurrentComparisonResponse
     history: PolicyHistoryWindowResponse
     items: list[PolicyRecord]

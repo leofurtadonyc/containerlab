@@ -8,6 +8,7 @@ Expected direction:
 - endpoint
 - color
 - candidate paths
+- per-target policy footprint where only bounded aggregate evidence exists
 - intent state
 - observed state
 - support state

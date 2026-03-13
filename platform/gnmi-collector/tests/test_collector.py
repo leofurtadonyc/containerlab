@@ -300,6 +300,13 @@ def test_policy_snapshot_endpoint_returns_live_policy_observations(monkeypatch) 
     assert payload["static_non_local_policy_count"] == 1
     assert payload["ttm_preference_count"] == 476
     assert payload["detail_mode"] == "static_policies_when_present"
+    assert len(payload["target_footprints"]) == expected_target_count
+    pe1_footprint = next(
+        item for item in payload["target_footprints"] if item["target_name"] == "PE1"
+    )
+    assert pe1_footprint["policy_capable"] is True
+    assert pe1_footprint["observed_policy_count"] == 1
+    assert pe1_footprint["detail_record_count"] == 1
     assert len(payload["records"]) == 2
     assert payload["records"][0]["policy_type"] == "static_local"
 
@@ -415,3 +422,10 @@ def test_policy_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> Non
     assert snapshot.delivery.destination_service == "app-api"
     assert snapshot.delivery.delivery_status == "live_ready"
     assert snapshot.delivery.model_family == "policy_inventory"
+    assert len(snapshot.delivery.target_footprints) == expected_target_count
+    pe1_footprint = next(
+        item for item in snapshot.delivery.target_footprints if item.target_name == "PE1"
+    )
+    assert pe1_footprint.policy_capable is True
+    assert pe1_footprint.observed_policy_count == 1
+    assert pe1_footprint.detail_record_count == 1

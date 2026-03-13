@@ -45,6 +45,7 @@ Current comparison-friendly API reality:
 - `/api/v1/devices` now distinguishes live collector reads, persisted fallback inventory reads, and bounded current-versus-latest-persisted inventory comparison when the backend has both sources available
 - `/api/v1/topology` now distinguishes live collector reads, persisted fallback topology reads, inferred topology evidence, and bounded current-versus-latest-persisted topology comparison where persisted support exists
 - `/api/v1/policies` now distinguishes live collector reads, persisted fallback policy reads, bounded current-versus-latest-persisted policy comparison, and bounded persisted-versus-previous policy snapshot comparison support
+- `/api/v1/policies` now also exposes a normalized per-target policy footprint so stable Nokia counter evidence remains visible even when the per-policy item list is empty
 - `/api/v1/workflow-history` and `/api/v1/audit-history` now expose bounded persisted snapshot context and immediate previous-snapshot comparison evidence for inventory, topology, and policy where those sync-derived records exist
 - those comparison views are explanatory read models only; they are not drift decisions, validation outcomes, or action recommendations
 

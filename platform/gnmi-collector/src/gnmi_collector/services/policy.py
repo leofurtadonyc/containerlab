@@ -6,6 +6,7 @@ from gnmi_collector.mappings.policy import (
     derive_policy_observed_at,
     map_policy_records,
     summarize_policy_counts,
+    summarize_policy_target_footprints,
 )
 from gnmi_collector.metrics.state import record_policy_summary
 from gnmi_collector.models.policy import (
@@ -24,6 +25,7 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
     raw_records = [adapter.collect_policy(target) for target in config.targets]
     normalized_records = map_policy_records(raw_records)
     aggregated_counts = summarize_policy_counts(raw_records)
+    target_footprints = summarize_policy_target_footprints(raw_records, normalized_records)
     collection_success_count = sum(
         1 for record in raw_records if record.collection_status == "success"
     )
@@ -100,6 +102,7 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
         ttm_preference_count=aggregated_counts["ttm_preference_count"],
         binding_sid_count=aggregated_counts["binding_sid_count"],
         srv6_binding_sid_count=aggregated_counts["srv6_binding_sid_count"],
+        target_footprints=target_footprints,
         records=normalized_records,
         notes=notes,
     )

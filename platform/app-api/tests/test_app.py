@@ -203,6 +203,42 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
         ttm_preference_count=476,
         binding_sid_count=0,
         srv6_binding_sid_count=0,
+        target_footprints=[
+            {
+                "target_name": "PE1",
+                "target_role": "pe",
+                "collection_status": "success",
+                "policy_capable": True,
+                "observed_policy_count": 1,
+                "active_policy_count": 1,
+                "static_policy_count": 1,
+                "static_local_policy_count": 1,
+                "static_non_local_policy_count": 0,
+                "bgp_policy_count": 0,
+                "ttm_preference_count": 14,
+                "binding_sid_count": 0,
+                "srv6_binding_sid_count": 0,
+                "detail_record_count": 1,
+                "notes": [],
+            },
+            {
+                "target_name": "P1",
+                "target_role": "p",
+                "collection_status": "success",
+                "policy_capable": True,
+                "observed_policy_count": 1,
+                "active_policy_count": 0,
+                "static_policy_count": 1,
+                "static_local_policy_count": 0,
+                "static_non_local_policy_count": 1,
+                "bgp_policy_count": 0,
+                "ttm_preference_count": 14,
+                "binding_sid_count": 0,
+                "srv6_binding_sid_count": 0,
+                "detail_record_count": 1,
+                "notes": [],
+            },
+        ],
         notes=[
             "Policy inventory is currently bounded to live Nokia SR policy counters collected over gNMI.",
             "When static-policy state is exposed, the collector now derives bounded per-policy observations without claiming full SR policy truth.",
@@ -291,6 +327,46 @@ def _build_live_empty_policy_snapshot() -> CollectorPolicySnapshot:
         ttm_preference_count=476,
         binding_sid_count=0,
         srv6_binding_sid_count=0,
+        target_footprints=[
+            {
+                "target_name": "PE1",
+                "target_role": "pe",
+                "collection_status": "success",
+                "policy_capable": True,
+                "observed_policy_count": 0,
+                "active_policy_count": 0,
+                "static_policy_count": 0,
+                "static_local_policy_count": 0,
+                "static_non_local_policy_count": 0,
+                "bgp_policy_count": 0,
+                "ttm_preference_count": 14,
+                "binding_sid_count": 0,
+                "srv6_binding_sid_count": 0,
+                "detail_record_count": 0,
+                "notes": [
+                    "Stable SR policy resource counters are visible on this target even though no SR policies are currently observed."
+                ],
+            },
+            {
+                "target_name": "P1",
+                "target_role": "p",
+                "collection_status": "success",
+                "policy_capable": True,
+                "observed_policy_count": 0,
+                "active_policy_count": 0,
+                "static_policy_count": 0,
+                "static_local_policy_count": 0,
+                "static_non_local_policy_count": 0,
+                "bgp_policy_count": 0,
+                "ttm_preference_count": 14,
+                "binding_sid_count": 0,
+                "srv6_binding_sid_count": 0,
+                "detail_record_count": 0,
+                "notes": [
+                    "Stable SR policy resource counters are visible on this target even though no SR policies are currently observed."
+                ],
+            },
+        ],
         notes=[
             "Policy inventory is currently bounded to live Nokia SR policy counters collected over gNMI.",
             "No SR policies are currently observed across the configured Nokia targets.",
@@ -1055,6 +1131,11 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["history"]["comparison_to_previous"]["changed_policy_count"] == 1
     assert payload["comparison_to_latest_persisted"]["status"] == "current_vs_latest_persisted_ready"
     assert payload["comparison_to_latest_persisted"]["persisted_observed_policy_count"] == 1
+    assert len(payload["target_footprints"]) == 2
+    assert payload["target_footprints"][0]["target_name"] == "PE1"
+    assert payload["target_footprints"][0]["observed_policy_count"] == 1
+    assert payload["target_footprints"][1]["target_name"] == "P1"
+    assert payload["target_footprints"][1]["static_non_local_policy_count"] == 1
     assert "bounded static-policy observations" in payload["summary"]
     assert payload["items"][0]["policy_type"] == "static_local"
     assert payload["items"][0]["source_target"] == "PE1"
@@ -1088,9 +1169,12 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     assert payload["empty_reason"] == "no_policies_observed"
     assert payload["ttm_preference_count"] == 476
     assert payload["observed_target_role_counts"]["p"] == 16
+    assert len(payload["target_footprints"]) == 2
+    assert payload["target_footprints"][0]["policy_capable"] is True
+    assert payload["target_footprints"][0]["detail_record_count"] == 0
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
     assert payload["history"]["status"] == "unavailable"
-    assert "stable counter footprint and target-role coverage" in payload["summary"]
+    assert "stable per-target policy counter footprint and target-role coverage" in payload["summary"]
 
 
 def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) -> None:
