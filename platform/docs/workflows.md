@@ -167,11 +167,20 @@ rule execution, approval behavior, or dry-run implementation.
 
 The platform now also has a design-only workflow audit relationship document in:
 
+- `platform/schemas/workflows/audit-linkage-contract.md`
 - `platform/schemas/workflows/audit-relationships.md`
 
-That document defines how future workflow, preview, validation, blocker,
+Those documents define how future workflow, preview, validation, blocker,
 approval, and execution concepts should relate to audit events without
 overstating the current sync-derived audit-history surface.
+
+The audit-linkage contract defines the explicit platform-owned identity shape,
+chronology rules, ordering semantics, and evidence-reference interaction for
+future `audit_linkage` records.
+
+The audit-relationships document defines how those linkages should be applied
+across workflow entities and where current sync-derived history must remain a
+bounded partial analogue only.
 
 ## Phase 2 Reuse Mapping
 

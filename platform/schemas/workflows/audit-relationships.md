@@ -47,50 +47,36 @@ The identity and citation rules for `evidence_reference` should follow:
 
 - `platform/schemas/workflows/evidence-reference-contract.md`
 
-## Conceptual Audit Relationship Shape
+The identity, chronology, and ordering rules for `audit_linkage` should follow:
 
-The future audit-relationship model should stay explicit and normalized.
+- `platform/schemas/workflows/audit-linkage-contract.md`
 
-### `audit_linkage`
+## Contract Boundary
 
-Purpose:
+The detailed field-level semantics for `audit_linkage` now live in
+[platform/schemas/workflows/audit-linkage-contract.md](platform/schemas/workflows/audit-linkage-contract.md).
 
-- bind one workflow-owned entity or artifact to one audit event
-- preserve chronology and accountability without duplicating event content into the workflow object
+This document focuses on:
 
-Minimum future fields:
+- which future workflow-owned entities should link to audit events
+- what those links should and should not imply
+- how current sync-derived history differs from future workflow-grade audit linkage
 
-| Field | Type | Purpose |
-| --- | --- | --- |
-| `audit_linkage_id` | `string` | Stable audit-linkage identity. |
-| `workflow_id` | `string` | Top-level workflow identity for the relationship. |
-| `workflow_revision_id` | `string or null` | Specific workflow revision when the linkage is revision-scoped. |
-| `linked_entity_kind` | `string` | `workflow`, `preview_artifact`, `validation_result`, `workflow_blocker`, `approval_record`, `execution_record`, or `rollback_record`. |
-| `linked_entity_id` | `string` | Identity of the linked workflow-owned record. |
-| `audit_event_id` | `string` | Linked audit-event identity. |
-| `relationship_kind` | `string` | `emitted_by`, `documents`, `constrains`, `approves`, `rejects`, `observes`, or `summarizes`. |
-| `chronology_role` | `string` | `request_time`, `preview_time`, `validation_time`, `approval_time`, `execution_time`, `rollback_time`, or `observation_time`. |
-| `created_at` | `string` | When the linkage was recorded. |
-| `link_reason` | `string` | Short normalized explanation of why this relationship exists. |
-| `evidence_references` | `array` | Optional evidence references that explain the linkage. |
-| `notes` | `array` | Additional honesty-preserving context. |
+The future audit event should remain the durable record of something that
+happened or was recorded.
 
-### `audit_event`
-
-The future audit event should remain the durable record of something that happened or was recorded.
-
-The linkage object should answer:
+The future linkage object should answer:
 
 - which workflow-owned entity this event is related to
 - why it is related
-- where it belongs in the workflow chronology
+- where it belongs in workflow chronology
 
 The audit event should answer:
 
 - what happened
 - when it happened
 - who or what recorded it
-- what the bounded result or message was
+- what bounded result or message was recorded
 
 ## Entity-Specific Audit Linkages
 

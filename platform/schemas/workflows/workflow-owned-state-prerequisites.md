@@ -129,6 +129,10 @@ Minimum prerequisite outcomes:
 - preserve explicit `relationship_kind`, `chronology_role`, and cited `evidence_reference` fields
 - treat current sync-derived and readiness-snapshot-derived audit-history events as evidence context only until workflow-owned audit linkage exists
 
+The design source of truth for this prerequisite layer should be:
+
+- `platform/schemas/workflows/audit-linkage-contract.md`
+
 Audit rules:
 
 - do not relabel current `workflow-history` records into workflow lifecycle transitions

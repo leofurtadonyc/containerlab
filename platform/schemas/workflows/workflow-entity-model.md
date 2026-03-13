@@ -315,13 +315,22 @@ Purpose:
 
 - the future relationship record that binds workflow entities to audit events and audit-relevant artifacts without collapsing them into one object
 
-Minimum future fields:
+Minimum future identity, chronology, and ordering semantics are defined in:
+
+- [platform/schemas/workflows/audit-linkage-contract.md](platform/schemas/workflows/audit-linkage-contract.md)
+
+Core future fields include:
 
 - `audit_linkage_id`
 - `workflow_id`
+- `workflow_revision_id`
 - `linked_entity_kind`
 - `linked_entity_id`
 - `audit_event_id`
+- `relationship_kind`
+- `chronology_role`
+- `chronology`
+- `ordering`
 - `link_reason`
 
 This entity is future-only.
@@ -331,6 +340,7 @@ Current Phase 2 analogue:
 - none
 - current audit records in [platform/app-api/src/app_api/models/audit.py](platform/app-api/src/app_api/models/audit.py#L90) are sync-derived event views, not workflow-linked audit relationships
 - the design-only relationship model is documented in [platform/schemas/workflows/audit-relationships.md](platform/schemas/workflows/audit-relationships.md)
+- the design-only contract for explicit linkage identity and chronology is documented in [platform/schemas/workflows/audit-linkage-contract.md](platform/schemas/workflows/audit-linkage-contract.md)
 
 ### 13. `evidence_reference`
 
