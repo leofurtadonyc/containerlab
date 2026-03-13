@@ -1,9 +1,99 @@
 import { useMemo, useState } from "react";
 
+import type { EvidenceConfidenceSummary } from "../../api/contracts";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
+import {
+  describeBlockedReason,
+  describeConfidencePosture,
+  describeEvidenceKind,
+  describeEvidenceSource,
+  describeFreshnessPosture,
+  normalizeEvidenceConfidence,
+} from "../../lib/evidence-confidence";
 import { useDevicesQuery } from "./api";
+
+function getInventoryEvidenceFallback(
+  servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold",
+  dataStatus: "placeholder" | "integration_scaffold" | "live" | "degraded",
+): EvidenceConfidenceSummary {
+  if (servingMode === "live_collector") {
+    return {
+      source_posture: "live_observed",
+      evidence_kind: "direct_observed",
+      confidence_posture:
+        dataStatus === "live" ? "strong_for_current_slice" : "degraded",
+      freshness_posture: "current",
+      blocked_reason: "none",
+      summary:
+        dataStatus === "live"
+          ? "Device inventory is backed by the current live observed normalized inventory path."
+          : "Device inventory remains live observed, but the current collector evidence is degraded.",
+      notes: [
+        "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
+      ],
+    };
+  }
+  if (servingMode === "persisted_fallback") {
+    return {
+      source_posture: "persisted_fallback",
+      evidence_kind: "direct_observed",
+      confidence_posture: "degraded",
+      freshness_posture: "stale",
+      blocked_reason: "collector_unavailable",
+      summary:
+        "Device inventory is being served from a persisted normalized fallback snapshot because the live collector path is unavailable.",
+      notes: [
+        "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
+      ],
+    };
+  }
+  return {
+    source_posture: "empty_scaffold",
+    evidence_kind: "unknown",
+    confidence_posture: "blocked",
+    freshness_posture: "unknown",
+    blocked_reason: "collector_unavailable_and_no_persisted_snapshot",
+    summary:
+      "The devices page only has empty-scaffold posture because neither live collector evidence nor a persisted fallback snapshot is available.",
+    notes: [
+      "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
+    ],
+  };
+}
+
+function describeInventoryComparisonReadout(
+  status: "unavailable" | "live_vs_latest_persisted_ready",
+  servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold",
+): { label: string; detail: string } {
+  if (status === "live_vs_latest_persisted_ready") {
+    return {
+      label: "Comparison ready",
+      detail:
+        "Bounded normalized comparison is available between the current device response and the latest persisted inventory snapshot.",
+    };
+  }
+  if (servingMode === "persisted_fallback") {
+    return {
+      label: "Fallback serving",
+      detail:
+        "Comparison is unavailable here because the current response already reflects the persisted fallback snapshot.",
+    };
+  }
+  return {
+    label: "Comparison unavailable",
+    detail:
+      "The backend does not currently have the extra persisted inventory evidence needed for a bounded comparison.",
+  };
+}
+
+function formatSignedDelta(value: number): string {
+  if (value > 0) {
+    return `+${value}`;
+  }
+  return `${value}`;
+}
 
 export function DevicesView() {
   const { data, error, isLoading, reload } = useDevicesQuery();
@@ -68,6 +158,15 @@ export function DevicesView() {
     );
   }
 
+  const evidenceConfidence = normalizeEvidenceConfidence(
+    data.evidence_confidence,
+    getInventoryEvidenceFallback(data.serving_mode, data.data_status),
+  );
+  const comparisonReadout = describeInventoryComparisonReadout(
+    data.comparison_to_latest_persisted.status,
+    data.serving_mode,
+  );
+
   return (
     <section>
       <div className="section-header">
@@ -83,12 +182,41 @@ export function DevicesView() {
 
       <div className="metadata-row">
         <span>Count: {data.count}</span>
+        <span>Serving mode: {formatLabel(data.serving_mode)}</span>
+        <span>Evidence confidence: {formatLabel(evidenceConfidence.confidence_posture)}</span>
+        <span>Freshness posture: {formatLabel(evidenceConfidence.freshness_posture)}</span>
         <span>Generated: {formatDateTime(data.generated_at)}</span>
+        <span>Served persisted at: {formatDateTime(data.served_persisted_at)}</span>
       </div>
 
       <p className="callout">{data.summary}</p>
 
       <div className="summary-grid">
+        <article className="summary-card">
+          <p className="summary-label">Devices</p>
+          <strong>{data.count}</strong>
+          <p>Normalized inventory records currently shown on this page.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Evidence Confidence</p>
+          <strong>{formatLabel(evidenceConfidence.confidence_posture)}</strong>
+          <p>{describeConfidencePosture(evidenceConfidence.confidence_posture)}</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Freshness Posture</p>
+          <strong>{formatLabel(evidenceConfidence.freshness_posture)}</strong>
+          <p>{describeFreshnessPosture(evidenceConfidence.freshness_posture)}</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Serving Mode</p>
+          <strong>{formatLabel(data.serving_mode)}</strong>
+          <p>{describeEvidenceSource(evidenceConfidence.source_posture)}</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Current vs Latest Persisted</p>
+          <strong>{comparisonReadout.label}</strong>
+          <p>{comparisonReadout.detail}</p>
+        </article>
         <article className="summary-card">
           <p className="summary-label">Collector OK</p>
           <strong>{collectorCounts.ok ?? 0}</strong>
@@ -101,9 +229,7 @@ export function DevicesView() {
         </article>
         <article className="summary-card">
           <p className="summary-label">Capability Gaps</p>
-          <strong>
-            {capabilityCounts.not_implemented_in_platform ?? 0}
-          </strong>
+          <strong>{capabilityCounts.not_implemented_in_platform ?? 0}</strong>
           <p>Devices where support is intentionally not yet implemented.</p>
         </article>
         <article className="summary-card">
@@ -112,6 +238,168 @@ export function DevicesView() {
           <p>Devices with useful read-only coverage but bounded deeper semantics.</p>
         </article>
       </div>
+
+      {evidenceConfidence.freshness_posture === "stale" ? (
+        <div className="callout">
+          <strong>Stale inventory posture remains explicit</strong>
+          <p>
+            The devices page is currently relying on persisted normalized inventory evidence
+            from {formatDateTime(data.served_persisted_at)} rather than a current live collector
+            read. This keeps the page useful without pretending present live truth is known.
+          </p>
+        </div>
+      ) : null}
+
+      {evidenceConfidence.confidence_posture === "blocked" ? (
+        <div className="callout">
+          <strong>Blocked inventory reasoning remains explicit</strong>
+          <p>
+            The backend does not currently have enough live or persisted inventory evidence to
+            support a stronger truth claim for this page. The UI keeps that blocked posture
+            visible instead of inventing device certainty.
+          </p>
+        </div>
+      ) : null}
+
+      {data.comparison_to_latest_persisted.status === "live_vs_latest_persisted_ready" ? (
+        <div className="callout">
+          <strong>Bounded current-versus-persisted comparison is available</strong>
+          <p>
+            The current device response can be compared with the latest persisted normalized
+            inventory snapshot from{" "}
+            {formatDateTime(data.comparison_to_latest_persisted.comparison_persisted_at)}. This
+            remains bounded normalized evidence, not drift analysis or validation guidance.
+          </p>
+        </div>
+      ) : null}
+
+      <div className="content-grid">
+        <article className="detail-card">
+          <h3>Trust Readout</h3>
+          <p>{evidenceConfidence.summary}</p>
+          <ul className="compact-list">
+            <li>
+              <span>Backend inventory status</span>
+              <StatusPill value={data.data_status} />
+            </li>
+            <li>
+              <span>Evidence confidence</span>
+              <StatusPill value={evidenceConfidence.confidence_posture} />
+            </li>
+            <li>
+              <span>Freshness posture</span>
+              <StatusPill value={evidenceConfidence.freshness_posture} />
+            </li>
+            <li>
+              <span>Source posture</span>
+              <StatusPill value={evidenceConfidence.source_posture} />
+            </li>
+            <li>
+              <span>Blocked reason</span>
+              <StatusPill value={evidenceConfidence.blocked_reason} />
+            </li>
+            <li>
+              <span>Current comparison posture</span>
+              <strong>{comparisonReadout.label}</strong>
+            </li>
+          </ul>
+        </article>
+        <article className="detail-card">
+          <h3>Evidence Basis</h3>
+          <p>
+            The current devices page is a backend-owned normalized inventory view. It may reflect
+            live observed records, a persisted fallback snapshot, or a blocked empty scaffold when
+            backend-owned evidence is missing.
+          </p>
+          <ul className="compact-list">
+            <li>
+              <span>Source posture</span>
+              <strong>{formatLabel(evidenceConfidence.source_posture)}</strong>
+            </li>
+            <li>
+              <span>Evidence kind</span>
+              <strong>{formatLabel(evidenceConfidence.evidence_kind)}</strong>
+            </li>
+            <li>
+              <span>Confidence posture</span>
+              <strong>{formatLabel(evidenceConfidence.confidence_posture)}</strong>
+            </li>
+            <li>
+              <span>Freshness posture</span>
+              <strong>{formatLabel(evidenceConfidence.freshness_posture)}</strong>
+            </li>
+            <li>
+              <span>Blocked reason</span>
+              <strong>{formatLabel(evidenceConfidence.blocked_reason)}</strong>
+            </li>
+          </ul>
+          <p className="table-note">
+            {describeEvidenceSource(evidenceConfidence.source_posture)}{" "}
+            {describeEvidenceKind(evidenceConfidence.evidence_kind)}{" "}
+            {describeBlockedReason(evidenceConfidence.blocked_reason)}
+          </p>
+        </article>
+        <article className="detail-card">
+          <h3>Current vs Latest Persisted</h3>
+          <p>{data.comparison_to_latest_persisted.summary}</p>
+          <ul className="compact-list">
+            <li>
+              <span>Comparison status</span>
+              <strong>{comparisonReadout.label}</strong>
+            </li>
+            <li>
+              <span>Compared persisted snapshot</span>
+              <strong>
+                {formatDateTime(data.comparison_to_latest_persisted.comparison_persisted_at)}
+              </strong>
+            </li>
+            <li>
+              <span>Device delta</span>
+              <strong>{formatSignedDelta(data.comparison_to_latest_persisted.device_count_delta)}</strong>
+            </li>
+            <li>
+              <span>Current / persisted devices</span>
+              <strong>
+                {data.comparison_to_latest_persisted.current_device_count} /{" "}
+                {data.comparison_to_latest_persisted.persisted_device_count}
+              </strong>
+            </li>
+            <li>
+              <span>Added / removed devices</span>
+              <strong>
+                {data.comparison_to_latest_persisted.added_device_count} /{" "}
+                {data.comparison_to_latest_persisted.removed_device_count}
+              </strong>
+            </li>
+            <li>
+              <span>Changed devices</span>
+              <strong>{data.comparison_to_latest_persisted.changed_device_count}</strong>
+            </li>
+          </ul>
+        </article>
+      </div>
+
+      {evidenceConfidence.notes.length > 0 ? (
+        <div className="callout">
+          <strong>Evidence-confidence limits</strong>
+          <ul className="notes-list">
+            {evidenceConfidence.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {data.comparison_to_latest_persisted.notes.length > 0 ? (
+        <div className="callout">
+          <strong>Comparison limits</strong>
+          <ul className="notes-list">
+            {data.comparison_to_latest_persisted.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="toolbar">
         <label className="field-group">
@@ -204,7 +492,7 @@ export function DevicesView() {
 
       <p className="footnote">
         Current inventory status: {formatLabel(data.data_status)}. This view stays
-        product-oriented and does not expose raw collector payloads.
+        product-oriented, keeps uncertainty explicit, and does not expose raw collector payloads.
       </p>
     </section>
   );

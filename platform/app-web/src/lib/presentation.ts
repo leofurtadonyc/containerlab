@@ -24,17 +24,30 @@ export function getStatusTone(value: string): "good" | "warn" | "bad" | "neutral
     case "implemented":
     case "active":
     case "healthy":
+    case "current":
+    case "live_observed":
+    case "direct_observed":
+    case "strong_for_current_slice":
       return "good";
     case "degraded":
     case "partial":
     case "partially_supported":
     case "planned":
     case "placeholder":
+    case "stale":
+    case "persisted_fallback":
+    case "observed_plus_inferred":
+    case "aggregate_only":
+    case "aggregate_plus_bounded_records":
+    case "bounded_partial":
       return "warn";
     case "down":
     case "failed":
     case "unsupported":
     case "unreachable":
+    case "blocked":
+    case "collector_unavailable":
+    case "collector_unavailable_and_no_persisted_snapshot":
       return "bad";
     default:
       return "neutral";

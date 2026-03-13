@@ -1,9 +1,20 @@
 import { useMemo, useState } from "react";
 
-import type { TopologyLinkRecord, TopologyNodeRecord } from "../../api/contracts";
+import type {
+  EvidenceConfidenceSummary,
+  TopologyLinkRecord,
+  TopologyNodeRecord,
+} from "../../api/contracts";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
+import {
+  describeBlockedReason,
+  describeConfidencePosture,
+  describeEvidenceKind,
+  describeEvidenceSource,
+  normalizeEvidenceConfidence,
+} from "../../lib/evidence-confidence";
 import { useTopologyQuery } from "./api";
 
 function getLinkEvidenceCount(link: TopologyLinkRecord): number {
@@ -189,6 +200,54 @@ function buildFreshnessSummary(observedAt: string | null, generatedAt: string) {
   return {
     label: "Stale",
     detail: `Observed ${ageMinutes} minute${ageMinutes === 1 ? "" : "s"} before the API response was generated.`,
+  };
+}
+
+function getTopologyEvidenceFallback(
+  servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold",
+  dataStatus: "normalized_scaffold" | "live" | "degraded",
+): EvidenceConfidenceSummary {
+  if (servingMode === "live_collector") {
+    return {
+      source_posture: "live_observed",
+      evidence_kind: "observed_plus_inferred",
+      confidence_posture: dataStatus === "live" ? "bounded_partial" : "degraded",
+      freshness_posture: "current",
+      blocked_reason: "none",
+      summary:
+        dataStatus === "live"
+          ? "Topology is backed by current live observed evidence plus bounded backend-owned inference."
+          : "Topology remains live observed plus inferred, but the current collector evidence is degraded.",
+      notes: [
+        "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
+      ],
+    };
+  }
+  if (servingMode === "persisted_fallback") {
+    return {
+      source_posture: "persisted_fallback",
+      evidence_kind: "observed_plus_inferred",
+      confidence_posture: "degraded",
+      freshness_posture: "stale",
+      blocked_reason: "collector_unavailable",
+      summary:
+        "Topology is being served from a persisted normalized fallback snapshot because the live collector path is unavailable.",
+      notes: [
+        "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
+      ],
+    };
+  }
+  return {
+    source_posture: "empty_scaffold",
+    evidence_kind: "unknown",
+    confidence_posture: "blocked",
+    freshness_posture: "unknown",
+    blocked_reason: "collector_unavailable_and_no_persisted_snapshot",
+    summary:
+      "The topology page only has empty-scaffold posture because neither live collector evidence nor a persisted fallback snapshot is available.",
+    notes: [
+      "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
+    ],
   };
 }
 
@@ -385,6 +444,10 @@ export function TopologyView() {
 
   const comparison = data.comparison_to_latest_persisted;
   const servingMode = getServingModeReadout(data.serving_mode);
+  const evidenceConfidence = normalizeEvidenceConfidence(
+    data.evidence_confidence,
+    getTopologyEvidenceFallback(data.serving_mode, data.data_status),
+  );
   const comparisonReadout = describeComparisonReadout(comparison.status, data.serving_mode);
   const inferenceReadout = describeInferenceReadout(
     singleSidedLinkCount,
@@ -437,6 +500,11 @@ export function TopologyView() {
           <p>{servingMode.detail}</p>
         </article>
         <article className="summary-card">
+          <p className="summary-label">Evidence Confidence</p>
+          <strong>{formatLabel(evidenceConfidence.confidence_posture)}</strong>
+          <p>{describeConfidencePosture(evidenceConfidence.confidence_posture)}</p>
+        </article>
+        <article className="summary-card">
           <p className="summary-label">Comparison Status</p>
           <strong>{comparisonReadout.label}</strong>
           <p>{comparisonReadout.detail}</p>
@@ -471,7 +539,7 @@ export function TopologyView() {
       <div className="content-grid">
         <article className="detail-card">
           <h3>Trust Readout</h3>
-          <p>{data.summary}</p>
+          <p>{evidenceConfidence.summary}</p>
           <ul className="compact-list">
             <li>
               <span>Backend topology status</span>
@@ -490,8 +558,16 @@ export function TopologyView() {
               <strong>{freshness.label}</strong>
             </li>
             <li>
+              <span>Evidence confidence</span>
+              <StatusPill value={evidenceConfidence.confidence_posture} />
+            </li>
+            <li>
               <span>Serving mode</span>
               <strong>{servingMode.label}</strong>
+            </li>
+            <li>
+              <span>Source posture</span>
+              <StatusPill value={evidenceConfidence.source_posture} />
             </li>
             <li>
               <span>Observed to generated gap</span>
@@ -504,6 +580,10 @@ export function TopologyView() {
             <li>
               <span>Link evidence posture</span>
               <strong>{inferenceReadout.label}</strong>
+            </li>
+            <li>
+              <span>Blocked reason</span>
+              <strong>{formatLabel(evidenceConfidence.blocked_reason)}</strong>
             </li>
           </ul>
         </article>
@@ -518,12 +598,16 @@ export function TopologyView() {
             <li>
               <span>Primary evidence basis</span>
               <strong>
-                {data.serving_mode === "live_collector"
-                  ? "Live collector-backed normalized topology"
-                  : data.serving_mode === "persisted_fallback"
-                    ? "Persisted normalized topology snapshot"
-                    : "Empty scaffold only"}
+                {formatLabel(evidenceConfidence.source_posture)}
               </strong>
+            </li>
+            <li>
+              <span>Evidence kind</span>
+              <strong>{formatLabel(evidenceConfidence.evidence_kind)}</strong>
+            </li>
+            <li>
+              <span>Confidence posture</span>
+              <strong>{formatLabel(evidenceConfidence.confidence_posture)}</strong>
             </li>
             <li>
               <span>Inference method</span>
@@ -546,6 +630,11 @@ export function TopologyView() {
               <strong>{formatDateTime(comparison.comparison_persisted_at)}</strong>
             </li>
           </ul>
+          <p className="table-note">
+            {describeEvidenceSource(evidenceConfidence.source_posture)}{" "}
+            {describeEvidenceKind(evidenceConfidence.evidence_kind)}{" "}
+            {describeBlockedReason(evidenceConfidence.blocked_reason)}
+          </p>
         </article>
         <article className="detail-card">
           <h3>Current vs Latest Persisted</h3>
@@ -678,11 +767,43 @@ export function TopologyView() {
         </p>
       </div>
 
+      {evidenceConfidence.freshness_posture === "stale" ? (
+        <div className="callout">
+          <strong>Stale topology posture remains explicit</strong>
+          <p>
+            The topology page is currently relying on persisted normalized evidence from{" "}
+            {formatDateTime(data.served_persisted_at)} rather than a current live collector read.
+            This keeps the page usable without pretending current topology truth is fully known.
+          </p>
+        </div>
+      ) : null}
+
+      {evidenceConfidence.confidence_posture === "blocked" ? (
+        <div className="callout">
+          <strong>Blocked topology reasoning remains explicit</strong>
+          <p>
+            The backend does not currently have enough live or persisted topology evidence to
+            support a stronger truth claim for this page. The UI keeps that blocked posture
+            visible instead of inventing graph certainty.
+          </p>
+        </div>
+      ) : null}
+
       {topology.notes.length > 0 ? (
         <div className="callout">
           <strong>Current limits</strong>
           <ul className="notes-list">
             {topology.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {evidenceConfidence.notes.length > 0 ? (
+        <div className="callout">
+          <strong>Evidence-confidence limits</strong>
+          <ul className="notes-list">
+            {evidenceConfidence.notes.map((note) => (
               <li key={note}>{note}</li>
             ))}
           </ul>

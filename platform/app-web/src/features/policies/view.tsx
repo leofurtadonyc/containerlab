@@ -1,8 +1,16 @@
 import { useMemo, useState } from "react";
 
+import type { EvidenceConfidenceSummary } from "../../api/contracts";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
+import {
+  describeBlockedReason,
+  describeConfidencePosture,
+  describeEvidenceKind,
+  describeEvidenceSource,
+  normalizeEvidenceConfidence,
+} from "../../lib/evidence-confidence";
 import { usePoliciesQuery } from "./api";
 
 function buildFreshnessSummary(observedAt: string | null, generatedAt: string) {
@@ -233,6 +241,74 @@ function getCurrentComparisonReadout(
   };
 }
 
+function getPolicyEvidenceFallback(
+  servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold",
+  dataStatus: "live" | "degraded",
+  detailMode: "counters_only" | "static_policies_when_present" | "mixed" | "unknown",
+  emptyReason:
+    | "none"
+    | "no_policies_observed"
+    | "per_policy_details_unavailable"
+    | "collector_unavailable",
+): EvidenceConfidenceSummary {
+  const evidenceKind =
+    emptyReason === "per_policy_details_unavailable" || detailMode === "counters_only"
+      ? "aggregate_only"
+      : detailMode === "static_policies_when_present" || detailMode === "mixed"
+        ? "aggregate_plus_bounded_records"
+        : "unknown";
+  if (servingMode === "live_collector") {
+    return {
+      source_posture: "live_observed",
+      evidence_kind: evidenceKind,
+      confidence_posture:
+        emptyReason === "per_policy_details_unavailable"
+          ? "blocked"
+          : dataStatus === "degraded"
+            ? "degraded"
+            : "bounded_partial",
+      freshness_posture: "current",
+      blocked_reason:
+        emptyReason === "per_policy_details_unavailable"
+          ? "per_record_detail_unavailable"
+          : "none",
+      summary:
+        emptyReason === "per_policy_details_unavailable"
+          ? "Policy state is backed by current live aggregate evidence, but stable per-policy detail remains blocked."
+          : "Policy state is backed by current live observed evidence, with confidence bounded by the current normalized detail coverage.",
+      notes: [
+        "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
+      ],
+    };
+  }
+  if (servingMode === "persisted_fallback") {
+    return {
+      source_posture: "persisted_fallback",
+      evidence_kind: evidenceKind,
+      confidence_posture: "degraded",
+      freshness_posture: "stale",
+      blocked_reason: "collector_unavailable",
+      summary:
+        "Policy state is being served from a persisted normalized fallback snapshot because the live collector path is unavailable.",
+      notes: [
+        "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
+      ],
+    };
+  }
+  return {
+    source_posture: "empty_scaffold",
+    evidence_kind: "unknown",
+    confidence_posture: "blocked",
+    freshness_posture: "unknown",
+    blocked_reason: "collector_unavailable_and_no_persisted_snapshot",
+    summary:
+      "The policies page only has empty-scaffold posture because neither live collector evidence nor a persisted fallback snapshot is available.",
+    notes: [
+      "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
+    ],
+  };
+}
+
 export function PoliciesView() {
   const { data, error, isLoading, reload } = usePoliciesQuery();
   const [healthFilter, setHealthFilter] = useState("all");
@@ -402,6 +478,15 @@ export function PoliciesView() {
     data.empty_reason,
     data.serving_mode,
   );
+  const evidenceConfidence = normalizeEvidenceConfidence(
+    data.evidence_confidence,
+    getPolicyEvidenceFallback(
+      data.serving_mode,
+      data.data_status,
+      data.detail_mode,
+      data.empty_reason,
+    ),
+  );
   const comparisonReadout = getCurrentComparisonReadout(
     currentComparison.status,
     data.serving_mode,
@@ -475,6 +560,11 @@ export function PoliciesView() {
           <p>{currentPosture.detail}</p>
         </article>
         <article className="summary-card">
+          <p className="summary-label">Evidence Confidence</p>
+          <strong>{formatLabel(evidenceConfidence.confidence_posture)}</strong>
+          <p>{describeConfidencePosture(evidenceConfidence.confidence_posture)}</p>
+        </article>
+        <article className="summary-card">
           <p className="summary-label">Freshness</p>
           <strong>{freshness.label}</strong>
           <p>{freshness.detail}</p>
@@ -529,6 +619,18 @@ export function PoliciesView() {
         </div>
       ) : null}
 
+      {evidenceConfidence.freshness_posture === "stale" &&
+      data.serving_mode !== "persisted_fallback" ? (
+        <div className="callout">
+          <strong>Stale policy posture remains explicit</strong>
+          <p>
+            The policies page is currently relying on older persisted evidence rather than a
+            current live collector read. The UI keeps that stale posture visible instead of
+            overstating current policy certainty.
+          </p>
+        </div>
+      ) : null}
+
       {data.serving_mode === "live_collector" &&
       !hasObservedPolicies &&
       data.empty_reason === "no_policies_observed" ? (
@@ -578,7 +680,7 @@ export function PoliciesView() {
       <div className="content-grid">
         <article className="detail-card">
           <h3>Trust Readout</h3>
-          <p>{data.summary}</p>
+          <p>{evidenceConfidence.summary}</p>
           <ul className="compact-list">
             <li>
               <span>Backend policy status</span>
@@ -605,8 +707,16 @@ export function PoliciesView() {
               <strong>{freshness.label}</strong>
             </li>
             <li>
+              <span>Evidence confidence</span>
+              <StatusPill value={evidenceConfidence.confidence_posture} />
+            </li>
+            <li>
               <span>Serving mode</span>
               <strong>{servingMode.label}</strong>
+            </li>
+            <li>
+              <span>Source posture</span>
+              <StatusPill value={evidenceConfidence.source_posture} />
             </li>
             <li>
               <span>Observed to generated gap</span>
@@ -620,6 +730,10 @@ export function PoliciesView() {
               <span>Comparison posture</span>
               <strong>{comparisonReadout.label}</strong>
             </li>
+            <li>
+              <span>Blocked reason</span>
+              <strong>{formatLabel(evidenceConfidence.blocked_reason)}</strong>
+            </li>
           </ul>
         </article>
         <article className="detail-card">
@@ -632,13 +746,15 @@ export function PoliciesView() {
           <ul className="compact-list">
             <li>
               <span>Primary evidence basis</span>
-              <strong>
-                {data.serving_mode === "live_collector"
-                  ? "Live collector-backed normalized policy state"
-                  : data.serving_mode === "persisted_fallback"
-                    ? "Persisted normalized policy snapshot"
-                    : "Empty scaffold only"}
-              </strong>
+              <strong>{formatLabel(evidenceConfidence.source_posture)}</strong>
+            </li>
+            <li>
+              <span>Evidence kind</span>
+              <strong>{formatLabel(evidenceConfidence.evidence_kind)}</strong>
+            </li>
+            <li>
+              <span>Confidence posture</span>
+              <strong>{formatLabel(evidenceConfidence.confidence_posture)}</strong>
             </li>
             <li>
               <span>Current posture</span>
@@ -657,6 +773,11 @@ export function PoliciesView() {
               <strong>{comparisonReadout.label}</strong>
             </li>
           </ul>
+          <p className="table-note">
+            {describeEvidenceSource(evidenceConfidence.source_posture)}{" "}
+            {describeEvidenceKind(evidenceConfidence.evidence_kind)}{" "}
+            {describeBlockedReason(evidenceConfidence.blocked_reason)}
+          </p>
         </article>
         <article className="detail-card">
           <h3>Current Evidence</h3>
@@ -934,6 +1055,17 @@ export function PoliciesView() {
           policy-history, drift analysis, or workflow state.
         </p>
       </div>
+
+      {evidenceConfidence.notes.length > 0 ? (
+        <div className="callout">
+          <strong>Evidence-confidence limits</strong>
+          <ul className="notes-list">
+            {evidenceConfidence.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {data.notes.length > 0 ? (
         <div className="callout">
