@@ -78,6 +78,10 @@ Why this layer comes first:
 - workflow-owned records must point to evidence explicitly instead of copying read-side payloads into workflow tables
 - later preview, diff, validation, and audit linkage will otherwise drift into duplicated or contradictory truth
 
+The design source of truth for this prerequisite layer should be:
+
+- `platform/schemas/workflows/evidence-reference-contract.md`
+
 ### Layer 2: Workflow Root Storage Foundation
 
 Before preview, validation, or approval artifacts are even considered, the

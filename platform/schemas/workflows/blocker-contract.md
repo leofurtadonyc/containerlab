@@ -177,3 +177,14 @@ They become blockers when they materially prevent the platform from producing an
 The blocker contract is an explanation surface only.
 
 It does not itself implement validation, approval, or execution behavior.
+
+## Related Evidence Reference Rule
+
+When a blocker cites evidence through `related_evidence_references`, those
+citations should follow:
+
+- `platform/schemas/workflows/evidence-reference-contract.md`
+
+That keeps blocker evidence explicit about chronology, bounded truth posture,
+and whether the cited record supports, constrains, or explains the blocked
+claim.

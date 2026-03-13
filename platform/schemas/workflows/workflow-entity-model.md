@@ -356,6 +356,7 @@ Current Phase 2 analogue:
 
 - no dedicated entity exists yet
 - the preview contract design in [platform/schemas/workflows/preview-contract.md](platform/schemas/workflows/preview-contract.md) already defines the intended contract shape
+- the explicit identity and citation rules are defined in [platform/schemas/workflows/evidence-reference-contract.md](platform/schemas/workflows/evidence-reference-contract.md)
 - current snapshot summaries and comparison context in [platform/app-api/src/app_api/models/workflow.py](platform/app-api/src/app_api/models/workflow.py#L1) and [platform/app-api/src/app_api/models/audit.py](platform/app-api/src/app_api/models/audit.py#L1) are the closest structural evidence carriers
 
 ## Relationship Map

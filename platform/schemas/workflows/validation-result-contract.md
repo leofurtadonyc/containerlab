@@ -157,18 +157,22 @@ Each `validation_checks[]` element should stay normalized and explicit.
 
 The future `validation_evidence[]` array should align with current capability and preview evidence semantics.
 
+The identity and citation rules for each validation evidence reference should follow:
+
+- `platform/schemas/workflows/evidence-reference-contract.md`
+
 ### Minimum fields
 
 | Field | Type | Purpose |
 | --- | --- | --- |
-| `reference_kind` | `string` | Such as `inventory_snapshot`, `topology_snapshot`, `policy_snapshot`, `capability_record`, `preview_artifact`, or `audit_event`. |
-| `reference_id` | `string` | Stable record identity. |
-| `source_domain` | `string` | Inventory, topology, policy, capability, workflow, audit, or integration health. |
-| `evidence_basis` | `string` | Capability-aligned basis such as `live_validated`, `persisted_validated`, `platform_probe`, `design_review`, or `roadmap_only`. |
-| `evidence_coverage` | `string` | `strong`, `bounded`, `partial`, or `blocked`. |
-| `freshness_posture` | `string` | `current`, `stale`, `mixed`, or `unknown`. |
-| `confidence_posture` | `string` | `strong`, `bounded`, `degraded`, `blocked`, or `unknown`. |
-| `support_status` | `string` | Capability-aligned support posture for the relevant feature slice. |
+| `evidence_reference_id` | `string` | Stable opaque citation identity. |
+| `evidence_kind` | `string` | High-level evidence family such as `persisted_snapshot`, `comparison_record`, or `capability_record`. |
+| `reference_kind` | `string` | Specific platform-owned record kind being cited. |
+| `source_domain` | `string` | Inventory, topology, policy, capability, readiness, workflow_history, audit, or integration health. |
+| `source_record_id` | `string` | Stable cited record identity. |
+| `citation_role` | `string` | Why this evidence is cited for the validation result. |
+| `chronology` | `object` | Time anchors that apply to the cited evidence. |
+| `posture_summary` | `object` | Bounded truth posture carried by the citation. |
 | `relevance_summary` | `string` | Why this evidence matters to the validation result. |
 | `notes` | `array` | Additional context about evidence limits. |
 

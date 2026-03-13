@@ -138,6 +138,19 @@ linkage, and workflow-state persistence.
 It does not introduce workflow behavior, dry-run APIs, approvals, rollback
 behavior, or any phase change.
 
+## Evidence Reference Contract Design
+
+The platform now also has a design-only evidence-reference contract document in:
+
+- `platform/schemas/workflows/evidence-reference-contract.md`
+
+That document defines the platform-owned identity shape, allowed evidence kinds,
+citation roles, chronology expectations, and bounded truth-posture semantics for
+future `evidence_reference` records.
+
+It does not introduce workflow-owned storage, workflow APIs, preview behavior,
+validation behavior, or persistence changes.
+
 ## Validation And Blocker Contract Design
 
 The platform now also has design-only validation and blocker contract documents under:

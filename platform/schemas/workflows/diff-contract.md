@@ -85,6 +85,11 @@ It should not answer:
 
 Each `changes[]` element should remain small, explicit, and normalized.
 
+The identity and citation rules for each `evidence_references` entry should
+follow:
+
+- `platform/schemas/workflows/evidence-reference-contract.md`
+
 ### Minimum fields
 
 | Field | Type | Purpose |

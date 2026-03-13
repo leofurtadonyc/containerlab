@@ -213,17 +213,22 @@ These values should remain descriptive, not probabilistic.
 
 The future `evidence_references` array should make clear what platform-owned evidence supports the preview.
 
+The identity and citation rules for each reference should follow:
+
+- `platform/schemas/workflows/evidence-reference-contract.md`
+
 ### Minimum evidence reference fields
 
 | Field | Type | Purpose |
 | --- | --- | --- |
-| `reference_kind` | `string` | Such as `inventory_snapshot`, `topology_snapshot`, `policy_snapshot`, `capability_record`, or `audit_event`. |
-| `reference_id` | `string` | Stable record identity. |
-| `source_domain` | `string` | Inventory, topology, policy, capability, workflow, audit, or integration health. |
-| `observed_at` | `string or null` | Observed timestamp when relevant. |
-| `persisted_at` | `string or null` | Persisted timestamp when relevant. |
-| `freshness_posture` | `string` | Current, stale, mixed, or unknown. |
-| `confidence_posture` | `string` | Strong, bounded, degraded, blocked, or unknown. |
+| `evidence_reference_id` | `string` | Stable opaque citation identity. |
+| `evidence_kind` | `string` | High-level evidence family such as `current_read_model` or `persisted_snapshot`. |
+| `reference_kind` | `string` | Specific platform-owned record kind being cited. |
+| `source_domain` | `string` | Inventory, topology, policy, capability, readiness, workflow_history, audit, or integration health. |
+| `source_record_id` | `string` | Stable cited record identity. |
+| `citation_role` | `string` | Why this evidence is cited for the preview. |
+| `chronology` | `object` | Time anchors that apply to the cited evidence. |
+| `posture_summary` | `object` | Bounded truth posture carried by the citation. |
 | `notes` | `array` | Why this reference matters to the preview. |
 
 ## Preview Status Values

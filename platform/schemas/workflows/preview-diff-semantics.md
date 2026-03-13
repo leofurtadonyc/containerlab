@@ -109,6 +109,10 @@ Future contracts should expose unsupported elements explicitly so callers can di
 
 Preview and diff contracts must explain what platform-owned evidence they depend on.
 
+The identity and citation rules for those references should follow:
+
+- `platform/schemas/workflows/evidence-reference-contract.md`
+
 Evidence references should prefer:
 
 - persisted normalized snapshots

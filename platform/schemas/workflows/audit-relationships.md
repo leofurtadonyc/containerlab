@@ -43,6 +43,10 @@ The audit relationship must not be collapsed into any one artifact.
 - `execution_record`
 - `audit_event`
 
+The identity and citation rules for `evidence_reference` should follow:
+
+- `platform/schemas/workflows/evidence-reference-contract.md`
+
 ## Conceptual Audit Relationship Shape
 
 The future audit-relationship model should stay explicit and normalized.
