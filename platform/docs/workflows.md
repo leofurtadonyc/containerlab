@@ -213,6 +213,18 @@ future workflow-owned records relative to `evidence_reference`,
 It does not introduce workflow APIs, workflow persistence, execution behavior,
 or approval retrieval behavior.
 
+## Planning Slice Blockers
+
+The platform now also has a strict blocker-analysis document in:
+
+- `platform/schemas/workflows/planning-slice-blockers.md`
+
+That document classifies the exact blockers revealed by the current
+evidence-reference, audit-linkage, retrieval-sequencing, and ownership-boundary
+planning slice into blockers that must be fixed before concrete planning can
+continue, blockers that are important but not currently blocking, and later
+phase concerns.
+
 ## Phase 2 Reuse Mapping
 
 The platform now also has an evidence-based reuse mapping document in:
