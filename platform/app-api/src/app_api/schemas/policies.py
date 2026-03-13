@@ -89,6 +89,17 @@ class PolicyHistorySnapshotResponseRecord(BaseModel):
     detail_record_count: int
 
 
+class PolicyComparisonChangePreviewResponse(BaseModel):
+    """Bounded preview of one normalized policy-record change."""
+
+    policy_id: str
+    policy_name: str
+    source_target: str
+    source_target_role: str | None = None
+    change_kind: Literal["added", "removed", "changed"]
+    changed_fields: list[str]
+
+
 class PolicyHistoryComparisonResponse(BaseModel):
     """Bounded comparison of the latest two persisted policy snapshots."""
 
@@ -103,6 +114,7 @@ class PolicyHistoryComparisonResponse(BaseModel):
     added_policy_count: int
     removed_policy_count: int
     changed_policy_count: int
+    change_preview: list[PolicyComparisonChangePreviewResponse]
     notes: list[str]
 
 
@@ -131,6 +143,7 @@ class PolicyCurrentComparisonResponse(BaseModel):
     added_policy_count: int
     removed_policy_count: int
     changed_policy_count: int
+    change_preview: list[PolicyComparisonChangePreviewResponse]
     notes: list[str]
 
 

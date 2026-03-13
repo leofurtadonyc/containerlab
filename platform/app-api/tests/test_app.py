@@ -1129,8 +1129,18 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["history"]["comparison_to_previous"]["added_policy_count"] == 0
     assert payload["history"]["comparison_to_previous"]["removed_policy_count"] == 1
     assert payload["history"]["comparison_to_previous"]["changed_policy_count"] == 1
+    assert payload["history"]["comparison_to_previous"]["change_preview"][0]["policy_id"] == "persisted-policy-2"
+    assert payload["history"]["comparison_to_previous"]["change_preview"][0]["change_kind"] == "removed"
+    assert payload["history"]["comparison_to_previous"]["change_preview"][1]["policy_id"] == "persisted-policy-1"
+    assert payload["history"]["comparison_to_previous"]["change_preview"][1]["change_kind"] == "changed"
+    assert "observed_state" in payload["history"]["comparison_to_previous"]["change_preview"][1]["changed_fields"]
+    assert "health_state" in payload["history"]["comparison_to_previous"]["change_preview"][1]["changed_fields"]
+    assert "candidate_paths" in payload["history"]["comparison_to_previous"]["change_preview"][1]["changed_fields"]
     assert payload["comparison_to_latest_persisted"]["status"] == "current_vs_latest_persisted_ready"
     assert payload["comparison_to_latest_persisted"]["persisted_observed_policy_count"] == 1
+    assert payload["comparison_to_latest_persisted"]["change_preview"][0]["change_kind"] == "added"
+    assert payload["comparison_to_latest_persisted"]["change_preview"][1]["change_kind"] == "added"
+    assert payload["comparison_to_latest_persisted"]["change_preview"][2]["change_kind"] == "removed"
     assert len(payload["target_footprints"]) == 2
     assert payload["target_footprints"][0]["target_name"] == "PE1"
     assert payload["target_footprints"][0]["observed_policy_count"] == 1
@@ -1173,6 +1183,7 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     assert payload["target_footprints"][0]["policy_capable"] is True
     assert payload["target_footprints"][0]["detail_record_count"] == 0
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
+    assert payload["comparison_to_latest_persisted"]["change_preview"] == []
     assert payload["history"]["status"] == "unavailable"
     assert "stable per-target policy counter footprint and target-role coverage" in payload["summary"]
 
