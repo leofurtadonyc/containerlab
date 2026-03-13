@@ -7,14 +7,18 @@ import type {
 } from "../../api/contracts";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
+import { buildCrossSliceConsistencyReadout } from "../../lib/cross-slice-consistency";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
 import {
+  buildPolicyEvidenceFallback,
+  buildTopologyEvidenceFallback,
   describeBlockedReason,
   describeConfidencePosture,
   describeEvidenceKind,
   describeEvidenceSource,
   normalizeEvidenceConfidence,
 } from "../../lib/evidence-confidence";
+import { usePoliciesQuery } from "../policies/api";
 import { useTopologyQuery } from "./api";
 
 function getLinkEvidenceCount(link: TopologyLinkRecord): number {
@@ -203,56 +207,13 @@ function buildFreshnessSummary(observedAt: string | null, generatedAt: string) {
   };
 }
 
-function getTopologyEvidenceFallback(
-  servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold",
-  dataStatus: "normalized_scaffold" | "live" | "degraded",
-): EvidenceConfidenceSummary {
-  if (servingMode === "live_collector") {
-    return {
-      source_posture: "live_observed",
-      evidence_kind: "observed_plus_inferred",
-      confidence_posture: dataStatus === "live" ? "bounded_partial" : "degraded",
-      freshness_posture: "current",
-      blocked_reason: "none",
-      summary:
-        dataStatus === "live"
-          ? "Topology is backed by current live observed evidence plus bounded backend-owned inference."
-          : "Topology remains live observed plus inferred, but the current collector evidence is degraded.",
-      notes: [
-        "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
-      ],
-    };
-  }
-  if (servingMode === "persisted_fallback") {
-    return {
-      source_posture: "persisted_fallback",
-      evidence_kind: "observed_plus_inferred",
-      confidence_posture: "degraded",
-      freshness_posture: "stale",
-      blocked_reason: "collector_unavailable",
-      summary:
-        "Topology is being served from a persisted normalized fallback snapshot because the live collector path is unavailable.",
-      notes: [
-        "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
-      ],
-    };
-  }
-  return {
-    source_posture: "empty_scaffold",
-    evidence_kind: "unknown",
-    confidence_posture: "blocked",
-    freshness_posture: "unknown",
-    blocked_reason: "collector_unavailable_and_no_persisted_snapshot",
-    summary:
-      "The topology page only has empty-scaffold posture because neither live collector evidence nor a persisted fallback snapshot is available.",
-    notes: [
-      "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
-    ],
-  };
-}
-
 export function TopologyView() {
   const { data, error, isLoading, reload } = useTopologyQuery();
+  const {
+    data: policyData,
+    error: policyError,
+    isLoading: isPolicyLoading,
+  } = usePoliciesQuery();
   const [nodeSearchValue, setNodeSearchValue] = useState("");
   const [nodeStateFilter, setNodeStateFilter] = useState("all");
   const [nodeRoleFilter, setNodeRoleFilter] = useState("all");
@@ -446,13 +407,43 @@ export function TopologyView() {
   const servingMode = getServingModeReadout(data.serving_mode);
   const evidenceConfidence = normalizeEvidenceConfidence(
     data.evidence_confidence,
-    getTopologyEvidenceFallback(data.serving_mode, data.data_status),
+    buildTopologyEvidenceFallback(data.serving_mode, data.data_status),
   );
+  const policyEvidenceConfidence = policyData
+    ? normalizeEvidenceConfidence(
+        policyData.evidence_confidence,
+        buildPolicyEvidenceFallback(
+          policyData.serving_mode,
+          policyData.data_status,
+          policyData.detail_mode,
+          policyData.empty_reason,
+        ),
+      )
+    : null;
   const comparisonReadout = describeComparisonReadout(comparison.status, data.serving_mode);
   const inferenceReadout = describeInferenceReadout(
     singleSidedLinkCount,
     topology.links.length,
     knowledgeCounts,
+  );
+  const policyConsistencyReadout = buildCrossSliceConsistencyReadout(
+    {
+      sliceLabel: "Topology",
+      servingMode: data.serving_mode,
+      evidenceConfidence,
+    },
+    {
+      sliceLabel: "Policy",
+      isLoading: isPolicyLoading,
+      hasError: policyError !== null,
+      snapshot: policyData && policyEvidenceConfidence
+        ? {
+            sliceLabel: "Policy",
+            servingMode: policyData.serving_mode,
+            evidenceConfidence: policyEvidenceConfidence,
+          }
+        : null,
+    },
   );
 
   return (
@@ -508,6 +499,11 @@ export function TopologyView() {
           <p className="summary-label">Comparison Status</p>
           <strong>{comparisonReadout.label}</strong>
           <p>{comparisonReadout.detail}</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Policy Slice Posture</p>
+          <strong>{policyConsistencyReadout.label}</strong>
+          <p>{policyConsistencyReadout.detail}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Degraded Links</p>
@@ -677,6 +673,47 @@ export function TopologyView() {
           </ul>
         </article>
         <article className="detail-card">
+          <h3>Policy Slice Consistency</h3>
+          <p>{policyConsistencyReadout.detail}</p>
+          {policyData && policyEvidenceConfidence ? (
+            <ul className="compact-list">
+              <li>
+                <span>Policy data status</span>
+                <StatusPill value={policyData.data_status} />
+              </li>
+              <li>
+                <span>Policy serving mode</span>
+                <strong>{formatLabel(policyData.serving_mode)}</strong>
+              </li>
+              <li>
+                <span>Policy evidence confidence</span>
+                <StatusPill value={policyEvidenceConfidence.confidence_posture} />
+              </li>
+              <li>
+                <span>Policy evidence kind</span>
+                <strong>{formatLabel(policyEvidenceConfidence.evidence_kind)}</strong>
+              </li>
+              <li>
+                <span>Policy detail mode</span>
+                <strong>{formatLabel(policyData.detail_mode)}</strong>
+              </li>
+              <li>
+                <span>Policy empty reason</span>
+                <strong>{formatLabel(policyData.empty_reason)}</strong>
+              </li>
+            </ul>
+          ) : (
+            <p className="table-note">
+              The topology page remains usable even when the companion policy slice is still
+              loading or temporarily unavailable.
+            </p>
+          )}
+          <p className="table-note">
+            This compares slice posture only. It does not claim that topology and policy
+            data are semantically inconsistent with each other.
+          </p>
+        </article>
+        <article className="detail-card">
           <h3>Node Role Distribution</h3>
           {sortedRoleCounts.length === 0 ? (
             <p>No node roles are available in the current topology snapshot.</p>
@@ -766,6 +803,16 @@ export function TopologyView() {
           path-validation, controller truth, or drift verdicts.
         </p>
       </div>
+
+      {policyConsistencyReadout.label !== "Aligned live posture" ? (
+        <div className="callout">
+          <strong>Policy slice posture is being shown alongside topology</strong>
+          <p>
+            {policyConsistencyReadout.detail} This stays explanatory and does not imply a
+            topology-policy mismatch verdict.
+          </p>
+        </div>
+      ) : null}
 
       {evidenceConfidence.freshness_posture === "stale" ? (
         <div className="callout">

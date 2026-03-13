@@ -11,6 +11,122 @@ export function normalizeEvidenceConfidence(
   };
 }
 
+export function buildTopologyEvidenceFallback(
+  servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold",
+  dataStatus: "normalized_scaffold" | "live" | "degraded",
+): EvidenceConfidenceSummary {
+  if (servingMode === "live_collector") {
+    return {
+      source_posture: "live_observed",
+      evidence_kind: "observed_plus_inferred",
+      confidence_posture: dataStatus === "live" ? "bounded_partial" : "degraded",
+      freshness_posture: "current",
+      blocked_reason: "none",
+      summary:
+        dataStatus === "live"
+          ? "Topology is backed by current live observed evidence plus bounded backend-owned inference."
+          : "Topology remains live observed plus inferred, but the current collector evidence is degraded.",
+      notes: [
+        "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
+      ],
+    };
+  }
+  if (servingMode === "persisted_fallback") {
+    return {
+      source_posture: "persisted_fallback",
+      evidence_kind: "observed_plus_inferred",
+      confidence_posture: "degraded",
+      freshness_posture: "stale",
+      blocked_reason: "collector_unavailable",
+      summary:
+        "Topology is being served from a persisted normalized fallback snapshot because the live collector path is unavailable.",
+      notes: [
+        "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
+      ],
+    };
+  }
+  return {
+    source_posture: "empty_scaffold",
+    evidence_kind: "unknown",
+    confidence_posture: "blocked",
+    freshness_posture: "unknown",
+    blocked_reason: "collector_unavailable_and_no_persisted_snapshot",
+    summary:
+      "The topology page only has empty-scaffold posture because neither live collector evidence nor a persisted fallback snapshot is available.",
+    notes: [
+      "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
+    ],
+  };
+}
+
+export function buildPolicyEvidenceFallback(
+  servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold",
+  dataStatus: "live" | "degraded",
+  detailMode: "counters_only" | "static_policies_when_present" | "mixed" | "unknown",
+  emptyReason:
+    | "none"
+    | "no_policies_observed"
+    | "per_policy_details_unavailable"
+    | "collector_unavailable",
+): EvidenceConfidenceSummary {
+  const evidenceKind =
+    emptyReason === "per_policy_details_unavailable" || detailMode === "counters_only"
+      ? "aggregate_only"
+      : detailMode === "static_policies_when_present" || detailMode === "mixed"
+        ? "aggregate_plus_bounded_records"
+        : "unknown";
+  if (servingMode === "live_collector") {
+    return {
+      source_posture: "live_observed",
+      evidence_kind: evidenceKind,
+      confidence_posture:
+        emptyReason === "per_policy_details_unavailable"
+          ? "blocked"
+          : dataStatus === "degraded"
+            ? "degraded"
+            : "bounded_partial",
+      freshness_posture: "current",
+      blocked_reason:
+        emptyReason === "per_policy_details_unavailable"
+          ? "per_record_detail_unavailable"
+          : "none",
+      summary:
+        emptyReason === "per_policy_details_unavailable"
+          ? "Policy state is backed by current live aggregate evidence, but stable per-policy detail remains blocked."
+          : "Policy state is backed by current live observed evidence, with confidence bounded by the current normalized detail coverage.",
+      notes: [
+        "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
+      ],
+    };
+  }
+  if (servingMode === "persisted_fallback") {
+    return {
+      source_posture: "persisted_fallback",
+      evidence_kind: evidenceKind,
+      confidence_posture: "degraded",
+      freshness_posture: "stale",
+      blocked_reason: "collector_unavailable",
+      summary:
+        "Policy state is being served from a persisted normalized fallback snapshot because the live collector path is unavailable.",
+      notes: [
+        "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
+      ],
+    };
+  }
+  return {
+    source_posture: "empty_scaffold",
+    evidence_kind: "unknown",
+    confidence_posture: "blocked",
+    freshness_posture: "unknown",
+    blocked_reason: "collector_unavailable_and_no_persisted_snapshot",
+    summary:
+      "The policies page only has empty-scaffold posture because neither live collector evidence nor a persisted fallback snapshot is available.",
+    notes: [
+      "This fallback UI summary is used when the backend response does not yet include explicit evidence-confidence details.",
+    ],
+  };
+}
+
 export function describeEvidenceSource(
   value: EvidenceConfidenceSummary["source_posture"],
 ): string {
