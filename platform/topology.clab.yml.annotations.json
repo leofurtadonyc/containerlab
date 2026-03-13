@@ -1,0 +1,61 @@
+{
+  "freeTextAnnotations": [],
+  "freeShapeAnnotations": [],
+  "trafficRateAnnotations": [],
+  "groupStyleAnnotations": [],
+  "networkNodeAnnotations": [],
+  "nodeAnnotations": [
+    {
+      "id": "odl",
+      "position": {
+        "x": -60,
+        "y": 360
+      }
+    },
+    {
+      "id": "prometheus",
+      "position": {
+        "x": 140,
+        "y": 340
+      }
+    },
+    {
+      "id": "grafana",
+      "position": {
+        "x": 300,
+        "y": 360
+      }
+    },
+    {
+      "id": "postgres",
+      "position": {
+        "x": 460,
+        "y": 340
+      }
+    },
+    {
+      "id": "gnmi-collector",
+      "position": {
+        "x": 600,
+        "y": 360
+      }
+    },
+    {
+      "id": "app-api",
+      "position": {
+        "x": 780,
+        "y": 360
+      }
+    },
+    {
+      "id": "app-web",
+      "position": {
+        "x": 960,
+        "y": 340
+      }
+    }
+  ],
+  "edgeAnnotations": [],
+  "aliasEndpointAnnotations": [],
+  "viewerSettings": {}
+}
