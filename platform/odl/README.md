@@ -21,9 +21,9 @@ Some SR policy and topology interactions may benefit from a purpose-built SDN co
 - final product truth by itself
 
 ## Runtime details
-- image: `opendaylight/opendaylight:0.18.2` in the current topology skeleton
+- image: `platform-odl:0.1.0`, built from `opendaylight/opendaylight:0.18.2` with a small startup wrapper for bounded credential provisioning
 - ports: 8181 for northbound API access and 8101 for Karaf shell access
-- env vars: `ODL_ADMIN_PASSWORD` placeholder in the current topology skeleton
+- env vars: `ODL_ADMIN_PASSWORD` for the bounded RESTCONF admin credential used by the backend capability probe
 - mounts: none in the current topology skeleton; host config and data mounts can be added later with an explicit image-compatible layout and write-permissions strategy
 - persistence: container-local controller state in the current topology skeleton; ODL is not the platform system of record
 - dependencies: none at platform layer; integrates with lab topologies over the management plane
@@ -32,9 +32,11 @@ Some SR policy and topology interactions may benefit from a purpose-built SDN co
 - `app-api` queries ODL through bounded integration modules
 - ODL-derived records are treated as observed inputs, not the only source of truth
 - ODL does not call the backend; the backend pulls from ODL
+- `../scripts/verify-odl-auth.sh` provides a deploy-time regression check for the bounded RESTCONF credential path and the backend's ODL platform-health observation
 
 ## Current status
 Topology-level service presence exists and the backend now has a bounded live ODL read enrichment on the Platform Health path: `app-api` performs a small RESTCONF capability probe against the controller's YANG library and operations inventory, then exposes that result as backend-owned platform status data. ODL still does not own topology, policy, or workflow truth.
+The platform now builds ODL as a local image so the controller's bounded RESTCONF admin credential is rotated at startup to the topology-configured `ODL_ADMIN_PASSWORD` value. This keeps the backend ODL probe authenticated without falling back to the upstream image default credential.
 
 ## Planned evolution
 - documented bounded role in the platform topology

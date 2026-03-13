@@ -11,11 +11,13 @@ from app_api.integrations.collector.policies import (
 from app_api.metrics.state import cache_policy_metrics
 from app_api.models.policy import (
     CandidatePath,
+    PolicyComparisonChangePreview,
     PolicyCurrentComparison,
     PolicyHistoryComparison,
     PolicyHistoryWindow,
     PolicyInventoryRecord,
     PolicyInventorySnapshot,
+    PolicyTargetFootprint,
 )
 from app_api.persistence.read_side import (
     load_latest_policy_snapshot,
@@ -25,12 +27,14 @@ from app_api.persistence.read_side import (
 )
 from app_api.schemas.policies import (
     CandidatePathRecord,
+    PolicyComparisonChangePreviewResponse,
     PolicyCurrentComparisonResponse,
     PolicyHistoryComparisonResponse,
     PolicyHistorySnapshotResponseRecord,
     PolicyHistoryWindowResponse,
     PoliciesListResponse,
     PolicyRecord,
+    PolicyTargetFootprintRecord,
 )
 from app_api.schemas.common import EvidenceConfidenceSummary
 
@@ -74,6 +78,7 @@ def _build_policy_inventory() -> tuple[
                 "The backend could not load the live policy snapshot from the collector.",
                 "No raw vendor payloads are exposed through the policies API.",
             ],
+            target_footprints=[],
             records=[],
         ), None
 
@@ -106,6 +111,26 @@ def _build_policy_inventory() -> tuple[
         binding_sid_count=collector_snapshot.binding_sid_count,
         srv6_binding_sid_count=collector_snapshot.srv6_binding_sid_count,
         notes=collector_snapshot.notes,
+        target_footprints=[
+            PolicyTargetFootprint(
+                target_name=footprint.target_name,
+                target_role=footprint.target_role,
+                collection_status=footprint.collection_status,
+                policy_capable=footprint.policy_capable,
+                observed_policy_count=footprint.observed_policy_count,
+                active_policy_count=footprint.active_policy_count,
+                static_policy_count=footprint.static_policy_count,
+                static_local_policy_count=footprint.static_local_policy_count,
+                static_non_local_policy_count=footprint.static_non_local_policy_count,
+                bgp_policy_count=footprint.bgp_policy_count,
+                ttm_preference_count=footprint.ttm_preference_count,
+                binding_sid_count=footprint.binding_sid_count,
+                srv6_binding_sid_count=footprint.srv6_binding_sid_count,
+                detail_record_count=footprint.detail_record_count,
+                notes=footprint.notes,
+            )
+            for footprint in collector_snapshot.target_footprints
+        ],
         records=[
             PolicyInventoryRecord(
                 policy_id=record.policy_id,
@@ -171,6 +196,106 @@ def _policy_record_signature(policy: PolicyInventoryRecord) -> tuple[object, ...
     )
 
 
+def _policy_changed_fields(
+    current_policy: PolicyInventoryRecord,
+    previous_policy: PolicyInventoryRecord,
+) -> list[str]:
+    """Return the normalized field names that changed between two policy records."""
+    changed_fields: list[str] = []
+    field_pairs = [
+        ("policy_name", current_policy.policy_name, previous_policy.policy_name),
+        ("policy_type", current_policy.policy_type, previous_policy.policy_type),
+        ("headend", current_policy.headend, previous_policy.headend),
+        ("endpoint", current_policy.endpoint, previous_policy.endpoint),
+        ("color", current_policy.color, previous_policy.color),
+        ("source_target", current_policy.source_target, previous_policy.source_target),
+        (
+            "source_target_role",
+            current_policy.source_target_role,
+            previous_policy.source_target_role,
+        ),
+        ("intent_state", current_policy.intent_state, previous_policy.intent_state),
+        ("observed_state", current_policy.observed_state, previous_policy.observed_state),
+        ("support_state", current_policy.support_state, previous_policy.support_state),
+        ("health_state", current_policy.health_state, previous_policy.health_state),
+    ]
+    for field_name, current_value, previous_value in field_pairs:
+        if current_value != previous_value:
+            changed_fields.append(field_name)
+    current_candidate_paths = [
+        (
+            candidate_path.name,
+            candidate_path.path_state,
+            candidate_path.preference,
+            tuple(candidate_path.notes),
+        )
+        for candidate_path in current_policy.candidate_paths
+    ]
+    previous_candidate_paths = [
+        (
+            candidate_path.name,
+            candidate_path.path_state,
+            candidate_path.preference,
+            tuple(candidate_path.notes),
+        )
+        for candidate_path in previous_policy.candidate_paths
+    ]
+    if current_candidate_paths != previous_candidate_paths:
+        changed_fields.append("candidate_paths")
+    return changed_fields
+
+
+def _build_policy_change_preview(
+    *,
+    current_records: dict[str, PolicyInventoryRecord],
+    previous_records: dict[str, PolicyInventoryRecord],
+    added_policy_ids: set[str],
+    removed_policy_ids: set[str],
+    changed_policy_ids: set[str],
+    limit: int = 10,
+) -> list[PolicyComparisonChangePreview]:
+    """Build a bounded preview of record-level policy changes."""
+    preview: list[PolicyComparisonChangePreview] = []
+    for policy_id in sorted(added_policy_ids, key=lambda item: (current_records[item].policy_name, item)):
+        policy = current_records[policy_id]
+        preview.append(
+            PolicyComparisonChangePreview(
+                policy_id=policy.policy_id,
+                policy_name=policy.policy_name,
+                source_target=policy.source_target,
+                source_target_role=policy.source_target_role,
+                change_kind="added",
+                changed_fields=[],
+            )
+        )
+    for policy_id in sorted(removed_policy_ids, key=lambda item: (previous_records[item].policy_name, item)):
+        policy = previous_records[policy_id]
+        preview.append(
+            PolicyComparisonChangePreview(
+                policy_id=policy.policy_id,
+                policy_name=policy.policy_name,
+                source_target=policy.source_target,
+                source_target_role=policy.source_target_role,
+                change_kind="removed",
+                changed_fields=[],
+            )
+        )
+    for policy_id in sorted(changed_policy_ids, key=lambda item: (current_records[item].policy_name, item)):
+        current_policy = current_records[policy_id]
+        previous_policy = previous_records[policy_id]
+        preview.append(
+            PolicyComparisonChangePreview(
+                policy_id=current_policy.policy_id,
+                policy_name=current_policy.policy_name,
+                source_target=current_policy.source_target,
+                source_target_role=current_policy.source_target_role,
+                change_kind="changed",
+                changed_fields=_policy_changed_fields(current_policy, previous_policy),
+            )
+        )
+    return preview[:limit]
+
+
 def _build_policy_history_window() -> PolicyHistoryWindow:
     """Build a bounded persisted history/comparison view for policy snapshots."""
     recent_snapshots = load_recent_policy_snapshot_summaries(limit=3)
@@ -218,6 +343,13 @@ def _build_policy_history_window() -> PolicyHistoryWindow:
         if _policy_record_signature(current_records[policy_id])
         != _policy_record_signature(previous_records[policy_id])
     }
+    change_preview = _build_policy_change_preview(
+        current_records=current_records,
+        previous_records=previous_records,
+        added_policy_ids=added_policy_ids,
+        removed_policy_ids=removed_policy_ids,
+        changed_policy_ids=changed_policy_ids,
+    )
     comparison_notes = [
         "This comparison is derived from the latest two persisted normalized policy snapshots.",
         (
@@ -231,6 +363,10 @@ def _build_policy_history_window() -> PolicyHistoryWindow:
     ):
         comparison_notes.append(
             "Observed policy totals may be higher than detailed record totals when the bounded read path cannot derive per-policy detail for every observed policy type."
+        )
+    if len(change_preview) < len(added_policy_ids) + len(removed_policy_ids) + len(changed_policy_ids):
+        comparison_notes.append(
+            "Change preview is intentionally capped to a short bounded list of normalized policy records."
         )
     return PolicyHistoryWindow(
         status="comparison_ready",
@@ -256,6 +392,7 @@ def _build_policy_history_window() -> PolicyHistoryWindow:
             added_policy_count=len(added_policy_ids),
             removed_policy_count=len(removed_policy_ids),
             changed_policy_count=len(changed_policy_ids),
+            change_preview=change_preview,
             notes=comparison_notes,
         ),
     )
@@ -287,6 +424,7 @@ def _build_current_policy_comparison(
             added_policy_count=0,
             removed_policy_count=0,
             changed_policy_count=0,
+            change_preview=[],
             notes=[
                 "Comparison becomes available only when the backend already has a persisted normalized policy snapshot to compare against the current response.",
             ],
@@ -302,6 +440,13 @@ def _build_current_policy_comparison(
         if _policy_record_signature(current_records[policy_id])
         != _policy_record_signature(persisted_records[policy_id])
     }
+    change_preview = _build_policy_change_preview(
+        current_records=current_records,
+        previous_records=persisted_records,
+        added_policy_ids=added_policy_ids,
+        removed_policy_ids=removed_policy_ids,
+        changed_policy_ids=changed_policy_ids,
+    )
     notes = [
         "This comparison reflects the current policy response against the latest persisted normalized policy snapshot.",
         "Added, removed, and changed counts only reflect policies that currently have bounded normalized detail records.",
@@ -312,6 +457,10 @@ def _build_current_policy_comparison(
     ):
         notes.append(
             "Observed policy totals may be higher than detailed record totals when the bounded read path cannot derive per-policy detail for every observed policy type."
+        )
+    if len(change_preview) < len(added_policy_ids) + len(removed_policy_ids) + len(changed_policy_ids):
+        notes.append(
+            "Change preview is intentionally capped to a short bounded list of normalized policy records."
         )
     return PolicyCurrentComparison(
         status="current_vs_latest_persisted_ready",
@@ -332,6 +481,7 @@ def _build_current_policy_comparison(
         added_policy_count=len(added_policy_ids),
         removed_policy_count=len(removed_policy_ids),
         changed_policy_count=len(changed_policy_ids),
+        change_preview=change_preview,
         notes=notes,
     )
 
@@ -495,8 +645,8 @@ def build_policies_list_response() -> PoliciesListResponse:
             summary = (
                 "Policy inventory is backed by live Nokia SR policy counters and "
                 "bounded static-policy visibility. No SR policies are currently "
-                "observed, but stable counter footprint and target-role coverage "
-                "remain visible across the configured targets."
+                "observed, but stable per-target policy counter footprint and "
+                "target-role coverage remain visible across the configured targets."
             )
         elif snapshot.empty_reason == "per_policy_details_unavailable":
             summary = (
@@ -538,6 +688,7 @@ def build_policies_list_response() -> PoliciesListResponse:
                 added_policy_count=0,
                 removed_policy_count=0,
                 changed_policy_count=0,
+                change_preview=[],
                 notes=[
                     "Comparison is not shown here because the current policy response is already the persisted fallback snapshot.",
                 ],
@@ -607,6 +758,26 @@ def build_policies_list_response() -> PoliciesListResponse:
         srv6_binding_sid_count=snapshot.srv6_binding_sid_count,
         count=len(items),
         notes=snapshot.notes,
+        target_footprints=[
+            PolicyTargetFootprintRecord(
+                target_name=footprint.target_name,
+                target_role=footprint.target_role,
+                collection_status=footprint.collection_status,
+                policy_capable=footprint.policy_capable,
+                observed_policy_count=footprint.observed_policy_count,
+                active_policy_count=footprint.active_policy_count,
+                static_policy_count=footprint.static_policy_count,
+                static_local_policy_count=footprint.static_local_policy_count,
+                static_non_local_policy_count=footprint.static_non_local_policy_count,
+                bgp_policy_count=footprint.bgp_policy_count,
+                ttm_preference_count=footprint.ttm_preference_count,
+                binding_sid_count=footprint.binding_sid_count,
+                srv6_binding_sid_count=footprint.srv6_binding_sid_count,
+                detail_record_count=footprint.detail_record_count,
+                notes=footprint.notes,
+            )
+            for footprint in snapshot.target_footprints
+        ],
         comparison_to_latest_persisted=PolicyCurrentComparisonResponse(
             status=current_comparison.status,
             summary=current_comparison.summary,
@@ -621,6 +792,17 @@ def build_policies_list_response() -> PoliciesListResponse:
             added_policy_count=current_comparison.added_policy_count,
             removed_policy_count=current_comparison.removed_policy_count,
             changed_policy_count=current_comparison.changed_policy_count,
+            change_preview=[
+                PolicyComparisonChangePreviewResponse(
+                    policy_id=entry.policy_id,
+                    policy_name=entry.policy_name,
+                    source_target=entry.source_target,
+                    source_target_role=entry.source_target_role,
+                    change_kind=entry.change_kind,
+                    changed_fields=entry.changed_fields,
+                )
+                for entry in current_comparison.change_preview
+            ],
             notes=current_comparison.notes,
         ),
         history=PolicyHistoryWindowResponse(
@@ -655,6 +837,17 @@ def build_policies_list_response() -> PoliciesListResponse:
                     added_policy_count=history.comparison_to_previous.added_policy_count,
                     removed_policy_count=history.comparison_to_previous.removed_policy_count,
                     changed_policy_count=history.comparison_to_previous.changed_policy_count,
+                    change_preview=[
+                        PolicyComparisonChangePreviewResponse(
+                            policy_id=entry.policy_id,
+                            policy_name=entry.policy_name,
+                            source_target=entry.source_target,
+                            source_target_role=entry.source_target_role,
+                            change_kind=entry.change_kind,
+                            changed_fields=entry.changed_fields,
+                        )
+                        for entry in history.comparison_to_previous.change_preview
+                    ],
                     notes=history.comparison_to_previous.notes,
                 )
                 if history.comparison_to_previous is not None

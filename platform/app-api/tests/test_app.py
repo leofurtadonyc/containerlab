@@ -23,6 +23,7 @@ from app_api.persistence.history import (
     PersistedInventorySnapshotSummary,
     PersistedPolicySnapshotComparison,
     PersistedPolicySnapshotSummary as PersistedPolicyHistorySummary,
+    PersistedReadinessSnapshotHistoryRecord,
     PersistedSyncRun,
     SyncRunHistorySummary,
     PersistedTopologySnapshotComparison,
@@ -203,6 +204,42 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
         ttm_preference_count=476,
         binding_sid_count=0,
         srv6_binding_sid_count=0,
+        target_footprints=[
+            {
+                "target_name": "PE1",
+                "target_role": "pe",
+                "collection_status": "success",
+                "policy_capable": True,
+                "observed_policy_count": 1,
+                "active_policy_count": 1,
+                "static_policy_count": 1,
+                "static_local_policy_count": 1,
+                "static_non_local_policy_count": 0,
+                "bgp_policy_count": 0,
+                "ttm_preference_count": 14,
+                "binding_sid_count": 0,
+                "srv6_binding_sid_count": 0,
+                "detail_record_count": 1,
+                "notes": [],
+            },
+            {
+                "target_name": "P1",
+                "target_role": "p",
+                "collection_status": "success",
+                "policy_capable": True,
+                "observed_policy_count": 1,
+                "active_policy_count": 0,
+                "static_policy_count": 1,
+                "static_local_policy_count": 0,
+                "static_non_local_policy_count": 1,
+                "bgp_policy_count": 0,
+                "ttm_preference_count": 14,
+                "binding_sid_count": 0,
+                "srv6_binding_sid_count": 0,
+                "detail_record_count": 1,
+                "notes": [],
+            },
+        ],
         notes=[
             "Policy inventory is currently bounded to live Nokia SR policy counters collected over gNMI.",
             "When static-policy state is exposed, the collector now derives bounded per-policy observations without claiming full SR policy truth.",
@@ -291,6 +328,46 @@ def _build_live_empty_policy_snapshot() -> CollectorPolicySnapshot:
         ttm_preference_count=476,
         binding_sid_count=0,
         srv6_binding_sid_count=0,
+        target_footprints=[
+            {
+                "target_name": "PE1",
+                "target_role": "pe",
+                "collection_status": "success",
+                "policy_capable": True,
+                "observed_policy_count": 0,
+                "active_policy_count": 0,
+                "static_policy_count": 0,
+                "static_local_policy_count": 0,
+                "static_non_local_policy_count": 0,
+                "bgp_policy_count": 0,
+                "ttm_preference_count": 14,
+                "binding_sid_count": 0,
+                "srv6_binding_sid_count": 0,
+                "detail_record_count": 0,
+                "notes": [
+                    "Stable SR policy resource counters are visible on this target even though no SR policies are currently observed."
+                ],
+            },
+            {
+                "target_name": "P1",
+                "target_role": "p",
+                "collection_status": "success",
+                "policy_capable": True,
+                "observed_policy_count": 0,
+                "active_policy_count": 0,
+                "static_policy_count": 0,
+                "static_local_policy_count": 0,
+                "static_non_local_policy_count": 0,
+                "bgp_policy_count": 0,
+                "ttm_preference_count": 14,
+                "binding_sid_count": 0,
+                "srv6_binding_sid_count": 0,
+                "detail_record_count": 0,
+                "notes": [
+                    "Stable SR policy resource counters are visible on this target even though no SR policies are currently observed."
+                ],
+            },
+        ],
         notes=[
             "Policy inventory is currently bounded to live Nokia SR policy counters collected over gNMI.",
             "No SR policies are currently observed across the configured Nokia targets.",
@@ -652,6 +729,24 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             ),
             notes=["Inventory sync completed from the bounded live path."],
         ),
+    ]
+
+
+def _build_persisted_readiness_snapshot_history() -> list[PersistedReadinessSnapshotHistoryRecord]:
+    return [
+        PersistedReadinessSnapshotHistoryRecord(
+            snapshot_id="readiness-snapshot-1",
+            persisted_at=datetime.fromisoformat("2026-03-10T02:00:00+00:00"),
+            readiness_status="bounded_readiness_support",
+            planning_readiness="readiness_planning_supported",
+            phase_recommendation="remain_phase_2_read_only_foundation",
+            summary="Current bounded readiness support remains useful for planning but not for dry-run execution.",
+            blocker_count=6,
+            strongest_blockers=[
+                "No durable workflow lifecycle model exists yet.",
+                "Policy truth remains intentionally bounded.",
+            ],
+        )
     ]
 
 
@@ -1053,8 +1148,23 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["history"]["comparison_to_previous"]["added_policy_count"] == 0
     assert payload["history"]["comparison_to_previous"]["removed_policy_count"] == 1
     assert payload["history"]["comparison_to_previous"]["changed_policy_count"] == 1
+    assert payload["history"]["comparison_to_previous"]["change_preview"][0]["policy_id"] == "persisted-policy-2"
+    assert payload["history"]["comparison_to_previous"]["change_preview"][0]["change_kind"] == "removed"
+    assert payload["history"]["comparison_to_previous"]["change_preview"][1]["policy_id"] == "persisted-policy-1"
+    assert payload["history"]["comparison_to_previous"]["change_preview"][1]["change_kind"] == "changed"
+    assert "observed_state" in payload["history"]["comparison_to_previous"]["change_preview"][1]["changed_fields"]
+    assert "health_state" in payload["history"]["comparison_to_previous"]["change_preview"][1]["changed_fields"]
+    assert "candidate_paths" in payload["history"]["comparison_to_previous"]["change_preview"][1]["changed_fields"]
     assert payload["comparison_to_latest_persisted"]["status"] == "current_vs_latest_persisted_ready"
     assert payload["comparison_to_latest_persisted"]["persisted_observed_policy_count"] == 1
+    assert payload["comparison_to_latest_persisted"]["change_preview"][0]["change_kind"] == "added"
+    assert payload["comparison_to_latest_persisted"]["change_preview"][1]["change_kind"] == "added"
+    assert payload["comparison_to_latest_persisted"]["change_preview"][2]["change_kind"] == "removed"
+    assert len(payload["target_footprints"]) == 2
+    assert payload["target_footprints"][0]["target_name"] == "PE1"
+    assert payload["target_footprints"][0]["observed_policy_count"] == 1
+    assert payload["target_footprints"][1]["target_name"] == "P1"
+    assert payload["target_footprints"][1]["static_non_local_policy_count"] == 1
     assert "bounded static-policy observations" in payload["summary"]
     assert payload["items"][0]["policy_type"] == "static_local"
     assert payload["items"][0]["source_target"] == "PE1"
@@ -1088,9 +1198,13 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     assert payload["empty_reason"] == "no_policies_observed"
     assert payload["ttm_preference_count"] == 476
     assert payload["observed_target_role_counts"]["p"] == 16
+    assert len(payload["target_footprints"]) == 2
+    assert payload["target_footprints"][0]["policy_capable"] is True
+    assert payload["target_footprints"][0]["detail_record_count"] == 0
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
+    assert payload["comparison_to_latest_persisted"]["change_preview"] == []
     assert payload["history"]["status"] == "unavailable"
-    assert "stable counter footprint and target-role coverage" in payload["summary"]
+    assert "stable per-target policy counter footprint and target-role coverage" in payload["summary"]
 
 
 def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) -> None:
@@ -1217,6 +1331,10 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
         "app_api.services.audit_history.load_sync_runs",
         _build_persisted_sync_runs,
     )
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_readiness_snapshot_history",
+        _build_persisted_readiness_snapshot_history,
+    )
 
     response = client.get("/api/v1/audit-history", headers={"X-Request-ID": "audit-test"})
 
@@ -1224,27 +1342,38 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     payload = response.json()
     assert response.headers["X-Request-ID"] == "audit-test"
     assert payload["data_status"] == "persisted_activity_history"
-    assert payload["count"] == 3
-    assert "platform-recorded read-side sync events" in payload["summary"]
-    assert payload["items"][0]["event_type"] == "read_side_sync_recorded"
-    assert payload["items"][0]["source"] == "app-api"
-    assert payload["items"][0]["actor"] == "platform_system"
-    assert payload["items"][0]["target_scope"] == "policy_inventory_read_side"
+    assert payload["count"] == 4
+    assert "persisted readiness-support snapshots" in payload["summary"]
+    assert payload["items"][0]["event_type"] == "readiness_snapshot_recorded"
+    assert payload["items"][0]["target_scope"] == "dry_run_readiness_support"
     assert payload["items"][0]["result"] == "succeeded"
-    assert payload["items"][0]["policy_snapshot_summary"]["detail_record_count"] == 1
-    assert payload["items"][0]["policy_comparison_to_previous"]["changed_policy_count"] == 1
-    assert payload["items"][0]["correlation_id"] == "sync-policy-1"
-    assert "persisted policy_snapshot" in payload["items"][0]["message"]
-    assert payload["items"][1]["topology_snapshot_summary"]["topology_name"] == "Platform Observed Topology"
-    assert payload["items"][1]["topology_comparison_to_previous"]["node_count_delta"] == 1
-    assert payload["items"][1]["policy_snapshot_summary"] is None
-    assert payload["items"][2]["inventory_snapshot_summary"]["role_counts"]["pe"] == 8
-    assert payload["items"][2]["inventory_comparison_to_previous"]["added_device_count"] == 1
+    assert payload["items"][0]["readiness_snapshot_summary"]["readiness_status"] == "bounded_readiness_support"
+    assert payload["items"][0]["readiness_snapshot_summary"]["blocker_count"] == 6
+    assert payload["items"][0]["policy_snapshot_summary"] is None
+    assert "changed materially" in payload["items"][0]["message"]
+    assert payload["items"][1]["event_type"] == "read_side_sync_recorded"
+    assert payload["items"][0]["source"] == "app-api"
+    assert payload["items"][1]["actor"] == "platform_system"
+    assert payload["items"][1]["target_scope"] == "policy_inventory_read_side"
+    assert payload["items"][1]["result"] == "succeeded"
+    assert payload["items"][1]["policy_snapshot_summary"]["detail_record_count"] == 1
+    assert payload["items"][1]["policy_comparison_to_previous"]["changed_policy_count"] == 1
+    assert payload["items"][1]["correlation_id"] == "sync-policy-1"
+    assert "persisted policy_snapshot" in payload["items"][1]["message"]
+    assert payload["items"][2]["topology_snapshot_summary"]["topology_name"] == "Platform Observed Topology"
+    assert payload["items"][2]["topology_comparison_to_previous"]["node_count_delta"] == 1
+    assert payload["items"][2]["policy_snapshot_summary"] is None
+    assert payload["items"][3]["inventory_snapshot_summary"]["role_counts"]["pe"] == 8
+    assert payload["items"][3]["inventory_comparison_to_previous"]["added_device_count"] == 1
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
 def test_audit_history_endpoint_handles_empty_persisted_history(monkeypatch) -> None:
     monkeypatch.setattr("app_api.services.audit_history.load_sync_runs", lambda: [])
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_readiness_snapshot_history",
+        lambda: [],
+    )
 
     response = client.get("/api/v1/audit-history")
 
@@ -1252,7 +1381,7 @@ def test_audit_history_endpoint_handles_empty_persisted_history(monkeypatch) -> 
     payload = response.json()
     assert payload["data_status"] == "empty"
     assert payload["count"] == 0
-    assert "No persisted platform audit-style sync events" in payload["summary"]
+    assert "No persisted platform audit-style sync events or readiness-support snapshots" in payload["summary"]
 
 
 def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:

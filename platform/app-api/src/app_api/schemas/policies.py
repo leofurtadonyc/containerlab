@@ -43,6 +43,26 @@ class PolicyRecord(BaseModel):
     notes: list[str]
 
 
+class PolicyTargetFootprintRecord(BaseModel):
+    """Vendor-neutral per-target policy footprint."""
+
+    target_name: str
+    target_role: str | None = None
+    collection_status: Literal["success", "failure", "partial"]
+    policy_capable: bool
+    observed_policy_count: int
+    active_policy_count: int
+    static_policy_count: int
+    static_local_policy_count: int
+    static_non_local_policy_count: int
+    bgp_policy_count: int
+    ttm_preference_count: int
+    binding_sid_count: int
+    srv6_binding_sid_count: int
+    detail_record_count: int
+    notes: list[str]
+
+
 class PolicyHistorySnapshotResponseRecord(BaseModel):
     """Bounded summary of one persisted policy snapshot."""
 
@@ -69,6 +89,17 @@ class PolicyHistorySnapshotResponseRecord(BaseModel):
     detail_record_count: int
 
 
+class PolicyComparisonChangePreviewResponse(BaseModel):
+    """Bounded preview of one normalized policy-record change."""
+
+    policy_id: str
+    policy_name: str
+    source_target: str
+    source_target_role: str | None = None
+    change_kind: Literal["added", "removed", "changed"]
+    changed_fields: list[str]
+
+
 class PolicyHistoryComparisonResponse(BaseModel):
     """Bounded comparison of the latest two persisted policy snapshots."""
 
@@ -83,6 +114,7 @@ class PolicyHistoryComparisonResponse(BaseModel):
     added_policy_count: int
     removed_policy_count: int
     changed_policy_count: int
+    change_preview: list[PolicyComparisonChangePreviewResponse]
     notes: list[str]
 
 
@@ -111,6 +143,7 @@ class PolicyCurrentComparisonResponse(BaseModel):
     added_policy_count: int
     removed_policy_count: int
     changed_policy_count: int
+    change_preview: list[PolicyComparisonChangePreviewResponse]
     notes: list[str]
 
 
@@ -153,6 +186,7 @@ class PoliciesListResponse(ApiResponseMetadata):
     srv6_binding_sid_count: int
     count: int
     notes: list[str]
+    target_footprints: list[PolicyTargetFootprintRecord]
     comparison_to_latest_persisted: PolicyCurrentComparisonResponse
     history: PolicyHistoryWindowResponse
     items: list[PolicyRecord]

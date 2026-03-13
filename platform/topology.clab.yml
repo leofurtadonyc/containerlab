@@ -6,7 +6,7 @@ topology:
   nodes:
     odl:
       kind: linux
-      image: opendaylight/opendaylight:0.18.2
+      image: platform-odl:0.1.0
       ports:
         - "8181:8181" # RESTCONF and northbound API access
         - "8101:8101" # Karaf shell access
@@ -15,55 +15,58 @@ topology:
 
     prometheus:
       kind: linux
-      image: prom/prometheus:latest
+      image: platform-prometheus:0.1.0
       ports:
         - "9090:9090"
       binds:
         - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
         - ./prometheus/rules:/etc/prometheus/rules
         - ./prometheus/recording-rules:/etc/prometheus/recording-rules
+        - ./prometheus/data:/prometheus
       env:
         PLATFORM_ENV: dev
+        PROMETHEUS_CONFIG_FILE: /etc/prometheus/prometheus.yml
+        PROMETHEUS_RULES_DIR: /etc/prometheus/rules
+        PROMETHEUS_RECORDING_RULES_DIR: /etc/prometheus/recording-rules
+        PROMETHEUS_STORAGE_PATH: /prometheus
 
     grafana:
       kind: linux
-      image: grafana/grafana:latest
+      image: platform-grafana:0.1.0
       ports:
         - "3000:3000"
       binds:
         - ./grafana/provisioning:/etc/grafana/provisioning
-        - ./grafana/dashboards:/var/lib/grafana/dashboards
+        - ./grafana/dashboards:/etc/grafana/dashboards
+        - ./grafana/data:/var/lib/grafana
       env:
         GF_SECURITY_ADMIN_USER: admin
         GF_SECURITY_ADMIN_PASSWORD: change_me
         GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+        GRAFANA_DASHBOARDS_PATH: /etc/grafana/dashboards
+        GRAFANA_DATA_PATH: /var/lib/grafana
 
     postgres:
       kind: linux
-      image: postgres:16
+      image: platform-postgres:0.1.0
       ports:
         - "5432:5432"
       binds:
         - ./postgres/init:/docker-entrypoint-initdb.d
+        - ./postgres/data:/var/lib/postgresql/data
       env:
+        PGDATA: /var/lib/postgresql/data/pgdata
         POSTGRES_DB: platform
         POSTGRES_USER: platform
         POSTGRES_PASSWORD: change_me
 
     gnmi-collector:
       kind: linux
-      # Placeholder image until the service Dockerfile is implemented.
-      image: python:3.12-slim
-      cmd: >-
-        sh -lc "cd /app &&
-        python3 -m pip install --no-cache-dir -e . &&
-        uvicorn gnmi_collector.main:app --host 0.0.0.0 --port ${COLLECTOR_METRICS_PORT:-9804}"
+      image: platform-gnmi-collector:0.1.0
       ports:
         - "9804:9804"
       binds:
-        - ./gnmi-collector:/app
         - ./gnmi-collector/configs:/app/configs
-        - ./shared:/app/shared
       env:
         COLLECTOR_METRICS_PORT: "9804"
         APP_API_URL: http://app-api:8000
@@ -71,37 +74,23 @@ topology:
 
     app-api:
       kind: linux
-      # Placeholder image until the service Dockerfile is implemented.
-      image: python:3.12-slim
-      cmd: >-
-        sh /app/scripts/start-app-api.sh
+      image: platform-app-api:0.1.0
       ports:
         - "8000:8000"
-      binds:
-        - ./app-api:/app
-        - ./shared:/app/shared
-        - ./schemas:/app/schemas
       env:
         API_PORT: "8000"
         DATABASE_URL: postgresql://platform:change_me@postgres:5432/platform
         ODL_URL: http://odl:8181
+        ODL_USERNAME: admin
+        ODL_PASSWORD: change_me
+        ODL_TIMEOUT_SECONDS: "3"
         PROMETHEUS_URL: http://prometheus:9090
 
     app-web:
       kind: linux
-      # Placeholder image until the service Dockerfile is implemented.
-      image: node:22-alpine
-      cmd: >-
-        sh -lc "cd /app &&
-        npm install --no-fund --no-audit &&
-        npm run dev -- --host 0.0.0.0 --port ${APP_WEB_PORT:-8088}"
+      image: platform-app-web:0.1.0
       ports:
         - "8088:8088"
-      binds:
-        - ./app-web:/app
-      env:
-        APP_WEB_PORT: "8088"
-        VITE_APP_API_BASE_URL: http://app-api:8000
 
   # No direct links to lab nodes are defined here.
   # The platform is expected to reach lab services over management connectivity.

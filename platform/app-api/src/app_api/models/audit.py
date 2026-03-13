@@ -101,11 +101,23 @@ class AuditPolicySnapshotComparison(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class AuditReadinessSnapshotSummary(BaseModel):
+    """Bounded persisted readiness snapshot context attached to an audit event."""
+
+    persisted_at: datetime
+    readiness_status: str
+    planning_readiness: str
+    phase_recommendation: str
+    summary: str
+    blocker_count: int
+    strongest_blockers: list[str] = Field(default_factory=list)
+
+
 class AuditEventRecord(BaseModel):
     """Bounded read-only audit-style event record."""
 
     event_id: str
-    event_type: Literal["read_side_sync_recorded"]
+    event_type: Literal["read_side_sync_recorded", "readiness_snapshot_recorded"]
     source: Literal["app-api"]
     actor: Literal["platform_system"]
     target_scope: str
@@ -119,4 +131,5 @@ class AuditEventRecord(BaseModel):
     topology_comparison_to_previous: AuditTopologySnapshotComparison | None = None
     policy_snapshot_summary: AuditPolicySnapshotSummary | None = None
     policy_comparison_to_previous: AuditPolicySnapshotComparison | None = None
+    readiness_snapshot_summary: AuditReadinessSnapshotSummary | None = None
     notes: list[str] = Field(default_factory=list)

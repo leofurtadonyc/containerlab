@@ -46,6 +46,26 @@ class CollectorPolicyRecord(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class CollectorPolicyTargetFootprintRecord(BaseModel):
+    """Normalized per-target policy footprint accepted from the collector boundary."""
+
+    target_name: str
+    target_role: str | None = None
+    collection_status: Literal["success", "failure", "partial"]
+    policy_capable: bool
+    observed_policy_count: int
+    active_policy_count: int
+    static_policy_count: int
+    static_local_policy_count: int
+    static_non_local_policy_count: int
+    bgp_policy_count: int
+    ttm_preference_count: int
+    binding_sid_count: int
+    srv6_binding_sid_count: int
+    detail_record_count: int
+    notes: list[str] = Field(default_factory=list)
+
+
 class CollectorPolicySnapshot(BaseModel):
     """Stable intermediate boundary for collector-backed policy reads."""
 
@@ -76,6 +96,7 @@ class CollectorPolicySnapshot(BaseModel):
     ttm_preference_count: int
     binding_sid_count: int
     srv6_binding_sid_count: int
+    target_footprints: list[CollectorPolicyTargetFootprintRecord] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
     records: list[CollectorPolicyRecord] = Field(default_factory=list)
     fetch_error: str | None = None
@@ -118,6 +139,7 @@ class CollectorPolicyClient:
                 ttm_preference_count=0,
                 binding_sid_count=0,
                 srv6_binding_sid_count=0,
+                target_footprints=[],
                 notes=[],
                 records=[],
                 fetch_error=str(exc),
@@ -151,6 +173,10 @@ class CollectorPolicyClient:
             ttm_preference_count=payload.get("ttm_preference_count", 0),
             binding_sid_count=payload.get("binding_sid_count", 0),
             srv6_binding_sid_count=payload.get("srv6_binding_sid_count", 0),
+            target_footprints=[
+                CollectorPolicyTargetFootprintRecord.model_validate(record)
+                for record in payload.get("target_footprints", [])
+            ],
             notes=payload.get("notes", []),
             records=[
                 CollectorPolicyRecord.model_validate(record)

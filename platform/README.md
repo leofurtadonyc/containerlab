@@ -53,6 +53,13 @@ That means:
 
 The platform should be able to run alongside one or more lab topologies rather than being fused into a single combined deployment.
 
+Custom platform services now build as local container images before topology deployment.
+
+Run `./scripts/build-images.sh` from `platform/` before deploying `topology.clab.yml`.
+After deployment, run `./scripts/verify-core-runtime.sh` and `./scripts/verify-odl-auth.sh` from `platform/` to catch bounded runtime-contract regressions before relying on the WebUI platform-health view.
+The current bounded runtime-hardening slice now packages Postgres, Prometheus, and Grafana as local images with small startup validators, while still preserving their explicit bind-mounted runtime contracts in the topology.
+When a change touches Grafana provisioning or dashboard files, treat `./scripts/verify-core-runtime.sh` as the required post-deploy observability regression.
+
 ## Architecture Direction
 
 The platform is being built with clear component boundaries.
@@ -80,6 +87,7 @@ It is responsible for gathering device state, mapping vendor-specific data into 
 OpenDaylight is a bounded support component.
 
 It may provide controller-side and protocol-side leverage for areas such as BGP-LS, BMP, PCEP, and related topology or policy-adjacent inputs. It is not the product brain, not the workflow engine, and not the global source of truth.
+The local ODL image now includes a narrow startup-time credential rotation so the controller's bounded RESTCONF admin password actually matches the topology-configured `ODL_ADMIN_PASSWORD` value used by `app-api`.
 
 ### `prometheus`
 
@@ -106,7 +114,7 @@ Current bounded reality:
 - normalized policy snapshots and bounded candidate-path records are now persisted
 - workflow-history and audit-history currently derive from persisted sync-run activity rather than separate durable workflow or audit domains
 - broader durable workflow, audit, and intent state remain partial or unimplemented
-- the current topology still lacks host-backed Postgres data storage, so persistence is real within the running deployment but not yet hardened across full reprovisioning
+- the current topology now mounts host-backed Postgres, Prometheus, and Grafana data directories, but backup discipline, credential hardening, and broader durable workflow/audit state are still pending
 
 ## Vendor Strategy
 
@@ -142,6 +150,7 @@ At this stage, contributors should assume:
 - the architecture direction is defined
 - the platform structure is established enough to support a read-only product foundation
 - several services still expose bounded live slices and partial persistence rather than mature end-state behavior
+- the runtime posture is no longer bootstrap-only: all initial services now run from repo-built local images, while the current hardening slice adds bounded startup validation and post-deploy verification only for the most important stateful and controller-adjacent runtime contracts
 - read-only visibility comes before advanced workflows
 - broad action automation is intentionally deferred
 
@@ -153,6 +162,7 @@ At this stage, contributors should assume:
 - service directories and README skeletons
 - documentation scaffolding
 - dashboard folder structure and provisioning layout scaffolding, with an initial real platform dashboard
+- repo-built local images for the initial service set, with bounded startup validators now in place for Postgres, Prometheus, and Grafana plus a bounded deploy-time verification flow for the core runtime and ODL auth path
 - schema and shared-directory scaffolding
 - read-only inventory, topology, policy, capability, and platform status APIs
 - read-only WebUI pages backed by stable backend contracts
@@ -189,5 +199,22 @@ Supporting documents live under `platform/docs/`:
 - `docs/data-flows.md`
 - `docs/dashboards.md`
 - `docs/workflows.md`
+- `docs/workflow-lifecycle-vocabulary.md`
+- `docs/phase2-workflow-foundations.md`
+- `docs/workflow-planning-gate.md`
+- `docs/service-hardening-plan.md`
 - `docs/vendors.md`
 - `docs/roadmap.md`
+
+Workflow-related conceptual contract docs also live under `platform/schemas/workflows/`.
+
+That directory now includes lifecycle-adjacent design docs for:
+
+- workflow entity modeling
+- preview contracts
+- diff contracts
+- preview/diff semantics
+- validation-result contracts
+- blocker contracts
+- validation/blocker semantics
+- workflow audit relationship design

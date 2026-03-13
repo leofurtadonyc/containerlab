@@ -19,11 +19,12 @@ Operators need a time-series and event dashboard view that is decoupled from the
 - business logic
 
 ## Runtime details
-- image: `grafana/grafana:latest`
+- image: `platform-grafana:0.1.0`, built from the pinned upstream `grafana/grafana:11.2.2` base with a small startup validator
 - ports: 3000
-- env vars: `GF_SECURITY_ADMIN_USER`, `GF_SECURITY_ADMIN_PASSWORD`, `GF_PATHS_PROVISIONING`
-- mounts: `./grafana/provisioning:/etc/grafana/provisioning`, `./grafana/dashboards:/var/lib/grafana/dashboards`
-- persistence: container-local Grafana state in the current topology skeleton; host persistence can be added later with an explicit write-permissions strategy
+- env vars: `GF_SECURITY_ADMIN_USER`, `GF_SECURITY_ADMIN_PASSWORD`, `GF_PATHS_PROVISIONING`, `GRAFANA_DASHBOARDS_PATH`, and `GRAFANA_DATA_PATH`
+- mounts: `./grafana/provisioning:/etc/grafana/provisioning`, `./grafana/dashboards:/etc/grafana/dashboards`, `./grafana/data:/var/lib/grafana`
+- persistence: host-backed Grafana state under `./grafana/data`
+- startup posture: the local image now validates the mounted provisioning files, dashboards directory, and writable Grafana data path before delegating to the upstream runtime
 - dependencies: Prometheus
 
 ## Integration points
@@ -31,7 +32,7 @@ Operators need a time-series and event dashboard view that is decoupled from the
 - does not query the backend or Postgres directly
 
 ## Current status
-Provisioning from files is in place, and real platform, topology, and SR policy dashboards now exist. They visualize Prometheus scrape health plus real `app-api` and `gnmi-collector` metrics, while the remaining dashboard families still stay as clearly marked placeholders.
+Provisioning from files is in place, and real platform, topology, and SR policy dashboards now exist. They visualize Prometheus scrape health plus real `app-api` and `gnmi-collector` metrics, while the remaining dashboard families still stay as clearly marked placeholders. `../scripts/verify-core-runtime.sh` now provides one bounded post-deploy regression check for Grafana API health, datasource provisioning, and provisioned overview dashboard discovery.
 
 ## Planned evolution
 - refine provisioned Prometheus datasource settings as observability needs grow
@@ -40,3 +41,5 @@ Provisioning from files is in place, and real platform, topology, and SR policy 
 
 ## Notes and caveats
 Grafana is observability-only. The product UI is `app-web`. Do not build operator workflows or product pages in Grafana.
+The local runtime image is intentionally narrow: it keeps repo-managed provisioning as the source of truth, but fails fast when the provisioning contract is broken.
+When provisioning or dashboard files change, reconfigure the platform topology and rerun `../scripts/verify-core-runtime.sh` to confirm the mounted provisioning contract still loads cleanly.

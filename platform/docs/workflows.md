@@ -89,6 +89,186 @@ Workflow ownership does not belong to:
 - `odl`
 - raw collector logic
 
+## Lifecycle Vocabulary
+
+The platform now has a dedicated workflow lifecycle vocabulary document in
+`platform/docs/workflow-lifecycle-vocabulary.md`.
+
+That document defines canonical state names, state meanings, non-definitions,
+and conceptual transitions only.
+
+It does not introduce workflow behavior, dry-run APIs, approval semantics, or
+execution logic in the current phase.
+
+## Preview And Diff Contract Design
+
+The platform now also has design-only preview and diff contract documents under:
+
+- `platform/schemas/workflows/preview-contract.md`
+- `platform/schemas/workflows/diff-contract.md`
+- `platform/schemas/workflows/preview-diff-semantics.md`
+
+These files define future contract vocabulary, bounded claim rules, uncertainty posture,
+and blocker semantics only.
+
+They do not introduce preview generation, validation behavior, approval behavior,
+execution behavior, or rollback behavior in the current phase.
+
+## Workflow Entity Model
+
+The platform now also has a design-only workflow entity model document in:
+
+- `platform/schemas/workflows/workflow-entity-model.md`
+
+That document defines future workflow entities, their relationships, and how current
+Phase 2 history and readiness structures map only partially onto those future concepts.
+
+It does not introduce storage design, workflow APIs, or implementation behavior.
+
+## Workflow-Owned State Prerequisites
+
+The platform now also has a design-only implementation-prerequisite document in:
+
+- `platform/schemas/workflows/workflow-owned-state-prerequisites.md`
+
+- `platform/schemas/workflows/ownership-boundaries.md`
+
+That document defines the ownership boundaries and prerequisite sequencing for
+future workflow-owned state across storage, API introduction order, audit
+linkage, and workflow-state persistence.
+
+The dedicated ownership-boundary document sharpens what must remain separate
+between current read-side evidence, persisted snapshots, readiness or blocker
+metadata, future workflow-owned state, and future workflow audit records.
+
+It does not introduce workflow behavior, dry-run APIs, approvals, rollback
+behavior, or any phase change.
+
+## Evidence Reference Contract Design
+
+The platform now also has a design-only evidence-reference contract document in:
+
+- `platform/schemas/workflows/evidence-reference-contract.md`
+
+That document defines the platform-owned identity shape, allowed evidence kinds,
+citation roles, chronology expectations, and bounded truth-posture semantics for
+future `evidence_reference` records.
+
+It does not introduce workflow-owned storage, workflow APIs, preview behavior,
+validation behavior, or persistence changes.
+
+## Validation And Blocker Contract Design
+
+The platform now also has design-only validation and blocker contract documents under:
+
+- `platform/schemas/workflows/validation-result-contract.md`
+- `platform/schemas/workflows/blocker-contract.md`
+- `platform/schemas/workflows/validation-blocker-semantics.md`
+
+These files define future validation-result, blocker, unsupported-condition,
+and insufficient-evidence semantics without introducing validation behavior,
+rule execution, approval behavior, or dry-run implementation.
+
+## Audit Relationship Design
+
+The platform now also has a design-only workflow audit relationship document in:
+
+- `platform/schemas/workflows/audit-linkage-contract.md`
+- `platform/schemas/workflows/audit-relationships.md`
+
+Those documents define how future workflow, preview, validation, blocker,
+approval, and execution concepts should relate to audit events without
+overstating the current sync-derived audit-history surface.
+
+The audit-linkage contract defines the explicit platform-owned identity shape,
+chronology rules, ordering semantics, and evidence-reference interaction for
+future `audit_linkage` records.
+
+The audit-relationships document defines how those linkages should be applied
+across workflow entities and where current sync-derived history must remain a
+bounded partial analogue only.
+
+## Current History To Audit-Linkage Mapping
+
+The platform now also has a strict history-to-audit-linkage mapping document in:
+
+- `platform/schemas/workflows/history-audit-linkage-mapping.md`
+
+That document classifies current sync-derived and readiness-derived history
+sources by whether they are reusable later for workflow linkage, only partially
+reusable, conceptually helpful only, or not suitable, and it makes current
+identity, chronology, and retention limits explicit.
+
+## Read-Only Retrieval Sequencing Design
+
+The platform now also has a design-only read-only retrieval sequencing document
+in:
+
+- `platform/schemas/workflows/read-only-retrieval-sequencing.md`
+
+That document defines the conceptual retrieval order and dependency map for
+future workflow-owned records relative to `evidence_reference`,
+`audit_linkage`, bounded history, blockers, and capability or readiness context.
+
+It does not introduce workflow APIs, workflow persistence, execution behavior,
+or approval retrieval behavior.
+
+## Planning Slice Blockers
+
+The platform now also has a strict blocker-analysis document in:
+
+- `platform/schemas/workflows/planning-slice-blockers.md`
+
+That document classifies the exact blockers revealed by the current
+evidence-reference, audit-linkage, retrieval-sequencing, and ownership-boundary
+planning slice into blockers that must be fixed before concrete planning can
+continue, blockers that are important but not currently blocking, and later
+phase concerns.
+
+## Bounded Next-Step Plan
+
+The platform now also has a bounded next-step planning document in:
+
+- `platform/schemas/workflows/bounded-next-step-plan.md`
+
+That document converts the revealed blocker set into a disciplined next-step
+order, identifies which blockers can still be closed honestly inside `Phase 2`,
+which can only be narrowed, and which must remain later-phase concerns until a
+future reassessment explicitly justifies deeper workflow-owned planning.
+
+## Post-Planning Recommendation
+
+The platform now also has a strict post-planning recommendation document in:
+
+- `platform/docs/workflow-next-step-recommendation.md`
+
+That document evaluates evidence-reference maturity, audit-linkage maturity,
+retrieval-sequencing maturity, ownership-boundary clarity, and blocker severity
+to recommend whether the project should continue blocker-driven `Phase 2`
+hardening first or proceed to the next bounded planning slice, while also
+stating explicitly what must not happen next.
+
+## Phase 2 Reuse Mapping
+
+The platform now also has an evidence-based reuse mapping document in:
+
+- `platform/docs/phase2-workflow-foundations.md`
+
+That document maps current Phase 2 artifacts to future workflow-phase foundations,
+classifies what is directly reusable versus only partially reusable or merely
+conceptually helpful, and lists the remaining workflow-grade gaps without
+implying any phase transition.
+
+## Workflow Planning Gate
+
+The platform now also has a strict planning-gate document in:
+
+- `platform/docs/workflow-planning-gate.md`
+
+That document gives a strict `go` or `no-go` style recommendation for future
+workflow-phase planning, separates planning readiness from implementation
+readiness, and preserves the current Phase 2 boundary.
+
 ## Current Vs Future
 
 ### Current
@@ -98,6 +278,7 @@ Workflow ownership does not belong to:
 - bounded workflow-history and audit-history product views now exist, but they are derived from persisted sync activity rather than an execution workflow engine
 - the project now supports stricter future dry-run planning assessment, but only as descriptive readiness support rather than actual workflow functionality
 - no actual dry-run or action workflow implementation exists
+- no workflow-grade audit linkage implementation exists
 
 ## Stricter Planning Readiness
 
@@ -113,7 +294,7 @@ Why planning readiness is now supportable:
 Why implementation readiness is still blocked:
 
 - no durable workflow lifecycle records exist yet for requested, planned, dry-run-complete, approved, executing, succeeded, failed, or rollback stages
-- no dry-run API, preview, diff, or validation-result contracts exist yet
+- no dry-run API, preview, diff, or validation-result implementation exists yet
 - topology and policy truth remain intentionally partial and should not yet be used as workflow-grade pre-change intelligence
 - workflow-history and audit-history remain sync-derived visibility rather than workflow-grade audit relationships
 - blocker maturity itself remains explicitly blocked, because contract, truth, and history blockers still overlap with the `phase_transition` scope

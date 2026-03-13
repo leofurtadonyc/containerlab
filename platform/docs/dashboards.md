@@ -14,6 +14,7 @@ The platform currently has:
 - a real platform overview dashboard backed by Prometheus scrape health plus current `app-api` and `gnmi-collector` metrics
 - real topology and SR policy overview dashboards backed by current Prometheus metrics for those bounded live slices
 - the platform, topology, and SR policy dashboards now surface bounded persisted sync evidence plus clearer aggregate freshness, agreement, and evidence-gap cues where those backend and collector metrics honestly exist
+- a bounded post-deploy core-runtime regression check that now validates Grafana API health, the provisioned Prometheus datasource, and the provisioned overview dashboards alongside Postgres and Prometheus readiness
 - clearly marked placeholder dashboard files for the dashboard families that do not yet have real backing metrics
 
 What does not exist yet:
@@ -64,6 +65,40 @@ This approach is required because it keeps observability delivery:
 - aligned with the platform topology and repository structure
 
 Manual dashboard creation in the Grafana UI must not be the primary delivery model.
+
+## Dashboard Change Workflow
+
+Grafana dashboard delivery is now expected to follow one small repo-owned regression workflow.
+
+When a change touches:
+
+- `platform/grafana/provisioning/datasources/`
+- `platform/grafana/provisioning/dashboards/`
+- `platform/grafana/dashboards/`
+
+the expected follow-on steps are:
+
+1. redeploy or reconfigure the platform topology so the mounted provisioning files are re-read
+2. run `./scripts/verify-core-runtime.sh` from `platform/`
+3. treat any failure in Grafana API health, Prometheus datasource provisioning, or provisioned overview dashboard discovery as a regression that must be fixed before considering the observability change complete
+
+This is intentionally narrow.
+
+It does not claim full semantic validation of every panel query or every dashboard family.
+It does ensure that the current repo-owned Grafana provisioning contract still loads cleanly after observability changes.
+
+More specifically, `./scripts/verify-core-runtime.sh` currently validates only that:
+
+- Grafana's health API responds
+- the provisioned Prometheus datasource is present
+- provisioned overview dashboards can be discovered through the Grafana API
+
+It does not yet validate:
+
+- every panel query result across the platform, topology, and SR policy dashboards
+- placeholder dashboard families such as change-validation and vendor views
+- visual correctness, folder presentation details, or operator interpretation quality
+- deeper Prometheus query semantics beyond the current readiness and target-discovery checks
 
 ## Dashboard Families
 

@@ -65,6 +65,26 @@ class NormalizedPolicyRecord(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class NormalizedPolicyTargetFootprint(BaseModel):
+    """Vendor-neutral per-target policy footprint prepared for backend consumption."""
+
+    target_name: str
+    target_role: str | None = None
+    collection_status: Literal["success", "failure", "partial"]
+    policy_capable: bool
+    observed_policy_count: int
+    active_policy_count: int
+    static_policy_count: int
+    static_local_policy_count: int
+    static_non_local_policy_count: int
+    bgp_policy_count: int
+    ttm_preference_count: int
+    binding_sid_count: int
+    srv6_binding_sid_count: int
+    detail_record_count: int
+    notes: list[str] = Field(default_factory=list)
+
+
 class BackendPolicyDeliveryEnvelope(BaseModel):
     """Normalized policy payload prepared for backend delivery."""
 
@@ -96,6 +116,7 @@ class BackendPolicyDeliveryEnvelope(BaseModel):
     ttm_preference_count: int
     binding_sid_count: int
     srv6_binding_sid_count: int
+    target_footprints: list[NormalizedPolicyTargetFootprint] = Field(default_factory=list)
     records: list[NormalizedPolicyRecord] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 

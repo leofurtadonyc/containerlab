@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from gnmi_collector.models.policy import (
     NormalizedPolicyCandidatePathRecord,
     NormalizedPolicyRecord,
+    NormalizedPolicyTargetFootprint,
     PolicyRawRecord,
 )
 
@@ -169,6 +170,38 @@ def _map_health_state(observed_state: str) -> str:
     }.get(observed_state, "unknown")
 
 
+def _policy_counts_from_raw_record(record: PolicyRawRecord) -> dict[str, int]:
+    static_local_policies = record.sr_policy_counts.get("static-local-policies", 0)
+    static_non_local_policies = record.sr_policy_counts.get("static-non-local-policies", 0)
+    bgp_policies = record.sr_policy_counts.get("bgp-policies", 0)
+    return {
+        "policy_count": static_local_policies + static_non_local_policies + bgp_policies,
+        "active_policy_count": (
+            record.sr_policy_counts.get("active-static-local-policies", 0)
+            + record.sr_policy_counts.get("active-bgp-policies", 0)
+        ),
+        "static_policy_count": static_local_policies + static_non_local_policies,
+        "static_local_policy_count": static_local_policies,
+        "static_non_local_policy_count": static_non_local_policies,
+        "bgp_policy_count": bgp_policies,
+        "ttm_preference_count": record.sr_policy_counts.get("ttm-preferences", 0),
+        "binding_sid_count": record.sr_policy_counts.get("binding-sids-allocated", 0),
+        "srv6_binding_sid_count": record.sr_policy_counts.get(
+            "srv6-binding-sids-allocated", 0
+        ),
+    }
+
+
+def _target_has_policy_capability(counts: dict[str, int], raw_policy_count: int) -> bool:
+    return (
+        counts["ttm_preference_count"] > 0
+        or counts["binding_sid_count"] > 0
+        or counts["srv6_binding_sid_count"] > 0
+        or counts["policy_count"] > 0
+        or raw_policy_count > 0
+    )
+
+
 def derive_policy_observed_at(raw_records: list[PolicyRawRecord]) -> datetime | None:
     """Return the newest observed timestamp across collected policy records."""
     observed_values = [record.observed_at for record in raw_records if record.observed_at is not None]
@@ -253,30 +286,73 @@ def summarize_policy_counts(raw_records: list[PolicyRawRecord]) -> dict[str, int
         counts["observed_target_count"] += 1
         role_name = record.role or "unknown"
         observed_role_counts[role_name] += 1
-        ttm_preferences = record.sr_policy_counts.get("ttm-preferences", 0)
-        if ttm_preferences > 0:
+        target_counts = _policy_counts_from_raw_record(record)
+        if _target_has_policy_capability(target_counts, len(record.raw_policies)):
             counts["policy_capable_target_count"] += 1
             policy_capable_role_counts[role_name] += 1
-        counts["ttm_preference_count"] += ttm_preferences
-        counts["binding_sid_count"] += record.sr_policy_counts.get("binding-sids-allocated", 0)
-        counts["srv6_binding_sid_count"] += record.sr_policy_counts.get(
-            "srv6-binding-sids-allocated", 0
-        )
-        static_local_policies = record.sr_policy_counts.get("static-local-policies", 0)
-        static_non_local_policies = record.sr_policy_counts.get("static-non-local-policies", 0)
-        counts["policy_count"] += (
-            static_local_policies
-            + static_non_local_policies
-            + record.sr_policy_counts.get("bgp-policies", 0)
-        )
-        counts["active_policy_count"] += (
-            record.sr_policy_counts.get("active-static-local-policies", 0)
-            + record.sr_policy_counts.get("active-bgp-policies", 0)
-        )
-        counts["static_policy_count"] += static_local_policies + static_non_local_policies
-        counts["static_local_policy_count"] += static_local_policies
-        counts["static_non_local_policy_count"] += static_non_local_policies
-        counts["bgp_policy_count"] += record.sr_policy_counts.get("bgp-policies", 0)
+        counts["policy_count"] += target_counts["policy_count"]
+        counts["active_policy_count"] += target_counts["active_policy_count"]
+        counts["static_policy_count"] += target_counts["static_policy_count"]
+        counts["static_local_policy_count"] += target_counts["static_local_policy_count"]
+        counts["static_non_local_policy_count"] += target_counts["static_non_local_policy_count"]
+        counts["bgp_policy_count"] += target_counts["bgp_policy_count"]
+        counts["ttm_preference_count"] += target_counts["ttm_preference_count"]
+        counts["binding_sid_count"] += target_counts["binding_sid_count"]
+        counts["srv6_binding_sid_count"] += target_counts["srv6_binding_sid_count"]
     counts["observed_target_role_counts"] = dict(sorted(observed_role_counts.items()))
     counts["policy_capable_target_role_counts"] = dict(sorted(policy_capable_role_counts.items()))
     return counts
+
+
+def summarize_policy_target_footprints(
+    raw_records: list[PolicyRawRecord],
+    normalized_records: list[NormalizedPolicyRecord],
+) -> list[NormalizedPolicyTargetFootprint]:
+    """Build a bounded normalized policy footprint for each collected target."""
+    detail_counts = Counter(record.source_target for record in normalized_records)
+    items: list[NormalizedPolicyTargetFootprint] = []
+    for raw_record in sorted(raw_records, key=lambda item: item.target_name):
+        target_counts = _policy_counts_from_raw_record(raw_record)
+        detail_record_count = detail_counts.get(raw_record.target_name, 0)
+        policy_capable = _target_has_policy_capability(target_counts, len(raw_record.raw_policies))
+        notes: list[str] = []
+        if raw_record.collection_status == "failure":
+            notes.append(
+                "Live policy collection failed for this target, so per-target policy truth is currently unavailable."
+            )
+        elif target_counts["policy_count"] == 0 and policy_capable:
+            notes.append(
+                "Stable SR policy resource counters are visible on this target even though no SR policies are currently observed."
+            )
+        elif target_counts["policy_count"] > 0 and detail_record_count == 0:
+            notes.append(
+                "Counters indicate SR policies on this target, but the current bounded path could not derive per-policy detail records."
+            )
+        elif detail_record_count < target_counts["policy_count"]:
+            notes.append(
+                "Only a subset of the observed policies on this target currently has bounded normalized detail records."
+            )
+        if raw_record.collection_status == "partial":
+            notes.append(
+                "Policy collection for this target was partial, so degraded and unknown states remain explicit."
+            )
+        items.append(
+            NormalizedPolicyTargetFootprint(
+                target_name=raw_record.target_name,
+                target_role=raw_record.role,
+                collection_status=raw_record.collection_status,
+                policy_capable=policy_capable,
+                observed_policy_count=target_counts["policy_count"],
+                active_policy_count=target_counts["active_policy_count"],
+                static_policy_count=target_counts["static_policy_count"],
+                static_local_policy_count=target_counts["static_local_policy_count"],
+                static_non_local_policy_count=target_counts["static_non_local_policy_count"],
+                bgp_policy_count=target_counts["bgp_policy_count"],
+                ttm_preference_count=target_counts["ttm_preference_count"],
+                binding_sid_count=target_counts["binding_sid_count"],
+                srv6_binding_sid_count=target_counts["srv6_binding_sid_count"],
+                detail_record_count=detail_record_count,
+                notes=notes,
+            )
+        )
+    return items

@@ -51,6 +51,15 @@ images/
 **/build/
 npm-debug.log*
 
+# Platform runtime data mounts
+platform/grafana/data/*
+!platform/grafana/data/.gitignore
+platform/prometheus/data/*
+!platform/prometheus/data/.gitignore
+platform/postgres/data/*
+!platform/postgres/data/.gitignore
+!platform/postgres/data/.gitkeep
+
 # Not interesting
 agent/
 temp/
