@@ -58,6 +58,7 @@ Custom platform services now build as local container images before topology dep
 Run `./scripts/build-images.sh` from `platform/` before deploying `topology.clab.yml`.
 After deployment, run `./scripts/verify-core-runtime.sh` and `./scripts/verify-odl-auth.sh` from `platform/` to catch bounded runtime-contract regressions before relying on the WebUI platform-health view.
 The current bounded runtime-hardening slice now packages Postgres, Prometheus, and Grafana as local images with small startup validators, while still preserving their explicit bind-mounted runtime contracts in the topology.
+When a change touches Grafana provisioning or dashboard files, treat `./scripts/verify-core-runtime.sh` as the required post-deploy observability regression.
 
 ## Architecture Direction
 
