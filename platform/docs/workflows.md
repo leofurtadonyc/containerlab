@@ -147,6 +147,17 @@ That document defines how future workflow, preview, validation, blocker,
 approval, and execution concepts should relate to audit events without
 overstating the current sync-derived audit-history surface.
 
+## Phase 2 Reuse Mapping
+
+The platform now also has an evidence-based reuse mapping document in:
+
+- `platform/docs/phase2-workflow-foundations.md`
+
+That document maps current Phase 2 artifacts to future workflow-phase foundations,
+classifies what is directly reusable versus only partially reusable or merely
+conceptually helpful, and lists the remaining workflow-grade gaps without
+implying any phase transition.
+
 ## Current Vs Future
 
 ### Current

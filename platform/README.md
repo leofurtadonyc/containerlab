@@ -190,6 +190,7 @@ Supporting documents live under `platform/docs/`:
 - `docs/dashboards.md`
 - `docs/workflows.md`
 - `docs/workflow-lifecycle-vocabulary.md`
+- `docs/phase2-workflow-foundations.md`
 - `docs/vendors.md`
 - `docs/roadmap.md`
 
