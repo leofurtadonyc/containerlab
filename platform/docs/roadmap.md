@@ -30,26 +30,50 @@ The current evidence now supports **a stricter evidence-based assessment of even
 
 Current maturity by area:
 
-- model maturity: mixed, because inventory is strong enough to inform future planning but topology and policy still remain intentionally partial read-side truths
-- history maturity: blocked, because workflow-history and audit-history remain sync-derived and snapshot-bounded rather than durable workflow lifecycle records
-- comparison maturity: mixed, because bounded current-versus-persisted and persisted-versus-previous comparison support now exists for inventory, topology, policy, and sync history, but those comparisons are still explanatory rather than validation-grade
-- capability maturity: strong for planning, because support state, implementation status, delivery tier, evidence basis, vendor posture, and bounded workflow-readiness interpretation are now explicit enough to guide future planning safely
-- blocker maturity: blocked, because critical contract blockers plus truth and history blockers still overlap with the `phase_transition` scope and remain too severe for any dry-run-phase move beyond planning discussion
+- runtime maturity: strong for the current Phase 2 scope, because repo-built Postgres, Prometheus, and Grafana images now have bounded startup-contract validation and the live deployment passes both `verify-core-runtime` and `verify-odl-auth`, even though broader production-grade hardening still remains out of scope
+- truth maturity: mixed, because inventory is strong enough to inform future planning but topology remains intentionally inference-bounded and policy remains intentionally partial rather than workflow-grade pre-change truth
+- history maturity: mixed for read-side evidence but blocked for workflow implementation, because workflow-history and audit-history now include persisted snapshot context across inventory, topology, policy, and one bounded readiness-support snapshot event source, but still do not provide durable workflow lifecycle or operator-action history
+- policy maturity: mixed, because the platform now has aggregate counter evidence, bounded static-policy observations, per-target policy footprints, persisted comparison windows, and bounded `change_preview` support, but the live lab still presents a live-empty policy result and the policy slice is still not strong enough for validation-grade reasoning
+- capability maturity: strong for planning, because support state, implementation status, delivery tier, evidence basis, vendor posture, workflow-readiness interpretation, and blocker posture are now explicit enough to guide future planning safely
+- workflow-prerequisite clarity: strong for planning, because the repository now has an explicit ownership and sequencing plan for workflow-owned state across evidence boundaries, storage layers, API order, audit linkage, and persistence prerequisites
+- blocker maturity: blocked for implementation, because critical truth, history, and workflow-storage blockers still overlap with the `phase_transition` scope and remain too severe for any dry-run-phase move beyond tightly bounded planning discussion
 
 Strongest blockers before any future dry-run phase:
 
 - no durable workflow lifecycle model yet for requested, planned, dry-run, validation, approval, execution, success, failure, or rollback stages
-- no dry-run API contract, preview payload, diff schema, or validation-result model yet
+- no implemented workflow-owned storage, retrieval APIs, or audit-linkage records yet, even though design-only prerequisites are now clearer
 - topology and policy truth remain too partial for workflow-grade pre-change intelligence
-- history remains platform-sync-derived rather than workflow-grade and operator-action-aware
+- history remains platform-read-side-derived rather than workflow-grade and operator-action-aware
 - blocker posture still shows contract, truth, and history gaps that remain too immature for any dry-run-phase entry
 
 Bounded next steps for readiness only:
 
-- define the future workflow lifecycle and stage vocabulary in docs and schemas before any API implementation
-- specify dry-run-oriented preview, diff, and validation-result contracts only after read-side evidence boundaries are documented more strictly
+- use the new workflow-owned-state prerequisite plan to define one tiny documentation-first and schema-first planning slice around `evidence_reference`, `audit_linkage`, and read-only workflow retrieval sequencing
+- continue truth and history hardening only where those planning artifacts expose a concrete evidence gap that would otherwise force guesswork
 - deepen policy and topology truth only where live evidence and stable normalized models already justify it
-- preserve `Phase 2 — read-only product foundation` until workflow records, dry-run contracts, and validation outputs are all real
+- preserve `Phase 2 — read-only product foundation` until workflow records, workflow-owned APIs, and validation outputs are all real
+
+## Recommendation For The Next Planning Cycle
+
+Recommendation: `begin_tightly_bounded_workflow_planning_only`
+
+Interpret that recommendation narrowly:
+
+- keep the project fully in `Phase 2 — read-only product foundation`
+- use the next cycle for one documentation-first and schema-first workflow-planning slice only
+- do not start workflow implementation, dry-run implementation, or any phase transition work
+
+Why this is the right next-cycle focus:
+
+- runtime hardening is now strong enough for the current bounded scope and is no longer the primary bottleneck for planning clarity
+- capability maturity and workflow-prerequisite clarity are now strong enough to support one disciplined planning slice without guessing
+- truth, policy, and history maturity are still too uneven for workflow implementation, so any broader move would overread the current evidence
+
+The recommended next-cycle planning slice should stay limited to:
+
+- explicit `evidence_reference` identity and citation rules for persisted snapshots, bounded comparisons, and readiness snapshots
+- explicit `audit_linkage` identity and chronology rules for future workflow-owned records
+- read-only workflow retrieval sequencing only after future storage boundaries are clear on paper
 
 ## Phased Roadmap
 
@@ -117,9 +141,9 @@ Expected focus:
 
 Based on the current repo state, the next likely work should be:
 
-1. deepen workflow-history and audit-history beyond sync-derived platform activity only when additional honest backend history sources exist
-2. deepen the policy slice further only where stable Nokia evidence supports richer bounded read-only truth without crossing into write behavior
-3. broaden durable read-side, dashboard, and capability evidence carefully only where normalized models and operator questions are already stable, especially around richer comparison and readiness signals without implying dry-run implementation
+1. begin one tightly bounded workflow-planning slice only, focused on workflow-owned evidence-reference, audit-linkage, and retrieval-sequencing prerequisites in docs and schemas
+2. continue Phase 2 truth and history hardening only where that planning slice reveals a concrete evidence gap that cannot be resolved honestly on paper alone
+3. deepen the policy slice further only where stable Nokia evidence supports richer bounded read-only truth without crossing into write behavior
 
 ## Boundary Reminder
 

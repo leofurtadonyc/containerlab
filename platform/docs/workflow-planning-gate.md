@@ -51,13 +51,16 @@ Specifically, the repository still does not have:
 
 | Area | Recommendation posture | Evidence-based reasoning |
 | --- | --- | --- |
+| Runtime maturity | `strong_for_phase2_and_good_enough_for_planning_shift` | Repo-built stateful-service images, bounded startup validators, and passing `verify-core-runtime` plus `verify-odl-auth` checks make the current runtime slice stable enough that the next cycle does not need to stay runtime-hardening-first. Broader lifecycle hardening still remains out of scope. |
 | Read-only truth maturity | `mixed` | Inventory is strong enough to inform planning, but topology and policy remain intentionally partial and bounded. This is already stated in [platform/docs/roadmap.md](platform/docs/roadmap.md) and [platform/docs/workflows.md](platform/docs/workflows.md). |
-| History maturity | `blocked` | Workflow-history and audit-history remain sync-derived and snapshot-bounded rather than durable workflow lifecycle or operator-action history. This is stated in [platform/docs/roadmap.md](platform/docs/roadmap.md), [platform/docs/workflows.md](platform/docs/workflows.md), and [platform/schemas/workflows/audit-relationships.md](platform/schemas/workflows/audit-relationships.md). |
+| History maturity | `mixed_for_read_side_but_blocked_for_workflow` | Workflow-history and audit-history now include bounded inventory, topology, policy, and readiness-support snapshot context, but they still remain platform-read-side evidence rather than durable workflow lifecycle or operator-action history. This is stated in [platform/docs/roadmap.md](platform/docs/roadmap.md), [platform/docs/workflows.md](platform/docs/workflows.md), and [platform/schemas/workflows/audit-relationships.md](platform/schemas/workflows/audit-relationships.md). |
 | Comparison maturity | `mixed` | Current-versus-latest-persisted and persisted-versus-previous comparison support is useful and reusable as explanatory evidence, but it is not validation-grade or diff-grade truth. This is documented in [platform/docs/phase2-workflow-foundations.md](platform/docs/phase2-workflow-foundations.md). |
+| Policy maturity | `mixed` | The policy slice now includes aggregate counters, bounded static-policy observations, per-target policy footprints, persisted comparison windows, and bounded `change_preview` support, but the live lab remains live-empty and the result is still not workflow-grade pre-change intelligence. This is documented in [platform/docs/roadmap.md](platform/docs/roadmap.md) and [platform/docs/phase2-workflow-foundations.md](platform/docs/phase2-workflow-foundations.md). |
 | Capability maturity | `strong_for_planning` | The capability matrix already expresses support status, delivery tier, evidence basis, vendor posture, and workflow-readiness interpretation explicitly enough to guide planning safely. This is documented in [platform/docs/roadmap.md](platform/docs/roadmap.md) and modeled in [platform/app-api/src/app_api/schemas/capabilities.py](platform/app-api/src/app_api/schemas/capabilities.py#L1). |
 | Readiness and blocker maturity | `blocked_for_implementation_but_useful_for_planning` | Readiness metadata and blocker records are explicit enough to support planning discussion, but blocker maturity remains too severe for any implementation move because contract, truth, and history gaps still overlap with phase-transition scope. This is documented in [platform/docs/roadmap.md](platform/docs/roadmap.md), [platform/docs/workflows.md](platform/docs/workflows.md), and [platform/schemas/workflows/validation-blocker-semantics.md](platform/schemas/workflows/validation-blocker-semantics.md). |
 | Workflow domain clarity | `strong_for_planning` | Lifecycle vocabulary, preview/diff contracts, validation/blocker contracts, and the workflow entity model now provide a coherent planning baseline without implying implementation. See [platform/docs/workflows.md](platform/docs/workflows.md), [platform/docs/workflow-lifecycle-vocabulary.md](platform/docs/workflow-lifecycle-vocabulary.md), and [platform/schemas/workflows/workflow-entity-model.md](platform/schemas/workflows/workflow-entity-model.md). |
 | Audit relationship clarity | `strong_for_planning` | Audit linkage expectations are now explicit and keep sync-derived history separate from future workflow audit history. See [platform/schemas/workflows/audit-relationships.md](platform/schemas/workflows/audit-relationships.md). |
+| Workflow-prerequisite clarity | `strong_for_planning` | The repository now has an explicit prerequisite plan for workflow-owned state across ownership boundaries, storage layers, API sequencing, audit linkage, and workflow-state persistence. See [platform/schemas/workflows/workflow-owned-state-prerequisites.md](platform/schemas/workflows/workflow-owned-state-prerequisites.md). |
 
 ## Supporting Reasoning
 
@@ -69,12 +72,39 @@ Current evidence supports planning because:
 - the workflow domain has explicit design vocabulary instead of implicit guesses
 - blockers, unsupported areas, insufficient-evidence semantics, and audit relationships are now documented clearly enough to constrain future work
 - the reuse map distinguishes directly reusable artifacts from partial analogues and non-reusable surfaces
+- the workflow-owned-state prerequisite plan now makes storage, API sequencing, and ownership boundaries explicit enough to support one small planning cycle without inventing implementation details
 
 Current evidence blocks implementation because:
 
 - the active phase is still `Phase 2 — read-only product foundation` as stated in [agent/sdn/01-CURRENT-PHASE.md](agent/sdn/01-CURRENT-PHASE.md)
 - the current status file still says to remain in Phase 2 and explicitly says no workflow engine, dry-run APIs, preview or diff outputs, validation-result implementation, or workflow-grade audit relationships exist yet in [agent/sdn/03-CURRENT-STATUS.md](agent/sdn/03-CURRENT-STATUS.md)
 - the build-order rules place dry-run and workflow scaffolding after the read-only foundation in [agent/sdn/16-implementation-order.md](agent/sdn/16-implementation-order.md) and [agent/sdn/35-build-order-enforcement-rules.md](agent/sdn/35-build-order-enforcement-rules.md)
+
+## Next Planning Cycle Recommendation
+
+Recommendation: `begin_tightly_bounded_workflow_planning_only`
+
+This does not change the overall gate outcome.
+
+It means the next cycle should:
+
+- stay documentation-first and schema-first
+- focus on one small planning slice that sharpens workflow-owned evidence-reference, audit-linkage, and retrieval-sequencing prerequisites
+- avoid treating remaining runtime, policy, or history gaps as permission for workflow implementation
+
+Why this is preferred over Phase 2 hardening as the primary next-cycle focus:
+
+- the current runtime slice is stable enough for the bounded scope already implemented
+- capability and workflow-prerequisite clarity are now stronger than the remaining planning ambiguity
+- the remaining truth and history gaps still block implementation, but they do not block one narrow planning slice aimed at making those blockers more precise
+
+Guardrails for that next cycle:
+
+- no workflow storage implementation
+- no workflow endpoints
+- no dry-run, approval, rollback, or execution behavior
+- no phase relabeling
+- no overreading sync-derived or readiness-derived history into workflow state
 
 ## Strict Prerequisites For Conditional Planning Go
 
