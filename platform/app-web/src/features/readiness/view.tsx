@@ -114,6 +114,16 @@ export function ReadinessView() {
           <strong>{readiness.support_posture_counts.partially_supported ?? 0}</strong>
           <p>Prerequisites backed by useful but still bounded platform slices.</p>
         </article>
+        <article className="summary-card">
+          <p className="summary-label">Critical Blockers</p>
+          <strong>{readiness.blocker_severity_counts.critical ?? 0}</strong>
+          <p>Hard-stop blockers that still prevent any stronger move beyond planning assessment.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Phase-Transition Scope Hits</p>
+          <strong>{readiness.blocked_scope_counts.phase_transition ?? 0}</strong>
+          <p>Explicit blocker hits that still show why the platform must remain fully in Phase 2.</p>
+        </article>
       </div>
 
       <div className="callout">
@@ -185,6 +195,56 @@ export function ReadinessView() {
           ) : (
             <p>No assessment-area detail is available from the current backend response.</p>
           )}
+        </article>
+        <article className="detail-card">
+          <p className="summary-label">Blocker Posture</p>
+          <ul className="compact-list">
+            <li>
+              <span>Contract blockers</span>
+              <strong>{readiness.blocker_category_counts.contract ?? 0}</strong>
+            </li>
+            <li>
+              <span>Truth blockers</span>
+              <strong>{readiness.blocker_category_counts.truth ?? 0}</strong>
+            </li>
+            <li>
+              <span>History blockers</span>
+              <strong>{readiness.blocker_category_counts.history ?? 0}</strong>
+            </li>
+            <li>
+              <span>Critical severity</span>
+              <strong>{readiness.blocker_severity_counts.critical ?? 0}</strong>
+            </li>
+            <li>
+              <span>Major severity</span>
+              <strong>{readiness.blocker_severity_counts.major ?? 0}</strong>
+            </li>
+          </ul>
+        </article>
+        <article className="detail-card">
+          <p className="summary-label">Blocked Scope Coverage</p>
+          <ul className="compact-list">
+            <li>
+              <span>Planning depth</span>
+              <strong>{readiness.blocked_scope_counts.planning_depth ?? 0}</strong>
+            </li>
+            <li>
+              <span>Preview contracts</span>
+              <strong>{readiness.blocked_scope_counts.preview_contracts ?? 0}</strong>
+            </li>
+            <li>
+              <span>Validation contracts</span>
+              <strong>{readiness.blocked_scope_counts.validation_contracts ?? 0}</strong>
+            </li>
+            <li>
+              <span>Workflow audit relationships</span>
+              <strong>{readiness.blocked_scope_counts.workflow_audit_relationships ?? 0}</strong>
+            </li>
+            <li>
+              <span>Phase transition</span>
+              <strong>{readiness.blocked_scope_counts.phase_transition ?? 0}</strong>
+            </li>
+          </ul>
         </article>
       </div>
 

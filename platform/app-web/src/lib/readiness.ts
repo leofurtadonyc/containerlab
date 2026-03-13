@@ -25,6 +25,9 @@ export const FALLBACK_DRY_RUN_READINESS: DryRunReadinessSummary = {
   ],
   evidence_coverage_counts: {},
   support_posture_counts: {},
+  blocker_category_counts: {},
+  blocker_severity_counts: {},
+  blocked_scope_counts: {},
   assessment_areas: [],
   blockers: [],
   prerequisites: [],
@@ -149,6 +152,12 @@ export function normalizeDryRunReadiness(
       value?.evidence_coverage_counts ?? FALLBACK_DRY_RUN_READINESS.evidence_coverage_counts,
     support_posture_counts:
       value?.support_posture_counts ?? FALLBACK_DRY_RUN_READINESS.support_posture_counts,
+    blocker_category_counts:
+      value?.blocker_category_counts ?? FALLBACK_DRY_RUN_READINESS.blocker_category_counts,
+    blocker_severity_counts:
+      value?.blocker_severity_counts ?? FALLBACK_DRY_RUN_READINESS.blocker_severity_counts,
+    blocked_scope_counts:
+      value?.blocked_scope_counts ?? FALLBACK_DRY_RUN_READINESS.blocked_scope_counts,
     assessment_areas:
       value?.assessment_areas?.map((item) => normalizeReadinessAssessmentArea(item)) ??
       FALLBACK_DRY_RUN_READINESS.assessment_areas,

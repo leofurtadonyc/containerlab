@@ -101,13 +101,14 @@ Workflow ownership does not belong to:
 
 ## Stricter Planning Readiness
 
-The platform is now strong enough to support **stricter future dry-run planning assessment**, but not strong enough to justify any dry-run implementation work yet.
+The platform is now strong enough to support **a stricter evidence-based assessment of eventual dry-run-phase planning**, but not strong enough to justify any dry-run implementation work or any dry-run-phase move yet.
 
 Why planning readiness is now supportable:
 
 - inventory, topology, policy, capability, and sync-derived history now expose clearer bounded evidence and comparison semantics
-- capability metadata now makes support status, delivery tier, evidence basis, and vendor posture explicit enough to guide future planning without implying parity
+- capability metadata now makes support status, delivery tier, evidence basis, vendor posture, and bounded workflow-readiness interpretation explicit enough to guide future planning without implying parity
 - the WebUI and docs can now present readiness boundaries and blockers honestly rather than only as roadmap prose
+- blocker records and blocked-scope overlap are now explicit enough to assess where planning support exists and where hard-stop maturity gaps still remain
 
 Why implementation readiness is still blocked:
 
@@ -115,6 +116,7 @@ Why implementation readiness is still blocked:
 - no dry-run API, preview, diff, or validation-result contracts exist yet
 - topology and policy truth remain intentionally partial and should not yet be used as workflow-grade pre-change intelligence
 - workflow-history and audit-history remain sync-derived visibility rather than workflow-grade audit relationships
+- blocker maturity itself remains explicitly blocked, because contract, truth, and history blockers still overlap with the `phase_transition` scope
 
 Current conclusion:
 

@@ -132,6 +132,7 @@ class DryRunReadinessAssessmentArea(BaseModel):
         "history_maturity",
         "comparison_maturity",
         "capability_maturity",
+        "blocker_maturity",
     ]
     status: Literal["strong_for_planning", "mixed", "blocked"]
     summary: str
@@ -151,6 +152,9 @@ class DryRunReadinessSummary(BaseModel):
     bounded_next_steps: list[str]
     evidence_coverage_counts: dict[str, int] = Field(default_factory=dict)
     support_posture_counts: dict[str, int] = Field(default_factory=dict)
+    blocker_category_counts: dict[str, int] = Field(default_factory=dict)
+    blocker_severity_counts: dict[str, int] = Field(default_factory=dict)
+    blocked_scope_counts: dict[str, int] = Field(default_factory=dict)
     assessment_areas: list[DryRunReadinessAssessmentArea]
     blockers: list[DryRunReadinessBlocker]
     prerequisites: list[DryRunReadinessPrerequisite]

@@ -271,26 +271,41 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
                 "Future-ready Juniper structure exists, but no Juniper adapter behavior is implemented.",
             ],
         ),
+        DryRunReadinessAssessmentArea(
+            area="blocker_maturity",
+            status="blocked",
+            summary=(
+                "Blockers are now explicit enough to assess strictly, but the blocker set still "
+                "shows contract, truth, and history gaps that remain too severe for any future "
+                "dry-run-phase move beyond planning discussion."
+            ),
+            strongest_gaps=[
+                "Critical contract blockers still cover workflow lifecycle, preview or diff contracts, and validation-result schemas.",
+                "Truth and history blockers still overlap with phase-transition scope, so the blocker picture remains a hard stop for dry-run-phase readiness beyond planning.",
+            ],
+        ),
     ]
     return DryRunReadinessSummary(
         status="bounded_readiness_support",
         planning_readiness="readiness_planning_supported",
         phase_recommendation="remain_phase_2_read_only_foundation",
         summary=(
-            "The Phase 2 foundation is now strong enough to support stricter future dry-run "
-            "planning assessment, but not strong enough to justify dry-run implementation or "
-            "a phase transition."
+            "The Phase 2 foundation is now strong enough to support a stricter evidence-based "
+            "assessment of eventual dry-run-phase planning, but not strong enough to justify "
+            "dry-run implementation, dry-run-phase entry, or any phase transition."
         ),
         readiness_scope=(
             "This readiness summary is descriptive only. It exists to show which bounded "
-            "read-side foundations are mature enough to inform later dry-run planning and "
-            "which blockers still prevent any workflow-phase move."
+            "read-side foundations are mature enough to inform later dry-run-phase planning "
+            "discussion, which blocker families remain too immature, and why the current "
+            "platform must still remain fully inside Phase 2."
         ),
         notes=[
             "Readiness support is not dry-run functionality.",
             "The current platform still lacks requested or planned workflow records, dry-run outputs, approvals, rollback handling, and execution semantics.",
             "Any future dry-run work must build on these bounded prerequisites without overstating policy or topology truth.",
             "Planning readiness does not mean implementation readiness.",
+            "This stricter assessment is evidence-based, but it still evaluates planning support only rather than readiness to begin dry-run implementation work.",
         ],
         strongest_blockers=[
             "No durable workflow lifecycle model exists yet for requested, planned, dry-run, validation, approval, execution, or rollback stages.",
@@ -309,6 +324,11 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
         ),
         support_posture_counts=_count_values(
             prerequisite.support_posture for prerequisite in prerequisites
+        ),
+        blocker_category_counts=_count_values(blocker.category for blocker in blockers),
+        blocker_severity_counts=_count_values(blocker.severity for blocker in blockers),
+        blocked_scope_counts=_count_values(
+            scope for blocker in blockers for scope in blocker.blocked_readiness_scopes
         ),
         assessment_areas=assessment_areas,
         blockers=blockers,

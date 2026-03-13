@@ -25,14 +25,15 @@ Most of the week's work has established:
 
 ## Stricter Phase 2 Readiness Assessment
 
-The current evidence now supports **future dry-run planning assessment only**, not dry-run implementation and not a phase transition.
+The current evidence now supports **a stricter evidence-based assessment of eventual dry-run-phase planning only**, not dry-run implementation and not a phase transition.
 
 Current maturity by area:
 
 - model maturity: mixed, because inventory is strong enough to inform future planning but topology and policy still remain intentionally partial read-side truths
 - history maturity: blocked, because workflow-history and audit-history remain sync-derived and snapshot-bounded rather than durable workflow lifecycle records
 - comparison maturity: mixed, because bounded current-versus-persisted and persisted-versus-previous comparison support now exists for inventory, topology, policy, and sync history, but those comparisons are still explanatory rather than validation-grade
-- capability maturity: strong for planning, because support state, implementation status, delivery tier, evidence basis, and vendor posture are now explicit enough to guide future planning safely
+- capability maturity: strong for planning, because support state, implementation status, delivery tier, evidence basis, vendor posture, and bounded workflow-readiness interpretation are now explicit enough to guide future planning safely
+- blocker maturity: blocked, because critical contract blockers plus truth and history blockers still overlap with the `phase_transition` scope and remain too severe for any dry-run-phase move beyond planning discussion
 
 Strongest blockers before any future dry-run phase:
 
@@ -40,6 +41,7 @@ Strongest blockers before any future dry-run phase:
 - no dry-run API contract, preview payload, diff schema, or validation-result model yet
 - topology and policy truth remain too partial for workflow-grade pre-change intelligence
 - history remains platform-sync-derived rather than workflow-grade and operator-action-aware
+- blocker posture still shows contract, truth, and history gaps that remain too immature for any dry-run-phase entry
 
 Bounded next steps for readiness only:
 

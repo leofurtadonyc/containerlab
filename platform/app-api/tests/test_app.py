@@ -1314,12 +1314,14 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
         assert payload["dry_run_readiness"]["status"] == "bounded_readiness_support"
         assert payload["dry_run_readiness"]["planning_readiness"] == "readiness_planning_supported"
         assert payload["dry_run_readiness"]["phase_recommendation"] == "remain_phase_2_read_only_foundation"
-        assert "not strong enough to justify dry-run implementation" in payload["dry_run_readiness"]["summary"]
+        assert "eventual dry-run-phase planning" in payload["dry_run_readiness"]["summary"]
         assert len(payload["dry_run_readiness"]["prerequisites"]) == 5
-        assert len(payload["dry_run_readiness"]["assessment_areas"]) == 4
+        assert len(payload["dry_run_readiness"]["assessment_areas"]) == 5
         assert payload["dry_run_readiness"]["assessment_areas"][0]["area"] == "model_maturity"
         assert payload["dry_run_readiness"]["assessment_areas"][0]["status"] == "mixed"
         assert payload["dry_run_readiness"]["assessment_areas"][1]["status"] == "blocked"
+        assert payload["dry_run_readiness"]["assessment_areas"][4]["area"] == "blocker_maturity"
+        assert payload["dry_run_readiness"]["assessment_areas"][4]["status"] == "blocked"
         assert payload["dry_run_readiness"]["prerequisites"][0]["prerequisite"] == "inventory_read_model"
         assert payload["dry_run_readiness"]["prerequisites"][0]["status"] == "ready"
         assert payload["dry_run_readiness"]["prerequisites"][0]["support_posture"] == "supported"
@@ -1334,6 +1336,12 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
         assert payload["dry_run_readiness"]["evidence_coverage_counts"]["bounded"] == 2
         assert payload["dry_run_readiness"]["support_posture_counts"]["supported"] == 2
         assert payload["dry_run_readiness"]["support_posture_counts"]["partially_supported"] == 3
+        assert payload["dry_run_readiness"]["blocker_category_counts"]["contract"] == 3
+        assert payload["dry_run_readiness"]["blocker_category_counts"]["truth"] == 2
+        assert payload["dry_run_readiness"]["blocker_category_counts"]["history"] == 1
+        assert payload["dry_run_readiness"]["blocker_severity_counts"]["critical"] == 3
+        assert payload["dry_run_readiness"]["blocker_severity_counts"]["major"] == 3
+        assert payload["dry_run_readiness"]["blocked_scope_counts"]["phase_transition"] == 6
         assert "Readiness support is not dry-run functionality." in payload["dry_run_readiness"]["notes"]
         assert "No durable workflow lifecycle model exists yet" in payload["dry_run_readiness"]["strongest_blockers"][0]
         assert payload["dry_run_readiness"]["bounded_next_steps"][0].startswith("Define the future workflow lifecycle model")

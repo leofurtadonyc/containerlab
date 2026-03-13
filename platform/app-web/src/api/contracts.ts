@@ -527,7 +527,8 @@ export interface DryRunReadinessAssessmentArea {
     | "model_maturity"
     | "history_maturity"
     | "comparison_maturity"
-    | "capability_maturity";
+    | "capability_maturity"
+    | "blocker_maturity";
   status: "strong_for_planning" | "mixed" | "blocked";
   summary: string;
   strongest_gaps: string[];
@@ -544,6 +545,9 @@ export interface DryRunReadinessSummary {
   bounded_next_steps: string[];
   evidence_coverage_counts: Record<string, number>;
   support_posture_counts: Record<string, number>;
+  blocker_category_counts: Record<string, number>;
+  blocker_severity_counts: Record<string, number>;
+  blocked_scope_counts: Record<string, number>;
   assessment_areas: DryRunReadinessAssessmentArea[];
   blockers: DryRunReadinessBlocker[];
   prerequisites: DryRunReadinessPrerequisite[];
