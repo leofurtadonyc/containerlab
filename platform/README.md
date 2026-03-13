@@ -204,3 +204,4 @@ That directory now includes lifecycle-adjacent design docs for:
 - validation-result contracts
 - blocker contracts
 - validation/blocker semantics
+- workflow audit relationship design

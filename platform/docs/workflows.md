@@ -137,6 +137,16 @@ These files define future validation-result, blocker, unsupported-condition,
 and insufficient-evidence semantics without introducing validation behavior,
 rule execution, approval behavior, or dry-run implementation.
 
+## Audit Relationship Design
+
+The platform now also has a design-only workflow audit relationship document in:
+
+- `platform/schemas/workflows/audit-relationships.md`
+
+That document defines how future workflow, preview, validation, blocker,
+approval, and execution concepts should relate to audit events without
+overstating the current sync-derived audit-history surface.
+
 ## Current Vs Future
 
 ### Current
@@ -146,6 +156,7 @@ rule execution, approval behavior, or dry-run implementation.
 - bounded workflow-history and audit-history product views now exist, but they are derived from persisted sync activity rather than an execution workflow engine
 - the project now supports stricter future dry-run planning assessment, but only as descriptive readiness support rather than actual workflow functionality
 - no actual dry-run or action workflow implementation exists
+- no workflow-grade audit linkage implementation exists
 
 ## Stricter Planning Readiness
 

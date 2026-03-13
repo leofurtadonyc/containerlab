@@ -330,6 +330,7 @@ Current Phase 2 analogue:
 
 - none
 - current audit records in [platform/app-api/src/app_api/models/audit.py](platform/app-api/src/app_api/models/audit.py#L90) are sync-derived event views, not workflow-linked audit relationships
+- the design-only relationship model is documented in [platform/schemas/workflows/audit-relationships.md](platform/schemas/workflows/audit-relationships.md)
 
 ### 13. `evidence_reference`
 
