@@ -125,6 +125,18 @@ Phase 2 history and readiness structures map only partially onto those future co
 
 It does not introduce storage design, workflow APIs, or implementation behavior.
 
+## Validation And Blocker Contract Design
+
+The platform now also has design-only validation and blocker contract documents under:
+
+- `platform/schemas/workflows/validation-result-contract.md`
+- `platform/schemas/workflows/blocker-contract.md`
+- `platform/schemas/workflows/validation-blocker-semantics.md`
+
+These files define future validation-result, blocker, unsupported-condition,
+and insufficient-evidence semantics without introducing validation behavior,
+rule execution, approval behavior, or dry-run implementation.
+
 ## Current Vs Future
 
 ### Current
@@ -149,7 +161,7 @@ Why planning readiness is now supportable:
 Why implementation readiness is still blocked:
 
 - no durable workflow lifecycle records exist yet for requested, planned, dry-run-complete, approved, executing, succeeded, failed, or rollback stages
-- no dry-run API, preview, diff, or validation-result contracts exist yet
+- no dry-run API, preview, diff, or validation-result implementation exists yet
 - topology and policy truth remain intentionally partial and should not yet be used as workflow-grade pre-change intelligence
 - workflow-history and audit-history remain sync-derived visibility rather than workflow-grade audit relationships
 - blocker maturity itself remains explicitly blocked, because contract, truth, and history blockers still overlap with the `phase_transition` scope

@@ -135,6 +135,7 @@ This entity is partly future-facing.
 Current Phase 2 analogue:
 
 - `DryRunReadinessBlocker` in [platform/app-api/src/app_api/schemas/capabilities.py](platform/app-api/src/app_api/schemas/capabilities.py#L89)
+- the design-only contract is documented in [platform/schemas/workflows/blocker-contract.md](platform/schemas/workflows/blocker-contract.md)
 
 Important boundary:
 
@@ -238,6 +239,7 @@ Current Phase 2 analogue:
 
 - none
 - current comparison summaries and readiness metadata are explanatory support only and must not be treated as validation results
+- the design-only contract is documented in [platform/schemas/workflows/validation-result-contract.md](platform/schemas/workflows/validation-result-contract.md)
 
 ### 9. `approval_record`
 

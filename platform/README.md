@@ -201,3 +201,6 @@ That directory now includes lifecycle-adjacent design docs for:
 - preview contracts
 - diff contracts
 - preview/diff semantics
+- validation-result contracts
+- blocker contracts
+- validation/blocker semantics
