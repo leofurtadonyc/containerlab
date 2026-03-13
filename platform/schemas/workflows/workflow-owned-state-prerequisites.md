@@ -24,6 +24,12 @@ So this document must be interpreted as implementation-prerequisite planning for
 later workflow-owned state, not as permission to start building workflow
 surfaces now.
 
+For the sharper ownership split between current evidence, persisted snapshots,
+readiness metadata, workflow-owned state, and future workflow audit records,
+see:
+
+- `platform/schemas/workflows/ownership-boundaries.md`
+
 ## Core Rule
 
 Future workflow-owned state must be added only after ownership boundaries are

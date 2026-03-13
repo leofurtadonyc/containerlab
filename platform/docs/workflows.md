@@ -131,9 +131,15 @@ The platform now also has a design-only implementation-prerequisite document in:
 
 - `platform/schemas/workflows/workflow-owned-state-prerequisites.md`
 
+- `platform/schemas/workflows/ownership-boundaries.md`
+
 That document defines the ownership boundaries and prerequisite sequencing for
 future workflow-owned state across storage, API introduction order, audit
 linkage, and workflow-state persistence.
+
+The dedicated ownership-boundary document sharpens what must remain separate
+between current read-side evidence, persisted snapshots, readiness or blocker
+metadata, future workflow-owned state, and future workflow audit records.
 
 It does not introduce workflow behavior, dry-run APIs, approvals, rollback
 behavior, or any phase change.
