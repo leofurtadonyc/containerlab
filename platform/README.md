@@ -56,6 +56,7 @@ The platform should be able to run alongside one or more lab topologies rather t
 Custom platform services now build as local container images before topology deployment.
 
 Run `./scripts/build-images.sh` from `platform/` before deploying `topology.clab.yml`.
+After deployment, run `./scripts/verify-odl-auth.sh` from `platform/` to catch bounded ODL credential regressions before relying on the WebUI platform-health view.
 
 ## Architecture Direction
 
@@ -84,6 +85,7 @@ It is responsible for gathering device state, mapping vendor-specific data into 
 OpenDaylight is a bounded support component.
 
 It may provide controller-side and protocol-side leverage for areas such as BGP-LS, BMP, PCEP, and related topology or policy-adjacent inputs. It is not the product brain, not the workflow engine, and not the global source of truth.
+The local ODL image now includes a narrow startup-time credential rotation so the controller's bounded RESTCONF admin password actually matches the topology-configured `ODL_ADMIN_PASSWORD` value used by `app-api`.
 
 ### `prometheus`
 

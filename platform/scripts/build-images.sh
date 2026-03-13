@@ -16,3 +16,4 @@ build_image() {
 build_image platform-app-api:0.1.0 app-api
 build_image platform-gnmi-collector:0.1.0 gnmi-collector
 build_image platform-app-web:0.1.0 app-web
+build_image platform-odl:0.1.0 odl

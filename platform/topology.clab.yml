@@ -6,7 +6,7 @@ topology:
   nodes:
     odl:
       kind: linux
-      image: opendaylight/opendaylight:0.18.2
+      image: platform-odl:0.1.0
       ports:
         - "8181:8181" # RESTCONF and northbound API access
         - "8101:8101" # Karaf shell access
