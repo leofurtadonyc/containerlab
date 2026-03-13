@@ -87,6 +87,19 @@ This is intentionally narrow.
 It does not claim full semantic validation of every panel query or every dashboard family.
 It does ensure that the current repo-owned Grafana provisioning contract still loads cleanly after observability changes.
 
+More specifically, `./scripts/verify-core-runtime.sh` currently validates only that:
+
+- Grafana's health API responds
+- the provisioned Prometheus datasource is present
+- provisioned overview dashboards can be discovered through the Grafana API
+
+It does not yet validate:
+
+- every panel query result across the platform, topology, and SR policy dashboards
+- placeholder dashboard families such as change-validation and vendor views
+- visual correctness, folder presentation details, or operator interpretation quality
+- deeper Prometheus query semantics beyond the current readiness and target-discovery checks
+
 ## Dashboard Families
 
 The platform currently organizes dashboards into five required families.
