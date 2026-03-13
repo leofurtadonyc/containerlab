@@ -8,6 +8,7 @@ from app_api.schemas.capabilities import (
     CapabilityRecord,
     CapabilitiesListResponse,
     DryRunReadinessAssessmentArea,
+    DryRunReadinessBlocker,
     DryRunReadinessPrerequisite,
     DryRunReadinessSummary,
 )
@@ -26,6 +27,10 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
         DryRunReadinessPrerequisite(
             prerequisite="inventory_read_model",
             status="ready",
+            support_posture="supported",
+            evidence_basis="live_validated",
+            evidence_coverage="strong",
+            related_capabilities=["device_inventory"],
             current_evidence=(
                 "Inventory already has a stable live normalized read path and backend-owned "
                 "Phase 2 API contract."
@@ -35,6 +40,13 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
         DryRunReadinessPrerequisite(
             prerequisite="topology_comparison_evidence",
             status="partial",
+            support_posture="partially_supported",
+            evidence_basis="persisted_validated",
+            evidence_coverage="bounded",
+            related_capabilities=[
+                "topology_observation",
+                "topology_persisted_comparison",
+            ],
             current_evidence=(
                 "Topology now exposes bounded current-versus-latest-persisted comparison "
                 "evidence and serving-mode context."
@@ -46,6 +58,14 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
         DryRunReadinessPrerequisite(
             prerequisite="policy_comparison_evidence",
             status="partial",
+            support_posture="partially_supported",
+            evidence_basis="persisted_validated",
+            evidence_coverage="bounded",
+            related_capabilities=[
+                "policy_counter_visibility",
+                "static_policy_detail",
+                "policy_persisted_comparison",
+            ],
             current_evidence=(
                 "Policy now exposes bounded persisted comparison evidence plus explicit "
                 "live-empty, detail-limited, and persisted-fallback semantics."
@@ -57,6 +77,13 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
         DryRunReadinessPrerequisite(
             prerequisite="workflow_audit_visibility",
             status="partial",
+            support_posture="partially_supported",
+            evidence_basis="persisted_validated",
+            evidence_coverage="partial",
+            related_capabilities=[
+                "workflow_history_visibility",
+                "audit_history_visibility",
+            ],
             current_evidence=(
                 "Workflow-history and audit-history now expose bounded persisted sync "
                 "activity and policy snapshot comparison context."
@@ -68,11 +95,122 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
         DryRunReadinessPrerequisite(
             prerequisite="capability_matrix_precision",
             status="ready",
+            support_posture="supported",
+            evidence_basis="design_review",
+            evidence_coverage="strong",
+            related_capabilities=[],
             current_evidence=(
                 "The capability matrix now distinguishes delivery tier, evidence basis, "
                 "and vendor posture for the current product slice."
             ),
             blocking_gaps=[],
+        ),
+    ]
+    blockers = [
+        DryRunReadinessBlocker(
+            blocker="workflow_lifecycle_contract_missing",
+            category="contract",
+            severity="critical",
+            evidence_basis="design_review",
+            summary=(
+                "No backend-owned workflow lifecycle contract exists yet for requested, "
+                "planned, approved, dry-run, execution, or rollback states."
+            ),
+            blocked_readiness_scopes=[
+                "planning_depth",
+                "workflow_audit_relationships",
+                "phase_transition",
+            ],
+            related_prerequisites=["workflow_audit_visibility"],
+            notes=[
+                "Current workflow-history remains sync-derived rather than workflow-grade.",
+            ],
+        ),
+        DryRunReadinessBlocker(
+            blocker="dry_run_contract_missing",
+            category="contract",
+            severity="critical",
+            evidence_basis="design_review",
+            summary=(
+                "No dry-run API, preview payload, or diff contract exists yet in the backend."
+            ),
+            blocked_readiness_scopes=[
+                "preview_contracts",
+                "planning_depth",
+                "phase_transition",
+            ],
+            related_prerequisites=[
+                "topology_comparison_evidence",
+                "policy_comparison_evidence",
+                "capability_matrix_precision",
+            ],
+            notes=[
+                "Bounded comparison evidence is not the same thing as a preview or diff model.",
+            ],
+        ),
+        DryRunReadinessBlocker(
+            blocker="validation_result_contract_missing",
+            category="contract",
+            severity="critical",
+            evidence_basis="design_review",
+            summary=(
+                "No validation-result schema exists yet for future pre-change or post-change reasoning."
+            ),
+            blocked_readiness_scopes=["validation_contracts", "phase_transition"],
+            related_prerequisites=[
+                "topology_comparison_evidence",
+                "policy_comparison_evidence",
+                "capability_matrix_precision",
+            ],
+            notes=[
+                "Current capability and comparison metadata remain explanatory rather than verdict-producing.",
+            ],
+        ),
+        DryRunReadinessBlocker(
+            blocker="topology_truth_still_bounded",
+            category="truth",
+            severity="major",
+            evidence_basis="live_validated",
+            summary=(
+                "Topology truth remains intentionally bounded and inference-heavy rather than protocol-derived."
+            ),
+            blocked_readiness_scopes=["validation_contracts", "phase_transition"],
+            related_prerequisites=["topology_comparison_evidence"],
+            notes=[
+                "Bounded topology comparison support is useful, but not workflow-grade path truth.",
+            ],
+        ),
+        DryRunReadinessBlocker(
+            blocker="policy_truth_still_bounded",
+            category="truth",
+            severity="major",
+            evidence_basis="live_validated",
+            summary=(
+                "Policy truth remains intentionally bounded to aggregate counters, static detail when present, and snapshot comparison."
+            ),
+            blocked_readiness_scopes=["validation_contracts", "phase_transition"],
+            related_prerequisites=["policy_comparison_evidence"],
+            notes=[
+                "The current lab still exposes a live-empty policy posture, which is honest but not workflow-grade policy truth.",
+            ],
+        ),
+        DryRunReadinessBlocker(
+            blocker="history_still_sync_derived",
+            category="history",
+            severity="major",
+            evidence_basis="persisted_validated",
+            summary=(
+                "History remains derived from persisted sync activity and bounded snapshots rather than user or workflow lifecycle events."
+            ),
+            blocked_readiness_scopes=[
+                "workflow_audit_relationships",
+                "planning_depth",
+                "phase_transition",
+            ],
+            related_prerequisites=["workflow_audit_visibility"],
+            notes=[
+                "Current audit visibility is real and useful, but not yet a workflow-grade action record.",
+            ],
         ),
     ]
     assessment_areas = [
@@ -159,7 +297,14 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
             "Deepen policy and topology truth only where live evidence and stable normalized models already justify it.",
             "Preserve the current Phase 2 boundary until workflow records, dry-run contracts, and validation outputs are all real rather than descriptive.",
         ],
+        evidence_coverage_counts=_count_values(
+            prerequisite.evidence_coverage for prerequisite in prerequisites
+        ),
+        support_posture_counts=_count_values(
+            prerequisite.support_posture for prerequisite in prerequisites
+        ),
         assessment_areas=assessment_areas,
+        blockers=blockers,
         prerequisites=prerequisites,
     )
 

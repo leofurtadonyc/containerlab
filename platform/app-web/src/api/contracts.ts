@@ -448,8 +448,56 @@ export interface DryRunReadinessPrerequisite {
     | "workflow_audit_visibility"
     | "capability_matrix_precision";
   status: "ready" | "partial" | "not_ready";
+  support_posture:
+    | "supported"
+    | "partially_supported"
+    | "unsupported"
+    | "unknown"
+    | "not_implemented_in_platform";
+  evidence_basis:
+    | "live_validated"
+    | "persisted_validated"
+    | "platform_probe"
+    | "design_review"
+    | "roadmap_only";
+  evidence_coverage: "strong" | "bounded" | "partial" | "blocked";
+  related_capabilities: string[];
   current_evidence: string;
   blocking_gaps: string[];
+}
+
+export interface DryRunReadinessBlocker {
+  blocker:
+    | "workflow_lifecycle_contract_missing"
+    | "dry_run_contract_missing"
+    | "validation_result_contract_missing"
+    | "topology_truth_still_bounded"
+    | "policy_truth_still_bounded"
+    | "history_still_sync_derived";
+  category: "contract" | "truth" | "history";
+  severity: "critical" | "major";
+  evidence_basis:
+    | "live_validated"
+    | "persisted_validated"
+    | "platform_probe"
+    | "design_review"
+    | "roadmap_only";
+  summary: string;
+  blocked_readiness_scopes: Array<
+    | "planning_depth"
+    | "preview_contracts"
+    | "validation_contracts"
+    | "workflow_audit_relationships"
+    | "phase_transition"
+  >;
+  related_prerequisites: Array<
+    | "inventory_read_model"
+    | "topology_comparison_evidence"
+    | "policy_comparison_evidence"
+    | "workflow_audit_visibility"
+    | "capability_matrix_precision"
+  >;
+  notes: string[];
 }
 
 export interface DryRunReadinessAssessmentArea {
@@ -472,7 +520,10 @@ export interface DryRunReadinessSummary {
   notes: string[];
   strongest_blockers: string[];
   bounded_next_steps: string[];
+  evidence_coverage_counts: Record<string, number>;
+  support_posture_counts: Record<string, number>;
   assessment_areas: DryRunReadinessAssessmentArea[];
+  blockers: DryRunReadinessBlocker[];
   prerequisites: DryRunReadinessPrerequisite[];
 }
 

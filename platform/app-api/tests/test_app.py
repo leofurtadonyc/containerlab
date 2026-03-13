@@ -1300,10 +1300,31 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
     assert payload["dry_run_readiness"]["assessment_areas"][1]["status"] == "blocked"
     assert payload["dry_run_readiness"]["prerequisites"][0]["prerequisite"] == "inventory_read_model"
     assert payload["dry_run_readiness"]["prerequisites"][0]["status"] == "ready"
+    assert payload["dry_run_readiness"]["prerequisites"][0]["support_posture"] == "supported"
+    assert payload["dry_run_readiness"]["prerequisites"][0]["evidence_basis"] == "live_validated"
+    assert payload["dry_run_readiness"]["prerequisites"][0]["evidence_coverage"] == "strong"
+    assert payload["dry_run_readiness"]["prerequisites"][0]["related_capabilities"] == [
+        "device_inventory"
+    ]
     assert payload["dry_run_readiness"]["prerequisites"][1]["status"] == "partial"
+    assert payload["dry_run_readiness"]["prerequisites"][1]["evidence_coverage"] == "bounded"
+    assert payload["dry_run_readiness"]["evidence_coverage_counts"]["strong"] == 2
+    assert payload["dry_run_readiness"]["evidence_coverage_counts"]["bounded"] == 2
+    assert payload["dry_run_readiness"]["support_posture_counts"]["supported"] == 2
+    assert payload["dry_run_readiness"]["support_posture_counts"]["partially_supported"] == 3
     assert "Readiness support is not dry-run functionality." in payload["dry_run_readiness"]["notes"]
     assert "No durable workflow lifecycle model exists yet" in payload["dry_run_readiness"]["strongest_blockers"][0]
     assert payload["dry_run_readiness"]["bounded_next_steps"][0].startswith("Define the future workflow lifecycle model")
+    assert len(payload["dry_run_readiness"]["blockers"]) == 6
+    assert (
+        payload["dry_run_readiness"]["blockers"][0]["blocker"]
+        == "workflow_lifecycle_contract_missing"
+    )
+    assert payload["dry_run_readiness"]["blockers"][0]["severity"] == "critical"
+    assert (
+        payload["dry_run_readiness"]["blockers"][0]["blocked_readiness_scopes"][0]
+        == "planning_depth"
+    )
     assert payload["items"][1]["feature"] == "topology_observation"
     assert payload["items"][2]["feature"] == "topology_persisted_comparison"
     assert payload["items"][6]["feature"] == "bgp_signaled_policy_detail"

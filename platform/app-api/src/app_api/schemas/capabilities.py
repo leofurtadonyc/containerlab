@@ -6,6 +6,21 @@ from pydantic import BaseModel, Field
 
 from app_api.schemas.common import ApiResponseMetadata
 
+SupportStatus = Literal[
+    "supported",
+    "partially_supported",
+    "unsupported",
+    "unknown",
+    "not_implemented_in_platform",
+]
+CapabilityEvidenceBasis = Literal[
+    "live_validated",
+    "persisted_validated",
+    "platform_probe",
+    "design_review",
+    "roadmap_only",
+]
+
 
 class CapabilityRecord(BaseModel):
     """Vendor-neutral capability record for Phase 2 APIs."""
@@ -22,13 +37,7 @@ class CapabilityRecord(BaseModel):
         "audit_history",
     ]
     feature: str
-    support_status: Literal[
-        "supported",
-        "partially_supported",
-        "unsupported",
-        "unknown",
-        "not_implemented_in_platform",
-    ]
+    support_status: SupportStatus
     implementation_status: Literal["planned", "placeholder", "partial", "implemented"]
     delivery_tier: Literal[
         "delivered_read_only",
@@ -36,13 +45,7 @@ class CapabilityRecord(BaseModel):
         "future_roadmap",
         "out_of_scope",
     ]
-    evidence_basis: Literal[
-        "live_validated",
-        "persisted_validated",
-        "platform_probe",
-        "design_review",
-        "roadmap_only",
-    ]
+    evidence_basis: CapabilityEvidenceBasis
     vendor_posture: Literal[
         "current_nokia_focus",
         "future_juniper_target",
@@ -65,8 +68,48 @@ class DryRunReadinessPrerequisite(BaseModel):
         "capability_matrix_precision",
     ]
     status: Literal["ready", "partial", "not_ready"]
+    support_posture: SupportStatus
+    evidence_basis: CapabilityEvidenceBasis
+    evidence_coverage: Literal["strong", "bounded", "partial", "blocked"]
+    related_capabilities: list[str] = Field(default_factory=list)
     current_evidence: str
-    blocking_gaps: list[str]
+    blocking_gaps: list[str] = Field(default_factory=list)
+
+
+class DryRunReadinessBlocker(BaseModel):
+    """One explicit blocker that still prevents workflow-grade readiness."""
+
+    blocker: Literal[
+        "workflow_lifecycle_contract_missing",
+        "dry_run_contract_missing",
+        "validation_result_contract_missing",
+        "topology_truth_still_bounded",
+        "policy_truth_still_bounded",
+        "history_still_sync_derived",
+    ]
+    category: Literal["contract", "truth", "history"]
+    severity: Literal["critical", "major"]
+    evidence_basis: CapabilityEvidenceBasis
+    summary: str
+    blocked_readiness_scopes: list[
+        Literal[
+            "planning_depth",
+            "preview_contracts",
+            "validation_contracts",
+            "workflow_audit_relationships",
+            "phase_transition",
+        ]
+    ] = Field(default_factory=list)
+    related_prerequisites: list[
+        Literal[
+            "inventory_read_model",
+            "topology_comparison_evidence",
+            "policy_comparison_evidence",
+            "workflow_audit_visibility",
+            "capability_matrix_precision",
+        ]
+    ] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
 
 
 class DryRunReadinessAssessmentArea(BaseModel):
@@ -94,7 +137,10 @@ class DryRunReadinessSummary(BaseModel):
     notes: list[str]
     strongest_blockers: list[str]
     bounded_next_steps: list[str]
+    evidence_coverage_counts: dict[str, int] = Field(default_factory=dict)
+    support_posture_counts: dict[str, int] = Field(default_factory=dict)
     assessment_areas: list[DryRunReadinessAssessmentArea]
+    blockers: list[DryRunReadinessBlocker]
     prerequisites: list[DryRunReadinessPrerequisite]
 
 

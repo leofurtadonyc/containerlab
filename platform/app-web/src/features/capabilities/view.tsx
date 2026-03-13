@@ -24,7 +24,10 @@ const FALLBACK_DRY_RUN_READINESS: DryRunReadinessSummary = {
   bounded_next_steps: [
     "Keep the platform in Phase 2 until the backend exposes a stricter readiness assessment.",
   ],
+  evidence_coverage_counts: {},
+  support_posture_counts: {},
   assessment_areas: [],
+  blockers: [],
   prerequisites: [],
 };
 
@@ -135,7 +138,12 @@ function normalizeDryRunReadiness(
       value?.strongest_blockers ?? FALLBACK_DRY_RUN_READINESS.strongest_blockers,
     bounded_next_steps:
       value?.bounded_next_steps ?? FALLBACK_DRY_RUN_READINESS.bounded_next_steps,
+    evidence_coverage_counts:
+      value?.evidence_coverage_counts ?? FALLBACK_DRY_RUN_READINESS.evidence_coverage_counts,
+    support_posture_counts:
+      value?.support_posture_counts ?? FALLBACK_DRY_RUN_READINESS.support_posture_counts,
     assessment_areas: value?.assessment_areas ?? FALLBACK_DRY_RUN_READINESS.assessment_areas,
+    blockers: value?.blockers ?? FALLBACK_DRY_RUN_READINESS.blockers,
     prerequisites: value?.prerequisites ?? FALLBACK_DRY_RUN_READINESS.prerequisites,
   };
 }
