@@ -15,7 +15,7 @@ topology:
 
     prometheus:
       kind: linux
-      image: prom/prometheus:v2.54.1
+      image: platform-prometheus:0.1.0
       ports:
         - "9090:9090"
       binds:
@@ -25,10 +25,14 @@ topology:
         - ./prometheus/data:/prometheus
       env:
         PLATFORM_ENV: dev
+        PROMETHEUS_CONFIG_FILE: /etc/prometheus/prometheus.yml
+        PROMETHEUS_RULES_DIR: /etc/prometheus/rules
+        PROMETHEUS_RECORDING_RULES_DIR: /etc/prometheus/recording-rules
+        PROMETHEUS_STORAGE_PATH: /prometheus
 
     grafana:
       kind: linux
-      image: grafana/grafana:11.2.2
+      image: platform-grafana:0.1.0
       ports:
         - "3000:3000"
       binds:
@@ -39,10 +43,12 @@ topology:
         GF_SECURITY_ADMIN_USER: admin
         GF_SECURITY_ADMIN_PASSWORD: change_me
         GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+        GRAFANA_DASHBOARDS_PATH: /etc/grafana/dashboards
+        GRAFANA_DATA_PATH: /var/lib/grafana
 
     postgres:
       kind: linux
-      image: postgres:16
+      image: platform-postgres:0.1.0
       ports:
         - "5432:5432"
       binds:

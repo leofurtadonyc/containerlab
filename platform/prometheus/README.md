@@ -19,11 +19,12 @@ The platform requires a dedicated metrics layer that is decoupled from the appli
 - workflow state
 
 ## Runtime details
-- image: `prom/prometheus:v2.54.1`
+- image: `platform-prometheus:0.1.0`, built from the pinned upstream `prom/prometheus:v2.54.1` base with a small startup validator
 - ports: 9090
-- env vars: `PLATFORM_ENV` placeholder in the current topology skeleton
+- env vars: `PLATFORM_ENV`, `PROMETHEUS_CONFIG_FILE`, `PROMETHEUS_RULES_DIR`, `PROMETHEUS_RECORDING_RULES_DIR`, and `PROMETHEUS_STORAGE_PATH`
 - mounts: `./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml`, `./prometheus/rules:/etc/prometheus/rules`, `./prometheus/recording-rules:/etc/prometheus/recording-rules`, `./prometheus/data:/prometheus`
 - persistence: host-backed TSDB under `./prometheus/data`
+- startup posture: the local image now validates the mounted config, rules directories, and writable TSDB path, then runs `promtool check config` before starting Prometheus
 - dependencies: all platform services exposing `/metrics` endpoints
 
 ## Integration points
@@ -41,3 +42,4 @@ Initial configuration exists, including `prometheus.yml` plus `rules/`, `recordi
 
 ## Notes and caveats
 Prometheus is metrics-only. Do not store operational topology or policy state here.
+The local runtime image is intentionally narrow: it keeps the repo-managed bind-mounted config model, but fails fast when the runtime config contract is broken.

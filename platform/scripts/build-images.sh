@@ -17,3 +17,6 @@ build_image platform-app-api:0.1.0 app-api
 build_image platform-gnmi-collector:0.1.0 gnmi-collector
 build_image platform-app-web:0.1.0 app-web
 build_image platform-odl:0.1.0 odl
+build_image platform-postgres:0.1.0 postgres
+build_image platform-prometheus:0.1.0 prometheus
+build_image platform-grafana:0.1.0 grafana

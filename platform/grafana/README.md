@@ -19,11 +19,12 @@ Operators need a time-series and event dashboard view that is decoupled from the
 - business logic
 
 ## Runtime details
-- image: `grafana/grafana:11.2.2`
+- image: `platform-grafana:0.1.0`, built from the pinned upstream `grafana/grafana:11.2.2` base with a small startup validator
 - ports: 3000
-- env vars: `GF_SECURITY_ADMIN_USER`, `GF_SECURITY_ADMIN_PASSWORD`, `GF_PATHS_PROVISIONING`
+- env vars: `GF_SECURITY_ADMIN_USER`, `GF_SECURITY_ADMIN_PASSWORD`, `GF_PATHS_PROVISIONING`, `GRAFANA_DASHBOARDS_PATH`, and `GRAFANA_DATA_PATH`
 - mounts: `./grafana/provisioning:/etc/grafana/provisioning`, `./grafana/dashboards:/etc/grafana/dashboards`, `./grafana/data:/var/lib/grafana`
 - persistence: host-backed Grafana state under `./grafana/data`
+- startup posture: the local image now validates the mounted provisioning files, dashboards directory, and writable Grafana data path before delegating to the upstream runtime
 - dependencies: Prometheus
 
 ## Integration points
@@ -40,3 +41,4 @@ Provisioning from files is in place, and real platform, topology, and SR policy 
 
 ## Notes and caveats
 Grafana is observability-only. The product UI is `app-web`. Do not build operator workflows or product pages in Grafana.
+The local runtime image is intentionally narrow: it keeps repo-managed provisioning as the source of truth, but fails fast when the provisioning contract is broken.
