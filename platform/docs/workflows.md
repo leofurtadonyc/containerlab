@@ -182,6 +182,17 @@ The audit-relationships document defines how those linkages should be applied
 across workflow entities and where current sync-derived history must remain a
 bounded partial analogue only.
 
+## Current History To Audit-Linkage Mapping
+
+The platform now also has a strict history-to-audit-linkage mapping document in:
+
+- `platform/schemas/workflows/history-audit-linkage-mapping.md`
+
+That document classifies current sync-derived and readiness-derived history
+sources by whether they are reusable later for workflow linkage, only partially
+reusable, conceptually helpful only, or not suitable, and it makes current
+identity, chronology, and retention limits explicit.
+
 ## Phase 2 Reuse Mapping
 
 The platform now also has an evidence-based reuse mapping document in:

@@ -198,6 +198,10 @@ The future linkage model should follow these rules.
 The current platform already exposes bounded history, but it does not yet expose
 future workflow-grade audit linkage.
 
+For a strict mapping of which current history sources are reusable later versus
+only partial or unsuitable, see
+[platform/schemas/workflows/history-audit-linkage-mapping.md](platform/schemas/workflows/history-audit-linkage-mapping.md).
+
 ### What current history can support now
 
 Current sync-derived and readiness-snapshot-derived history can support:
