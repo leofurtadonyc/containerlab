@@ -194,3 +194,10 @@ Supporting documents live under `platform/docs/`:
 - `docs/roadmap.md`
 
 Workflow-related conceptual contract docs also live under `platform/schemas/workflows/`.
+
+That directory now includes lifecycle-adjacent design docs for:
+
+- workflow entity modeling
+- preview contracts
+- diff contracts
+- preview/diff semantics

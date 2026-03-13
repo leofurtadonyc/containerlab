@@ -114,6 +114,17 @@ and blocker semantics only.
 They do not introduce preview generation, validation behavior, approval behavior,
 execution behavior, or rollback behavior in the current phase.
 
+## Workflow Entity Model
+
+The platform now also has a design-only workflow entity model document in:
+
+- `platform/schemas/workflows/workflow-entity-model.md`
+
+That document defines future workflow entities, their relationships, and how current
+Phase 2 history and readiness structures map only partially onto those future concepts.
+
+It does not introduce storage design, workflow APIs, or implementation behavior.
+
 ## Current Vs Future
 
 ### Current
