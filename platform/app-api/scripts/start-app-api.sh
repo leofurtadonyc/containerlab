@@ -3,7 +3,6 @@ set -eu
 
 cd /app
 
-python3 -m pip install --no-cache-dir -e .
 python3 -m alembic -c alembic.ini upgrade head
 
 uvicorn app_api.main:app --host 0.0.0.0 --port "${API_PORT:-8000}" &

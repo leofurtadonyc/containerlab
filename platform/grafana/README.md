@@ -19,11 +19,11 @@ Operators need a time-series and event dashboard view that is decoupled from the
 - business logic
 
 ## Runtime details
-- image: `grafana/grafana:latest`
+- image: `grafana/grafana:11.2.2`
 - ports: 3000
 - env vars: `GF_SECURITY_ADMIN_USER`, `GF_SECURITY_ADMIN_PASSWORD`, `GF_PATHS_PROVISIONING`
-- mounts: `./grafana/provisioning:/etc/grafana/provisioning`, `./grafana/dashboards:/var/lib/grafana/dashboards`
-- persistence: container-local Grafana state in the current topology skeleton; host persistence can be added later with an explicit write-permissions strategy
+- mounts: `./grafana/provisioning:/etc/grafana/provisioning`, `./grafana/dashboards:/etc/grafana/dashboards`, `./grafana/data:/var/lib/grafana`
+- persistence: host-backed Grafana state under `./grafana/data`
 - dependencies: Prometheus
 
 ## Integration points

@@ -23,11 +23,11 @@ The platform requires a single authoritative source of business logic. The backe
 - operator UI (that is `app-web`)
 
 ## Runtime details
-- image: `python:3.12-slim` in the current topology skeleton, pending a service-specific Dockerfile
-- startup: the current topology bootstraps dependencies at container start, applies Alembic migrations, warms the bounded read-side cache, and runs `uvicorn app_api.main:app` from the mounted source tree until a service Dockerfile exists
+- image: `platform-app-api:0.1.0`, built from the local service Dockerfile
+- startup: the packaged runtime applies Alembic migrations, warms the bounded read-side cache, and runs `uvicorn app_api.main:app` from the image entrypoint
 - ports: 8000 for the versioned API and `/metrics`
-- env vars: `API_PORT`, `DATABASE_URL`, `ODL_URL`, `ODL_USERNAME`, `ODL_PASSWORD`, `ODL_TIMEOUT_SECONDS`, and `PROMETHEUS_URL` placeholders in the current topology skeleton
-- mounts: `./app-api:/app`, `./shared:/app/shared`, `./schemas:/app/schemas`
+- env vars: `API_PORT`, `DATABASE_URL`, `ODL_URL`, `ODL_USERNAME`, `ODL_PASSWORD`, `ODL_TIMEOUT_SECONDS`, and `PROMETHEUS_URL`
+- mounts: none required for the packaged runtime
 - persistence: writes bounded normalized inventory, topology, and policy snapshots, bounded policy candidate-path records, and sync-run records to Postgres
 - dependencies: Postgres, `gnmi-collector`, and optional ODL integration
 
@@ -65,4 +65,4 @@ The current backend metrics path remains transient and in-memory for scrape safe
 The current ODL enrichment is intentionally narrow: the backend probes bounded RESTCONF capability signals for platform health, but ODL still does not own topology truth, policy truth, or workflow logic.
 The current capability matrix is still intentionally bounded: it reflects the delivered Nokia-first read-only product slice and planned Juniper direction, not full multi-vendor parity or deep per-version capability discovery.
 Workflow-history and audit-history are currently bounded views derived from persisted sync-run activity, not separate durable workflow or user-action audit domains.
-The current topology does not yet mount a host-backed Postgres data directory, so persisted read-side state is durable within the running deployment but not yet hardened across full platform reprovisioning.
+The current topology now mounts a host-backed Postgres data directory, so bounded read-side state survives normal container replacement within the same platform workspace.

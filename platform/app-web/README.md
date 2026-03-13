@@ -19,11 +19,11 @@ Operators need a product UI that is purpose-built for network operations workflo
 - any direct database or gNMI access
 
 ## Runtime details
-- image: `node:22-alpine` in the current topology skeleton, pending a service-specific Dockerfile
-- startup: the current topology bootstraps `npm` dependencies at container start and runs the Vite development server from the mounted source tree until a service Dockerfile exists
+- image: `platform-app-web:0.1.0`, built from the local service Dockerfile
+- startup: the packaged runtime serves the production Vite build through Nginx and proxies `/api` requests to `app-api`
 - ports: 8088 for the published WebUI endpoint
-- env vars: `APP_WEB_PORT` and `VITE_APP_API_BASE_URL` placeholders in the current topology skeleton
-- mounts: `./app-web:/app`
+- env vars: none required in the packaged topology runtime; `VITE_APP_API_BASE_URL` remains available for development builds
+- mounts: none required for the packaged runtime
 - persistence: none — stateless frontend
 - dependencies: `app-api`
 

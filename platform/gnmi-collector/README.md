@@ -20,10 +20,10 @@ The platform must observe live device state without hard-coding vendor assumptio
 - SR policy workflow decisions (that is `app-api`)
 
 ## Runtime details
-- image: `python:3.12-slim` in the current topology skeleton, pending a service-specific Dockerfile
+- image: `platform-gnmi-collector:0.1.0`, built from the local service Dockerfile
 - ports: 9804 for metrics; additional runtime ports are TBD
-- env vars: `COLLECTOR_METRICS_PORT`, `APP_API_URL`, and `GNMI_CONFIG_PATH` placeholders in the current topology skeleton
-- mounts: `./gnmi-collector/configs:/app/configs`, `./shared:/app/shared`
+- env vars: `COLLECTOR_METRICS_PORT`, `APP_API_URL`, and `GNMI_CONFIG_PATH`
+- mounts: `./gnmi-collector/configs:/app/configs` for runtime config overrides
 - persistence: none — stateless observer; all durable read-side storage is owned by `app-api` through Postgres
 - dependencies: `app-api`
 

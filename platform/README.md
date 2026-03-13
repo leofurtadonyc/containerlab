@@ -53,6 +53,10 @@ That means:
 
 The platform should be able to run alongside one or more lab topologies rather than being fused into a single combined deployment.
 
+Custom platform services now build as local container images before topology deployment.
+
+Run `./scripts/build-images.sh` from `platform/` before deploying `topology.clab.yml`.
+
 ## Architecture Direction
 
 The platform is being built with clear component boundaries.
@@ -106,7 +110,7 @@ Current bounded reality:
 - normalized policy snapshots and bounded candidate-path records are now persisted
 - workflow-history and audit-history currently derive from persisted sync-run activity rather than separate durable workflow or audit domains
 - broader durable workflow, audit, and intent state remain partial or unimplemented
-- the current topology still lacks host-backed Postgres data storage, so persistence is real within the running deployment but not yet hardened across full reprovisioning
+- the current topology now mounts host-backed Postgres, Prometheus, and Grafana data directories, but backup discipline, credential hardening, and broader durable workflow/audit state are still pending
 
 ## Vendor Strategy
 
