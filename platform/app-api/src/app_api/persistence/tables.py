@@ -255,3 +255,42 @@ class PolicyCandidatePathTable(Base):
     notes: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
 
     policy_record: Mapped[PolicyRecordTable] = relationship(back_populates="candidate_paths")
+
+
+class ReadinessSnapshotTable(Base):
+    """One persisted bounded readiness-support snapshot."""
+
+    __tablename__ = "readiness_snapshots"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    persisted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    readiness_status: Mapped[str] = mapped_column(String(64), nullable=False)
+    planning_readiness: Mapped[str] = mapped_column(String(64), nullable=False)
+    phase_recommendation: Mapped[str] = mapped_column(String(96), nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    readiness_scope: Mapped[str] = mapped_column(Text, nullable=False)
+    notes: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    strongest_blockers: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
+    bounded_next_steps: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
+    evidence_coverage_counts: Mapped[dict[str, int]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
+    support_posture_counts: Mapped[dict[str, int]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
+    prerequisites: Mapped[list[dict[str, object]]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
+    assessment_areas: Mapped[list[dict[str, object]]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
+    blockers: Mapped[list[dict[str, object]]] = mapped_column(
+        JSON, nullable=False, default=list
+    )

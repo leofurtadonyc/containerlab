@@ -1,5 +1,6 @@
 """Typed schemas for capability responses."""
 
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -150,6 +151,7 @@ class CapabilitiesListResponse(ApiResponseMetadata):
     data_status: Literal["placeholder", "bounded_matrix"]
     summary: str
     count: int
+    readiness_persisted_at: datetime | None = None
     domain_counts: dict[str, int] = Field(default_factory=dict)
     support_counts: dict[str, int] = Field(default_factory=dict)
     implementation_counts: dict[str, int] = Field(default_factory=dict)

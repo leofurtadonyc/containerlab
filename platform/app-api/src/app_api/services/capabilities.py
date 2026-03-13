@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from typing import Iterable
 
 from app_api.config.settings import get_settings
+from app_api.persistence.readiness import persist_readiness_snapshot
 from app_api.schemas.capabilities import (
     CapabilityRecord,
     CapabilitiesListResponse,
@@ -312,6 +313,10 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
 def build_capabilities_list_response() -> CapabilitiesListResponse:
     """Build the bounded capability matrix response for the current phase."""
     settings = get_settings()
+    dry_run_readiness = _build_dry_run_readiness_summary()
+    readiness_persisted_at = persist_readiness_snapshot(
+        dry_run_readiness=dry_run_readiness
+    )
     items = [
         CapabilityRecord(
             vendor="nokia",
@@ -651,6 +656,7 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
             "remains structurally visible but roadmap-only rather than implied parity."
         ),
         count=len(items),
+        readiness_persisted_at=readiness_persisted_at,
         domain_counts=_count_values(item.domain for item in items),
         support_counts=_count_values(item.support_status for item in items),
         implementation_counts=_count_values(item.implementation_status for item in items),
@@ -658,6 +664,6 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
         evidence_basis_counts=_count_values(item.evidence_basis for item in items),
         vendor_counts=_count_values(item.vendor for item in items),
         vendor_posture_counts=_count_values(item.vendor_posture for item in items),
-        dry_run_readiness=_build_dry_run_readiness_summary(),
+        dry_run_readiness=dry_run_readiness,
         items=items,
     )

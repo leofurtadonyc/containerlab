@@ -1256,82 +1256,94 @@ def test_audit_history_endpoint_handles_empty_persisted_history(monkeypatch) -> 
 
 
 def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
-    response = client.get(
-        "/api/v1/capabilities",
-        headers={"X-Request-ID": "capabilities-test"},
-    )
+    fixed_readiness_persisted_at = datetime.fromisoformat("2026-03-16T00:00:00+00:00")
 
-    assert response.status_code == 200
-    payload = response.json()
+    # Keep the endpoint test deterministic and avoid requiring a migrated database here.
+    import app_api.services.capabilities as capabilities_service
+    original_persist = capabilities_service.persist_readiness_snapshot
+    capabilities_service.persist_readiness_snapshot = (
+        lambda *, dry_run_readiness: fixed_readiness_persisted_at
+    )
+    try:
+        response = client.get(
+            "/api/v1/capabilities",
+            headers={"X-Request-ID": "capabilities-test"},
+        )
 
-    assert response.headers["X-Request-ID"] == "capabilities-test"
-    assert payload["data_status"] == "bounded_matrix"
-    assert payload["count"] == 13
-    assert "evidence basis, and vendor posture are explicit" in payload["summary"]
-    assert payload["items"][0]["feature"] == "device_inventory"
-    assert payload["items"][0]["domain"] == "inventory"
-    assert payload["items"][0]["support_status"] == "supported"
-    assert payload["items"][0]["implementation_status"] == "implemented"
-    assert payload["items"][0]["delivery_tier"] == "delivered_read_only"
-    assert payload["items"][0]["evidence_basis"] == "live_validated"
-    assert "stable backend-owned contract" in payload["items"][0]["status_detail"]
-    assert payload["domain_counts"]["policy"] == 5
-    assert payload["domain_counts"]["topology"] == 3
-    assert payload["support_counts"]["partially_supported"] == 8
-    assert payload["support_counts"]["unknown"] == 1
-    assert payload["support_counts"]["not_implemented_in_platform"] == 3
-    assert payload["implementation_counts"]["partial"] == 8
-    assert payload["implementation_counts"]["planned"] == 4
-    assert payload["delivery_tier_counts"]["bounded_partial_read_only"] == 8
-    assert payload["delivery_tier_counts"]["future_roadmap"] == 4
-    assert payload["evidence_basis_counts"]["persisted_validated"] == 4
-    assert payload["vendor_counts"]["nokia"] == 10
-    assert payload["vendor_counts"]["juniper"] == 3
-    assert payload["vendor_posture_counts"]["current_nokia_focus"] == 10
-    assert payload["vendor_posture_counts"]["future_juniper_target"] == 3
-    assert payload["dry_run_readiness"]["status"] == "bounded_readiness_support"
-    assert payload["dry_run_readiness"]["planning_readiness"] == "readiness_planning_supported"
-    assert payload["dry_run_readiness"]["phase_recommendation"] == "remain_phase_2_read_only_foundation"
-    assert "not strong enough to justify dry-run implementation" in payload["dry_run_readiness"]["summary"]
-    assert len(payload["dry_run_readiness"]["prerequisites"]) == 5
-    assert len(payload["dry_run_readiness"]["assessment_areas"]) == 4
-    assert payload["dry_run_readiness"]["assessment_areas"][0]["area"] == "model_maturity"
-    assert payload["dry_run_readiness"]["assessment_areas"][0]["status"] == "mixed"
-    assert payload["dry_run_readiness"]["assessment_areas"][1]["status"] == "blocked"
-    assert payload["dry_run_readiness"]["prerequisites"][0]["prerequisite"] == "inventory_read_model"
-    assert payload["dry_run_readiness"]["prerequisites"][0]["status"] == "ready"
-    assert payload["dry_run_readiness"]["prerequisites"][0]["support_posture"] == "supported"
-    assert payload["dry_run_readiness"]["prerequisites"][0]["evidence_basis"] == "live_validated"
-    assert payload["dry_run_readiness"]["prerequisites"][0]["evidence_coverage"] == "strong"
-    assert payload["dry_run_readiness"]["prerequisites"][0]["related_capabilities"] == [
-        "device_inventory"
-    ]
-    assert payload["dry_run_readiness"]["prerequisites"][1]["status"] == "partial"
-    assert payload["dry_run_readiness"]["prerequisites"][1]["evidence_coverage"] == "bounded"
-    assert payload["dry_run_readiness"]["evidence_coverage_counts"]["strong"] == 2
-    assert payload["dry_run_readiness"]["evidence_coverage_counts"]["bounded"] == 2
-    assert payload["dry_run_readiness"]["support_posture_counts"]["supported"] == 2
-    assert payload["dry_run_readiness"]["support_posture_counts"]["partially_supported"] == 3
-    assert "Readiness support is not dry-run functionality." in payload["dry_run_readiness"]["notes"]
-    assert "No durable workflow lifecycle model exists yet" in payload["dry_run_readiness"]["strongest_blockers"][0]
-    assert payload["dry_run_readiness"]["bounded_next_steps"][0].startswith("Define the future workflow lifecycle model")
-    assert len(payload["dry_run_readiness"]["blockers"]) == 6
-    assert (
-        payload["dry_run_readiness"]["blockers"][0]["blocker"]
-        == "workflow_lifecycle_contract_missing"
-    )
-    assert payload["dry_run_readiness"]["blockers"][0]["severity"] == "critical"
-    assert (
-        payload["dry_run_readiness"]["blockers"][0]["blocked_readiness_scopes"][0]
-        == "planning_depth"
-    )
-    assert payload["items"][1]["feature"] == "topology_observation"
-    assert payload["items"][2]["feature"] == "topology_persisted_comparison"
-    assert payload["items"][6]["feature"] == "bgp_signaled_policy_detail"
-    assert payload["items"][10]["vendor"] == "juniper"
-    assert payload["items"][11]["domain"] == "topology"
-    assert payload["items"][12]["domain"] == "policy"
-    assert datetime.fromisoformat(payload["generated_at"]) is not None
+        assert response.status_code == 200
+        payload = response.json()
+
+        assert response.headers["X-Request-ID"] == "capabilities-test"
+        assert payload["data_status"] == "bounded_matrix"
+        assert payload["count"] == 13
+        assert payload["readiness_persisted_at"] == "2026-03-16T00:00:00Z"
+        assert "evidence basis, and vendor posture are explicit" in payload["summary"]
+        assert payload["items"][0]["feature"] == "device_inventory"
+        assert payload["items"][0]["domain"] == "inventory"
+        assert payload["items"][0]["support_status"] == "supported"
+        assert payload["items"][0]["implementation_status"] == "implemented"
+        assert payload["items"][0]["delivery_tier"] == "delivered_read_only"
+        assert payload["items"][0]["evidence_basis"] == "live_validated"
+        assert "stable backend-owned contract" in payload["items"][0]["status_detail"]
+        assert payload["domain_counts"]["policy"] == 5
+        assert payload["domain_counts"]["topology"] == 3
+        assert payload["support_counts"]["partially_supported"] == 8
+        assert payload["support_counts"]["unknown"] == 1
+        assert payload["support_counts"]["not_implemented_in_platform"] == 3
+        assert payload["implementation_counts"]["partial"] == 8
+        assert payload["implementation_counts"]["planned"] == 4
+        assert payload["delivery_tier_counts"]["bounded_partial_read_only"] == 8
+        assert payload["delivery_tier_counts"]["future_roadmap"] == 4
+        assert payload["evidence_basis_counts"]["persisted_validated"] == 4
+        assert payload["vendor_counts"]["nokia"] == 10
+        assert payload["vendor_counts"]["juniper"] == 3
+        assert payload["vendor_posture_counts"]["current_nokia_focus"] == 10
+        assert payload["vendor_posture_counts"]["future_juniper_target"] == 3
+        assert payload["dry_run_readiness"]["status"] == "bounded_readiness_support"
+        assert payload["dry_run_readiness"]["planning_readiness"] == "readiness_planning_supported"
+        assert payload["dry_run_readiness"]["phase_recommendation"] == "remain_phase_2_read_only_foundation"
+        assert "not strong enough to justify dry-run implementation" in payload["dry_run_readiness"]["summary"]
+        assert len(payload["dry_run_readiness"]["prerequisites"]) == 5
+        assert len(payload["dry_run_readiness"]["assessment_areas"]) == 4
+        assert payload["dry_run_readiness"]["assessment_areas"][0]["area"] == "model_maturity"
+        assert payload["dry_run_readiness"]["assessment_areas"][0]["status"] == "mixed"
+        assert payload["dry_run_readiness"]["assessment_areas"][1]["status"] == "blocked"
+        assert payload["dry_run_readiness"]["prerequisites"][0]["prerequisite"] == "inventory_read_model"
+        assert payload["dry_run_readiness"]["prerequisites"][0]["status"] == "ready"
+        assert payload["dry_run_readiness"]["prerequisites"][0]["support_posture"] == "supported"
+        assert payload["dry_run_readiness"]["prerequisites"][0]["evidence_basis"] == "live_validated"
+        assert payload["dry_run_readiness"]["prerequisites"][0]["evidence_coverage"] == "strong"
+        assert payload["dry_run_readiness"]["prerequisites"][0]["related_capabilities"] == [
+            "device_inventory"
+        ]
+        assert payload["dry_run_readiness"]["prerequisites"][1]["status"] == "partial"
+        assert payload["dry_run_readiness"]["prerequisites"][1]["evidence_coverage"] == "bounded"
+        assert payload["dry_run_readiness"]["evidence_coverage_counts"]["strong"] == 2
+        assert payload["dry_run_readiness"]["evidence_coverage_counts"]["bounded"] == 2
+        assert payload["dry_run_readiness"]["support_posture_counts"]["supported"] == 2
+        assert payload["dry_run_readiness"]["support_posture_counts"]["partially_supported"] == 3
+        assert "Readiness support is not dry-run functionality." in payload["dry_run_readiness"]["notes"]
+        assert "No durable workflow lifecycle model exists yet" in payload["dry_run_readiness"]["strongest_blockers"][0]
+        assert payload["dry_run_readiness"]["bounded_next_steps"][0].startswith("Define the future workflow lifecycle model")
+        assert len(payload["dry_run_readiness"]["blockers"]) == 6
+        assert (
+            payload["dry_run_readiness"]["blockers"][0]["blocker"]
+            == "workflow_lifecycle_contract_missing"
+        )
+        assert payload["dry_run_readiness"]["blockers"][0]["severity"] == "critical"
+        assert (
+            payload["dry_run_readiness"]["blockers"][0]["blocked_readiness_scopes"][0]
+            == "planning_depth"
+        )
+        assert payload["items"][1]["feature"] == "topology_observation"
+        assert payload["items"][2]["feature"] == "topology_persisted_comparison"
+        assert payload["items"][6]["feature"] == "bgp_signaled_policy_detail"
+        assert payload["items"][10]["vendor"] == "juniper"
+        assert payload["items"][11]["domain"] == "topology"
+        assert payload["items"][12]["domain"] == "policy"
+        assert datetime.fromisoformat(payload["generated_at"]) is not None
+    finally:
+        capabilities_service.persist_readiness_snapshot = original_persist
 
 
 def test_unknown_route_returns_consistent_error_payload() -> None:
