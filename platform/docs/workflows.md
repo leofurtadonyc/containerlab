@@ -100,6 +100,20 @@ and conceptual transitions only.
 It does not introduce workflow behavior, dry-run APIs, approval semantics, or
 execution logic in the current phase.
 
+## Preview And Diff Contract Design
+
+The platform now also has design-only preview and diff contract documents under:
+
+- `platform/schemas/workflows/preview-contract.md`
+- `platform/schemas/workflows/diff-contract.md`
+- `platform/schemas/workflows/preview-diff-semantics.md`
+
+These files define future contract vocabulary, bounded claim rules, uncertainty posture,
+and blocker semantics only.
+
+They do not introduce preview generation, validation behavior, approval behavior,
+execution behavior, or rollback behavior in the current phase.
+
 ## Current Vs Future
 
 ### Current

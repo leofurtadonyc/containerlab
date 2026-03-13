@@ -192,3 +192,5 @@ Supporting documents live under `platform/docs/`:
 - `docs/workflow-lifecycle-vocabulary.md`
 - `docs/vendors.md`
 - `docs/roadmap.md`
+
+Workflow-related conceptual contract docs also live under `platform/schemas/workflows/`.
