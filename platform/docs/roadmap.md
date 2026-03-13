@@ -22,6 +22,7 @@ Most of the week's work has established:
 - bounded workflow-history and audit-history visibility derived from persisted sync activity
 - sharper capability semantics plus a stricter descriptive dry-run-planning-readiness assessment
 - stronger platform, topology, and SR policy dashboards with bounded freshness, agreement, and evidence-gap cues where real metrics exist
+- a first bounded runtime-hardening slice with repo-built local images, startup-contract validation for the most important stateful services, and small post-deploy verification scripts for the core runtime and ODL auth path
 
 ## Stricter Phase 2 Readiness Assessment
 
@@ -67,7 +68,7 @@ Focus:
 Current state:
 
 - foundation complete and preserved as the base for the current phase
-- still intentionally bounded on deep runtime behavior, live ingestion, and workflows
+- still intentionally bounded on broader lifecycle hardening, live ingestion depth, and workflows, even though the initial runtime packaging and verification slice is now real
 
 ### Phase 2 — read-only product foundation
 

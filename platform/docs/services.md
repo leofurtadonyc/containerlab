@@ -6,7 +6,13 @@ This document describes the major platform services, what each one owns, what ea
 
 ## Current Status
 
-The platform now has service directories, service READMEs, a platform topology skeleton, observability scaffolding, a backend skeleton, a collector skeleton, and bounded Postgres-backed read-side persistence for inventory, topology, and policy snapshots.
+The platform now has service directories, service READMEs, a platform topology skeleton, observability scaffolding, a backend skeleton, a collector skeleton, bounded Postgres-backed read-side persistence for inventory, topology, and policy snapshots, and repo-built local runtime images for the initial service set.
+
+The current runtime posture is no longer skeleton-only:
+
+- all initial platform services now run as repo-built local images
+- Postgres, Prometheus, and Grafana now have small startup validators that fail fast when the mounted runtime contract is broken
+- `verify-core-runtime` and `verify-odl-auth` now provide bounded post-deploy verification for the current live stack
 
 What still remains incomplete:
 
@@ -124,7 +130,7 @@ Current state:
 - migration direction is documented
 - Alembic ownership lives in `app-api`
 - the first bounded persisted schema now exists for inventory snapshots, topology snapshots, policy snapshots, candidate-path records, and sync-run records
-- current durability is deployment-local because a host-mounted Postgres data directory is not yet configured
+- the current topology now uses a repo-built local Postgres image plus a host-backed data directory, and the startup path validates the env and mount contract before delegating to the upstream database runtime
 
 ### `prometheus`
 
@@ -149,6 +155,8 @@ Current state:
 
 - `prometheus.yml` exists
 - `rules/`, `recording-rules/`, and data directory scaffolding exist
+- the current topology now runs a repo-built local Prometheus image that validates the mounted config and TSDB path before startup
+- `verify-core-runtime` now checks Prometheus readiness and discovery of the currently real scrape targets after deploy or reconfigure
 
 ### `grafana`
 
@@ -176,6 +184,8 @@ Current state:
 - dashboard provisioning exists
 - real platform, topology, and SR policy dashboards now exist for current `app-api`, `gnmi-collector`, and Prometheus-backed observability
 - those dashboards now surface richer current evidence such as sync freshness, persisted sync results, topology agreement signals, bounded persisted policy sync evidence, and honest live-empty policy context where available
+- the current topology now runs a repo-built local Grafana image that validates provisioning and writable data-path mounts before startup
+- `verify-core-runtime` now checks Grafana API health, Prometheus datasource provisioning, and provisioned overview dashboard discovery after deploy or reconfigure
 - placeholder dashboards still exist for the remaining required dashboard families
 
 ### `odl`
@@ -260,11 +270,12 @@ The following boundaries are non-negotiable:
 
 - service topology is defined
 - runtime expectations are documented
+- runtime packaging now includes repo-built local images for all initial services, with bounded startup validation for the currently most important stateful services
 - backend and collector skeletons exist
 - backend read-only APIs and frontend read-only pages now exist as a useful initial product slice
 - observability scaffolding exists
 - live collector-to-backend read delivery is real for the current bounded slices
-- database direction is explicit and partially implemented
+- database direction is explicit and partially implemented, with host-backed Postgres persistence and bounded post-deploy runtime verification now in place
 
 ### Future
 

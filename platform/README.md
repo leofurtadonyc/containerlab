@@ -150,6 +150,7 @@ At this stage, contributors should assume:
 - the architecture direction is defined
 - the platform structure is established enough to support a read-only product foundation
 - several services still expose bounded live slices and partial persistence rather than mature end-state behavior
+- the runtime posture is no longer bootstrap-only: all initial services now run from repo-built local images, while the current hardening slice adds bounded startup validation and post-deploy verification only for the most important stateful and controller-adjacent runtime contracts
 - read-only visibility comes before advanced workflows
 - broad action automation is intentionally deferred
 
@@ -161,6 +162,7 @@ At this stage, contributors should assume:
 - service directories and README skeletons
 - documentation scaffolding
 - dashboard folder structure and provisioning layout scaffolding, with an initial real platform dashboard
+- repo-built local images for the initial service set, with bounded startup validators now in place for Postgres, Prometheus, and Grafana plus a bounded deploy-time verification flow for the core runtime and ODL auth path
 - schema and shared-directory scaffolding
 - read-only inventory, topology, policy, capability, and platform status APIs
 - read-only WebUI pages backed by stable backend contracts

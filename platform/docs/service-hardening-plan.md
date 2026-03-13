@@ -6,15 +6,25 @@ This document proposes the minimum viable hardening sequence for the current pla
 
 It is intentionally bounded to Phase 2 runtime reliability work. It does not introduce service rewrites, architecture changes, or a broader productionization program.
 
+## Current status note
+
+The first bounded runtime-hardening slice described here has now been partially completed:
+
+- Postgres, Prometheus, and Grafana now run as repo-built local images derived from their pinned upstream bases
+- those three services now have small startup validators for their mounted runtime contracts
+- `./scripts/verify-core-runtime.sh` now provides the broader post-deploy verification pass that was still missing when this plan was first drafted
+
+The remaining sections are kept as the bounded plan baseline and stop line for the next hardening steps, not as a claim that the full hardening sequence is already complete.
+
 ## Runtime audit baseline
 
 The current topology already has a mixed maturity profile:
 
 - `app-api`, `gnmi-collector`, `app-web`, and `odl` now run as local images built from repo-owned Dockerfiles.
-- `postgres`, `prometheus`, and `grafana` remain pinned upstream images with repo-mounted config and data directories.
+- `postgres`, `prometheus`, and `grafana` now also run as repo-built local images derived from pinned upstream bases, while still preserving repo-mounted config and data directories.
 - Postgres, Prometheus, and Grafana now have host-backed persistence, but backup discipline, credential hardening, and broader lifecycle hardening are still pending.
 - ODL now has one bounded hardening measure for the RESTCONF credential path, but it still remains a helper service rather than a durable system of record.
-- `./scripts/build-images.sh` and `./scripts/verify-odl-auth.sh` provide a starting point for reproducible builds and one bounded post-deploy regression check, but there is not yet a broader service verification pass for the full topology.
+- `./scripts/build-images.sh`, `./scripts/verify-core-runtime.sh`, and `./scripts/verify-odl-auth.sh` now provide reproducible builds plus bounded post-deploy regression checks for the core runtime and the ODL credential path.
 
 This means the next cycle should focus on closing the most important runtime-reliability gaps without broadening scope.
 

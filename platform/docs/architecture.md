@@ -14,6 +14,8 @@ The platform now has:
 - Prometheus and Grafana provisioning skeletons
 - backend, collector, frontend, and database-direction scaffolding
 - a first bounded persistence-backed read-side slice for inventory, topology, and policy snapshots
+- repo-built local images for all initial platform services, with the current runtime-hardening slice now adding bounded startup validation for Postgres, Prometheus, and Grafana plus ODL credential provisioning
+- bounded post-deploy verification scripts for the core runtime contract and the ODL credential path
 
 What remains incomplete:
 
@@ -156,7 +158,7 @@ Current persistence boundary:
 - sync-run history for those persisted read-side writes is persisted
 - workflow-history and audit-history are currently derived from persisted sync-run activity rather than separate workflow or audit tables
 - workflow, audit, and broader intent/history domains are not yet independently persisted in this phase
-- the current topology still lacks a host-mounted Postgres data directory, so persisted state is durable within the running deployment but not yet hardened across full reprovisioning
+- the current topology now mounts a host-backed Postgres data directory and the local Postgres image validates that mount contract at startup, but backup, restore, and broader lifecycle hardening are still intentionally out of scope
 
 ### `prometheus`
 
@@ -164,11 +166,23 @@ Prometheus is the metrics and time-series layer.
 
 It scrapes service metrics and supports alerting and recording rules. It is not the application database.
 
+Current runtime posture:
+
+- the current topology runs Prometheus as a repo-built local image derived from the pinned upstream base
+- the image validates the mounted config, rules paths, and writable TSDB path before Prometheus starts
+- current post-deploy verification remains intentionally bounded to readiness plus discovery of the currently real scrape targets
+
 ### `grafana`
 
 Grafana is the observability layer.
 
 It provides dashboards and operational drilldowns. It is not the product UI and it must not absorb workflow or business logic.
+
+Current runtime posture:
+
+- the current topology runs Grafana as a repo-built local image derived from the pinned upstream base
+- the image validates the mounted provisioning files, dashboard directory, and writable data path before startup
+- `verify-core-runtime` now checks Grafana health, datasource provisioning, and overview dashboard discovery after deploy or reconfigure, but it does not yet validate every panel query or dashboard family semantically
 
 ### `odl`
 
@@ -233,6 +247,8 @@ These boundaries remain non-negotiable:
 
 - service topology exists
 - runtime boundaries are documented
+- all initial platform services now run from repo-built local images rather than a mixed local-image versus direct-upstream deployment posture
+- the current runtime-hardening slice adds bounded startup-contract validation for Postgres, Prometheus, and Grafana plus one bounded post-deploy verification path for the core runtime and one for ODL auth
 - backend and collector skeletons exist
 - read-only devices, topology, policies, capabilities, and platform status APIs now exist as backend-owned normalized bounded live contracts
 - those read APIs now also expose clearer live-versus-persisted and comparison-friendly semantics where honest persisted support exists, especially for inventory, topology, and policy

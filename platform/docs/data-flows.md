@@ -20,6 +20,8 @@ The current repository state includes:
 - a collector skeleton
 - Prometheus and Grafana scaffolding
 - Postgres bootstrap and migration direction
+- repo-built local images for the initial platform service set
+- bounded post-deploy verification for the current core runtime contract and ODL credential path
 
 It does not yet include:
 
@@ -64,7 +66,7 @@ Current truth labels today:
 
 Important current limitation:
 
-- the Postgres service does not yet have a host-mounted data directory in the current topology, so persisted state survives normal in-deployment reads and fallback behavior, but it is not yet hardened across full reprovisioning of the platform lab
+- the current topology now uses host-backed Postgres, Prometheus, and Grafana data directories, so bounded read-side state and observability state survive normal container replacement within the same workspace, but backup, restore, and broader lifecycle hardening are still intentionally out of scope
 
 ## Deployment And Integration Model
 
@@ -244,6 +246,7 @@ Current state:
 - `app-api` now exposes bounded HTTP request and latency metrics
 - `gnmi-collector` now exposes bounded inventory collection, normalization, and backend-readiness metrics
 - Prometheus should actively scrape only the currently real service metrics targets and keep the remaining service targets documented as future placeholders
+- `verify-core-runtime` now provides one bounded post-deploy regression for Prometheus readiness, current real target discovery, Grafana health, datasource provisioning, and overview dashboard discovery
 
 ## ODL Integration Flow
 
