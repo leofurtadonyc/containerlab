@@ -236,6 +236,18 @@ order, identifies which blockers can still be closed honestly inside `Phase 2`,
 which can only be narrowed, and which must remain later-phase concerns until a
 future reassessment explicitly justifies deeper workflow-owned planning.
 
+## Post-Planning Recommendation
+
+The platform now also has a strict post-planning recommendation document in:
+
+- `platform/docs/workflow-next-step-recommendation.md`
+
+That document evaluates evidence-reference maturity, audit-linkage maturity,
+retrieval-sequencing maturity, ownership-boundary clarity, and blocker severity
+to recommend whether the project should continue blocker-driven `Phase 2`
+hardening first or proceed to the next bounded planning slice, while also
+stating explicitly what must not happen next.
+
 ## Phase 2 Reuse Mapping
 
 The platform now also has an evidence-based reuse mapping document in:
