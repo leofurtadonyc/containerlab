@@ -193,6 +193,20 @@ sources by whether they are reusable later for workflow linkage, only partially
 reusable, conceptually helpful only, or not suitable, and it makes current
 identity, chronology, and retention limits explicit.
 
+## Read-Only Retrieval Sequencing Design
+
+The platform now also has a design-only read-only retrieval sequencing document
+in:
+
+- `platform/schemas/workflows/read-only-retrieval-sequencing.md`
+
+That document defines the conceptual retrieval order and dependency map for
+future workflow-owned records relative to `evidence_reference`,
+`audit_linkage`, bounded history, blockers, and capability or readiness context.
+
+It does not introduce workflow APIs, workflow persistence, execution behavior,
+or approval retrieval behavior.
+
 ## Phase 2 Reuse Mapping
 
 The platform now also has an evidence-based reuse mapping document in:

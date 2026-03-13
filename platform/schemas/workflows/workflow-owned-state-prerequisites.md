@@ -145,6 +145,11 @@ Workflow APIs should be introduced only after ownership and storage layers are
 stable enough that each endpoint can expose backend-owned workflow truth rather
 than inferred read-side analogues.
 
+The design source of truth for the conceptual retrieval order in this layer
+should be:
+
+- `platform/schemas/workflows/read-only-retrieval-sequencing.md`
+
 Required sequencing:
 
 1. stabilize workflow-owned entity and relationship vocabulary in docs and schemas
