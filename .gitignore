@@ -27,6 +27,7 @@ automation/src/**/__pycache__/
 *.pyd
 .pytest_cache/
 automation/src/netlab_automation.egg-info/
+*.egg-info/
 
 # netlab generated outputs
 automation/artifacts/
@@ -42,6 +43,13 @@ license.txt
 
 # Images
 images/
+
+# Frontend local dependencies / build outputs
+**/node_modules/
+**/.vite/
+**/dist/
+**/build/
+npm-debug.log*
 
 # Not interesting
 agent/

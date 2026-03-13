@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "platform/schemas/integration-health/integration-health.schema.json",
+  "title": "IntegrationHealthRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["integration_name", "component", "health_state", "evidence_source"],
+  "properties": {
+    "integration_name": { "type": "string" },
+    "component": { "type": "string" },
+    "health_state": {
+      "type": "string",
+      "enum": ["healthy", "degraded", "failed", "unknown"]
+    },
+    "last_success_at": { "type": "string" },
+    "last_error_summary": { "type": "string" },
+    "evidence_source": { "type": "string" }
+  }
+}

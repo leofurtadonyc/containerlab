@@ -1,0 +1,44 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": false,
+  "graphTooltip": 0,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "content": "## Change Validation Overview Placeholder\nThis dashboard family will answer: how many dry-runs are being requested, which validations are failing, how long validations take, and whether rollback-related events are occurring.\n\nCurrent state: placeholder only. This folder exists now so change-validation observability stays clearly separate from the WebUI and backend workflow logic.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "11.0.0",
+      "title": "Dashboard Scope",
+      "type": "text"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "change-validation",
+    "placeholder"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Change Validation Overview Placeholder",
+  "uid": "change-validation-overview",
+  "version": 1
+}

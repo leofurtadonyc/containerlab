@@ -1,0 +1,477 @@
+collector:
+  mode: phase_2_live_inventory
+  metrics_port: 9804
+  delivery:
+    mode: backend_http_snapshot
+    endpoint: http://app-api:8000
+
+inventory:
+  subscriptions:
+    - name: system-name
+      path: /nokia-state:state/system/oper-name
+      cadence: poll
+    - name: platform-chassis
+      path: /nokia-state:state/system/platform
+      cadence: poll
+    - name: software-version
+      path: /nokia-state:state/system/version
+      cadence: poll
+
+topology:
+  subscriptions:
+    - name: base-router-interfaces
+      path: /nokia-state:state/router[router-name=Base]/interface
+      cadence: poll
+
+policies:
+  subscriptions:
+    - name: base-router-sr-policy-counters
+      path: /nokia-state:state/router[router-name=Base]/segment-routing/sr-policies
+      cadence: poll
+    - name: base-router-static-policies
+      path: /nokia-state:state/router[router-name=Base]/segment-routing/sr-policies/static-policy
+      cadence: poll
+
+targets:
+  - name: CPE-A1
+    vendor: nokia
+    role: cpe
+    management_address: 172.20.20.101
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CPE-A2
+    vendor: nokia
+    role: cpe
+    management_address: 172.20.20.102
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CPE-B1
+    vendor: nokia
+    role: cpe
+    management_address: 172.20.20.103
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CPE-B2
+    vendor: nokia
+    role: cpe
+    management_address: 172.20.20.104
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: NOC-R1
+    vendor: nokia
+    role: noc
+    management_address: 172.20.20.105
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: NOC-R2
+    vendor: nokia
+    role: noc
+    management_address: 172.20.20.106
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: PE1
+    vendor: nokia
+    role: pe
+    management_address: 172.20.20.107
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: PE2
+    vendor: nokia
+    role: pe
+    management_address: 172.20.20.108
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: P1
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.109
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: P2
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.110
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: P3
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.111
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: P4
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.112
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: P5
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.113
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: P6
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.114
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: P7
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.115
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: P8
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.116
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: PE3
+    vendor: nokia
+    role: pe
+    management_address: 172.20.20.117
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: PE4
+    vendor: nokia
+    role: pe
+    management_address: 172.20.20.118
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CSC1-PE1
+    vendor: nokia
+    role: pe
+    management_address: 172.20.20.119
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CSC1-PE2
+    vendor: nokia
+    role: pe
+    management_address: 172.20.20.120
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CSC1-P1
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.121
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CSC1-P2
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.122
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CSC1-P3
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.123
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CSC1-P4
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.124
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: ISP1-R1
+    vendor: nokia
+    role: isp
+    management_address: 172.20.20.125
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: ISP2-R1
+    vendor: nokia
+    role: isp
+    management_address: 172.20.20.126
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CSC2-PE1
+    vendor: nokia
+    role: pe
+    management_address: 172.20.20.127
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CSC2-PE2
+    vendor: nokia
+    role: pe
+    management_address: 172.20.20.128
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CSC2-P1
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.129
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CSC2-P2
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.130
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CSC2-P3
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.131
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CSC2-P4
+    vendor: nokia
+    role: p
+    management_address: 172.20.20.132
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CPE-C1
+    vendor: nokia
+    role: cpe
+    management_address: 172.20.20.133
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version
+  - name: CPE-C2
+    vendor: nokia
+    role: cpe
+    management_address: 172.20.20.134
+    port: 57400
+    auth:
+      username: platform-ro
+      password: PlatformReadOnly1!
+    insecure: true
+    inventory_paths:
+      - /nokia-state:state/system/oper-name
+      - /nokia-state:state/system/platform
+      - /nokia-state:state/system/version

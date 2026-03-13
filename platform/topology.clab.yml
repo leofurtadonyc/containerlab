@@ -1,0 +1,107 @@
+name: platform
+
+# Separate platform topology.
+# Labs are deployed independently and integrated over the management plane.
+topology:
+  nodes:
+    odl:
+      kind: linux
+      image: opendaylight/opendaylight:0.18.2
+      ports:
+        - "8181:8181" # RESTCONF and northbound API access
+        - "8101:8101" # Karaf shell access
+      env:
+        ODL_ADMIN_PASSWORD: change_me
+
+    prometheus:
+      kind: linux
+      image: prom/prometheus:latest
+      ports:
+        - "9090:9090"
+      binds:
+        - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+        - ./prometheus/rules:/etc/prometheus/rules
+        - ./prometheus/recording-rules:/etc/prometheus/recording-rules
+      env:
+        PLATFORM_ENV: dev
+
+    grafana:
+      kind: linux
+      image: grafana/grafana:latest
+      ports:
+        - "3000:3000"
+      binds:
+        - ./grafana/provisioning:/etc/grafana/provisioning
+        - ./grafana/dashboards:/var/lib/grafana/dashboards
+      env:
+        GF_SECURITY_ADMIN_USER: admin
+        GF_SECURITY_ADMIN_PASSWORD: change_me
+        GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+
+    postgres:
+      kind: linux
+      image: postgres:16
+      ports:
+        - "5432:5432"
+      binds:
+        - ./postgres/init:/docker-entrypoint-initdb.d
+      env:
+        POSTGRES_DB: platform
+        POSTGRES_USER: platform
+        POSTGRES_PASSWORD: change_me
+
+    gnmi-collector:
+      kind: linux
+      # Placeholder image until the service Dockerfile is implemented.
+      image: python:3.12-slim
+      cmd: >-
+        sh -lc "cd /app &&
+        python3 -m pip install --no-cache-dir -e . &&
+        uvicorn gnmi_collector.main:app --host 0.0.0.0 --port ${COLLECTOR_METRICS_PORT:-9804}"
+      ports:
+        - "9804:9804"
+      binds:
+        - ./gnmi-collector:/app
+        - ./gnmi-collector/configs:/app/configs
+        - ./shared:/app/shared
+      env:
+        COLLECTOR_METRICS_PORT: "9804"
+        APP_API_URL: http://app-api:8000
+        GNMI_CONFIG_PATH: /app/configs/config.example.yaml
+
+    app-api:
+      kind: linux
+      # Placeholder image until the service Dockerfile is implemented.
+      image: python:3.12-slim
+      cmd: >-
+        sh /app/scripts/start-app-api.sh
+      ports:
+        - "8000:8000"
+      binds:
+        - ./app-api:/app
+        - ./shared:/app/shared
+        - ./schemas:/app/schemas
+      env:
+        API_PORT: "8000"
+        DATABASE_URL: postgresql://platform:change_me@postgres:5432/platform
+        ODL_URL: http://odl:8181
+        PROMETHEUS_URL: http://prometheus:9090
+
+    app-web:
+      kind: linux
+      # Placeholder image until the service Dockerfile is implemented.
+      image: node:22-alpine
+      cmd: >-
+        sh -lc "cd /app &&
+        npm install --no-fund --no-audit &&
+        npm run dev -- --host 0.0.0.0 --port ${APP_WEB_PORT:-8088}"
+      ports:
+        - "8088:8088"
+      binds:
+        - ./app-web:/app
+      env:
+        APP_WEB_PORT: "8088"
+        VITE_APP_API_BASE_URL: http://app-api:8000
+
+  # No direct links to lab nodes are defined here.
+  # The platform is expected to reach lab services over management connectivity.
