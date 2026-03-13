@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from app_api.schemas.common import ApiResponseMetadata
+from app_api.schemas.common import ApiResponseMetadata, EvidenceConfidenceSummary
 
 
 class TopologyNodeRecord(BaseModel):
@@ -72,6 +72,7 @@ class TopologyResponse(ApiResponseMetadata):
 
     data_status: Literal["normalized_scaffold", "live", "degraded"]
     serving_mode: Literal["live_collector", "persisted_fallback", "empty_scaffold"]
+    evidence_confidence: EvidenceConfidenceSummary
     summary: str
     served_persisted_at: datetime | None = None
     comparison_to_latest_persisted: TopologyComparisonSummary

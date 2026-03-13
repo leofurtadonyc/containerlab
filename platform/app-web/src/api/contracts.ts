@@ -17,6 +17,30 @@ export interface ErrorResponse {
   request_id: string;
 }
 
+export interface EvidenceConfidenceSummary {
+  source_posture: "live_observed" | "persisted_fallback" | "empty_scaffold";
+  evidence_kind:
+    | "direct_observed"
+    | "observed_plus_inferred"
+    | "aggregate_only"
+    | "aggregate_plus_bounded_records"
+    | "unknown";
+  confidence_posture:
+    | "strong_for_current_slice"
+    | "bounded_partial"
+    | "degraded"
+    | "blocked";
+  freshness_posture: "current" | "stale" | "unknown";
+  blocked_reason:
+    | "none"
+    | "collector_unavailable"
+    | "collector_unavailable_and_no_persisted_snapshot"
+    | "per_record_detail_unavailable"
+    | "unknown";
+  summary: string;
+  notes: string[];
+}
+
 export interface PlatformComponentStatus {
   name: string;
   role: string;
@@ -74,6 +98,7 @@ export interface InventoryCurrentComparison {
 export interface DevicesListResponse extends ApiResponseMetadata {
   data_status: "placeholder" | "integration_scaffold" | "live" | "degraded";
   serving_mode: "live_collector" | "persisted_fallback" | "empty_scaffold";
+  evidence_confidence: EvidenceConfidenceSummary;
   summary: string;
   served_persisted_at: string | null;
   comparison_to_latest_persisted: InventoryCurrentComparison;
@@ -135,6 +160,7 @@ export interface TopologyComparisonSummary {
 export interface TopologyResponse extends ApiResponseMetadata {
   data_status: "normalized_scaffold" | "live" | "degraded";
   serving_mode: "live_collector" | "persisted_fallback" | "empty_scaffold";
+  evidence_confidence: EvidenceConfidenceSummary;
   summary: string;
   served_persisted_at: string | null;
   comparison_to_latest_persisted: TopologyComparisonSummary;
@@ -286,6 +312,7 @@ export interface PolicyCurrentComparison {
 export interface PoliciesListResponse extends ApiResponseMetadata {
   data_status: "live" | "degraded";
   serving_mode: "live_collector" | "persisted_fallback" | "empty_scaffold";
+  evidence_confidence: EvidenceConfidenceSummary;
   summary: string;
   served_persisted_at: string | null;
   sync_source: string;

@@ -18,6 +18,7 @@ from app_api.schemas.devices import (
     DevicesListResponse,
     InventoryComparisonSummary as InventoryComparisonSummaryResponse,
 )
+from app_api.schemas.common import EvidenceConfidenceSummary
 
 
 def _describe_capability_summary(value: str) -> str:
@@ -138,6 +139,77 @@ def _build_inventory_comparison_summary(
     )
 
 
+def _build_inventory_evidence_confidence(
+    *,
+    collector_status: str,
+    persisted_at: datetime | None,
+) -> EvidenceConfidenceSummary:
+    """Describe how much confidence the current inventory response deserves."""
+    if collector_status == "live_normalized_feed":
+        return EvidenceConfidenceSummary(
+            source_posture="live_observed",
+            evidence_kind="direct_observed",
+            confidence_posture="strong_for_current_slice",
+            freshness_posture="current",
+            blocked_reason="none",
+            summary=(
+                "Current device inventory is served from direct live observed collector "
+                "records for the current read-only inventory slice."
+            ),
+            notes=[
+                "This posture reflects normalized device records derived from live collector delivery rather than raw vendor payloads.",
+                "Capability posture remains bounded to the currently implemented read-only platform slice.",
+            ],
+        )
+    if collector_status == "partial_live_feed":
+        return EvidenceConfidenceSummary(
+            source_posture="live_observed",
+            evidence_kind="direct_observed",
+            confidence_posture="degraded",
+            freshness_posture="current",
+            blocked_reason="none",
+            summary=(
+                "Current device inventory is still live observed, but one or more "
+                "targets returned partial or degraded collector evidence."
+            ),
+            notes=[
+                "The backend is serving live normalized device records.",
+                "Confidence is degraded because the collector explicitly reported a partial live feed.",
+            ],
+        )
+    if persisted_at is not None:
+        return EvidenceConfidenceSummary(
+            source_posture="persisted_fallback",
+            evidence_kind="direct_observed",
+            confidence_posture="degraded",
+            freshness_posture="stale",
+            blocked_reason="collector_unavailable",
+            summary=(
+                "Current device inventory is a persisted fallback snapshot because live "
+                "collector evidence is unavailable."
+            ),
+            notes=[
+                "The served records still come from normalized observed inventory data, but not from the current live collector read.",
+                "Treat this response as stale relative to present network truth until live collection recovers.",
+            ],
+        )
+    return EvidenceConfidenceSummary(
+        source_posture="empty_scaffold",
+        evidence_kind="unknown",
+        confidence_posture="blocked",
+        freshness_posture="unknown",
+        blocked_reason="collector_unavailable_and_no_persisted_snapshot",
+        summary=(
+            "The inventory response is blocked from showing device truth because live "
+            "collector evidence is unavailable and no persisted fallback snapshot exists."
+        ),
+        notes=[
+            "The devices API preserves schema stability here without inventing device records.",
+            "No raw vendor payloads are exposed when backend-owned evidence is missing.",
+        ],
+    )
+
+
 def _build_inventory_devices() -> tuple[
     CollectorInventorySnapshot,
     list[InventoryDevice],
@@ -236,6 +308,10 @@ def build_devices_list_response() -> DevicesListResponse:
     """Build the device inventory response from the live collector boundary."""
     settings = get_settings()
     snapshot, inventory_devices, persisted_at, comparison = _build_inventory_devices()
+    evidence_confidence = _build_inventory_evidence_confidence(
+        collector_status=snapshot.status,
+        persisted_at=persisted_at,
+    )
     items = [
         DeviceRecord(
             device_id=device.device_id,
@@ -285,6 +361,7 @@ def build_devices_list_response() -> DevicesListResponse:
         generated_at=datetime.now(UTC),
         data_status=data_status,
         serving_mode=serving_mode,
+        evidence_confidence=evidence_confidence,
         summary=summary,
         served_persisted_at=persisted_at,
         comparison_to_latest_persisted=InventoryComparisonSummaryResponse(

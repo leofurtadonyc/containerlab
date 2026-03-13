@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from app_api.schemas.common import ApiResponseMetadata
+from app_api.schemas.common import ApiResponseMetadata, EvidenceConfidenceSummary
 
 
 class CandidatePathRecord(BaseModel):
@@ -119,6 +119,7 @@ class PoliciesListResponse(ApiResponseMetadata):
 
     data_status: Literal["live", "degraded"]
     serving_mode: Literal["live_collector", "persisted_fallback", "empty_scaffold"]
+    evidence_confidence: EvidenceConfidenceSummary
     summary: str
     served_persisted_at: datetime | None = None
     sync_source: str

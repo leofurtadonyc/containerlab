@@ -758,6 +758,11 @@ def test_devices_endpoint_returns_live_inventory(monkeypatch) -> None:
     assert response.headers["X-Request-ID"] == "devices-test"
     assert payload["data_status"] == "live"
     assert payload["serving_mode"] == "live_collector"
+    assert payload["evidence_confidence"]["source_posture"] == "live_observed"
+    assert payload["evidence_confidence"]["evidence_kind"] == "direct_observed"
+    assert payload["evidence_confidence"]["confidence_posture"] == "strong_for_current_slice"
+    assert payload["evidence_confidence"]["freshness_posture"] == "current"
+    assert payload["evidence_confidence"]["blocked_reason"] == "none"
     assert payload["served_persisted_at"] is None
     assert payload["count"] == 2
     assert "live read-only Nokia gNMI collection" in payload["summary"]
@@ -790,6 +795,11 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert response.headers["X-Request-ID"] == "topology-test"
     assert payload["data_status"] == "live"
     assert payload["serving_mode"] == "live_collector"
+    assert payload["evidence_confidence"]["source_posture"] == "live_observed"
+    assert payload["evidence_confidence"]["evidence_kind"] == "observed_plus_inferred"
+    assert payload["evidence_confidence"]["confidence_posture"] == "bounded_partial"
+    assert payload["evidence_confidence"]["freshness_posture"] == "current"
+    assert payload["evidence_confidence"]["blocked_reason"] == "none"
     assert payload["served_persisted_at"] is None
     assert payload["topology"]["topology_id"] == "platform-observed-topology"
     assert payload["topology"]["topology_name"] == "Platform Observed Topology"
@@ -840,6 +850,11 @@ def test_devices_endpoint_falls_back_to_persisted_inventory(monkeypatch) -> None
     payload = response.json()
     assert payload["data_status"] == "degraded"
     assert payload["serving_mode"] == "persisted_fallback"
+    assert payload["evidence_confidence"]["source_posture"] == "persisted_fallback"
+    assert payload["evidence_confidence"]["evidence_kind"] == "direct_observed"
+    assert payload["evidence_confidence"]["confidence_posture"] == "degraded"
+    assert payload["evidence_confidence"]["freshness_posture"] == "stale"
+    assert payload["evidence_confidence"]["blocked_reason"] == "collector_unavailable"
     assert payload["count"] == 1
     assert datetime.fromisoformat(
         payload["served_persisted_at"].replace("Z", "+00:00")
@@ -925,6 +940,11 @@ def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None
     payload = response.json()
     assert payload["data_status"] == "degraded"
     assert payload["serving_mode"] == "persisted_fallback"
+    assert payload["evidence_confidence"]["source_posture"] == "persisted_fallback"
+    assert payload["evidence_confidence"]["evidence_kind"] == "observed_plus_inferred"
+    assert payload["evidence_confidence"]["confidence_posture"] == "degraded"
+    assert payload["evidence_confidence"]["freshness_posture"] == "stale"
+    assert payload["evidence_confidence"]["blocked_reason"] == "collector_unavailable"
     assert payload["topology"]["sync_source"] == "persisted_topology_snapshot"
     assert len(payload["topology"]["nodes"]) == 1
     assert len(payload["topology"]["links"]) == 1
@@ -994,6 +1014,11 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert response.headers["X-Request-ID"] == "policies-test"
     assert payload["data_status"] == "live"
     assert payload["serving_mode"] == "live_collector"
+    assert payload["evidence_confidence"]["source_posture"] == "live_observed"
+    assert payload["evidence_confidence"]["evidence_kind"] == "aggregate_plus_bounded_records"
+    assert payload["evidence_confidence"]["confidence_posture"] == "bounded_partial"
+    assert payload["evidence_confidence"]["freshness_posture"] == "current"
+    assert payload["evidence_confidence"]["blocked_reason"] == "none"
     assert payload["served_persisted_at"] is None
     assert payload["count"] == 2
     assert payload["sync_source"] == "gnmi_collector_policy_sr_counters"
@@ -1053,6 +1078,11 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     payload = response.json()
     assert payload["data_status"] == "live"
     assert payload["serving_mode"] == "live_collector"
+    assert payload["evidence_confidence"]["source_posture"] == "live_observed"
+    assert payload["evidence_confidence"]["evidence_kind"] == "aggregate_only"
+    assert payload["evidence_confidence"]["confidence_posture"] == "bounded_partial"
+    assert payload["evidence_confidence"]["freshness_posture"] == "current"
+    assert payload["evidence_confidence"]["blocked_reason"] == "none"
     assert payload["count"] == 0
     assert payload["observed_policy_count"] == 0
     assert payload["empty_reason"] == "no_policies_observed"
@@ -1117,6 +1147,11 @@ def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) 
     payload = response.json()
     assert payload["data_status"] == "degraded"
     assert payload["serving_mode"] == "persisted_fallback"
+    assert payload["evidence_confidence"]["source_posture"] == "persisted_fallback"
+    assert payload["evidence_confidence"]["evidence_kind"] == "aggregate_plus_bounded_records"
+    assert payload["evidence_confidence"]["confidence_posture"] == "degraded"
+    assert payload["evidence_confidence"]["freshness_posture"] == "stale"
+    assert payload["evidence_confidence"]["blocked_reason"] == "collector_unavailable"
     assert payload["count"] == 1
     assert payload["sync_source"] == "persisted_policy_snapshot"
     assert payload["detail_mode"] == "static_policies_when_present"

@@ -21,6 +21,7 @@ from app_api.schemas.topology import (
     TopologyRecord,
     TopologyResponse,
 )
+from app_api.schemas.common import EvidenceConfidenceSummary
 
 
 def _node_signature(node: TopologyNode) -> tuple[object, ...]:
@@ -133,6 +134,77 @@ def _build_topology_comparison_summary(
         removed_link_count=len(comparison_link_ids - current_link_ids),
         changed_link_count=changed_link_count,
         notes=notes,
+    )
+
+
+def _build_topology_evidence_confidence(
+    *,
+    collector_status: str,
+    persisted_at: datetime | None,
+) -> EvidenceConfidenceSummary:
+    """Describe how much confidence the current topology response deserves."""
+    if collector_status == "live_normalized_feed":
+        return EvidenceConfidenceSummary(
+            source_posture="live_observed",
+            evidence_kind="observed_plus_inferred",
+            confidence_posture="bounded_partial",
+            freshness_posture="current",
+            blocked_reason="none",
+            summary=(
+                "Current topology is based on live observed collector evidence plus "
+                "bounded backend-owned link inference for the current read-only slice."
+            ),
+            notes=[
+                "Node state is directly observed from live normalized collector inputs.",
+                "Some link relationships remain inferred rather than directly observed, so confidence stays explicitly bounded.",
+            ],
+        )
+    if collector_status == "partial_live_feed":
+        return EvidenceConfidenceSummary(
+            source_posture="live_observed",
+            evidence_kind="observed_plus_inferred",
+            confidence_posture="degraded",
+            freshness_posture="current",
+            blocked_reason="none",
+            summary=(
+                "Current topology remains live observed plus inferred, but the "
+                "collector reported partial or degraded evidence for part of the slice."
+            ),
+            notes=[
+                "Inference remains backend-owned and bounded.",
+                "Confidence is degraded because the live topology feed itself is partial.",
+            ],
+        )
+    if persisted_at is not None:
+        return EvidenceConfidenceSummary(
+            source_posture="persisted_fallback",
+            evidence_kind="observed_plus_inferred",
+            confidence_posture="degraded",
+            freshness_posture="stale",
+            blocked_reason="collector_unavailable",
+            summary=(
+                "Current topology is a persisted fallback snapshot because live "
+                "collector evidence is unavailable."
+            ),
+            notes=[
+                "The served snapshot may still include bounded inferred links from the earlier normalized topology read path.",
+                "Treat this response as stale relative to current topology truth until live collection recovers.",
+            ],
+        )
+    return EvidenceConfidenceSummary(
+        source_posture="empty_scaffold",
+        evidence_kind="unknown",
+        confidence_posture="blocked",
+        freshness_posture="unknown",
+        blocked_reason="collector_unavailable_and_no_persisted_snapshot",
+        summary=(
+            "The topology response is blocked from showing current truth because live "
+            "collector evidence is unavailable and no persisted fallback snapshot exists."
+        ),
+        notes=[
+            "The topology API keeps partial-state boundaries explicit instead of inventing links or nodes.",
+            "No raw vendor payloads are exposed when backend-owned topology evidence is missing.",
+        ],
     )
 
 
@@ -276,6 +348,10 @@ def build_topology_response() -> TopologyResponse:
     """Build the topology response from a normalized backend model."""
     settings = get_settings()
     collector_snapshot, snapshot, persisted_at, comparison = _build_topology_snapshot()
+    evidence_confidence = _build_topology_evidence_confidence(
+        collector_status=collector_snapshot.status,
+        persisted_at=persisted_at,
+    )
     topology = TopologyRecord(
         topology_id=snapshot.topology_id,
         topology_name=snapshot.topology_name,
@@ -352,6 +428,7 @@ def build_topology_response() -> TopologyResponse:
         generated_at=datetime.now(UTC),
         data_status=data_status,
         serving_mode=serving_mode,
+        evidence_confidence=evidence_confidence,
         summary=summary,
         served_persisted_at=persisted_at,
         comparison_to_latest_persisted=comparison,

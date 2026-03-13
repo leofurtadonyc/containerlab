@@ -32,6 +32,7 @@ from app_api.schemas.policies import (
     PoliciesListResponse,
     PolicyRecord,
 )
+from app_api.schemas.common import EvidenceConfidenceSummary
 
 
 def _build_policy_inventory() -> tuple[
@@ -335,12 +336,121 @@ def _build_current_policy_comparison(
     )
 
 
+def _policy_evidence_kind(detail_mode: str, empty_reason: str) -> str:
+    """Map bounded policy detail posture into a stable evidence-kind label."""
+    if empty_reason == "per_policy_details_unavailable" or detail_mode == "counters_only":
+        return "aggregate_only"
+    if detail_mode in {"static_policies_when_present", "mixed"}:
+        return "aggregate_plus_bounded_records"
+    return "unknown"
+
+
+def _build_policy_evidence_confidence(
+    *,
+    collector_status: str,
+    detail_mode: str,
+    empty_reason: str,
+    persisted_at: datetime | None,
+) -> EvidenceConfidenceSummary:
+    """Describe how much confidence the current policy response deserves."""
+    evidence_kind = _policy_evidence_kind(detail_mode, empty_reason)
+    if collector_status == "live_normalized_feed":
+        if empty_reason == "per_policy_details_unavailable":
+            return EvidenceConfidenceSummary(
+                source_posture="live_observed",
+                evidence_kind=evidence_kind,
+                confidence_posture="blocked",
+                freshness_posture="current",
+                blocked_reason="per_record_detail_unavailable",
+                summary=(
+                    "Current policy truth is backed by live observed aggregate evidence, "
+                    "but bounded per-policy detail records are unavailable."
+                ),
+                notes=[
+                    "Observed policy counters and target coverage remain real live evidence.",
+                    "Per-policy comparison semantics stay blocked until backend-owned normalized detail records are available.",
+                ],
+            )
+        return EvidenceConfidenceSummary(
+            source_posture="live_observed",
+            evidence_kind=evidence_kind,
+            confidence_posture=(
+                "bounded_partial"
+                if detail_mode in {"static_policies_when_present", "mixed", "counters_only"}
+                else "strong_for_current_slice"
+            ),
+            freshness_posture="current",
+            blocked_reason="none",
+            summary=(
+                "Current policy truth is backed by live observed policy evidence, with "
+                "confidence bounded by the current normalized detail coverage."
+            ),
+            notes=[
+                "Aggregate policy counters are directly observed from the live collector feed.",
+                "Per-policy records remain intentionally bounded to the policy types the current read path can normalize honestly.",
+            ],
+        )
+    if collector_status == "partial_live_feed":
+        return EvidenceConfidenceSummary(
+            source_posture="live_observed",
+            evidence_kind=evidence_kind,
+            confidence_posture="degraded",
+            freshness_posture="current",
+            blocked_reason="none",
+            summary=(
+                "Current policy truth remains live observed, but the collector reported "
+                "partial or degraded policy visibility."
+            ),
+            notes=[
+                "The backend is still serving live policy evidence for the currently available slice.",
+                "Confidence is degraded because one or more targets returned partial live policy data.",
+            ],
+        )
+    if persisted_at is not None:
+        return EvidenceConfidenceSummary(
+            source_posture="persisted_fallback",
+            evidence_kind=evidence_kind,
+            confidence_posture="degraded",
+            freshness_posture="stale",
+            blocked_reason="collector_unavailable",
+            summary=(
+                "Current policy truth is a persisted fallback snapshot because live "
+                "collector evidence is unavailable."
+            ),
+            notes=[
+                "The served policy data still reflects normalized observed policy evidence, but not from the current live read.",
+                "Treat this response as stale relative to current policy truth until live collection recovers.",
+            ],
+        )
+    return EvidenceConfidenceSummary(
+        source_posture="empty_scaffold",
+        evidence_kind="unknown",
+        confidence_posture="blocked",
+        freshness_posture="unknown",
+        blocked_reason="collector_unavailable_and_no_persisted_snapshot",
+        summary=(
+            "The policy response is blocked from showing policy truth because live "
+            "collector evidence is unavailable and no persisted fallback snapshot exists."
+        ),
+        notes=[
+            "The policies API preserves contract stability here without inventing policy records.",
+            "No raw vendor payloads are exposed when backend-owned policy evidence is missing.",
+        ],
+    )
+
+
 def build_policies_list_response() -> PoliciesListResponse:
     """Build the policy inventory response from the live collector boundary."""
     settings = get_settings()
     collector_snapshot, snapshot, persisted_at = _build_policy_inventory()
     latest_persisted_snapshot = load_latest_policy_snapshot()
     history = _build_policy_history_window()
+    evidence_confidence = _build_policy_evidence_confidence(
+        collector_status=collector_snapshot.status,
+        detail_mode=snapshot.detail_mode,
+        empty_reason=snapshot.empty_reason,
+        persisted_at=persisted_at,
+    )
     current_comparison = _build_current_policy_comparison(
         current_snapshot=snapshot,
         comparison_snapshot=(
@@ -466,6 +576,7 @@ def build_policies_list_response() -> PoliciesListResponse:
         generated_at=datetime.now(UTC),
         data_status=data_status,
         serving_mode=serving_mode,
+        evidence_confidence=evidence_confidence,
         summary=summary,
         served_persisted_at=persisted_at,
         sync_source=snapshot.sync_source,

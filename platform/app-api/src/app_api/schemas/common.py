@@ -15,6 +15,35 @@ class ApiResponseMetadata(BaseModel):
     generated_at: datetime
 
 
+class EvidenceConfidenceSummary(BaseModel):
+    """Shared summary of evidence basis and truth-confidence posture."""
+
+    source_posture: Literal["live_observed", "persisted_fallback", "empty_scaffold"]
+    evidence_kind: Literal[
+        "direct_observed",
+        "observed_plus_inferred",
+        "aggregate_only",
+        "aggregate_plus_bounded_records",
+        "unknown",
+    ]
+    confidence_posture: Literal[
+        "strong_for_current_slice",
+        "bounded_partial",
+        "degraded",
+        "blocked",
+    ]
+    freshness_posture: Literal["current", "stale", "unknown"]
+    blocked_reason: Literal[
+        "none",
+        "collector_unavailable",
+        "collector_unavailable_and_no_persisted_snapshot",
+        "per_record_detail_unavailable",
+        "unknown",
+    ]
+    summary: str
+    notes: list[str] = Field(default_factory=list)
+
+
 class ErrorDetail(BaseModel):
     """Structured error detail entry."""
 
