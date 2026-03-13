@@ -74,3 +74,21 @@ def persist_readiness_snapshot(
     except Exception:
         logger.exception("Failed to persist bounded readiness snapshot.")
         return None
+
+
+def load_latest_readiness_snapshot_persisted_at() -> datetime | None:
+    """Return the latest persisted readiness-support timestamp when available."""
+    try:
+        with create_session() as session:
+            latest_snapshot = (
+                session.query(ReadinessSnapshotTable.persisted_at)
+                .order_by(ReadinessSnapshotTable.persisted_at.desc())
+                .limit(1)
+                .one_or_none()
+            )
+            if latest_snapshot is None:
+                return None
+            return latest_snapshot[0]
+    except Exception:
+        logger.exception("Failed to load latest bounded readiness snapshot timestamp.")
+        return None

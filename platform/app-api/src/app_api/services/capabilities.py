@@ -1,10 +1,15 @@
 """Capability service helpers."""
 
+from collections import Counter
 from datetime import UTC, datetime
 from typing import Iterable
 
 from app_api.config.settings import get_settings
-from app_api.persistence.readiness import persist_readiness_snapshot
+from app_api.metrics.state import cache_readiness_metrics
+from app_api.persistence.readiness import (
+    load_latest_readiness_snapshot_persisted_at,
+    persist_readiness_snapshot,
+)
 from app_api.schemas.capabilities import (
     CapabilityRecord,
     CapabilitiesListResponse,
@@ -310,12 +315,60 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
     )
 
 
+def _cache_dry_run_readiness_metrics(
+    *,
+    dry_run_readiness: DryRunReadinessSummary,
+    readiness_persisted_at: datetime | None,
+) -> None:
+    """Cache the bounded readiness-support metrics used by Prometheus."""
+    cache_readiness_metrics(
+        status=dry_run_readiness.status,
+        planning_readiness=dry_run_readiness.planning_readiness,
+        phase_recommendation=dry_run_readiness.phase_recommendation,
+        persisted_at_seconds=(
+            readiness_persisted_at.timestamp() if readiness_persisted_at is not None else None
+        ),
+        evidence_coverage_counts=dry_run_readiness.evidence_coverage_counts,
+        support_posture_counts=dry_run_readiness.support_posture_counts,
+        assessment_area_status_counts=dict(
+            Counter(
+                (area.area, area.status) for area in dry_run_readiness.assessment_areas
+            )
+        ),
+        blocker_counts_by_category_and_severity=dict(
+            Counter(
+                (blocker.category, blocker.severity)
+                for blocker in dry_run_readiness.blockers
+            )
+        ),
+        blocked_scope_counts=_count_values(
+            scope
+            for blocker in dry_run_readiness.blockers
+            for scope in blocker.blocked_readiness_scopes
+        ),
+    )
+
+
+def refresh_readiness_metrics() -> None:
+    """Refresh the cached readiness-support metrics without persisting a new snapshot."""
+    dry_run_readiness = _build_dry_run_readiness_summary()
+    readiness_persisted_at = load_latest_readiness_snapshot_persisted_at()
+    _cache_dry_run_readiness_metrics(
+        dry_run_readiness=dry_run_readiness,
+        readiness_persisted_at=readiness_persisted_at,
+    )
+
+
 def build_capabilities_list_response() -> CapabilitiesListResponse:
     """Build the bounded capability matrix response for the current phase."""
     settings = get_settings()
     dry_run_readiness = _build_dry_run_readiness_summary()
     readiness_persisted_at = persist_readiness_snapshot(
         dry_run_readiness=dry_run_readiness
+    )
+    _cache_dry_run_readiness_metrics(
+        dry_run_readiness=dry_run_readiness,
+        readiness_persisted_at=readiness_persisted_at,
     )
     items = [
         CapabilityRecord(

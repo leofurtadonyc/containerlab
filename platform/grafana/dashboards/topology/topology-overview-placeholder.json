@@ -14,7 +14,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## Topology Observability Overview\nThis dashboard summarizes the current live topology slice exposed by the platform. It focuses on bounded, real evidence: topology node and link counts, state distributions, inference quality, backend-versus-collector agreement, persisted sync-history freshness, and delivery coverage posture for the topology read side.\n\nCurrent limits:\n- The topology model is live and useful, but intentionally partial.\n- Links are inferred from interface naming and operational state rather than LLDP, IGP, or ODL enrichment.\n- Comparison panels here show aggregate delivery and agreement posture, not protocol-derived drift truth.\n- Partial knowledge remains explicit through degraded links, single-sided links, backend-ready coverage ratios, and partial sync-history results.",
+        "content": "## Topology Observability Overview\nThis dashboard summarizes the current live topology slice exposed by the platform. It focuses on bounded, real evidence: topology node and link counts, state distributions, inference quality, backend-versus-collector agreement, persisted sync-history freshness, serving-mode posture, and delivery coverage posture for the topology read side.\n\nCurrent limits:\n- The topology model is live and useful, but intentionally partial.\n- Links are inferred from interface naming and operational state rather than LLDP, IGP, or ODL enrichment.\n- Comparison panels here show aggregate delivery and agreement posture, not protocol-derived drift truth.\n- Evidence-posture panels show source, freshness, and bounded-confidence labels only; they do not turn Grafana into topology validation logic.\n- Partial knowledge remains explicit through degraded links, single-sided links, backend-ready coverage ratios, and partial sync-history results.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -1018,11 +1018,106 @@
       "targets": [
         {
           "expr": "platform_app_api_topology_snapshot_status",
-          "legendFormat": "{{data_status}} • {{sync_status}} • {{completeness}}",
+          "legendFormat": "{{serving_mode}} • {{data_status}} • {{sync_status}} • {{completeness}}",
           "refId": "A"
         }
       ],
       "title": "Topology Snapshot Labels",
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 54
+      },
+      "id": 28,
+      "panels": [],
+      "title": "Topology Serving And Evidence Posture",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 55
+      },
+      "id": 29,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_topology_evidence_posture",
+          "legendFormat": "{{source_posture}} • {{confidence_posture}} • {{freshness_posture}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Topology Evidence Confidence Posture",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 55
+      },
+      "id": 30,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_topology_evidence_posture",
+          "legendFormat": "{{evidence_kind}} • {{blocked_reason}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Topology Evidence Basis And Blockers",
       "type": "bargauge"
     }
   ],
@@ -1044,5 +1139,5 @@
   "timezone": "browser",
   "title": "Topology Overview",
   "uid": "topology-overview",
-  "version": 5
+  "version": 6
 }

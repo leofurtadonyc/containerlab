@@ -18,8 +18,14 @@ class CachedTopologyMetrics:
     node_count: int = 0
     link_count: int = 0
     data_status: str = "unknown"
+    serving_mode: str = "unknown"
     sync_status: str = "unknown"
     completeness: str = "unknown"
+    source_posture: str = "unknown"
+    evidence_kind: str = "unknown"
+    confidence_posture: str = "unknown"
+    freshness_posture: str = "unknown"
+    blocked_reason: str = "unknown"
     node_state_counts: dict[str, int] = field(default_factory=dict)
     link_state_counts: dict[str, int] = field(default_factory=dict)
 
@@ -40,13 +46,38 @@ class CachedPolicyMetrics:
     support_state_counts: dict[str, int] = field(default_factory=dict)
     policy_type_counts: dict[str, int] = field(default_factory=dict)
     data_status: str = "unknown"
+    serving_mode: str = "unknown"
     sync_status: str = "unknown"
     completeness: str = "unknown"
     detail_mode: str = "unknown"
+    empty_reason: str = "unknown"
+    source_posture: str = "unknown"
+    evidence_kind: str = "unknown"
+    confidence_posture: str = "unknown"
+    freshness_posture: str = "unknown"
+    blocked_reason: str = "unknown"
+
+
+@dataclass(frozen=True)
+class CachedReadinessMetrics:
+    """Latest bounded readiness-support metrics for scrape-safe exposition."""
+
+    status: str = "unknown"
+    planning_readiness: str = "unknown"
+    phase_recommendation: str = "unknown"
+    persisted_at_seconds: float | None = None
+    evidence_coverage_counts: dict[str, int] = field(default_factory=dict)
+    support_posture_counts: dict[str, int] = field(default_factory=dict)
+    assessment_area_status_counts: dict[tuple[str, str], int] = field(default_factory=dict)
+    blocker_counts_by_category_and_severity: dict[tuple[str, str], int] = field(
+        default_factory=dict
+    )
+    blocked_scope_counts: dict[str, int] = field(default_factory=dict)
 
 
 _cached_topology_metrics = CachedTopologyMetrics()
 _cached_policy_metrics = CachedPolicyMetrics()
+_cached_readiness_metrics = CachedReadinessMetrics()
 
 
 def observe_http_request(
@@ -71,8 +102,14 @@ def cache_topology_metrics(
     node_count: int,
     link_count: int,
     data_status: str,
+    serving_mode: str,
     sync_status: str,
     completeness: str,
+    source_posture: str,
+    evidence_kind: str,
+    confidence_posture: str,
+    freshness_posture: str,
+    blocked_reason: str,
     node_state_counts: dict[str, int],
     link_state_counts: dict[str, int],
 ) -> None:
@@ -83,8 +120,14 @@ def cache_topology_metrics(
             node_count=node_count,
             link_count=link_count,
             data_status=data_status,
+            serving_mode=serving_mode,
             sync_status=sync_status,
             completeness=completeness,
+            source_posture=source_posture,
+            evidence_kind=evidence_kind,
+            confidence_posture=confidence_posture,
+            freshness_posture=freshness_posture,
+            blocked_reason=blocked_reason,
             node_state_counts=dict(node_state_counts),
             link_state_counts=dict(link_state_counts),
         )
@@ -110,9 +153,16 @@ def cache_policy_metrics(
     support_state_counts: dict[str, int],
     policy_type_counts: dict[str, int],
     data_status: str,
+    serving_mode: str,
     sync_status: str,
     completeness: str,
     detail_mode: str,
+    empty_reason: str,
+    source_posture: str,
+    evidence_kind: str,
+    confidence_posture: str,
+    freshness_posture: str,
+    blocked_reason: str,
 ) -> None:
     """Store the latest policy metrics for bounded scrape exposition."""
     global _cached_policy_metrics
@@ -130,9 +180,16 @@ def cache_policy_metrics(
             support_state_counts=dict(support_state_counts),
             policy_type_counts=dict(policy_type_counts),
             data_status=data_status,
+            serving_mode=serving_mode,
             sync_status=sync_status,
             completeness=completeness,
             detail_mode=detail_mode,
+            empty_reason=empty_reason,
+            source_posture=source_posture,
+            evidence_kind=evidence_kind,
+            confidence_posture=confidence_posture,
+            freshness_posture=freshness_posture,
+            blocked_reason=blocked_reason,
         )
 
 
@@ -142,11 +199,48 @@ def get_cached_policy_metrics() -> CachedPolicyMetrics:
         return _cached_policy_metrics
 
 
+def cache_readiness_metrics(
+    *,
+    status: str,
+    planning_readiness: str,
+    phase_recommendation: str,
+    persisted_at_seconds: float | None,
+    evidence_coverage_counts: dict[str, int],
+    support_posture_counts: dict[str, int],
+    assessment_area_status_counts: dict[tuple[str, str], int],
+    blocker_counts_by_category_and_severity: dict[tuple[str, str], int],
+    blocked_scope_counts: dict[str, int],
+) -> None:
+    """Store the latest readiness-support metrics for bounded scrape exposition."""
+    global _cached_readiness_metrics
+    with _lock:
+        _cached_readiness_metrics = CachedReadinessMetrics(
+            status=status,
+            planning_readiness=planning_readiness,
+            phase_recommendation=phase_recommendation,
+            persisted_at_seconds=persisted_at_seconds,
+            evidence_coverage_counts=dict(evidence_coverage_counts),
+            support_posture_counts=dict(support_posture_counts),
+            assessment_area_status_counts=dict(assessment_area_status_counts),
+            blocker_counts_by_category_and_severity=dict(
+                blocker_counts_by_category_and_severity
+            ),
+            blocked_scope_counts=dict(blocked_scope_counts),
+        )
+
+
+def get_cached_readiness_metrics() -> CachedReadinessMetrics:
+    """Return the latest cached readiness-support metrics."""
+    with _lock:
+        return _cached_readiness_metrics
+
+
 def render_prometheus_metrics(
     app_version: str,
     *,
     topology_metrics: dict[str, object] | None = None,
     policy_metrics: dict[str, object] | None = None,
+    readiness_metrics: dict[str, object] | None = None,
     history_metrics: dict[str, object] | None = None,
 ) -> str:
     """Render backend metrics in Prometheus text format."""
@@ -223,8 +317,22 @@ def render_prometheus_metrics(
                 (
                     "platform_app_api_topology_snapshot_status"
                     f'{{data_status="{topology_metrics["data_status"]}",'
+                    f'serving_mode="{topology_metrics["serving_mode"]}",'
                     f'sync_status="{topology_metrics["sync_status"]}",'
                     f'completeness="{topology_metrics["completeness"]}"}} 1'
+                ),
+                (
+                    "# HELP platform_app_api_topology_evidence_posture "
+                    "Current topology evidence posture exposed by the backend."
+                ),
+                "# TYPE platform_app_api_topology_evidence_posture gauge",
+                (
+                    "platform_app_api_topology_evidence_posture"
+                    f'{{source_posture="{topology_metrics["source_posture"]}",'
+                    f'evidence_kind="{topology_metrics["evidence_kind"]}",'
+                    f'confidence_posture="{topology_metrics["confidence_posture"]}",'
+                    f'freshness_posture="{topology_metrics["freshness_posture"]}",'
+                    f'blocked_reason="{topology_metrics["blocked_reason"]}"}} 1'
                 ),
                 (
                     "# HELP platform_app_api_topology_nodes_by_state "
@@ -304,9 +412,24 @@ def render_prometheus_metrics(
                 (
                     "platform_app_api_policy_snapshot_status"
                     f'{{data_status="{policy_metrics["data_status"]}",'
+                    f'serving_mode="{policy_metrics["serving_mode"]}",'
                     f'sync_status="{policy_metrics["sync_status"]}",'
                     f'completeness="{policy_metrics["completeness"]}",'
-                    f'detail_mode="{policy_metrics["detail_mode"]}"}} 1'
+                    f'detail_mode="{policy_metrics["detail_mode"]}",'
+                    f'empty_reason="{policy_metrics["empty_reason"]}"}} 1'
+                ),
+                (
+                    "# HELP platform_app_api_policy_evidence_posture "
+                    "Current policy evidence posture exposed by the backend."
+                ),
+                "# TYPE platform_app_api_policy_evidence_posture gauge",
+                (
+                    "platform_app_api_policy_evidence_posture"
+                    f'{{source_posture="{policy_metrics["source_posture"]}",'
+                    f'evidence_kind="{policy_metrics["evidence_kind"]}",'
+                    f'confidence_posture="{policy_metrics["confidence_posture"]}",'
+                    f'freshness_posture="{policy_metrics["freshness_posture"]}",'
+                    f'blocked_reason="{policy_metrics["blocked_reason"]}"}} 1'
                 ),
                 (
                     "# HELP platform_app_api_policy_records_by_observed_state "
@@ -391,6 +514,130 @@ def render_prometheus_metrics(
             ]
         )
 
+    if readiness_metrics is not None:
+        lines.extend(
+            [
+                (
+                    "# HELP platform_app_api_readiness_status "
+                    "Current bounded readiness-support status exposed by the backend."
+                ),
+                "# TYPE platform_app_api_readiness_status gauge",
+                (
+                    "platform_app_api_readiness_status"
+                    f'{{status="{readiness_metrics["status"]}",'
+                    f'planning_readiness="{readiness_metrics["planning_readiness"]}",'
+                    f'phase_recommendation="{readiness_metrics["phase_recommendation"]}"}} 1'
+                ),
+                (
+                    "# HELP platform_app_api_readiness_snapshot_persisted_at_seconds "
+                    "Unix timestamp of the latest persisted readiness-support snapshot when available."
+                ),
+                "# TYPE platform_app_api_readiness_snapshot_persisted_at_seconds gauge",
+                (
+                    "platform_app_api_readiness_snapshot_persisted_at_seconds "
+                    + (
+                        f"{readiness_metrics['persisted_at_seconds']:.3f}"
+                        if readiness_metrics["persisted_at_seconds"] is not None
+                        else "0"
+                    )
+                ),
+                (
+                    "# HELP platform_app_api_readiness_prerequisites_by_evidence_coverage "
+                    "Readiness prerequisite counts by evidence coverage posture."
+                ),
+                "# TYPE platform_app_api_readiness_prerequisites_by_evidence_coverage gauge",
+                *[
+                    (
+                        "platform_app_api_readiness_prerequisites_by_evidence_coverage"
+                        f'{{coverage="{coverage}"}} {count}'
+                    )
+                    for coverage, count in sorted(
+                        {
+                            "strong": 0,
+                            "bounded": 0,
+                            "partial": 0,
+                            "blocked": 0,
+                            **dict(readiness_metrics.get("evidence_coverage_counts", {})),
+                        }.items()
+                    )
+                ],
+                (
+                    "# HELP platform_app_api_readiness_prerequisites_by_support_posture "
+                    "Readiness prerequisite counts by support posture."
+                ),
+                "# TYPE platform_app_api_readiness_prerequisites_by_support_posture gauge",
+                *[
+                    (
+                        "platform_app_api_readiness_prerequisites_by_support_posture"
+                        f'{{support_posture="{support_posture}"}} {count}'
+                    )
+                    for support_posture, count in sorted(
+                        {
+                            "supported": 0,
+                            "partially_supported": 0,
+                            "unsupported": 0,
+                            "unknown": 0,
+                            "not_implemented_in_platform": 0,
+                            **dict(readiness_metrics.get("support_posture_counts", {})),
+                        }.items()
+                    )
+                ],
+                (
+                    "# HELP platform_app_api_readiness_assessment_areas_by_status "
+                    "Readiness assessment area counts by area and status."
+                ),
+                "# TYPE platform_app_api_readiness_assessment_areas_by_status gauge",
+                *[
+                    (
+                        "platform_app_api_readiness_assessment_areas_by_status"
+                        f'{{area="{area}",status="{status}"}} {count}'
+                    )
+                    for (area, status), count in sorted(
+                        dict(readiness_metrics.get("assessment_area_status_counts", {})).items()
+                    )
+                ],
+                (
+                    "# HELP platform_app_api_readiness_blockers_by_category_and_severity "
+                    "Readiness blocker counts by blocker category and severity."
+                ),
+                "# TYPE platform_app_api_readiness_blockers_by_category_and_severity gauge",
+                *[
+                    (
+                        "platform_app_api_readiness_blockers_by_category_and_severity"
+                        f'{{category="{category}",severity="{severity}"}} {count}'
+                    )
+                    for (category, severity), count in sorted(
+                        dict(
+                            readiness_metrics.get(
+                                "blocker_counts_by_category_and_severity", {}
+                            )
+                        ).items()
+                    )
+                ],
+                (
+                    "# HELP platform_app_api_readiness_blocked_scopes "
+                    "Readiness blocker counts by blocked readiness scope."
+                ),
+                "# TYPE platform_app_api_readiness_blocked_scopes gauge",
+                *[
+                    (
+                        "platform_app_api_readiness_blocked_scopes"
+                        f'{{scope="{scope}"}} {count}'
+                    )
+                    for scope, count in sorted(
+                        {
+                            "planning_depth": 0,
+                            "preview_contracts": 0,
+                            "validation_contracts": 0,
+                            "workflow_audit_relationships": 0,
+                            "phase_transition": 0,
+                            **dict(readiness_metrics.get("blocked_scope_counts", {})),
+                        }.items()
+                    )
+                ],
+            ]
+        )
+
     if history_metrics is not None:
         history_families = {"inventory", "topology", "policy"}
         history_results = {"completed", "partial", "failed", "unknown"}
@@ -469,10 +716,11 @@ def render_prometheus_metrics(
 
 def reset_metrics_registry() -> None:
     """Reset in-memory metrics for tests."""
-    global _cached_topology_metrics, _cached_policy_metrics
+    global _cached_topology_metrics, _cached_policy_metrics, _cached_readiness_metrics
     with _lock:
         _request_counts.clear()
         _request_duration_counts.clear()
         _request_duration_sums.clear()
         _cached_topology_metrics = CachedTopologyMetrics()
         _cached_policy_metrics = CachedPolicyMetrics()
+        _cached_readiness_metrics = CachedReadinessMetrics()

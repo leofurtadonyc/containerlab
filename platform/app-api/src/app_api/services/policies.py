@@ -565,9 +565,16 @@ def build_policies_list_response() -> PoliciesListResponse:
         support_state_counts=dict(Counter(policy.support_state for policy in items)),
         policy_type_counts=dict(Counter(policy.policy_type for policy in items)),
         data_status=data_status,
+        serving_mode=serving_mode,
         sync_status=snapshot.sync_status,
         completeness=snapshot.completeness,
         detail_mode=snapshot.detail_mode,
+        empty_reason=snapshot.empty_reason,
+        source_posture=evidence_confidence.source_posture,
+        evidence_kind=evidence_confidence.evidence_kind,
+        confidence_posture=evidence_confidence.confidence_posture,
+        freshness_posture=evidence_confidence.freshness_posture,
+        blocked_reason=evidence_confidence.blocked_reason,
     )
     return PoliciesListResponse(
         service="app-api",

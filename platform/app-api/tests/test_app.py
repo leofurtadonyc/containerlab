@@ -1393,6 +1393,10 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         "app_api.metrics.router.summarize_sync_run_history",
         _build_sync_run_history_summary,
     )
+    monkeypatch.setattr(
+        "app_api.services.capabilities.load_latest_readiness_snapshot_persisted_at",
+        lambda: datetime.fromisoformat("2026-03-16T10:15:00+00:00"),
+    )
     reset_metrics_registry()
     client.get("/api/v1/health")
     client.get("/api/v1/devices")
@@ -1411,15 +1415,52 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert "platform_app_api_http_request_duration_seconds_sum" in response.text
     assert "platform_app_api_topology_nodes 2" in response.text
     assert "platform_app_api_topology_links 1" in response.text
-    assert 'data_status="live",sync_status="ok",completeness="partial"' in response.text
+    assert (
+        'data_status="live",serving_mode="live_collector",sync_status="ok",'
+        'completeness="partial"'
+    ) in response.text
+    assert (
+        'platform_app_api_topology_evidence_posture{source_posture="live_observed",'
+        'evidence_kind="observed_plus_inferred",confidence_posture="bounded_partial",'
+        'freshness_posture="current",blocked_reason="none"} 1'
+    ) in response.text
     assert 'platform_app_api_topology_nodes_by_state{state="up"} 2' in response.text
     assert 'platform_app_api_topology_links_by_state{state="up"} 1' in response.text
     assert "platform_app_api_policy_records 2" in response.text
     assert "platform_app_api_policy_observed_policy_count 2" in response.text
     assert "platform_app_api_policy_observed_targets 34" in response.text
     assert "platform_app_api_policy_capable_targets 34" in response.text
+    assert (
+        'platform_app_api_policy_snapshot_status{data_status="live",'
+        'serving_mode="live_collector",sync_status="ok",completeness="partial",'
+        'detail_mode="static_policies_when_present",empty_reason="none"} 1'
+    ) in response.text
+    assert (
+        'platform_app_api_policy_evidence_posture{source_posture="live_observed",'
+        'evidence_kind="aggregate_plus_bounded_records",'
+        'confidence_posture="bounded_partial",freshness_posture="current",'
+        'blocked_reason="none"} 1'
+    ) in response.text
     assert 'platform_app_api_policy_records_by_observed_state{state="active"} 1' in response.text
     assert 'platform_app_api_policy_records_by_type{type="static_local"} 1' in response.text
+    assert (
+        'platform_app_api_readiness_status{status="bounded_readiness_support",'
+        'planning_readiness="readiness_planning_supported",'
+        'phase_recommendation="remain_phase_2_read_only_foundation"} 1'
+    ) in response.text
+    assert (
+        "platform_app_api_readiness_snapshot_persisted_at_seconds 1773656100.000"
+        in response.text
+    )
+    assert (
+        'platform_app_api_readiness_prerequisites_by_evidence_coverage{coverage="bounded"} 2'
+        in response.text
+    )
+    assert (
+        'platform_app_api_readiness_blockers_by_category_and_severity{category="contract",'
+        'severity="critical"} 3'
+    ) in response.text
+    assert 'platform_app_api_readiness_blocked_scopes{scope="phase_transition"} 6' in response.text
     assert "platform_app_api_sync_runs_total 3" in response.text
     assert 'platform_app_api_sync_runs_by_family{model_family="inventory"} 1' in response.text
     assert 'platform_app_api_sync_runs_by_family{model_family="policy"} 1' in response.text
