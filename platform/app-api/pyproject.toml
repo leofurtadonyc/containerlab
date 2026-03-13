@@ -5,12 +5,12 @@ description = "Phase 2 read-only backend foundation for the platform app-api ser
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-  "alembic",
-  "fastapi",
-  "pydantic-settings",
-  "psycopg[binary]",
-  "sqlalchemy",
-  "uvicorn[standard]",
+  "alembic==1.18.4",
+  "fastapi==0.135.1",
+  "pydantic-settings==2.13.1",
+  "psycopg[binary]==3.3.3",
+  "sqlalchemy==2.0.48",
+  "uvicorn[standard]==0.41.0",
 ]
 
 [project.optional-dependencies]
@@ -20,7 +20,7 @@ dev = [
 ]
 
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools==82.0.1"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]

@@ -60,6 +60,21 @@ After deployment, run `./scripts/verify-core-runtime.sh` and `./scripts/verify-o
 The current bounded runtime-hardening slice now packages Postgres, Prometheus, and Grafana as local images with small startup validators, while still preserving their explicit bind-mounted runtime contracts in the topology.
 When a change touches Grafana provisioning or dashboard files, treat `./scripts/verify-core-runtime.sh` as the required post-deploy observability regression.
 
+## Build Reproducibility
+
+The platform build now tightens reproducibility in three concrete ways:
+
+- all upstream container bases are pinned by digest in the service Dockerfiles
+- `app-web` already builds with `npm ci` against the committed `package-lock.json`
+- `app-api` and `gnmi-collector` now build from committed `requirements.lock.txt` files plus pinned `pip` and `setuptools` versions
+
+This makes host-to-host rebuilds much more stable as long as the target host can reach the same upstream registries.
+
+Current honest limit:
+
+- the project is still not fully self-contained or fully offline-reproducible from repository files alone, because Docker still pulls upstream base images by digest and Python still resolves packages from the package index unless those artifacts are mirrored or pre-cached in your environment
+- deployment still assumes a Linux host with Docker and Containerlab available
+
 ## Architecture Direction
 
 The platform is being built with clear component boundaries.
@@ -190,6 +205,8 @@ Future contributors should be able to tell immediately that:
 - gNMI-first observed-state collection is a core principle
 - the design is Nokia-first but prepared for later vendor expansion
 
+For host recreation and deployment steps, see `INSTALLATION-INSTRUCTIONS.md`.
+
 ## Additional Docs
 
 Supporting documents live under `platform/docs/`:
@@ -203,6 +220,7 @@ Supporting documents live under `platform/docs/`:
 - `docs/phase2-workflow-foundations.md`
 - `docs/workflow-planning-gate.md`
 - `docs/service-hardening-plan.md`
+- `docs/build-reproducibility.md`
 - `docs/vendors.md`
 - `docs/roadmap.md`
 
