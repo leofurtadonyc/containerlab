@@ -158,6 +158,16 @@ classifies what is directly reusable versus only partially reusable or merely
 conceptually helpful, and lists the remaining workflow-grade gaps without
 implying any phase transition.
 
+## Workflow Planning Gate
+
+The platform now also has a strict planning-gate document in:
+
+- `platform/docs/workflow-planning-gate.md`
+
+That document gives a strict `go` or `no-go` style recommendation for future
+workflow-phase planning, separates planning readiness from implementation
+readiness, and preserves the current Phase 2 boundary.
+
 ## Current Vs Future
 
 ### Current

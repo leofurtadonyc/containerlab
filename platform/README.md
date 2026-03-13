@@ -191,6 +191,7 @@ Supporting documents live under `platform/docs/`:
 - `docs/workflows.md`
 - `docs/workflow-lifecycle-vocabulary.md`
 - `docs/phase2-workflow-foundations.md`
+- `docs/workflow-planning-gate.md`
 - `docs/vendors.md`
 - `docs/roadmap.md`
 
