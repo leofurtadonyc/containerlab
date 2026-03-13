@@ -1,35 +1,15 @@
 import { useMemo, useState } from "react";
 
-import type { DryRunReadinessSummary } from "../../api/contracts";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
+import {
+  describeAssessmentAreaStatus,
+  describeDryRunReadinessStatus,
+  describePlanningReadiness,
+  normalizeDryRunReadiness,
+} from "../../lib/readiness";
 import { useCapabilitiesQuery } from "./api";
-
-const FALLBACK_DRY_RUN_READINESS: DryRunReadinessSummary = {
-  status: "foundation_strengthening",
-  planning_readiness: "more_foundation_needed",
-  phase_recommendation: "remain_phase_2_read_only_foundation",
-  summary:
-    "Dry-run-readiness support is not available from the current backend response.",
-  readiness_scope:
-    "This WebUI view is falling back safely because the running backend has not exposed the bounded readiness summary yet.",
-  notes: [
-    "The capabilities page remains usable even when this newer readiness metadata has not been rolled out.",
-    "This fallback does not imply any dry-run functionality.",
-  ],
-  strongest_blockers: [
-    "No stricter readiness assessment is available from the current backend response.",
-  ],
-  bounded_next_steps: [
-    "Keep the platform in Phase 2 until the backend exposes a stricter readiness assessment.",
-  ],
-  evidence_coverage_counts: {},
-  support_posture_counts: {},
-  assessment_areas: [],
-  blockers: [],
-  prerequisites: [],
-};
 
 function describeSupportState(value: string): string {
   switch (value) {
@@ -96,56 +76,6 @@ function describeImplementationState(value: string): string {
     default:
       return "The platform keeps this area visible as a placeholder without claiming delivered behavior.";
   }
-}
-
-function describeDryRunReadinessStatus(value: string): string {
-  switch (value) {
-    case "bounded_readiness_support":
-      return "The read-only foundation is strong enough to expose bounded prerequisite readiness for future dry-run work.";
-    default:
-      return "The current read-only foundation still needs more strengthening before even bounded dry-run readiness should be exposed.";
-  }
-}
-
-function describePlanningReadiness(value: string): string {
-  switch (value) {
-    case "readiness_planning_supported":
-      return "The current read-only foundation is strong enough to support stricter future dry-run planning, but not implementation.";
-    default:
-      return "The current read-only foundation still needs more strengthening before even bounded dry-run planning should be treated as credible.";
-  }
-}
-
-function describeAssessmentAreaStatus(value: string): string {
-  switch (value) {
-    case "strong_for_planning":
-      return "This area is strong enough to support future planning discussions.";
-    case "mixed":
-      return "This area has useful foundations but still retains important blockers or truth gaps.";
-    default:
-      return "This area is still a hard blocker for any credible dry-run phase planning.";
-  }
-}
-
-function normalizeDryRunReadiness(
-  value: Partial<DryRunReadinessSummary> | undefined,
-): DryRunReadinessSummary {
-  return {
-    ...FALLBACK_DRY_RUN_READINESS,
-    ...value,
-    notes: value?.notes ?? FALLBACK_DRY_RUN_READINESS.notes,
-    strongest_blockers:
-      value?.strongest_blockers ?? FALLBACK_DRY_RUN_READINESS.strongest_blockers,
-    bounded_next_steps:
-      value?.bounded_next_steps ?? FALLBACK_DRY_RUN_READINESS.bounded_next_steps,
-    evidence_coverage_counts:
-      value?.evidence_coverage_counts ?? FALLBACK_DRY_RUN_READINESS.evidence_coverage_counts,
-    support_posture_counts:
-      value?.support_posture_counts ?? FALLBACK_DRY_RUN_READINESS.support_posture_counts,
-    assessment_areas: value?.assessment_areas ?? FALLBACK_DRY_RUN_READINESS.assessment_areas,
-    blockers: value?.blockers ?? FALLBACK_DRY_RUN_READINESS.blockers,
-    prerequisites: value?.prerequisites ?? FALLBACK_DRY_RUN_READINESS.prerequisites,
-  };
 }
 
 export function CapabilitiesView() {

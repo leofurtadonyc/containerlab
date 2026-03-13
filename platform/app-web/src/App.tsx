@@ -8,6 +8,7 @@ import { DevicesView } from "./features/devices/view";
 import { OverviewView } from "./features/overview/view";
 import { PlatformHealthView } from "./features/platform-health/view";
 import { PoliciesView } from "./features/policies/view";
+import { ReadinessView } from "./features/readiness/view";
 import { TopologyView } from "./features/topology/view";
 import { WorkflowsView } from "./features/workflows/view";
 
@@ -19,6 +20,7 @@ const NAV_ITEMS = [
   { id: "workflows", label: "Workflows" },
   { id: "audit", label: "Audit" },
   { id: "capabilities", label: "Capabilities" },
+  { id: "readiness", label: "Readiness" },
   { id: "platform-health", label: "Platform Health" },
 ] as const;
 
@@ -36,6 +38,8 @@ function renderView(viewId: string) {
       return <AuditView />;
     case "capabilities":
       return <CapabilitiesView />;
+    case "readiness":
+      return <ReadinessView />;
     case "platform-health":
       return <PlatformHealthView />;
     case "overview":
@@ -59,9 +63,9 @@ export function App() {
         <p className="body-copy">
           This WebUI now consumes the current read-only backend contracts for
           overview, platform status, devices, topology, policies, workflow
-          history, audit history, and capabilities. Grafana remains the
-          observability layer, and backend APIs remain the source of business
-          logic.
+          history, audit history, capabilities, and readiness. Grafana remains
+          the observability layer, and backend APIs remain the source of
+          business logic.
         </p>
         <p className="meta-copy">Configured backend base URL: {appApiBaseUrl}</p>
       </div>
