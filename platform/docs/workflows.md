@@ -89,6 +89,17 @@ Workflow ownership does not belong to:
 - `odl`
 - raw collector logic
 
+## Lifecycle Vocabulary
+
+The platform now has a dedicated workflow lifecycle vocabulary document in
+`platform/docs/workflow-lifecycle-vocabulary.md`.
+
+That document defines canonical state names, state meanings, non-definitions,
+and conceptual transitions only.
+
+It does not introduce workflow behavior, dry-run APIs, approval semantics, or
+execution logic in the current phase.
+
 ## Current Vs Future
 
 ### Current
