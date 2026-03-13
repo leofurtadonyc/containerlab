@@ -14,6 +14,28 @@ SupportStatus = Literal[
     "unknown",
     "not_implemented_in_platform",
 ]
+WorkflowReadinessStatus = Literal[
+    "supports_planning",
+    "partial_foundation",
+    "blocked",
+    "roadmap_only",
+    "context_only",
+]
+WorkflowReadinessScope = Literal[
+    "planning_depth",
+    "preview_contracts",
+    "validation_contracts",
+    "workflow_audit_relationships",
+    "phase_transition",
+]
+ReadinessBlockerName = Literal[
+    "workflow_lifecycle_contract_missing",
+    "dry_run_contract_missing",
+    "validation_result_contract_missing",
+    "topology_truth_still_bounded",
+    "policy_truth_still_bounded",
+    "history_still_sync_derived",
+]
 CapabilityEvidenceBasis = Literal[
     "live_validated",
     "persisted_validated",
@@ -56,6 +78,10 @@ class CapabilityRecord(BaseModel):
     status_detail: str
     caveats: list[str]
     source_of_determination: str
+    workflow_readiness_status: WorkflowReadinessStatus
+    workflow_readiness_scopes: list[WorkflowReadinessScope] = Field(default_factory=list)
+    workflow_readiness_detail: str
+    related_readiness_blockers: list[ReadinessBlockerName] = Field(default_factory=list)
 
 
 class DryRunReadinessPrerequisite(BaseModel):
@@ -80,27 +106,12 @@ class DryRunReadinessPrerequisite(BaseModel):
 class DryRunReadinessBlocker(BaseModel):
     """One explicit blocker that still prevents workflow-grade readiness."""
 
-    blocker: Literal[
-        "workflow_lifecycle_contract_missing",
-        "dry_run_contract_missing",
-        "validation_result_contract_missing",
-        "topology_truth_still_bounded",
-        "policy_truth_still_bounded",
-        "history_still_sync_derived",
-    ]
+    blocker: ReadinessBlockerName
     category: Literal["contract", "truth", "history"]
     severity: Literal["critical", "major"]
     evidence_basis: CapabilityEvidenceBasis
     summary: str
-    blocked_readiness_scopes: list[
-        Literal[
-            "planning_depth",
-            "preview_contracts",
-            "validation_contracts",
-            "workflow_audit_relationships",
-            "phase_transition",
-        ]
-    ] = Field(default_factory=list)
+    blocked_readiness_scopes: list[WorkflowReadinessScope] = Field(default_factory=list)
     related_prerequisites: list[
         Literal[
             "inventory_read_model",
@@ -159,5 +170,7 @@ class CapabilitiesListResponse(ApiResponseMetadata):
     evidence_basis_counts: dict[str, int] = Field(default_factory=dict)
     vendor_counts: dict[str, int] = Field(default_factory=dict)
     vendor_posture_counts: dict[str, int] = Field(default_factory=dict)
+    workflow_readiness_counts: dict[str, int] = Field(default_factory=dict)
+    workflow_readiness_scope_counts: dict[str, int] = Field(default_factory=dict)
     dry_run_readiness: DryRunReadinessSummary
     items: list[CapabilityRecord]

@@ -107,7 +107,8 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
             related_capabilities=[],
             current_evidence=(
                 "The capability matrix now distinguishes delivery tier, evidence basis, "
-                "and vendor posture for the current product slice."
+                "vendor posture, and one bounded future workflow-readiness interpretation "
+                "for the current product slice."
             ),
             blocking_gaps=[],
         ),
@@ -262,8 +263,8 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
             status="strong_for_planning",
             summary=(
                 "Capability-awareness is now explicit enough to support stricter future dry-run "
-                "planning because support status, delivery tier, evidence basis, and vendor posture "
-                "are all exposed clearly."
+                "planning because support status, delivery tier, evidence basis, vendor posture, "
+                "and bounded workflow-readiness interpretation are all exposed clearly."
             ),
             strongest_gaps=[
                 "The matrix remains descriptive and does not yet drive dry-run eligibility, preview behavior, or validation outcomes.",
@@ -395,6 +396,13 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "Juniper inventory support is not implemented yet.",
             ],
             source_of_determination="live_inventory_read_path",
+            workflow_readiness_status="supports_planning",
+            workflow_readiness_scopes=["planning_depth"],
+            workflow_readiness_detail=(
+                "Stable inventory coverage is strong enough to support future planning context, "
+                "but it does not by itself create preview, validation, or lifecycle contracts."
+            ),
+            related_readiness_blockers=[],
         ),
         CapabilityRecord(
             vendor="nokia",
@@ -421,6 +429,20 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "Controller-derived or protocol-derived topology enrichment is not the current source of truth.",
             ],
             source_of_determination="live_topology_read_path",
+            workflow_readiness_status="partial_foundation",
+            workflow_readiness_scopes=[
+                "planning_depth",
+                "validation_contracts",
+                "phase_transition",
+            ],
+            workflow_readiness_detail=(
+                "This capability gives future planning useful live topology context, but it "
+                "still remains too inference-heavy for workflow-grade validation or any phase move."
+            ),
+            related_readiness_blockers=[
+                "topology_truth_still_bounded",
+                "validation_result_contract_missing",
+            ],
         ),
         CapabilityRecord(
             vendor="nokia",
@@ -447,6 +469,21 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "This does not imply controller-backed topology validation or path computation.",
             ],
             source_of_determination="persisted_topology_snapshot_comparison",
+            workflow_readiness_status="partial_foundation",
+            workflow_readiness_scopes=[
+                "planning_depth",
+                "preview_contracts",
+                "validation_contracts",
+            ],
+            workflow_readiness_detail=(
+                "Bounded topology comparison can inform future preview and validation design, "
+                "but it remains aggregate comparison evidence rather than a workflow-ready diff model."
+            ),
+            related_readiness_blockers=[
+                "dry_run_contract_missing",
+                "validation_result_contract_missing",
+                "topology_truth_still_bounded",
+            ],
         ),
         CapabilityRecord(
             vendor="nokia",
@@ -473,6 +510,16 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "It does not by itself imply broad per-policy detail coverage.",
             ],
             source_of_determination="live_policy_read_path",
+            workflow_readiness_status="partial_foundation",
+            workflow_readiness_scopes=["planning_depth", "validation_contracts"],
+            workflow_readiness_detail=(
+                "Live policy counter visibility gives future planning a bounded policy posture, "
+                "but it is still too aggregate for workflow-grade policy validation."
+            ),
+            related_readiness_blockers=[
+                "policy_truth_still_bounded",
+                "validation_result_contract_missing",
+            ],
         ),
         CapabilityRecord(
             vendor="nokia",
@@ -499,6 +546,16 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "Write-safe policy workflows are still out of scope.",
             ],
             source_of_determination="live_policy_read_path",
+            workflow_readiness_status="partial_foundation",
+            workflow_readiness_scopes=["planning_depth", "validation_contracts"],
+            workflow_readiness_detail=(
+                "Static-policy detail helps future reasoning more than counters alone, but the "
+                "current slice remains too narrow for broader workflow-safe policy conclusions."
+            ),
+            related_readiness_blockers=[
+                "policy_truth_still_bounded",
+                "validation_result_contract_missing",
+            ],
         ),
         CapabilityRecord(
             vendor="nokia",
@@ -525,6 +582,21 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "Comparison does not imply full policy history or execution validation.",
             ],
             source_of_determination="persisted_policy_snapshot_comparison",
+            workflow_readiness_status="partial_foundation",
+            workflow_readiness_scopes=[
+                "planning_depth",
+                "preview_contracts",
+                "validation_contracts",
+            ],
+            workflow_readiness_detail=(
+                "Bounded policy comparison is useful future preview context, but it is still "
+                "snapshot-based evidence rather than a workflow-ready diff or validation contract."
+            ),
+            related_readiness_blockers=[
+                "dry_run_contract_missing",
+                "validation_result_contract_missing",
+                "policy_truth_still_bounded",
+            ],
         ),
         CapabilityRecord(
             vendor="nokia",
@@ -549,6 +621,13 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "Unknown is explicit here because the support picture is not yet validated by stable implementation.",
             ],
             source_of_determination="capability_matrix_review",
+            workflow_readiness_status="blocked",
+            workflow_readiness_scopes=["validation_contracts", "phase_transition"],
+            workflow_readiness_detail=(
+                "This missing capability still blocks stronger future workflow reasoning because "
+                "policy truth remains too narrow for deeper validation-grade interpretation."
+            ),
+            related_readiness_blockers=["policy_truth_still_bounded"],
         ),
         CapabilityRecord(
             vendor="nokia",
@@ -573,6 +652,20 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "No approvals, rollback, dry-run, or execution workflow state is implied by this capability.",
             ],
             source_of_determination="persisted_sync_activity_history",
+            workflow_readiness_status="partial_foundation",
+            workflow_readiness_scopes=[
+                "planning_depth",
+                "workflow_audit_relationships",
+                "phase_transition",
+            ],
+            workflow_readiness_detail=(
+                "Current workflow-history visibility helps future planning understand persisted sync "
+                "activity, but it is still not a durable workflow lifecycle foundation."
+            ),
+            related_readiness_blockers=[
+                "workflow_lifecycle_contract_missing",
+                "history_still_sync_derived",
+            ],
         ),
         CapabilityRecord(
             vendor="nokia",
@@ -594,6 +687,16 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "User-driven audit history and broader action traces are not implemented in this phase.",
             ],
             source_of_determination="persisted_sync_activity_history",
+            workflow_readiness_status="partial_foundation",
+            workflow_readiness_scopes=["workflow_audit_relationships", "phase_transition"],
+            workflow_readiness_detail=(
+                "Current audit visibility contributes bounded future workflow context, but it "
+                "still lacks workflow-grade actor, approval, and rollback relationships."
+            ),
+            related_readiness_blockers=[
+                "workflow_lifecycle_contract_missing",
+                "history_still_sync_derived",
+            ],
         ),
         CapabilityRecord(
             vendor="nokia",
@@ -618,6 +721,13 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "This does not imply broader controller-backed topology, policy, or workflow support.",
             ],
             source_of_determination="odl_restconf_capability_probe",
+            workflow_readiness_status="context_only",
+            workflow_readiness_scopes=[],
+            workflow_readiness_detail=(
+                "This platform-health probe is useful operational context, but it is not a primary "
+                "future workflow-readiness foundation for preview, validation, or lifecycle design."
+            ),
+            related_readiness_blockers=[],
         ),
         CapabilityRecord(
             vendor="juniper",
@@ -642,6 +752,13 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "This record exists to make the roadmap explicit without implying parity.",
             ],
             source_of_determination="vendor_roadmap",
+            workflow_readiness_status="roadmap_only",
+            workflow_readiness_scopes=[],
+            workflow_readiness_detail=(
+                "This roadmap-only record keeps the next vendor step visible, but it contributes "
+                "nothing to current workflow-readiness until a real Juniper read path exists."
+            ),
+            related_readiness_blockers=[],
         ),
         CapabilityRecord(
             vendor="juniper",
@@ -668,6 +785,13 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "No Juniper topology ingestion, persistence, or controller-backed enrichment is implemented.",
             ],
             source_of_determination="vendor_roadmap",
+            workflow_readiness_status="roadmap_only",
+            workflow_readiness_scopes=[],
+            workflow_readiness_detail=(
+                "This roadmap-only record preserves future vendor structure, but it does not add "
+                "any present workflow-readiness support until Juniper topology evidence is real."
+            ),
+            related_readiness_blockers=[],
         ),
         CapabilityRecord(
             vendor="juniper",
@@ -694,6 +818,13 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "No Juniper policy comparison, history, or workflow support is implemented.",
             ],
             source_of_determination="vendor_roadmap",
+            workflow_readiness_status="roadmap_only",
+            workflow_readiness_scopes=[],
+            workflow_readiness_detail=(
+                "This roadmap-only record keeps future vendor policy direction explicit, but it "
+                "does not strengthen current workflow-readiness until real Juniper policy evidence exists."
+            ),
+            related_readiness_blockers=[],
         ),
     ]
     return CapabilitiesListResponse(
@@ -704,9 +835,10 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
         data_status="bounded_matrix",
         summary=(
             "Phase 2 bounded capability matrix. Support state, implementation status, "
-            "delivery tier, evidence basis, and vendor posture are explicit across the "
-            "current Nokia-first read-only product slice, while future Juniper expansion "
-            "remains structurally visible but roadmap-only rather than implied parity."
+            "delivery tier, evidence basis, vendor posture, and bounded workflow-readiness "
+            "interpretation are explicit across the current Nokia-first read-only product "
+            "slice, while future Juniper expansion remains structurally visible but "
+            "roadmap-only rather than implied parity."
         ),
         count=len(items),
         readiness_persisted_at=readiness_persisted_at,
@@ -717,6 +849,12 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
         evidence_basis_counts=_count_values(item.evidence_basis for item in items),
         vendor_counts=_count_values(item.vendor for item in items),
         vendor_posture_counts=_count_values(item.vendor_posture for item in items),
+        workflow_readiness_counts=_count_values(
+            item.workflow_readiness_status for item in items
+        ),
+        workflow_readiness_scope_counts=_count_values(
+            scope for item in items for scope in item.workflow_readiness_scopes
+        ),
         dry_run_readiness=dry_run_readiness,
         items=items,
     )

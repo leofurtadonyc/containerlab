@@ -1277,13 +1277,15 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
         assert payload["data_status"] == "bounded_matrix"
         assert payload["count"] == 13
         assert payload["readiness_persisted_at"] == "2026-03-16T00:00:00Z"
-        assert "evidence basis, and vendor posture are explicit" in payload["summary"]
+        assert "workflow-readiness interpretation are explicit" in payload["summary"]
         assert payload["items"][0]["feature"] == "device_inventory"
         assert payload["items"][0]["domain"] == "inventory"
         assert payload["items"][0]["support_status"] == "supported"
         assert payload["items"][0]["implementation_status"] == "implemented"
         assert payload["items"][0]["delivery_tier"] == "delivered_read_only"
         assert payload["items"][0]["evidence_basis"] == "live_validated"
+        assert payload["items"][0]["workflow_readiness_status"] == "supports_planning"
+        assert payload["items"][0]["workflow_readiness_scopes"] == ["planning_depth"]
         assert "stable backend-owned contract" in payload["items"][0]["status_detail"]
         assert payload["domain_counts"]["policy"] == 5
         assert payload["domain_counts"]["topology"] == 3
@@ -1299,6 +1301,16 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
         assert payload["vendor_counts"]["juniper"] == 3
         assert payload["vendor_posture_counts"]["current_nokia_focus"] == 10
         assert payload["vendor_posture_counts"]["future_juniper_target"] == 3
+        assert payload["workflow_readiness_counts"]["supports_planning"] == 1
+        assert payload["workflow_readiness_counts"]["partial_foundation"] == 7
+        assert payload["workflow_readiness_counts"]["blocked"] == 1
+        assert payload["workflow_readiness_counts"]["context_only"] == 1
+        assert payload["workflow_readiness_counts"]["roadmap_only"] == 3
+        assert payload["workflow_readiness_scope_counts"]["planning_depth"] == 7
+        assert payload["workflow_readiness_scope_counts"]["preview_contracts"] == 2
+        assert payload["workflow_readiness_scope_counts"]["validation_contracts"] == 6
+        assert payload["workflow_readiness_scope_counts"]["workflow_audit_relationships"] == 2
+        assert payload["workflow_readiness_scope_counts"]["phase_transition"] == 4
         assert payload["dry_run_readiness"]["status"] == "bounded_readiness_support"
         assert payload["dry_run_readiness"]["planning_readiness"] == "readiness_planning_supported"
         assert payload["dry_run_readiness"]["phase_recommendation"] == "remain_phase_2_read_only_foundation"
@@ -1336,9 +1348,14 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
             == "planning_depth"
         )
         assert payload["items"][1]["feature"] == "topology_observation"
+        assert payload["items"][1]["workflow_readiness_status"] == "partial_foundation"
+        assert "validation_contracts" in payload["items"][1]["workflow_readiness_scopes"]
         assert payload["items"][2]["feature"] == "topology_persisted_comparison"
+        assert "preview_contracts" in payload["items"][2]["workflow_readiness_scopes"]
         assert payload["items"][6]["feature"] == "bgp_signaled_policy_detail"
+        assert payload["items"][6]["workflow_readiness_status"] == "blocked"
         assert payload["items"][10]["vendor"] == "juniper"
+        assert payload["items"][10]["workflow_readiness_status"] == "roadmap_only"
         assert payload["items"][11]["domain"] == "topology"
         assert payload["items"][12]["domain"] == "policy"
         assert datetime.fromisoformat(payload["generated_at"]) is not None

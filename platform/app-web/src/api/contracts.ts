@@ -438,6 +438,28 @@ export interface CapabilityRecord {
   status_detail: string;
   caveats: string[];
   source_of_determination: string;
+  workflow_readiness_status:
+    | "supports_planning"
+    | "partial_foundation"
+    | "blocked"
+    | "roadmap_only"
+    | "context_only";
+  workflow_readiness_scopes: Array<
+    | "planning_depth"
+    | "preview_contracts"
+    | "validation_contracts"
+    | "workflow_audit_relationships"
+    | "phase_transition"
+  >;
+  workflow_readiness_detail: string;
+  related_readiness_blockers: Array<
+    | "workflow_lifecycle_contract_missing"
+    | "dry_run_contract_missing"
+    | "validation_result_contract_missing"
+    | "topology_truth_still_bounded"
+    | "policy_truth_still_bounded"
+    | "history_still_sync_derived"
+  >;
 }
 
 export interface DryRunReadinessPrerequisite {
@@ -539,6 +561,8 @@ export interface CapabilitiesListResponse extends ApiResponseMetadata {
   evidence_basis_counts: Record<string, number>;
   vendor_counts: Record<string, number>;
   vendor_posture_counts: Record<string, number>;
+  workflow_readiness_counts: Record<string, number>;
+  workflow_readiness_scope_counts: Record<string, number>;
   dry_run_readiness?: DryRunReadinessSummary;
   items: CapabilityRecord[];
 }
