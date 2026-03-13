@@ -9,10 +9,11 @@ from app_api.models.audit import (
     AuditInventorySnapshotSummary,
     AuditPolicySnapshotComparison,
     AuditPolicySnapshotSummary,
+    AuditReadinessSnapshotSummary,
     AuditTopologySnapshotComparison,
     AuditTopologySnapshotSummary,
 )
-from app_api.persistence.history import load_sync_runs
+from app_api.persistence.history import load_readiness_snapshot_history, load_sync_runs
 from app_api.schemas.audit_history import (
     AuditHistoryItem,
     AuditHistoryResponse,
@@ -20,6 +21,7 @@ from app_api.schemas.audit_history import (
     AuditInventorySnapshotSummary as AuditInventorySnapshotSummaryResponse,
     AuditPolicySnapshotComparison as AuditPolicySnapshotComparisonResponse,
     AuditPolicySnapshotSummary as AuditPolicySnapshotSummaryResponse,
+    AuditReadinessSnapshotSummary as AuditReadinessSnapshotSummaryResponse,
     AuditTopologySnapshotComparison as AuditTopologySnapshotComparisonResponse,
     AuditTopologySnapshotSummary as AuditTopologySnapshotSummaryResponse,
 )
@@ -115,7 +117,7 @@ def _build_topology_snapshot_note(
 def build_audit_history_response() -> AuditHistoryResponse:
     """Build the bounded audit-style history response from persisted sync runs."""
     settings = get_settings()
-    records = [
+    sync_run_records = [
         AuditEventRecord(
             event_id=f"sync-run:{sync_run.sync_run_id}",
             event_type="read_side_sync_recorded",
@@ -231,6 +233,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 if sync_run.policy_comparison_to_previous is not None
                 else None
             ),
+            readiness_snapshot_summary=None,
             notes=[
                 *sync_run.notes,
                 *_build_inventory_snapshot_note(sync_run),
@@ -240,17 +243,58 @@ def build_audit_history_response() -> AuditHistoryResponse:
         )
         for sync_run in load_sync_runs()
     ]
+    readiness_records = [
+        AuditEventRecord(
+            event_id=f"readiness-snapshot:{snapshot.snapshot_id}",
+            event_type="readiness_snapshot_recorded",
+            source="app-api",
+            actor="platform_system",
+            target_scope="dry_run_readiness_support",
+            result="succeeded",
+            correlation_id=snapshot.snapshot_id,
+            occurred_at=snapshot.persisted_at,
+            message=(
+                "Platform recorded a bounded dry-run-readiness support snapshot when the "
+                "readiness summary changed materially."
+            ),
+            inventory_snapshot_summary=None,
+            inventory_comparison_to_previous=None,
+            topology_snapshot_summary=None,
+            topology_comparison_to_previous=None,
+            policy_snapshot_summary=None,
+            policy_comparison_to_previous=None,
+            readiness_snapshot_summary=AuditReadinessSnapshotSummary(
+                persisted_at=snapshot.persisted_at,
+                readiness_status=snapshot.readiness_status,
+                planning_readiness=snapshot.planning_readiness,
+                phase_recommendation=snapshot.phase_recommendation,
+                summary=snapshot.summary,
+                blocker_count=snapshot.blocker_count,
+                strongest_blockers=snapshot.strongest_blockers,
+            ),
+            notes=[
+                "Readiness snapshot history reflects bounded planning-support metadata rather than dry-run execution, approval, or rollback history.",
+                "A new readiness history record exists only when the persisted readiness content changed materially.",
+            ],
+        )
+        for snapshot in load_readiness_snapshot_history()
+    ]
+    records = sorted(
+        [*sync_run_records, *readiness_records],
+        key=lambda record: record.occurred_at,
+        reverse=True,
+    )
     if records:
         data_status = "persisted_activity_history"
         summary = (
-            "Audit history currently reflects platform-recorded read-side sync events "
-            "derived from persisted inventory, topology, and policy activity. It does not yet "
-            "represent full operator workflow or approval history."
+            "Audit history currently reflects platform-recorded read-side sync events plus "
+            "persisted readiness-support snapshots. It does not yet represent full operator "
+            "workflow, approval, or rollback history."
         )
     else:
         data_status = "empty"
         summary = (
-            "No persisted platform audit-style sync events are currently available."
+            "No persisted platform audit-style sync events or readiness-support snapshots are currently available."
         )
     return AuditHistoryResponse(
         service="app-api",
@@ -370,6 +414,19 @@ def build_audit_history_response() -> AuditHistoryResponse:
                         notes=record.policy_comparison_to_previous.notes,
                     )
                     if record.policy_comparison_to_previous is not None
+                    else None
+                ),
+                readiness_snapshot_summary=(
+                    AuditReadinessSnapshotSummaryResponse(
+                        persisted_at=record.readiness_snapshot_summary.persisted_at,
+                        readiness_status=record.readiness_snapshot_summary.readiness_status,
+                        planning_readiness=record.readiness_snapshot_summary.planning_readiness,
+                        phase_recommendation=record.readiness_snapshot_summary.phase_recommendation,
+                        summary=record.readiness_snapshot_summary.summary,
+                        blocker_count=record.readiness_snapshot_summary.blocker_count,
+                        strongest_blockers=record.readiness_snapshot_summary.strongest_blockers,
+                    )
+                    if record.readiness_snapshot_summary is not None
                     else None
                 ),
                 notes=record.notes,

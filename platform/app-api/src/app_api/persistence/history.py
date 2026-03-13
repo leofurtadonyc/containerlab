@@ -15,6 +15,7 @@ from app_api.persistence.tables import (
     PolicyCandidatePathTable,
     PolicyRecordTable,
     PolicySnapshotTable,
+    ReadinessSnapshotTable,
     SyncRunTable,
     TopologyLinkTable,
     TopologyNodeTable,
@@ -139,6 +140,19 @@ class PersistedPolicySnapshotComparison(BaseModel):
     removed_policy_count: int
     changed_policy_count: int
     notes: list[str] = Field(default_factory=list)
+
+
+class PersistedReadinessSnapshotHistoryRecord(BaseModel):
+    """Bounded persisted readiness snapshot context for history surfaces."""
+
+    snapshot_id: str
+    persisted_at: datetime
+    readiness_status: str
+    planning_readiness: str
+    phase_recommendation: str
+    summary: str
+    blocker_count: int
+    strongest_blockers: list[str] = Field(default_factory=list)
 
 
 class SyncRunHistorySummary(BaseModel):
@@ -608,6 +622,35 @@ def load_sync_runs(limit: int = 50) -> list[PersistedSyncRun]:
             return items
     except Exception:
         logger.exception("Failed to load bounded sync-run history.")
+        return []
+
+
+def load_readiness_snapshot_history(
+    limit: int = 20,
+) -> list[PersistedReadinessSnapshotHistoryRecord]:
+    """Load recent persisted readiness snapshots for bounded history surfaces."""
+    try:
+        with create_session() as session:
+            rows = session.scalars(
+                select(ReadinessSnapshotTable)
+                .order_by(ReadinessSnapshotTable.persisted_at.desc())
+                .limit(limit)
+            ).all()
+            return [
+                PersistedReadinessSnapshotHistoryRecord(
+                    snapshot_id=row.id,
+                    persisted_at=row.persisted_at,
+                    readiness_status=row.readiness_status,
+                    planning_readiness=row.planning_readiness,
+                    phase_recommendation=row.phase_recommendation,
+                    summary=row.summary,
+                    blocker_count=len(row.blockers or []),
+                    strongest_blockers=list(row.strongest_blockers or []),
+                )
+                for row in rows
+            ]
+    except Exception:
+        logger.exception("Failed to load bounded readiness snapshot history.")
         return []
 
 

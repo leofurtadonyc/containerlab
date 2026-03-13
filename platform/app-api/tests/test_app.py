@@ -23,6 +23,7 @@ from app_api.persistence.history import (
     PersistedInventorySnapshotSummary,
     PersistedPolicySnapshotComparison,
     PersistedPolicySnapshotSummary as PersistedPolicyHistorySummary,
+    PersistedReadinessSnapshotHistoryRecord,
     PersistedSyncRun,
     SyncRunHistorySummary,
     PersistedTopologySnapshotComparison,
@@ -731,6 +732,24 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
     ]
 
 
+def _build_persisted_readiness_snapshot_history() -> list[PersistedReadinessSnapshotHistoryRecord]:
+    return [
+        PersistedReadinessSnapshotHistoryRecord(
+            snapshot_id="readiness-snapshot-1",
+            persisted_at=datetime.fromisoformat("2026-03-10T02:00:00+00:00"),
+            readiness_status="bounded_readiness_support",
+            planning_readiness="readiness_planning_supported",
+            phase_recommendation="remain_phase_2_read_only_foundation",
+            summary="Current bounded readiness support remains useful for planning but not for dry-run execution.",
+            blocker_count=6,
+            strongest_blockers=[
+                "No durable workflow lifecycle model exists yet.",
+                "Policy truth remains intentionally bounded.",
+            ],
+        )
+    ]
+
+
 def _build_sync_run_history_summary() -> SyncRunHistorySummary:
     return SyncRunHistorySummary(
         total_count=3,
@@ -1312,6 +1331,10 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
         "app_api.services.audit_history.load_sync_runs",
         _build_persisted_sync_runs,
     )
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_readiness_snapshot_history",
+        _build_persisted_readiness_snapshot_history,
+    )
 
     response = client.get("/api/v1/audit-history", headers={"X-Request-ID": "audit-test"})
 
@@ -1319,27 +1342,38 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     payload = response.json()
     assert response.headers["X-Request-ID"] == "audit-test"
     assert payload["data_status"] == "persisted_activity_history"
-    assert payload["count"] == 3
-    assert "platform-recorded read-side sync events" in payload["summary"]
-    assert payload["items"][0]["event_type"] == "read_side_sync_recorded"
-    assert payload["items"][0]["source"] == "app-api"
-    assert payload["items"][0]["actor"] == "platform_system"
-    assert payload["items"][0]["target_scope"] == "policy_inventory_read_side"
+    assert payload["count"] == 4
+    assert "persisted readiness-support snapshots" in payload["summary"]
+    assert payload["items"][0]["event_type"] == "readiness_snapshot_recorded"
+    assert payload["items"][0]["target_scope"] == "dry_run_readiness_support"
     assert payload["items"][0]["result"] == "succeeded"
-    assert payload["items"][0]["policy_snapshot_summary"]["detail_record_count"] == 1
-    assert payload["items"][0]["policy_comparison_to_previous"]["changed_policy_count"] == 1
-    assert payload["items"][0]["correlation_id"] == "sync-policy-1"
-    assert "persisted policy_snapshot" in payload["items"][0]["message"]
-    assert payload["items"][1]["topology_snapshot_summary"]["topology_name"] == "Platform Observed Topology"
-    assert payload["items"][1]["topology_comparison_to_previous"]["node_count_delta"] == 1
-    assert payload["items"][1]["policy_snapshot_summary"] is None
-    assert payload["items"][2]["inventory_snapshot_summary"]["role_counts"]["pe"] == 8
-    assert payload["items"][2]["inventory_comparison_to_previous"]["added_device_count"] == 1
+    assert payload["items"][0]["readiness_snapshot_summary"]["readiness_status"] == "bounded_readiness_support"
+    assert payload["items"][0]["readiness_snapshot_summary"]["blocker_count"] == 6
+    assert payload["items"][0]["policy_snapshot_summary"] is None
+    assert "changed materially" in payload["items"][0]["message"]
+    assert payload["items"][1]["event_type"] == "read_side_sync_recorded"
+    assert payload["items"][0]["source"] == "app-api"
+    assert payload["items"][1]["actor"] == "platform_system"
+    assert payload["items"][1]["target_scope"] == "policy_inventory_read_side"
+    assert payload["items"][1]["result"] == "succeeded"
+    assert payload["items"][1]["policy_snapshot_summary"]["detail_record_count"] == 1
+    assert payload["items"][1]["policy_comparison_to_previous"]["changed_policy_count"] == 1
+    assert payload["items"][1]["correlation_id"] == "sync-policy-1"
+    assert "persisted policy_snapshot" in payload["items"][1]["message"]
+    assert payload["items"][2]["topology_snapshot_summary"]["topology_name"] == "Platform Observed Topology"
+    assert payload["items"][2]["topology_comparison_to_previous"]["node_count_delta"] == 1
+    assert payload["items"][2]["policy_snapshot_summary"] is None
+    assert payload["items"][3]["inventory_snapshot_summary"]["role_counts"]["pe"] == 8
+    assert payload["items"][3]["inventory_comparison_to_previous"]["added_device_count"] == 1
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
 def test_audit_history_endpoint_handles_empty_persisted_history(monkeypatch) -> None:
     monkeypatch.setattr("app_api.services.audit_history.load_sync_runs", lambda: [])
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_readiness_snapshot_history",
+        lambda: [],
+    )
 
     response = client.get("/api/v1/audit-history")
 
@@ -1347,7 +1381,7 @@ def test_audit_history_endpoint_handles_empty_persisted_history(monkeypatch) -> 
     payload = response.json()
     assert payload["data_status"] == "empty"
     assert payload["count"] == 0
-    assert "No persisted platform audit-style sync events" in payload["summary"]
+    assert "No persisted platform audit-style sync events or readiness-support snapshots" in payload["summary"]
 
 
 def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
