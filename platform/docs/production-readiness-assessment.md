@@ -112,6 +112,8 @@ Assessment:
 
 - strong enough for routine read-only interpretation of persisted-backed
   evidence surfaces
+- strong enough that no immediate item-ID implementation is required for the
+  current bounded product slice
 - not strong enough for workflow-grade citation, lifecycle reasoning, or
   execution semantics
 
@@ -303,6 +305,8 @@ The current platform is not yet safe to use for the following jobs.
 - pre-change safety reasoning that depends on complete topology or policy truth
 - workflow execution, approvals, rollback, or any action-oriented lifecycle
 - dry-run, preview, diff, or validation-result behavior
+- standalone citation of readiness blockers, prerequisites, assessment areas,
+  or capability items as if they were durable item records
 - treating workflow-history or audit-history as workflow-grade lifecycle,
   approval, rollback, or operator-accountability history
 - repo-only recreation of prior runtime data after Postgres, Prometheus, or
