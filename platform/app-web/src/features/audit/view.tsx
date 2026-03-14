@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import type { AuditHistoryItem } from "../../api/contracts";
+import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
@@ -96,6 +97,9 @@ function matchesRecencyFilter(
 }
 
 function getAuditEvidenceLabel(item: AuditHistoryItem): string {
+  if (item.readiness_snapshot_summary) {
+    return "Readiness snapshot";
+  }
   if (item.inventory_comparison_to_previous) {
     return "Inventory comparison";
   }
@@ -118,6 +122,9 @@ function getAuditEvidenceLabel(item: AuditHistoryItem): string {
 }
 
 function getAuditEvidencePosture(item: AuditHistoryItem): string {
+  if (item.readiness_snapshot_summary) {
+    return "Audit event plus bounded readiness snapshot context";
+  }
   if (item.inventory_comparison_to_previous) {
     return "Audit event plus bounded inventory comparison evidence";
   }
@@ -142,6 +149,9 @@ function getAuditEvidencePosture(item: AuditHistoryItem): string {
 function matchesAuditEvidenceFilter(item: AuditHistoryItem, evidenceFilter: string): boolean {
   if (evidenceFilter === "all") {
     return true;
+  }
+  if (evidenceFilter === "readiness_snapshot_context") {
+    return item.readiness_snapshot_summary !== null;
   }
   if (evidenceFilter === "inventory_snapshot_context") {
     return item.inventory_snapshot_summary !== null;
@@ -176,6 +186,7 @@ function getAuditEvidenceWeight(item: AuditHistoryItem): number {
     return 3;
   }
   if (
+    item.readiness_snapshot_summary ||
     item.inventory_snapshot_summary ||
     item.topology_snapshot_summary ||
     item.policy_snapshot_summary
@@ -209,6 +220,9 @@ export function AuditView() {
   const topologyContextCount = items.filter((item) => item.topology_snapshot_summary !== null).length;
   const policyContextCount = items.filter((item) => item.policy_snapshot_summary !== null).length;
   const itemsWithNotesCount = items.filter((item) => item.notes.length > 0).length;
+  const readinessContextCount = items.filter(
+    (item) => item.readiness_snapshot_summary !== null,
+  ).length;
   const recentEventCount = items.filter(
     (item) => getRecencyBucket(item.occurred_at, data?.generated_at ?? "") === "recent",
   ).length;
@@ -389,6 +403,11 @@ export function AuditView() {
           <p>Audit events that include bounded inventory, topology, or policy comparison context.</p>
         </article>
         <article className="summary-card">
+          <p className="summary-label">Readiness Snapshot Context</p>
+          <strong>{readinessContextCount}</strong>
+          <p>Events that include bounded persisted readiness-support evidence.</p>
+        </article>
+        <article className="summary-card">
           <p className="summary-label">Inventory Snapshot Context</p>
           <strong>{inventoryContextCount}</strong>
           <p>Events that include bounded persisted inventory evidence beyond plain audit messaging.</p>
@@ -481,7 +500,7 @@ export function AuditView() {
             <li>
               <span>Bounded snapshot context</span>
               <strong>
-                {inventoryContextCount + topologyContextCount + policyContextCount}
+                {readinessContextCount + inventoryContextCount + topologyContextCount + policyContextCount}
               </strong>
             </li>
             <li>
@@ -499,6 +518,10 @@ export function AuditView() {
             They show what the platform recorded, not who approved or executed change actions.
           </p>
           <ul className="compact-list">
+            <li>
+              <span>Readiness context</span>
+              <strong>{readinessContextCount}</strong>
+            </li>
             <li>
               <span>Inventory context / comparison</span>
               <strong>
@@ -563,6 +586,7 @@ export function AuditView() {
             onChange={(event) => setEvidenceFilter(event.target.value)}
           >
             <option value="all">All</option>
+            <option value="readiness_snapshot_context">Readiness snapshot context</option>
             <option value="inventory_snapshot_context">Inventory snapshot context</option>
             <option value="inventory_comparison">Inventory comparison evidence</option>
             <option value="topology_snapshot_context">Topology snapshot context</option>
@@ -692,6 +716,20 @@ export function AuditView() {
                   <strong>{selectedEvent.correlation_id}</strong>
                 </div>
                 <div className="key-value-row">
+                  <span>Sync-run anchor</span>
+                  <IdentifierChip
+                    value={selectedEvent.sync_run_id}
+                    emptyLabel="Not a sync-run-backed event"
+                  />
+                </div>
+                <div className="key-value-row">
+                  <span>Readiness snapshot anchor</span>
+                  <IdentifierChip
+                    value={selectedEvent.readiness_snapshot_id}
+                    emptyLabel="Not a readiness-backed event"
+                  />
+                </div>
+                <div className="key-value-row">
                   <span>Message</span>
                   <strong>{selectedEvent.message}</strong>
                 </div>
@@ -716,10 +754,63 @@ export function AuditView() {
                   </ul>
                 </>
               ) : null}
+              {selectedEvent.readiness_snapshot_summary ? (
+                <>
+                  <p className="summary-label">Readiness Snapshot Context</p>
+                  <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Snapshot anchor</span>
+                      <IdentifierChip value={selectedEvent.readiness_snapshot_summary.snapshot_id} />
+                    </div>
+                    <div className="key-value-row">
+                      <span>Persisted at</span>
+                      <strong>
+                        {formatDateTime(selectedEvent.readiness_snapshot_summary.persisted_at)}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Occurred to persisted gap</span>
+                      <strong>
+                        {describeTimeGap(
+                          selectedEvent.occurred_at,
+                          selectedEvent.readiness_snapshot_summary.persisted_at,
+                        )}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Readiness status</span>
+                      <strong>
+                        {formatLabel(selectedEvent.readiness_snapshot_summary.readiness_status)}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Planning readiness</span>
+                      <strong>
+                        {formatLabel(selectedEvent.readiness_snapshot_summary.planning_readiness)}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Phase recommendation</span>
+                      <strong>
+                        {formatLabel(selectedEvent.readiness_snapshot_summary.phase_recommendation)}
+                      </strong>
+                    </div>
+                    <div className="key-value-row">
+                      <span>Blocker count</span>
+                      <strong>{selectedEvent.readiness_snapshot_summary.blocker_count}</strong>
+                    </div>
+                  </div>
+                  <p className="table-note">{selectedEvent.readiness_snapshot_summary.summary}</p>
+                </>
+              ) : null}
               {selectedEvent.inventory_snapshot_summary ? (
                 <>
                   <p className="summary-label">Inventory Snapshot Context</p>
                   <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Snapshot anchor</span>
+                      <IdentifierChip value={selectedEvent.inventory_snapshot_summary.snapshot_id} />
+                    </div>
                     <div className="key-value-row">
                       <span>Persisted at</span>
                       <strong>
@@ -780,6 +871,14 @@ export function AuditView() {
                   <p className="summary-label">Inventory Comparison Evidence</p>
                   <div className="key-value-list">
                     <div className="key-value-row">
+                      <span>Current snapshot anchor</span>
+                      <IdentifierChip value={selectedEvent.inventory_comparison_to_previous.current_snapshot_id} />
+                    </div>
+                    <div className="key-value-row">
+                      <span>Previous snapshot anchor</span>
+                      <IdentifierChip value={selectedEvent.inventory_comparison_to_previous.previous_snapshot_id} />
+                    </div>
+                    <div className="key-value-row">
                       <span>Compared snapshots</span>
                       <strong>
                         {formatDateTime(
@@ -821,6 +920,10 @@ export function AuditView() {
                 <>
                   <p className="summary-label">Topology Snapshot Context</p>
                   <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Snapshot anchor</span>
+                      <IdentifierChip value={selectedEvent.topology_snapshot_summary.snapshot_id} />
+                    </div>
                     <div className="key-value-row">
                       <span>Persisted at</span>
                       <strong>
@@ -886,6 +989,14 @@ export function AuditView() {
                   <p className="summary-label">Topology Comparison Evidence</p>
                   <div className="key-value-list">
                     <div className="key-value-row">
+                      <span>Current snapshot anchor</span>
+                      <IdentifierChip value={selectedEvent.topology_comparison_to_previous.current_snapshot_id} />
+                    </div>
+                    <div className="key-value-row">
+                      <span>Previous snapshot anchor</span>
+                      <IdentifierChip value={selectedEvent.topology_comparison_to_previous.previous_snapshot_id} />
+                    </div>
+                    <div className="key-value-row">
                       <span>Compared snapshots</span>
                       <strong>
                         {formatDateTime(
@@ -945,6 +1056,10 @@ export function AuditView() {
                   <p className="summary-label">Policy Snapshot Context</p>
                   <div className="key-value-list">
                     <div className="key-value-row">
+                      <span>Snapshot anchor</span>
+                      <IdentifierChip value={null} emptyLabel="Not exposed in this summary" />
+                    </div>
+                    <div className="key-value-row">
                       <span>Persisted at</span>
                       <strong>{formatDateTime(selectedEvent.policy_snapshot_summary.persisted_at)}</strong>
                     </div>
@@ -985,6 +1100,14 @@ export function AuditView() {
                 <>
                   <p className="summary-label">Policy Comparison Evidence</p>
                   <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Current snapshot anchor</span>
+                      <IdentifierChip value={selectedEvent.policy_comparison_to_previous.current_snapshot_id} />
+                    </div>
+                    <div className="key-value-row">
+                      <span>Previous snapshot anchor</span>
+                      <IdentifierChip value={selectedEvent.policy_comparison_to_previous.previous_snapshot_id} />
+                    </div>
                     <div className="key-value-row">
                       <span>Compared snapshots</span>
                       <strong>

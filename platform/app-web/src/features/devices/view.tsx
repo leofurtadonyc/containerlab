@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import type { EvidenceConfidenceSummary } from "../../api/contracts";
+import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
@@ -270,6 +271,13 @@ export function DevicesView() {
             {formatDateTime(data.comparison_to_latest_persisted.comparison_persisted_at)}. This
             remains bounded normalized evidence, not drift analysis or validation guidance.
           </p>
+          <p className="table-note">
+            Persisted snapshot anchor:{" "}
+            <IdentifierChip
+              value={data.comparison_to_latest_persisted.comparison_snapshot_id}
+              emptyLabel="Not exposed in this posture"
+            />
+          </p>
         </div>
       ) : null}
 
@@ -352,6 +360,13 @@ export function DevicesView() {
               <strong>
                 {formatDateTime(data.comparison_to_latest_persisted.comparison_persisted_at)}
               </strong>
+            </li>
+            <li>
+              <span>Persisted snapshot anchor</span>
+              <IdentifierChip
+                value={data.comparison_to_latest_persisted.comparison_snapshot_id}
+                emptyLabel="Not exposed in this posture"
+              />
             </li>
             <li>
               <span>Device delta</span>
