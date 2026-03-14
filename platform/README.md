@@ -205,13 +205,14 @@ Future contributors should be able to tell immediately that:
 - gNMI-first observed-state collection is a core principle
 - the design is Nokia-first but prepared for later vendor expansion
 
-For host recreation and deployment steps, see `INSTALLATION-INSTRUCTIONS.md`.
+For host recreation and deployment steps, see `INSTALLATION-INSTRUCTIONS.md`. For the bounded operator-facing build, deploy, verify, healthy-state, and first-response troubleshooting flow, see `docs/deployment-runbook.md`.
 
 ## Additional Docs
 
 Supporting documents live under `platform/docs/`:
 
 - `docs/architecture.md`
+- `docs/deployment-runbook.md`
 - `docs/services.md`
 - `docs/data-flows.md`
 - `docs/dashboards.md`

@@ -2,6 +2,8 @@
 
 This document explains how to recreate the current platform on another host.
 
+For the bounded operator-facing deployment and troubleshooting flow after initial bring-up, see `docs/deployment-runbook.md`.
+
 It is written for the current implementation reality:
 
 - `Phase 2 — read-only product foundation`
