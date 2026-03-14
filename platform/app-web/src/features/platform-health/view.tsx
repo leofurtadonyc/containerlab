@@ -88,6 +88,10 @@ export function PlatformHealthView() {
           It does not claim persisted snapshot anchors, fallback serving, or full dependency health
           coverage for every service.
         </p>
+        <p className="table-note">
+          Persisted readiness anchors and any readiness child-item identity cues belong on the
+          Readiness page, not on this bounded current-status surface.
+        </p>
       </div>
 
       <div className="summary-grid">
@@ -149,7 +153,13 @@ export function PlatformHealthView() {
               kind: "anchor",
               value: null,
               emptyLabel: "Not exposed on this page",
-              note: "Platform status does not currently expose a persisted snapshot identifier because this page is a bounded current-status surface.",
+              note: "Platform status does not currently expose a persisted snapshot identifier because this page is a bounded current-status surface rather than a persisted readiness or history view.",
+            },
+            {
+              label: "Readiness identity cues",
+              kind: "text",
+              value: "See Readiness page",
+              note: "Readiness snapshot anchors and any per-item readiness identifiers are intentionally kept with the readiness-support contract instead of this platform-status view.",
             },
             {
               label: "Degraded scope",

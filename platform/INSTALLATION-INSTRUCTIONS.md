@@ -73,6 +73,9 @@ Current tested assumptions:
 - Containerlab installed and working
 - outbound access to the required upstream image and package registries unless you already mirror or cache those artifacts internally
 
+The standard recreate flow does not require host-installed Node.js, `npm`, or `pytest`.
+For the current Phase 2 platform workflow, those toolchains run inside the service image builds or are replaced by the bounded post-deploy verification scripts.
+
 Current external dependencies still required during a fresh rebuild:
 
 - Docker image registries for the pinned base images
@@ -126,6 +129,9 @@ Current reproducibility protections in this build flow:
 - `app-web` builds with `npm ci` against the committed lock file
 - `app-api` and `gnmi-collector` build from committed `requirements.lock.txt` files with pinned `pip` and `setuptools`
 
+Operationally, this means a host without local `npm` can still rebuild `app-web`, because the Node toolchain runs inside the Docker build for that image.
+Likewise, routine recreate-time validation does not depend on host-installed `pytest`; the current bounded validation path is to rebuild the images, redeploy the topology, and rerun the verification scripts below.
+
 ## Deploy The Platform Topology
 
 From `platform/`, deploy the current topology:
@@ -150,6 +156,8 @@ After the topology comes up, run the bounded runtime verification scripts:
 ./scripts/verify-core-runtime.sh
 ./scripts/verify-odl-auth.sh
 ```
+
+If you changed source files on a host that does not have local frontend or Python test tooling installed, use this rebuild-and-verify path rather than trying to validate the services with host-side `npm` or `pytest` commands.
 
 These checks currently validate:
 

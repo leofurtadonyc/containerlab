@@ -2,6 +2,7 @@ import { EmptyState, ErrorState, LoadingState } from "../../components/query-sta
 import { StatusPill } from "../../components/status-pill";
 import { TrustCueCard } from "../../components/trust-cue-card";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
+import { normalizeDryRunReadiness, summarizeReadinessItemIdentitySupport } from "../../lib/readiness";
 import { useCapabilitiesQuery } from "../capabilities/api";
 import { useDevicesQuery } from "../devices/api";
 import { usePlatformStatusQuery } from "../platform-health/api";
@@ -101,6 +102,8 @@ export function OverviewView() {
   const staleSliceCount = [devicesQuery.data, topologyQuery.data, policiesQuery.data].filter(
     (slice) => slice.evidence_confidence.freshness_posture === "stale",
   ).length;
+  const readiness = normalizeDryRunReadiness(capabilitiesQuery.data.dry_run_readiness);
+  const readinessIdentity = summarizeReadinessItemIdentitySupport(readiness);
 
   return (
     <section>
@@ -311,7 +314,7 @@ export function OverviewView() {
 
         <TrustCueCard
           title="Capabilities And Readiness Cues"
-          summary="The capability matrix stays descriptive, but it now exposes whether the current readiness-support surface has a persisted anchor and when that support snapshot was last persisted."
+          summary="The capability matrix stays descriptive. The readiness surface uses the persisted snapshot anchor as the strongest trust cue, while child item identifiers may remain absent or mixed across backend versions and never imply workflow handles."
           rows={[
             {
               label: "Matrix status",
@@ -322,14 +325,20 @@ export function OverviewView() {
             {
               label: "Planning readiness",
               kind: "status",
-              value:
-                capabilitiesQuery.data.dry_run_readiness?.planning_readiness ?? "unknown",
+              value: readiness.planning_readiness,
             },
             {
               label: "Readiness anchor",
               kind: "anchor",
               value: capabilitiesQuery.data.readiness_snapshot_id,
               emptyLabel: "No readiness anchor exposed",
+              note: "The response anchor is the durable reference for the persisted readiness-support record when it is available.",
+            },
+            {
+              label: "Child item identity",
+              kind: "text",
+              value: formatLabel(readinessIdentity.posture),
+              note: readinessIdentity.note,
             },
             {
               label: "Readiness persisted at",
@@ -337,9 +346,14 @@ export function OverviewView() {
               value: formatDateTime(capabilitiesQuery.data.readiness_persisted_at ?? null),
             },
             {
+              label: "Identifiers exposed",
+              kind: "text",
+              value: `${readinessIdentity.exposedCount} of ${readinessIdentity.totalCount}`,
+            },
+            {
               label: "Strongest blocker count",
               kind: "text",
-              value: `${capabilitiesQuery.data.dry_run_readiness?.strongest_blockers.length ?? 0}`,
+              value: `${readiness.strongest_blockers.length}`,
             },
           ]}
         />

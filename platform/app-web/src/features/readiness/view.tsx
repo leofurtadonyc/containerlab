@@ -10,6 +10,7 @@ import {
   describeReadinessBlockerCategory,
   describeReadinessBlockerSeverity,
   normalizeDryRunReadiness,
+  summarizeReadinessItemIdentitySupport,
 } from "../../lib/readiness";
 import { useCapabilitiesQuery } from "../capabilities/api";
 
@@ -50,6 +51,7 @@ export function ReadinessView() {
   const blockers = readiness.blockers;
   const prerequisites = readiness.prerequisites;
   const assessmentAreas = readiness.assessment_areas;
+  const identitySupport = summarizeReadinessItemIdentitySupport(readiness);
 
   return (
     <section>
@@ -70,6 +72,7 @@ export function ReadinessView() {
         <span>Phase recommendation: {formatLabel(readiness.phase_recommendation)}</span>
         <span>Readiness persisted at: {formatDateTime(data.readiness_persisted_at ?? null)}</span>
         <span>Snapshot anchor exposed: {data.readiness_snapshot_id ? "Yes" : "No"}</span>
+        <span>Child item identity: {formatLabel(identitySupport.posture)}</span>
         <span>Generated: {formatDateTime(data.generated_at)}</span>
       </div>
 
@@ -95,6 +98,13 @@ export function ReadinessView() {
           <p className="summary-label">Prerequisites</p>
           <strong>{prerequisites.length}</strong>
           <p>Bounded prerequisite checks currently exposed by the backend-owned readiness model.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Child Item Identifiers</p>
+          <strong>
+            {identitySupport.exposedCount} / {identitySupport.totalCount}
+          </strong>
+          <p>The response anchor stays primary when child records remain snapshot-scoped only.</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Strong Evidence</p>
@@ -145,13 +155,20 @@ export function ReadinessView() {
         </p>
       </div>
 
+      <div className="callout">
+        <strong>Identity posture stays explicit</strong>
+        <p>{identitySupport.summary}</p>
+        <p className="table-note">{identitySupport.note}</p>
+      </div>
+
       <div className="content-grid">
         <article className="detail-card">
           <p className="summary-label">Persisted Readiness Anchor</p>
           <p>
             This page is backed by a persisted readiness-support snapshot when the backend has one.
-            The anchor identifies that persisted read-only record and does not imply workflow state
-            or execution capability.
+            The anchor identifies that persisted read-only response record, remains the strongest
+            stable reference across mixed-version payloads, and does not imply workflow state or
+            execution capability.
           </p>
           <div className="key-value-list">
             <div className="key-value-row">
@@ -170,6 +187,34 @@ export function ReadinessView() {
               <strong>{formatDateTime(data.generated_at)}</strong>
             </div>
           </div>
+        </article>
+        <article className="detail-card">
+          <p className="summary-label">Child Item Identity Posture</p>
+          <p>
+            Standalone blocker, prerequisite, and assessment-area identifiers are optional trust
+            cues. Their presence helps reference a specific child record, but they never imply a
+            workflow handle, approval object, or execution control.
+          </p>
+          <div className="key-value-list">
+            <div className="key-value-row">
+              <span>Current posture</span>
+              <strong>{formatLabel(identitySupport.posture)}</strong>
+            </div>
+            <div className="key-value-row">
+              <span>Identifiers exposed</span>
+              <strong>
+                {identitySupport.exposedCount} of {identitySupport.totalCount}
+              </strong>
+            </div>
+            <div className="key-value-row">
+              <span>Fallback reference</span>
+              <IdentifierChip
+                value={data.readiness_snapshot_id}
+                emptyLabel="No response anchor exposed"
+              />
+            </div>
+          </div>
+          <p className="table-note">{identitySupport.note}</p>
         </article>
         <article className="detail-card">
           <p className="summary-label">Readiness Scope</p>
@@ -220,6 +265,13 @@ export function ReadinessView() {
                   </strong>
                   {" - "}
                   {assessment.summary}
+                  <div className="table-note">
+                    Item identifier:{" "}
+                    <IdentifierChip
+                      value={assessment.item_id}
+                      emptyLabel="Snapshot-scoped only"
+                    />
+                  </div>
                   <div className="table-note">
                     {describeAssessmentAreaStatus(assessment.status)}
                   </div>
@@ -325,6 +377,10 @@ export function ReadinessView() {
                 </li>
               </ul>
               <p className="table-note">
+                Item identifier:{" "}
+                <IdentifierChip value={blocker.item_id} emptyLabel="Snapshot-scoped only" />
+              </p>
+              <p className="table-note">
                 {describeReadinessBlockerSeverity(blocker.severity)}{" "}
                 {describeReadinessBlockerCategory(blocker.category)}
               </p>
@@ -378,6 +434,13 @@ export function ReadinessView() {
                   </strong>
                 </li>
               </ul>
+              <p className="table-note">
+                Item identifier:{" "}
+                <IdentifierChip
+                  value={prerequisite.item_id}
+                  emptyLabel="Snapshot-scoped only"
+                />
+              </p>
               <p className="table-note">
                 {describeEvidenceCoverage(prerequisite.evidence_coverage)}
               </p>

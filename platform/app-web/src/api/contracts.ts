@@ -501,6 +501,7 @@ export interface CapabilityRecord {
 }
 
 export interface DryRunReadinessPrerequisite {
+  item_id?: string | null;
   prerequisite:
     | "inventory_read_model"
     | "topology_comparison_evidence"
@@ -527,6 +528,7 @@ export interface DryRunReadinessPrerequisite {
 }
 
 export interface DryRunReadinessBlocker {
+  item_id?: string | null;
   blocker:
     | "workflow_lifecycle_contract_missing"
     | "dry_run_contract_missing"
@@ -561,6 +563,7 @@ export interface DryRunReadinessBlocker {
 }
 
 export interface DryRunReadinessAssessmentArea {
+  item_id?: string | null;
   area:
     | "model_maturity"
     | "history_maturity"
@@ -595,7 +598,7 @@ export interface CapabilitiesListResponse extends ApiResponseMetadata {
   data_status: "placeholder" | "bounded_matrix";
   summary: string;
   count: number;
-  readiness_snapshot_id: string | null;
+  readiness_snapshot_id?: string | null;
   readiness_persisted_at?: string | null;
   domain_counts: Record<string, number>;
   support_counts: Record<string, number>;
