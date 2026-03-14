@@ -500,6 +500,11 @@ export interface CapabilityRecord {
   >;
 }
 
+export type CapabilityRecordIdentityTuple = Pick<
+  CapabilityRecord,
+  "vendor" | "platform" | "domain" | "feature" | "version_scope"
+>;
+
 export interface DryRunReadinessPrerequisite {
   item_id?: string | null;
   prerequisite:

@@ -416,6 +416,26 @@ export function DevicesView() {
         </div>
       ) : null}
 
+      <div className="callout">
+        <strong>Device capability posture stays intentionally coarse</strong>
+        <p>
+          The capability status on each device row is a bounded support summary for the current
+          product slice. It is not a per-device capability inventory, a roadmap guarantee, or a
+          substitute for the capabilities matrix.
+        </p>
+      </div>
+
+      {(capabilityCounts.not_implemented_in_platform ?? 0) > 0 ? (
+        <div className="callout">
+          <strong>Not implemented does not mean the device is unhealthy</strong>
+          <p>
+            A device row marked as not implemented means the current platform does not yet deliver
+            that capability for the relevant vendor or platform slice. It remains a support-boundary
+            cue, not a device fault or roadmap promise.
+          </p>
+        </div>
+      ) : null}
+
       <div className="toolbar">
         <label className="field-group">
           <span>Search devices</span>
@@ -507,7 +527,9 @@ export function DevicesView() {
 
       <p className="footnote">
         Current inventory status: {formatLabel(data.data_status)}. This view stays
-        product-oriented, keeps uncertainty explicit, and does not expose raw collector payloads.
+        product-oriented, keeps uncertainty explicit, does not expose raw collector payloads, and
+        leaves capability identity, delivery tier, evidence basis, and roadmap posture on the
+        dedicated capabilities page.
       </p>
     </section>
   );
