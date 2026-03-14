@@ -6,20 +6,20 @@ type TrustCueRow =
       label: string;
       kind: "status";
       value: string;
-      note?: string;
+      note?: string | string[];
     }
   | {
       label: string;
       kind: "anchor";
       value: string | null | undefined;
       emptyLabel?: string;
-      note?: string;
+      note?: string | string[];
     }
   | {
       label: string;
       kind: "text";
       value: string;
-      note?: string;
+      note?: string | string[];
     };
 
 interface TrustCueCardProps {
@@ -39,6 +39,20 @@ function renderValue(row: TrustCueRow) {
   }
 }
 
+function renderNote(note: string | string[]) {
+  if (Array.isArray(note)) {
+    return (
+      <ul className="notes-list">
+        {note.map((entry) => (
+          <li key={entry}>{entry}</li>
+        ))}
+      </ul>
+    );
+  }
+
+  return <p className="table-note">{note}</p>;
+}
+
 export function TrustCueCard({ title, summary, rows }: TrustCueCardProps) {
   return (
     <article className="detail-card">
@@ -50,7 +64,7 @@ export function TrustCueCard({ title, summary, rows }: TrustCueCardProps) {
             <span>{row.label}</span>
             <div>
               {renderValue(row)}
-              {row.note ? <p className="table-note">{row.note}</p> : null}
+              {row.note ? renderNote(row.note) : null}
             </div>
           </div>
         ))}

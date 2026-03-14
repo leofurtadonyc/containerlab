@@ -115,6 +115,7 @@ Current state:
 - adapter and mapping scaffolding exist
 - narrow normalized inventory, topology, and policy delivery shapes now exist between the collector and the backend
 - live transport from the collector process into `app-api` now exists for those bounded read-side slices
+- those bounded collector deliveries now also carry configured-target coverage, observed-target counts, freshness-window timestamps, degraded-scope summaries, and policy detail-ready posture so `app-api` can expose clearer product trust cues without inventing fuller truth
 
 ## Backend To Frontend Flow
 
@@ -144,6 +145,7 @@ Current state:
 - inventory and topology may be served from the latest persisted normalized snapshot if the live collector boundary is temporarily unavailable
 - policy may now also be served from the latest persisted normalized policy snapshot if the live collector boundary is temporarily unavailable
 - useful frontend read-only pages now consume those stable contracts for overview, platform health, devices, topology, policies, and capabilities
+- overview and platform health now also surface the backend-owned bounded read-path coverage, freshness-window, and degraded-scope posture that the platform-status contract exposes for inventory, topology, and policy
 - workflow-history and audit-history pages now interpret persisted sync-derived evidence using bounded recency and comparison cues, but those remain product-facing explanations rather than workflow, audit-forensics, or validation conclusions
 
 Current comparison semantics:
@@ -245,8 +247,15 @@ Current state:
 - placeholder dashboard families exist
 - `app-api` now exposes bounded HTTP request and latency metrics
 - `gnmi-collector` now exposes bounded inventory collection, normalization, and backend-readiness metrics
+- `gnmi-collector` now also exposes bounded observed-target coverage and observation-age metrics for inventory, topology, and policy plus policy detail-ready target counts, which the platform overview dashboard can use directly
 - Prometheus should actively scrape only the currently real service metrics targets and keep the remaining service targets documented as future placeholders
 - `verify-core-runtime` now provides one bounded post-deploy regression for Prometheus readiness, current real target discovery, Grafana health, datasource provisioning, and overview dashboard discovery
+
+Current product-versus-observability split:
+
+- `app-api` and `app-web` carry the human-readable degraded-scope summaries and bounded read-path explanations
+- Prometheus and Grafana carry the numeric proxies for those same conditions, such as observed-versus-configured target gaps, freshness age, single-sided topology evidence, and policy detail-ready gaps
+- observability panels therefore reinforce the product posture without becoming a second product contract
 
 ## ODL Integration Flow
 

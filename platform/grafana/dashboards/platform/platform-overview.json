@@ -15,7 +15,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## Platform Observability Overview\nThis dashboard follows the current read-only platform boundary: Prometheus scrape health, backend API responsiveness, collector-backed snapshot signals, bounded persisted sync-history evidence, one bounded readiness-support posture slice, and a small amount of honest live-versus-persisted or backend-versus-collector comparison context where those metrics already exist.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- Inventory, topology, policy, and bounded readiness-support freshness now surface where the backend already owns those metrics.\n- Cross-slice posture panels show freshness, persisted sync result mix, and current topology or policy snapshot labels where those backend metrics already exist.\n- Readiness panels here show blocker, coverage, and persisted-snapshot posture only; they are not workflow verdicts or phase-transition control.\n- Comparison panels here show bounded aggregate deltas only; they are not drift engines or product truth.\n- Policy operational truth remains intentionally partial even though bounded policy sync evidence now exists.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels.",
+        "content": "## Platform Observability Overview\nThis dashboard follows the current read-only platform boundary: Prometheus scrape health, backend API responsiveness, collector-backed snapshot signals, bounded persisted sync-history evidence, one bounded readiness-support posture slice, and a small amount of honest live-versus-persisted or backend-versus-collector comparison context where those metrics already exist.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- Inventory, topology, policy, and bounded readiness-support freshness now surface where the backend already owns those metrics.\n- Collector read-path coverage, observation age, and detail-ready gaps are visualized here as numeric observability signals; the product-facing degraded-scope summaries still belong in `app-web`.\n- Cross-slice posture panels show freshness, persisted sync result mix, and current topology or policy snapshot labels where those backend metrics already exist.\n- Readiness panels here show blocker, coverage, and persisted-snapshot posture only; they are not workflow verdicts or phase-transition control.\n- Comparison panels here show bounded aggregate deltas only; they are not drift engines or product truth.\n- Policy operational truth remains intentionally partial even though bounded policy sync evidence now exists.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -927,7 +927,7 @@
       },
       "id": 16,
       "panels": [],
-      "title": "Current Read-Side Snapshot Signals",
+      "title": "Current Read-Path Coverage Signals",
       "type": "row"
     },
     {
@@ -965,11 +965,11 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_app_api_topology_nodes",
+          "expr": "platform_gnmi_collector_inventory_observed_targets",
           "refId": "A"
         }
       ],
-      "title": "Observed Topology Nodes",
+      "title": "Inventory Observed Targets",
       "type": "stat"
     },
     {
@@ -1007,11 +1007,11 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_app_api_topology_links",
+          "expr": "platform_gnmi_collector_topology_observed_targets",
           "refId": "A"
         }
       ],
-      "title": "Observed Topology Links",
+      "title": "Topology Observed Targets",
       "type": "stat"
     },
     {
@@ -1091,11 +1091,11 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_app_api_policy_active_records",
+          "expr": "platform_gnmi_collector_policy_detail_ready_targets",
           "refId": "A"
         }
       ],
-      "title": "Active Policies",
+      "title": "Policy Detail-Ready Targets",
       "type": "stat"
     },
     {
@@ -1105,7 +1105,9 @@
       },
       "fieldConfig": {
         "defaults": {
-          "min": 0
+          "min": 0,
+          "max": 100,
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -1131,13 +1133,73 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_app_api_topology_nodes_by_state",
-          "legendFormat": "{{state}}",
+          "expr": "100 * platform_gnmi_collector_inventory_observed_targets / clamp_min(platform_gnmi_collector_inventory_targets, 1)",
+          "legendFormat": "inventory coverage",
           "refId": "A"
+        },
+        {
+          "expr": "100 * platform_gnmi_collector_topology_observed_targets / clamp_min(platform_gnmi_collector_topology_targets, 1)",
+          "legendFormat": "topology coverage",
+          "refId": "B"
+        },
+        {
+          "expr": "100 * platform_gnmi_collector_policy_observed_targets / clamp_min(platform_gnmi_collector_policy_targets, 1)",
+          "legendFormat": "policy coverage",
+          "refId": "C"
         }
       ],
-      "title": "Topology Node States",
+      "title": "Collector Target Coverage",
       "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 43
+      },
+      "id": 22,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "clamp_min(time() - platform_gnmi_collector_inventory_newest_observed_timestamp_seconds, 0) unless platform_gnmi_collector_inventory_newest_observed_timestamp_seconds == 0",
+          "legendFormat": "inventory age",
+          "refId": "A"
+        },
+        {
+          "expr": "clamp_min(time() - platform_gnmi_collector_topology_newest_observed_timestamp_seconds, 0) unless platform_gnmi_collector_topology_newest_observed_timestamp_seconds == 0",
+          "legendFormat": "topology age",
+          "refId": "B"
+        },
+        {
+          "expr": "clamp_min(time() - platform_gnmi_collector_policy_newest_observed_timestamp_seconds, 0) unless platform_gnmi_collector_policy_newest_observed_timestamp_seconds == 0",
+          "legendFormat": "policy age",
+          "refId": "C"
+        }
+      ],
+      "title": "Collector Observation Age by Slice",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -1153,10 +1215,10 @@
       "gridPos": {
         "h": 8,
         "w": 8,
-        "x": 8,
+        "x": 16,
         "y": 43
       },
-      "id": 22,
+      "id": 23,
       "options": {
         "displayMode": "gradient",
         "orientation": "horizontal",
@@ -1172,72 +1234,33 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_app_api_policy_records_by_support_state",
-          "legendFormat": "{{state}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Policy Support Posture",
-      "type": "bargauge"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "reqps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 43
-      },
-      "id": 23,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "11.0.0",
-      "targets": [
-        {
-          "expr": "sum(rate(platform_gnmi_collector_inventory_collection_success_total[5m]))",
-          "legendFormat": "inventory success",
+          "expr": "clamp_min(platform_gnmi_collector_inventory_targets - platform_gnmi_collector_inventory_observed_targets, 0)",
+          "legendFormat": "inventory target gap",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(platform_gnmi_collector_topology_collection_success_total[5m]))",
-          "legendFormat": "topology success",
+          "expr": "clamp_min(platform_gnmi_collector_topology_targets - platform_gnmi_collector_topology_observed_targets, 0)",
+          "legendFormat": "topology target gap",
           "refId": "B"
         },
         {
-          "expr": "sum(rate(platform_gnmi_collector_topology_collection_partial_total[5m]))",
-          "legendFormat": "topology partial",
+          "expr": "platform_gnmi_collector_topology_single_sided_links",
+          "legendFormat": "single-sided topology links",
           "refId": "C"
         },
         {
-          "expr": "sum(rate(platform_gnmi_collector_policy_collection_success_total[5m]))",
-          "legendFormat": "policy success",
+          "expr": "clamp_min(platform_gnmi_collector_policy_targets - platform_gnmi_collector_policy_observed_targets, 0)",
+          "legendFormat": "policy target gap",
           "refId": "D"
         },
         {
-          "expr": "sum(rate(platform_gnmi_collector_policy_collection_partial_total[5m]))",
-          "legendFormat": "policy partial",
+          "expr": "clamp_min(platform_gnmi_collector_policy_observed_targets - platform_gnmi_collector_policy_detail_ready_targets, 0)",
+          "legendFormat": "policy detail gap",
           "refId": "E"
         }
       ],
-      "title": "Collector Read-Side Outcome Rates",
-      "type": "timeseries"
+      "title": "Coverage And Detail Gaps",
+      "type": "bargauge"
     },
     {
       "collapsed": false,

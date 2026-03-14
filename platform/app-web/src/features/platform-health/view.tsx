@@ -1,8 +1,25 @@
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { TrustCueCard } from "../../components/trust-cue-card";
+import type { PlatformReadPathStatus } from "../../api/contracts";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
 import { usePlatformStatusQuery } from "./api";
+
+function formatReadPathCoverage(readPath: PlatformReadPathStatus): string {
+  return `${readPath.observed_target_count} of ${readPath.configured_target_count} configured targets`;
+}
+
+function formatReadPathCollection(readPath: PlatformReadPathStatus): string {
+  return `success ${readPath.collection_success_count} • partial ${readPath.collection_partial_count} • failed ${readPath.collection_failure_count}`;
+}
+
+function formatReadPathFreshness(readPath: PlatformReadPathStatus): string {
+  if (!readPath.oldest_observed_at || !readPath.newest_observed_at) {
+    return "Not exposed";
+  }
+
+  return `${formatDateTime(readPath.oldest_observed_at)} -> ${formatDateTime(readPath.newest_observed_at)}`;
+}
 
 export function PlatformHealthView() {
   const { data, error, isLoading, reload } = usePlatformStatusQuery();
@@ -57,6 +74,22 @@ export function PlatformHealthView() {
     Object.entries(observationSourceCounts)
       .map(([source, count]) => `${formatLabel(source)}: ${count}`)
       .join(" • ") || "No bounded observation source is currently exposed on this page.";
+  const readPaths = data.read_paths ?? [];
+  const okReadPathCount = readPaths.filter((readPath) => readPath.observation_state === "ok").length;
+  const degradedReadPathCount = readPaths.filter(
+    (readPath) => readPath.observation_state !== "ok",
+  ).length;
+  const totalObservedTargets = readPaths.reduce(
+    (sum, readPath) => sum + readPath.observed_target_count,
+    0,
+  );
+  const totalConfiguredTargets = readPaths.reduce(
+    (sum, readPath) => sum + readPath.configured_target_count,
+    0,
+  );
+  const freshnessWindowCount = readPaths.filter(
+    (readPath) => readPath.oldest_observed_at && readPath.newest_observed_at,
+  ).length;
 
   return (
     <section>
@@ -65,8 +98,8 @@ export function PlatformHealthView() {
           <h2>Platform Health</h2>
           <p>
             This page stays product-oriented. It summarizes declared platform
-            components and current API-level status without duplicating Grafana's
-            deeper metrics views.
+            components, bounded collector-to-backend read-path posture, and current
+            API-level status without duplicating Grafana's deeper metrics views.
           </p>
         </div>
         <StatusPill value={data.status} />
@@ -77,6 +110,7 @@ export function PlatformHealthView() {
         <span>Generated: {formatDateTime(data.generated_at)}</span>
         <span>Observed components: {observedCount}</span>
         <span>Not checked: {notCheckedCount}</span>
+        <span>Read paths: {readPaths.length}</span>
       </div>
 
       <p className="callout">{data.summary}</p>
@@ -84,9 +118,9 @@ export function PlatformHealthView() {
       <div className="callout">
         <strong>Observation scope remains explicit</strong>
         <p>
-          This page summarizes declared platform components plus one bounded live observation path.
-          It does not claim persisted snapshot anchors, fallback serving, or full dependency health
-          coverage for every service.
+          This page summarizes declared platform components, bounded collector-to-backend read-path
+          coverage, and one bounded controller-helper probe. It does not claim persisted snapshot
+          anchors, fallback serving, or full dependency health coverage for every service.
         </p>
         <p className="table-note">
           Persisted readiness anchors and any readiness child-item identity cues belong on the
@@ -121,6 +155,25 @@ export function PlatformHealthView() {
           <p>Components with a concrete bounded observation source on this page.</p>
         </article>
         <article className="summary-card">
+          <p className="summary-label">Read Paths OK</p>
+          <strong>
+            {okReadPathCount}/{readPaths.length}
+          </strong>
+          <p>Collector-backed model families currently reporting usable bounded coverage.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Read-Path Coverage</p>
+          <strong>
+            {totalObservedTargets}/{totalConfiguredTargets || 0}
+          </strong>
+          <p>Observed versus configured targets across the exposed inventory, topology, and policy paths.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Freshness Windows</p>
+          <strong>{freshnessWindowCount}</strong>
+          <p>Read paths currently exposing bounded oldest-to-newest observation timestamps.</p>
+        </article>
+        <article className="summary-card">
           <p className="summary-label">Observation Sources</p>
           <strong>{Object.keys(observationSourceCounts).length}</strong>
           <p>Distinct bounded observation-source families currently exposed in product status.</p>
@@ -130,7 +183,7 @@ export function PlatformHealthView() {
       <div className="content-grid">
         <TrustCueCard
           title="Routine-Use Trust Cues"
-          summary="Platform Health is a current API response rather than an anchored history surface, so the key cues are freshness, observation coverage, and how much of the page is probe-backed versus declared-only."
+          summary="Platform Health is a current API response rather than an anchored history surface, so the key cues are freshness, observation coverage, read-path scope, and how much of the page is probe-backed versus declared-only."
           rows={[
             {
               label: "API freshness",
@@ -149,6 +202,30 @@ export function PlatformHealthView() {
               value: `${observedCount} of ${data.components.length} declared components`,
             },
             {
+              label: "Read-path coverage",
+              kind: "text",
+              value: `${totalObservedTargets} of ${totalConfiguredTargets || 0} configured targets`,
+              note:
+                readPaths.length > 0
+                  ? readPaths.map(
+                      (readPath) =>
+                        `${formatLabel(readPath.model_family)}: ${formatReadPathCoverage(readPath)}`,
+                    )
+                  : "No bounded read-path summaries are currently exposed.",
+            },
+            {
+              label: "Freshness windows",
+              kind: "text",
+              value: `${freshnessWindowCount} exposed`,
+              note:
+                readPaths.length > 0
+                  ? readPaths.map(
+                      (readPath) =>
+                        `${formatLabel(readPath.model_family)}: ${formatReadPathFreshness(readPath)}`,
+                    )
+                  : undefined,
+            },
+            {
               label: "Anchor posture",
               kind: "anchor",
               value: null,
@@ -164,14 +241,23 @@ export function PlatformHealthView() {
             {
               label: "Degraded scope",
               kind: "status",
-              value: degradedCount > 0 ? "degraded" : "ok",
+              value: degradedCount > 0 || degradedReadPathCount > 0 ? "degraded" : "ok",
+              note:
+                degradedReadPathCount > 0
+                  ? readPaths
+                      .filter((readPath) => readPath.observation_state !== "ok")
+                      .map(
+                        (readPath) =>
+                          `${formatLabel(readPath.model_family)}: ${readPath.degraded_scope_summary}`,
+                      )
+                  : "No exposed read path currently reports degraded bounded scope.",
             },
           ]}
         />
 
         <TrustCueCard
           title="Observation Basis"
-          summary="Current evidence on this page comes from declared component inventory plus the bounded observation sources the backend can complete without turning Platform Health into a full dependency-monitoring system."
+          summary="Current evidence on this page comes from declared component inventory plus the bounded observation sources and read-path summaries the backend can complete without turning Platform Health into a full dependency-monitoring system."
           rows={[
             {
               label: "Probe-backed components",
@@ -189,12 +275,76 @@ export function PlatformHealthView() {
               value: observationSourceSummary,
             },
             {
+              label: "Read-path posture",
+              kind: "text",
+              value: `${okReadPathCount} ok • ${degradedReadPathCount} degraded`,
+              note:
+                readPaths.length > 0
+                  ? readPaths.map(
+                      (readPath) =>
+                        `${formatLabel(readPath.model_family)}: ${formatReadPathCollection(readPath)}`,
+                    )
+                  : "No bounded read-path summaries are currently exposed.",
+            },
+            {
               label: "Status baseline",
               kind: "status",
               value: data.status,
             },
           ]}
         />
+      </div>
+
+      <div className="table-card">
+        <h3>Bounded Read-Path Coverage</h3>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Read Path</th>
+              <th>Observation</th>
+              <th>Coverage</th>
+              <th>Collection</th>
+              <th>Freshness</th>
+              <th>Degraded Scope</th>
+            </tr>
+          </thead>
+          <tbody>
+            {readPaths.length > 0 ? (
+              readPaths.map((readPath) => (
+                <tr key={readPath.model_family}>
+                  <td>
+                    <strong>{formatLabel(readPath.model_family)}</strong>
+                    <p className="table-note">{readPath.summary}</p>
+                  </td>
+                  <td>
+                    <StatusPill value={readPath.observation_state} />
+                  </td>
+                  <td>{formatReadPathCoverage(readPath)}</td>
+                  <td>{formatReadPathCollection(readPath)}</td>
+                  <td>{formatReadPathFreshness(readPath)}</td>
+                  <td>
+                    <p className="table-note">{readPath.degraded_scope_summary}</p>
+                    {readPath.notes.length > 0 ? (
+                      <ul className="notes-list">
+                        {readPath.notes.map((note) => (
+                          <li key={note}>{note}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6}>
+                  <span className="meta-copy">
+                    No bounded read-path summaries are currently exposed by the platform-status response.
+                  </span>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       <div className="table-card">
