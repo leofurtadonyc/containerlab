@@ -26,6 +26,7 @@ The platform requires persistent, queryable application state that is separate f
 - mounts: `./postgres/init:/docker-entrypoint-initdb.d`, `./postgres/data:/var/lib/postgresql/data`
 - persistence: the current topology binds init scripts and a host-backed Postgres data directory, with Postgres initialized under the `pgdata/` subdirectory of that mount for portable startup safety
 - startup posture: the local image now validates the required database env vars, the mounted data root, the `PGDATA` subdirectory contract, and the presence of the init-script mount before delegating to the upstream entrypoint
+- health visibility: the packaged runtime now also exposes a bounded Docker health check using `pg_isready` against the configured database contract
 - dependencies: none
 
 ## Integration points
@@ -46,3 +47,4 @@ Postgres is the application state store. It is not a metrics database. Keep sche
 Current durability is bounded: persisted inventory/topology/policy snapshots and sync-run history now survive normal service replacement within the same platform workspace through the host-backed Postgres data mount, but broader backup, secret-management, and lifecycle hardening are still pending.
 The current history views exposed by `app-api` are still derived mainly from persisted sync-run activity. They should not yet be read as proof that full workflow or user-action audit domains are durably modeled in Postgres.
 The local runtime image is intentionally narrow: it does not replace the upstream initialization logic, but it does fail fast when the required bind-mounted runtime contract is broken.
+The Docker health check proves packaged database readiness only. Backup automation, restore drills, secret lifecycle hardening, and multi-node durability remain outside the current runtime contract.

@@ -25,6 +25,7 @@ The platform requires a dedicated metrics layer that is decoupled from the appli
 - mounts: `./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml`, `./prometheus/rules:/etc/prometheus/rules`, `./prometheus/recording-rules:/etc/prometheus/recording-rules`, `./prometheus/data:/prometheus`
 - persistence: host-backed TSDB under `./prometheus/data`
 - startup posture: the local image now validates the mounted config and rules directories, repairs ownership and write access on the mounted TSDB path when the container starts as root, verifies that `nobody` can write that path, then runs `promtool check config` before starting Prometheus as `nobody`
+- health visibility: the packaged runtime now also exposes a bounded Docker health check against `/-/ready`
 - dependencies: all platform services exposing `/metrics` endpoints
 
 ## Integration points
@@ -44,3 +45,4 @@ Initial configuration exists, including `prometheus.yml` plus `rules/`, `recordi
 Prometheus is metrics-only. Do not store operational topology or policy state here.
 The local runtime image is intentionally narrow: it keeps the repo-managed bind-mounted config model, but fails fast when the runtime config contract is broken.
 The local runtime now also normalizes ownership on the bind-mounted TSDB directory so a fresh clone on another Linux host does not depend on pre-created host-side Prometheus-compatible ownership just to start.
+The Docker health check proves packaged process readiness only. Alert routing, backup discipline, long-retention lifecycle management, and broader observability recovery posture remain outside the current runtime contract.

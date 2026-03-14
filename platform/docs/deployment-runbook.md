@@ -120,10 +120,14 @@ These are required, not optional, for the current bounded operational slice.
 This now validates:
 
 - Postgres readiness and expected schema presence
+- Postgres Docker health visibility for the packaged runtime
+- Prometheus Docker health visibility and readiness
+- Grafana Docker health visibility and API readiness
+- `gnmi-collector` startup-contract readiness and metrics availability
 - `app-api` startup-contract readiness and HTTP health
-- `app-web` startup-contract readiness and HTTP availability
-- Prometheus readiness and live scrape target posture
-- Grafana API health, provisioned datasource presence, and provisioned overview dashboards
+- `app-web` startup-contract readiness, static HTTP availability, and `/api` proxy reachability to `app-api`
+- Prometheus live scrape target posture for the current real targets
+- Grafana provisioned datasource presence and provisioned overview dashboards
 
 ### `verify-odl-auth.sh`
 
@@ -150,12 +154,12 @@ Expected current posture:
 - `clab-platform-app-api` should be `Up ... (healthy)`
 - `clab-platform-gnmi-collector` should be `Up ... (healthy)`
 - `clab-platform-app-web` should be `Up ... (healthy)`
-- `clab-platform-postgres` should be `Up ...`
-- `clab-platform-prometheus` should be `Up ...`
-- `clab-platform-grafana` should be `Up ...`
+- `clab-platform-postgres` should be `Up ... (healthy)`
+- `clab-platform-prometheus` should be `Up ... (healthy)`
+- `clab-platform-grafana` should be `Up ... (healthy)`
 - `clab-platform-odl` should be `Up ...`
 
-Only `app-api`, `gnmi-collector`, and `app-web` currently expose Docker health checks. The other services are validated through bounded startup scripts and the repo verification flow instead.
+`app-api`, `gnmi-collector`, `app-web`, `postgres`, `prometheus`, and `grafana` now expose bounded Docker health checks. `odl` remains outside that contract and is still validated by `./scripts/verify-odl-auth.sh` plus the bounded platform-health probe surfaced through `app-api`.
 
 ### HTTP Endpoints
 
@@ -172,9 +176,11 @@ Useful spot checks:
 
 ```bash
 curl -s http://localhost:8000/api/v1/health | python -m json.tool
+curl -s http://localhost:8088/api/v1/health | python -m json.tool
 curl -s http://localhost:8000/api/v1/platform/status | python -m json.tool
 curl -s http://localhost:9090/-/ready
 curl -s http://localhost:3000/api/health
+curl -s http://localhost:9804/metrics | head
 ```
 
 ### Product Sanity Checks
@@ -194,6 +200,15 @@ What healthy means here:
 - the response shape matches the current bounded contracts
 - live versus persisted-fallback posture is explicit where relevant
 - empty or partial data remains possible and may still be healthy if it is honest about current evidence limits
+
+## What Remains Bootstrap-Grade
+
+The current hardening is still intentionally bounded. Keep these limits explicit:
+
+- Docker health checks prove packaged startup and local readiness, not deep semantic correctness or full recovery behavior
+- Postgres, Prometheus, and Grafana remain single-instance services backed by host-mounted workspace data rather than backup-managed or HA-managed storage
+- verification still assumes the documented Linux, Docker, and Containerlab path with repo-managed bind mounts
+- TLS, external identity, secret lifecycle hardening, backup automation, and disaster recovery remain outside the current runtime contract
 
 ## Standard Replacement Workflow
 

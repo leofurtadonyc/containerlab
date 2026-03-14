@@ -4,8 +4,12 @@ set -eu
 POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-clab-platform-postgres}"
 POSTGRES_USER="${POSTGRES_USER:-platform}"
 POSTGRES_DB="${POSTGRES_DB:-platform}"
+PROMETHEUS_CONTAINER="${PROMETHEUS_CONTAINER:-clab-platform-prometheus}"
+GRAFANA_CONTAINER="${GRAFANA_CONTAINER:-clab-platform-grafana}"
+GNMI_COLLECTOR_CONTAINER="${GNMI_COLLECTOR_CONTAINER:-clab-platform-gnmi-collector}"
 APP_API_CONTAINER="${APP_API_CONTAINER:-clab-platform-app-api}"
 APP_WEB_CONTAINER="${APP_WEB_CONTAINER:-clab-platform-app-web}"
+GNMI_COLLECTOR_URL="${GNMI_COLLECTOR_URL:-http://127.0.0.1:9804}"
 APP_API_URL="${APP_API_URL:-http://127.0.0.1:8000}"
 APP_WEB_URL="${APP_WEB_URL:-http://127.0.0.1:8088}"
 PROMETHEUS_URL="${PROMETHEUS_URL:-http://127.0.0.1:9090}"
@@ -85,11 +89,22 @@ wait_for_container_healthy() {
   exit 1
 }
 
-if ! docker inspect "$POSTGRES_CONTAINER" >/dev/null 2>&1; then
-  echo "Postgres container not found: $POSTGRES_CONTAINER" >&2
-  exit 1
-fi
+require_container() {
+  container_name=$1
+  if ! docker inspect "$container_name" >/dev/null 2>&1; then
+    echo "Container not found: $container_name" >&2
+    exit 1
+  fi
+}
 
+require_container "$POSTGRES_CONTAINER"
+require_container "$PROMETHEUS_CONTAINER"
+require_container "$GRAFANA_CONTAINER"
+require_container "$GNMI_COLLECTOR_CONTAINER"
+require_container "$APP_API_CONTAINER"
+require_container "$APP_WEB_CONTAINER"
+
+wait_for_container_healthy "$POSTGRES_CONTAINER"
 wait_for_postgres
 
 postgres_schema_count=$(docker exec "$POSTGRES_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT count(*) FROM information_schema.schemata WHERE schema_name = 'platform_app';")
@@ -98,16 +113,20 @@ if [ "$postgres_schema_count" != "1" ]; then
   exit 1
 fi
 
+wait_for_container_healthy "$PROMETHEUS_CONTAINER"
+wait_for_container_healthy "$GRAFANA_CONTAINER"
+wait_for_container_healthy "$GNMI_COLLECTOR_CONTAINER"
 wait_for_container_healthy "$APP_API_CONTAINER"
 wait_for_container_healthy "$APP_WEB_CONTAINER"
+wait_for_http_ok "gNMI collector metrics" "$GNMI_COLLECTOR_URL/metrics"
 wait_for_http_ok "app-api health" "$APP_API_URL/api/v1/health"
 wait_for_http_ok "app-web root" "$APP_WEB_URL/"
+wait_for_http_ok "app-web API proxy health" "$APP_WEB_URL/api/v1/health"
 wait_for_http_ok "Prometheus readiness" "$PROMETHEUS_URL/-/ready"
 
 prometheus_targets=$(curl -fsS "$PROMETHEUS_URL/api/v1/targets" | tr -d '\n')
-echo "$prometheus_targets" | grep '"job":"app-api"' >/dev/null
-echo "$prometheus_targets" | grep '"job":"gnmi-collector"' >/dev/null
-echo "$prometheus_targets" | grep '"health":"up"' >/dev/null
+echo "$prometheus_targets" | grep '"job":"app-api".*"health":"up"' >/dev/null
+echo "$prometheus_targets" | grep '"job":"gnmi-collector".*"health":"up"' >/dev/null
 
 wait_for_http_ok "Grafana health" "$GRAFANA_URL/api/health"
 
@@ -118,4 +137,4 @@ grafana_dashboards=$(curl -fsS -u "$GRAFANA_USER:$GRAFANA_PASSWORD" "$GRAFANA_UR
 echo "$grafana_dashboards" | grep 'platform-overview' >/dev/null
 echo "$grafana_dashboards" | grep 'topology-overview' >/dev/null
 
-echo "Core runtime verification passed. Postgres, app-api, and app-web are ready with their expected startup contracts, Prometheus is ready and scraping the current real targets, and Grafana has the provisioned datasource and dashboards."
+echo "Core runtime verification passed. Postgres, Prometheus, Grafana, gNMI collector, app-api, and app-web are ready with their expected startup contracts, the WebUI proxy reaches the backend health path, Prometheus is scraping the current real targets, and Grafana has the provisioned datasource and dashboards."
