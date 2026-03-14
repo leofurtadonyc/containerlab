@@ -257,6 +257,33 @@ Assessment:
 - truth is not strong enough for full pre-change reasoning, validation
   conclusions, or workflow-grade accountability
 
+### Next-cycle implication
+
+Posture: `topology_truth_depth_is_the_next_highest_value_phase2_gap`
+
+Why this is the right next bounded focus now:
+
+- the accepted week 13 identity review ended in a no-change decision for
+  capability item IDs, so the default identity lane is no longer the strongest
+  immediate gap
+- post-deploy verification now proves the bounded read-path and capability
+  posture contracts end to end, so verification hardening is no longer the
+  primary bottleneck either
+- the live stack still reports partial topology completeness and single-sided
+  topology evidence, which makes topology the clearest current truth-depth gap
+  on a slice that already has stable live data
+- policy remains important, but the current `no_policies_observed` and zero
+  detail-ready-target posture means a policy-first cycle would mostly run into
+  absent source detail rather than a clean, already-evidenced truth gap
+
+Assessment:
+
+- the next bounded cycle should return to topology truth depth rather than
+  reopening item-identity work or a workflow-planning lane
+- that cycle should stay narrow: tighten endpoint-pairing and single-sided-link
+  coverage semantics where the collector and backend already have real signals,
+  while preserving `Phase 2` and the current safe-use boundary
+
 ### Trust-cue maturity
 
 Posture: `good_for_routine_operator_interpretation`
