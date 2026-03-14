@@ -826,6 +826,7 @@ def build_policies_list_response() -> PoliciesListResponse:
             summary=history.summary,
             recent_snapshots=[
                 PolicyHistorySnapshotResponseRecord(
+                    snapshot_id=entry.snapshot_id,
                     persisted_at=entry.persisted_at,
                     observed_at=entry.observed_at,
                     data_status=entry.data_status,

@@ -66,6 +66,7 @@ class PolicyTargetFootprintRecord(BaseModel):
 class PolicyHistorySnapshotResponseRecord(BaseModel):
     """Bounded summary of one persisted policy snapshot."""
 
+    snapshot_id: str
     persisted_at: datetime
     observed_at: datetime | None = None
     data_status: Literal["live", "degraded"]

@@ -571,6 +571,7 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
             snapshot_id="policy-snapshot-1",
             persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
             snapshot={
+                "snapshot_id": "policy-snapshot-1",
                 "persisted_at": datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
                 "observed_at": datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
                 "data_status": "degraded",
@@ -588,6 +589,7 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
             snapshot_id="policy-snapshot-0",
             persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
             snapshot={
+                "snapshot_id": "policy-snapshot-0",
                 "persisted_at": datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
                 "observed_at": datetime.fromisoformat("2026-03-09T23:29:00+00:00"),
                 "data_status": "live",
@@ -605,6 +607,7 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
             snapshot_id="policy-snapshot-minus-1",
             persisted_at=datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
             snapshot={
+                "snapshot_id": "policy-snapshot-minus-1",
                 "persisted_at": datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
                 "observed_at": datetime.fromisoformat("2026-03-09T22:59:00+00:00"),
                 "data_status": "live",
@@ -1168,6 +1171,8 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["ttm_preference_count"] == 476
     assert payload["history"]["status"] == "comparison_ready"
     assert len(payload["history"]["recent_snapshots"]) == 3
+    assert payload["history"]["recent_snapshots"][0]["snapshot_id"] == "policy-snapshot-1"
+    assert payload["history"]["recent_snapshots"][1]["snapshot_id"] == "policy-snapshot-0"
     assert payload["history"]["comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-1"
     assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-0"
     assert payload["history"]["comparison_to_previous"]["observed_policy_delta"] == -1
@@ -1305,6 +1310,7 @@ def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) 
     assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] == "policy-snapshot-1"
     assert "latest persisted normalized policy snapshot" in payload["summary"]
     assert payload["history"]["status"] == "comparison_ready"
+    assert payload["history"]["recent_snapshots"][0]["snapshot_id"] == "policy-snapshot-1"
     assert payload["history"]["comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-1"
     assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-0"
     assert payload["items"][0]["policy_id"] == "persisted-policy-1"

@@ -200,6 +200,7 @@ export interface PolicyRecord {
 }
 
 export interface PolicyHistorySnapshotRecord {
+  snapshot_id: string;
   persisted_at: string;
   observed_at: string | null;
   data_status: "live" | "degraded";
