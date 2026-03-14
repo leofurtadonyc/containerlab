@@ -1,8 +1,22 @@
 """Environment-driven settings for the gNMI collector service."""
 
 from functools import lru_cache
+from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _default_gnmi_config_path() -> str:
+    """Return the default config path for container and source-based runs."""
+    container_path = Path("/app/configs/config.example.yaml")
+    if container_path.exists():
+        return str(container_path)
+
+    repo_local_path = (
+        Path(__file__).resolve().parents[3] / "configs" / "config.example.yaml"
+    )
+    return str(repo_local_path)
 
 
 class Settings(BaseSettings):
@@ -12,7 +26,7 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     collector_metrics_port: int = 9804
     app_api_url: str = "http://app-api:8000"
-    gnmi_config_path: str = "/app/configs/config.example.yaml"
+    gnmi_config_path: str = Field(default_factory=_default_gnmi_config_path)
     collector_mode: str = "phase_2_live_inventory"
 
     model_config = SettingsConfigDict(

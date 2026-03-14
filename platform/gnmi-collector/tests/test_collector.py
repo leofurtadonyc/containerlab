@@ -1,7 +1,10 @@
+from pathlib import Path
+
 from fastapi.testclient import TestClient
 
 from gnmi_collector.adapters.nokia import NokiaSrosAdapter
 from gnmi_collector.config.runtime import build_runtime_config
+from gnmi_collector.config.settings import get_settings
 from gnmi_collector.main import app
 from gnmi_collector.mappings.inventory import map_inventory_record
 from gnmi_collector.services.inventory import build_inventory_flow_snapshot
@@ -12,8 +15,26 @@ from gnmi_collector.services.topology import build_topology_flow_snapshot
 client = TestClient(app)
 
 
+def _clear_settings_cache() -> None:
+    get_settings.cache_clear()
+
+
 def _targets():
     return build_runtime_config().targets
+
+
+def test_runtime_config_defaults_to_repo_local_config_when_env_is_unset(
+    monkeypatch,
+) -> None:
+    monkeypatch.delenv("GNMI_CONFIG_PATH", raising=False)
+    _clear_settings_cache()
+
+    config = build_runtime_config()
+    expected_path = Path(__file__).resolve().parents[1] / "configs" / "config.example.yaml"
+
+    assert Path(config.config_path).samefile(expected_path)
+
+    _clear_settings_cache()
 
 
 def _target_name_by_host() -> dict[str, str]:
