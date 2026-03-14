@@ -112,6 +112,7 @@ After deployment, run both verification steps before treating the platform as us
 ```
 
 These are required, not optional, for the current bounded operational slice.
+If either script fails, stop there and treat the deployment as not yet usable until the failing runtime contract is understood.
 
 ## What The Verification Scripts Prove
 
@@ -286,6 +287,27 @@ What to look for:
 - invalid env assumptions
 - warm-up failures that point to a bounded read-side dependency problem
 
+### `postgres` Never Becomes Healthy
+
+Typical signals:
+
+- `docker ps` shows `clab-platform-postgres` stuck in `starting` or restarting
+- `verify-core-runtime.sh` fails before schema verification
+
+First checks:
+
+```bash
+docker logs clab-platform-postgres --tail 200
+docker inspect clab-platform-postgres --format '{{json .State.Health}}'
+```
+
+What to look for:
+
+- missing `POSTGRES_DB`, `POSTGRES_USER`, or `POSTGRES_PASSWORD`
+- broken or unwritable bind-mounted `platform/postgres/data`
+- broken `PGDATA` subdirectory contract under the mounted data root
+- missing init mount content under `platform/postgres/init`
+
 ### `gnmi-collector` Never Becomes Healthy
 
 Typical signals:
@@ -324,6 +346,29 @@ What to look for:
 - Nginx config validation errors
 - unexpected runtime image mismatch after a partial rebuild
 
+### The WebUI Loads But `/api` Fails Through The Proxy
+
+Typical signals:
+
+- `http://localhost:8088/` loads static UI assets
+- `http://localhost:8088/api/v1/health` fails or returns a gateway-style error
+- `verify-core-runtime.sh` fails on the app-web API proxy health step
+
+First checks:
+
+```bash
+docker logs clab-platform-app-web --tail 200
+docker logs clab-platform-app-api --tail 200
+curl -s http://localhost:8000/api/v1/health | python -m json.tool
+curl -s http://localhost:8088/api/v1/health | python -m json.tool
+```
+
+What to look for:
+
+- `app-api` is not actually healthy even though the WebUI static container is up
+- Nginx cannot resolve or reach `app-api:8000` on the platform topology network
+- a partial rebuild left the WebUI runtime current but the backend runtime stale or broken
+
 ### `verify-core-runtime.sh` Fails On Prometheus Or Grafana
 
 Typical signals:
@@ -345,6 +390,13 @@ What to look for:
 - missing or broken mounted config under `platform/prometheus/`
 - broken Grafana provisioning files or dashboard discovery
 - target scrape failures for `app-api` or `gnmi-collector`
+
+If the container health check is failing before the HTTP checks, inspect the packaged health state directly:
+
+```bash
+docker inspect clab-platform-prometheus --format '{{json .State.Health}}'
+docker inspect clab-platform-grafana --format '{{json .State.Health}}'
+```
 
 ### `verify-odl-auth.sh` Fails
 
