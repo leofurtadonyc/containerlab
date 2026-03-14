@@ -1,4 +1,5 @@
 from datetime import datetime
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
@@ -379,6 +380,8 @@ def _build_live_empty_policy_snapshot() -> CollectorPolicySnapshot:
 
 def _build_persisted_inventory_snapshot() -> PersistedInventorySnapshot:
     return PersistedInventorySnapshot(
+        snapshot_id="inventory-snapshot-1",
+        sync_run_id="sync-inventory-0",
         persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
         devices=[
             InventoryDevice(
@@ -397,6 +400,8 @@ def _build_persisted_inventory_snapshot() -> PersistedInventorySnapshot:
 
 def _build_persisted_topology_snapshot() -> PersistedTopologySnapshot:
     return PersistedTopologySnapshot(
+        snapshot_id="topology-snapshot-1",
+        sync_run_id="sync-topology-0",
         persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
         snapshot=TopologySnapshot(
             topology_id="platform-observed-topology",
@@ -433,6 +438,8 @@ def _build_persisted_topology_snapshot() -> PersistedTopologySnapshot:
 
 def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
     return PersistedPolicySnapshot(
+        snapshot_id="policy-snapshot-1",
+        sync_run_id="sync-policy-0",
         persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
         snapshot=PolicyInventorySnapshot(
             sync_source="persisted_policy_snapshot",
@@ -487,6 +494,8 @@ def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
 
 def _build_previous_persisted_policy_snapshot() -> PersistedPolicySnapshot:
     return PersistedPolicySnapshot(
+        snapshot_id="policy-snapshot-0",
+        sync_run_id="sync-policy-previous",
         persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
         snapshot=PolicyInventorySnapshot(
             sync_source="persisted_policy_snapshot",
@@ -559,6 +568,7 @@ def _build_previous_persisted_policy_snapshot() -> PersistedPolicySnapshot:
 def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSummary]:
     return [
         PersistedPolicySnapshotSummary(
+            snapshot_id="policy-snapshot-1",
             persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
             snapshot={
                 "persisted_at": datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
@@ -575,6 +585,7 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
             },
         ),
         PersistedPolicySnapshotSummary(
+            snapshot_id="policy-snapshot-0",
             persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
             snapshot={
                 "persisted_at": datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
@@ -591,6 +602,7 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
             },
         ),
         PersistedPolicySnapshotSummary(
+            snapshot_id="policy-snapshot-minus-1",
             persisted_at=datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
             snapshot={
                 "persisted_at": datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
@@ -623,6 +635,7 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             finished_at=datetime.fromisoformat("2026-03-10T01:30:04+00:00"),
             persisted_artifacts=["policy_snapshot"],
             policy_snapshot_summary=PersistedPolicyHistorySummary(
+                snapshot_id="policy-snapshot-sync-1",
                 persisted_at=datetime.fromisoformat("2026-03-10T01:30:04+00:00"),
                 observed_at=datetime.fromisoformat("2026-03-10T01:30:00+00:00"),
                 sync_source="persisted_policy_snapshot",
@@ -635,6 +648,8 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
                 detail_record_count=1,
             ),
             policy_comparison_to_previous=PersistedPolicySnapshotComparison(
+                current_snapshot_id="policy-snapshot-sync-1",
+                previous_snapshot_id="policy-snapshot-sync-0",
                 current_persisted_at=datetime.fromisoformat("2026-03-10T01:30:04+00:00"),
                 previous_persisted_at=datetime.fromisoformat("2026-03-10T01:00:00+00:00"),
                 current_observed_policy_count=1,
@@ -664,6 +679,7 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             finished_at=datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
             persisted_artifacts=["topology_snapshot"],
             topology_snapshot_summary=PersistedTopologySnapshotSummary(
+                snapshot_id="topology-snapshot-sync-1",
                 persisted_at=datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
                 observed_at=datetime.fromisoformat("2026-03-10T01:00:00+00:00"),
                 topology_name="Platform Observed Topology",
@@ -676,6 +692,8 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
                 link_state_counts={"up": 1},
             ),
             topology_comparison_to_previous=PersistedTopologySnapshotComparison(
+                current_snapshot_id="topology-snapshot-sync-1",
+                previous_snapshot_id="topology-snapshot-sync-0",
                 current_persisted_at=datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
                 previous_persisted_at=datetime.fromisoformat("2026-03-10T00:30:00+00:00"),
                 current_node_count=2,
@@ -706,6 +724,7 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             finished_at=datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
             persisted_artifacts=["inventory_snapshot"],
             inventory_snapshot_summary=PersistedInventorySnapshotSummary(
+                snapshot_id="inventory-snapshot-sync-1",
                 persisted_at=datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
                 observed_at=None,
                 sync_source="gnmi_collector_inventory",
@@ -717,6 +736,8 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
                 capability_summary_counts={"partially_supported": 34},
             ),
             inventory_comparison_to_previous=PersistedInventorySnapshotComparison(
+                current_snapshot_id="inventory-snapshot-sync-1",
+                previous_snapshot_id="inventory-snapshot-sync-0",
                 current_persisted_at=datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
                 previous_persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
                 current_device_count=34,
@@ -862,6 +883,7 @@ def test_devices_endpoint_returns_live_inventory(monkeypatch) -> None:
     assert payload["count"] == 2
     assert "live read-only Nokia gNMI collection" in payload["summary"]
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
+    assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] is None
     assert payload["items"][0]["device_id"] == "PE1"
     assert payload["items"][0]["vendor"] == "nokia"
     assert payload["items"][0]["management_address"] == "172.20.20.107"
@@ -982,6 +1004,7 @@ def test_devices_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypat
     payload = response.json()
     assert payload["serving_mode"] == "live_collector"
     assert payload["comparison_to_latest_persisted"]["status"] == "live_vs_latest_persisted_ready"
+    assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] == "inventory-snapshot-1"
     assert payload["comparison_to_latest_persisted"]["persisted_device_count"] == 1
     assert payload["comparison_to_latest_persisted"]["current_device_count"] == 2
     assert payload["comparison_to_latest_persisted"]["added_device_count"] == 1
@@ -1047,6 +1070,7 @@ def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None
         payload["served_persisted_at"].replace("Z", "+00:00")
     ) == datetime.fromisoformat("2026-03-10T00:00:00+00:00")
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
+    assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] == "topology-snapshot-1"
     assert "latest persisted normalized topology snapshot" in payload["summary"]
 
 
@@ -1072,6 +1096,7 @@ def test_topology_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypa
     payload = response.json()
     assert payload["serving_mode"] == "live_collector"
     assert payload["comparison_to_latest_persisted"]["status"] == "live_vs_latest_persisted_ready"
+    assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] == "topology-snapshot-1"
     assert payload["comparison_to_latest_persisted"]["persisted_node_count"] == 1
     assert payload["comparison_to_latest_persisted"]["current_node_count"] == 2
     assert payload["comparison_to_latest_persisted"]["added_node_count"] == 1
@@ -1143,6 +1168,8 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["ttm_preference_count"] == 476
     assert payload["history"]["status"] == "comparison_ready"
     assert len(payload["history"]["recent_snapshots"]) == 3
+    assert payload["history"]["comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-1"
+    assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-0"
     assert payload["history"]["comparison_to_previous"]["observed_policy_delta"] == -1
     assert payload["history"]["comparison_to_previous"]["detail_record_delta"] == -1
     assert payload["history"]["comparison_to_previous"]["added_policy_count"] == 0
@@ -1156,6 +1183,7 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert "health_state" in payload["history"]["comparison_to_previous"]["change_preview"][1]["changed_fields"]
     assert "candidate_paths" in payload["history"]["comparison_to_previous"]["change_preview"][1]["changed_fields"]
     assert payload["comparison_to_latest_persisted"]["status"] == "current_vs_latest_persisted_ready"
+    assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] == "policy-snapshot-1"
     assert payload["comparison_to_latest_persisted"]["persisted_observed_policy_count"] == 1
     assert payload["comparison_to_latest_persisted"]["change_preview"][0]["change_kind"] == "added"
     assert payload["comparison_to_latest_persisted"]["change_preview"][1]["change_kind"] == "added"
@@ -1202,6 +1230,7 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     assert payload["target_footprints"][0]["policy_capable"] is True
     assert payload["target_footprints"][0]["detail_record_count"] == 0
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
+    assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] is None
     assert payload["comparison_to_latest_persisted"]["change_preview"] == []
     assert payload["history"]["status"] == "unavailable"
     assert "stable per-target policy counter footprint and target-role coverage" in payload["summary"]
@@ -1273,8 +1302,11 @@ def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) 
         payload["served_persisted_at"].replace("Z", "+00:00")
     ) == datetime.fromisoformat("2026-03-10T00:00:00+00:00")
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
+    assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] == "policy-snapshot-1"
     assert "latest persisted normalized policy snapshot" in payload["summary"]
     assert payload["history"]["status"] == "comparison_ready"
+    assert payload["history"]["comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-1"
+    assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-0"
     assert payload["items"][0]["policy_id"] == "persisted-policy-1"
 
 
@@ -1293,23 +1325,33 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert payload["count"] == 3
     assert "platform-side read-only sync activity" in payload["summary"]
     assert payload["items"][0]["workflow_type"] == "read_side_sync"
+    assert payload["items"][0]["sync_run_id"] == "sync-policy-1"
     assert payload["items"][0]["workflow_name"] == "policy_snapshot_sync"
     assert payload["items"][0]["scope"] == "policy_inventory_read_side"
     assert payload["items"][0]["persisted_artifacts"] == ["policy_snapshot"]
+    assert payload["items"][0]["policy_snapshot_summary"]["snapshot_id"] == "policy-snapshot-sync-1"
     assert payload["items"][0]["policy_snapshot_summary"]["observed_policy_count"] == 1
+    assert payload["items"][0]["policy_comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-sync-1"
+    assert payload["items"][0]["policy_comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-sync-0"
     assert payload["items"][0]["policy_comparison_to_previous"]["removed_policy_count"] == 1
     assert payload["items"][1]["workflow_name"] == "topology_snapshot_sync"
     assert payload["items"][1]["status"] == "partial"
     assert payload["items"][1]["persisted_artifacts"] == ["topology_snapshot"]
+    assert payload["items"][1]["topology_snapshot_summary"]["snapshot_id"] == "topology-snapshot-sync-1"
     assert payload["items"][1]["topology_snapshot_summary"]["node_count"] == 2
+    assert payload["items"][1]["topology_comparison_to_previous"]["current_snapshot_id"] == "topology-snapshot-sync-1"
+    assert payload["items"][1]["topology_comparison_to_previous"]["previous_snapshot_id"] == "topology-snapshot-sync-0"
     assert payload["items"][1]["topology_comparison_to_previous"]["added_link_count"] == 1
     assert payload["items"][1]["policy_snapshot_summary"] is None
     assert payload["items"][2]["workflow_name"] == "inventory_snapshot_sync"
     assert payload["items"][2]["status"] == "completed"
+    assert payload["items"][2]["inventory_snapshot_summary"]["snapshot_id"] == "inventory-snapshot-sync-1"
     assert payload["items"][2]["inventory_snapshot_summary"]["device_count"] == 34
     assert payload["items"][2]["inventory_snapshot_summary"]["collector_status_counts"] == {
         "ok": 34
     }
+    assert payload["items"][2]["inventory_comparison_to_previous"]["current_snapshot_id"] == "inventory-snapshot-sync-1"
+    assert payload["items"][2]["inventory_comparison_to_previous"]["previous_snapshot_id"] == "inventory-snapshot-sync-0"
     assert payload["items"][2]["inventory_comparison_to_previous"]["changed_device_count"] == 2
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
@@ -1347,6 +1389,9 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert payload["items"][0]["event_type"] == "readiness_snapshot_recorded"
     assert payload["items"][0]["target_scope"] == "dry_run_readiness_support"
     assert payload["items"][0]["result"] == "succeeded"
+    assert payload["items"][0]["sync_run_id"] is None
+    assert payload["items"][0]["readiness_snapshot_id"] == "readiness-snapshot-1"
+    assert payload["items"][0]["readiness_snapshot_summary"]["snapshot_id"] == "readiness-snapshot-1"
     assert payload["items"][0]["readiness_snapshot_summary"]["readiness_status"] == "bounded_readiness_support"
     assert payload["items"][0]["readiness_snapshot_summary"]["blocker_count"] == 6
     assert payload["items"][0]["policy_snapshot_summary"] is None
@@ -1356,14 +1401,25 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert payload["items"][1]["actor"] == "platform_system"
     assert payload["items"][1]["target_scope"] == "policy_inventory_read_side"
     assert payload["items"][1]["result"] == "succeeded"
+    assert payload["items"][1]["sync_run_id"] == "sync-policy-1"
+    assert payload["items"][1]["readiness_snapshot_id"] is None
+    assert payload["items"][1]["policy_snapshot_summary"]["snapshot_id"] == "policy-snapshot-sync-1"
     assert payload["items"][1]["policy_snapshot_summary"]["detail_record_count"] == 1
+    assert payload["items"][1]["policy_comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-sync-1"
+    assert payload["items"][1]["policy_comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-sync-0"
     assert payload["items"][1]["policy_comparison_to_previous"]["changed_policy_count"] == 1
     assert payload["items"][1]["correlation_id"] == "sync-policy-1"
     assert "persisted policy_snapshot" in payload["items"][1]["message"]
+    assert payload["items"][2]["topology_snapshot_summary"]["snapshot_id"] == "topology-snapshot-sync-1"
     assert payload["items"][2]["topology_snapshot_summary"]["topology_name"] == "Platform Observed Topology"
+    assert payload["items"][2]["topology_comparison_to_previous"]["current_snapshot_id"] == "topology-snapshot-sync-1"
+    assert payload["items"][2]["topology_comparison_to_previous"]["previous_snapshot_id"] == "topology-snapshot-sync-0"
     assert payload["items"][2]["topology_comparison_to_previous"]["node_count_delta"] == 1
     assert payload["items"][2]["policy_snapshot_summary"] is None
+    assert payload["items"][3]["inventory_snapshot_summary"]["snapshot_id"] == "inventory-snapshot-sync-1"
     assert payload["items"][3]["inventory_snapshot_summary"]["role_counts"]["pe"] == 8
+    assert payload["items"][3]["inventory_comparison_to_previous"]["current_snapshot_id"] == "inventory-snapshot-sync-1"
+    assert payload["items"][3]["inventory_comparison_to_previous"]["previous_snapshot_id"] == "inventory-snapshot-sync-0"
     assert payload["items"][3]["inventory_comparison_to_previous"]["added_device_count"] == 1
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
@@ -1386,12 +1442,20 @@ def test_audit_history_endpoint_handles_empty_persisted_history(monkeypatch) -> 
 
 def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
     fixed_readiness_persisted_at = datetime.fromisoformat("2026-03-16T00:00:00+00:00")
+    fixed_readiness_reference = SimpleNamespace(
+        snapshot_id="readiness-snapshot-current",
+        persisted_at=fixed_readiness_persisted_at,
+    )
 
     # Keep the endpoint test deterministic and avoid requiring a migrated database here.
     import app_api.services.capabilities as capabilities_service
     original_persist = capabilities_service.persist_readiness_snapshot
+    original_load_reference = capabilities_service.load_latest_readiness_snapshot_reference
     capabilities_service.persist_readiness_snapshot = (
         lambda *, dry_run_readiness: fixed_readiness_persisted_at
+    )
+    capabilities_service.load_latest_readiness_snapshot_reference = (
+        lambda: fixed_readiness_reference
     )
     try:
         response = client.get(
@@ -1405,6 +1469,7 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
         assert response.headers["X-Request-ID"] == "capabilities-test"
         assert payload["data_status"] == "bounded_matrix"
         assert payload["count"] == 13
+        assert payload["readiness_snapshot_id"] == "readiness-snapshot-current"
         assert payload["readiness_persisted_at"] == "2026-03-16T00:00:00Z"
         assert "workflow-readiness interpretation are explicit" in payload["summary"]
         assert payload["items"][0]["feature"] == "device_inventory"
@@ -1498,6 +1563,9 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
         assert datetime.fromisoformat(payload["generated_at"]) is not None
     finally:
         capabilities_service.persist_readiness_snapshot = original_persist
+        capabilities_service.load_latest_readiness_snapshot_reference = (
+            original_load_reference
+        )
 
 
 def test_unknown_route_returns_consistent_error_payload() -> None:
@@ -1548,8 +1616,11 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         _build_sync_run_history_summary,
     )
     monkeypatch.setattr(
-        "app_api.services.capabilities.load_latest_readiness_snapshot_persisted_at",
-        lambda: datetime.fromisoformat("2026-03-16T10:15:00+00:00"),
+        "app_api.services.capabilities.load_latest_readiness_snapshot_reference",
+        lambda: SimpleNamespace(
+            snapshot_id="readiness-snapshot-metrics",
+            persisted_at=datetime.fromisoformat("2026-03-16T10:15:00+00:00"),
+        ),
     )
     reset_metrics_registry()
     client.get("/api/v1/health")

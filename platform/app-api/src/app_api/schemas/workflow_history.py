@@ -11,6 +11,7 @@ from app_api.schemas.common import ApiResponseMetadata
 class WorkflowPolicySnapshotSummary(BaseModel):
     """Bounded persisted policy snapshot context attached to a workflow history item."""
 
+    snapshot_id: str
     persisted_at: datetime
     observed_at: datetime | None = None
     sync_source: str
@@ -26,6 +27,7 @@ class WorkflowPolicySnapshotSummary(BaseModel):
 class WorkflowInventorySnapshotSummary(BaseModel):
     """Bounded persisted inventory snapshot context attached to a workflow history item."""
 
+    snapshot_id: str
     persisted_at: datetime
     observed_at: datetime | None = None
     sync_source: str
@@ -40,6 +42,8 @@ class WorkflowInventorySnapshotSummary(BaseModel):
 class WorkflowInventorySnapshotComparison(BaseModel):
     """Bounded current-versus-previous inventory snapshot comparison evidence."""
 
+    current_snapshot_id: str
+    previous_snapshot_id: str
     current_persisted_at: datetime
     previous_persisted_at: datetime
     current_device_count: int
@@ -54,6 +58,7 @@ class WorkflowInventorySnapshotComparison(BaseModel):
 class WorkflowTopologySnapshotSummary(BaseModel):
     """Bounded persisted topology snapshot context attached to a workflow history item."""
 
+    snapshot_id: str
     persisted_at: datetime
     observed_at: datetime | None = None
     topology_name: str
@@ -69,6 +74,8 @@ class WorkflowTopologySnapshotSummary(BaseModel):
 class WorkflowTopologySnapshotComparison(BaseModel):
     """Bounded current-versus-previous topology snapshot comparison evidence."""
 
+    current_snapshot_id: str
+    previous_snapshot_id: str
     current_persisted_at: datetime
     previous_persisted_at: datetime
     current_node_count: int
@@ -89,6 +96,8 @@ class WorkflowTopologySnapshotComparison(BaseModel):
 class WorkflowPolicySnapshotComparison(BaseModel):
     """Bounded current-versus-previous policy snapshot comparison evidence."""
 
+    current_snapshot_id: str
+    previous_snapshot_id: str
     current_persisted_at: datetime
     previous_persisted_at: datetime
     current_observed_policy_count: int
@@ -107,6 +116,7 @@ class WorkflowHistoryItem(BaseModel):
     """Bounded workflow-style history item."""
 
     workflow_id: str
+    sync_run_id: str
     workflow_type: Literal["read_side_sync"]
     workflow_name: str
     scope: str

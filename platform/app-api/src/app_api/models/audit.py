@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 class AuditPolicySnapshotSummary(BaseModel):
     """Bounded persisted policy snapshot context attached to an audit event."""
 
+    snapshot_id: str
     persisted_at: datetime
     observed_at: datetime | None = None
     sync_source: str
@@ -24,6 +25,7 @@ class AuditPolicySnapshotSummary(BaseModel):
 class AuditInventorySnapshotSummary(BaseModel):
     """Bounded persisted inventory snapshot context attached to an audit event."""
 
+    snapshot_id: str
     persisted_at: datetime
     observed_at: datetime | None = None
     sync_source: str
@@ -38,6 +40,8 @@ class AuditInventorySnapshotSummary(BaseModel):
 class AuditInventorySnapshotComparison(BaseModel):
     """Bounded current-versus-previous inventory snapshot comparison evidence."""
 
+    current_snapshot_id: str
+    previous_snapshot_id: str
     current_persisted_at: datetime
     previous_persisted_at: datetime
     current_device_count: int
@@ -52,6 +56,7 @@ class AuditInventorySnapshotComparison(BaseModel):
 class AuditTopologySnapshotSummary(BaseModel):
     """Bounded persisted topology snapshot context attached to an audit event."""
 
+    snapshot_id: str
     persisted_at: datetime
     observed_at: datetime | None = None
     topology_name: str
@@ -67,6 +72,8 @@ class AuditTopologySnapshotSummary(BaseModel):
 class AuditTopologySnapshotComparison(BaseModel):
     """Bounded current-versus-previous topology snapshot comparison evidence."""
 
+    current_snapshot_id: str
+    previous_snapshot_id: str
     current_persisted_at: datetime
     previous_persisted_at: datetime
     current_node_count: int
@@ -87,6 +94,8 @@ class AuditTopologySnapshotComparison(BaseModel):
 class AuditPolicySnapshotComparison(BaseModel):
     """Bounded current-versus-previous policy snapshot comparison evidence."""
 
+    current_snapshot_id: str
+    previous_snapshot_id: str
     current_persisted_at: datetime
     previous_persisted_at: datetime
     current_observed_policy_count: int
@@ -104,6 +113,7 @@ class AuditPolicySnapshotComparison(BaseModel):
 class AuditReadinessSnapshotSummary(BaseModel):
     """Bounded persisted readiness snapshot context attached to an audit event."""
 
+    snapshot_id: str
     persisted_at: datetime
     readiness_status: str
     planning_readiness: str
@@ -123,6 +133,8 @@ class AuditEventRecord(BaseModel):
     target_scope: str
     result: Literal["succeeded", "failed", "partial", "unknown"]
     correlation_id: str
+    sync_run_id: str | None = None
+    readiness_snapshot_id: str | None = None
     occurred_at: datetime
     message: str
     inventory_snapshot_summary: AuditInventorySnapshotSummary | None = None

@@ -126,6 +126,8 @@ def build_audit_history_response() -> AuditHistoryResponse:
             target_scope=_map_scope(sync_run.model_family),
             result=_map_result(sync_run.fetch_status),
             correlation_id=sync_run.sync_run_id,
+            sync_run_id=sync_run.sync_run_id,
+            readiness_snapshot_id=None,
             occurred_at=sync_run.finished_at,
             message=_build_message(
                 sync_run.model_family,
@@ -134,6 +136,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
             ),
             inventory_snapshot_summary=(
                 AuditInventorySnapshotSummary(
+                    snapshot_id=sync_run.inventory_snapshot_summary.snapshot_id,
                     persisted_at=sync_run.inventory_snapshot_summary.persisted_at,
                     observed_at=sync_run.inventory_snapshot_summary.observed_at,
                     sync_source=sync_run.inventory_snapshot_summary.sync_source,
@@ -149,6 +152,8 @@ def build_audit_history_response() -> AuditHistoryResponse:
             ),
             inventory_comparison_to_previous=(
                 AuditInventorySnapshotComparison(
+                    current_snapshot_id=sync_run.inventory_comparison_to_previous.current_snapshot_id,
+                    previous_snapshot_id=sync_run.inventory_comparison_to_previous.previous_snapshot_id,
                     current_persisted_at=sync_run.inventory_comparison_to_previous.current_persisted_at,
                     previous_persisted_at=sync_run.inventory_comparison_to_previous.previous_persisted_at,
                     current_device_count=sync_run.inventory_comparison_to_previous.current_device_count,
@@ -164,6 +169,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
             ),
             topology_snapshot_summary=(
                 AuditTopologySnapshotSummary(
+                    snapshot_id=sync_run.topology_snapshot_summary.snapshot_id,
                     persisted_at=sync_run.topology_snapshot_summary.persisted_at,
                     observed_at=sync_run.topology_snapshot_summary.observed_at,
                     topology_name=sync_run.topology_snapshot_summary.topology_name,
@@ -180,6 +186,8 @@ def build_audit_history_response() -> AuditHistoryResponse:
             ),
             topology_comparison_to_previous=(
                 AuditTopologySnapshotComparison(
+                    current_snapshot_id=sync_run.topology_comparison_to_previous.current_snapshot_id,
+                    previous_snapshot_id=sync_run.topology_comparison_to_previous.previous_snapshot_id,
                     current_persisted_at=sync_run.topology_comparison_to_previous.current_persisted_at,
                     previous_persisted_at=sync_run.topology_comparison_to_previous.previous_persisted_at,
                     current_node_count=sync_run.topology_comparison_to_previous.current_node_count,
@@ -201,6 +209,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
             ),
             policy_snapshot_summary=(
                 AuditPolicySnapshotSummary(
+                    snapshot_id=sync_run.policy_snapshot_summary.snapshot_id,
                     persisted_at=sync_run.policy_snapshot_summary.persisted_at,
                     observed_at=sync_run.policy_snapshot_summary.observed_at,
                     sync_source=sync_run.policy_snapshot_summary.sync_source,
@@ -217,6 +226,8 @@ def build_audit_history_response() -> AuditHistoryResponse:
             ),
             policy_comparison_to_previous=(
                 AuditPolicySnapshotComparison(
+                    current_snapshot_id=sync_run.policy_comparison_to_previous.current_snapshot_id,
+                    previous_snapshot_id=sync_run.policy_comparison_to_previous.previous_snapshot_id,
                     current_persisted_at=sync_run.policy_comparison_to_previous.current_persisted_at,
                     previous_persisted_at=sync_run.policy_comparison_to_previous.previous_persisted_at,
                     current_observed_policy_count=sync_run.policy_comparison_to_previous.current_observed_policy_count,
@@ -252,6 +263,8 @@ def build_audit_history_response() -> AuditHistoryResponse:
             target_scope="dry_run_readiness_support",
             result="succeeded",
             correlation_id=snapshot.snapshot_id,
+            sync_run_id=None,
+            readiness_snapshot_id=snapshot.snapshot_id,
             occurred_at=snapshot.persisted_at,
             message=(
                 "Platform recorded a bounded dry-run-readiness support snapshot when the "
@@ -264,6 +277,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
             policy_snapshot_summary=None,
             policy_comparison_to_previous=None,
             readiness_snapshot_summary=AuditReadinessSnapshotSummary(
+                snapshot_id=snapshot.snapshot_id,
                 persisted_at=snapshot.persisted_at,
                 readiness_status=snapshot.readiness_status,
                 planning_readiness=snapshot.planning_readiness,
@@ -313,10 +327,13 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 target_scope=record.target_scope,
                 result=record.result,
                 correlation_id=record.correlation_id,
+                sync_run_id=record.sync_run_id,
+                readiness_snapshot_id=record.readiness_snapshot_id,
                 occurred_at=record.occurred_at,
                 message=record.message,
                 inventory_snapshot_summary=(
                     AuditInventorySnapshotSummaryResponse(
+                        snapshot_id=record.inventory_snapshot_summary.snapshot_id,
                         persisted_at=record.inventory_snapshot_summary.persisted_at,
                         observed_at=record.inventory_snapshot_summary.observed_at,
                         sync_source=record.inventory_snapshot_summary.sync_source,
@@ -332,6 +349,8 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 ),
                 inventory_comparison_to_previous=(
                     AuditInventorySnapshotComparisonResponse(
+                        current_snapshot_id=record.inventory_comparison_to_previous.current_snapshot_id,
+                        previous_snapshot_id=record.inventory_comparison_to_previous.previous_snapshot_id,
                         current_persisted_at=record.inventory_comparison_to_previous.current_persisted_at,
                         previous_persisted_at=record.inventory_comparison_to_previous.previous_persisted_at,
                         current_device_count=record.inventory_comparison_to_previous.current_device_count,
@@ -347,6 +366,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 ),
                 topology_snapshot_summary=(
                     AuditTopologySnapshotSummaryResponse(
+                        snapshot_id=record.topology_snapshot_summary.snapshot_id,
                         persisted_at=record.topology_snapshot_summary.persisted_at,
                         observed_at=record.topology_snapshot_summary.observed_at,
                         topology_name=record.topology_snapshot_summary.topology_name,
@@ -363,6 +383,8 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 ),
                 topology_comparison_to_previous=(
                     AuditTopologySnapshotComparisonResponse(
+                        current_snapshot_id=record.topology_comparison_to_previous.current_snapshot_id,
+                        previous_snapshot_id=record.topology_comparison_to_previous.previous_snapshot_id,
                         current_persisted_at=record.topology_comparison_to_previous.current_persisted_at,
                         previous_persisted_at=record.topology_comparison_to_previous.previous_persisted_at,
                         current_node_count=record.topology_comparison_to_previous.current_node_count,
@@ -384,6 +406,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 ),
                 policy_snapshot_summary=(
                     AuditPolicySnapshotSummaryResponse(
+                        snapshot_id=record.policy_snapshot_summary.snapshot_id,
                         persisted_at=record.policy_snapshot_summary.persisted_at,
                         observed_at=record.policy_snapshot_summary.observed_at,
                         sync_source=record.policy_snapshot_summary.sync_source,
@@ -400,6 +423,8 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 ),
                 policy_comparison_to_previous=(
                     AuditPolicySnapshotComparisonResponse(
+                        current_snapshot_id=record.policy_comparison_to_previous.current_snapshot_id,
+                        previous_snapshot_id=record.policy_comparison_to_previous.previous_snapshot_id,
                         current_persisted_at=record.policy_comparison_to_previous.current_persisted_at,
                         previous_persisted_at=record.policy_comparison_to_previous.previous_persisted_at,
                         current_observed_policy_count=record.policy_comparison_to_previous.current_observed_policy_count,
@@ -418,6 +443,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 ),
                 readiness_snapshot_summary=(
                     AuditReadinessSnapshotSummaryResponse(
+                        snapshot_id=record.readiness_snapshot_summary.snapshot_id,
                         persisted_at=record.readiness_snapshot_summary.persisted_at,
                         readiness_status=record.readiness_snapshot_summary.readiness_status,
                         planning_readiness=record.readiness_snapshot_summary.planning_readiness,

@@ -79,6 +79,7 @@ export interface DeviceRecord {
 export interface InventoryCurrentComparison {
   status: "unavailable" | "live_vs_latest_persisted_ready";
   summary: string;
+  comparison_snapshot_id: string | null;
   comparison_persisted_at: string | null;
   current_device_count: number;
   persisted_device_count: number;
@@ -140,6 +141,7 @@ export interface TopologyRecord {
 export interface TopologyComparisonSummary {
   status: "unavailable" | "live_vs_latest_persisted_ready";
   summary: string;
+  comparison_snapshot_id: string | null;
   comparison_persisted_at: string | null;
   current_observed_at: string | null;
   current_node_count: number;
@@ -215,7 +217,17 @@ export interface PolicyHistorySnapshotRecord {
   detail_record_count: number;
 }
 
+export interface PolicyComparisonChangePreview {
+  policy_id: string;
+  policy_name: string;
+  source_target: string;
+  source_target_role: string | null;
+  change_kind: "added" | "removed" | "changed";
+  changed_fields: string[];
+}
+
 export interface InventoryHistorySnapshotRecord {
+  snapshot_id: string;
   persisted_at: string;
   observed_at: string | null;
   sync_source: string;
@@ -228,6 +240,8 @@ export interface InventoryHistorySnapshotRecord {
 }
 
 export interface InventoryHistoryComparison {
+  current_snapshot_id: string;
+  previous_snapshot_id: string;
   current_persisted_at: string;
   previous_persisted_at: string;
   current_device_count: number;
@@ -240,6 +254,7 @@ export interface InventoryHistoryComparison {
 }
 
 export interface TopologyHistorySnapshotRecord {
+  snapshot_id: string;
   persisted_at: string;
   observed_at: string | null;
   topology_name: string;
@@ -253,6 +268,8 @@ export interface TopologyHistorySnapshotRecord {
 }
 
 export interface TopologyHistoryComparison {
+  current_snapshot_id: string;
+  previous_snapshot_id: string;
   current_persisted_at: string;
   previous_persisted_at: string;
   current_node_count: number;
@@ -271,6 +288,8 @@ export interface TopologyHistoryComparison {
 }
 
 export interface PolicyHistoryComparison {
+  current_snapshot_id: string;
+  previous_snapshot_id: string;
   current_persisted_at: string;
   previous_persisted_at: string;
   current_observed_policy_count: number;
@@ -282,6 +301,7 @@ export interface PolicyHistoryComparison {
   added_policy_count: number;
   removed_policy_count: number;
   changed_policy_count: number;
+  change_preview: PolicyComparisonChangePreview[];
   notes: string[];
 }
 
@@ -295,6 +315,7 @@ export interface PolicyHistoryWindow {
 export interface PolicyCurrentComparison {
   status: "unavailable" | "current_vs_latest_persisted_ready";
   summary: string;
+  comparison_snapshot_id: string | null;
   comparison_persisted_at: string | null;
   current_observed_at: string | null;
   current_observed_policy_count: number;
@@ -306,6 +327,7 @@ export interface PolicyCurrentComparison {
   added_policy_count: number;
   removed_policy_count: number;
   changed_policy_count: number;
+  change_preview: PolicyComparisonChangePreview[];
   notes: string[];
 }
 
@@ -347,6 +369,7 @@ export interface PoliciesListResponse extends ApiResponseMetadata {
 
 export interface WorkflowHistoryItem {
   workflow_id: string;
+  sync_run_id: string;
   workflow_type: "read_side_sync";
   workflow_name: string;
   scope: string;
@@ -376,12 +399,14 @@ export interface WorkflowHistoryResponse extends ApiResponseMetadata {
 
 export interface AuditHistoryItem {
   event_id: string;
-  event_type: "read_side_sync_recorded";
+  event_type: "read_side_sync_recorded" | "readiness_snapshot_recorded";
   source: "app-api";
   actor: "platform_system";
   target_scope: string;
   result: "succeeded" | "failed" | "partial" | "unknown";
   correlation_id: string;
+  sync_run_id: string | null;
+  readiness_snapshot_id: string | null;
   occurred_at: string;
   message: string;
   inventory_snapshot_summary: InventoryHistorySnapshotRecord | null;
@@ -390,7 +415,19 @@ export interface AuditHistoryItem {
   topology_comparison_to_previous: TopologyHistoryComparison | null;
   policy_snapshot_summary: PolicyHistorySnapshotRecord | null;
   policy_comparison_to_previous: PolicyHistoryComparison | null;
+  readiness_snapshot_summary: AuditReadinessSnapshotSummary | null;
   notes: string[];
+}
+
+export interface AuditReadinessSnapshotSummary {
+  snapshot_id: string;
+  persisted_at: string;
+  readiness_status: string;
+  planning_readiness: string;
+  phase_recommendation: string;
+  summary: string;
+  blocker_count: number;
+  strongest_blockers: string[];
 }
 
 export interface AuditHistoryResponse extends ApiResponseMetadata {
@@ -557,6 +594,7 @@ export interface CapabilitiesListResponse extends ApiResponseMetadata {
   data_status: "placeholder" | "bounded_matrix";
   summary: string;
   count: number;
+  readiness_snapshot_id: string | null;
   readiness_persisted_at?: string | null;
   domain_counts: Record<string, number>;
   support_counts: Record<string, number>;

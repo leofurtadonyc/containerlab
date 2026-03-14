@@ -138,6 +138,8 @@ class PolicyComparisonChangePreview(BaseModel):
 class PolicyHistoryComparison(BaseModel):
     """Bounded comparison of the latest two persisted policy snapshots."""
 
+    current_snapshot_id: str
+    previous_snapshot_id: str
     current_persisted_at: datetime
     previous_persisted_at: datetime
     current_observed_policy_count: int
@@ -167,6 +169,7 @@ class PolicyCurrentComparison(BaseModel):
 
     status: Literal["unavailable", "current_vs_latest_persisted_ready"]
     summary: str
+    comparison_snapshot_id: str | None = None
     comparison_persisted_at: datetime | None = None
     current_observed_at: datetime | None = None
     current_observed_policy_count: int

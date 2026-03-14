@@ -49,6 +49,7 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
     records = [
         WorkflowHistoryRecord(
             workflow_id=sync_run.sync_run_id,
+            sync_run_id=sync_run.sync_run_id,
             workflow_type="read_side_sync",
             workflow_name=f"{sync_run.model_family}_snapshot_sync",
             scope=_map_scope(sync_run.model_family),
@@ -62,6 +63,7 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
             persisted_artifacts=sync_run.persisted_artifacts,
             inventory_snapshot_summary=(
                 WorkflowInventorySnapshotSummary(
+                    snapshot_id=sync_run.inventory_snapshot_summary.snapshot_id,
                     persisted_at=sync_run.inventory_snapshot_summary.persisted_at,
                     observed_at=sync_run.inventory_snapshot_summary.observed_at,
                     sync_source=sync_run.inventory_snapshot_summary.sync_source,
@@ -77,6 +79,8 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
             ),
             inventory_comparison_to_previous=(
                 WorkflowInventorySnapshotComparison(
+                    current_snapshot_id=sync_run.inventory_comparison_to_previous.current_snapshot_id,
+                    previous_snapshot_id=sync_run.inventory_comparison_to_previous.previous_snapshot_id,
                     current_persisted_at=sync_run.inventory_comparison_to_previous.current_persisted_at,
                     previous_persisted_at=sync_run.inventory_comparison_to_previous.previous_persisted_at,
                     current_device_count=sync_run.inventory_comparison_to_previous.current_device_count,
@@ -92,6 +96,7 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
             ),
             topology_snapshot_summary=(
                 WorkflowTopologySnapshotSummary(
+                    snapshot_id=sync_run.topology_snapshot_summary.snapshot_id,
                     persisted_at=sync_run.topology_snapshot_summary.persisted_at,
                     observed_at=sync_run.topology_snapshot_summary.observed_at,
                     topology_name=sync_run.topology_snapshot_summary.topology_name,
@@ -108,6 +113,8 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
             ),
             topology_comparison_to_previous=(
                 WorkflowTopologySnapshotComparison(
+                    current_snapshot_id=sync_run.topology_comparison_to_previous.current_snapshot_id,
+                    previous_snapshot_id=sync_run.topology_comparison_to_previous.previous_snapshot_id,
                     current_persisted_at=sync_run.topology_comparison_to_previous.current_persisted_at,
                     previous_persisted_at=sync_run.topology_comparison_to_previous.previous_persisted_at,
                     current_node_count=sync_run.topology_comparison_to_previous.current_node_count,
@@ -129,6 +136,7 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
             ),
             policy_snapshot_summary=(
                 WorkflowPolicySnapshotSummary(
+                    snapshot_id=sync_run.policy_snapshot_summary.snapshot_id,
                     persisted_at=sync_run.policy_snapshot_summary.persisted_at,
                     observed_at=sync_run.policy_snapshot_summary.observed_at,
                     sync_source=sync_run.policy_snapshot_summary.sync_source,
@@ -145,6 +153,8 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
             ),
             policy_comparison_to_previous=(
                 WorkflowPolicySnapshotComparison(
+                    current_snapshot_id=sync_run.policy_comparison_to_previous.current_snapshot_id,
+                    previous_snapshot_id=sync_run.policy_comparison_to_previous.previous_snapshot_id,
                     current_persisted_at=sync_run.policy_comparison_to_previous.current_persisted_at,
                     previous_persisted_at=sync_run.policy_comparison_to_previous.previous_persisted_at,
                     current_observed_policy_count=sync_run.policy_comparison_to_previous.current_observed_policy_count,
@@ -189,6 +199,7 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
         items=[
             WorkflowHistoryItem(
                 workflow_id=record.workflow_id,
+                sync_run_id=record.sync_run_id,
                 workflow_type=record.workflow_type,
                 workflow_name=record.workflow_name,
                 scope=record.scope,
@@ -202,6 +213,7 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                 persisted_artifacts=record.persisted_artifacts,
                 inventory_snapshot_summary=(
                     WorkflowInventorySnapshotSummaryResponse(
+                        snapshot_id=record.inventory_snapshot_summary.snapshot_id,
                         persisted_at=record.inventory_snapshot_summary.persisted_at,
                         observed_at=record.inventory_snapshot_summary.observed_at,
                         sync_source=record.inventory_snapshot_summary.sync_source,
@@ -217,6 +229,8 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                 ),
                 inventory_comparison_to_previous=(
                     WorkflowInventorySnapshotComparisonResponse(
+                        current_snapshot_id=record.inventory_comparison_to_previous.current_snapshot_id,
+                        previous_snapshot_id=record.inventory_comparison_to_previous.previous_snapshot_id,
                         current_persisted_at=record.inventory_comparison_to_previous.current_persisted_at,
                         previous_persisted_at=record.inventory_comparison_to_previous.previous_persisted_at,
                         current_device_count=record.inventory_comparison_to_previous.current_device_count,
@@ -232,6 +246,7 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                 ),
                 topology_snapshot_summary=(
                     WorkflowTopologySnapshotSummaryResponse(
+                        snapshot_id=record.topology_snapshot_summary.snapshot_id,
                         persisted_at=record.topology_snapshot_summary.persisted_at,
                         observed_at=record.topology_snapshot_summary.observed_at,
                         topology_name=record.topology_snapshot_summary.topology_name,
@@ -248,6 +263,8 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                 ),
                 topology_comparison_to_previous=(
                     WorkflowTopologySnapshotComparisonResponse(
+                        current_snapshot_id=record.topology_comparison_to_previous.current_snapshot_id,
+                        previous_snapshot_id=record.topology_comparison_to_previous.previous_snapshot_id,
                         current_persisted_at=record.topology_comparison_to_previous.current_persisted_at,
                         previous_persisted_at=record.topology_comparison_to_previous.previous_persisted_at,
                         current_node_count=record.topology_comparison_to_previous.current_node_count,
@@ -269,6 +286,7 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                 ),
                 policy_snapshot_summary=(
                     WorkflowPolicySnapshotSummaryResponse(
+                        snapshot_id=record.policy_snapshot_summary.snapshot_id,
                         persisted_at=record.policy_snapshot_summary.persisted_at,
                         observed_at=record.policy_snapshot_summary.observed_at,
                         sync_source=record.policy_snapshot_summary.sync_source,
@@ -285,6 +303,8 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                 ),
                 policy_comparison_to_previous=(
                     WorkflowPolicySnapshotComparisonResponse(
+                        current_snapshot_id=record.policy_comparison_to_previous.current_snapshot_id,
+                        previous_snapshot_id=record.policy_comparison_to_previous.previous_snapshot_id,
                         current_persisted_at=record.policy_comparison_to_previous.current_persisted_at,
                         previous_persisted_at=record.policy_comparison_to_previous.previous_persisted_at,
                         current_observed_policy_count=record.policy_comparison_to_previous.current_observed_policy_count,

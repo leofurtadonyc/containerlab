@@ -376,6 +376,8 @@ def _build_policy_history_window() -> PolicyHistoryWindow:
         ),
         recent_snapshots=[entry.snapshot for entry in recent_snapshots],
         comparison_to_previous=PolicyHistoryComparison(
+            current_snapshot_id=current_snapshot.snapshot_id,
+            previous_snapshot_id=previous_snapshot.snapshot_id,
             current_persisted_at=current_snapshot.persisted_at,
             previous_persisted_at=previous_snapshot.persisted_at,
             current_observed_policy_count=current_snapshot.snapshot.observed_policy_count,
@@ -402,6 +404,7 @@ def _build_current_policy_comparison(
     *,
     current_snapshot: PolicyInventorySnapshot,
     comparison_snapshot,
+    comparison_snapshot_id: str | None,
     comparison_persisted_at: datetime | None,
 ) -> PolicyCurrentComparison:
     """Build bounded current-versus-latest-persisted policy comparison evidence."""
@@ -413,6 +416,7 @@ def _build_current_policy_comparison(
                 "No persisted normalized policy snapshot is currently available for "
                 "bounded comparison with the current policy response."
             ),
+            comparison_snapshot_id=comparison_snapshot_id,
             comparison_persisted_at=None,
             current_observed_at=current_snapshot.observed_at,
             current_observed_policy_count=current_snapshot.observed_policy_count,
@@ -468,6 +472,7 @@ def _build_current_policy_comparison(
             "Bounded comparison is available between the current policy response and "
             "the latest persisted normalized policy snapshot."
         ),
+        comparison_snapshot_id=comparison_snapshot_id,
         comparison_persisted_at=comparison_persisted_at,
         current_observed_at=current_snapshot.observed_at,
         current_observed_policy_count=current_snapshot.observed_policy_count,
@@ -606,6 +611,11 @@ def build_policies_list_response() -> PoliciesListResponse:
         comparison_snapshot=(
             latest_persisted_snapshot.snapshot if latest_persisted_snapshot is not None else None
         ),
+        comparison_snapshot_id=(
+            latest_persisted_snapshot.snapshot_id
+            if latest_persisted_snapshot is not None
+            else None
+        ),
         comparison_persisted_at=(
             latest_persisted_snapshot.persisted_at if latest_persisted_snapshot is not None else None
         ),
@@ -676,6 +686,11 @@ def build_policies_list_response() -> PoliciesListResponse:
                 summary=(
                     "Live collector policy data is unavailable, so the current response "
                     "already reflects the latest persisted normalized policy snapshot."
+                ),
+                comparison_snapshot_id=(
+                    latest_persisted_snapshot.snapshot_id
+                    if latest_persisted_snapshot is not None
+                    else None
                 ),
                 comparison_persisted_at=persisted_at,
                 current_observed_at=snapshot.observed_at,
@@ -781,6 +796,7 @@ def build_policies_list_response() -> PoliciesListResponse:
         comparison_to_latest_persisted=PolicyCurrentComparisonResponse(
             status=current_comparison.status,
             summary=current_comparison.summary,
+            comparison_snapshot_id=current_comparison.comparison_snapshot_id,
             comparison_persisted_at=current_comparison.comparison_persisted_at,
             current_observed_at=current_comparison.current_observed_at,
             current_observed_policy_count=current_comparison.current_observed_policy_count,
@@ -826,6 +842,8 @@ def build_policies_list_response() -> PoliciesListResponse:
             ],
             comparison_to_previous=(
                 PolicyHistoryComparisonResponse(
+                    current_snapshot_id=history.comparison_to_previous.current_snapshot_id,
+                    previous_snapshot_id=history.comparison_to_previous.previous_snapshot_id,
                     current_persisted_at=history.comparison_to_previous.current_persisted_at,
                     previous_persisted_at=history.comparison_to_previous.previous_persisted_at,
                     current_observed_policy_count=history.comparison_to_previous.current_observed_policy_count,

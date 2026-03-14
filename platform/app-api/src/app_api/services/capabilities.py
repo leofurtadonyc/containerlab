@@ -7,6 +7,7 @@ from typing import Iterable
 from app_api.config.settings import get_settings
 from app_api.metrics.state import cache_readiness_metrics
 from app_api.persistence.readiness import (
+    load_latest_readiness_snapshot_reference,
     load_latest_readiness_snapshot_persisted_at,
     persist_readiness_snapshot,
 )
@@ -373,10 +374,12 @@ def _cache_dry_run_readiness_metrics(
 def refresh_readiness_metrics() -> None:
     """Refresh the cached readiness-support metrics without persisting a new snapshot."""
     dry_run_readiness = _build_dry_run_readiness_summary()
-    readiness_persisted_at = load_latest_readiness_snapshot_persisted_at()
+    readiness_reference = load_latest_readiness_snapshot_reference()
     _cache_dry_run_readiness_metrics(
         dry_run_readiness=dry_run_readiness,
-        readiness_persisted_at=readiness_persisted_at,
+        readiness_persisted_at=(
+            readiness_reference.persisted_at if readiness_reference is not None else None
+        ),
     )
 
 
@@ -387,6 +390,7 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
     readiness_persisted_at = persist_readiness_snapshot(
         dry_run_readiness=dry_run_readiness
     )
+    readiness_reference = load_latest_readiness_snapshot_reference()
     _cache_dry_run_readiness_metrics(
         dry_run_readiness=dry_run_readiness,
         readiness_persisted_at=readiness_persisted_at,
@@ -861,6 +865,9 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
             "roadmap-only rather than implied parity."
         ),
         count=len(items),
+        readiness_snapshot_id=(
+            readiness_reference.snapshot_id if readiness_reference is not None else None
+        ),
         readiness_persisted_at=readiness_persisted_at,
         domain_counts=_count_values(item.domain for item in items),
         support_counts=_count_values(item.support_status for item in items),

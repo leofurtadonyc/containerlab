@@ -17,12 +17,52 @@ curl_status() {
     "${ODL_URL}${path}" || true
 }
 
-configured_status=$(curl_status "${ODL_USERNAME}" "${ODL_PASSWORD}" "${ODL_RESTCONF_PATH}")
-if [ "${configured_status}" != "200" ]; then
+wait_for_configured_auth() {
+  attempts=${ODL_AUTH_ATTEMPTS:-30}
+  sleep_seconds=${ODL_AUTH_SLEEP_SECONDS:-2}
+
+  while [ "${attempts}" -gt 0 ]; do
+    configured_status=$(curl_status "${ODL_USERNAME}" "${ODL_PASSWORD}" "${ODL_RESTCONF_PATH}")
+    if [ "${configured_status}" = "200" ]; then
+      return 0
+    fi
+
+    attempts=$((attempts - 1))
+    if [ "${attempts}" -gt 0 ]; then
+      sleep "${sleep_seconds}"
+    fi
+  done
+
   echo "Configured ODL credential check failed with HTTP ${configured_status}." >&2
   cat /tmp/odl-auth-check.out >&2
   exit 1
-fi
+}
+
+wait_for_platform_probe() {
+  attempts=${ODL_AUTH_ATTEMPTS:-30}
+  sleep_seconds=${ODL_AUTH_SLEEP_SECONDS:-2}
+
+  while [ "${attempts}" -gt 0 ]; do
+    platform_status=$(curl -sS "${APP_API_URL}/api/v1/platform/status" || true)
+    platform_status_compact=$(printf '%s' "${platform_status}" | tr -d '\n\r\t ')
+
+    if printf '%s' "${platform_status_compact}" | grep -F '"observation_source":"odl_restconf_capability_probe"' >/dev/null \
+      && printf '%s' "${platform_status_compact}" | grep -F '"observation_state":"ok"' >/dev/null; then
+      return 0
+    fi
+
+    attempts=$((attempts - 1))
+    if [ "${attempts}" -gt 0 ]; then
+      sleep "${sleep_seconds}"
+    fi
+  done
+
+  echo "app-api did not report bounded ODL health as ok in time." >&2
+  printf '%s\n' "${platform_status}" >&2
+  exit 1
+}
+
+wait_for_configured_auth
 
 if [ "${ODL_PASSWORD}" != "${ODL_DEFAULT_PASSWORD}" ]; then
   default_status=$(curl_status "${ODL_USERNAME}" "${ODL_DEFAULT_PASSWORD}" "${ODL_RESTCONF_PATH}")
@@ -32,10 +72,6 @@ if [ "${ODL_PASSWORD}" != "${ODL_DEFAULT_PASSWORD}" ]; then
   fi
 fi
 
-platform_status=$(curl -sS "${APP_API_URL}/api/v1/platform/status")
-platform_status_compact=$(printf '%s' "${platform_status}" | tr -d '\n\r\t ')
-
-printf '%s' "${platform_status_compact}" | grep -F '"observation_source":"odl_restconf_capability_probe"' >/dev/null
-printf '%s' "${platform_status_compact}" | grep -F '"observation_state":"ok"' >/dev/null
+wait_for_platform_probe
 
 echo "ODL auth verification passed. Configured credential works, default fallback is rejected, and app-api reports bounded ODL health as ok."
