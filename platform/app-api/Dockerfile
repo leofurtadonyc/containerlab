@@ -22,4 +22,6 @@ USER app
 
 EXPOSE 8000
 
+HEALTHCHECK --interval=15s --timeout=3s --start-period=25s --retries=6 CMD ["python3", "-c", "import os, urllib.request; port = os.environ.get('API_PORT', '8000'); response = urllib.request.urlopen(f'http://127.0.0.1:{port}/api/v1/health', timeout=2); raise SystemExit(0 if response.status == 200 else 1)"]
+
 CMD ["sh", "/app/scripts/start-app-api.sh"]

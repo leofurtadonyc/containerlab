@@ -3,13 +3,64 @@ set -eu
 
 cd /app
 
+require_env() {
+  var_name=$1
+  eval "var_value=\${$var_name:-}"
+  if [ -z "$var_value" ]; then
+    echo "$var_name must be set" >&2
+    exit 1
+  fi
+}
+
+wait_for_database() {
+  attempts=${APP_API_DATABASE_ATTEMPTS:-45}
+  sleep_seconds=${APP_API_DATABASE_SLEEP_SECONDS:-2}
+
+  while [ "$attempts" -gt 0 ]; do
+    if python3 - <<'PY'
+import os
+
+import psycopg
+
+database_url = os.environ["DATABASE_URL"]
+
+try:
+    with psycopg.connect(database_url, connect_timeout=3) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+except Exception:
+    raise SystemExit(1)
+
+raise SystemExit(0)
+PY
+    then
+      return 0
+    fi
+
+    attempts=$((attempts - 1))
+    if [ "$attempts" -gt 0 ]; then
+      sleep "$sleep_seconds"
+    fi
+  done
+
+  echo "Timed out waiting for Postgres readiness for app-api migrations." >&2
+  exit 1
+}
+
+require_env API_PORT
+require_env DATABASE_URL
+
+wait_for_database
+
 python3 -m alembic -c alembic.ini upgrade head
 
 uvicorn app_api.main:app --host 0.0.0.0 --port "${API_PORT:-8000}" &
 api_pid=$!
 
 (
-  python3 - <<'PY'
+  if {
+    python3 - <<'PY'
 import os
 import socket
 import time
@@ -23,7 +74,13 @@ for _ in range(60):
         time.sleep(1)
 raise SystemExit(1)
 PY
-  python3 -m app_api.startup.warmup
-) >/tmp/app-api-warmup.log 2>&1 || true &
+    python3 -m app_api.startup.warmup
+  } >/tmp/app-api-warmup.log 2>&1; then
+    echo "app-api bounded startup warm-up completed." >&2
+  else
+    echo "app-api bounded startup warm-up failed; see /tmp/app-api-warmup.log" >&2
+    cat /tmp/app-api-warmup.log >&2
+  fi
+) &
 
 wait "$api_pid"

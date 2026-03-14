@@ -24,7 +24,7 @@ The platform requires a single authoritative source of business logic. The backe
 
 ## Runtime details
 - image: `platform-app-api:0.1.0`, built from the local service Dockerfile
-- startup: the packaged runtime applies Alembic migrations, warms the bounded read-side cache, and runs `uvicorn app_api.main:app` from the image entrypoint
+- startup: the packaged runtime now validates required env, waits for Postgres readiness, applies Alembic migrations, starts `uvicorn app_api.main:app`, and then runs the bounded read-side warm-up best-effort in the background with visible failure logging
 - ports: 8000 for the versioned API and `/metrics`
 - env vars: `API_PORT`, `DATABASE_URL`, `ODL_URL`, `ODL_USERNAME`, `ODL_PASSWORD`, `ODL_TIMEOUT_SECONDS`, and `PROMETHEUS_URL`
 - mounts: none required for the packaged runtime
@@ -66,6 +66,7 @@ Comparison summaries explain bounded normalized current-versus-persisted or pers
 The current response, readiness, and embedded history-support surfaces are now anchor-strong at the persisted snapshot or sync-run level, but they still do not claim durable per-change, per-capability-item, or per-readiness-item identities where no such persisted records exist yet.
 Topology may still include inferred truth within the current normalized slice, especially for link interpretation, while workflow-history and audit-history may label sync-derived evidence as recent, aging, stale, or unavailable in the product view without claiming a verified network mismatch.
 The current backend metrics path remains transient and in-memory for scrape safety. Those metrics are observability signals, not durable product records.
+The packaged runtime is now stricter about startup ordering against Postgres, but it is still bootstrap-grade in the broader operational sense: it relies on topology-level env wiring, does not yet own secret rotation, restart orchestration, TLS, or broader recovery automation, and still treats bounded warm-up as best-effort rather than as a full readiness gate.
 The current ODL enrichment is intentionally narrow: the backend probes bounded RESTCONF capability signals for platform health, but ODL still does not own topology truth, policy truth, or workflow logic.
 The current capability matrix is still intentionally bounded: it reflects the delivered Nokia-first read-only product slice and planned Juniper direction, not full multi-vendor parity or deep per-version capability discovery.
 Workflow-history and audit-history are currently bounded views derived from persisted sync-run activity, not separate durable workflow or user-action audit domains.

@@ -21,6 +21,7 @@ The platform must observe live device state without hard-coding vendor assumptio
 
 ## Runtime details
 - image: `platform-gnmi-collector:0.1.0`, built from the local service Dockerfile
+- startup: the packaged runtime now validates required env, validates the mounted runtime config by building the typed collector runtime document, waits for `app-api` health, and only then starts the collector service
 - ports: 9804 for metrics; additional runtime ports are TBD
 - env vars: `COLLECTOR_METRICS_PORT`, `APP_API_URL`, and `GNMI_CONFIG_PATH`
 - mounts: `./gnmi-collector/configs:/app/configs` for runtime config overrides
@@ -43,3 +44,4 @@ The collector now exposes bounded live normalized inventory, topology, and polic
 ## Notes and caveats
 The collector is Nokia-first but must not be Nokia-bound. All vendor-specific normalization logic must live in named adapter modules. The core collector pipeline must remain vendor-neutral.
 The collector is intentionally transient. It provides current observed-state slices and observability signals, but it does not become the durable system of record.
+The startup contract is now less fragile for the packaged topology runtime, but it is still bootstrap-grade beyond that narrow scope: target reachability, collector scheduling depth, retry orchestration after downstream outages, and broader delivery resilience remain intentionally limited.
