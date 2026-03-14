@@ -1,6 +1,7 @@
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
-import { countBy, formatLabel } from "../../lib/presentation";
+import { TrustCueCard } from "../../components/trust-cue-card";
+import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
 import { useCapabilitiesQuery } from "../capabilities/api";
 import { useDevicesQuery } from "../devices/api";
 import { usePlatformStatusQuery } from "../platform-health/api";
@@ -73,6 +74,34 @@ export function OverviewView() {
     );
   }
 
+  const observedComponentCount = platformQuery.data.components.filter(
+    (component) => component.observation_state !== "not_checked",
+  ).length;
+  const degradedComponentCount = platformQuery.data.components.filter((component) =>
+    ["degraded", "unreachable", "unknown"].includes(component.observation_state),
+  ).length;
+  const liveBackedSliceCount = [devicesQuery.data, topologyQuery.data, policiesQuery.data].filter(
+    (slice) => slice.serving_mode === "live_collector",
+  ).length;
+  const fallbackOrBlockedSliceCount = [
+    devicesQuery.data,
+    topologyQuery.data,
+    policiesQuery.data,
+  ].filter(
+    (slice) =>
+      slice.serving_mode !== "live_collector" ||
+      slice.evidence_confidence.confidence_posture === "blocked",
+  ).length;
+  const anchorBackedSurfaceCount = [
+    devicesQuery.data.comparison_to_latest_persisted.comparison_snapshot_id,
+    topologyQuery.data.comparison_to_latest_persisted.comparison_snapshot_id,
+    policiesQuery.data.comparison_to_latest_persisted.comparison_snapshot_id,
+    capabilitiesQuery.data.readiness_snapshot_id,
+  ].filter(Boolean).length;
+  const staleSliceCount = [devicesQuery.data, topologyQuery.data, policiesQuery.data].filter(
+    (slice) => slice.evidence_confidence.freshness_posture === "stale",
+  ).length;
+
   return (
     <section>
       <div className="section-header">
@@ -86,6 +115,25 @@ export function OverviewView() {
         </div>
         <StatusPill value={platformQuery.data.status} />
       </div>
+
+      <div className="metadata-row">
+        <span>Platform generated: {formatDateTime(platformQuery.data.generated_at)}</span>
+        <span>Devices generated: {formatDateTime(devicesQuery.data.generated_at)}</span>
+        <span>Topology generated: {formatDateTime(topologyQuery.data.generated_at)}</span>
+        <span>Policies generated: {formatDateTime(policiesQuery.data.generated_at)}</span>
+        <span>Capabilities generated: {formatDateTime(capabilitiesQuery.data.generated_at)}</span>
+      </div>
+
+      <p className="callout">
+        Routine-use trust cues stay explicit here: {liveBackedSliceCount} core read-side
+        slice{liveBackedSliceCount === 1 ? " is" : "slices are"} currently live-backed,
+        {" "}
+        {fallbackOrBlockedSliceCount} slice
+        {fallbackOrBlockedSliceCount === 1 ? " remains" : "s remain"} fallback or blocked,
+        and {anchorBackedSurfaceCount} surface
+        {anchorBackedSurfaceCount === 1 ? " currently exposes" : "s currently expose"}{" "}
+        a persisted anchor for bounded comparison or readiness support.
+      </p>
 
       <div className="summary-grid">
         <article className="summary-card">
@@ -123,6 +171,26 @@ export function OverviewView() {
           </strong>
           <p>Degraded policy or topology items visible in current product views.</p>
         </article>
+        <article className="summary-card">
+          <p className="summary-label">Live-Backed Slices</p>
+          <strong>{liveBackedSliceCount}</strong>
+          <p>Devices, topology, and policies currently served from live collector-backed paths.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Fallback Or Blocked</p>
+          <strong>{fallbackOrBlockedSliceCount}</strong>
+          <p>Core slices where routine interpretation still depends on fallback or blocked posture.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Anchor-Backed Surfaces</p>
+          <strong>{anchorBackedSurfaceCount}</strong>
+          <p>Current comparison or readiness surfaces exposing persisted anchor identifiers.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Stale Slice Posture</p>
+          <strong>{staleSliceCount}</strong>
+          <p>Core slices whose current evidence is explicitly stale rather than current.</p>
+        </article>
       </div>
 
       <div className="content-grid">
@@ -139,27 +207,142 @@ export function OverviewView() {
           </ul>
         </article>
 
-        <article className="detail-card">
-          <h3>Read-only model posture</h3>
-          <ul className="compact-list">
-            <li>
-              <span>Devices</span>
-              <StatusPill value={devicesQuery.data.data_status} />
-            </li>
-            <li>
-              <span>Topology</span>
-              <StatusPill value={topologyQuery.data.topology.completeness} />
-            </li>
-            <li>
-              <span>Policies</span>
-              <StatusPill value={policiesQuery.data.data_status} />
-            </li>
-            <li>
-              <span>Capabilities</span>
-              <StatusPill value={capabilitiesQuery.data.data_status} />
-            </li>
-          </ul>
-        </article>
+        <TrustCueCard
+          title="Devices Trust Cues"
+          summary="Routine device use depends on whether inventory is live-backed, stale, or fallback-served, and whether a persisted comparison anchor is already available."
+          rows={[
+            {
+              label: "Serving mode",
+              kind: "status",
+              value: devicesQuery.data.serving_mode,
+              note: devicesQuery.data.summary,
+            },
+            {
+              label: "Freshness posture",
+              kind: "status",
+              value: devicesQuery.data.evidence_confidence.freshness_posture,
+            },
+            {
+              label: "Evidence basis",
+              kind: "status",
+              value: devicesQuery.data.evidence_confidence.evidence_kind,
+            },
+            {
+              label: "Comparison anchor",
+              kind: "anchor",
+              value: devicesQuery.data.comparison_to_latest_persisted.comparison_snapshot_id,
+              emptyLabel: "No comparison anchor exposed",
+            },
+            {
+              label: "Served persisted at",
+              kind: "text",
+              value: formatDateTime(devicesQuery.data.served_persisted_at),
+            },
+          ]}
+        />
+
+        <TrustCueCard
+          title="Topology Trust Cues"
+          summary="Topology routine use depends on live-versus-fallback serving, partial completeness, and whether the page can point to a persisted comparison anchor for bounded context."
+          rows={[
+            {
+              label: "Serving mode",
+              kind: "status",
+              value: topologyQuery.data.serving_mode,
+              note: topologyQuery.data.summary,
+            },
+            {
+              label: "Freshness posture",
+              kind: "status",
+              value: topologyQuery.data.evidence_confidence.freshness_posture,
+            },
+            {
+              label: "Evidence basis",
+              kind: "status",
+              value: topologyQuery.data.evidence_confidence.evidence_kind,
+            },
+            {
+              label: "Completeness",
+              kind: "status",
+              value: topologyQuery.data.topology.completeness,
+            },
+            {
+              label: "Comparison anchor",
+              kind: "anchor",
+              value: topologyQuery.data.comparison_to_latest_persisted.comparison_snapshot_id,
+              emptyLabel: "No comparison anchor exposed",
+            },
+          ]}
+        />
+
+        <TrustCueCard
+          title="Policies Trust Cues"
+          summary="Policy routine use is grounded in serving mode, freshness posture, evidence kind, and whether the current page can point to a bounded persisted comparison anchor."
+          rows={[
+            {
+              label: "Serving mode",
+              kind: "status",
+              value: policiesQuery.data.serving_mode,
+              note: policiesQuery.data.summary,
+            },
+            {
+              label: "Freshness posture",
+              kind: "status",
+              value: policiesQuery.data.evidence_confidence.freshness_posture,
+            },
+            {
+              label: "Evidence basis",
+              kind: "status",
+              value: policiesQuery.data.evidence_confidence.evidence_kind,
+            },
+            {
+              label: "Current posture",
+              kind: "status",
+              value: policiesQuery.data.empty_reason === "none" ? "ok" : policiesQuery.data.empty_reason,
+            },
+            {
+              label: "Comparison anchor",
+              kind: "anchor",
+              value: policiesQuery.data.comparison_to_latest_persisted.comparison_snapshot_id,
+              emptyLabel: "No comparison anchor exposed",
+            },
+          ]}
+        />
+
+        <TrustCueCard
+          title="Capabilities And Readiness Cues"
+          summary="The capability matrix stays descriptive, but it now exposes whether the current readiness-support surface has a persisted anchor and when that support snapshot was last persisted."
+          rows={[
+            {
+              label: "Matrix status",
+              kind: "status",
+              value: capabilitiesQuery.data.data_status,
+              note: capabilitiesQuery.data.summary,
+            },
+            {
+              label: "Planning readiness",
+              kind: "status",
+              value:
+                capabilitiesQuery.data.dry_run_readiness?.planning_readiness ?? "unknown",
+            },
+            {
+              label: "Readiness anchor",
+              kind: "anchor",
+              value: capabilitiesQuery.data.readiness_snapshot_id,
+              emptyLabel: "No readiness anchor exposed",
+            },
+            {
+              label: "Readiness persisted at",
+              kind: "text",
+              value: formatDateTime(capabilitiesQuery.data.readiness_persisted_at ?? null),
+            },
+            {
+              label: "Strongest blocker count",
+              kind: "text",
+              value: `${capabilitiesQuery.data.dry_run_readiness?.strongest_blockers.length ?? 0}`,
+            },
+          ]}
+        />
 
         <article className="detail-card">
           <h3>What needs interpretation</h3>
@@ -182,6 +365,12 @@ export function OverviewView() {
             These pages organize backend-owned inventory, topology, policy, and
             capability contracts into operator-readable views. Deep time-series
             troubleshooting still belongs in Grafana.
+          </p>
+          <p className="table-note">
+            Platform observation coverage: {observedComponentCount} of {platformQuery.data.components.length}
+            {" "}
+            declared components currently have a bounded live observation on the product-facing
+            platform status surface, and {degradedComponentCount} currently need closer review.
           </p>
         </article>
       </div>
