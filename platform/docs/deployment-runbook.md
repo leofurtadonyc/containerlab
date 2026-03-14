@@ -125,9 +125,12 @@ This now validates:
 - Prometheus Docker health visibility and readiness
 - Grafana Docker health visibility and API readiness
 - `gnmi-collector` startup-contract readiness and metrics availability
-- `app-api` startup-contract readiness and HTTP health
+- `app-api` startup-contract readiness, HTTP health, and metrics availability
 - `app-web` startup-contract readiness, static HTTP availability, and `/api` proxy reachability to `app-api`
 - Prometheus live scrape target posture for the current real targets
+- read-side API contract sanity for platform status, devices, topology, policies, and capabilities
+- dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts
+- bounded warnings when current read-side responses fall back to persisted data, become blocked, or expose other degraded-but-honest states
 - Grafana provisioned datasource presence and provisioned overview dashboards
 
 ### `verify-odl-auth.sh`
@@ -179,6 +182,10 @@ Useful spot checks:
 curl -s http://localhost:8000/api/v1/health | python -m json.tool
 curl -s http://localhost:8088/api/v1/health | python -m json.tool
 curl -s http://localhost:8000/api/v1/platform/status | python -m json.tool
+curl -s http://localhost:8000/api/v1/devices | python -m json.tool
+curl -s http://localhost:8000/api/v1/topology | python -m json.tool
+curl -s http://localhost:8000/api/v1/policies | python -m json.tool
+curl -s http://localhost:8000/api/v1/capabilities | python -m json.tool
 curl -s http://localhost:9090/-/ready
 curl -s http://localhost:3000/api/health
 curl -s http://localhost:9804/metrics | head
@@ -202,6 +209,14 @@ What healthy means here:
 - live versus persisted-fallback posture is explicit where relevant
 - empty or partial data remains possible and may still be healthy if it is honest about current evidence limits
 
+### Verification Warnings
+
+`./scripts/verify-core-runtime.sh` now distinguishes between hard failures and bounded warnings.
+
+- hard failures still stop the deployment from being treated as usable
+- warnings call out degraded-but-honest current postures such as persisted fallback, blocked read-side evidence, or bounded policy and topology limits that remain visible by design
+- a warning does not imply workflow semantics, remediation intent, or automatic rollback; it is an operator cue to inspect current truth posture more carefully
+
 ## What Remains Bootstrap-Grade
 
 The current hardening is still intentionally bounded. Keep these limits explicit:
@@ -210,6 +225,14 @@ The current hardening is still intentionally bounded. Keep these limits explicit
 - Postgres, Prometheus, and Grafana remain single-instance services backed by host-mounted workspace data rather than backup-managed or HA-managed storage
 - verification still assumes the documented Linux, Docker, and Containerlab path with repo-managed bind mounts
 - TLS, external identity, secret lifecycle hardening, backup automation, and disaster recovery remain outside the current runtime contract
+
+Failures that still remain outside current coverage:
+
+- semantic validation of every Grafana panel query, threshold, or operator interpretation path
+- protocol-complete topology truth, path-computation truth, or controller-grade topology verification
+- deep per-policy operational truth beyond the current bounded aggregate and static-policy-aware slice
+- backup, restore, disaster recovery, or restart-orchestration validation
+- automatic diagnosis or remediation of degraded collector, backend, or controller states
 
 ## Standard Replacement Workflow
 

@@ -92,6 +92,7 @@ More specifically, `./scripts/verify-core-runtime.sh` currently validates only t
 - Grafana's health API responds
 - the provisioned Prometheus datasource is present
 - provisioned overview dashboards can be discovered through the Grafana API
+- the current `app-api` and `gnmi-collector` metrics contracts still expose the metric families the platform overview dashboard depends on most directly
 
 It does not yet validate:
 

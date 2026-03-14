@@ -133,9 +133,12 @@ After the topology comes up, run the bounded runtime verification scripts:
 These checks currently validate:
 
 - Postgres readiness and expected schema presence
-- `app-api` health and packaged startup contract readiness
+- `app-api` health, packaged startup contract readiness, and metrics availability
 - `app-web` packaged startup contract readiness
 - Prometheus readiness and the current real scrape targets
+- read-side API contract sanity for platform status, devices, topology, policies, and capabilities
+- dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts
+- bounded degraded-state warnings for persisted-fallback, blocked, or otherwise degraded-but-honest read-side responses
 - Grafana datasource and dashboard provisioning
 - ODL credential rotation and bounded controller reachability through `app-api`
 
