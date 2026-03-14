@@ -6,6 +6,7 @@ import type {
   TopologyNodeRecord,
 } from "../../api/contracts";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
+import { IdentifierChip } from "../../components/identifier-chip";
 import { StatusPill } from "../../components/status-pill";
 import { buildCrossSliceConsistencyReadout } from "../../lib/cross-slice-consistency";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
@@ -645,6 +646,13 @@ export function TopologyView() {
               <strong>{formatDateTime(comparison.comparison_persisted_at)}</strong>
             </li>
             <li>
+              <span>Persisted snapshot anchor</span>
+              <IdentifierChip
+                value={comparison.comparison_snapshot_id}
+                emptyLabel="Not exposed in this posture"
+              />
+            </li>
+            <li>
               <span>Observed to compared snapshot gap</span>
               <strong>
                 {describeTimeGap(comparison.comparison_persisted_at, comparison.current_observed_at)}
@@ -801,6 +809,10 @@ export function TopologyView() {
           snapshots keep the page usable when live collection is unavailable. Comparison
           summaries show bounded normalized differences only and should not be read as
           path-validation, controller truth, or drift verdicts.
+        </p>
+        <p className="table-note">
+          When the backend can identify the compared persisted topology record explicitly, this
+          page now shows that snapshot anchor alongside the comparison timestamp.
         </p>
       </div>
 

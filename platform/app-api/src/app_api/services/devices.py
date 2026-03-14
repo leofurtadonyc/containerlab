@@ -66,6 +66,7 @@ def _build_inventory_comparison_summary(
     *,
     current_devices: list[InventoryDevice],
     comparison_devices: list[InventoryDevice] | None,
+    comparison_snapshot_id: str | None,
     comparison_persisted_at: datetime | None,
 ) -> InventoryComparisonSummary:
     """Build bounded current-versus-persisted inventory comparison evidence."""
@@ -79,6 +80,7 @@ def _build_inventory_comparison_summary(
                 "No persisted normalized inventory snapshot is currently available for "
                 "bounded comparison with the current device inventory response."
             ),
+            comparison_snapshot_id=comparison_snapshot_id,
             comparison_persisted_at=None,
             current_device_count=len(current_devices),
             persisted_device_count=0,
@@ -119,6 +121,7 @@ def _build_inventory_comparison_summary(
             "Bounded comparison is available between the current device inventory "
             "response and the latest persisted normalized inventory snapshot."
         ),
+        comparison_snapshot_id=comparison_snapshot_id,
         comparison_persisted_at=comparison_persisted_at,
         current_device_count=len(current_devices),
         persisted_device_count=len(comparison_devices),
@@ -228,6 +231,7 @@ def _build_inventory_devices() -> tuple[
                     "Live collector inventory is unavailable, so the current response "
                     "already reflects the latest persisted normalized inventory snapshot."
                 ),
+                comparison_snapshot_id=persisted_snapshot.snapshot_id,
                 comparison_persisted_at=persisted_snapshot.persisted_at,
                 current_device_count=len(devices),
                 persisted_device_count=len(devices),
@@ -251,6 +255,7 @@ def _build_inventory_devices() -> tuple[
                 "No persisted inventory comparison is available because neither a live "
                 "collector inventory snapshot nor a persisted fallback snapshot could be loaded."
             ),
+                comparison_snapshot_id=None,
             comparison_persisted_at=None,
             current_device_count=0,
             persisted_device_count=0,
@@ -287,6 +292,11 @@ def _build_inventory_devices() -> tuple[
         current_devices=inventory_devices,
         comparison_devices=(
             latest_persisted_snapshot.devices if latest_persisted_snapshot is not None else None
+        ),
+        comparison_snapshot_id=(
+            latest_persisted_snapshot.snapshot_id
+            if latest_persisted_snapshot is not None
+            else None
         ),
         comparison_persisted_at=(
             latest_persisted_snapshot.persisted_at
@@ -367,6 +377,7 @@ def build_devices_list_response() -> DevicesListResponse:
         comparison_to_latest_persisted=InventoryComparisonSummaryResponse(
             status=comparison.status,
             summary=comparison.summary,
+            comparison_snapshot_id=comparison.comparison_snapshot_id,
             comparison_persisted_at=comparison.comparison_persisted_at,
             current_device_count=comparison.current_device_count,
             persisted_device_count=comparison.persisted_device_count,

@@ -166,6 +166,7 @@ class CapabilitiesListResponse(ApiResponseMetadata):
     data_status: Literal["placeholder", "bounded_matrix"]
     summary: str
     count: int
+    readiness_snapshot_id: str | None = None
     readiness_persisted_at: datetime | None = None
     domain_counts: dict[str, int] = Field(default_factory=dict)
     support_counts: dict[str, int] = Field(default_factory=dict)

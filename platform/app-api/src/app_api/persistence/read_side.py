@@ -37,6 +37,8 @@ logger = getLogger(__name__)
 class PersistedInventorySnapshot(BaseModel):
     """Latest persisted inventory snapshot recovered from Postgres."""
 
+    snapshot_id: str
+    sync_run_id: str
     persisted_at: datetime
     devices: list[InventoryDevice]
 
@@ -44,6 +46,8 @@ class PersistedInventorySnapshot(BaseModel):
 class PersistedTopologySnapshot(BaseModel):
     """Latest persisted topology snapshot recovered from Postgres."""
 
+    snapshot_id: str
+    sync_run_id: str
     persisted_at: datetime
     snapshot: TopologySnapshot
 
@@ -51,6 +55,8 @@ class PersistedTopologySnapshot(BaseModel):
 class PersistedPolicySnapshot(BaseModel):
     """Latest persisted policy snapshot recovered from Postgres."""
 
+    snapshot_id: str
+    sync_run_id: str
     persisted_at: datetime
     snapshot: PolicyInventorySnapshot
 
@@ -58,6 +64,7 @@ class PersistedPolicySnapshot(BaseModel):
 class PersistedPolicySnapshotSummary(BaseModel):
     """Bounded summary of one persisted policy snapshot."""
 
+    snapshot_id: str
     persisted_at: datetime
     snapshot: PolicyHistorySnapshotRecord
 
@@ -137,6 +144,8 @@ def load_latest_inventory_snapshot() -> PersistedInventorySnapshot | None:
                 .order_by(InventoryRecordTable.device_id.asc())
             ).all()
             return PersistedInventorySnapshot(
+                snapshot_id=snapshot.id,
+                sync_run_id=snapshot.sync_run_id,
                 persisted_at=snapshot.persisted_at,
                 devices=[
                     InventoryDevice(
@@ -255,6 +264,8 @@ def load_latest_topology_snapshot() -> PersistedTopologySnapshot | None:
                 .order_by(TopologyLinkTable.link_id.asc())
             ).all()
             return PersistedTopologySnapshot(
+                snapshot_id=snapshot.id,
+                sync_run_id=snapshot.sync_run_id,
                 persisted_at=snapshot.persisted_at,
                 snapshot=TopologySnapshot(
                     topology_id=snapshot.topology_id,
@@ -417,6 +428,8 @@ def _load_policy_snapshot_at_offset(offset: int) -> PersistedPolicySnapshot | No
             for row in candidate_rows:
                 candidates_by_policy_id.setdefault(row.policy_record_id, []).append(row)
             return PersistedPolicySnapshot(
+                snapshot_id=snapshot.id,
+                sync_run_id=snapshot.sync_run_id,
                 persisted_at=snapshot.persisted_at,
                 snapshot=PolicyInventorySnapshot(
                     sync_source=snapshot.sync_source,
@@ -505,6 +518,7 @@ def load_recent_policy_snapshot_summaries(limit: int = 3) -> list[PersistedPolic
                 counts_by_snapshot_id[snapshot_id] = int(count)
             return [
                 PersistedPolicySnapshotSummary(
+                    snapshot_id=snapshot.id,
                     persisted_at=snapshot.persisted_at,
                     snapshot=PolicyHistorySnapshotRecord(
                         persisted_at=snapshot.persisted_at,

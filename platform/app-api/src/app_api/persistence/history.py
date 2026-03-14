@@ -50,6 +50,7 @@ class PersistedSyncRun(BaseModel):
 class PersistedInventorySnapshotSummary(BaseModel):
     """Bounded persisted inventory snapshot context for history surfaces."""
 
+    snapshot_id: str
     persisted_at: datetime
     observed_at: datetime | None = None
     sync_source: str
@@ -64,6 +65,8 @@ class PersistedInventorySnapshotSummary(BaseModel):
 class PersistedInventorySnapshotComparison(BaseModel):
     """Bounded current-versus-previous comparison for one persisted inventory snapshot."""
 
+    current_snapshot_id: str
+    previous_snapshot_id: str
     current_persisted_at: datetime
     previous_persisted_at: datetime
     current_device_count: int
@@ -78,6 +81,7 @@ class PersistedInventorySnapshotComparison(BaseModel):
 class PersistedTopologySnapshotSummary(BaseModel):
     """Bounded persisted topology snapshot context for history surfaces."""
 
+    snapshot_id: str
     persisted_at: datetime
     observed_at: datetime | None = None
     topology_name: str
@@ -93,6 +97,8 @@ class PersistedTopologySnapshotSummary(BaseModel):
 class PersistedTopologySnapshotComparison(BaseModel):
     """Bounded current-versus-previous comparison for one persisted topology snapshot."""
 
+    current_snapshot_id: str
+    previous_snapshot_id: str
     current_persisted_at: datetime
     previous_persisted_at: datetime
     current_node_count: int
@@ -113,6 +119,7 @@ class PersistedTopologySnapshotComparison(BaseModel):
 class PersistedPolicySnapshotSummary(BaseModel):
     """Bounded persisted policy snapshot context for history surfaces."""
 
+    snapshot_id: str
     persisted_at: datetime
     observed_at: datetime | None = None
     sync_source: str
@@ -128,6 +135,8 @@ class PersistedPolicySnapshotSummary(BaseModel):
 class PersistedPolicySnapshotComparison(BaseModel):
     """Bounded current-versus-previous comparison for one persisted policy snapshot."""
 
+    current_snapshot_id: str
+    previous_snapshot_id: str
     current_persisted_at: datetime
     previous_persisted_at: datetime
     current_observed_policy_count: int
@@ -267,6 +276,7 @@ def _build_inventory_snapshot_summary(
         collector_status_counts[row.collector_status] += 1
         capability_summary_counts[row.capability_summary] += 1
     return PersistedInventorySnapshotSummary(
+        snapshot_id=snapshot.id,
         persisted_at=snapshot.persisted_at,
         observed_at=snapshot.sync_run.observed_at if snapshot.sync_run is not None else None,
         sync_source=snapshot.sync_run.source_type if snapshot.sync_run is not None else "unknown",
@@ -307,6 +317,8 @@ def _build_inventory_snapshot_comparison(
         if current_signatures[device_id] != previous_signatures[device_id]
     }
     return PersistedInventorySnapshotComparison(
+        current_snapshot_id=snapshot.id,
+        previous_snapshot_id=previous_snapshot.id,
         current_persisted_at=snapshot.persisted_at,
         previous_persisted_at=previous_snapshot.persisted_at,
         current_device_count=snapshot.record_count,
@@ -341,6 +353,7 @@ def _build_topology_snapshot_summary(
     for row in link_rows:
         link_state_counts[row.state] += 1
     return PersistedTopologySnapshotSummary(
+        snapshot_id=snapshot.id,
         persisted_at=snapshot.persisted_at,
         observed_at=snapshot.observed_at,
         topology_name=snapshot.topology_name,
@@ -395,6 +408,8 @@ def _build_topology_snapshot_comparison(
         if current_link_signatures[link_id] != previous_link_signatures[link_id]
     }
     return PersistedTopologySnapshotComparison(
+        current_snapshot_id=snapshot.id,
+        previous_snapshot_id=previous_snapshot.id,
         current_persisted_at=snapshot.persisted_at,
         previous_persisted_at=previous_snapshot.persisted_at,
         current_node_count=snapshot.node_count,
@@ -479,6 +494,7 @@ def _build_policy_snapshot_summary(
         select(func.count(PolicyRecordTable.id)).where(PolicyRecordTable.snapshot_id == snapshot.id)
     )
     return PersistedPolicySnapshotSummary(
+        snapshot_id=snapshot.id,
         persisted_at=snapshot.persisted_at,
         observed_at=snapshot.observed_at,
         sync_source=snapshot.sync_source,
@@ -533,6 +549,8 @@ def _build_policy_snapshot_comparison(
             "Observed policy totals may be higher than detailed record totals when the bounded read path cannot derive per-policy detail for every observed policy type."
         )
     return PersistedPolicySnapshotComparison(
+        current_snapshot_id=snapshot.id,
+        previous_snapshot_id=previous_snapshot.id,
         current_persisted_at=snapshot.persisted_at,
         previous_persisted_at=previous_snapshot.persisted_at,
         current_observed_policy_count=snapshot.observed_policy_count,

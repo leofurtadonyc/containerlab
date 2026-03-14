@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
+import { IdentifierChip } from "../../components/identifier-chip";
 import { StatusPill } from "../../components/status-pill";
 import {
   buildCrossSliceConsistencyReadout,
@@ -659,6 +660,13 @@ export function PoliciesView() {
             snapshot from {formatDateTime(currentComparison.comparison_persisted_at)}. This remains
             bounded normalized policy evidence, not full drift analysis.
           </p>
+          <p className="table-note">
+            Persisted snapshot anchor:{" "}
+            <IdentifierChip
+              value={currentComparison.comparison_snapshot_id}
+              emptyLabel="Not exposed in this posture"
+            />
+          </p>
         </div>
       ) : null}
 
@@ -840,6 +848,13 @@ export function PoliciesView() {
             <li>
               <span>Compared persisted snapshot</span>
               <strong>{formatDateTime(currentComparison.comparison_persisted_at)}</strong>
+            </li>
+            <li>
+              <span>Persisted snapshot anchor</span>
+              <IdentifierChip
+                value={currentComparison.comparison_snapshot_id}
+                emptyLabel="Not exposed in this posture"
+              />
             </li>
             <li>
               <span>Observed to compared snapshot gap</span>
@@ -1032,6 +1047,14 @@ export function PoliciesView() {
             <>
               <ul className="compact-list">
                 <li>
+                  <span>Current snapshot anchor</span>
+                  <IdentifierChip value={comparison.current_snapshot_id} />
+                </li>
+                <li>
+                  <span>Previous snapshot anchor</span>
+                  <IdentifierChip value={comparison.previous_snapshot_id} />
+                </li>
+                <li>
                   <span>Current / previous persisted</span>
                   <strong>
                     {formatDateTime(comparison.current_persisted_at)} /{" "}
@@ -1106,6 +1129,10 @@ export function PoliciesView() {
           snapshots keep the page usable when live collection is unavailable. Comparison summaries
           and recent snapshots show bounded normalized evidence only and should not be read as full
           policy-history, drift analysis, or workflow state.
+        </p>
+        <p className="table-note">
+          Where the backend now exposes explicit persisted anchors, this page surfaces those
+          snapshot identifiers as trust cues rather than as workflow state.
         </p>
       </div>
 

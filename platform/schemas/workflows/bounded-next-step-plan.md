@@ -1,15 +1,16 @@
-# Bounded Next-Step Plan For Revealed Workflow Blockers
+# Bounded Next-Step Plan From The Refined Blocker Set
 
 ## Purpose
 
-This document converts the revealed workflow-planning blockers into a bounded
-next-step plan.
+This document converts the refined blocker set into the next bounded,
+`Phase 2`-safe plan.
 
-It exists to answer four narrow questions.
+It exists to answer five narrow questions.
 
-- which blocker should be addressed first
-- which blockers can be closed while the project remains in `Phase 2`
-- which blockers should stay open until a later reassessment or later phase
+- which remaining blocker should drive the next concrete cycle
+- which remaining blockers can still be closed honestly inside `Phase 2`
+- which remaining blockers should wait for later reassessment
+- whether policy deepening or non-sync history hardening should move earlier
 - what follow-up order is necessary rather than merely interesting
 
 It is a sequencing document only.
@@ -20,172 +21,244 @@ It does not introduce:
 - workflow behavior
 - persistence changes
 - a phase transition
-- a broad remediation program
+- broad redesign
 
 ## Phase Boundary
 
 The platform remains in `Phase 2 — read-only product foundation`.
 
-So the next-step plan must prefer documentation-first and schema-first closure
-where that is still honest, and it must defer blockers that would require
-workflow-owned storage, workflow-owned retrieval, or workflow-grade audit
-surfaces.
+So the next-step plan must stay documentation-first and schema-first unless the
+repository already has enough live evidence or persisted truth to justify one
+small truth-and-history hardening slice without crossing into workflow-owned
+storage, workflow retrieval, or workflow-grade audit design.
 
 ## Planning Rule
 
-Use necessity, not curiosity, to choose the next slice.
+Use necessity, not curiosity, to choose the next cycle.
 
 That means:
 
-- address only blockers that directly constrain the next truthful planning step
-- prefer blockers that can be closed without violating the active phase
-- do not pull later workflow-owned implementation prerequisites into `Phase 2`
-  just because they are conceptually central
-- keep later-phase truth and accountability gaps visible, but do not let them
-  distort the current bounded planning order
+- address only the blocker that still directly forces cheating if left open
+- keep already-clarified guardrails visible without reopening them as if they
+  were still unresolved design questions
+- allow truth-and-history hardening only when it directly serves the remaining
+  identity gap
+- defer workflow-owned storage, workflow-owned retrieval, and workflow-grade
+  audit design until a later reassessment explicitly reopens them
+- do not let broader product deepening outrank the immediate blocker unless the
+  evidence now shows it is a prerequisite
 
 ## Inputs Used For This Plan
 
 This plan is derived from the current blocker and workflow-planning baseline in:
 
 - [platform/schemas/workflows/planning-slice-blockers.md](platform/schemas/workflows/planning-slice-blockers.md)
-- [platform/schemas/workflows/evidence-reference-contract.md](platform/schemas/workflows/evidence-reference-contract.md)
+- [platform/schemas/workflows/source-record-identity-needs-mapping.md](platform/schemas/workflows/source-record-identity-needs-mapping.md)
 - [platform/schemas/workflows/history-audit-linkage-mapping.md](platform/schemas/workflows/history-audit-linkage-mapping.md)
-- [platform/schemas/workflows/read-only-retrieval-sequencing.md](platform/schemas/workflows/read-only-retrieval-sequencing.md)
-- [platform/schemas/workflows/ownership-boundaries.md](platform/schemas/workflows/ownership-boundaries.md)
-- [platform/docs/workflow-planning-gate.md](platform/docs/workflow-planning-gate.md)
+- [platform/schemas/workflows/current-history-chronology-ordering-rules.md](platform/schemas/workflows/current-history-chronology-ordering-rules.md)
+- [platform/schemas/workflows/comparison-citation-posture-rules.md](platform/schemas/workflows/comparison-citation-posture-rules.md)
+- [platform/docs/workflow-next-step-recommendation.md](platform/docs/workflow-next-step-recommendation.md)
+- [agent/sdn/03-CURRENT-STATUS.md](agent/sdn/03-CURRENT-STATUS.md)
 - [agent/sdn/16-implementation-order.md](agent/sdn/16-implementation-order.md)
 - [agent/sdn/35-build-order-enforcement-rules.md](agent/sdn/35-build-order-enforcement-rules.md)
+
+## What Changed Since The Earlier Next-Step Plan
+
+The earlier next-step plan ranked several planning slices that are no longer the
+active next closure targets.
+
+That older order is now too broad for the refined blocker set because:
+
+1. source-record identity, chronology interpretation, ownership posture, and
+   comparison-citation posture have already been clarified on paper
+2. the blocker analysis now leaves only one active must-fix blocker
+3. workflow-owned anchors and workflow-grade audit linkage are now explicitly
+   deferred until later reassessment rather than treated as the next closure
+   targets
+4. the immediate next move is now bounded truth-and-history hardening only where
+   it directly closes the remaining identity gap
 
 ## Sequencing Principles
 
 Apply the following ordering rules strictly.
 
-1. Close Phase-2-safe identity ambiguity before planning workflow-owned records.
-2. Close ambiguity on current evidence reuse before planning future workflow
-   retrieval rooted in new storage.
-3. Defer blockers that inherently require workflow-owned persistence or
-   workflow-grade audit chains until the repository explicitly reassesses that
-   move.
-4. Keep important but non-blocking gaps documented, but do not let them outrank
-   the remaining strict blocker that can still be closed honestly inside
-   `Phase 2`.
-5. Treat topology truth, policy truth, and approval or execution accountability
-   as later-phase concerns unless a narrower future task explicitly reclassifies
-   them.
+1. Close the one remaining citation-grade identity gap before reopening deeper
+   workflow-owned planning.
+2. Treat current-history limitations as active guardrails, not as a new broad
+   planning lane to reopen immediately.
+3. Permit truth-and-history hardening only where it directly exposes or closes
+   source identity and anchor gaps in already-implemented read-side surfaces.
+4. Keep policy deepening behind the blocker-driven bridge unless policy evidence
+   itself becomes the only honest way to close the current identity gap.
+5. Keep non-sync history hardening behind the blocker-driven bridge unless a
+   narrow readiness-history or derived-audit anchor gap is proven to block the
+   current identity closure.
+6. Defer anything that would require workflow-owned entities, retrieval roots,
+   audit-linkage chains, or workflow chronology roots.
 
-## Ranked Blocker Handling Order
+## Ranked Next-Step Order
 
-The table below ranks blockers by next-step handling order, not only by abstract
-future severity.
+The table below ranks the remaining items by immediate necessity, not by abstract
+future importance.
 
-| Rank | Blocker code | Current class | Why it belongs here | Phase 2 closure posture |
+| Rank | Item | Current posture | Why it belongs here | Phase-2-safe handling posture |
 | --- | --- | --- | --- | --- |
-| 1 | `source_record_identity_missing_for_current_read_models_and_comparisons` | `must_fix_before_planning_can_continue` | This is the only strict blocker that can be closed directly through documentation-first and schema-first work on current read-model, comparison, readiness, capability, and embedded history-support evidence. It is also the cleanest dependency for any later `evidence_reference` attachment rules. | `close_now_inside_phase2` |
-| 2 | `current_history_identity_and_ordering_too_weak_for_workflow_chronology` | `must_fix_before_planning_can_continue` | This remains a strict blocker, but it should be handled only after source-record identity rules make the reusable current-history surfaces explicit. The next safe step is to narrow chronology rules for current history-derived evidence, not to invent workflow history. | `narrow_only_inside_phase2_then_reassess` |
-| 3 | `ownership_boundaries_are_clear_in_docs_but_not_yet_grounded_in_concrete_record_rules` | `important_but_not_blocking` | Once source identity and current-history citation scope are clearer, the remaining ownership split can be tightened into more concrete record-level rules without introducing workflow behavior. | `close_now_inside_phase2` |
-| 4 | `comparison_records_are_explanatory_but_not_durable_entities` | `important_but_not_blocking` | This should be addressed after the source-identity slice decides what comparison evidence can be cited directly versus only attached as explanation. The needed closure is a contract decision, not a persistence implementation. | `close_now_inside_phase2` |
-| 5 | `workflow_owned_anchor_records_absent` | `must_fix_before_planning_can_continue` | This is a root future dependency for concrete retrieval and storage planning, but addressing it directly would pull the project into workflow-owned persistence design rather than finishing the remaining Phase-2-safe clarification work first. | `do_not_close_in_phase2` |
-| 6 | `workflow_grade_audit_linkage_chain_absent` | `must_fix_before_planning_can_continue` | This depends on workflow-owned anchors and stronger chronology. It must remain visible, but it should not be treated as the next bounded slice because Phase 2 still lacks the identity and ownership precision needed before workflow-grade audit retrieval can be planned credibly. | `do_not_close_in_phase2` |
-| 7 | `history_query_and_retention_model_remains_bounded` | `important_but_not_blocking` | The bounded window is real, but it does not outrank source identity, chronology scope, or ownership decisions for the current planning checkpoint. | `leave_open_until_later_reassessment` |
-| 8 | `topology_truth_is_still_too_bounded_for_workflow_grade_pre_change_reasoning` | `later_phase_concern` | This is a later validation and safe-action concern, not the next blocker to sequence in the current documentation-first cycle. | `later_phase_only` |
-| 9 | `policy_truth_is_still_too_partial_for_workflow_grade_pre_change_reasoning` | `later_phase_concern` | This remains real, especially for preview and validation phases, but it should not pull the project away from the current bounded planning lane. | `later_phase_only` |
-| 10 | `approval_execution_and_rollback_accountability_is_absent_by_design` | `later_phase_concern` | This matters only once dry-run, approval, execution, or rollback surfaces become real future work. | `later_phase_only` |
+| 1 | `citation_grade_source_record_identity_still_missing_for_identity_weak_current_surfaces` | `must_fix_before_planning_can_continue` | This is the only remaining blocker that still directly forces ambiguous citation or anchor cheating if left unresolved. The affected surfaces are already known and bounded: current comparison contracts, readiness items, capability items, and embedded history-support attachments. | `close_now_inside_phase2` |
+| 2 | `bounded_truth_and_history_hardening_only_where_identity_gap_demands_it` | `derived_follow_up_step` | The refined blocker set now points to a bridge step rather than a second broad planning cycle: close only the concrete read-side truth or anchor gaps that the remaining identity blocker proves cannot be resolved honestly on paper alone. | `allow_only_if_directly_identity_serving` |
+| 3 | `current_history_surfaces_remain_non_workflow_grade_even_after_clarification` | `important_but_not_blocking` | This is now a guardrail, not the next primary closure target. It must constrain the next cycle so sync history, readiness history, workflow-history projections, and audit-feed order are not overread while identity hardening proceeds. | `preserve_as_guardrail_do_not_reopen_broadly` |
+| 4 | `history_query_and_retention_model_remains_bounded` | `important_but_not_blocking` | This still matters, but the current evidence does not show that retention breadth is the next prerequisite for honest identity closure. | `leave_open_until_later_reassessment` |
+| 5 | `workflow_owned_anchor_records_absent` | `important_but_not_blocking` | Still a real future dependency, but current status and blocker analysis now explicitly defer it behind the identity-focused bridge. | `wait_for_later_reassessment` |
+| 6 | `workflow_grade_audit_linkage_chain_absent` | `important_but_not_blocking` | Still real, but downstream of both stronger current source identity and any later decision to resume deeper workflow-owned planning. | `wait_for_later_reassessment` |
+| 7 | `policy_truth_is_still_too_partial_for_workflow_grade_pre_change_reasoning` | `later_phase_concern` | Policy truth depth remains important for later preview and validation strength, but it is not the next blocker in the refined set. | `do_not_move_earlier` |
+| 8 | `topology_truth_is_still_too_bounded_for_workflow_grade_pre_change_reasoning` | `later_phase_concern` | Topology truth depth remains later-phase as well. | `later_phase_only` |
+| 9 | `approval_execution_and_rollback_accountability_is_absent_by_design` | `later_phase_concern` | This belongs to later dry-run and safe-action phases only. | `later_phase_only` |
 
-## Which Blockers Can Be Closed Inside Phase 2
+## Which Items Can Still Be Closed Inside Phase 2
 
-The following blockers can be closed honestly while the repository remains in
-`Phase 2`, because their closure is still documentation-first and schema-first.
+The following item can still be closed honestly inside `Phase 2` and should
+drive the next bounded cycle.
 
-- `source_record_identity_missing_for_current_read_models_and_comparisons`
-- `ownership_boundaries_are_clear_in_docs_but_not_yet_grounded_in_concrete_record_rules`
-- `comparison_records_are_explanatory_but_not_durable_entities`
+- `citation_grade_source_record_identity_still_missing_for_identity_weak_current_surfaces`
 
-These are Phase-2-safe because closure means defining exact identity,
-ownership, and citation posture rules for existing read-side evidence.
+Closure remains `Phase 2`-safe because it can stay bounded to already
+implemented read-side evidence.
 
-They do not require:
+That closure should focus on the already identified weak families.
 
-- workflow-owned storage
-- workflow endpoints
-- dry-run behavior
-- workflow-grade audit events
+- current comparison summaries that still lack explicit compared anchor IDs or
+  explicit explanatory-only posture
+- readiness summary, blocker, prerequisite, and assessment-area items that
+  still lack snapshot-scoped citation-grade identity
+- capability items that still rely on inferred tuples rather than explicit item
+  identity
+- embedded history-support summaries and comparison attachments that still hide
+  their stronger underlying snapshot or sync-run anchors
 
-## Which Blockers Can Only Be Narrowed Inside Phase 2
+## Which Items May Be Narrowly Hardened Inside Phase 2 Only If Evidence Demands It
 
-The following blocker should be narrowed, but not claimed as fully closed, while
-the repository remains in `Phase 2`.
+The following follow-up is allowed only as a narrow consequence of the remaining
+identity blocker.
 
-- `current_history_identity_and_ordering_too_weak_for_workflow_chronology`
+- bounded truth-and-history hardening tied directly to identity closure
 
-Why only narrowed:
+That means only small hardening steps such as:
 
-- current sync-derived and readiness-derived history can be bounded more
-  explicitly on paper
-- current overloaded and synthesized identities can be documented more strictly
-- full closure would still require workflow-owned chronology rather than only
-  stricter interpretation of read-side history
+- exposing or documenting stronger underlying persisted snapshot or sync-run
+  anchors where current attachments still hide them
+- clarifying or tightening readiness-snapshot anchor exposure where current
+  readiness items cannot otherwise be cited honestly
+- tightening derived audit-envelope anchor preference where current projection
+  identity would otherwise be overread
 
-## Which Blockers Should Not Be Closed In Phase 2
+That does not authorize:
 
-The following blockers should remain open until a later reassessment explicitly
-decides to plan workflow-owned persistence and workflow-grade audit retrieval
-more concretely.
+- a general non-sync history redesign
+- broad retention-model hardening
+- broader audit-history expansion
+- workflow-grade chronology work
+
+## Which Items Should Wait For Later Reassessment
+
+The following items should remain open until the repository explicitly decides
+to reopen deeper workflow-owned planning after the bounded identity-focused
+bridge is complete.
 
 - `workflow_owned_anchor_records_absent`
 - `workflow_grade_audit_linkage_chain_absent`
 - `history_query_and_retention_model_remains_bounded`
 
-These are not the right next slice because they would either:
+These should wait because addressing them next would either:
 
-- force workflow-owned storage design too early
-- force workflow-grade retrieval design too early
-- broaden the planning surface before identity and ownership rules are precise
+- pull the repository into workflow-owned storage design too early
+- pull the repository into workflow-grade retrieval or audit design too early
+- broaden the current cycle beyond the one remaining blocker that still matters
+  immediately
 
 ## Later-Phase Concerns Only
 
-The following blockers should remain explicitly out of the next-step plan and be
-treated as later-phase concerns only.
+The following items remain explicitly outside the next bounded plan.
 
-- `topology_truth_is_still_too_bounded_for_workflow_grade_pre_change_reasoning`
 - `policy_truth_is_still_too_partial_for_workflow_grade_pre_change_reasoning`
+- `topology_truth_is_still_too_bounded_for_workflow_grade_pre_change_reasoning`
 - `approval_execution_and_rollback_accountability_is_absent_by_design`
 
-They matter for later dry-run, validation, approval, execution, rollback, and
-safe-action work, but they do not determine the next bounded planning slice.
+They matter for later preview, validation, approval, execution, rollback, and
+safe-action work, but they do not determine the next blocker-driven `Phase 2`
+cycle.
 
-## Phase-Safe Follow-Up Order
+## Policy Deepening Versus Non-Sync History Hardening
 
-Follow this order unless a later review documents a narrower reason not to.
+This plan makes those two adjacent choices explicit.
 
-1. Complete explicit source-record identity rules for current read-model,
-   comparison, readiness, capability, and embedded history-support evidence.
-2. Use that result to tighten current-history chronology and ordering rules only
-   where current evidence is still reusable later, while preserving the rule
-   that sync-derived history is not workflow history.
-3. Convert the ownership-boundary split into more concrete record-level rules so
-   later workflow-owned state cannot silently reuse current evidence or
-   readiness records as substitutes.
-4. Decide explicitly which current comparison surfaces remain explanatory only
-   and which, if any, can be cited directly once source identity is known.
-5. Stop and reassess whether the remaining open blockers now truly require a new
-   later planning slice for workflow-owned anchors and workflow-grade audit
-   linkage, or whether Phase 2 documentation can still sharpen them further
-   without crossing the phase boundary.
+### Policy deepening
 
-## What Must Wait For Later Reassessment
+Recommendation: `do_not_move_earlier`
+
+Why:
+
+1. the refined blocker set does not identify richer policy truth as the next
+   prerequisite for honest workflow-planning progress
+2. current policy truth remains a later-phase concern for preview and validation
+   quality rather than the current identity-focused bridge
+3. the current policy-related blocker inside `Phase 2` is still mostly about
+   comparison identity and anchor exposure, not deeper policy domain breadth
+
+Practical consequence:
+
+- keep policy deepening behind the identity-focused bridge
+- only return to it afterward as bounded read-only product work where live Nokia
+  evidence supports richer truth
+
+### Non-sync history hardening
+
+Recommendation: `do_not_move_earlier_as_a_standalone_cycle`
+
+Why:
+
+1. the chronology and reuse meaning of current readiness history and derived
+   audit envelopes is already clarified enough to act as a guardrail
+2. the refined blocker set does not show a general non-sync history weakness as
+   the next primary blocker
+3. the only honest reason to touch non-sync history next would be a narrow
+   identity-serving need, such as explicit readiness snapshot anchor exposure
+   for current readiness items or derived readiness events
+
+Practical consequence:
+
+- do not start a general non-sync history hardening slice next
+- allow only narrow readiness-history or derived-audit anchor tightening if the
+  identity-focused bridge proves it is required
+
+## Phase-2-Safe Follow-Up Order
+
+Follow this order unless a later review documents a narrower, evidence-based
+reason not to.
+
+1. close the remaining citation-grade source-identity and explicit-anchor gaps
+   in the already-known weak surface families
+2. if that work exposes a concrete truth or anchor gap that cannot be resolved
+   on paper alone, perform one narrow truth-and-history hardening step tied only
+   to that gap
+3. stop and reassess whether the remaining deferred workflow-owned-anchor,
+   workflow-grade audit-linkage, or bounded-retention gaps still need a deeper
+   planning slice next
+4. only after that return to broader bounded product deepening such as policy
+   truth improvements where live evidence genuinely supports it
+
+## What Must Still Wait
 
 Do not treat the following as the immediate next tasks.
 
-- designing concrete workflow root tables or persistence schemas
+- designing workflow root tables or workflow-owned persistence schemas
 - designing workflow-owned retrieval endpoints
-- designing workflow-grade audit-event families
-- expanding truth work into validation-grade topology or policy reasoning
-- designing approval, execution, rollback, or operator-accountability surfaces
+- designing workflow-grade audit-event families or linkage chains
+- broad non-sync history redesign or retention expansion
+- validation-grade policy or topology reasoning
+- approval, execution, rollback, or operator-accountability surfaces
 
-Those moves should wait until the repository has finished the remaining Phase 2
-identity and ownership clarification work and then explicitly reassesses whether
-planning should deepen further.
+Those moves must wait until the repository has either closed the remaining
+identity gap or shown, through the bounded bridge step, that a later planning
+reassessment is truly necessary.
 
 ## Explicit Non-Goals
 
@@ -199,15 +272,20 @@ This plan does not define:
 
 ## Conservative Bottom Line
 
-The next bounded step is not to chase every revealed blocker at once.
+The refined blocker set changes the next-step order materially.
 
-The correct next-step order is:
+The next bounded cycle should be:
 
-1. close source-record identity rules
-2. narrow current-history chronology reuse rules
-3. tighten concrete ownership and comparison-posture rules
-4. only then reassess whether workflow-owned anchors and workflow-grade audit
-   linkage should become a later planning slice
+1. close the remaining citation-grade source-identity gap in the still-weak
+   current surfaces
+2. allow only the smallest truth-and-history hardening step that this identity
+   work proves is necessary
+3. keep current-history guardrails in force without reopening broad non-sync
+   history work
+4. keep policy deepening behind this bridge step
+5. only then reassess whether workflow-owned anchors, workflow-grade audit
+   linkage, or broader retention planning should become a deeper later slice
 
-Everything else should remain visible but deferred, so the project stays inside
-`Phase 2` and avoids turning blocker awareness into workflow momentum.
+That is the narrowest plan that preserves `Phase 2`, respects the refined
+blocker set, and avoids turning blocker awareness into premature workflow
+momentum.

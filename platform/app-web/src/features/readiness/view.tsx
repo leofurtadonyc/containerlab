@@ -1,4 +1,5 @@
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
+import { IdentifierChip } from "../../components/identifier-chip";
 import { StatusPill } from "../../components/status-pill";
 import { formatDateTime, formatLabel } from "../../lib/presentation";
 import {
@@ -68,6 +69,7 @@ export function ReadinessView() {
         <span>Planning readiness: {formatLabel(readiness.planning_readiness)}</span>
         <span>Phase recommendation: {formatLabel(readiness.phase_recommendation)}</span>
         <span>Readiness persisted at: {formatDateTime(data.readiness_persisted_at ?? null)}</span>
+        <span>Snapshot anchor exposed: {data.readiness_snapshot_id ? "Yes" : "No"}</span>
         <span>Generated: {formatDateTime(data.generated_at)}</span>
       </div>
 
@@ -134,9 +136,41 @@ export function ReadinessView() {
           goal is to make blockers and bounded evidence easier to understand before
           any future workflow-grade work is considered.
         </p>
+        <p className="table-note">
+          Persisted readiness snapshot anchor:{" "}
+          <IdentifierChip
+            value={data.readiness_snapshot_id}
+            emptyLabel="Not exposed in this response"
+          />
+        </p>
       </div>
 
       <div className="content-grid">
+        <article className="detail-card">
+          <p className="summary-label">Persisted Readiness Anchor</p>
+          <p>
+            This page is backed by a persisted readiness-support snapshot when the backend has one.
+            The anchor identifies that persisted read-only record and does not imply workflow state
+            or execution capability.
+          </p>
+          <div className="key-value-list">
+            <div className="key-value-row">
+              <span>Snapshot anchor</span>
+              <IdentifierChip
+                value={data.readiness_snapshot_id}
+                emptyLabel="Not exposed in this response"
+              />
+            </div>
+            <div className="key-value-row">
+              <span>Persisted at</span>
+              <strong>{formatDateTime(data.readiness_persisted_at ?? null)}</strong>
+            </div>
+            <div className="key-value-row">
+              <span>Generated at</span>
+              <strong>{formatDateTime(data.generated_at)}</strong>
+            </div>
+          </div>
+        </article>
         <article className="detail-card">
           <p className="summary-label">Readiness Scope</p>
           <p>{readiness.readiness_scope}</p>

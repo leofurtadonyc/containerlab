@@ -12,6 +12,14 @@ from app_api.schemas.capabilities import DryRunReadinessSummary
 logger = getLogger(__name__)
 
 
+class PersistedReadinessSnapshotReference:
+    """Reference to the latest persisted readiness-support snapshot."""
+
+    def __init__(self, *, snapshot_id: str, persisted_at: datetime) -> None:
+        self.snapshot_id = snapshot_id
+        self.persisted_at = persisted_at
+
+
 def _build_readiness_content_hash(
     dry_run_readiness: DryRunReadinessSummary,
 ) -> str:
@@ -78,17 +86,28 @@ def persist_readiness_snapshot(
 
 def load_latest_readiness_snapshot_persisted_at() -> datetime | None:
     """Return the latest persisted readiness-support timestamp when available."""
+    reference = load_latest_readiness_snapshot_reference()
+    if reference is None:
+        return None
+    return reference.persisted_at
+
+
+def load_latest_readiness_snapshot_reference() -> PersistedReadinessSnapshotReference | None:
+    """Return the latest persisted readiness-support snapshot reference when available."""
     try:
         with create_session() as session:
             latest_snapshot = (
-                session.query(ReadinessSnapshotTable.persisted_at)
+                session.query(ReadinessSnapshotTable.id, ReadinessSnapshotTable.persisted_at)
                 .order_by(ReadinessSnapshotTable.persisted_at.desc())
                 .limit(1)
                 .one_or_none()
             )
             if latest_snapshot is None:
                 return None
-            return latest_snapshot[0]
+            return PersistedReadinessSnapshotReference(
+                snapshot_id=latest_snapshot[0],
+                persisted_at=latest_snapshot[1],
+            )
     except Exception:
-        logger.exception("Failed to load latest bounded readiness snapshot timestamp.")
+        logger.exception("Failed to load latest bounded readiness snapshot reference.")
         return None

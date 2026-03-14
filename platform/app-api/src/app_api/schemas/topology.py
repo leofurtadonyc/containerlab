@@ -50,6 +50,7 @@ class TopologyComparisonSummary(BaseModel):
 
     status: Literal["unavailable", "live_vs_latest_persisted_ready"]
     summary: str
+    comparison_snapshot_id: str | None = None
     comparison_persisted_at: datetime | None = None
     current_observed_at: datetime | None = None
     current_node_count: int

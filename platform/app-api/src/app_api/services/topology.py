@@ -51,6 +51,7 @@ def _build_topology_comparison_summary(
     *,
     current_snapshot: TopologySnapshot,
     comparison_snapshot: TopologySnapshot | None,
+    comparison_snapshot_id: str | None,
     comparison_persisted_at: datetime | None,
 ) -> TopologyComparisonSummary:
     """Build bounded current-versus-persisted topology comparison evidence."""
@@ -67,6 +68,7 @@ def _build_topology_comparison_summary(
                 "No earlier persisted normalized topology snapshot is currently available "
                 "for bounded comparison."
             ),
+            comparison_snapshot_id=comparison_snapshot_id,
             comparison_persisted_at=None,
             current_observed_at=current_snapshot.observed_at,
             current_node_count=len(current_snapshot.nodes),
@@ -119,6 +121,7 @@ def _build_topology_comparison_summary(
             "Bounded comparison is available between the current normalized topology "
             "snapshot and the latest earlier persisted normalized topology snapshot."
         ),
+        comparison_snapshot_id=comparison_snapshot_id,
         comparison_persisted_at=comparison_persisted_at,
         current_observed_at=current_snapshot.observed_at,
         current_node_count=len(current_snapshot.nodes),
@@ -232,6 +235,7 @@ def _build_topology_snapshot() -> tuple[
                         "Live collector topology is unavailable, so the current response "
                         "already reflects the latest persisted normalized topology snapshot."
                     ),
+                    comparison_snapshot_id=persisted_snapshot.snapshot_id,
                     comparison_persisted_at=persisted_snapshot.persisted_at,
                     current_observed_at=persisted_snapshot.snapshot.observed_at,
                     current_node_count=len(persisted_snapshot.snapshot.nodes),
@@ -270,6 +274,7 @@ def _build_topology_snapshot() -> tuple[
                 "No persisted topology comparison is available because neither a live "
                 "collector topology snapshot nor a persisted fallback snapshot could be loaded."
             ),
+            comparison_snapshot_id=None,
             comparison_persisted_at=None,
             current_observed_at=None,
             current_node_count=0,
@@ -329,6 +334,11 @@ def _build_topology_snapshot() -> tuple[
         current_snapshot=snapshot,
         comparison_snapshot=(
             previous_persisted_snapshot.snapshot if previous_persisted_snapshot is not None else None
+        ),
+        comparison_snapshot_id=(
+            previous_persisted_snapshot.snapshot_id
+            if previous_persisted_snapshot is not None
+            else None
         ),
         comparison_persisted_at=(
             previous_persisted_snapshot.persisted_at if previous_persisted_snapshot is not None else None

@@ -20,7 +20,7 @@ Operators need a product UI that is purpose-built for network operations workflo
 
 ## Runtime details
 - image: `platform-app-web:0.1.0`, built from the local service Dockerfile
-- startup: the packaged runtime serves the production Vite build through Nginx and proxies `/api` requests to `app-api`
+- startup: the packaged runtime now validates that the built frontend assets exist, validates the Nginx config, and then serves the production Vite build through Nginx while proxying `/api` requests to `app-api`
 - ports: 8088 for the published WebUI endpoint
 - env vars: none required in the packaged topology runtime; `VITE_APP_API_BASE_URL` remains available for development builds
 - mounts: none required for the packaged runtime
@@ -41,3 +41,4 @@ The frontend now has a Vite + React + TypeScript scaffold, a feature-oriented `s
 
 ## Notes and caveats
 `app-web` is the product. Grafana is for observability. Do not duplicate dashboard logic in the WebUI and do not build product workflows into Grafana.
+The packaged runtime is now stricter about local startup validation and container health visibility, but it is still bootstrap-grade in broader platform terms: it remains a single Nginx-served static build without TLS termination, runtime config reload orchestration, or broader frontend-serving hardening.

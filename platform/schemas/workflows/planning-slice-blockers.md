@@ -57,52 +57,102 @@ The blocker is real and important, but it belongs to later workflow
 implementation readiness or later workflow-scope strength rather than the
 current concrete planning checkpoint.
 
-## Exact Blocker List
+## What Changed Since The Earlier Blocker Analysis
 
-| Blocker code | Class | Primary category | Exact blocker | Evidence basis | Why this blocker matters | Dependency notes |
+The blocker set is now narrower because several planning questions that were
+previously open have been answered by the recent clarification work.
+
+1. Source-record identity is no longer a vague general gap. The repository now
+   has explicit identity classes plus a needs map that isolate the remaining
+   weak surfaces to current comparison contracts, readiness items, capability
+   items, and embedded history-support attachments that still hide stronger
+   underlying anchors.
+2. Current-history chronology is no longer an open interpretation problem. The
+   repository now states explicitly that current history is only bounded post
+   hoc source chronology, derived chronology through stronger anchors, or feed
+   presentation order.
+3. Comparison ownership and citation posture are no longer open blocker
+   questions. The repository now explicitly classifies which comparison
+   surfaces are direct source anchors, assembled summaries, supporting context,
+   or unsafe workflow-owned citation targets.
+4. The current status and follow-up guidance now point to bounded `Phase 2`
+   truth-and-history hardening before any deeper workflow-owned-anchor or
+   workflow-grade audit-linkage planning resumes.
+
+## Updated Active Blocker List
+
+| Blocker code | Class | Primary category | Exact blocker | Evidence basis | Why this blocker matters now | Dependency notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| `source_record_identity_missing_for_current_read_models_and_comparisons` | `must_fix_before_planning_can_continue` | `evidence_identity` | Many current read-model, comparison, readiness, and capability surfaces still do not expose explicit standalone source-record identities that a future `evidence_reference` can cite cleanly. | [platform/schemas/workflows/phase2-evidence-surface-mapping.md](platform/schemas/workflows/phase2-evidence-surface-mapping.md) states that most current read-model and comparison surfaces still lack explicit standalone `source_record_id` values; current API schemas such as [platform/app-api/src/app_api/schemas/devices.py](platform/app-api/src/app_api/schemas/devices.py), [platform/app-api/src/app_api/schemas/topology.py](platform/app-api/src/app_api/schemas/topology.py), [platform/app-api/src/app_api/schemas/policies.py](platform/app-api/src/app_api/schemas/policies.py), and [platform/app-api/src/app_api/schemas/capabilities.py](platform/app-api/src/app_api/schemas/capabilities.py) expose object IDs for some domain records but no explicit citation-grade IDs for comparison summaries, readiness blockers, readiness prerequisites, or capability items. | The evidence-reference contract and retrieval-sequencing design both depend on a stable `source_record_id`. Without it, later workflow artifacts would have to cite response envelopes or aggregate projections ambiguously, which would weaken chronology, scope, and provenance semantics immediately. | This blocker sits upstream of concrete evidence-reference attachment rules, citation precedence, and any later workflow retrieval payload that wants to expose direct cited evidence rather than copied summaries. |
-| `workflow_owned_anchor_records_absent` | `must_fix_before_planning_can_continue` | `persistence` | The retrieval design now assumes workflow-owned anchors such as `workflow_id`, `workflow_revision_id`, and `workflow_state_transition_id`, but no workflow-owned anchor records exist in current backend persistence. | [platform/schemas/workflows/read-only-retrieval-sequencing.md](platform/schemas/workflows/read-only-retrieval-sequencing.md) makes anchor resolution the first retrieval layer and marks current `Phase 2` support as `no`; [platform/schemas/workflows/workflow-owned-state-prerequisites.md](platform/schemas/workflows/workflow-owned-state-prerequisites.md) says workflow root storage is a prerequisite layer; [platform/docs/workflow-planning-gate.md](platform/docs/workflow-planning-gate.md) explicitly lists durable workflow lifecycle records as still missing; current persistence code under [platform/app-api/src/app_api/persistence/history.py](platform/app-api/src/app_api/persistence/history.py) and the persistence directory do not define workflow root tables or workflow revision records. | Until workflow-owned anchors are real and explicit on paper, retrieval sequencing cannot be converted into concrete storage or endpoint planning. Any attempt to continue without them would drift back into using sync runs or read-side responses as fake workflow roots. | This blocker must be resolved before concrete planning can specify workflow retrieval inputs, workflow lifecycle storage shape, or revision-scoped ownership rules. |
-| `workflow_grade_audit_linkage_chain_absent` | `must_fix_before_planning_can_continue` | `audit_linkage` | The repo now has audit-linkage semantics, but no concrete workflow-grade audit-event family, no persisted `audit_linkage` chain, and no workflow-scoped retrieval path for those relationships. | [platform/schemas/workflows/audit-linkage-contract.md](platform/schemas/workflows/audit-linkage-contract.md) is design-only and states that current history cannot support workflow-created `audit_linkage_id` families or workflow revision chronology; [platform/schemas/workflows/history-audit-linkage-mapping.md](platform/schemas/workflows/history-audit-linkage-mapping.md) lists no implemented `audit_linkage` records or retrieval chains; current audit models in [platform/app-api/src/app_api/models/audit.py](platform/app-api/src/app_api/models/audit.py) define only bounded read-only `AuditEventRecord` projections. | Future workflow planning cannot become concrete if auditability remains only conceptual. Without a workflow-grade audit-linkage chain, later workflow retrieval cannot specify how workflow entities, audit events, and cited evidence join together durably. | This blocker depends on workflow-owned anchors, but it must also be resolved before any concrete planning for workflow history retrieval, validation accountability, or execution observation linkage can stabilize. |
-| `current_history_identity_and_ordering_too_weak_for_workflow_chronology` | `must_fix_before_planning_can_continue` | `history` | Current history surfaces still use overloaded or synthesized identities and presentation ordering that are too weak for concrete workflow chronology planning. | [platform/schemas/workflows/history-audit-linkage-mapping.md](platform/schemas/workflows/history-audit-linkage-mapping.md) states that `WorkflowHistoryRecord.workflow_id` overloads `sync_run_id`, current `AuditEventRecord.event_id` values are synthesized, and current responses have no `sequence_scope`, `sequence_number`, predecessor link, or supersession chain; code confirms `workflow_id=sync_run.sync_run_id` in [platform/app-api/src/app_api/services/workflow_history.py](platform/app-api/src/app_api/services/workflow_history.py) and synthesized event IDs in [platform/app-api/src/app_api/services/audit_history.py](platform/app-api/src/app_api/services/audit_history.py). | If chronology remains projection-based, later workflow planning cannot define concrete state-transition history, revision history, or audit ordering without risking silent reuse of sync history as workflow history. | This blocker is tightly coupled to workflow-owned anchors and audit-linkage persistence. It must be fixed before concrete workflow history or audit retrieval planning can become credible. |
-| `history_query_and_retention_model_remains_bounded` | `important_but_not_blocking` | `history` | Current history access is explicitly bounded to small recent windows and lacks a broader query, pagination, archival, or retention model. | [platform/schemas/workflows/history-audit-linkage-mapping.md](platform/schemas/workflows/history-audit-linkage-mapping.md) states that `load_sync_runs` returns only the latest `50` rows and `load_readiness_snapshot_history` only the latest `20`, with no broader durable query model; current persistence helpers in [platform/app-api/src/app_api/persistence/history.py](platform/app-api/src/app_api/persistence/history.py) implement those bounded history reads. | This does not stop the current planning slice from continuing, but it limits how far a future workflow retrieval design can depend on historical evidence and how far workflow-linked audit reasoning can extend beyond recent windows. | This blocker becomes more severe once workflow-owned audit linkage and post hoc observation rules move closer to implementation. It is not the next planning slice by itself because source identity and workflow anchors are more immediate blockers. |
-| `comparison_records_are_explanatory_but_not_durable_entities` | `important_but_not_blocking` | `retrieval` | Current comparison summaries and `change_preview` structures are useful, but they remain derived, embedded, and non-durable rather than standalone comparison records. | [platform/schemas/workflows/phase2-evidence-surface-mapping.md](platform/schemas/workflows/phase2-evidence-surface-mapping.md) and [platform/schemas/workflows/history-audit-linkage-mapping.md](platform/schemas/workflows/history-audit-linkage-mapping.md) both say comparison surfaces lack dedicated durable comparison IDs; current schemas in [platform/app-api/src/app_api/schemas/devices.py](platform/app-api/src/app_api/schemas/devices.py), [platform/app-api/src/app_api/schemas/topology.py](platform/app-api/src/app_api/schemas/topology.py), and [platform/app-api/src/app_api/schemas/policies.py](platform/app-api/src/app_api/schemas/policies.py) expose comparison summaries without any comparison-record identifier. | This matters because retrieval sequencing gives comparison evidence a lower precedence than direct records, but later workflow planning still needs to know whether those comparison surfaces can ever be cited directly or only as attached explanatory context. | This blocker is downstream of source-record identity rules. It does not stop planning from continuing now, but it constrains how precise later comparison citation rules can become. |
-| `ownership_boundaries_are_clear_in_docs_but_not_yet_grounded_in_concrete_record_rules` | `important_but_not_blocking` | `ownership_boundary` | The ownership split is now explicit at the design level, but there are still no concrete field-by-field or table-by-table record rules that would prevent an implementation from collapsing evidence, readiness, workflow state, and workflow audit into the same storage or retrieval surfaces. | [platform/schemas/workflows/ownership-boundaries.md](platform/schemas/workflows/ownership-boundaries.md) explicitly separates five domains and lists current Phase 2 surfaces that must never silently become workflow objects later; [platform/schemas/workflows/workflow-owned-state-prerequisites.md](platform/schemas/workflows/workflow-owned-state-prerequisites.md) says workflow-owned state must remain separate from evidence, snapshots, and readiness metadata. | The blocker matters because once concrete storage and retrieval planning starts, this boundary must be translated into exact record ownership rules. If it is not, later implementation may reuse sync history, readiness blockers, or snapshot tables as workflow-state substitutes. | This blocker should stay open until workflow root storage, workflow blockers, and workflow audit records each have explicit concrete record boundaries. It does not stop the next source-identity planning slice from continuing. |
-| `topology_truth_is_still_too_bounded_for_workflow_grade_pre_change_reasoning` | `later_phase_concern` | `truth` | The topology slice remains partial and inference-heavy, which is not strong enough for workflow-grade pre-change intelligence. | [platform/docs/workflow-planning-gate.md](platform/docs/workflow-planning-gate.md) classifies read-only truth maturity as mixed; [platform/schemas/workflows/phase2-evidence-surface-mapping.md](platform/schemas/workflows/phase2-evidence-surface-mapping.md) warns that inferred topology must not be overread as validation-grade truth; current topology schemas in [platform/app-api/src/app_api/schemas/topology.py](platform/app-api/src/app_api/schemas/topology.py) explicitly preserve `partial` and `unknown` semantics. | This matters for later validation or safe action planning, but it does not block the current source-identity or ownership planning slice directly. | This is a later-phase concern because build-order rules place workflow implementation after the read-only foundation and because the current planning cycle is still contract-first, not validation-engine planning. |
-| `policy_truth_is_still_too_partial_for_workflow_grade_pre_change_reasoning` | `later_phase_concern` | `truth` | The policy slice remains bounded, sometimes aggregate-only, and live-empty in the current lab, so it is still too weak for workflow-grade change intelligence. | [platform/docs/workflow-planning-gate.md](platform/docs/workflow-planning-gate.md) marks policy maturity as mixed; [platform/schemas/workflows/phase2-evidence-surface-mapping.md](platform/schemas/workflows/phase2-evidence-surface-mapping.md) states that aggregate footprints and live-empty posture must not be treated as full per-policy truth; current policy schemas in [platform/app-api/src/app_api/schemas/policies.py](platform/app-api/src/app_api/schemas/policies.py) show bounded `detail_mode`, `empty_reason`, `target_footprints`, and derived `change_preview` support. | This matters for later validation, preview, and safe-action phases, but it does not prevent the current planning slice from finishing the remaining identity and ownership work. | This concern will become a blocking issue for later workflow implementation phases, especially validation and safe action, rather than for the current planning checkpoint. |
-| `approval_execution_and_rollback_accountability_is_absent_by_design` | `later_phase_concern` | `audit_linkage` | Current history and audit surfaces intentionally do not contain approval, execution, rollback, or broad operator-accountability semantics. | [platform/schemas/workflows/audit-linkage-contract.md](platform/schemas/workflows/audit-linkage-contract.md) explicitly says current history cannot support approval, execution, or rollback chronology; [platform/schemas/workflows/history-audit-linkage-mapping.md](platform/schemas/workflows/history-audit-linkage-mapping.md) says current sync-derived history is not suitable for lifecycle, approval, execution, or rollback history. | This is a real later workflow concern, but it should not be mistaken for the immediate blocker to the current design slice. The current slice is still about evidence identity, workflow anchors, and workflow-grade relationship scaffolding. | This concern becomes active when the project reaches the later dry-run, approval, execution, or safe-action phases defined in [agent/sdn/16-implementation-order.md](agent/sdn/16-implementation-order.md) and [agent/sdn/35-build-order-enforcement-rules.md](agent/sdn/35-build-order-enforcement-rules.md). |
+| `citation_grade_source_record_identity_still_missing_for_identity_weak_current_surfaces` | `must_fix_before_planning_can_continue` | `evidence_identity` | The recent identity, chronology, and citation documents now isolate the remaining weak surfaces, but current backend contracts still do not expose citation-grade item identity or explicit anchor IDs for current comparison summaries, readiness items, capability items, and embedded history-support attachments. | [platform/schemas/workflows/source-record-identity-rules.md](platform/schemas/workflows/source-record-identity-rules.md) and [platform/schemas/workflows/source-record-identity-needs-mapping.md](platform/schemas/workflows/source-record-identity-needs-mapping.md) classify those families as `still_identity_weak`, `supporting_only_cite_underlying_source`, or `citation_unsafe_until_explicit_identity_exists`; [platform/schemas/workflows/comparison-citation-posture-rules.md](platform/schemas/workflows/comparison-citation-posture-rules.md) keeps many comparison surfaces explanatory-only; current schemas such as [platform/app-api/src/app_api/schemas/devices.py](platform/app-api/src/app_api/schemas/devices.py), [platform/app-api/src/app_api/schemas/topology.py](platform/app-api/src/app_api/schemas/topology.py), [platform/app-api/src/app_api/schemas/policies.py](platform/app-api/src/app_api/schemas/policies.py), and [platform/app-api/src/app_api/schemas/capabilities.py](platform/app-api/src/app_api/schemas/capabilities.py) still expose weak or implicit identity on those surfaces. | The blocker is now concrete and minimal: further truthful workflow-planning progress cannot rely on inferred tuples, response envelopes, or attached explanatory objects where the repository already knows stronger citation-grade identity is still missing. Until that gap is reduced, later evidence-reference planning would still be forced to cheat the clarified ownership and chronology rules. | This is now the root blocker for the next bounded `Phase 2` truth-and-history hardening step. It sits upstream of any later reassessment about whether deeper workflow-owned planning should resume. |
+| `workflow_owned_anchor_records_absent` | `important_but_not_blocking` | `persistence` | Workflow-owned anchors such as `workflow_id`, `workflow_revision_id`, and `workflow_state_transition_id` are still absent, but after the recent clarification work they no longer belong in the immediate must-fix set for the current planning checkpoint. | [platform/schemas/workflows/read-only-retrieval-sequencing.md](platform/schemas/workflows/read-only-retrieval-sequencing.md) still makes anchor resolution the first retrieval layer and marks current `Phase 2` support as `no`; [platform/schemas/workflows/workflow-owned-state-prerequisites.md](platform/schemas/workflows/workflow-owned-state-prerequisites.md) still lists workflow root storage as a prerequisite; [platform/schemas/workflows/bounded-next-step-plan.md](platform/schemas/workflows/bounded-next-step-plan.md) and [agent/sdn/03-CURRENT-STATUS.md](agent/sdn/03-CURRENT-STATUS.md) now defer deeper workflow-owned-anchor planning until after bounded truth-and-history hardening and later reassessment. | The absence of workflow-owned anchors remains a real future dependency, but it no longer blocks the next honest move because the repository has explicitly chosen not to deepen workflow-owned storage or retrieval planning yet. | This should remain visible for later reassessment. It becomes blocking again only if the repository explicitly reopens concrete workflow-owned retrieval or lifecycle storage planning. |
+| `workflow_grade_audit_linkage_chain_absent` | `important_but_not_blocking` | `audit_linkage` | The repo still has no persisted workflow-grade `audit_linkage` chain, no dedicated workflow-aware audit-event family, and no workflow-scoped retrieval path for those relationships, but that absence is now deferred behind truth-and-history hardening rather than treated as the next must-fix gap. | [platform/schemas/workflows/audit-linkage-contract.md](platform/schemas/workflows/audit-linkage-contract.md) remains design-only; [platform/schemas/workflows/history-audit-linkage-mapping.md](platform/schemas/workflows/history-audit-linkage-mapping.md) still lists no implemented `audit_linkage` records or workflow-scoped retrieval chains; [agent/sdn/03-CURRENT-STATUS.md](agent/sdn/03-CURRENT-STATUS.md) now treats deeper workflow-grade audit planning as a later reassessment topic rather than the next default step. | This still matters before any workflow-grade audit retrieval or accountability model can become concrete, but it is not the immediate blocker while the project is still closing current source-truth and identity gaps inside `Phase 2`. | This depends on both stronger current source identity and any future decision to resume deeper workflow-owned anchor planning. |
+| `current_history_surfaces_remain_non_workflow_grade_even_after_clarification` | `important_but_not_blocking` | `history` | The chronology ambiguity has now been narrowed honestly, but current history surfaces still remain bounded post hoc source chronology, derived chronology through stronger anchors, or presentation order only rather than workflow-grade chronology. | [platform/schemas/workflows/current-history-chronology-ordering-rules.md](platform/schemas/workflows/current-history-chronology-ordering-rules.md) explicitly classifies sync runs, readiness snapshots, derived audit envelopes, workflow-history projections, and audit-history feed order; [platform/schemas/workflows/history-audit-linkage-mapping.md](platform/schemas/workflows/history-audit-linkage-mapping.md) now says the same surfaces remain useful only in that bounded way. | This remains an important guardrail because later planning must continue to avoid reusing sync history or audit feed order as workflow chronology. But the repo now knows the honest interpretation already, so this is no longer a must-fix classification problem by itself. | This becomes blocking only if later work tries to promote current history into workflow lifecycle, revision, approval, execution, or rollback ordering without new workflow-owned records. |
+| `history_query_and_retention_model_remains_bounded` | `important_but_not_blocking` | `history` | Current history access is still explicitly bounded to small recent windows and still lacks a broader query, pagination, archival, or retention model. | [platform/schemas/workflows/history-audit-linkage-mapping.md](platform/schemas/workflows/history-audit-linkage-mapping.md) states that `load_sync_runs` returns only the latest `50` rows and `load_readiness_snapshot_history` only the latest `20`, with no broader durable query model; current persistence helpers in [platform/app-api/src/app_api/persistence/history.py](platform/app-api/src/app_api/persistence/history.py) implement those bounded reads. | This still constrains later workflow-linked audit reasoning, but it does not block the next bounded truth-and-history hardening slice. | This becomes more severe only when later workflow-owned audit linkage or broader history retrieval actually resumes. |
+| `topology_truth_is_still_too_bounded_for_workflow_grade_pre_change_reasoning` | `later_phase_concern` | `truth` | The topology slice remains partial and inference-heavy, which is still not strong enough for workflow-grade pre-change intelligence. | [platform/docs/workflow-planning-gate.md](platform/docs/workflow-planning-gate.md) classifies read-only truth maturity as mixed; [platform/schemas/workflows/phase2-evidence-surface-mapping.md](platform/schemas/workflows/phase2-evidence-surface-mapping.md) warns that inferred topology must not be overread as validation-grade truth; current topology schemas in [platform/app-api/src/app_api/schemas/topology.py](platform/app-api/src/app_api/schemas/topology.py) explicitly preserve `partial` and `unknown` semantics. | This matters for later validation or safe action planning, not for the current blocker reassessment. | This remains later-phase because build-order rules place workflow implementation after the read-only foundation and because the current checkpoint is still truth-hardening, not validation design. |
+| `policy_truth_is_still_too_partial_for_workflow_grade_pre_change_reasoning` | `later_phase_concern` | `truth` | The policy slice remains bounded, sometimes aggregate-only, and live-empty in the current lab, so it is still too weak for workflow-grade change intelligence. | [platform/docs/workflow-planning-gate.md](platform/docs/workflow-planning-gate.md) marks policy maturity as mixed; [platform/schemas/workflows/phase2-evidence-surface-mapping.md](platform/schemas/workflows/phase2-evidence-surface-mapping.md) states that aggregate footprints and live-empty posture must not be treated as full per-policy truth; current policy schemas in [platform/app-api/src/app_api/schemas/policies.py](platform/app-api/src/app_api/schemas/policies.py) show bounded `detail_mode`, `empty_reason`, `target_footprints`, and derived `change_preview` support. | This matters for later validation, preview, and safe-action phases, not for the current blocker reassessment. | This remains later-phase for the same reason as topology truth: it becomes blocking only when the project approaches later workflow implementation scope. |
+| `approval_execution_and_rollback_accountability_is_absent_by_design` | `later_phase_concern` | `audit_linkage` | Current history and audit surfaces intentionally do not contain approval, execution, rollback, or broad operator-accountability semantics. | [platform/schemas/workflows/audit-linkage-contract.md](platform/schemas/workflows/audit-linkage-contract.md) explicitly says current history cannot support approval, execution, or rollback chronology; [platform/schemas/workflows/history-audit-linkage-mapping.md](platform/schemas/workflows/history-audit-linkage-mapping.md) says current sync-derived history is not suitable for lifecycle, approval, execution, or rollback history. | This remains real but belongs to later dry-run, approval, execution, and safe-action phases rather than the current truth-and-history checkpoint. | This becomes active only when the project deliberately moves into later workflow phases defined in [agent/sdn/16-implementation-order.md](agent/sdn/16-implementation-order.md) and [agent/sdn/35-build-order-enforcement-rules.md](agent/sdn/35-build-order-enforcement-rules.md). |
 
-## Why The `Must Fix` Blockers Are Strictly Blocking
+## Questions Recently Closed By Clarification Work
 
-The `must_fix_before_planning_can_continue` blockers all sit on the critical
-path exposed by the current planning slice.
+The following earlier blocker questions are no longer active blockers in their
+own right because the recent planning work answered them directly.
 
-1. The evidence-reference contract requires stable cited source identities.
-2. The retrieval-sequencing design requires workflow-owned anchors first.
-3. The audit-linkage contract requires workflow-scoped relationships and
-   workflow-grade chronology.
-4. The current history mapping proves that current identities and ordering are
-   too weak to stand in for those missing workflow-owned structures.
+| Earlier blocker or ambiguity | What changed | Current result |
+| --- | --- | --- |
+| `source_record_identity_missing_for_current_read_models_and_comparisons` | The repository now has explicit source-record identity classes plus a needs map that isolate the exact still-weak surfaces. | Replaced by the narrower active blocker `citation_grade_source_record_identity_still_missing_for_identity_weak_current_surfaces`. |
+| `current_history_identity_and_ordering_too_weak_for_workflow_chronology` | The repository now explicitly defines which chronology is reusable as post hoc source chronology, which is derived chronology through stronger anchors, and which is presentation order only. | Downgraded to the narrower guardrail blocker `current_history_surfaces_remain_non_workflow_grade_even_after_clarification`. |
+| `ownership_boundaries_are_clear_in_docs_but_not_yet_grounded_in_concrete_record_rules` | [platform/schemas/workflows/comparison-citation-posture-rules.md](platform/schemas/workflows/comparison-citation-posture-rules.md) now makes comparison ownership and citation posture explicit enough for the current planning checkpoint. | No longer an active blocker for the current reassessment. |
+| `comparison_records_are_explanatory_but_not_durable_entities` | The repository now explicitly says which comparison surfaces are assembled summaries only, bounded supporting context only, or unsafe for direct workflow-owned citation. | No longer an active blocker for the current reassessment. |
 
-If any one of those four stays unresolved, later planning either stalls or
-starts cheating by reusing current `Phase 2` surfaces as fake workflow roots,
-fake workflow chronology, or fake workflow audit chains.
+## Why The `Must Fix` Set Is Now Minimal
 
-## Dependency Notes
+Only one blocker remains in the `must_fix_before_planning_can_continue` class.
 
-The blocker dependencies should be read in this order.
+That is intentional.
 
-1. `workflow_owned_anchor_records_absent`
-   This is the root dependency for concrete retrieval planning.
-2. `source_record_identity_missing_for_current_read_models_and_comparisons`
-   This is the root dependency for concrete evidence-reference planning.
-3. `current_history_identity_and_ordering_too_weak_for_workflow_chronology`
-   This is the root dependency for concrete workflow history and chronology planning.
+The recent planning slices already answered the design questions that were
+previously inflating the must-fix set.
+
+1. Ownership posture is now explicit enough to keep current evidence separate
+   from future workflow-owned state.
+2. Comparison citation posture is now explicit enough to keep comparison
+   surfaces explanatory unless stronger identity exists later.
+3. Current-history chronology is now explicit enough to keep sync runs,
+   readiness snapshots, derived audit envelopes, workflow-history projections,
+   and audit-feed ordering in their honest bounded roles.
+4. The repository has also explicitly deferred deeper workflow-owned-anchor and
+   workflow-grade audit-linkage planning until after bounded `Phase 2`
+   truth-and-history hardening and later reassessment.
+
+So the remaining strict blocker is the one gap that still forces cheating even
+after those clarifications: current contracts still leave several known
+identity-weak surfaces without citation-grade source identity or explicit anchor
+exposure.
+
+## New Dependency Order
+
+The updated blocker dependency order is now narrower and more phase-aligned.
+
+1. `citation_grade_source_record_identity_still_missing_for_identity_weak_current_surfaces`
+   This is the immediate truth-and-history hardening dependency because later
+   planning still cannot cite several known weak surfaces honestly.
+2. `current_history_surfaces_remain_non_workflow_grade_even_after_clarification`
+   This remains the next guardrail dependency because any future planning must
+   keep using current history only through the narrowed post hoc and
+   presentation-only rules already documented.
+3. `workflow_owned_anchor_records_absent`
+   This remains a deeper future dependency, but only after the repository
+   chooses to reopen concrete workflow-owned retrieval or lifecycle storage
+   planning.
 4. `workflow_grade_audit_linkage_chain_absent`
-   This depends on workflow-owned anchors and chronology, but it is still a
-   separate blocker because audit relationships cannot be inferred away.
-5. The remaining blockers depend on how narrowly or broadly later workflow
-   phases choose to operate.
+   This remains downstream of both stronger current source identity and any
+   future workflow-owned-anchor decision.
+5. `history_query_and_retention_model_remains_bounded`
+   This stays behind the earlier items because broader retention only matters
+   once future workflow-linked retrieval scope expands.
+6. The later-phase truth and accountability concerns remain behind all of the
+   above because they belong to later validation, execution, and safe-action
+   phases rather than the current checkpoint.
 
 ## Explicit Non-Goals
 
@@ -116,15 +166,25 @@ This document does not define:
 
 ## Conservative Bottom Line
 
-The current planning slice produced real blockers, not just elegant contracts.
+The current planning slice still produced real blockers, but the active blocker
+set is now smaller and stricter than before.
 
-The exact strict blockers are:
+The exact remaining must-fix blocker is:
 
-- missing citation-grade source-record identity for many current evidence surfaces
-- missing workflow-owned anchor records
-- missing workflow-grade audit-linkage chains
-- current history identities and ordering that are too weak for workflow chronology
+- missing citation-grade source identity and explicit anchor exposure for the
+   exact current surfaces that the recent identity and citation work already
+   proved are still weak
 
-Everything else in this document matters, but those are the blockers that now
-most directly prevent workflow implementation planning from becoming concrete
-without cheating the current `Phase 2` boundaries.
+The remaining open items still matter, but they now fall into two narrower
+groups.
+
+- important but not blocking for the current checkpoint: workflow-owned anchors,
+   workflow-grade audit linkage, non-workflow-grade current history, and bounded
+   history retention
+- later-phase only: topology truth depth, policy truth depth, and broad
+   approval, execution, and rollback accountability
+
+That is the stricter blocker posture after the recent clarification work.
+
+The next honest move is bounded `Phase 2` truth-and-history hardening, not a
+return to broad workflow-owned storage or audit-linkage planning.

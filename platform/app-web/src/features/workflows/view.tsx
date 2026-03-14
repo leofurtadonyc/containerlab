@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import type { WorkflowHistoryItem } from "../../api/contracts";
+import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
@@ -759,6 +760,10 @@ export function WorkflowsView() {
                   <strong>{formatLabel(selectedWorkflow.workflow_name)}</strong>
                 </div>
                 <div className="key-value-row">
+                  <span>Sync-run anchor</span>
+                  <IdentifierChip value={selectedWorkflow.sync_run_id} />
+                </div>
+                <div className="key-value-row">
                   <span>Scope</span>
                   <strong>{formatLabel(selectedWorkflow.scope)}</strong>
                 </div>
@@ -839,6 +844,10 @@ export function WorkflowsView() {
                   <p className="summary-label">Inventory Snapshot Context</p>
                   <div className="key-value-list">
                     <div className="key-value-row">
+                      <span>Snapshot anchor</span>
+                      <IdentifierChip value={selectedWorkflow.inventory_snapshot_summary.snapshot_id} />
+                    </div>
+                    <div className="key-value-row">
                       <span>Persisted at</span>
                       <strong>
                         {formatDateTime(selectedWorkflow.inventory_snapshot_summary.persisted_at)}
@@ -908,6 +917,14 @@ export function WorkflowsView() {
                   <p className="summary-label">Inventory Comparison Evidence</p>
                   <div className="key-value-list">
                     <div className="key-value-row">
+                      <span>Current snapshot anchor</span>
+                      <IdentifierChip value={selectedWorkflow.inventory_comparison_to_previous.current_snapshot_id} />
+                    </div>
+                    <div className="key-value-row">
+                      <span>Previous snapshot anchor</span>
+                      <IdentifierChip value={selectedWorkflow.inventory_comparison_to_previous.previous_snapshot_id} />
+                    </div>
+                    <div className="key-value-row">
                       <span>Compared snapshots</span>
                       <strong>
                         {formatDateTime(
@@ -949,6 +966,10 @@ export function WorkflowsView() {
                 <>
                   <p className="summary-label">Topology Snapshot Context</p>
                   <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Snapshot anchor</span>
+                      <IdentifierChip value={selectedWorkflow.topology_snapshot_summary.snapshot_id} />
+                    </div>
                     <div className="key-value-row">
                       <span>Persisted at</span>
                       <strong>
@@ -1014,6 +1035,14 @@ export function WorkflowsView() {
                   <p className="summary-label">Topology Comparison Evidence</p>
                   <div className="key-value-list">
                     <div className="key-value-row">
+                      <span>Current snapshot anchor</span>
+                      <IdentifierChip value={selectedWorkflow.topology_comparison_to_previous.current_snapshot_id} />
+                    </div>
+                    <div className="key-value-row">
+                      <span>Previous snapshot anchor</span>
+                      <IdentifierChip value={selectedWorkflow.topology_comparison_to_previous.previous_snapshot_id} />
+                    </div>
+                    <div className="key-value-row">
                       <span>Compared snapshots</span>
                       <strong>
                         {formatDateTime(
@@ -1073,6 +1102,10 @@ export function WorkflowsView() {
                   <p className="summary-label">Policy Snapshot Context</p>
                   <div className="key-value-list">
                     <div className="key-value-row">
+                      <span>Snapshot anchor</span>
+                      <IdentifierChip value={null} emptyLabel="Not exposed in this summary" />
+                    </div>
+                    <div className="key-value-row">
                       <span>Persisted at</span>
                       <strong>{formatDateTime(selectedWorkflow.policy_snapshot_summary.persisted_at)}</strong>
                     </div>
@@ -1117,6 +1150,14 @@ export function WorkflowsView() {
                 <>
                   <p className="summary-label">Policy Comparison Evidence</p>
                   <div className="key-value-list">
+                    <div className="key-value-row">
+                      <span>Current snapshot anchor</span>
+                      <IdentifierChip value={selectedWorkflow.policy_comparison_to_previous.current_snapshot_id} />
+                    </div>
+                    <div className="key-value-row">
+                      <span>Previous snapshot anchor</span>
+                      <IdentifierChip value={selectedWorkflow.policy_comparison_to_previous.previous_snapshot_id} />
+                    </div>
                     <div className="key-value-row">
                       <span>Compared snapshots</span>
                       <strong>

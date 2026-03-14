@@ -1,3 +1,264 @@
+# Strict Recommendation For The Following Workflow Cycle
+
+## Purpose
+
+This document gives a strict recommendation for what the following cycle should
+be after the completed source-record identity slice and the later
+chronology, comparison-citation, blocker, and implementation-candidate
+refinements.
+
+It exists to answer one narrow question.
+
+Should the project now:
+
+- continue one more bounded planning slice, or
+- move to one small blocker-driven `Phase 2` implementation cycle
+
+This is a recommendation document only.
+
+It does not authorize:
+
+- workflow implementation
+- dry-run implementation
+- a phase jump
+- roadmap expansion
+- broad redesign
+
+## Recommendation
+
+Recommendation: `move_to_one_small_blocker_driven_phase2_implementation_cycle`
+
+Interpret it narrowly.
+
+- stay fully in `Phase 2 — read-only product foundation`
+- implement only the smallest read-side contract change that directly reduces
+  the one remaining active must-fix blocker
+- make the cycle about exposing already existing persisted anchors, not about
+  inventing workflow-owned entities or redesigning persistence
+- stop after that bounded implementation slice and reassess before opening any
+  deeper workflow-planning lane again
+
+## Why This Recommendation Is Strict
+
+The current decision is no longer between an unfinished planning baseline and
+an early implementation jump.
+
+The planning baseline is now mature enough to isolate one concrete remaining
+gap.
+
+That gap is also now concrete enough to show that wording alone will not close
+it.
+
+So the strict answer is to move into one small blocker-driven `Phase 2`
+implementation cycle, not another bounded planning slice.
+
+Another planning cycle would mostly restate facts the repository already knows.
+It would not change the current backend contracts that still hide the explicit
+anchors the planning docs now require.
+
+## Evidence-Based Evaluation
+
+### Source-record identity maturity
+
+Posture: `mature_enough_for_one_bounded_implementation_step`
+
+Reasoning:
+
+- [platform/schemas/workflows/source-record-identity-rules.md](platform/schemas/workflows/source-record-identity-rules.md)
+  already distinguishes direct source records, assembled read models, derived
+  comparison surfaces, readiness and capability overlays, and embedded
+  history-support attachments
+- [platform/schemas/workflows/source-record-identity-needs-mapping.md](platform/schemas/workflows/source-record-identity-needs-mapping.md)
+  already narrows the remaining weak areas to current comparison contracts,
+  readiness items and summaries, capability items, and embedded
+  history-support attachments
+- [platform/schemas/workflows/smallest-implementation-candidate-gaps.md](platform/schemas/workflows/smallest-implementation-candidate-gaps.md)
+  shows that several of the necessary underlying anchors already exist in the
+  implemented persistence and service layers, but are still not exposed through
+  the read-only contracts
+
+Conclusion:
+
+- source-record identity is no longer blocked by missing planning vocabulary
+- it is now blocked by missing field-level anchor exposure in implemented
+  contracts
+- that is the threshold for one bounded implementation cycle
+
+### Chronology narrowing maturity
+
+Posture: `clear_enough_to_act_as_a_guardrail_without_more_planning_first`
+
+Reasoning:
+
+- [platform/schemas/workflows/current-history-chronology-ordering-rules.md](platform/schemas/workflows/current-history-chronology-ordering-rules.md)
+  already makes explicit which current chronology is reusable only as bounded
+  post hoc source chronology and which ordering remains presentation-only
+- [platform/schemas/workflows/history-audit-linkage-mapping.md](platform/schemas/workflows/history-audit-linkage-mapping.md)
+  already says derived audit envelopes and workflow-history projections must
+  defer to stronger underlying anchors rather than become workflow chronology
+
+Conclusion:
+
+- chronology meaning is no longer the reason to keep planning
+- it is now the guardrail that tells the implementation slice what not to fake
+
+### Comparison-citation posture clarity
+
+Posture: `clear_enough_to_constrain_the_implementation_shape`
+
+Reasoning:
+
+- [platform/schemas/workflows/comparison-citation-posture-rules.md](platform/schemas/workflows/comparison-citation-posture-rules.md)
+  already classifies current comparison surfaces as direct source anchors,
+  assembled summaries only, bounded supporting context only, or not suitable
+  for future workflow-owned citation without redesign
+- that same posture now makes the missing contract detail explicit: current
+  comparison summaries still lack the compared anchor IDs that would let later
+  citation preserve the right ownership posture honestly
+
+Conclusion:
+
+- comparison-citation posture does not need another design-first cycle
+- it now directly points to a small read-side implementation target
+
+### Remaining blocker severity
+
+Posture: `single_concrete_must_fix_blocker_left`
+
+Reasoning:
+
+- [platform/schemas/workflows/planning-slice-blockers.md](platform/schemas/workflows/planning-slice-blockers.md)
+  now leaves only one active `must_fix_before_planning_can_continue` blocker:
+  missing citation-grade source identity and explicit anchor exposure for the
+  still-weak current surfaces
+- [platform/schemas/workflows/bounded-next-step-plan.md](platform/schemas/workflows/bounded-next-step-plan.md)
+  already ranks that gap first and explicitly allows only identity-serving
+  truth-and-history hardening ahead of any deeper workflow-owned planning
+
+Conclusion:
+
+- blocker severity is now narrow enough to drive one bounded cycle
+- it is too concrete to justify another broad planning pass
+
+### Does any blocker now clearly require implementation?
+
+Posture: `yes`
+
+Reasoning:
+
+- [platform/schemas/workflows/smallest-implementation-candidate-gaps.md](platform/schemas/workflows/smallest-implementation-candidate-gaps.md)
+  already shows why docs and schemas are no longer enough: the repository knows
+  which anchors should be cited, but the implemented API contracts still expose
+  timestamps and projection envelopes instead of those explicit anchors
+- the strongest example is persisted snapshot and sync-run identity that
+  already exists underneath comparison, readiness, and embedded history-support
+  surfaces but is still not surfaced to clients
+
+Conclusion:
+
+- at least one blocker has crossed from design ambiguity into implementation
+  necessity
+- that implementation necessity is still small enough to stay inside `Phase 2`
+
+## Supporting Reasoning
+
+The completed planning slices have already done the hard design work.
+
+They now answer the questions that another planning cycle would normally be used
+to answer.
+
+- source identity classes are defined
+- chronology reuse is narrowed honestly
+- comparison ownership posture is explicit
+- the blocker set is reduced to one active must-fix gap
+- the smallest real implementation candidate is already isolated
+
+Because of that, another bounded planning slice would mostly duplicate the
+current truth.
+
+The repository would still end that cycle with the same practical problem:
+current clients could still see timestamps, summaries, and projections without
+the explicit persisted anchors that the planning docs now say matter.
+
+So the honest next move is to change the read-only contracts in the smallest
+possible way that makes the documented identity rules usable in practice.
+
+## Next-Cycle Boundaries
+
+The next cycle should be limited to one bounded implementation target.
+
+### Primary implementation target
+
+Implement
+`expose_explicit_persisted_anchor_ids_for_identity_weak_comparison_readiness_and_history_support_surfaces`
+as defined in
+[platform/schemas/workflows/smallest-implementation-candidate-gaps.md](platform/schemas/workflows/smallest-implementation-candidate-gaps.md).
+
+### In-scope surfaces
+
+- current-versus-latest-persisted comparison responses for inventory, topology,
+  and policy
+- latest-versus-previous persisted policy comparison responses where explicit
+  compared snapshot IDs already exist underneath
+- readiness support surfaces that currently expose `readiness_persisted_at`
+  without the readiness snapshot ID
+- embedded workflow-history and audit-history snapshot or comparison attachments
+  that already rest on persisted snapshot IDs or `sync_run_id` but still hide
+  those anchors
+
+### In-scope implementation posture
+
+- expose already existing persisted anchor IDs
+- update only the read-only backend schemas, response builders, and typed
+  frontend contracts needed to carry those fields
+- keep any UI change minimal and limited to current evidence-context displays if
+  the added fields must be surfaced for operator usefulness or mixed-version
+  safety
+
+### Explicitly deferred even inside this cycle
+
+- deterministic or snapshot-scoped item IDs for capability items
+- deterministic or snapshot-scoped item IDs for readiness blocker,
+  prerequisite, or assessment-area items
+- broader history retention or query expansion
+- policy truth deepening
+- topology truth deepening
+- workflow-owned anchors
+- workflow-grade audit linkage
+- any workflow, preview, validation, approval, execution, or rollback behavior
+
+## Explicit Anti-Recommendations
+
+The following should not happen next.
+
+- do not run one more general planning slice on source identity, chronology, or
+  comparison posture as the primary cycle
+- do not widen this cycle into workflow-owned storage, workflow retrieval, or
+  workflow-grade audit-linkage design
+- do not treat capability-item identity as part of the first code slice unless
+  exposing existing persisted anchors proves insufficient after implementation
+- do not broaden into retention-model hardening, broad non-sync history
+  redesign, or richer policy truth work
+- do not reinterpret workflow-history or audit-history projection IDs as
+  workflow-owned identities
+- do not relabel the project as beyond `Phase 2`
+- do not treat this bounded implementation slice as permission to start dry-run
+  or action workflows
+
+## Conservative Bottom Line
+
+The strict recommendation for the following cycle is:
+
+- move to one small blocker-driven `Phase 2` implementation cycle
+
+That recommendation is narrow.
+
+It does not mean the project should reopen workflow implementation.
+
+It means the planning baseline is now mature enough that the one remaining
+active blocker has become a contract-exposure problem, and the smallest honest
+next step is to expose the already existing persisted anchors that current
+comparison, readiness, and embedded history-support surfaces still hide.
 # Post-Planning Recommendation For The Next Workflow Step
 
 ## Purpose
