@@ -30,6 +30,27 @@ These instructions do not cover:
 - backup and restore procedures
 - advanced workflow or action automation
 
+## Durability And Recovery Boundary
+
+The repository can rebuild the software and topology shape, but not every runtime artifact.
+
+Current durable state depends on the host-backed data directories under `platform/`:
+
+- `platform/postgres/data` preserves bounded normalized inventory, topology, and policy snapshots, sync-run history, and deduplicated readiness-support snapshots
+- `platform/prometheus/data` preserves Prometheus TSDB history
+- `platform/grafana/data` preserves Grafana local state
+
+Current repo-only rebuildable state includes:
+
+- service images rebuilt from local Dockerfiles
+- startup validators and topology wiring
+- app-api schema migration path
+- Prometheus config and rules
+- Grafana datasource and dashboard provisioning files
+- app-web build output regenerated during image build
+
+If you recreate the platform on another host from repository files alone and do not carry over those host-backed data directories, the platform will still come up, but persisted snapshots, readiness-support history, Prometheus TSDB history, and Grafana local state start from a new baseline.
+
 ## Safeguards And Boundaries
 
 Before recreating the platform elsewhere, preserve these rules:
@@ -141,6 +162,8 @@ These checks currently validate:
 - bounded degraded-state warnings for persisted-fallback, blocked, or otherwise degraded-but-honest read-side responses
 - Grafana datasource and dashboard provisioning
 - ODL credential rotation and bounded controller reachability through `app-api`
+
+After restart or redeploy, operators should also confirm whether the platform came back with live recollection or persisted fallback where relevant by checking `serving_mode`, `data_status`, `served_persisted_at`, and readiness timestamps through the product-owned API paths.
 
 ## Access The Running Services
 

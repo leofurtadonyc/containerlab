@@ -44,7 +44,8 @@ Initial database direction exists, including a minimal init SQL bootstrap script
 
 ## Notes and caveats
 Postgres is the application state store. It is not a metrics database. Keep schema normalized and migration-managed from the start.
-Current durability is bounded: persisted inventory/topology/policy snapshots and sync-run history now survive normal service replacement within the same platform workspace through the host-backed Postgres data mount, but broader backup, secret-management, and lifecycle hardening are still pending.
+Current durability is bounded: persisted inventory/topology/policy snapshots, sync-run history, and deduplicated readiness-support snapshots now survive normal service replacement within the same platform workspace through the host-backed Postgres data mount, but broader backup, secret-management, and lifecycle hardening are still pending.
 The current history views exposed by `app-api` are still derived mainly from persisted sync-run activity. They should not yet be read as proof that full workflow or user-action audit domains are durably modeled in Postgres.
 The local runtime image is intentionally narrow: it does not replace the upstream initialization logic, but it does fail fast when the required bind-mounted runtime contract is broken.
+If the Postgres data directory is preserved, bounded read-side fallback and history anchors can survive restart or `clab deploy -t topology.clab.yml -c`; if that directory is replaced or lost, the backend can recreate schema and recollect live data, but previous snapshot anchors, sync-derived history, and readiness-support records do not recover from repo files alone.
 The Docker health check proves packaged database readiness only. Backup automation, restore drills, secret lifecycle hardening, and multi-node durability remain outside the current runtime contract.

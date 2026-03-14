@@ -28,7 +28,7 @@ The platform requires a single authoritative source of business logic. The backe
 - ports: 8000 for the versioned API and `/metrics`
 - env vars: `API_PORT`, `DATABASE_URL`, `ODL_URL`, `ODL_USERNAME`, `ODL_PASSWORD`, `ODL_TIMEOUT_SECONDS`, and `PROMETHEUS_URL`
 - mounts: none required for the packaged runtime
-- persistence: writes bounded normalized inventory, topology, and policy snapshots, bounded policy candidate-path records, and sync-run records to Postgres
+- persistence: writes bounded normalized inventory, topology, and policy snapshots, bounded policy candidate-path records, sync-run records, and deduplicated readiness-support snapshots to Postgres
 - dependencies: Postgres, `gnmi-collector`, and optional ODL integration
 
 ## Integration points
@@ -60,12 +60,15 @@ Current comparison-friendly API reality:
 The backend is the only service that writes to Postgres. Keep it as the single source of truth for application state.
 The current inventory, topology, and policy read models are intentionally bounded and honest: they provide stable product-owned contracts, but they do not yet claim live operational completeness, deep path computation, intended-state reconciliation, or workflow-grade policy semantics.
 Inventory, topology, and policy now persist normalized snapshot records and sync-run history in Postgres, and the API may fall back to the latest persisted snapshot when the live collector path is temporarily unavailable.
+The capabilities path now also persists deduplicated readiness-support snapshots in Postgres so the latest readiness anchor and timestamp can survive normal service replacement in the same workspace.
 Live collector-backed reads remain the primary source for current observed state; persistence strengthens bounded fallback behavior and sync-derived history rather than replacing those live reads.
 Serving-mode fields explain whether the current response is live-backed, persisted fallback, or effectively empty because neither live nor persisted state is available.
 Comparison summaries explain bounded normalized current-versus-persisted or persisted-versus-previous differences only where the backend already has the necessary persisted evidence.
 The current response, readiness, and embedded history-support surfaces are now anchor-strong at the persisted snapshot or sync-run level, but they still do not claim durable per-change, per-capability-item, or per-readiness-item identities where no such persisted records exist yet.
 Topology may still include inferred truth within the current normalized slice, especially for link interpretation, while workflow-history and audit-history may label sync-derived evidence as recent, aging, stale, or unavailable in the product view without claiming a verified network mismatch.
 The current backend metrics path remains transient and in-memory for scrape safety. Those metrics are observability signals, not durable product records.
+After restart or redeploy, live collector-backed reads may need to be recollected before the current APIs return fresh live evidence again, but persisted fallback snapshots, sync-derived history, and readiness-support anchors remain available as long as the Postgres data directory survives.
+If the Postgres data directory is lost or replaced, the backend can rebuild schema and recollect current live read-side data, but prior persisted snapshot anchors, prior sync-derived history, prior readiness-support records, and bounded comparison baselines do not recover automatically from repo files alone.
 The packaged runtime is now stricter about startup ordering against Postgres, but it is still bootstrap-grade in the broader operational sense: it relies on topology-level env wiring, does not yet own secret rotation, restart orchestration, TLS, or broader recovery automation, and still treats bounded warm-up as best-effort rather than as a full readiness gate.
 The current ODL enrichment is intentionally narrow: the backend probes bounded RESTCONF capability signals for platform health, but ODL still does not own topology truth, policy truth, or workflow logic.
 The current capability matrix is still intentionally bounded: it reflects the delivered Nokia-first read-only product slice and planned Juniper direction, not full multi-vendor parity or deep per-version capability discovery.
