@@ -52,11 +52,30 @@ export interface PlatformComponentStatus {
   notes: string[];
 }
 
+export interface PlatformReadPathStatus {
+  model_family: "inventory" | "topology" | "policy";
+  observation_state: "ok" | "degraded" | "unreachable" | "unknown";
+  configured_target_count: number;
+  observed_target_count: number;
+  collection_success_count: number;
+  collection_partial_count: number;
+  collection_failure_count: number;
+  oldest_observed_at: string | null;
+  newest_observed_at: string | null;
+  policy_capable_target_count: number | null;
+  detail_ready_target_count: number | null;
+  single_sided_link_count: number | null;
+  degraded_scope_summary: string;
+  summary: string;
+  notes: string[];
+}
+
 export interface PlatformStatusResponse extends ApiResponseMetadata {
   status: "ok";
   topology_name: "platform";
   summary: string;
   components: PlatformComponentStatus[];
+  read_paths?: PlatformReadPathStatus[];
 }
 
 export interface DeviceRecord {
