@@ -122,6 +122,26 @@ or overloaded workflow-history projection IDs.
 | `CapabilitiesListResponse.items` in [platform/app-api/src/app_api/schemas/capabilities.py](platform/app-api/src/app_api/schemas/capabilities.py) | Current assembled list of capability items | `still_identity_weak` | The list is backend-owned and useful. | Response-level list position is not a valid source-record identity, and the contained items still lack explicit IDs. |
 | Capability rollups such as `domain_counts`, `support_counts`, `delivery_tier_counts`, and `workflow_readiness_counts` in [platform/app-api/src/app_api/schemas/capabilities.py](platform/app-api/src/app_api/schemas/capabilities.py) | Aggregate counts over capability items | `not_suitable_for_future_citation_without_redesign` | These rollups are useful summaries for operators and planning. | They are aggregate-only and cannot anchor future citation without collapsing item-level evidence into response-level counts. |
 
+### Current Capability Consumer Check
+
+The current repository does not yet show a bounded consumer that needs a
+standalone backend capability item ID.
+
+- the current capability matrix builder in
+  [platform/app-api/src/app_api/services/capabilities.py](platform/app-api/src/app_api/services/capabilities.py)
+  emits one bounded record per current vendor plus platform plus domain plus
+  feature tuple
+- the current WebUI capability view in
+  [platform/app-web/src/features/capabilities/view.tsx](platform/app-web/src/features/capabilities/view.tsx)
+  already uses that bounded tuple as its current selection and row-key context
+  rather than asking the backend for a separate durable item ID
+- no current read-only API contract, test, or workflow-planning artifact in the
+  repo requires direct standalone citation of one capability item during normal
+  `Phase 2` product use
+
+So the residual weakness remains real only for later standalone citation, not
+for the current delivered capability matrix behavior.
+
 ## Embedded History-Support Surface Mapping
 
 | Current surface | Current implemented basis | Classification | Why this classification is justified | Identity ambiguity that still exists |
@@ -213,6 +233,12 @@ It is concentrated in one bounded area:
 
 That remaining need does not justify an immediate code change for the current
 bounded product slice.
+
+For the current Wednesday review checkpoint, the honest result is therefore a
+documented no-change decision for capability item identity: keep capability
+items non-citation-grade for now, preserve the current descriptive tuple-based
+behavior, and reopen deterministic capability item IDs only if a later bounded
+consumer proves that response-level context is no longer enough.
 
 It matters only if a later consumer can no longer operate honestly with the
 already exposed response-level and persisted anchors.
