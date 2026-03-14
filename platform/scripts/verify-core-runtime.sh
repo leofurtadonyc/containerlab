@@ -186,6 +186,21 @@ assert_contains "platform status response" "$platform_status_response" '"name":"
 assert_contains "platform status response" "$platform_status_response" '"name":"prometheus"'
 assert_contains "platform status response" "$platform_status_response" '"name":"grafana"'
 assert_contains "platform status response" "$platform_status_response" '"name":"odl"'
+assert_contains "platform status response" "$platform_status_response" '"read_paths":[{'
+assert_contains "platform status response" "$platform_status_response" '"model_family":"inventory"'
+assert_contains "platform status response" "$platform_status_response" '"model_family":"topology"'
+assert_contains "platform status response" "$platform_status_response" '"model_family":"policy"'
+assert_contains "platform status response" "$platform_status_response" '"configured_target_count":'
+assert_contains "platform status response" "$platform_status_response" '"observed_target_count":'
+assert_contains "platform status response" "$platform_status_response" '"collection_success_count":'
+assert_contains "platform status response" "$platform_status_response" '"collection_partial_count":'
+assert_contains "platform status response" "$platform_status_response" '"collection_failure_count":'
+assert_contains "platform status response" "$platform_status_response" '"oldest_observed_at":'
+assert_contains "platform status response" "$platform_status_response" '"newest_observed_at":'
+assert_contains "platform status response" "$platform_status_response" '"degraded_scope_summary":"'
+assert_contains "platform status response" "$platform_status_response" '"single_sided_link_count":'
+assert_contains "platform status response" "$platform_status_response" '"policy_capable_target_count":'
+assert_contains "platform status response" "$platform_status_response" '"detail_ready_target_count":'
 
 assert_contains "devices response" "$devices_response" '"data_status":"'
 assert_contains "devices response" "$devices_response" '"serving_mode":"'
@@ -213,13 +228,22 @@ assert_contains "capabilities response" "$capabilities_response" '"data_status":
 assert_contains "capabilities response" "$capabilities_response" '"dry_run_readiness":{'
 assert_contains "capabilities response" "$capabilities_response" '"planning_readiness":"readiness_planning_supported"'
 assert_contains "capabilities response" "$capabilities_response" '"phase_recommendation":"remain_phase_2_read_only_foundation"'
+assert_contains "capabilities response" "$capabilities_response" '"delivery_tier_counts":{'
+assert_contains "capabilities response" "$capabilities_response" '"future_roadmap":'
+assert_contains "capabilities response" "$capabilities_response" '"vendor_posture_counts":{'
+assert_contains "capabilities response" "$capabilities_response" '"future_juniper_target":'
 
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_snapshot_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshot_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_readiness_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_sync_runs_total'
+assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_inventory_newest_observed_timestamp_seconds'
+assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_single_sided_links'
+assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_newest_observed_timestamp_seconds'
+assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_policy_newest_observed_timestamp_seconds'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_normalized_nodes'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_policy_observed_targets'
+assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_policy_detail_ready_targets'
 
 if printf '%s' "$platform_status_response" | grep -F '"name":"odl"' | grep -F '"observation_state":"ok"' >/dev/null 2>&1; then
   :
@@ -238,6 +262,22 @@ if printf '%s' "$devices_response" | grep -F '"blocked_reason":"collector_unavai
 fi
 if printf '%s' "$devices_response" | grep -F '"data_status":"degraded"' >/dev/null 2>&1; then
   warn "Devices API reports degraded data_status."
+fi
+
+if printf '%s' "$platform_status_response" | grep -E '"model_family":"inventory"[^}]*"observation_state":"(degraded|unreachable|unknown)"' >/dev/null 2>&1; then
+  warn "Platform status reports a non-ok inventory read path; inspect inventory coverage and freshness posture before treating the slice as current."
+fi
+if printf '%s' "$platform_status_response" | grep -E '"model_family":"topology"[^}]*"observation_state":"(degraded|unreachable|unknown)"' >/dev/null 2>&1; then
+  warn "Platform status reports a non-ok topology read path; inspect bounded topology coverage and freshness posture before treating the slice as current."
+fi
+if printf '%s' "$platform_status_response" | grep -E '"model_family":"policy"[^}]*"observation_state":"(degraded|unreachable|unknown)"' >/dev/null 2>&1; then
+  warn "Platform status reports a non-ok policy read path; inspect bounded policy coverage and freshness posture before treating the slice as current."
+fi
+if printf '%s' "$platform_status_response" | grep -E '"model_family":"topology"[^}]*"single_sided_link_count":[1-9][0-9]*' >/dev/null 2>&1; then
+  notice "Platform status reports single-sided topology evidence, so the current topology slice remains honest but has endpoint-coverage gaps."
+fi
+if printf '%s' "$platform_status_response" | grep -E '"model_family":"policy"[^}]*"detail_ready_target_count":0' >/dev/null 2>&1; then
+  notice "Platform status reports zero policy detail-ready targets, so current policy truth remains bounded to counters or other aggregate-only evidence."
 fi
 
 if printf '%s' "$topology_response" | grep -F '"serving_mode":"persisted_fallback"' >/dev/null 2>&1; then

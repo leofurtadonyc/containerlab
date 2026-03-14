@@ -899,9 +899,32 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert payload["read_paths"][0]["model_family"] == "inventory"
     assert payload["read_paths"][0]["observation_state"] == "ok"
     assert payload["read_paths"][0]["configured_target_count"] == 2
+    assert payload["read_paths"][0]["observed_target_count"] == 2
+    assert payload["read_paths"][0]["collection_success_count"] == 2
+    assert payload["read_paths"][0]["collection_partial_count"] == 0
+    assert payload["read_paths"][0]["collection_failure_count"] == 0
+    assert payload["read_paths"][0]["oldest_observed_at"] == "2026-03-09T19:25:08.500000Z"
+    assert payload["read_paths"][0]["newest_observed_at"] == "2026-03-09T19:25:08.500000Z"
+    assert "normalized live inventory evidence" in payload["read_paths"][0]["summary"]
+    assert payload["read_paths"][0]["degraded_scope_summary"] == (
+        "All configured inventory targets returned normalized live inventory evidence."
+    )
     assert payload["read_paths"][1]["model_family"] == "topology"
+    assert payload["read_paths"][1]["single_sided_link_count"] == 0
+    assert payload["read_paths"][1]["degraded_scope_summary"] == (
+        "All configured topology targets returned usable live topology evidence within the current bounded inference slice."
+    )
     assert payload["read_paths"][2]["model_family"] == "policy"
+    assert payload["read_paths"][2]["policy_capable_target_count"] == 34
     assert payload["read_paths"][2]["detail_ready_target_count"] == 2
+    assert payload["read_paths"][2]["degraded_scope_summary"] == (
+        "All configured policy targets returned current counter evidence, but per-policy detail remains bounded to static-policy visibility."
+    )
+    assert len(gnmi_component["notes"]) == 6
+    assert "inventory: 2/2 targets, success 2, partial 0, failed 0" in gnmi_component["notes"][0]
+    assert "freshness 2026-03-09T19:25:08.500000+00:00 -> 2026-03-09T19:25:08.500000+00:00" in gnmi_component["notes"][0]
+    assert gnmi_component["notes"][1] == "All configured inventory targets returned normalized live inventory evidence."
+    assert "detail-ready targets 2." in gnmi_component["notes"][4]
     odl_component = payload["components"][-1]
     assert odl_component["name"] == "odl"
     assert odl_component["observation_state"] == "ok"
@@ -1569,6 +1592,8 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
         assert payload["items"][0]["implementation_status"] == "implemented"
         assert payload["items"][0]["delivery_tier"] == "delivered_read_only"
         assert payload["items"][0]["evidence_basis"] == "live_validated"
+        assert payload["items"][0]["version_scope"] == "current onboarded Nokia SR OS lab targets"
+        assert payload["items"][0]["vendor_posture"] == "current_nokia_focus"
         assert payload["items"][0]["workflow_readiness_status"] == "supports_planning"
         assert payload["items"][0]["workflow_readiness_scopes"] == ["planning_depth"]
         assert "stable backend-owned contract" in payload["items"][0]["status_detail"]
@@ -1648,6 +1673,9 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
         assert payload["items"][6]["feature"] == "bgp_signaled_policy_detail"
         assert payload["items"][6]["workflow_readiness_status"] == "blocked"
         assert payload["items"][10]["vendor"] == "juniper"
+        assert payload["items"][10]["vendor_posture"] == "future_juniper_target"
+        assert payload["items"][10]["delivery_tier"] == "future_roadmap"
+        assert payload["items"][10]["version_scope"] == "planned next expansion"
         assert payload["items"][10]["workflow_readiness_status"] == "roadmap_only"
         assert payload["items"][11]["domain"] == "topology"
         assert payload["items"][12]["domain"] == "policy"

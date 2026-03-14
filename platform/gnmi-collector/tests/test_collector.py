@@ -255,6 +255,8 @@ def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
     )
     assert "platform_gnmi_collector_inventory_collection_partial_total 0" in response.text
     assert f"platform_gnmi_collector_inventory_observed_targets {expected_target_count}" in response.text
+    assert "platform_gnmi_collector_inventory_oldest_observed_timestamp_seconds " in response.text
+    assert "platform_gnmi_collector_inventory_newest_observed_timestamp_seconds " in response.text
     assert "platform_gnmi_collector_inventory_normalization_failure_total 0" in response.text
     assert (
         f"platform_gnmi_collector_inventory_backend_ready_records {expected_target_count}"
@@ -268,9 +270,14 @@ def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
     assert f"platform_gnmi_collector_topology_observed_targets {expected_target_count}" in response.text
     assert "platform_gnmi_collector_topology_normalized_nodes 34" in response.text
     assert "platform_gnmi_collector_topology_normalized_links 17" in response.text
+    assert "platform_gnmi_collector_topology_single_sided_links 0" in response.text
+    assert "platform_gnmi_collector_topology_oldest_observed_timestamp_seconds " in response.text
+    assert "platform_gnmi_collector_topology_newest_observed_timestamp_seconds " in response.text
     assert 'platform_gnmi_collector_topology_nodes_by_state{state="up"} 34' in response.text
     assert 'platform_gnmi_collector_topology_links_by_state{state="up"} 17' in response.text
     assert f"platform_gnmi_collector_policy_targets {expected_target_count}" in response.text
+    assert "platform_gnmi_collector_policy_oldest_observed_timestamp_seconds " in response.text
+    assert "platform_gnmi_collector_policy_newest_observed_timestamp_seconds " in response.text
     assert f"platform_gnmi_collector_policy_observed_targets {expected_target_count}" in response.text
     assert f"platform_gnmi_collector_policy_capable_targets {expected_target_count}" in response.text
     assert "platform_gnmi_collector_policy_detail_ready_targets 2" in response.text
@@ -314,6 +321,11 @@ def test_topology_snapshot_endpoint_returns_normalized_live_records(monkeypatch)
     assert payload["link_count"] == 17
     assert payload["sync_source"] == "gnmi_collector_topology_interface_inference"
     assert payload["completeness"] == "partial"
+    assert payload["oldest_observed_at"] is not None
+    assert payload["newest_observed_at"] is not None
+    assert payload["degraded_scope_summary"] == (
+        "All configured topology targets returned live evidence for the current bounded inference path."
+    )
 
 
 def test_policy_snapshot_endpoint_returns_live_policy_observations(monkeypatch) -> None:
@@ -346,6 +358,11 @@ def test_policy_snapshot_endpoint_returns_live_policy_observations(monkeypatch) 
     assert payload["static_non_local_policy_count"] == 1
     assert payload["ttm_preference_count"] == 476
     assert payload["detail_mode"] == "static_policies_when_present"
+    assert payload["oldest_observed_at"] is not None
+    assert payload["newest_observed_at"] is not None
+    assert payload["degraded_scope_summary"] == (
+        "Policy delivery remains bounded because only a subset of observed targets currently has per-target detail coverage."
+    )
     assert len(payload["target_footprints"]) == expected_target_count
     pe1_footprint = next(
         item for item in payload["target_footprints"] if item["target_name"] == "PE1"
@@ -451,6 +468,9 @@ def test_topology_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> N
     assert snapshot.delivery.model_family == "topology"
     assert snapshot.delivery.configured_target_count == expected_target_count
     assert snapshot.delivery.observed_target_count == expected_target_count
+    assert snapshot.delivery.degraded_scope_summary == (
+        "All configured topology targets returned live evidence for the current bounded inference path."
+    )
 
 
 def test_policy_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> None:
@@ -486,6 +506,9 @@ def test_policy_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> Non
     assert snapshot.delivery.model_family == "policy_inventory"
     assert snapshot.delivery.configured_target_count == expected_target_count
     assert snapshot.delivery.detail_ready_target_count == 2
+    assert snapshot.delivery.degraded_scope_summary == (
+        "Policy delivery remains bounded because only a subset of observed targets currently has per-target detail coverage."
+    )
     assert len(snapshot.delivery.target_footprints) == expected_target_count
     pe1_footprint = next(
         item for item in snapshot.delivery.target_footprints if item.target_name == "PE1"

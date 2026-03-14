@@ -49,6 +49,10 @@ evidence gathered from the running platform on `2026-03-14`.
 
 ### Live API posture
 
+- `/api/v1/platform/status` reported `status=ok`, declared platform components,
+  and bounded `read_paths` for inventory, topology, and policy carrying
+  target-coverage, freshness-window, degraded-scope, and policy detail-ready
+  posture
 - `/api/v1/devices` reported `data_status=live`,
   `serving_mode=live_collector`, `count=34`, and an explicit
   `comparison_snapshot_id`
@@ -175,11 +179,14 @@ Why this is strong enough now:
 
 - `verify-core-runtime` checks startup contracts, support-service health,
   collector metrics, WebUI proxy health, read-side API contract presence,
-  dashboard-critical metric families, and Prometheus target posture
+  bounded platform-status `read_paths`, capability vendor-posture and roadmap
+  rollups, dashboard-critical metric families, and Prometheus target posture
 - `verify-odl-auth` validates the configured ODL credential path and rejects
   the default fallback
-- degraded but honest states such as partial topology or live-empty policy
-  posture are surfaced as bounded notices instead of being hidden
+- degraded but honest states such as partial topology, non-ok read-path
+  posture, single-sided topology evidence, live-empty policy posture, or zero
+  policy detail-ready targets are surfaced as bounded notices or warnings
+  instead of being hidden
 
 Why this is still bounded:
 
@@ -257,8 +264,8 @@ Posture: `good_for_routine_operator_interpretation`
 Why this is strong enough now:
 
 - Overview and Platform Health now surface freshness, serving posture, anchor
-  posture, evidence basis, observation coverage, and degraded scope more
-  clearly
+  posture, evidence basis, observation coverage, degraded scope, and bounded
+  read-path coverage posture more clearly
 - topology, policy, readiness, workflow-history, and audit-history views now
   expose stronger trust and anchor cues where the backend supports them
 - trust cues are now aligned better with actual backend truth posture rather
