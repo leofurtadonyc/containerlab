@@ -41,7 +41,16 @@ class CollectorInventorySnapshot(BaseModel):
     status: Literal["live_normalized_feed", "partial_live_feed", "collector_unavailable"]
     destination_service: Literal["app-api"]
     source_endpoint: str
+    configured_target_count: int
+    observed_target_count: int
+    collection_success_count: int
+    collection_partial_count: int
+    collection_failure_count: int
+    oldest_observed_at: str | None = None
+    newest_observed_at: str | None = None
+    degraded_scope_summary: str
     records: list[CollectorInventoryRecord]
+    notes: list[str]
     fetch_error: str | None = None
 
 
@@ -64,7 +73,18 @@ class CollectorInventoryClient:
                 status="collector_unavailable",
                 destination_service="app-api",
                 source_endpoint=snapshot_url,
+                configured_target_count=0,
+                observed_target_count=0,
+                collection_success_count=0,
+                collection_partial_count=0,
+                collection_failure_count=0,
+                oldest_observed_at=None,
+                newest_observed_at=None,
+                degraded_scope_summary=(
+                    "No configured inventory targets returned usable live inventory evidence."
+                ),
                 records=[],
+                notes=[],
                 fetch_error=str(exc),
             )
 
@@ -82,7 +102,19 @@ class CollectorInventoryClient:
             status=status_map.get(payload.get("delivery_status"), "collector_unavailable"),
             destination_service="app-api",
             source_endpoint=snapshot_url,
+            configured_target_count=payload.get("configured_target_count", 0),
+            observed_target_count=payload.get("observed_target_count", 0),
+            collection_success_count=payload.get("collection_success_count", 0),
+            collection_partial_count=payload.get("collection_partial_count", 0),
+            collection_failure_count=payload.get("collection_failure_count", 0),
+            oldest_observed_at=payload.get("oldest_observed_at"),
+            newest_observed_at=payload.get("newest_observed_at"),
+            degraded_scope_summary=payload.get(
+                "degraded_scope_summary",
+                "Inventory degraded scope was not provided by the collector.",
+            ),
             records=records,
+            notes=payload.get("notes", []),
             fetch_error=None,
         )
 

@@ -502,14 +502,28 @@ def _policy_evidence_kind(detail_mode: str, empty_reason: str) -> str:
 
 def _build_policy_evidence_confidence(
     *,
-    collector_status: str,
+    collector_snapshot: CollectorPolicySnapshot,
     detail_mode: str,
     empty_reason: str,
     persisted_at: datetime | None,
 ) -> EvidenceConfidenceSummary:
     """Describe how much confidence the current policy response deserves."""
     evidence_kind = _policy_evidence_kind(detail_mode, empty_reason)
-    if collector_status == "live_normalized_feed":
+    coverage_note = (
+        f"Coverage currently includes {collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured policy targets, "
+        f"with {collector_snapshot.collection_partial_count} partial and {collector_snapshot.collection_failure_count} failed targets."
+    )
+    detail_note = (
+        f"Bounded per-target detail coverage currently exists for {collector_snapshot.detail_ready_target_count} observed targets."
+    )
+    freshness_note = None
+    if collector_snapshot.oldest_observed_at and collector_snapshot.newest_observed_at:
+        freshness_note = (
+            "Current collector policy freshness window spans from "
+            f"{collector_snapshot.oldest_observed_at} to {collector_snapshot.newest_observed_at}."
+        )
+
+    if collector_snapshot.status == "live_normalized_feed":
         if empty_reason == "per_policy_details_unavailable":
             return EvidenceConfidenceSummary(
                 source_posture="live_observed",
@@ -524,6 +538,10 @@ def _build_policy_evidence_confidence(
                 notes=[
                     "Observed policy counters and target coverage remain real live evidence.",
                     "Per-policy comparison semantics stay blocked until backend-owned normalized detail records are available.",
+                    coverage_note,
+                    detail_note,
+                    collector_snapshot.degraded_scope_summary,
+                    *( [freshness_note] if freshness_note else [] ),
                 ],
             )
         return EvidenceConfidenceSummary(
@@ -543,9 +561,12 @@ def _build_policy_evidence_confidence(
             notes=[
                 "Aggregate policy counters are directly observed from the live collector feed.",
                 "Per-policy records remain intentionally bounded to the policy types the current read path can normalize honestly.",
+                coverage_note,
+                detail_note,
+                *( [freshness_note] if freshness_note else [] ),
             ],
         )
-    if collector_status == "partial_live_feed":
+    if collector_snapshot.status == "partial_live_feed":
         return EvidenceConfidenceSummary(
             source_posture="live_observed",
             evidence_kind=evidence_kind,
@@ -559,6 +580,10 @@ def _build_policy_evidence_confidence(
             notes=[
                 "The backend is still serving live policy evidence for the currently available slice.",
                 "Confidence is degraded because one or more targets returned partial live policy data.",
+                coverage_note,
+                detail_note,
+                collector_snapshot.degraded_scope_summary,
+                *( [freshness_note] if freshness_note else [] ),
             ],
         )
     if persisted_at is not None:
@@ -575,6 +600,7 @@ def _build_policy_evidence_confidence(
             notes=[
                 "The served policy data still reflects normalized observed policy evidence, but not from the current live read.",
                 "Treat this response as stale relative to current policy truth until live collection recovers.",
+                collector_snapshot.degraded_scope_summary,
             ],
         )
     return EvidenceConfidenceSummary(
@@ -601,7 +627,7 @@ def build_policies_list_response() -> PoliciesListResponse:
     latest_persisted_snapshot = load_latest_policy_snapshot()
     history = _build_policy_history_window()
     evidence_confidence = _build_policy_evidence_confidence(
-        collector_status=collector_snapshot.status,
+        collector_snapshot=collector_snapshot,
         detail_mode=snapshot.detail_mode,
         empty_reason=snapshot.empty_reason,
         persisted_at=persisted_at,
@@ -656,18 +682,21 @@ def build_policies_list_response() -> PoliciesListResponse:
                 "Policy inventory is backed by live Nokia SR policy counters and "
                 "bounded static-policy visibility. No SR policies are currently "
                 "observed, but stable per-target policy counter footprint and "
-                "target-role coverage remain visible across the configured targets."
+                "target-role coverage remain visible across the configured targets. "
+                f"Coverage currently includes {collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured targets."
             )
         elif snapshot.empty_reason == "per_policy_details_unavailable":
             summary = (
                 "Policy counters indicate SR policies are present, but the current "
                 "bounded platform path could not derive per-policy detail records for "
-                "the observed policy types."
+                "the observed policy types. "
+                f"{detail_note}"
             )
         else:
             summary = (
                 "Policy inventory is backed by live Nokia SR policy counters plus "
-                "bounded static-policy observations from the configured targets."
+                "bounded static-policy observations from the configured targets, with "
+                f"usable live evidence from {collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured targets and bounded per-target detail coverage on {collector_snapshot.detail_ready_target_count} targets."
             )
     elif collector_snapshot.status == "partial_live_feed":
         data_status = "degraded"
@@ -675,7 +704,8 @@ def build_policies_list_response() -> PoliciesListResponse:
         summary = (
             "Policy inventory is backed by live Nokia SR policy counters and bounded "
             "static-policy observations, but one or more targets returned partial or "
-            "degraded policy visibility."
+            "degraded policy visibility. "
+            f"Coverage currently includes {collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured targets."
         )
     else:
         data_status = "degraded"

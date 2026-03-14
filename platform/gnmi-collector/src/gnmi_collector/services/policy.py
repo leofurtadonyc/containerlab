@@ -36,6 +36,12 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
         1 for record in raw_records if record.collection_status == "partial"
     )
     normalized_policy_record_count = len(normalized_records)
+    observed_values = [record.observed_at for record in raw_records if record.observed_at is not None]
+    oldest_observed_at = min(observed_values) if observed_values else None
+    newest_observed_at = max(observed_values) if observed_values else None
+    detail_ready_target_count = sum(
+        1 for footprint in target_footprints if footprint.detail_record_count > 0
+    )
 
     if normalized_policy_record_count == 0:
         detail_mode = "counters_only"
@@ -54,11 +60,36 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
         delivery_status = "failed"
         sync_status = "failed"
 
+    if collection_failure_count == 0 and partial_collection_count == 0 and detail_ready_target_count == aggregated_counts["observed_target_count"]:
+        degraded_scope_summary = (
+            "All observed policy targets returned live evidence with bounded per-target detail coverage."
+        )
+    elif aggregated_counts["observed_target_count"] == 0:
+        degraded_scope_summary = (
+            "No configured policy targets returned usable live policy evidence."
+        )
+    elif collection_failure_count > 0 or partial_collection_count > 0:
+        degraded_scope_summary = (
+            "Policy delivery is degraded because one or more targets failed or returned partial live policy evidence."
+        )
+    elif detail_ready_target_count == 0 and aggregated_counts["policy_count"] > 0:
+        degraded_scope_summary = (
+            "Policy counters indicate observed policies, but the current bounded path could not derive per-target detail records."
+        )
+    else:
+        degraded_scope_summary = (
+            "Policy delivery remains bounded because only a subset of observed targets currently has per-target detail coverage."
+        )
+
     notes = [
         "Policy inventory is currently bounded to live Nokia SR policy counters collected over gNMI.",
         "When static-policy state is exposed, the collector now derives bounded per-policy observations without claiming full SR policy truth.",
         "BGP-signaled SR policy detail remains out of scope until a deeper vendor-neutral path is added.",
     ]
+    if oldest_observed_at is not None and newest_observed_at is not None:
+        notes.append(
+            f"Current policy freshness window spans from {oldest_observed_at.isoformat()} to {newest_observed_at.isoformat()} across targets that returned live evidence."
+        )
     if aggregated_counts["ttm_preference_count"] > 0:
         notes.append(
             "Stable SR policy resource counters remain visible even when no per-policy detail records are currently observed."
@@ -84,6 +115,14 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
         delivery_status=delivery_status,
         destination_endpoint=config.delivery.endpoint,
         model_family="policy_inventory",
+        configured_target_count=len(config.targets),
+        collection_success_count=collection_success_count,
+        collection_partial_count=partial_collection_count,
+        collection_failure_count=collection_failure_count,
+        oldest_observed_at=oldest_observed_at,
+        newest_observed_at=newest_observed_at,
+        detail_ready_target_count=detail_ready_target_count,
+        degraded_scope_summary=degraded_scope_summary,
         sync_source="gnmi_collector_policy_sr_counters",
         sync_status=sync_status,
         completeness="partial",
@@ -112,6 +151,8 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
         collection_success_count=collection_success_count,
         collection_failure_count=collection_failure_count,
         partial_collection_count=partial_collection_count,
+        oldest_observed_at=oldest_observed_at,
+        newest_observed_at=newest_observed_at,
         observed_target_count=aggregated_counts["observed_target_count"],
         policy_capable_target_count=aggregated_counts["policy_capable_target_count"],
         observed_target_role_counts=aggregated_counts["observed_target_role_counts"],
@@ -125,6 +166,7 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
         ttm_preference_count=aggregated_counts["ttm_preference_count"],
         binding_sid_count=aggregated_counts["binding_sid_count"],
         srv6_binding_sid_count=aggregated_counts["srv6_binding_sid_count"],
+        detail_ready_target_count=detail_ready_target_count,
         normalized_policy_record_count=normalized_policy_record_count,
         backend_ready_policy_count=delivery.policy_count,
         backend_delivery_error_count=0,

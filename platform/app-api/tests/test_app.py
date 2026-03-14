@@ -82,6 +82,14 @@ def _build_live_inventory_snapshot() -> CollectorInventorySnapshot:
         status="live_normalized_feed",
         destination_service="app-api",
         source_endpoint="http://gnmi-collector:9804/inventory/snapshot",
+        configured_target_count=2,
+        observed_target_count=2,
+        collection_success_count=2,
+        collection_partial_count=0,
+        collection_failure_count=0,
+        oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        newest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        degraded_scope_summary="All configured inventory targets returned normalized live inventory evidence.",
         records=[
             CollectorInventoryRecord(
                 device_id="PE1",
@@ -112,6 +120,9 @@ def _build_live_inventory_snapshot() -> CollectorInventorySnapshot:
                 notes=["Collected live over gNMI."],
             ),
         ],
+        notes=[
+            "Inventory coverage is currently bounded to the targets that returned normalized live inventory evidence.",
+        ],
         fetch_error=None,
     )
 
@@ -122,6 +133,14 @@ def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
         status="live_normalized_feed",
         destination_service="app-api",
         source_endpoint="http://gnmi-collector:9804/topology/snapshot",
+        configured_target_count=2,
+        observed_target_count=2,
+        collection_success_count=2,
+        collection_partial_count=0,
+        collection_failure_count=0,
+        oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        newest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        degraded_scope_summary="All configured topology targets returned usable live topology evidence within the current bounded inference slice.",
         topology_id="platform-observed-topology",
         topology_name="Platform Observed Topology",
         sync_source="gnmi_collector_topology_interface_inference",
@@ -187,6 +206,14 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
         status="live_normalized_feed",
         destination_service="app-api",
         source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+        configured_target_count=34,
+        collection_success_count=34,
+        collection_partial_count=0,
+        collection_failure_count=0,
+        oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        newest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        detail_ready_target_count=2,
+        degraded_scope_summary="All configured policy targets returned current counter evidence, but per-policy detail remains bounded to static-policy visibility.",
         sync_source="gnmi_collector_policy_sr_counters",
         sync_status="ok",
         completeness="partial",
@@ -311,6 +338,14 @@ def _build_live_empty_policy_snapshot() -> CollectorPolicySnapshot:
         status="live_normalized_feed",
         destination_service="app-api",
         source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+        configured_target_count=34,
+        collection_success_count=34,
+        collection_partial_count=0,
+        collection_failure_count=0,
+        oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        newest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        detail_ready_target_count=0,
+        degraded_scope_summary="All configured policy targets returned current counter evidence, but no per-policy detail records are presently available because no SR policies are observed.",
         sync_source="gnmi_collector_policy_sr_counters",
         sync_status="ok",
         completeness="partial",
@@ -827,6 +862,18 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
         "app_api.services.platform.get_odl_client",
         lambda: StubOdlClient(),
     )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_inventory_client",
+        lambda: SimpleNamespace(read_inventory_snapshot=_build_live_inventory_snapshot),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_topology_client",
+        lambda: SimpleNamespace(read_topology_snapshot=_build_live_topology_snapshot),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_policy_client",
+        lambda: SimpleNamespace(read_policy_snapshot=_build_live_policy_snapshot),
+    )
     response = client.get(
         "/api/v1/platform/status",
         headers={"X-Request-ID": "platform-status-test"},
@@ -840,10 +887,21 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert payload["service"] == "app-api"
     assert payload["topology_name"] == "platform"
     assert "bounded ODL RESTCONF capability probe" in payload["summary"]
+    assert "collector read-path coverage summaries" in payload["summary"]
     assert len(payload["components"]) == 7
     assert payload["components"][0]["name"] == "app-api"
     assert payload["components"][0]["lifecycle_state"] == "declared"
     assert payload["components"][0]["observation_state"] == "not_checked"
+    gnmi_component = payload["components"][2]
+    assert gnmi_component["name"] == "gnmi-collector"
+    assert "bounded inventory, topology, and policy read-path coverage summaries" in gnmi_component["observation_summary"]
+    assert len(payload["read_paths"]) == 3
+    assert payload["read_paths"][0]["model_family"] == "inventory"
+    assert payload["read_paths"][0]["observation_state"] == "ok"
+    assert payload["read_paths"][0]["configured_target_count"] == 2
+    assert payload["read_paths"][1]["model_family"] == "topology"
+    assert payload["read_paths"][2]["model_family"] == "policy"
+    assert payload["read_paths"][2]["detail_ready_target_count"] == 2
     odl_component = payload["components"][-1]
     assert odl_component["name"] == "odl"
     assert odl_component["observation_state"] == "ok"
@@ -920,6 +978,7 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert payload["evidence_confidence"]["confidence_posture"] == "bounded_partial"
     assert payload["evidence_confidence"]["freshness_posture"] == "current"
     assert payload["evidence_confidence"]["blocked_reason"] == "none"
+    assert any("Coverage currently includes 2 of 2 configured topology targets" in note for note in payload["evidence_confidence"]["notes"])
     assert payload["served_persisted_at"] is None
     assert payload["topology"]["topology_id"] == "platform-observed-topology"
     assert payload["topology"]["topology_name"] == "Platform Observed Topology"
@@ -951,7 +1010,16 @@ def test_devices_endpoint_falls_back_to_persisted_inventory(monkeypatch) -> None
                 status="collector_unavailable",
                 destination_service="app-api",
                 source_endpoint="http://gnmi-collector:9804/inventory/snapshot",
+                configured_target_count=0,
+                observed_target_count=0,
+                collection_success_count=0,
+                collection_partial_count=0,
+                collection_failure_count=0,
+                oldest_observed_at=None,
+                newest_observed_at=None,
+                degraded_scope_summary="No configured inventory targets returned usable live inventory evidence.",
                 records=[],
+                notes=[],
                 fetch_error="collector down",
             )
 
@@ -1035,6 +1103,14 @@ def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None
                 status="collector_unavailable",
                 destination_service="app-api",
                 source_endpoint="http://gnmi-collector:9804/topology/snapshot",
+                configured_target_count=0,
+                observed_target_count=0,
+                collection_success_count=0,
+                collection_partial_count=0,
+                collection_failure_count=0,
+                oldest_observed_at=None,
+                newest_observed_at=None,
+                degraded_scope_summary="No configured topology targets returned usable live topology evidence.",
                 topology_id="platform-observed-topology",
                 topology_name="Platform Observed Topology",
                 sync_source="gnmi_collector_topology",
@@ -1142,6 +1218,7 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["evidence_confidence"]["confidence_posture"] == "bounded_partial"
     assert payload["evidence_confidence"]["freshness_posture"] == "current"
     assert payload["evidence_confidence"]["blocked_reason"] == "none"
+    assert any("Bounded per-target detail coverage currently exists for 2 observed targets." in note for note in payload["evidence_confidence"]["notes"])
     assert payload["served_persisted_at"] is None
     assert payload["count"] == 2
     assert payload["sync_source"] == "gnmi_collector_policy_sr_counters"
@@ -1249,6 +1326,14 @@ def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) 
                 status="collector_unavailable",
                 destination_service="app-api",
                 source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+                configured_target_count=0,
+                collection_success_count=0,
+                collection_partial_count=0,
+                collection_failure_count=0,
+                oldest_observed_at=None,
+                newest_observed_at=None,
+                detail_ready_target_count=0,
+                degraded_scope_summary="No configured policy targets returned usable live policy evidence.",
                 sync_source="gnmi_collector_policy",
                 sync_status="failed",
                 completeness="unknown",

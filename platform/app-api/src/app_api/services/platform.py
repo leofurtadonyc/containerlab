@@ -3,8 +3,15 @@
 from datetime import UTC, datetime
 
 from app_api.config.settings import get_settings
+from app_api.integrations.collector.inventory import get_collector_inventory_client
+from app_api.integrations.collector.policies import get_collector_policy_client
+from app_api.integrations.collector.topology import get_collector_topology_client
 from app_api.integrations.odl import OdlControllerObservation, get_odl_client
-from app_api.schemas.platform import PlatformComponentStatus, PlatformStatusResponse
+from app_api.schemas.platform import (
+    PlatformComponentStatus,
+    PlatformReadPathStatus,
+    PlatformStatusResponse,
+)
 
 
 def _build_declared_component(name: str, role: str) -> PlatformComponentStatus:
@@ -14,6 +21,127 @@ def _build_declared_component(name: str, role: str) -> PlatformComponentStatus:
         role=role,
         lifecycle_state="declared",
         observation_state="not_checked",
+    )
+
+
+def _parse_collector_timestamp(value: str | None) -> datetime | None:
+    """Parse an ISO-formatted collector timestamp when present."""
+    if value is None:
+        return None
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def _map_read_path_state(status: str, fetch_error: str | None) -> str:
+    """Map collector snapshot status into a bounded platform observation state."""
+    if status == "live_normalized_feed":
+        return "ok"
+    if status == "partial_live_feed":
+        return "degraded"
+    if fetch_error:
+        return "unreachable"
+    return "unknown"
+
+
+def _build_inventory_read_path_status() -> PlatformReadPathStatus:
+    """Build bounded platform status for the inventory read path."""
+    snapshot = get_collector_inventory_client().read_inventory_snapshot()
+    return PlatformReadPathStatus(
+        model_family="inventory",
+        observation_state=_map_read_path_state(snapshot.status, snapshot.fetch_error),
+        configured_target_count=snapshot.configured_target_count,
+        observed_target_count=snapshot.observed_target_count,
+        collection_success_count=snapshot.collection_success_count,
+        collection_partial_count=snapshot.collection_partial_count,
+        collection_failure_count=snapshot.collection_failure_count,
+        oldest_observed_at=_parse_collector_timestamp(snapshot.oldest_observed_at),
+        newest_observed_at=_parse_collector_timestamp(snapshot.newest_observed_at),
+        degraded_scope_summary=snapshot.degraded_scope_summary,
+        summary=(
+            "Current inventory read-path coverage is bounded to the targets that returned normalized live inventory evidence."
+        ),
+        notes=snapshot.notes,
+    )
+
+
+def _build_topology_read_path_status() -> PlatformReadPathStatus:
+    """Build bounded platform status for the topology read path."""
+    snapshot = get_collector_topology_client().read_topology_snapshot()
+    single_sided_link_count = 0
+    for note in snapshot.notes:
+        if "only one observed endpoint" in note:
+            single_sided_link_count = 1
+            break
+    return PlatformReadPathStatus(
+        model_family="topology",
+        observation_state=_map_read_path_state(snapshot.status, snapshot.fetch_error),
+        configured_target_count=snapshot.configured_target_count,
+        observed_target_count=snapshot.observed_target_count,
+        collection_success_count=snapshot.collection_success_count,
+        collection_partial_count=snapshot.collection_partial_count,
+        collection_failure_count=snapshot.collection_failure_count,
+        oldest_observed_at=_parse_collector_timestamp(snapshot.oldest_observed_at),
+        newest_observed_at=_parse_collector_timestamp(snapshot.newest_observed_at),
+        single_sided_link_count=single_sided_link_count,
+        degraded_scope_summary=snapshot.degraded_scope_summary,
+        summary=(
+            "Current topology read-path coverage is bounded to live interface evidence plus the current backend-owned inference rules."
+        ),
+        notes=snapshot.notes,
+    )
+
+
+def _build_policy_read_path_status() -> PlatformReadPathStatus:
+    """Build bounded platform status for the policy read path."""
+    snapshot = get_collector_policy_client().read_policy_snapshot()
+    return PlatformReadPathStatus(
+        model_family="policy",
+        observation_state=_map_read_path_state(snapshot.status, snapshot.fetch_error),
+        configured_target_count=snapshot.configured_target_count,
+        observed_target_count=snapshot.observed_target_count,
+        collection_success_count=snapshot.collection_success_count,
+        collection_partial_count=snapshot.collection_partial_count,
+        collection_failure_count=snapshot.collection_failure_count,
+        oldest_observed_at=_parse_collector_timestamp(snapshot.oldest_observed_at),
+        newest_observed_at=_parse_collector_timestamp(snapshot.newest_observed_at),
+        policy_capable_target_count=snapshot.policy_capable_target_count,
+        detail_ready_target_count=snapshot.detail_ready_target_count,
+        degraded_scope_summary=snapshot.degraded_scope_summary,
+        summary=(
+            "Current policy read-path coverage is bounded to live SR-policy counter evidence and the subset of targets that yield normalized detail records."
+        ),
+        notes=snapshot.notes,
+    )
+
+
+def _build_gnmi_collector_component_status(
+    read_paths: list[PlatformReadPathStatus],
+) -> PlatformComponentStatus:
+    """Map bounded collector read-path summaries into the collector component row."""
+    read_path_notes = []
+    for read_path in read_paths:
+        freshness_note = (
+            f"freshness {read_path.oldest_observed_at.isoformat()} -> {read_path.newest_observed_at.isoformat()}"
+            if read_path.oldest_observed_at and read_path.newest_observed_at
+            else "freshness window unavailable"
+        )
+        coverage_note = (
+            f"{read_path.model_family}: {read_path.observed_target_count}/{read_path.configured_target_count} targets, "
+            f"success {read_path.collection_success_count}, partial {read_path.collection_partial_count}, failed {read_path.collection_failure_count}, {freshness_note}."
+        )
+        if read_path.detail_ready_target_count is not None:
+            coverage_note += f" detail-ready targets {read_path.detail_ready_target_count}."
+        read_path_notes.append(coverage_note)
+        read_path_notes.append(read_path.degraded_scope_summary)
+
+    return PlatformComponentStatus(
+        name="gnmi-collector",
+        role="observed-state-collector",
+        lifecycle_state="declared",
+        observation_state="not_checked",
+        observation_summary=(
+            "The backend now also carries bounded inventory, topology, and policy read-path coverage summaries derived from the collector boundary without turning Platform Health into a full dependency-health dashboard."
+        ),
+        notes=read_path_notes,
     )
 
 
@@ -55,6 +183,11 @@ def _build_odl_component_status() -> PlatformComponentStatus:
 def build_platform_status_response() -> PlatformStatusResponse:
     """Build the bounded platform status response for the current phase."""
     settings = get_settings()
+    read_paths = [
+        _build_inventory_read_path_status(),
+        _build_topology_read_path_status(),
+        _build_policy_read_path_status(),
+    ]
     return PlatformStatusResponse(
         status="ok",
         service="app-api",
@@ -64,16 +197,17 @@ def build_platform_status_response() -> PlatformStatusResponse:
         topology_name="platform",
         summary=(
             "Phase 2 declared platform service inventory with one bounded ODL "
-            "RESTCONF capability probe; other dependency checks remain "
-            "intentionally narrow."
+            "RESTCONF capability probe plus bounded inventory, topology, and policy "
+            "collector read-path coverage summaries; deeper dependency health checks remain intentionally narrow."
         ),
         components=[
             _build_declared_component("app-api", "backend-api"),
             _build_declared_component("app-web", "operator-webui"),
-            _build_declared_component("gnmi-collector", "observed-state-collector"),
+            _build_gnmi_collector_component_status(read_paths),
             _build_declared_component("postgres", "durable-application-store"),
             _build_declared_component("prometheus", "metrics-store"),
             _build_declared_component("grafana", "observability-dashboards"),
             _build_odl_component_status(),
         ],
+        read_paths=read_paths,
     )

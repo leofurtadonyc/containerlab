@@ -93,6 +93,14 @@ class BackendPolicyDeliveryEnvelope(BaseModel):
     delivery_status: Literal["live_ready", "partial", "failed"]
     destination_endpoint: str
     model_family: Literal["policy_inventory"]
+    configured_target_count: int
+    collection_success_count: int
+    collection_partial_count: int
+    collection_failure_count: int
+    oldest_observed_at: datetime | None = None
+    newest_observed_at: datetime | None = None
+    detail_ready_target_count: int
+    degraded_scope_summary: str
     sync_source: str
     sync_status: Literal["ok", "degraded", "failed", "unknown"]
     completeness: Literal["complete", "partial", "unknown"]
@@ -129,6 +137,8 @@ class PolicyFlowSummary(BaseModel):
     collection_success_count: int
     collection_failure_count: int
     partial_collection_count: int
+    oldest_observed_at: datetime | None = None
+    newest_observed_at: datetime | None = None
     observed_target_count: int
     policy_capable_target_count: int
     observed_target_role_counts: dict[str, int] = Field(default_factory=dict)
@@ -142,6 +152,7 @@ class PolicyFlowSummary(BaseModel):
     ttm_preference_count: int
     binding_sid_count: int
     srv6_binding_sid_count: int
+    detail_ready_target_count: int
     normalized_policy_record_count: int
     backend_ready_policy_count: int
     backend_delivery_error_count: int

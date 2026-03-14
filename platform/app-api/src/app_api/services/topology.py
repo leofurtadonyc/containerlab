@@ -142,11 +142,22 @@ def _build_topology_comparison_summary(
 
 def _build_topology_evidence_confidence(
     *,
-    collector_status: str,
+    collector_snapshot: CollectorTopologySnapshot,
     persisted_at: datetime | None,
 ) -> EvidenceConfidenceSummary:
     """Describe how much confidence the current topology response deserves."""
-    if collector_status == "live_normalized_feed":
+    coverage_note = (
+        f"Coverage currently includes {collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured topology targets, "
+        f"with {collector_snapshot.collection_partial_count} partial and {collector_snapshot.collection_failure_count} failed targets."
+    )
+    freshness_note = None
+    if collector_snapshot.oldest_observed_at and collector_snapshot.newest_observed_at:
+        freshness_note = (
+            "Current collector topology freshness window spans from "
+            f"{collector_snapshot.oldest_observed_at} to {collector_snapshot.newest_observed_at}."
+        )
+
+    if collector_snapshot.status == "live_normalized_feed":
         return EvidenceConfidenceSummary(
             source_posture="live_observed",
             evidence_kind="observed_plus_inferred",
@@ -160,9 +171,11 @@ def _build_topology_evidence_confidence(
             notes=[
                 "Node state is directly observed from live normalized collector inputs.",
                 "Some link relationships remain inferred rather than directly observed, so confidence stays explicitly bounded.",
+                coverage_note,
+                *( [freshness_note] if freshness_note else [] ),
             ],
         )
-    if collector_status == "partial_live_feed":
+    if collector_snapshot.status == "partial_live_feed":
         return EvidenceConfidenceSummary(
             source_posture="live_observed",
             evidence_kind="observed_plus_inferred",
@@ -176,6 +189,9 @@ def _build_topology_evidence_confidence(
             notes=[
                 "Inference remains backend-owned and bounded.",
                 "Confidence is degraded because the live topology feed itself is partial.",
+                coverage_note,
+                collector_snapshot.degraded_scope_summary,
+                *( [freshness_note] if freshness_note else [] ),
             ],
         )
     if persisted_at is not None:
@@ -192,6 +208,7 @@ def _build_topology_evidence_confidence(
             notes=[
                 "The served snapshot may still include bounded inferred links from the earlier normalized topology read path.",
                 "Treat this response as stale relative to current topology truth until live collection recovers.",
+                collector_snapshot.degraded_scope_summary,
             ],
         )
     return EvidenceConfidenceSummary(
@@ -359,7 +376,7 @@ def build_topology_response() -> TopologyResponse:
     settings = get_settings()
     collector_snapshot, snapshot, persisted_at, comparison = _build_topology_snapshot()
     evidence_confidence = _build_topology_evidence_confidence(
-        collector_status=collector_snapshot.status,
+        collector_snapshot=collector_snapshot,
         persisted_at=persisted_at,
     )
     topology = TopologyRecord(
@@ -399,14 +416,16 @@ def build_topology_response() -> TopologyResponse:
         serving_mode = "live_collector"
         summary = (
             "Topology is backed by live read-only Nokia gNMI collection and bounded "
-            "interface-based link inference, with partial knowledge still explicit."
+            "interface-based link inference, with partial knowledge still explicit and usable live evidence from "
+            f"{collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured targets."
         )
     elif collector_snapshot.status == "partial_live_feed":
         data_status = "degraded"
         serving_mode = "live_collector"
         summary = (
             "Topology is backed by live Nokia gNMI collection, but one or more "
-            "targets or inferred links remain partial or degraded."
+            "targets or inferred links remain partial or degraded. "
+            f"Coverage currently includes {collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured targets."
         )
     else:
         data_status = "degraded"

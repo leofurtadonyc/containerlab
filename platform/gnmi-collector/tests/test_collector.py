@@ -190,9 +190,16 @@ class FakeGnmiClient:
 
         return {
             "notification": [
-                {"update": [{"path": "state/system/oper-name", "val": device_name}]},
-                {"update": [{"path": "state/system/platform", "val": "7750 SR-1"}]},
                 {
+                    "timestamp": 1773094131368820265,
+                    "update": [{"path": "state/system/oper-name", "val": device_name}],
+                },
+                {
+                    "timestamp": 1773094131368820265,
+                    "update": [{"path": "state/system/platform", "val": "7750 SR-1"}],
+                },
+                {
+                    "timestamp": 1773094131368820265,
                     "update": [
                         {
                             "path": "state/system/version",
@@ -246,6 +253,8 @@ def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
         f"platform_gnmi_collector_inventory_collection_success_total {expected_target_count}"
         in response.text
     )
+    assert "platform_gnmi_collector_inventory_collection_partial_total 0" in response.text
+    assert f"platform_gnmi_collector_inventory_observed_targets {expected_target_count}" in response.text
     assert "platform_gnmi_collector_inventory_normalization_failure_total 0" in response.text
     assert (
         f"platform_gnmi_collector_inventory_backend_ready_records {expected_target_count}"
@@ -256,6 +265,7 @@ def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
         f"platform_gnmi_collector_topology_collection_success_total {expected_target_count}"
         in response.text
     )
+    assert f"platform_gnmi_collector_topology_observed_targets {expected_target_count}" in response.text
     assert "platform_gnmi_collector_topology_normalized_nodes 34" in response.text
     assert "platform_gnmi_collector_topology_normalized_links 17" in response.text
     assert 'platform_gnmi_collector_topology_nodes_by_state{state="up"} 34' in response.text
@@ -263,7 +273,9 @@ def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
     assert f"platform_gnmi_collector_policy_targets {expected_target_count}" in response.text
     assert f"platform_gnmi_collector_policy_observed_targets {expected_target_count}" in response.text
     assert f"platform_gnmi_collector_policy_capable_targets {expected_target_count}" in response.text
+    assert "platform_gnmi_collector_policy_detail_ready_targets 2" in response.text
     assert "platform_gnmi_collector_policy_observed_policies 2" in response.text
+    assert "platform_gnmi_collector_metrics_cache_updated_timestamp_seconds" in response.text
 
 
 def test_inventory_snapshot_endpoint_returns_normalized_live_records(monkeypatch) -> None:
@@ -276,6 +288,11 @@ def test_inventory_snapshot_endpoint_returns_normalized_live_records(monkeypatch
     payload = response.json()
     assert payload["delivery_mode"] == "backend_http_snapshot"
     assert payload["delivery_status"] == "live_ready"
+    assert payload["configured_target_count"] == expected_target_count
+    assert payload["observed_target_count"] == expected_target_count
+    assert payload["collection_partial_count"] == 0
+    assert payload["collection_failure_count"] == 0
+    assert payload["degraded_scope_summary"] == "All configured inventory targets returned live normalized inventory records."
     assert payload["record_count"] == expected_target_count
     assert payload["records"][0]["source"] == "gnmi"
 
@@ -289,6 +306,10 @@ def test_topology_snapshot_endpoint_returns_normalized_live_records(monkeypatch)
     payload = response.json()
     assert payload["delivery_mode"] == "backend_http_snapshot"
     assert payload["delivery_status"] == "live_ready"
+    assert payload["configured_target_count"] == 34
+    assert payload["observed_target_count"] == 34
+    assert payload["collection_partial_count"] == 0
+    assert payload["collection_failure_count"] == 0
     assert payload["node_count"] == 34
     assert payload["link_count"] == 17
     assert payload["sync_source"] == "gnmi_collector_topology_interface_inference"
@@ -307,8 +328,12 @@ def test_policy_snapshot_endpoint_returns_live_policy_observations(monkeypatch) 
     assert payload["delivery_status"] == "live_ready"
     assert payload["model_family"] == "policy_inventory"
     assert payload["sync_source"] == "gnmi_collector_policy_sr_counters"
+    assert payload["configured_target_count"] == expected_target_count
     assert payload["observed_target_count"] == expected_target_count
+    assert payload["collection_partial_count"] == 0
+    assert payload["collection_failure_count"] == 0
     assert payload["policy_capable_target_count"] == expected_target_count
+    assert payload["detail_ready_target_count"] == 2
     assert payload["observed_target_role_counts"] == {
         "cpe": 6,
         "isp": 2,
@@ -353,6 +378,7 @@ def test_nokia_adapter_collects_live_inventory_and_topology(monkeypatch) -> None
     assert inventory_record.vendor == "nokia"
     assert inventory_record.platform_hint == "sros"
     assert inventory_record.collection_status == "success"
+    assert inventory_record.observed_at is not None
     assert inventory_record.raw_data["system_name"] == target.name
     assert topology_record.collection_status == "success"
     assert topology_record.raw_interfaces[0].interface_name == "system"
@@ -384,13 +410,20 @@ def test_inventory_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> 
     assert snapshot.summary.target_count == expected_target_count
     assert snapshot.summary.collection_success_count == expected_target_count
     assert snapshot.summary.collection_failure_count == 0
+    assert snapshot.summary.partial_collection_count == 0
+    assert snapshot.summary.observed_target_count == expected_target_count
     assert snapshot.summary.normalization_partial_count == 0
     assert snapshot.summary.normalization_failure_count == 0
+    assert snapshot.summary.oldest_observed_at is not None
+    assert snapshot.summary.newest_observed_at is not None
     assert snapshot.summary.backend_ready_record_count == expected_target_count
     assert snapshot.summary.backend_delivery_error_count == 0
     assert snapshot.delivery.destination_service == "app-api"
     assert snapshot.delivery.delivery_status == "live_ready"
     assert snapshot.delivery.model_family == "inventory"
+    assert snapshot.delivery.configured_target_count == expected_target_count
+    assert snapshot.delivery.observed_target_count == expected_target_count
+    assert snapshot.delivery.degraded_scope_summary == "All configured inventory targets returned live normalized inventory records."
 
 
 def test_topology_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> None:
@@ -403,6 +436,9 @@ def test_topology_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> N
     assert snapshot.summary.collection_success_count == expected_target_count
     assert snapshot.summary.collection_failure_count == 0
     assert snapshot.summary.partial_collection_count == 0
+    assert snapshot.summary.observed_target_count == expected_target_count
+    assert snapshot.summary.oldest_observed_at is not None
+    assert snapshot.summary.newest_observed_at is not None
     assert snapshot.summary.normalized_node_count == expected_target_count
     assert snapshot.summary.normalized_link_count == expected_target_count // 2
     assert snapshot.summary.single_sided_link_count == 0
@@ -413,6 +449,8 @@ def test_topology_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> N
     assert snapshot.delivery.destination_service == "app-api"
     assert snapshot.delivery.delivery_status == "live_ready"
     assert snapshot.delivery.model_family == "topology"
+    assert snapshot.delivery.configured_target_count == expected_target_count
+    assert snapshot.delivery.observed_target_count == expected_target_count
 
 
 def test_policy_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> None:
@@ -426,6 +464,9 @@ def test_policy_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> Non
     assert snapshot.summary.collection_failure_count == 0
     assert snapshot.summary.partial_collection_count == 0
     assert snapshot.summary.observed_target_count == expected_target_count
+    assert snapshot.summary.detail_ready_target_count == 2
+    assert snapshot.summary.oldest_observed_at is not None
+    assert snapshot.summary.newest_observed_at is not None
     assert snapshot.summary.policy_capable_target_count == expected_target_count
     assert snapshot.summary.observed_target_role_counts == {
         "cpe": 6,
@@ -443,6 +484,8 @@ def test_policy_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> Non
     assert snapshot.delivery.destination_service == "app-api"
     assert snapshot.delivery.delivery_status == "live_ready"
     assert snapshot.delivery.model_family == "policy_inventory"
+    assert snapshot.delivery.configured_target_count == expected_target_count
+    assert snapshot.delivery.detail_ready_target_count == 2
     assert len(snapshot.delivery.target_footprints) == expected_target_count
     pe1_footprint = next(
         item for item in snapshot.delivery.target_footprints if item.target_name == "PE1"
