@@ -37,6 +37,12 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
     partial_collection_count = sum(
         1 for record in raw_records if record.collection_status == "partial"
     )
+    observed_target_count = sum(
+        1 for record in raw_records if record.collection_status != "failure"
+    )
+    observed_values = [record.observed_at for record in raw_records if record.observed_at is not None]
+    oldest_observed_at = min(observed_values) if observed_values else None
+    newest_observed_at = max(observed_values) if observed_values else None
 
     if normalized_nodes and collection_failure_count == 0 and partial_collection_count == 0:
         delivery_status = "live_ready"
@@ -48,10 +54,31 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         delivery_status = "failed"
         sync_status = "failed"
 
+    if collection_failure_count == 0 and partial_collection_count == 0 and single_sided_link_count == 0:
+        degraded_scope_summary = (
+            "All configured topology targets returned live evidence for the current bounded inference path."
+        )
+    elif observed_target_count == 0:
+        degraded_scope_summary = (
+            "No configured topology targets returned usable live topology evidence."
+        )
+    elif collection_failure_count > 0 or partial_collection_count > 0:
+        degraded_scope_summary = (
+            "Topology delivery is degraded because one or more targets failed or returned partial live topology evidence."
+        )
+    else:
+        degraded_scope_summary = (
+            "Topology delivery remains bounded because one or more inferred links still rely on only partial endpoint evidence."
+        )
+
     notes = [
         "Topology links are inferred from live router interface names and current interface operational state.",
         "The topology slice remains intentionally partial until LLDP, IGP, or bounded controller enrichment is added.",
     ]
+    if oldest_observed_at is not None and newest_observed_at is not None:
+        notes.append(
+            f"Current topology freshness window spans from {oldest_observed_at.isoformat()} to {newest_observed_at.isoformat()} across targets that returned live evidence."
+        )
     if single_sided_link_count > 0:
         notes.append(
             "One or more links were inferred from only one observed endpoint, so partial evidence remains explicit."
@@ -67,6 +94,14 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         delivery_status=delivery_status,
         destination_endpoint=config.delivery.endpoint,
         model_family="topology",
+        configured_target_count=len(config.targets),
+        observed_target_count=observed_target_count,
+        collection_success_count=collection_success_count,
+        collection_partial_count=partial_collection_count,
+        collection_failure_count=collection_failure_count,
+        oldest_observed_at=oldest_observed_at,
+        newest_observed_at=newest_observed_at,
+        degraded_scope_summary=degraded_scope_summary,
         topology_id="platform-observed-topology",
         topology_name="Platform Observed Topology",
         node_count=len(normalized_nodes),
@@ -82,9 +117,12 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
     summary = TopologyFlowSummary(
         target_count=len(config.targets),
         planned_paths=sum(len(plan.topology_paths) for plan in plans),
+        observed_target_count=observed_target_count,
         collection_success_count=collection_success_count,
         collection_failure_count=collection_failure_count,
         partial_collection_count=partial_collection_count,
+        oldest_observed_at=oldest_observed_at,
+        newest_observed_at=newest_observed_at,
         normalized_node_count=len(normalized_nodes),
         normalized_link_count=len(normalized_links),
         inferred_link_count=len(normalized_links),

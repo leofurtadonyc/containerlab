@@ -521,6 +521,7 @@ def load_recent_policy_snapshot_summaries(limit: int = 3) -> list[PersistedPolic
                     snapshot_id=snapshot.id,
                     persisted_at=snapshot.persisted_at,
                     snapshot=PolicyHistorySnapshotRecord(
+                        snapshot_id=snapshot.id,
                         persisted_at=snapshot.persisted_at,
                         observed_at=snapshot.observed_at,
                         data_status=snapshot.data_status,

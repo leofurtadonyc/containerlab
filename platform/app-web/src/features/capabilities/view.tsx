@@ -1,6 +1,10 @@
 import { useMemo, useState } from "react";
 
-import type { CapabilityRecord } from "../../api/contracts";
+import type {
+  CapabilityRecord,
+  CapabilityRecordIdentityTuple,
+} from "../../api/contracts";
+import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
@@ -77,6 +81,53 @@ function describeImplementationState(value: string): string {
     default:
       return "The platform keeps this area visible as a placeholder without claiming delivered behavior.";
   }
+}
+
+function getCapabilityIdentityTuple(
+  capability: CapabilityRecord,
+): CapabilityRecordIdentityTuple {
+  return {
+    vendor: capability.vendor,
+    platform: capability.platform,
+    domain: capability.domain,
+    feature: capability.feature,
+    version_scope: capability.version_scope,
+  };
+}
+
+function buildCapabilityIdentityKey(capability: CapabilityRecord): string {
+  const identity = getCapabilityIdentityTuple(capability);
+
+  return [
+    identity.vendor,
+    identity.platform,
+    identity.domain,
+    identity.feature,
+    identity.version_scope ?? "all_versions",
+  ].join("::");
+}
+
+function describeCapabilityIdentityPosture(capability: CapabilityRecord): string {
+  return capability.version_scope
+    ? "This record is selected by vendor, platform, domain, feature, and version scope. That tuple is a bounded UI identity only, not a standalone backend item ID."
+    : "This record is selected by vendor, platform, domain, and feature. The backend does not expose a standalone capability item ID for this bounded Phase 2 surface."
+}
+
+function describeRoadmapPosture(capability: CapabilityRecord): string {
+  if (
+    capability.delivery_tier === "future_roadmap" ||
+    capability.evidence_basis === "roadmap_only" ||
+    capability.vendor_posture === "future_juniper_target" ||
+    capability.support_status === "not_implemented_in_platform"
+  ) {
+    return "Treat this record as roadmap direction only. It does not indicate delivered support, device-level entitlement, or Juniper parity today.";
+  }
+
+  if (capability.vendor_posture === "current_nokia_focus") {
+    return "Treat this record as part of the current Nokia-first support boundary for the stated scope only, not as cross-vendor or all-version parity.";
+  }
+
+  return "Treat this record as future-ready structure around the current support boundary, while keeping the stated delivery tier and evidence basis as the real limit.";
 }
 
 function normalizeCapabilityRecord(value: Partial<CapabilityRecord>): CapabilityRecord {
@@ -241,9 +292,7 @@ export function CapabilitiesView() {
   ]);
   const selectedCapability =
     filteredCapabilities.find(
-      (capability) =>
-        `${capability.vendor}-${capability.platform}-${capability.domain}-${capability.feature}` ===
-        selectedCapabilityKey,
+      (capability) => buildCapabilityIdentityKey(capability) === selectedCapabilityKey,
     ) ?? filteredCapabilities[0] ?? null;
 
   if (isLoading) {
@@ -572,6 +621,15 @@ export function CapabilitiesView() {
       </div>
 
       <div className="callout">
+        <strong>Capability identity stays tuple-scoped in Phase 2</strong>
+        <p>
+          Capability rows are selected by vendor, platform, domain, feature, and version scope
+          when the backend provides one. This keeps version-scoped records distinct without
+          implying a durable backend item ID, workflow handle, or cross-response citation key.
+        </p>
+      </div>
+
+      <div className="callout">
         <strong>Phase recommendation remains unchanged</strong>
         <p>
           {formatLabel(dryRunReadiness.phase_recommendation)} remains the only current
@@ -878,11 +936,12 @@ export function CapabilitiesView() {
               </thead>
               <tbody>
                 {filteredCapabilities.map((capability) => {
-                  const capabilityKey = `${capability.vendor}-${capability.platform}-${capability.domain}-${capability.feature}`;
+                  const capabilityKey = buildCapabilityIdentityKey(capability);
                   const isSelected = selectedCapability?.feature === capability.feature &&
                     selectedCapability.domain === capability.domain &&
                     selectedCapability.vendor === capability.vendor &&
-                    selectedCapability.platform === capability.platform;
+                    selectedCapability.platform === capability.platform &&
+                    selectedCapability.version_scope === capability.version_scope;
 
                   return (
                     <tr
@@ -937,7 +996,20 @@ export function CapabilitiesView() {
           {selectedCapability ? (
             <article className="detail-card">
               <p className="summary-label">Selected Capability Detail</p>
+              <p>
+                This detail view keeps support, evidence, delivery, and roadmap posture tied to
+                the exact selected capability tuple without inventing a stronger backend identity
+                contract than the current response provides.
+              </p>
               <div className="key-value-list">
+                <div className="key-value-row">
+                  <span>Capability identity</span>
+                  <IdentifierChip value={buildCapabilityIdentityKey(selectedCapability)} />
+                </div>
+                <div className="key-value-row">
+                  <span>Identity posture</span>
+                  <strong>{describeCapabilityIdentityPosture(selectedCapability)}</strong>
+                </div>
                 <div className="key-value-row">
                   <span>Vendor</span>
                   <strong>
@@ -1019,6 +1091,10 @@ export function CapabilitiesView() {
                   <strong>{describeVendorPosture(selectedCapability.vendor_posture)}</strong>
                 </div>
                 <div className="key-value-row">
+                  <span>Roadmap posture</span>
+                  <strong>{describeRoadmapPosture(selectedCapability)}</strong>
+                </div>
+                <div className="key-value-row">
                   <span>Implementation Meaning</span>
                   <strong>{describeImplementationState(selectedCapability.implementation_status)}</strong>
                 </div>
@@ -1045,6 +1121,21 @@ export function CapabilitiesView() {
                   </ul>
                 </>
               ) : null}
+              <p className="summary-label">Operator Interpretation</p>
+              <ul className="notes-list">
+                <li>
+                  <strong>Identity:</strong> {describeCapabilityIdentityPosture(selectedCapability)}
+                </li>
+                <li>
+                  <strong>Delivery:</strong> {describeDeliveryTier(selectedCapability.delivery_tier)}
+                </li>
+                <li>
+                  <strong>Evidence:</strong> {describeEvidenceBasis(selectedCapability.evidence_basis)}
+                </li>
+                <li>
+                  <strong>Roadmap:</strong> {describeRoadmapPosture(selectedCapability)}
+                </li>
+              </ul>
               {selectedCapability.related_readiness_blockers.length > 0 ? (
                 <>
                   <p className="summary-label">Related Readiness Blockers</p>

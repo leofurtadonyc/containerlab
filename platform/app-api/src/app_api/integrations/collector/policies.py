@@ -73,6 +73,14 @@ class CollectorPolicySnapshot(BaseModel):
     status: Literal["live_normalized_feed", "partial_live_feed", "collector_unavailable"]
     destination_service: Literal["app-api"]
     source_endpoint: str
+    configured_target_count: int
+    collection_success_count: int
+    collection_partial_count: int
+    collection_failure_count: int
+    oldest_observed_at: str | None = None
+    newest_observed_at: str | None = None
+    detail_ready_target_count: int
+    degraded_scope_summary: str
     sync_source: str
     sync_status: Literal["ok", "degraded", "failed", "unknown"]
     completeness: Literal["complete", "partial", "unknown"]
@@ -121,6 +129,16 @@ class CollectorPolicyClient:
                 status="collector_unavailable",
                 destination_service="app-api",
                 source_endpoint=snapshot_url,
+                configured_target_count=0,
+                collection_success_count=0,
+                collection_partial_count=0,
+                collection_failure_count=0,
+                oldest_observed_at=None,
+                newest_observed_at=None,
+                detail_ready_target_count=0,
+                degraded_scope_summary=(
+                    "No configured policy targets returned usable live policy evidence."
+                ),
                 sync_source="gnmi_collector_policy",
                 sync_status="failed",
                 completeness="unknown",
@@ -155,6 +173,17 @@ class CollectorPolicyClient:
             status=status_map.get(payload.get("delivery_status"), "collector_unavailable"),
             destination_service="app-api",
             source_endpoint=snapshot_url,
+            configured_target_count=payload.get("configured_target_count", 0),
+            collection_success_count=payload.get("collection_success_count", 0),
+            collection_partial_count=payload.get("collection_partial_count", 0),
+            collection_failure_count=payload.get("collection_failure_count", 0),
+            oldest_observed_at=payload.get("oldest_observed_at"),
+            newest_observed_at=payload.get("newest_observed_at"),
+            detail_ready_target_count=payload.get("detail_ready_target_count", 0),
+            degraded_scope_summary=payload.get(
+                "degraded_scope_summary",
+                "Policy degraded scope was not provided by the collector.",
+            ),
             sync_source=payload.get("sync_source", "gnmi_collector_policy"),
             sync_status=payload.get("sync_status", "unknown"),
             completeness=payload.get("completeness", "unknown"),

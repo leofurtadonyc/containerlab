@@ -191,7 +191,7 @@ The following rules apply across all current evidence domains.
 | Persisted source record | `reference_kind` plus durable stored record key | `persisted_at` and `observed_at` when known | Scope may be narrowed to child objects or fields through `scope_locator` |
 | Assembled read model | `reference_kind` plus object key plus current serve anchor | `generated_at`, `served_at`, or current `observed_at` when exposed | Object-level scope is mandatory; response-level citation is not enough |
 | Derived comparison surface | `reference_kind` plus explicit comparison identity plus anchor record IDs | current and previous anchor times or equivalent comparison posture | Comparison section and compared object scope must be explicit |
-| Readiness or capability overlay | `reference_kind` plus per-item key, not only a response-level aggregate | `generated_at` or `readiness_persisted_at` | Blocker, prerequisite, capability item, or assessment-area scope must be explicit |
+| Readiness or capability overlay | `reference_kind` plus current overlay anchor; add a per-item key only when a child blocker, prerequisite, capability item, or assessment area must be cited individually | `generated_at` or `readiness_persisted_at` | Response-level overlay citation may rely on the exposed readiness or serve anchor; standalone child-item citation still requires explicit item scope |
 | Embedded history-support surface | Parent history-event or sync context plus underlying source record identity | parent event time plus underlying source record time | The embedded attachment must not replace the underlying source record identity |
 
 ## Current Surface Classification
@@ -219,16 +219,19 @@ honest.
 | `TopologyNodeRecord.node_id` and `TopologyLinkRecord.link_id` in [platform/app-api/src/app_api/schemas/topology.py](platform/app-api/src/app_api/schemas/topology.py) | Later citation must pair topology object identity with a current topology serve or observe anchor and preserve partial or inferred posture | `citation_safe_with_explicit_scope_and_time` |
 | `PolicyRecord.policy_id` and `PolicyTargetFootprintRecord.target_name` in [platform/app-api/src/app_api/schemas/policies.py](platform/app-api/src/app_api/schemas/policies.py) | Later citation must pair policy or target identity with the current policy response time or observed anchor and preserve aggregate-only versus detail-present posture | `citation_safe_with_explicit_scope_and_time` |
 
-### Overlay records that need explicit item identity before they are safe
+### Overlay child records that still need explicit item identity before they are safe as standalone item citations
 
-The following surfaces are useful later, but today they are still too implicit
-to serve as clean primary citations unless the repository defines per-item
-source-record identity explicitly.
+The following surfaces are already acceptable as bounded current-product overlay
+context when they are read through the current response or readiness snapshot
+anchor.
+
+They remain too implicit only if a later consumer needs to cite one child item
+as its own standalone source record.
 
 | Current surface | Identity gap | Identity strength |
 | --- | --- | --- |
-| `CapabilityRecord` items in [platform/app-api/src/app_api/schemas/capabilities.py](platform/app-api/src/app_api/schemas/capabilities.py) | No explicit `source_record_id`; future citation needs a per-item identity anchored by vendor, platform, domain, feature, version scope, and current readiness time | `citation_unsafe_until_explicit_identity_exists` |
-| `DryRunReadinessBlocker`, `DryRunReadinessPrerequisite`, and `DryRunReadinessAssessmentArea` in [platform/app-api/src/app_api/schemas/capabilities.py](platform/app-api/src/app_api/schemas/capabilities.py) | No explicit blocker, prerequisite, or assessment-area record IDs in current API surfaces | `citation_unsafe_until_explicit_identity_exists` |
+| `CapabilityRecord` items in [platform/app-api/src/app_api/schemas/capabilities.py](platform/app-api/src/app_api/schemas/capabilities.py) | No explicit `source_record_id`; current product use can rely on response-level context, but later standalone citation would need a per-item identity anchored by vendor, platform, domain, feature, and version scope | `citation_unsafe_until_explicit_identity_exists` |
+| `DryRunReadinessBlocker`, `DryRunReadinessPrerequisite`, and `DryRunReadinessAssessmentArea` in [platform/app-api/src/app_api/schemas/capabilities.py](platform/app-api/src/app_api/schemas/capabilities.py) | No explicit blocker, prerequisite, or assessment-area record IDs in current API surfaces; current product use can rely on `readiness_snapshot_id`, but later standalone item citation would still need per-item keys | `citation_unsafe_until_explicit_identity_exists` |
 | Shared `EvidenceConfidenceSummary` and response-level `serving_mode` in [platform/app-api/src/app_api/schemas/common.py](platform/app-api/src/app_api/schemas/common.py) | These are posture summaries, not standalone business records; they should travel with a cited domain record instead of being cited in isolation | `supporting_only_cite_underlying_source` |
 
 ### Derived comparison surfaces that remain unsafe until identity is made explicit

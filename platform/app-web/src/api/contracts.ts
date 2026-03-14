@@ -52,11 +52,30 @@ export interface PlatformComponentStatus {
   notes: string[];
 }
 
+export interface PlatformReadPathStatus {
+  model_family: "inventory" | "topology" | "policy";
+  observation_state: "ok" | "degraded" | "unreachable" | "unknown";
+  configured_target_count: number;
+  observed_target_count: number;
+  collection_success_count: number;
+  collection_partial_count: number;
+  collection_failure_count: number;
+  oldest_observed_at: string | null;
+  newest_observed_at: string | null;
+  policy_capable_target_count: number | null;
+  detail_ready_target_count: number | null;
+  single_sided_link_count: number | null;
+  degraded_scope_summary: string;
+  summary: string;
+  notes: string[];
+}
+
 export interface PlatformStatusResponse extends ApiResponseMetadata {
   status: "ok";
   topology_name: "platform";
   summary: string;
   components: PlatformComponentStatus[];
+  read_paths?: PlatformReadPathStatus[];
 }
 
 export interface DeviceRecord {
@@ -200,6 +219,7 @@ export interface PolicyRecord {
 }
 
 export interface PolicyHistorySnapshotRecord {
+  snapshot_id: string;
   persisted_at: string;
   observed_at: string | null;
   data_status: "live" | "degraded";
@@ -499,7 +519,13 @@ export interface CapabilityRecord {
   >;
 }
 
+export type CapabilityRecordIdentityTuple = Pick<
+  CapabilityRecord,
+  "vendor" | "platform" | "domain" | "feature" | "version_scope"
+>;
+
 export interface DryRunReadinessPrerequisite {
+  item_id?: string | null;
   prerequisite:
     | "inventory_read_model"
     | "topology_comparison_evidence"
@@ -526,6 +552,7 @@ export interface DryRunReadinessPrerequisite {
 }
 
 export interface DryRunReadinessBlocker {
+  item_id?: string | null;
   blocker:
     | "workflow_lifecycle_contract_missing"
     | "dry_run_contract_missing"
@@ -560,6 +587,7 @@ export interface DryRunReadinessBlocker {
 }
 
 export interface DryRunReadinessAssessmentArea {
+  item_id?: string | null;
   area:
     | "model_maturity"
     | "history_maturity"
@@ -594,7 +622,7 @@ export interface CapabilitiesListResponse extends ApiResponseMetadata {
   data_status: "placeholder" | "bounded_matrix";
   summary: string;
   count: number;
-  readiness_snapshot_id: string | null;
+  readiness_snapshot_id?: string | null;
   readiness_persisted_at?: string | null;
   domain_counts: Record<string, number>;
   support_counts: Record<string, number>;

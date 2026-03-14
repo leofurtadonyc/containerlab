@@ -44,129 +44,22 @@ this candidate list.
 
 ## Candidate List
 
-At this point, only one primary candidate and one smaller follow-on candidate
-remain justified.
+At this point, no immediate implementation candidate remains justified.
 
-## Candidate 1
+The current repository already exposes the persisted anchors that earlier
+planning text had treated as missing on the comparison, readiness-response,
+and embedded history-support surfaces needed for bounded `Phase 2` use.
 
-### `expose_explicit_persisted_anchor_ids_for_identity_weak_comparison_readiness_and_history_support_surfaces`
+What remains is one conditional future candidate.
 
-This is the smallest real implementation candidate.
-
-### Why this is the smallest candidate
-
-The refined blocker set already narrowed the remaining must-fix gap to missing
-citation-grade source identity and explicit anchor exposure for still-weak
-current surfaces.
-
-The code now shows that several of the required anchors already exist in backend
-persistence or response-builder inputs, but the current API contracts do not
-surface them.
-
-Examples:
-
-- comparison responses in
-  [platform/app-api/src/app_api/schemas/devices.py](platform/app-api/src/app_api/schemas/devices.py),
-  [platform/app-api/src/app_api/schemas/topology.py](platform/app-api/src/app_api/schemas/topology.py),
-  and [platform/app-api/src/app_api/schemas/policies.py](platform/app-api/src/app_api/schemas/policies.py)
-  expose timestamps such as `comparison_persisted_at`, `current_persisted_at`,
-  and `previous_persisted_at`, but not the persisted snapshot IDs that those
-  comparisons actually rest on
-- readiness support in
-  [platform/app-api/src/app_api/schemas/capabilities.py](platform/app-api/src/app_api/schemas/capabilities.py)
-  exposes only `readiness_persisted_at`, while
-  [platform/app-api/src/app_api/persistence/readiness.py](platform/app-api/src/app_api/persistence/readiness.py)
-  and [platform/app-api/src/app_api/persistence/tables.py](platform/app-api/src/app_api/persistence/tables.py)
-  show that a durable readiness snapshot ID already exists underneath
-- embedded history-support summaries and comparisons in
-  [platform/app-api/src/app_api/models/workflow.py](platform/app-api/src/app_api/models/workflow.py)
-  and [platform/app-api/src/app_api/models/audit.py](platform/app-api/src/app_api/models/audit.py)
-  carry timestamps but still hide the stronger persisted snapshot or sync-run
-  anchors that [platform/app-api/src/app_api/persistence/history.py](platform/app-api/src/app_api/persistence/history.py)
-  already loads
-
-### Why docs and schemas are no longer enough
-
-The docs already say which current surfaces are explanatory only, which inherit
-meaning from stronger anchors, and which remain identity-weak.
-
-That clarification is already complete.
-
-What is still missing is not meaning.
-
-What is still missing is field-level anchor exposure in the implemented backend
-contracts.
-
-Without implementation help, later citation still has to rely on:
-
-- timestamps instead of explicit persisted snapshot IDs
-- projection envelopes instead of underlying sync-run or snapshot anchors
-- readiness timestamp pointers instead of the actual readiness snapshot record
-
-That remaining gap cannot be closed further through wording alone because the
-API contracts simply do not carry the needed anchor fields today.
-
-### Smallest concrete implementation shape
-
-If this candidate is chosen later, the smallest honest implementation would be
-to expose already-existing anchor IDs, not to redesign persistence.
-
-Likely examples:
-
-- add persisted snapshot ID fields to current-versus-latest-persisted
-  comparison responses for inventory, topology, and policy
-- add compared snapshot ID fields to persisted-versus-previous policy history
-  comparison responses
-- add readiness snapshot ID exposure beside `readiness_persisted_at`
-- add underlying sync-run or snapshot anchor IDs to embedded history-support
-  summaries and comparison attachments where those anchors already exist in the
-  loaded backend models
-
-### Blast radius
-
-This is bounded.
-
-Expected touched areas:
-
-- backend response schemas in
-  [platform/app-api/src/app_api/schemas/devices.py](platform/app-api/src/app_api/schemas/devices.py),
-  [platform/app-api/src/app_api/schemas/topology.py](platform/app-api/src/app_api/schemas/topology.py),
-  [platform/app-api/src/app_api/schemas/policies.py](platform/app-api/src/app_api/schemas/policies.py),
-  and [platform/app-api/src/app_api/schemas/capabilities.py](platform/app-api/src/app_api/schemas/capabilities.py)
-- backend service builders in
-  [platform/app-api/src/app_api/services/devices.py](platform/app-api/src/app_api/services/devices.py),
-  [platform/app-api/src/app_api/services/topology.py](platform/app-api/src/app_api/services/topology.py),
-  [platform/app-api/src/app_api/services/policies.py](platform/app-api/src/app_api/services/policies.py),
-  [platform/app-api/src/app_api/services/capabilities.py](platform/app-api/src/app_api/services/capabilities.py),
-  [platform/app-api/src/app_api/services/workflow_history.py](platform/app-api/src/app_api/services/workflow_history.py),
-  and [platform/app-api/src/app_api/services/audit_history.py](platform/app-api/src/app_api/services/audit_history.py)
-- frontend contract types in
-  [platform/app-web/src/api/contracts.ts](platform/app-web/src/api/contracts.ts)
-  plus only the read-only views that display the affected evidence context
-
-Expected untouched areas:
-
-- collector logic
-- workflow-owned storage
-- workflow behavior
-- audit-linkage persistence
-- phase labeling
-
-### Sequencing note
-
-If any implementation happens next, this should be first.
-
-It is the smallest change that directly serves the one remaining active
-must-fix blocker without broadening the scope into new history models or deeper
-policy truth work.
-
-## Candidate 2
+## Conditional Candidate
 
 ### `add_snapshot_scoped_or_deterministic_item_ids_for_readiness_and_capability_records`
 
-This is a smaller secondary candidate, not the first choice.
+This is the only remaining small candidate, but it is not the next step by
+default.
 
-### Why it remains a candidate
+### Why it is only conditional now
 
 The current readiness and capability items still lack explicit item identity.
 
@@ -184,36 +77,50 @@ Examples:
   stores readiness items as embedded JSON inside a snapshot, which preserves the
   snapshot but not an explicit per-item citation key
 
-### Why docs and schemas are no longer enough
+The residual gap is now narrower than the earlier planning slice assumed.
 
-The docs already say these items are identity-weak.
+The current code and docs already expose:
 
-But a later citation consumer still cannot reference an exact blocker,
-prerequisite, assessment area, or capability item through a concrete field in
-the implemented API.
+- comparison snapshot anchors on current inventory, topology, and policy
+  comparison surfaces
+- readiness response-level anchor exposure through `readiness_snapshot_id`
+- embedded history-support comparison or correlation anchors where the current
+  models already carry them
 
-Natural names alone are not enough because they do not express one explicit
-record key bound to one snapshot or one stable capability identity contract.
+So the remaining gap is no longer broad anchor exposure.
 
-So this gap also requires implementation if the repository decides those items
-must become citeable in the current product slice.
+It is limited to non-persisted readiness child items and capability items that
+still do not have standalone item IDs.
 
-### Why this is not the first implementation choice
+### Why docs are enough for now
 
-This candidate is slightly larger and more design-sensitive than Candidate 1.
+The current product slice uses those items as bounded planning-support context,
+not as standalone workflow-grade citation targets.
 
-It requires choosing one of the following explicitly.
+Current response-level and snapshot-level anchors are already strong enough to
+support routine `Phase 2` read-only use without inventing new item contracts.
 
-- deterministic capability keys
-- snapshot-scoped readiness item keys
-- both
+So the honest next step is to reconcile the planning docs and stop unless a
+concrete future consumer requires standalone item citation.
 
-That is still bounded, but it is a stronger contract choice than simply exposing
-already-existing anchor IDs.
+### Smallest safe future design if a consumer appears
+
+If later work genuinely needs standalone item-level citation, keep the design
+bounded.
+
+- readiness blocker, prerequisite, and assessment-area IDs should be
+  snapshot-scoped keys derived from `readiness_snapshot_id` plus the bounded
+  natural key already exposed by each item
+- capability item IDs should be deterministic keys derived from the stable
+  vendor, platform, domain, feature, and version scope already used by the
+  current record shape
+- these IDs should remain descriptive read-side identity only; they must not be
+  reinterpreted as workflow-owned anchors, chronology roots, or new persistence
+  families
 
 ### Blast radius
 
-This is still bounded, but larger than Candidate 1.
+This remains bounded.
 
 Expected touched areas:
 
@@ -223,17 +130,18 @@ Expected touched areas:
 
 Expected untouched areas:
 
+- comparison responses that already expose anchor IDs
 - collector logic
 - workflow-owned storage
-- policy ingestion depth
+- workflow-owned retrieval
 - workflow-grade history design
 
 ### Sequencing note
 
-Treat this as second only if Candidate 1 proves insufficient.
+Do not implement this next by default.
 
-If exposing the existing persisted anchors solves the practical citation problem
-for the next bounded cycle, this candidate can stay deferred.
+Only reopen it if a later bounded consumer cannot operate honestly with the
+already exposed response-level or snapshot-level anchors.
 
 ## Explicit Non-Candidates For The Immediate Next Step
 
@@ -243,38 +151,36 @@ implementation candidate now.
 ### Broader durable history query and retention work
 
 Not the smallest candidate because the refined blocker set already classifies it
-as important but not blocking, and the current identity gap can be attacked more
-directly through anchor exposure first.
+as important but not blocking, and the current residual identity question is
+limited to later consumer-driven readiness or capability item citation.
 
 ### Broad non-sync history hardening
 
 Not the smallest candidate because the current readiness-history and derived
 audit-envelope semantics are already clarified enough to act as guardrails.
 
-Only the narrow anchor-exposure subset belongs in Candidate 1.
+Only a later concrete consumer would justify reopening the conditional
+item-identity candidate above.
 
 ### Richer policy truth where stable Nokia evidence exists
 
 Not the smallest candidate because current policy depth remains a later-phase
 truth concern and the current lab still exposes an honest live-empty posture.
 
-The immediate blocker inside `Phase 2` is still comparison and anchor identity,
-not broader policy-domain truth.
+The immediate question inside `Phase 2` is no longer anchor exposure.
+
+It is whether any later consumer truly needs standalone readiness or capability
+item identity beyond the anchors the product already exposes.
 
 ## Conservative Bottom Line
 
-If the repository needs one smallest real implementation candidate next, it is:
-
-- `expose_explicit_persisted_anchor_ids_for_identity_weak_comparison_readiness_and_history_support_surfaces`
-
-That candidate is the smallest because the anchors already exist in backend
-persistence or service inputs, the docs already clarified their meaning, and the
-remaining problem is simply that the implemented contracts still do not expose
-them.
-
-If a second candidate is needed later, it is:
+If the repository ever needs one smallest remaining identity candidate later,
+it is:
 
 - `add_snapshot_scoped_or_deterministic_item_ids_for_readiness_and_capability_records`
 
-Everything broader than that should remain deferred until this smaller anchor
-and item-identity question is either closed or proven insufficient.
+That candidate is conditional, not immediate.
+
+No new implementation slice is justified until a concrete bounded consumer
+shows that the already exposed response-level and persisted anchors are
+insufficient.

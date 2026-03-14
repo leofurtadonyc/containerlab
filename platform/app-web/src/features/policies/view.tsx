@@ -1100,8 +1100,10 @@ export function PoliciesView() {
           {data.history.recent_snapshots.length > 0 ? (
             <ul className="notes-list">
               {data.history.recent_snapshots.map((entry) => (
-                <li key={entry.persisted_at}>
+                <li key={entry.snapshot_id}>
                   <strong>{formatDateTime(entry.persisted_at)}</strong>
+                  {" • anchor "}
+                  <IdentifierChip value={entry.snapshot_id} />
                   {" • "}
                   {formatLabel(entry.data_status)}
                   {" • observed "}

@@ -25,6 +25,7 @@ Operators need a time-series and event dashboard view that is decoupled from the
 - mounts: `./grafana/provisioning:/etc/grafana/provisioning`, `./grafana/dashboards:/etc/grafana/dashboards`, `./grafana/data:/var/lib/grafana`
 - persistence: host-backed Grafana state under `./grafana/data`
 - startup posture: the local image now validates the mounted provisioning files and dashboards directory, repairs ownership and write access on the mounted Grafana data path when the container starts as root, verifies that the `grafana` user can write that path, and then delegates to the upstream runtime as `grafana`
+- health visibility: the packaged runtime now also exposes a bounded Docker health check against `/api/health`
 - dependencies: Prometheus
 
 ## Integration points
@@ -44,3 +45,4 @@ Grafana is observability-only. The product UI is `app-web`. Do not build operato
 The local runtime image is intentionally narrow: it keeps repo-managed provisioning as the source of truth, but fails fast when the provisioning contract is broken.
 The local runtime now also normalizes ownership on the bind-mounted data directory so a fresh clone on another Linux host does not depend on pre-created host-side `grafana` UID ownership just to start.
 When provisioning or dashboard files change, reconfigure the platform topology and rerun `../scripts/verify-core-runtime.sh` to confirm the mounted provisioning contract still loads cleanly.
+The Docker health check proves packaged API readiness only. Provisioning drift recovery, backup automation, external auth integration, and broader dashboard-lifecycle hardening remain outside the current runtime contract.

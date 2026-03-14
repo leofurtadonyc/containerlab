@@ -70,6 +70,14 @@ class BackendTopologyDeliveryEnvelope(BaseModel):
     delivery_status: Literal["live_ready", "partial", "failed"]
     destination_endpoint: str
     model_family: Literal["topology"]
+    configured_target_count: int
+    observed_target_count: int
+    collection_success_count: int
+    collection_partial_count: int
+    collection_failure_count: int
+    oldest_observed_at: datetime | None = None
+    newest_observed_at: datetime | None = None
+    degraded_scope_summary: str
     topology_id: str
     topology_name: str
     node_count: int
@@ -88,9 +96,12 @@ class TopologyFlowSummary(BaseModel):
 
     target_count: int
     planned_paths: int
+    observed_target_count: int
     collection_success_count: int
     collection_failure_count: int
     partial_collection_count: int
+    oldest_observed_at: datetime | None = None
+    newest_observed_at: datetime | None = None
     normalized_node_count: int
     normalized_link_count: int
     inferred_link_count: int

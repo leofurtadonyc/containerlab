@@ -1,5 +1,7 @@
 """Inventory normalization for live Nokia inventory records."""
 
+from datetime import datetime
+
 from gnmi_collector.models.inventory import InventoryRawRecord, NormalizedInventoryRecord
 
 
@@ -45,3 +47,13 @@ def map_inventory_record(raw_record: InventoryRawRecord) -> NormalizedInventoryR
         source_target=raw_record.target_name,
         notes=notes,
     )
+
+
+def derive_inventory_observed_range(
+    raw_records: list[InventoryRawRecord],
+) -> tuple[datetime | None, datetime | None]:
+    """Return the oldest and newest observed timestamps across inventory records."""
+    observed_values = [record.observed_at for record in raw_records if record.observed_at is not None]
+    if not observed_values:
+        return None, None
+    return min(observed_values), max(observed_values)

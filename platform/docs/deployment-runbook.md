@@ -112,6 +112,7 @@ After deployment, run both verification steps before treating the platform as us
 ```
 
 These are required, not optional, for the current bounded operational slice.
+If either script fails, stop there and treat the deployment as not yet usable until the failing runtime contract is understood.
 
 ## What The Verification Scripts Prove
 
@@ -120,10 +121,17 @@ These are required, not optional, for the current bounded operational slice.
 This now validates:
 
 - Postgres readiness and expected schema presence
-- `app-api` startup-contract readiness and HTTP health
-- `app-web` startup-contract readiness and HTTP availability
-- Prometheus readiness and live scrape target posture
-- Grafana API health, provisioned datasource presence, and provisioned overview dashboards
+- Postgres Docker health visibility for the packaged runtime
+- Prometheus Docker health visibility and readiness
+- Grafana Docker health visibility and API readiness
+- `gnmi-collector` startup-contract readiness and metrics availability
+- `app-api` startup-contract readiness, HTTP health, and metrics availability
+- `app-web` startup-contract readiness, static HTTP availability, and `/api` proxy reachability to `app-api`
+- Prometheus live scrape target posture for the current real targets
+- read-side API contract sanity for platform status, devices, topology, policies, and capabilities, now including bounded `read_paths` coverage and freshness fields plus capability vendor-posture and roadmap rollups
+- dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts, now including collector observation-age, topology single-sided-link, and policy detail-ready signals used by the platform overview dashboard
+- bounded warnings and notices when current read-side responses fall back to persisted data, become blocked, expose non-ok read-path posture, or surface other degraded-but-honest states such as partial topology and aggregate-only policy evidence
+- Grafana provisioned datasource presence and provisioned overview dashboards
 
 ### `verify-odl-auth.sh`
 
@@ -150,12 +158,12 @@ Expected current posture:
 - `clab-platform-app-api` should be `Up ... (healthy)`
 - `clab-platform-gnmi-collector` should be `Up ... (healthy)`
 - `clab-platform-app-web` should be `Up ... (healthy)`
-- `clab-platform-postgres` should be `Up ...`
-- `clab-platform-prometheus` should be `Up ...`
-- `clab-platform-grafana` should be `Up ...`
+- `clab-platform-postgres` should be `Up ... (healthy)`
+- `clab-platform-prometheus` should be `Up ... (healthy)`
+- `clab-platform-grafana` should be `Up ... (healthy)`
 - `clab-platform-odl` should be `Up ...`
 
-Only `app-api`, `gnmi-collector`, and `app-web` currently expose Docker health checks. The other services are validated through bounded startup scripts and the repo verification flow instead.
+`app-api`, `gnmi-collector`, `app-web`, `postgres`, `prometheus`, and `grafana` now expose bounded Docker health checks. `odl` remains outside that contract and is still validated by `./scripts/verify-odl-auth.sh` plus the bounded platform-health probe surfaced through `app-api`.
 
 ### HTTP Endpoints
 
@@ -172,9 +180,15 @@ Useful spot checks:
 
 ```bash
 curl -s http://localhost:8000/api/v1/health | python -m json.tool
+curl -s http://localhost:8088/api/v1/health | python -m json.tool
 curl -s http://localhost:8000/api/v1/platform/status | python -m json.tool
+curl -s http://localhost:8000/api/v1/devices | python -m json.tool
+curl -s http://localhost:8000/api/v1/topology | python -m json.tool
+curl -s http://localhost:8000/api/v1/policies | python -m json.tool
+curl -s http://localhost:8000/api/v1/capabilities | python -m json.tool
 curl -s http://localhost:9090/-/ready
 curl -s http://localhost:3000/api/health
+curl -s http://localhost:9804/metrics | head
 ```
 
 ### Product Sanity Checks
@@ -194,6 +208,32 @@ What healthy means here:
 - the response shape matches the current bounded contracts
 - live versus persisted-fallback posture is explicit where relevant
 - empty or partial data remains possible and may still be healthy if it is honest about current evidence limits
+
+### Verification Warnings
+
+`./scripts/verify-core-runtime.sh` now distinguishes between hard failures and bounded warnings.
+
+- hard failures still stop the deployment from being treated as usable
+- warnings call out degraded-but-honest current postures such as persisted fallback, blocked read-side evidence, or bounded policy and topology limits that remain visible by design
+- notices now also call out bounded read-path attention states such as single-sided topology evidence or zero policy detail-ready targets when those conditions are real
+- a warning does not imply workflow semantics, remediation intent, or automatic rollback; it is an operator cue to inspect current truth posture more carefully
+
+## What Remains Bootstrap-Grade
+
+The current hardening is still intentionally bounded. Keep these limits explicit:
+
+- Docker health checks prove packaged startup and local readiness, not deep semantic correctness or full recovery behavior
+- Postgres, Prometheus, and Grafana remain single-instance services backed by host-mounted workspace data rather than backup-managed or HA-managed storage
+- verification still assumes the documented Linux, Docker, and Containerlab path with repo-managed bind mounts
+- TLS, external identity, secret lifecycle hardening, backup automation, and disaster recovery remain outside the current runtime contract
+
+Failures that still remain outside current coverage:
+
+- semantic validation of every Grafana panel query, threshold, or operator interpretation path
+- protocol-complete topology truth, path-computation truth, or controller-grade topology verification
+- deep per-policy operational truth beyond the current bounded aggregate and static-policy-aware slice
+- backup, restore, disaster recovery, or restart-orchestration validation
+- automatic diagnosis or remediation of degraded collector, backend, or controller states
 
 ## Standard Replacement Workflow
 
@@ -271,6 +311,27 @@ What to look for:
 - invalid env assumptions
 - warm-up failures that point to a bounded read-side dependency problem
 
+### `postgres` Never Becomes Healthy
+
+Typical signals:
+
+- `docker ps` shows `clab-platform-postgres` stuck in `starting` or restarting
+- `verify-core-runtime.sh` fails before schema verification
+
+First checks:
+
+```bash
+docker logs clab-platform-postgres --tail 200
+docker inspect clab-platform-postgres --format '{{json .State.Health}}'
+```
+
+What to look for:
+
+- missing `POSTGRES_DB`, `POSTGRES_USER`, or `POSTGRES_PASSWORD`
+- broken or unwritable bind-mounted `platform/postgres/data`
+- broken `PGDATA` subdirectory contract under the mounted data root
+- missing init mount content under `platform/postgres/init`
+
 ### `gnmi-collector` Never Becomes Healthy
 
 Typical signals:
@@ -309,6 +370,29 @@ What to look for:
 - Nginx config validation errors
 - unexpected runtime image mismatch after a partial rebuild
 
+### The WebUI Loads But `/api` Fails Through The Proxy
+
+Typical signals:
+
+- `http://localhost:8088/` loads static UI assets
+- `http://localhost:8088/api/v1/health` fails or returns a gateway-style error
+- `verify-core-runtime.sh` fails on the app-web API proxy health step
+
+First checks:
+
+```bash
+docker logs clab-platform-app-web --tail 200
+docker logs clab-platform-app-api --tail 200
+curl -s http://localhost:8000/api/v1/health | python -m json.tool
+curl -s http://localhost:8088/api/v1/health | python -m json.tool
+```
+
+What to look for:
+
+- `app-api` is not actually healthy even though the WebUI static container is up
+- Nginx cannot resolve or reach `app-api:8000` on the platform topology network
+- a partial rebuild left the WebUI runtime current but the backend runtime stale or broken
+
 ### `verify-core-runtime.sh` Fails On Prometheus Or Grafana
 
 Typical signals:
@@ -330,6 +414,13 @@ What to look for:
 - missing or broken mounted config under `platform/prometheus/`
 - broken Grafana provisioning files or dashboard discovery
 - target scrape failures for `app-api` or `gnmi-collector`
+
+If the container health check is failing before the HTTP checks, inspect the packaged health state directly:
+
+```bash
+docker inspect clab-platform-prometheus --format '{{json .State.Health}}'
+docker inspect clab-platform-grafana --format '{{json .State.Health}}'
+```
 
 ### `verify-odl-auth.sh` Fails
 
@@ -404,6 +495,80 @@ Current reality:
 - normal container replacement within the same workspace preserves that bounded state
 - this is not the same thing as a full backup-and-restore story
 
+## Durability Boundary
+
+Treat recovery by data class rather than by container name.
+
+### What survives normal restart or replacement in the same workspace
+
+- Postgres keeps the bounded application-state records stored under `platform/postgres/data/pgdata`
+- those Postgres records include persisted normalized inventory, topology, and policy snapshots, sync-run history, and deduplicated readiness-support snapshots
+- Prometheus keeps its local TSDB under `platform/prometheus/data`
+- Grafana keeps its local state under `platform/grafana/data`
+- repo-owned build inputs, startup scripts, provisioning files, migrations, and dashboard JSON remain rebuildable from the repository itself
+
+### What is rebuilt from the repository on redeploy
+
+- all local service images rebuilt by `./scripts/build-images.sh`
+- the platform topology definition and container wiring under `topology.clab.yml`
+- app-api schema migration behavior through Alembic on startup
+- app-web static assets through the containerized frontend build
+- Grafana provisioning and dashboard definitions from repo files
+- Prometheus scrape configuration and rules from repo files
+
+### What must be re-collected or regenerated after restart
+
+- current live collector-backed inventory, topology, and policy evidence must be recollected from the lab or network targets
+- app-api in-memory metrics and warm-up state are regenerated on process restart
+- collector in-memory metrics snapshots are regenerated when the collector runs new inventory, topology, and policy collection flows
+
+### What does not recover automatically from repo files alone
+
+- persisted Postgres read-side history if `platform/postgres/data` is missing or replaced
+- Prometheus time-series history if `platform/prometheus/data` is missing or replaced
+- Grafana local state if `platform/grafana/data` is missing or replaced
+- any broader backup, restore-point, cross-host, HA, or disaster-recovery guarantees
+
+If you rebuild the environment from repository files on a new host without carrying over those host-backed data directories, the platform can be recreated, but the bounded persisted snapshots, readiness-support history, Prometheus TSDB, and Grafana local state start from a new empty baseline.
+
+## Recovery Semantics For Current Read-Side Data
+
+The current read-side recovery model is intentionally narrow.
+
+- persisted inventory, topology, and policy snapshots can serve as bounded fallback after restart only if the Postgres data directory is still present
+- sync-derived workflow-history and audit-history views recover only from the sync-run and readiness-snapshot records that already exist in Postgres
+- current-versus-latest-persisted and persisted-versus-previous comparison surfaces recover only when the required persisted snapshots still exist; they do not recreate older comparisons from Prometheus or Grafana state
+- readiness-support visibility recovers from the latest persisted readiness snapshot reference in Postgres, while current readiness metrics are regenerated by `app-api` during runtime
+- if Postgres data is lost, the platform can recollect live read-side data from the collector path, but earlier persisted comparison anchors, sync history, and readiness snapshot references are gone
+
+## After Restart Or Redeploy
+
+After a container restart, `clab deploy -t topology.clab.yml -c`, or other bounded recovery action, verify recovery in this order:
+
+1. run `./scripts/verify-core-runtime.sh`
+2. run `./scripts/verify-odl-auth.sh`
+3. confirm `serving_mode`, `data_status`, and any `served_persisted_at` fields on `/api/v1/devices`, `/api/v1/topology`, and `/api/v1/policies`
+4. confirm `/api/v1/capabilities` still exposes the latest `readiness_snapshot_id` and `readiness_persisted_at` when Postgres state was expected to survive
+5. confirm workflow-history and audit-history still show the expected bounded persisted evidence if Postgres state was expected to survive
+
+Useful checks:
+
+```bash
+curl -s http://localhost:8000/api/v1/devices | python -m json.tool
+curl -s http://localhost:8000/api/v1/topology | python -m json.tool
+curl -s http://localhost:8000/api/v1/policies | python -m json.tool
+curl -s http://localhost:8000/api/v1/capabilities | python -m json.tool
+curl -s http://localhost:8000/api/v1/workflow-history | python -m json.tool
+curl -s http://localhost:8000/api/v1/audit-history | python -m json.tool
+```
+
+Interpret the results honestly:
+
+- `live_collector` means current recollection succeeded
+- `persisted_fallback` means restart succeeded but live recollection is not currently available
+- `empty_scaffold` means neither live evidence nor a persisted fallback record is available
+- older `served_persisted_at` or readiness timestamps may be acceptable after restart, but they prove persisted fallback or persisted support rather than fresh live truth
+
 When the running stack drifts or you want to validate the repo-owned state again, prefer the documented replacement flow:
 
 ```bash
@@ -424,6 +589,13 @@ clab deploy -t topology.clab.yml -c
 - the platform provides bounded observability through Prometheus and Grafana
 - the current rebuild, deploy, and verification path is repeatable on a compatible host
 
+### Safe To Expect After Restart
+
+- the platform containers can be rebuilt and redeployed from repository source on a compatible Linux host
+- bounded persisted read-side state survives normal replacement only when the host-backed data directories are preserved
+- live inventory, topology, and policy may need to be recollected even when persisted fallback survives
+- sync-derived history and readiness-support history are only as durable as the retained Postgres data directory
+
 ### Not Safe To Say Right Now
 
 - that the platform executes workflows
@@ -431,6 +603,7 @@ clab deploy -t topology.clab.yml -c
 - that the platform provides full production hardening
 - that the platform provides full topology truth, full policy truth, or full multi-vendor parity
 - that the platform has complete recovery automation, complete backup discipline, or HA behavior
+- that repo files alone recreate prior persisted snapshots, prior Prometheus history, or prior Grafana local state without the matching data directories
 
 ## Related Documents
 

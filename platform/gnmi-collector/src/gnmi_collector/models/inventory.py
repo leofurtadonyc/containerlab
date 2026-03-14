@@ -1,5 +1,6 @@
 """Typed internal models for the inventory collection flow."""
 
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel
@@ -22,6 +23,7 @@ class InventoryRawRecord(BaseModel):
     platform_hint: str
     collection_status: Literal["success", "failure", "partial"]
     collection_error: str | None = None
+    observed_at: datetime | None = None
     raw_data: dict[str, str]
 
 
@@ -56,8 +58,17 @@ class BackendInventoryDeliveryEnvelope(BaseModel):
     delivery_status: Literal["live_ready", "partial", "failed"]
     destination_endpoint: str
     model_family: Literal["inventory"]
+    configured_target_count: int
+    observed_target_count: int
+    collection_success_count: int
+    collection_partial_count: int
+    collection_failure_count: int
+    oldest_observed_at: datetime | None = None
+    newest_observed_at: datetime | None = None
+    degraded_scope_summary: str
     record_count: int
     records: list[NormalizedInventoryRecord]
+    notes: list[str]
 
 
 class InventoryFlowSummary(BaseModel):
@@ -65,10 +76,14 @@ class InventoryFlowSummary(BaseModel):
 
     target_count: int
     planned_paths: int
+    observed_target_count: int
     collection_success_count: int
+    partial_collection_count: int
     collection_failure_count: int
     normalization_partial_count: int
     normalization_failure_count: int
+    oldest_observed_at: datetime | None = None
+    newest_observed_at: datetime | None = None
     normalized_record_count: int
     backend_ready_record_count: int
     backend_delivery_error_count: int

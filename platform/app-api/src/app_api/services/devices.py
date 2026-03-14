@@ -144,11 +144,22 @@ def _build_inventory_comparison_summary(
 
 def _build_inventory_evidence_confidence(
     *,
-    collector_status: str,
+    collector_snapshot: CollectorInventorySnapshot,
     persisted_at: datetime | None,
 ) -> EvidenceConfidenceSummary:
     """Describe how much confidence the current inventory response deserves."""
-    if collector_status == "live_normalized_feed":
+    coverage_note = (
+        f"Coverage currently includes {collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured inventory targets, "
+        f"with {collector_snapshot.collection_partial_count} partial and {collector_snapshot.collection_failure_count} failed targets."
+    )
+    freshness_note = None
+    if collector_snapshot.oldest_observed_at and collector_snapshot.newest_observed_at:
+        freshness_note = (
+            "Current collector inventory freshness window spans from "
+            f"{collector_snapshot.oldest_observed_at} to {collector_snapshot.newest_observed_at}."
+        )
+
+    if collector_snapshot.status == "live_normalized_feed":
         return EvidenceConfidenceSummary(
             source_posture="live_observed",
             evidence_kind="direct_observed",
@@ -162,9 +173,11 @@ def _build_inventory_evidence_confidence(
             notes=[
                 "This posture reflects normalized device records derived from live collector delivery rather than raw vendor payloads.",
                 "Capability posture remains bounded to the currently implemented read-only platform slice.",
+                coverage_note,
+                *( [freshness_note] if freshness_note else [] ),
             ],
         )
-    if collector_status == "partial_live_feed":
+    if collector_snapshot.status == "partial_live_feed":
         return EvidenceConfidenceSummary(
             source_posture="live_observed",
             evidence_kind="direct_observed",
@@ -178,6 +191,9 @@ def _build_inventory_evidence_confidence(
             notes=[
                 "The backend is serving live normalized device records.",
                 "Confidence is degraded because the collector explicitly reported a partial live feed.",
+                coverage_note,
+                collector_snapshot.degraded_scope_summary,
+                *( [freshness_note] if freshness_note else [] ),
             ],
         )
     if persisted_at is not None:
@@ -194,6 +210,7 @@ def _build_inventory_evidence_confidence(
             notes=[
                 "The served records still come from normalized observed inventory data, but not from the current live collector read.",
                 "Treat this response as stale relative to present network truth until live collection recovers.",
+                collector_snapshot.degraded_scope_summary,
             ],
         )
     return EvidenceConfidenceSummary(
@@ -319,7 +336,7 @@ def build_devices_list_response() -> DevicesListResponse:
     settings = get_settings()
     snapshot, inventory_devices, persisted_at, comparison = _build_inventory_devices()
     evidence_confidence = _build_inventory_evidence_confidence(
-        collector_status=snapshot.status,
+        collector_snapshot=snapshot,
         persisted_at=persisted_at,
     )
     items = [
@@ -341,14 +358,16 @@ def build_devices_list_response() -> DevicesListResponse:
         serving_mode = "live_collector"
         summary = (
             "Device inventory is backed by live read-only Nokia gNMI collection "
-            "from the configured management-plane targets."
+            "from the configured management-plane targets, with usable current evidence from "
+            f"{snapshot.observed_target_count} of {snapshot.configured_target_count} configured targets."
         )
     elif snapshot.status == "partial_live_feed":
         data_status = "degraded"
         serving_mode = "live_collector"
         summary = (
             "Device inventory is backed by live Nokia gNMI collection, but one or "
-            "more configured targets returned partial data."
+            "more configured targets returned partial data. "
+            f"Coverage currently includes {snapshot.observed_target_count} of {snapshot.configured_target_count} configured targets."
         )
     else:
         data_status = "degraded"

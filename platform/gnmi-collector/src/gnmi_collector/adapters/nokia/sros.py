@@ -84,11 +84,21 @@ class NokiaSrosAdapter:
                 platform_hint="sros",
                 collection_status="failure",
                 collection_error=str(exc),
+                observed_at=None,
                 raw_data={
                     "management_address": target.management_address,
                     "role": target.role or "unknown",
                 },
             )
+
+        timestamps = [
+            notification.get("timestamp")
+            for notification in result.get("notification", [])
+            if notification.get("timestamp") is not None
+        ]
+        observed_at = None
+        if timestamps:
+            observed_at = datetime.fromtimestamp(max(timestamps) / 1_000_000_000, tz=UTC)
 
         updates = {}
         for notification in result.get("notification", []):
@@ -126,6 +136,7 @@ class NokiaSrosAdapter:
                 if missing_fields
                 else None
             ),
+            observed_at=observed_at,
             raw_data=raw_data,
         )
 

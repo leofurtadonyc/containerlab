@@ -65,6 +65,26 @@ The platform should represent states such as:
 
 This rule prevents fake feature parity and keeps both APIs and UI behavior honest.
 
+## Capability Identity Posture
+
+The current capability matrix is a bounded product-trust surface, not a durable capability-item
+registry.
+
+At this stage, capability records are identified in the product by their existing backend tuple:
+
+- vendor
+- platform
+- domain
+- feature
+- version scope when relevant
+
+That tuple is sufficient for current Phase 2 operator interpretation and UI selection, but it is
+not a standalone backend capability-item ID, workflow handle, or cross-surface entitlement token.
+
+If stronger item identity becomes necessary later, it must be justified by a concrete consumer.
+Until then, the UI should expose the current tuple-scoped posture clearly rather than implying a
+stronger contract than the backend actually provides.
+
 ## Current Vs Future
 
 ### Current
@@ -79,6 +99,10 @@ This rule prevents fake feature parity and keeps both APIs and UI behavior hones
 - Juniper adapter structure
 - richer capability discovery logic
 - broader vendor support over time
+
+Juniper-target capability records may still appear in the matrix before implementation exists.
+Those records are roadmap-only direction and must not be interpreted as delivered Juniper support,
+device eligibility, or cross-vendor parity.
 
 ## Boundary Reminder
 

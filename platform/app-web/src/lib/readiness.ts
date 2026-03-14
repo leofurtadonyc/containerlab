@@ -33,6 +33,60 @@ export const FALLBACK_DRY_RUN_READINESS: DryRunReadinessSummary = {
   prerequisites: [],
 };
 
+export interface ReadinessItemIdentitySummary {
+  posture: "anchor_only" | "mixed_item_identity" | "item_identity_exposed";
+  exposedCount: number;
+  totalCount: number;
+  summary: string;
+  note: string;
+}
+
+function hasReadinessItemIdentity(value: { item_id?: string | null }): boolean {
+  return Boolean(value.item_id);
+}
+
+export function summarizeReadinessItemIdentitySupport(
+  value: DryRunReadinessSummary,
+): ReadinessItemIdentitySummary {
+  const items = [...value.assessment_areas, ...value.blockers, ...value.prerequisites];
+  const totalCount = items.length;
+  const exposedCount = items.filter((item) => hasReadinessItemIdentity(item)).length;
+
+  if (exposedCount === 0) {
+    return {
+      posture: "anchor_only",
+      exposedCount,
+      totalCount,
+      summary:
+        "The current readiness response relies on the persisted snapshot anchor as the strongest stable reference.",
+      note:
+        "Standalone blocker, prerequisite, and assessment-area identifiers are not exposed in this response. Treat the readiness snapshot anchor as the durable reference when it is available.",
+    };
+  }
+
+  if (exposedCount === totalCount) {
+    return {
+      posture: "item_identity_exposed",
+      exposedCount,
+      totalCount,
+      summary:
+        "Every returned readiness child record exposes a standalone identifier in addition to the response anchor.",
+      note:
+        "Those identifiers remain descriptive trust cues only. They do not imply workflow handles, approvals, or execution semantics.",
+    };
+  }
+
+  return {
+    posture: "mixed_item_identity",
+    exposedCount,
+    totalCount,
+    summary:
+      "This response mixes child records with and without standalone identifiers, so the response anchor remains the strongest cross-version reference.",
+    note:
+      "Mixed-version responses can expose some standalone readiness item identifiers while older records remain snapshot-scoped only. Use the readiness snapshot anchor as the stable fallback reference.",
+  };
+}
+
 export function describeDryRunReadinessStatus(value: string): string {
   switch (value) {
     case "bounded_readiness_support":
@@ -99,6 +153,7 @@ function normalizeReadinessPrerequisite(
   value: Partial<DryRunReadinessPrerequisite>,
 ): DryRunReadinessPrerequisite {
   return {
+    item_id: value.item_id ?? null,
     prerequisite: value.prerequisite ?? "capability_matrix_precision",
     status: value.status ?? "not_ready",
     support_posture: value.support_posture ?? "unknown",
@@ -115,6 +170,7 @@ function normalizeReadinessBlocker(
   value: Partial<DryRunReadinessBlocker>,
 ): DryRunReadinessBlocker {
   return {
+    item_id: value.item_id ?? null,
     blocker: value.blocker ?? "workflow_lifecycle_contract_missing",
     category: value.category ?? "contract",
     severity: value.severity ?? "major",
@@ -130,6 +186,7 @@ function normalizeReadinessAssessmentArea(
   value: Partial<DryRunReadinessAssessmentArea>,
 ): DryRunReadinessAssessmentArea {
   return {
+    item_id: value.item_id ?? null,
     area: value.area ?? "capability_maturity",
     status: value.status ?? "blocked",
     summary: value.summary ?? "No assessment summary was provided by the backend.",

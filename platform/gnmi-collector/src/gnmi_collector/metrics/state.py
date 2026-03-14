@@ -1,5 +1,6 @@
 """In-memory collector metrics snapshot cache."""
 
+from datetime import UTC, datetime
 from dataclasses import dataclass
 from threading import Lock
 from typing import TYPE_CHECKING
@@ -17,6 +18,7 @@ class CollectorMetricsSnapshot:
     inventory: "InventoryFlowSummary | None" = None
     topology: "TopologyFlowSummary | None" = None
     policy: "PolicyFlowSummary | None" = None
+    updated_at: datetime | None = None
 
 
 _lock = Lock()
@@ -31,6 +33,7 @@ def record_inventory_summary(summary: "InventoryFlowSummary") -> None:
             inventory=summary,
             topology=_snapshot.topology,
             policy=_snapshot.policy,
+            updated_at=datetime.now(UTC),
         )
 
 
@@ -42,6 +45,7 @@ def record_topology_summary(summary: "TopologyFlowSummary") -> None:
             inventory=_snapshot.inventory,
             topology=summary,
             policy=_snapshot.policy,
+            updated_at=datetime.now(UTC),
         )
 
 
@@ -53,6 +57,7 @@ def record_policy_summary(summary: "PolicyFlowSummary") -> None:
             inventory=_snapshot.inventory,
             topology=_snapshot.topology,
             policy=summary,
+            updated_at=datetime.now(UTC),
         )
 
 

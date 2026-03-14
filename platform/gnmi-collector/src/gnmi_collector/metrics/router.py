@@ -21,6 +21,7 @@ def get_metrics() -> Response:
     inventory_summary = snapshot.inventory
     topology_summary = snapshot.topology
     policy_summary = snapshot.policy
+    snapshot_updated_at = snapshot.updated_at
     target_count = len(config.targets)
     payload = "\n".join(
         [
@@ -29,6 +30,12 @@ def get_metrics() -> Response:
             (
                 "platform_gnmi_collector_info"
                 f'{{service="gnmi-collector",version="{settings.app_version}"}} 1'
+            ),
+            "# HELP platform_gnmi_collector_metrics_cache_updated_timestamp_seconds Last time the collector refreshed its cached summary metrics.",
+            "# TYPE platform_gnmi_collector_metrics_cache_updated_timestamp_seconds gauge",
+            (
+                "platform_gnmi_collector_metrics_cache_updated_timestamp_seconds "
+                f"{snapshot_updated_at.timestamp() if snapshot_updated_at else 0}"
             ),
             "# HELP platform_gnmi_collector_inventory_targets Configured inventory targets.",
             "# TYPE platform_gnmi_collector_inventory_targets gauge",
@@ -41,6 +48,15 @@ def get_metrics() -> Response:
             (
                 "platform_gnmi_collector_inventory_collection_success_total "
                 f"{inventory_summary.collection_success_count if inventory_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_inventory_collection_partial_total "
+                "Total partially collected live inventory records."
+            ),
+            "# TYPE platform_gnmi_collector_inventory_collection_partial_total counter",
+            (
+                "platform_gnmi_collector_inventory_collection_partial_total "
+                f"{inventory_summary.partial_collection_count if inventory_summary else 0}"
             ),
             (
                 "# HELP platform_gnmi_collector_inventory_collection_failure_total "
@@ -88,6 +104,33 @@ def get_metrics() -> Response:
                 f"{inventory_summary.backend_ready_record_count if inventory_summary else 0}"
             ),
             (
+                "# HELP platform_gnmi_collector_inventory_observed_targets "
+                "Configured inventory targets that returned usable live evidence."
+            ),
+            "# TYPE platform_gnmi_collector_inventory_observed_targets gauge",
+            (
+                "platform_gnmi_collector_inventory_observed_targets "
+                f"{inventory_summary.observed_target_count if inventory_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_inventory_oldest_observed_timestamp_seconds "
+                "Oldest current inventory observation timestamp across targets that returned live evidence."
+            ),
+            "# TYPE platform_gnmi_collector_inventory_oldest_observed_timestamp_seconds gauge",
+            (
+                "platform_gnmi_collector_inventory_oldest_observed_timestamp_seconds "
+                f"{inventory_summary.oldest_observed_at.timestamp() if inventory_summary and inventory_summary.oldest_observed_at else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_inventory_newest_observed_timestamp_seconds "
+                "Newest current inventory observation timestamp across targets that returned live evidence."
+            ),
+            "# TYPE platform_gnmi_collector_inventory_newest_observed_timestamp_seconds gauge",
+            (
+                "platform_gnmi_collector_inventory_newest_observed_timestamp_seconds "
+                f"{inventory_summary.newest_observed_at.timestamp() if inventory_summary and inventory_summary.newest_observed_at else 0}"
+            ),
+            (
                 "# HELP platform_gnmi_collector_inventory_backend_delivery_error_total "
                 "Total backend delivery preparation errors."
             ),
@@ -127,6 +170,15 @@ def get_metrics() -> Response:
                 f"{topology_summary.partial_collection_count if topology_summary else 0}"
             ),
             (
+                "# HELP platform_gnmi_collector_topology_observed_targets "
+                "Configured topology targets that returned usable live evidence."
+            ),
+            "# TYPE platform_gnmi_collector_topology_observed_targets gauge",
+            (
+                "platform_gnmi_collector_topology_observed_targets "
+                f"{topology_summary.observed_target_count if topology_summary else 0}"
+            ),
+            (
                 "# HELP platform_gnmi_collector_topology_normalized_nodes "
                 "Normalized topology nodes prepared by the mapping layer."
             ),
@@ -152,6 +204,24 @@ def get_metrics() -> Response:
             (
                 "platform_gnmi_collector_topology_single_sided_links "
                 f"{topology_summary.single_sided_link_count if topology_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_topology_oldest_observed_timestamp_seconds "
+                "Oldest current topology observation timestamp across targets that returned live evidence."
+            ),
+            "# TYPE platform_gnmi_collector_topology_oldest_observed_timestamp_seconds gauge",
+            (
+                "platform_gnmi_collector_topology_oldest_observed_timestamp_seconds "
+                f"{topology_summary.oldest_observed_at.timestamp() if topology_summary and topology_summary.oldest_observed_at else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_topology_newest_observed_timestamp_seconds "
+                "Newest current topology observation timestamp across targets that returned live evidence."
+            ),
+            "# TYPE platform_gnmi_collector_topology_newest_observed_timestamp_seconds gauge",
+            (
+                "platform_gnmi_collector_topology_newest_observed_timestamp_seconds "
+                f"{topology_summary.newest_observed_at.timestamp() if topology_summary and topology_summary.newest_observed_at else 0}"
             ),
             (
                 "# HELP platform_gnmi_collector_topology_nodes_by_state "
@@ -239,6 +309,24 @@ def get_metrics() -> Response:
                 f"{policy_summary.partial_collection_count if policy_summary else 0}"
             ),
             (
+                "# HELP platform_gnmi_collector_policy_oldest_observed_timestamp_seconds "
+                "Oldest current policy observation timestamp across targets that returned live evidence."
+            ),
+            "# TYPE platform_gnmi_collector_policy_oldest_observed_timestamp_seconds gauge",
+            (
+                "platform_gnmi_collector_policy_oldest_observed_timestamp_seconds "
+                f"{policy_summary.oldest_observed_at.timestamp() if policy_summary and policy_summary.oldest_observed_at else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_policy_newest_observed_timestamp_seconds "
+                "Newest current policy observation timestamp across targets that returned live evidence."
+            ),
+            "# TYPE platform_gnmi_collector_policy_newest_observed_timestamp_seconds gauge",
+            (
+                "platform_gnmi_collector_policy_newest_observed_timestamp_seconds "
+                f"{policy_summary.newest_observed_at.timestamp() if policy_summary and policy_summary.newest_observed_at else 0}"
+            ),
+            (
                 "# HELP platform_gnmi_collector_policy_observed_targets "
                 "Targets that returned bounded live policy observations."
             ),
@@ -255,6 +343,15 @@ def get_metrics() -> Response:
             (
                 "platform_gnmi_collector_policy_capable_targets "
                 f"{policy_summary.policy_capable_target_count if policy_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_policy_detail_ready_targets "
+                "Observed policy targets that currently have bounded per-target detail coverage."
+            ),
+            "# TYPE platform_gnmi_collector_policy_detail_ready_targets gauge",
+            (
+                "platform_gnmi_collector_policy_detail_ready_targets "
+                f"{policy_summary.detail_ready_target_count if policy_summary else 0}"
             ),
             (
                 "# HELP platform_gnmi_collector_policy_observed_policies "

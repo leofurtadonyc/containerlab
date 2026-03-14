@@ -30,6 +30,27 @@ These instructions do not cover:
 - backup and restore procedures
 - advanced workflow or action automation
 
+## Durability And Recovery Boundary
+
+The repository can rebuild the software and topology shape, but not every runtime artifact.
+
+Current durable state depends on the host-backed data directories under `platform/`:
+
+- `platform/postgres/data` preserves bounded normalized inventory, topology, and policy snapshots, sync-run history, and deduplicated readiness-support snapshots
+- `platform/prometheus/data` preserves Prometheus TSDB history
+- `platform/grafana/data` preserves Grafana local state
+
+Current repo-only rebuildable state includes:
+
+- service images rebuilt from local Dockerfiles
+- startup validators and topology wiring
+- app-api schema migration path
+- Prometheus config and rules
+- Grafana datasource and dashboard provisioning files
+- app-web build output regenerated during image build
+
+If you recreate the platform on another host from repository files alone and do not carry over those host-backed data directories, the platform will still come up, but persisted snapshots, readiness-support history, Prometheus TSDB history, and Grafana local state start from a new baseline.
+
 ## Safeguards And Boundaries
 
 Before recreating the platform elsewhere, preserve these rules:
@@ -51,6 +72,9 @@ Current tested assumptions:
 - Docker installed and working for the current user
 - Containerlab installed and working
 - outbound access to the required upstream image and package registries unless you already mirror or cache those artifacts internally
+
+The standard recreate flow does not require host-installed Node.js, `npm`, or `pytest`.
+For the current Phase 2 platform workflow, those toolchains run inside the service image builds or are replaced by the bounded post-deploy verification scripts.
 
 Current external dependencies still required during a fresh rebuild:
 
@@ -105,6 +129,9 @@ Current reproducibility protections in this build flow:
 - `app-web` builds with `npm ci` against the committed lock file
 - `app-api` and `gnmi-collector` build from committed `requirements.lock.txt` files with pinned `pip` and `setuptools`
 
+Operationally, this means a host without local `npm` can still rebuild `app-web`, because the Node toolchain runs inside the Docker build for that image.
+Likewise, routine recreate-time validation does not depend on host-installed `pytest`; the current bounded validation path is to rebuild the images, redeploy the topology, and rerun the verification scripts below.
+
 ## Deploy The Platform Topology
 
 From `platform/`, deploy the current topology:
@@ -130,14 +157,21 @@ After the topology comes up, run the bounded runtime verification scripts:
 ./scripts/verify-odl-auth.sh
 ```
 
+If you changed source files on a host that does not have local frontend or Python test tooling installed, use this rebuild-and-verify path rather than trying to validate the services with host-side `npm` or `pytest` commands.
+
 These checks currently validate:
 
 - Postgres readiness and expected schema presence
-- `app-api` health and packaged startup contract readiness
+- `app-api` health, packaged startup contract readiness, and metrics availability
 - `app-web` packaged startup contract readiness
 - Prometheus readiness and the current real scrape targets
+- read-side API contract sanity for platform status, devices, topology, policies, and capabilities
+- dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts
+- bounded degraded-state warnings for persisted-fallback, blocked, or otherwise degraded-but-honest read-side responses
 - Grafana datasource and dashboard provisioning
 - ODL credential rotation and bounded controller reachability through `app-api`
+
+After restart or redeploy, operators should also confirm whether the platform came back with live recollection or persisted fallback where relevant by checking `serving_mode`, `data_status`, `served_persisted_at`, and readiness timestamps through the product-owned API paths.
 
 ## Access The Running Services
 

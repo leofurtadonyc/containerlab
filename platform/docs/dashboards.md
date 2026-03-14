@@ -14,6 +14,7 @@ The platform currently has:
 - a real platform overview dashboard backed by Prometheus scrape health plus current `app-api` and `gnmi-collector` metrics
 - real topology and SR policy overview dashboards backed by current Prometheus metrics for those bounded live slices
 - the platform, topology, and SR policy dashboards now surface bounded persisted sync evidence plus clearer aggregate freshness, agreement, and evidence-gap cues where those backend and collector metrics honestly exist
+- the platform overview dashboard now also surfaces collector-backed target coverage, observation-age, and policy detail-gap cues for inventory, topology, and policy, using real numeric signals rather than trying to serialize product-facing degraded-scope prose into Grafana
 - a bounded post-deploy core-runtime regression check that now validates Grafana API health, the provisioned Prometheus datasource, and the provisioned overview dashboards alongside Postgres and Prometheus readiness
 - clearly marked placeholder dashboard files for the dashboard families that do not yet have real backing metrics
 
@@ -92,6 +93,7 @@ More specifically, `./scripts/verify-core-runtime.sh` currently validates only t
 - Grafana's health API responds
 - the provisioned Prometheus datasource is present
 - provisioned overview dashboards can be discovered through the Grafana API
+- the current `app-api` and `gnmi-collector` metrics contracts still expose the metric families the platform overview dashboard depends on most directly
 
 It does not yet validate:
 
@@ -125,6 +127,7 @@ Expected emphasis over time:
 - platform request and latency indicators as they become real
 - persisted inventory, topology, and policy sync freshness and result posture where those metrics exist
 - bounded cross-slice freshness and agreement cues where those aggregate metrics exist
+- collector-backed read-path coverage percentages, observation age, and target/detail gaps where those collector metrics exist
 
 ### Topology
 
@@ -162,6 +165,26 @@ Expected emphasis over time:
 - drift or mismatch indicators
 - persisted policy sync freshness and result posture where that evidence exists
 - bounded target-coverage and observed-versus-detailed evidence-gap cues where those aggregate metrics exist
+- bounded detail-ready target gaps where collector metrics honestly expose that narrower policy detail posture
+
+## Product Versus Observability Split
+
+The current read-path coverage improvement is intentionally split across layers.
+
+In `app-web`:
+
+- operators see backend-owned read-path summaries
+- degraded-scope explanations are shown as product trust cues
+- coverage and freshness remain tied to the bounded platform-status contract
+
+In Grafana:
+
+- operators see numeric observability signals only
+- coverage is represented through observed-versus-configured targets
+- freshness is represented through observation age from collector timestamps
+- degraded scope is approximated through numeric gaps such as missing targets, single-sided topology links, and policy detail-ready gaps
+
+Grafana does not attempt to reproduce the backend's human-readable degraded-scope summaries verbatim, because those are product semantics rather than durable metric labels.
 
 ### Change Validation
 
@@ -236,6 +259,7 @@ Dashboard design should therefore assume Prometheus-backed metrics first, with a
 - provisioning files exist
 - dashboard family folders exist
 - the platform, topology, and SR policy families now include real Prometheus-backed dashboards for the services that expose meaningful metrics today, with those dashboards now also surfacing bounded freshness, agreement, and evidence-gap cues where the supporting signals are real
+- the platform overview dashboard now also uses the newer collector coverage and observation-age metrics to make read-path gaps faster to interpret without turning Grafana into a product-status surrogate
 - placeholder dashboards still exist for families whose underlying metrics are not yet real
 - the platform observability shape is documented
 

@@ -32,7 +32,7 @@ Operators need a product UI that is purpose-built for network operations workflo
 - does not talk to Prometheus, Postgres, ODL, or the gNMI collector directly
 
 ## Current status
-The frontend now has a Vite + React + TypeScript scaffold, a feature-oriented `src/` layout, a typed API client layer for stable read-only backend contracts, and useful read-oriented product pages for overview, platform health, devices, topology, policies, workflow history, audit history, and capabilities. Those pages handle loading, error, empty, partial, and unsupported-support states explicitly, while execution workflow controls and richer audit semantics remain out of scope for the current phase.
+The frontend now has a Vite + React + TypeScript scaffold, a feature-oriented `src/` layout, a typed API client layer for stable read-only backend contracts, and useful read-oriented product pages for overview, platform health, devices, topology, policies, workflow history, audit history, and capabilities. Those pages handle loading, error, empty, partial, unsupported-support, and mixed-version states explicitly, while execution workflow controls and richer audit semantics remain out of scope for the current phase.
 
 ## Planned evolution
 - richer read-oriented pages backed by deeper backend APIs as those contracts become real
@@ -42,3 +42,6 @@ The frontend now has a Vite + React + TypeScript scaffold, a feature-oriented `s
 ## Notes and caveats
 `app-web` is the product. Grafana is for observability. Do not duplicate dashboard logic in the WebUI and do not build product workflows into Grafana.
 The packaged runtime is now stricter about local startup validation and container health visibility, but it is still bootstrap-grade in broader platform terms: it remains a single Nginx-served static build without TLS termination, runtime config reload orchestration, or broader frontend-serving hardening.
+Readiness trust cues stay bounded: the persisted readiness snapshot anchor is the strongest stable reference for that response, while any per-item readiness identifiers are optional descriptive cues only and must not be treated as workflow handles or execution objects.
+Capability trust cues stay bounded as well: the capabilities page now treats the existing vendor-platform-domain-feature tuple, plus version scope when present, as the current UI identity posture for a capability record. That helps operators distinguish version-scoped records without implying a stronger backend capability-item ID contract.
+Device capability posture remains intentionally coarser than the capabilities matrix. The devices page shows bounded support summaries only, while delivery tier, evidence basis, roadmap posture, and future-vendor direction remain explained on the dedicated capabilities page.

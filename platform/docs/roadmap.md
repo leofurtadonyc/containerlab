@@ -23,57 +23,59 @@ Most of the week's work has established:
 - sharper capability semantics plus a stricter descriptive dry-run-planning-readiness assessment
 - stronger platform, topology, and SR policy dashboards with bounded freshness, agreement, and evidence-gap cues where real metrics exist
 - a first bounded runtime-hardening slice with repo-built local images, startup-contract validation for the most important stateful services, and small post-deploy verification scripts for the core runtime and ODL auth path
+- accepted week 13 identity consolidation, with explicit persisted and response-level anchors now exposed where real records exist and no immediate capability item-ID follow-on justified for the current bounded product slice
+- bounded platform-status `read_paths` coverage, freshness, degraded-scope, and policy detail-ready posture now carried through the backend, surfaced in the product, and mirrored numerically in the platform overview dashboard
+- stronger automated verification, with backend and collector tests plus `verify-core-runtime` now checking the accepted week 13 identity, read-path, and roadmap-posture signals directly
 
-## Stricter Phase 2 Readiness Assessment
+## Updated Phase 2 Checkpoint Assessment
 
-The current evidence now supports **a stricter evidence-based assessment of eventual dry-run-phase planning only**, not dry-run implementation and not a phase transition.
+The current evidence supports a stricter checkpoint conclusion after the accepted
+week 13 work.
 
 Current maturity by area:
 
-- runtime maturity: strong for the current Phase 2 scope, because repo-built Postgres, Prometheus, and Grafana images now have bounded startup-contract validation and the live deployment passes both `verify-core-runtime` and `verify-odl-auth`, even though broader production-grade hardening still remains out of scope
-- truth maturity: mixed, because inventory is strong enough to inform future planning but topology remains intentionally inference-bounded and policy remains intentionally partial rather than workflow-grade pre-change truth
-- history maturity: mixed for read-side evidence but blocked for workflow implementation, because workflow-history and audit-history now include persisted snapshot context across inventory, topology, policy, and one bounded readiness-support snapshot event source, but still do not provide durable workflow lifecycle or operator-action history
-- policy maturity: mixed, because the platform now has aggregate counter evidence, bounded static-policy observations, per-target policy footprints, persisted comparison windows, and bounded `change_preview` support, but the live lab still presents a live-empty policy result and the policy slice is still not strong enough for validation-grade reasoning
-- capability maturity: strong for planning, because support state, implementation status, delivery tier, evidence basis, vendor posture, workflow-readiness interpretation, and blocker posture are now explicit enough to guide future planning safely
-- workflow-prerequisite clarity: strong for planning, because the repository now has an explicit ownership and sequencing plan for workflow-owned state across evidence boundaries, storage layers, API order, audit linkage, and persistence prerequisites
-- blocker maturity: blocked for implementation, because critical truth, history, and workflow-storage blockers still overlap with the `phase_transition` scope and remain too severe for any dry-run-phase move beyond tightly bounded planning discussion
+- runtime and verification maturity: strong for the current Phase 2 scope, because repo-built images, startup-contract validation, targeted pytest, and the live `verify-core-runtime` plus `verify-odl-auth` flow now prove the bounded runtime, read-path, and roadmap-posture contracts end to end
+- identity maturity: sufficient for bounded operations, because persisted and response-level anchors are explicit where real records exist and the accepted week 13 review closed the default capability item-ID lane with a documented no-change outcome
+- read-path maturity: mixed, because inventory is strong enough for routine bounded use, topology remains the weakest current live slice due to partial completeness and single-sided-link evidence, and policy remains intentionally partial and currently live-empty with zero detail-ready targets in the present lab
+- history maturity: mixed for read-side evidence but still blocked for workflow implementation, because workflow-history and audit-history now include bounded persisted context and anchors but still do not provide durable workflow lifecycle or operator-action history
+- capability maturity: strong for planning support and current product interpretation, because support state, implementation status, delivery tier, evidence basis, vendor posture, version scope, workflow-readiness interpretation, and blocker posture are now explicit enough for honest bounded use without implying workflow eligibility or Juniper parity
+- workflow-prerequisite clarity: still design-strong but implementation-deferred, because the repository has explicit ownership and sequencing guidance for future workflow-owned state while remaining fully in `Phase 2`
 
-Strongest blockers before any future dry-run phase:
+Strongest remaining evidence gap:
 
-- no durable workflow lifecycle model yet for requested, planned, dry-run, validation, approval, execution, success, failure, or rollback stages
-- no implemented workflow-owned storage, retrieval APIs, or audit-linkage records yet, even though design-only prerequisites are now clearer
-- topology and policy truth remain too partial for workflow-grade pre-change intelligence
-- history remains platform-read-side-derived rather than workflow-grade and operator-action-aware
-- blocker posture still shows contract, truth, and history gaps that remain too immature for any dry-run-phase entry
+- topology truth depth is now the clearest next bounded target because the live stack already exposes stable topology evidence plus a concrete, measurable gap through partial-completeness and single-sided-link signals
+- policy detail remains important but is not the best immediate next cycle, because the current lab still reports `no_policies_observed` and zero detail-ready targets, so a policy-first cycle would risk overreading absent source evidence
+- workflow implementation, dry-run behavior, and workflow-owned storage remain out of scope, but they are no longer the right immediate planning target for the next cycle either
 
-Bounded next steps for readiness only:
+Bounded next steps:
 
-- use the new workflow-owned-state prerequisite plan to define one tiny documentation-first and schema-first planning slice around `evidence_reference`, `audit_linkage`, and read-only workflow retrieval sequencing
-- continue truth and history hardening only where those planning artifacts expose a concrete evidence gap that would otherwise force guesswork
-- deepen policy and topology truth only where live evidence and stable normalized models already justify it
+- preserve `Phase 2 — read-only product foundation` and the `conditionally_ready_with_explicit_limits` operating boundary
+- keep the accepted week 13 identity no-change outcome closed unless a later concrete consumer proves the remaining item-level identity gap matters in practice
+- use the next cycle for one bounded topology truth-depth slice focused on endpoint-pairing and single-sided-link coverage semantics across collector, backend, product trust cues, and verification only where real signals already exist
 - preserve `Phase 2 — read-only product foundation` until workflow records, workflow-owned APIs, and validation outputs are all real
 
-## Recommendation For The Next Planning Cycle
+## Recommendation For The Next Bounded Cycle
 
-Recommendation: `begin_tightly_bounded_workflow_planning_only`
+Recommendation: `begin_one_bounded_topology_truth_depth_cycle`
 
-Interpret that recommendation narrowly:
+Interpret that recommendation narrowly.
 
 - keep the project fully in `Phase 2 — read-only product foundation`
-- use the next cycle for one documentation-first and schema-first workflow-planning slice only
+- do not reopen item-identity implementation by default
 - do not start workflow implementation, dry-run implementation, or any phase transition work
+- keep the backend as the brain, the WebUI as the product, Grafana as the observability layer, and ODL bounded
 
 Why this is the right next-cycle focus:
 
-- runtime hardening is now strong enough for the current bounded scope and is no longer the primary bottleneck for planning clarity
-- capability maturity and workflow-prerequisite clarity are now strong enough to support one disciplined planning slice without guessing
-- truth, policy, and history maturity are still too uneven for workflow implementation, so any broader move would overread the current evidence
+- the accepted week 13 work closed the default identity lane with a documented no-change decision rather than exposing a new must-build contract gap
+- runtime hardening and verification are now strong enough for the current bounded scope and are no longer the primary bottleneck
+- topology still exposes the clearest live truth gap that can be tightened honestly from current evidence, while policy remains more blocked by absent observed policy detail in the current lab
 
-The recommended next-cycle planning slice should stay limited to:
+The recommended next-cycle slice should stay limited to:
 
-- explicit `evidence_reference` identity and citation rules for persisted snapshots, bounded comparisons, and readiness snapshots
-- explicit `audit_linkage` identity and chronology rules for future workflow-owned records
-- read-only workflow retrieval sequencing only after future storage boundaries are clear on paper
+- tighter topology endpoint-coverage semantics from collector through backend-owned contracts
+- clearer bounded topology degraded-scope and single-sided-link trust cues in the product
+- targeted tests and runtime verification only for the real topology coverage signals added by that slice
 
 ## Phased Roadmap
 
@@ -141,9 +143,9 @@ Expected focus:
 
 Based on the current repo state, the next likely work should be:
 
-1. begin one tightly bounded workflow-planning slice only, focused on workflow-owned evidence-reference, audit-linkage, and retrieval-sequencing prerequisites in docs and schemas
-2. continue Phase 2 truth and history hardening only where that planning slice reveals a concrete evidence gap that cannot be resolved honestly on paper alone
-3. deepen the policy slice further only where stable Nokia evidence supports richer bounded read-only truth without crossing into write behavior
+1. preserve the current `conditionally_ready_with_explicit_limits` operating boundary and keep all near-term work inside the Phase 2 read-only safe-use envelope
+2. keep the accepted week 13 identity outcome closed by default; only reopen deterministic or snapshot-scoped readiness/capability item IDs if a concrete later consumer proves the existing anchors insufficient
+3. execute one bounded topology truth-depth slice next, targeting the single-sided-link and partial-completeness evidence gap before reconsidering broader policy deepening or any renewed workflow-planning lane
 
 ## Boundary Reminder
 
