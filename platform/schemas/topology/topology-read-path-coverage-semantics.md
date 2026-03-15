@@ -2,15 +2,25 @@
 
 ## Purpose
 
-This document defines the bounded topology coverage vocabulary that the week 14
-`Phase 2 - read-only product foundation` cycle should implement.
+This document defines the bounded topology coverage vocabulary for the accepted
+week 14 slice and the next narrower topology partiality follow-on inside
+`Phase 2 - read-only product foundation`.
 
-It exists to make one narrow part of the current topology slice clearer:
+The accepted week 14 slice made one narrow part of the current topology slice
+clearer:
 
 - endpoint pairing
 - single-sided inferred links
-- partial-completeness interpretation
 - the product-versus-observability split around those signals
+
+The next bounded follow-on exists to make one remaining weak area clearer
+without reopening the completed pairing work:
+
+- inference-boundedness
+- endpoint-coverage limits
+- collection degradation
+- why those three causes should not stay compressed into one broad
+  `completeness=partial` or `degraded_scope_summary` posture
 
 It does not authorize:
 
@@ -31,6 +41,128 @@ These rules are mandatory.
 - Coverage signals must not become workflow eligibility, drift verdicts, or
   validation status.
 - If a signal cannot be defined honestly from current live evidence, exclude it.
+
+## Topology Partiality Decomposition
+
+The next bounded follow-on should not replace `completeness=partial`.
+
+`partial` remains the top-level stop line that says the current topology slice
+is still bounded and not full topology truth.
+
+The next bounded follow-on should only decompose why the topology is partial.
+
+That decomposition should stay backend-owned and use only three bounded terms:
+
+- `inference_posture`
+- `endpoint_pairing_posture`
+- `collection_posture`
+
+These three terms separate three different things that are currently too easy
+to blur together.
+
+### Response-level term: `inference_posture`
+
+This term belongs on a backend-owned topology coverage summary.
+
+Allowed values:
+
+- `inferred`
+- `unknown`
+
+Definitions:
+
+- `inferred`: the emitted topology links remain bounded inferred topology links
+  rather than direct adjacency truth.
+- `unknown`: the current response cannot honestly classify the inference basis
+  of the emitted topology links from available normalized evidence.
+
+Explicit non-meanings:
+
+- `inferred` does not mean the topology is low quality; it means the current
+  topology slice is still inference-based.
+- `inferred` does not mean collection failed.
+- `unknown` does not imply controller truth exists elsewhere.
+
+### Response-level term: `endpoint_pairing_posture`
+
+This term remains the bounded endpoint-coverage dimension of topology
+partiality.
+
+It keeps the existing week 14 vocabulary rather than replacing it.
+
+Allowed values:
+
+- `paired`
+- `partially_paired`
+- `single_sided`
+- `unknown`
+
+Definitions:
+
+- `paired`: all emitted normalized links in the current response are classified
+  as `paired`.
+- `partially_paired`: the current response includes a mix of `paired` and
+  `single_sided` links.
+- `single_sided`: the current response emits link records, but none of those
+  links have paired endpoint evidence.
+- `unknown`: the current response cannot honestly summarize pairing posture from
+  the emitted normalized link evidence.
+
+Explicit non-meanings:
+
+- `paired` does not mean complete topology.
+- `partially_paired` does not mean a measured percentage of true topology
+  completeness.
+- `single_sided` does not mean the topology is unusable; it means endpoint
+  coverage remains weak.
+- `unknown` does not mean the platform knows a hidden topology and refuses to
+  show it.
+
+### Response-level term: `collection_posture`
+
+This term belongs on a backend-owned topology coverage summary.
+
+Allowed values:
+
+- `ok`
+- `degraded`
+- `blocked`
+- `unknown`
+
+Definitions:
+
+- `ok`: current topology collection completed without current target failures or
+  partial-collection evidence affecting the emitted live topology response.
+- `degraded`: the current response is still served, but current collection
+  counts or degraded-scope facts show partial collection or failed collection
+  for part of the topology path.
+- `blocked`: the current topology path cannot currently produce a live topology
+  result because collection is blocked.
+- `unknown`: the current response cannot honestly classify collection posture
+  from available normalized evidence.
+
+Explicit non-meanings:
+
+- `ok` does not mean complete topology truth.
+- `degraded` does not automatically mean the inferred links are wrong.
+- `blocked` does not replace `serving_mode`, fallback posture, or other
+  existing runtime-contract fields.
+
+### Relationship to `completeness`
+
+The follow-on should preserve this interpretation.
+
+- `completeness=partial` stays as the umbrella topology truth boundary.
+- `inference_posture` explains whether the current slice is still bounded by
+  inference.
+- `endpoint_pairing_posture` explains how much endpoint evidence supports the
+  emitted inferred links.
+- `collection_posture` explains whether the current collection window degraded
+  or blocked the live topology response.
+
+This means the topology can remain honestly `partial` even when
+`collection_posture=ok`, because inference-boundedness and endpoint coverage are
+separate from collection degradation.
 
 ## Vocabulary
 
@@ -64,38 +196,6 @@ Explicit non-meanings:
 - `single_sided` does not automatically mean broken forwarding.
 - `unknown` does not imply failure by itself.
 
-### Response-level term: `endpoint_pairing_posture`
-
-This term belongs on an aggregate topology coverage summary, not on one link.
-
-Allowed values:
-
-- `paired`
-- `partially_paired`
-- `single_sided`
-- `unknown`
-
-Definitions:
-
-- `paired`: all emitted normalized links in the current response are classified
-  as `paired`.
-- `partially_paired`: the current response includes a mix of `paired` and
-  `single_sided` links.
-- `single_sided`: the current response emits link records, but none of those
-  links have paired endpoint evidence.
-- `unknown`: the current response cannot honestly summarize pairing posture from
-  the emitted normalized link evidence.
-
-Explicit non-meanings:
-
-- `paired` does not mean complete topology.
-- `partially_paired` does not mean a measured percentage of true topology
-  completeness.
-- `single_sided` does not mean the topology is unusable; it means endpoint
-  coverage remains weak.
-- `unknown` does not mean the platform knows a hidden topology and refuses to
-  show it.
-
 ## Signals To Keep
 
 The following signals are already honest enough to preserve and extend.
@@ -109,13 +209,35 @@ The following signals are already honest enough to preserve and extend.
 - `newest_observed_at`
 - `completeness`
 - `degraded_scope_summary`
+- `endpoint_pairing_posture`
 - `single_sided_link_count`
 - per-link `endpoint_evidence_count`
 
 ## Signals To Add
 
-The week 14 implementation should add only the smallest new coverage signals
+The next bounded follow-on should add only the smallest new coverage signals
 that current live evidence can support honestly.
+
+### Bounded status fields
+
+These should be bounded status fields, not scores.
+
+- `inference_posture`
+- `collection_posture`
+
+Definitions:
+
+- `inference_posture`: backend-owned statement of whether the emitted topology
+  slice remains bounded by inference.
+- `collection_posture`: backend-owned statement of whether current collection
+  degradation is affecting the live topology response.
+
+Implementation status now:
+
+- not implemented yet in `gnmi-collector`
+- not implemented yet in `app-api`
+- not implemented yet in `app-web`
+- not implemented yet in Grafana or verifier behavior
 
 ### Numeric counts
 
@@ -134,7 +256,7 @@ Definitions:
 Do not add an `unknown_link_count` unless the runtime actually emits link
 records that can be honestly classified as `unknown`.
 
-Implementation status after the first two bounded slices:
+Implementation status after the accepted week 14 slice:
 
 - implemented now in `gnmi-collector`: per-link `endpoint_pairing_state` and
   `endpoint_evidence_count`
@@ -158,25 +280,6 @@ Implementation status after the first two bounded slices:
   bounded notices for backend-owned and collector-owned pairing signals,
   alongside collector and backend pytest coverage for the newer topology
   pairing contracts
-
-### Bounded status fields
-
-These should be bounded status fields, not scores.
-
-- `endpoint_pairing_state`
-- `endpoint_pairing_posture`
-
-These fields answer a narrow question:
-
-How much endpoint evidence supports the emitted inferred links in the current
-read-side topology slice.
-
-They do not answer:
-
-- whether the topology is operationally correct
-- whether protocol adjacency is validated
-- whether intent matches observed state
-- whether a workflow may proceed
 
 ### Prose-only notes
 
@@ -204,11 +307,16 @@ Collector ownership:
 - preserve current collection counts, freshness window, and degraded-scope
   summary
 
+Collector may later emit the bounded raw facts that allow the backend to derive
+`inference_posture` and `collection_posture`, but the backend remains the owner
+of those product-facing decomposition terms.
+
 Collector non-ownership:
 
 - do not define workflow meaning
 - do not define topology validation meaning
 - do not expose vendor-native evidence structures as the product contract
+- do not become the final owner of topology partiality decomposition semantics
 
 Collector metric semantics:
 
@@ -230,17 +338,24 @@ Backend ownership:
 - translate collector-side coverage signals into product-facing bounded topology
   semantics
 - expose explicit aggregate topology coverage summary on the topology response
+- decompose topology partiality into inference-boundedness, endpoint-coverage,
+  and collection-degradation dimensions without replacing `completeness`
 - preserve current evidence-confidence and serving-mode posture semantics
 
 Topology-response aggregate fields:
 
+- `coverage_summary.inference_posture`
 - `coverage_summary.endpoint_pairing_posture`
+- `coverage_summary.collection_posture`
 - `coverage_summary.paired_link_count`
 - `coverage_summary.single_sided_link_count`
 
 Current status:
 
-- implemented now in `app-api`
+- `endpoint_pairing_posture`, `paired_link_count`, and
+  `single_sided_link_count` are implemented now in `app-api`
+- `inference_posture` and `collection_posture` are not implemented yet in
+  `app-api`
 
 Per-link topology fields:
 
@@ -255,6 +370,8 @@ Backend non-ownership on this slice:
 
 - do not convert coverage posture into validation or drift results
 - do not infer complete topology from pairing improvements alone
+- do not collapse inference-boundedness and collection degradation back into one
+  broad topology-quality label
 
 ### 3. Backend-owned platform-status contract
 
@@ -266,13 +383,18 @@ Platform-status ownership:
 
 Topology read-path fields:
 
+- `inference_posture`
 - `endpoint_pairing_posture`
+- `collection_posture`
 - `paired_link_count`
 - `single_sided_link_count`
 
 Current status:
 
-- implemented now in `app-api`
+- `endpoint_pairing_posture`, `paired_link_count`, and
+  `single_sided_link_count` are implemented now in `app-api`
+- `inference_posture` and `collection_posture` are not implemented yet in
+  `app-api`
 
 Platform-status non-ownership:
 
@@ -289,10 +411,11 @@ WebUI ownership:
 
 WebUI interpretation rules:
 
-- Topology page may show `endpoint_pairing_posture`, `paired_link_count`,
-  `single_sided_link_count`, and per-link `endpoint_pairing_state`
-- Overview may show `endpoint_pairing_posture` plus the two counts as bounded
-  trust cues
+- Topology page may show `inference_posture`, `endpoint_pairing_posture`,
+  `collection_posture`, `paired_link_count`, `single_sided_link_count`, and
+  per-link `endpoint_pairing_state`
+- Overview may show `inference_posture`, `endpoint_pairing_posture`, and
+  `collection_posture` plus the two counts as bounded trust cues
 - Platform Health may show the same values only in the topology read-path row or
   read-path trust summary, not as a separate topology product analysis surface
 
@@ -301,6 +424,8 @@ WebUI non-ownership:
 - do not invent additional topology-quality labels
 - do not turn pairing posture into green or red workflow meaning
 - do not use pairing posture as a proxy for eligibility, approval, or validation
+- do not convert `inference_posture` or `collection_posture` into a topology
+  score
 
 ### 5. Grafana numeric observability views
 
@@ -316,6 +441,8 @@ Allowed Grafana signals:
 - paired-versus-single-sided share
 - backend-owned `endpoint_pairing_posture` labels only when projected directly
   from real metrics
+- backend-owned `inference_posture` and `collection_posture` labels only when
+  projected directly from real metrics
 - existing collector-versus-backend count deltas
 - existing freshness and sync-age signals
 
@@ -323,6 +450,8 @@ Grafana non-ownership:
 
 - do not render `endpoint_pairing_posture` as a product contract or workflow
   state
+- do not render `inference_posture` or `collection_posture` as a dashboard-only
+  taxonomy disconnected from the backend contract
 - do not invent dashboard-only pairing vocabulary beyond what backend-owned
   metrics already expose
 - do not duplicate backend `degraded_scope_summary` prose verbatim
@@ -339,21 +468,33 @@ Current verifier behavior:
 
 - continue warning when topology serving mode is fallback or blocked
 - continue noticing when `completeness=partial`
+- continue proving that the topology can be honestly partial even when current
+  collection posture is otherwise healthy
 - continue noticing when `endpoint_pairing_posture=partially_paired`
   or `endpoint_pairing_posture=single_sided`
 - continue proving the live presence of backend-owned topology coverage fields
   and backend plus collector pairing metrics as runtime-contract checks
+
+Next follow-on verifier behavior:
+
+- if `inference_posture` is implemented later, prove its presence as a runtime
+  contract field
+- if `collection_posture` is implemented later, notice degraded or blocked
+  collection posture without treating it as a topology validation verdict
 
 Verifier non-ownership:
 
 - do not fail the build because single-sided links exist in a bounded Phase 2
   slice
 - do not treat pairing posture as a validation verdict
+- do not fail the build only because topology remains inference-bounded
 
 ## Allowed Interpretations
 
 These interpretations are allowed.
 
+- `inference_posture=inferred` tells operators that the topology slice remains
+  bounded by inferred-link logic even if collection is otherwise healthy.
 - `paired_link_count` tells operators how many emitted inferred links are backed
   by both observed endpoints.
 - `single_sided_link_count` tells operators how many emitted inferred links are
@@ -364,6 +505,9 @@ These interpretations are allowed.
 - `endpoint_pairing_posture=single_sided` tells operators that the current
   topology slice has emitted inferred links, but none of them are backed by both
   observed endpoints.
+- `collection_posture=degraded` tells operators that current collection
+  degradation affected the live topology read path, which is a different problem
+  from inference-boundedness or single-sided endpoint evidence.
 - these signals improve trust interpretation inside the existing bounded inferred
   topology model.
 
@@ -374,16 +518,18 @@ These interpretations are forbidden.
 - do not interpret `paired` as protocol adjacency truth
 - do not interpret `paired` as end-to-end path correctness
 - do not interpret `paired` as controller agreement
+- do not interpret `inference_posture=inferred` as a collection failure label
 - do not interpret `partially_paired` as a measured completeness percentage for
   the whole network
 - do not interpret `single_sided` as a direct fault verdict
+- do not interpret `collection_posture=ok` as full topology truth
 - do not interpret any new coverage field as workflow readiness or workflow
   eligibility
 - do not interpret these signals as permission to leave `Phase 2`
 
-## Week 14 Implementation Shape
+## Completed Week 14 Slice
 
-The smallest honest week 14 implementation slice now does only this.
+The accepted week 14 implementation slice did only this.
 
 1. add explicit pairing vocabulary to collector delivery and topology product
    contracts
@@ -393,5 +539,22 @@ The smallest honest week 14 implementation slice now does only this.
    backend-owned topology and platform-status contracts
 4. mirror the counts numerically in Grafana
 5. keep verifier behavior notice-oriented rather than validation-oriented
+
+That completed slice should not be reopened by default.
+
+## Next Bounded Follow-On
+
+The next bounded follow-on should do only this.
+
+1. preserve `completeness=partial` as the umbrella topology truth boundary
+2. preserve the completed week 14 endpoint-pairing vocabulary as the
+  endpoint-coverage dimension
+3. add `inference_posture` so inference-boundedness is no longer compressed
+  into broad `partial` wording alone
+4. add `collection_posture` so collection degradation is no longer compressed
+  into broad `degraded_scope_summary` wording alone
+5. keep the backend as the owner of this decomposition, with Grafana limited to
+  numeric or projected observability signals and verifier behavior limited to
+  bounded runtime-contract checks and notices
 
 It should not do more than that.
