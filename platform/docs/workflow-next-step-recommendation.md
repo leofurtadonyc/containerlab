@@ -27,6 +27,17 @@ It does not authorize:
 
 Recommendation: `begin_one_bounded_topology_truth_depth_cycle`
 
+The current repository review in `platform/docs/topology-truth-depth-review.md`
+confirms that this recommendation is still correct.
+
+That review found that the strongest remaining live weakness is not missing
+topology structure in general. It is the narrower endpoint-pairing and
+single-sided-link coverage gap inside the already-real inferred topology slice.
+
+So the next cycle should remain tightly focused on explicit endpoint-pairing
+posture, single-sided-link coverage semantics, and sharper bounded trust cues,
+not on broad topology redesign.
+
 Interpret it narrowly.
 
 - stay fully in `Phase 2 — read-only product foundation`
