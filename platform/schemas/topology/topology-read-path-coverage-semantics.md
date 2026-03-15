@@ -154,8 +154,10 @@ Implementation status after the first two bounded slices:
   trust-cue consumption of these backend-owned typed fields
 - implemented now in Grafana: paired-link, single-sided-link, share, and
   backend-owned pairing-posture dashboard consumption from real metrics
-- still pending in later slices: any narrower verifier-specific refinement of
-  these backend-owned typed fields
+- implemented now in verifier and targeted tests: live runtime checks plus
+  bounded notices for backend-owned and collector-owned pairing signals,
+  alongside collector and backend pytest coverage for the newer topology
+  pairing contracts
 
 ### Bounded status fields
 
@@ -230,7 +232,7 @@ Backend ownership:
 - expose explicit aggregate topology coverage summary on the topology response
 - preserve current evidence-confidence and serving-mode posture semantics
 
-Planned topology-response aggregate fields:
+Topology-response aggregate fields:
 
 - `coverage_summary.endpoint_pairing_posture`
 - `coverage_summary.paired_link_count`
@@ -240,7 +242,7 @@ Current status:
 
 - implemented now in `app-api`
 
-Planned per-link topology fields:
+Per-link topology fields:
 
 - `endpoint_pairing_state`
 - `endpoint_evidence_count`
@@ -262,7 +264,7 @@ Platform-status ownership:
 - keep these values close to other bounded read-path cues such as target
   coverage, freshness window, and degraded scope
 
-Planned topology read-path fields:
+Topology read-path fields:
 
 - `endpoint_pairing_posture`
 - `paired_link_count`
@@ -333,13 +335,14 @@ Verifier ownership:
 - emit bounded notices for honest topology evidence limits
 - fail only on runtime-contract breakage, not on expected bounded partial truth
 
-Planned verifier behavior:
+Current verifier behavior:
 
 - continue warning when topology serving mode is fallback or blocked
 - continue noticing when `completeness=partial`
-- continue noticing when `single_sided_link_count > 0`
-- optionally add one notice when `endpoint_pairing_posture=partially_paired`
+- continue noticing when `endpoint_pairing_posture=partially_paired`
   or `endpoint_pairing_posture=single_sided`
+- continue proving the live presence of backend-owned topology coverage fields
+  and backend plus collector pairing metrics as runtime-contract checks
 
 Verifier non-ownership:
 
@@ -380,7 +383,7 @@ These interpretations are forbidden.
 
 ## Week 14 Implementation Shape
 
-The smallest honest week 14 implementation slice should therefore do only this.
+The smallest honest week 14 implementation slice now does only this.
 
 1. add explicit pairing vocabulary to collector delivery and topology product
    contracts

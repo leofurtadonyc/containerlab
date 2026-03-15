@@ -217,6 +217,7 @@ What healthy means here:
 - the response shape matches the current bounded contracts
 - live versus persisted-fallback posture is explicit where relevant
 - empty or partial data remains possible and may still be healthy if it is honest about current evidence limits
+- topology may still report `completeness=partial` and may honestly report `endpoint_pairing_posture=partially_paired` or `endpoint_pairing_posture=single_sided`; those are bounded evidence-depth cues, not validation failures
 
 ### Verification Warnings
 
@@ -225,6 +226,7 @@ What healthy means here:
 - hard failures still stop the deployment from being treated as usable
 - warnings call out degraded-but-honest current postures such as persisted fallback, blocked read-side evidence, or bounded policy and topology limits that remain visible by design
 - notices now also call out bounded read-path attention states such as partially-paired or single-sided topology endpoint coverage and zero policy detail-ready targets when those conditions are real
+- topology pairing notices mean the inferred topology slice still mixes stronger and weaker endpoint evidence; they do not mean the platform has proven an adjacency fault or protocol failure
 - a warning does not imply workflow semantics, remediation intent, or automatic rollback; it is an operator cue to inspect current truth posture more carefully
 
 ## What Remains Bootstrap-Grade

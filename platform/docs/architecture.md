@@ -95,6 +95,7 @@ Current read-model reality:
 
 - `/api/v1/devices` is backed by a bounded normalized live collector inventory path
 - `/api/v1/topology` is backed by a backend-owned normalized live topology model that explicitly marks partial and unknown knowledge
+- `/api/v1/topology` and `/api/v1/platform/status` now also expose bounded endpoint-pairing posture plus paired-versus-single-sided inferred-link counts so operators can interpret topology coverage depth without treating that slice as full topology truth
 - `/api/v1/policies` is backed by a backend-owned normalized live policy inventory model that explicitly marks support, observed, and unknown states
 - live collector-backed reads remain the primary path for devices, topology, and policy
 - inventory, topology, and policy snapshots are now persisted in Postgres along with sync-run records, and the API can fall back to the latest persisted normalized snapshot when the collector path is temporarily unavailable
@@ -110,6 +111,7 @@ Current truth and comparison semantics:
 - `persisted_fallback` means the live collector path is currently unavailable and the response is serving the latest persisted normalized snapshot instead
 - `inferred` currently applies most directly to parts of topology, where normalized links are derived from bounded interface-state interpretation rather than protocol-derived adjacency truth
 - `partial` means the contract is intentionally exposing bounded platform knowledge rather than claiming complete operational truth
+- `paired`, `partially_paired`, and `single_sided` now describe only how much endpoint evidence supports the emitted inferred links in the current topology response; they do not mean validated adjacency, controller agreement, or workflow readiness
 - `unavailable` means the backend does not currently have the additional persisted evidence required to produce a bounded comparison view
 - comparison-ready summaries describe current normalized state against the latest persisted normalized snapshot, or one persisted snapshot against the immediately previous persisted snapshot, but they do not express validation conclusions, drift decisions, or action recommendations
 - `stale` is currently a product-facing interpretation used mainly by the workflow-history and audit-history pages to describe recency of persisted sync-derived evidence; it is not a claim that the platform has proven a configuration or protocol mismatch
@@ -130,6 +132,7 @@ It does not own business logic.
 Current truth-presentation reality:
 
 - the WebUI surfaces backend-owned serving-mode, comparison, recency, and evidence-boundary semantics
+- the WebUI now also surfaces backend-owned topology endpoint-pairing posture and paired-versus-single-sided counts as bounded trust cues on the dedicated topology page and in coarser summary form on Overview and Platform Health
 - the WebUI may describe evidence as recent, aging, stale, partial, inferred, or unavailable where the backend contract and timestamps support that interpretation
 - those labels remain explanatory operator cues rather than workflow decisions, policy validation outcomes, or drift verdicts
 
@@ -143,6 +146,11 @@ It owns:
 - vendor adapter boundaries for collection
 - mapping from raw records into platform-friendly normalized forms
 - collector metrics
+
+Current observed-topology reality:
+
+- the collector emits explicit per-link `endpoint_pairing_state` and `endpoint_evidence_count` plus aggregate `endpoint_pairing_posture`, `paired_link_count`, and `single_sided_link_count` for the current bounded inferred topology slice
+- those signals remain collector-owned observed-input semantics only; they do not replace backend-owned product language or imply protocol-derived topology truth
 
 ### `postgres`
 

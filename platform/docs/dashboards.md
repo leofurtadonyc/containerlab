@@ -150,6 +150,7 @@ Expected emphasis over time:
 - bounded backend-versus-collector aggregate agreement cues where those metrics exist
 - explicit paired-versus-single-sided inferred-link counts and shares where those bounded collector metrics exist
 - backend-owned topology pairing-posture labels only as observability projections from real metrics, not as dashboard-authored business logic
+- operators should interpret paired-versus-single-sided topology panels as endpoint-evidence depth only, not as protocol adjacency validation or controller-backed topology truth
 
 ### SR Policy
 
@@ -181,6 +182,7 @@ In `app-web`:
 - degraded-scope explanations are shown as product trust cues
 - coverage and freshness remain tied to the bounded platform-status contract
 - topology endpoint-pairing posture should be shown as backend-owned product language, not as a Grafana-derived label
+- `paired`, `partially_paired`, and `single_sided` remain bounded topology trust cues about inferred-link endpoint evidence, not workflow or validation language
 
 In Grafana:
 

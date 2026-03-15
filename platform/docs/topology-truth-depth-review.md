@@ -170,20 +170,21 @@ also preserves topology read-path signals as product-owned status:
 This is strong enough for Phase 2 because the backend remains the brain and the
 topology contract remains normalized, typed, and read-only.
 
-### 4. The product already distinguishes the topology page from summary pages
+### 4. The product now distinguishes dedicated topology trust cues from summary cues correctly
 
 The topology product surface is strongest on the dedicated page.
 
 In `platform/app-web/src/features/topology/view.tsx`, the dedicated topology page
-already exposes:
+now exposes:
 
-- link evidence posture as `single_sided` versus `multi_sided`
-- link `knowledge_state`
+- backend-owned `coverage_summary.endpoint_pairing_posture`
+- backend-owned `paired_link_count` and `single_sided_link_count`
+- per-link `endpoint_pairing_state` and `endpoint_evidence_count`
 - inference readout and freshness readout
 - comparison anchor and comparison posture
 - link evidence distribution
 - selected-link and selected-node detail
-- explicit callouts for stale, blocked, and partial posture
+- explicit callouts for stale, blocked, partial, and bounded endpoint-pairing posture
 
 That page already behaves like a proper Phase 2 product surface: evidence-rich,
 read-only, and explicit about limits.
@@ -202,17 +203,20 @@ In `platform/app-web/src/features/overview/view.tsx`, topology trust cues surfac
 - degraded scope
 - comparison anchor
 
-Overview also adds the topology `single_sided_link_count`, but only inside the
-degraded-scope note rather than as a first-class trust dimension.
+Overview now also surfaces endpoint-pairing posture and paired-versus-single-
+sided counts directly as a bounded topology trust dimension rather than leaving
+those cues buried only in degraded-scope prose.
 
 In `platform/app-web/src/features/platform-health/view.tsx`, topology is even
 more aggregated. Platform Health shows bounded read-path coverage, freshness,
 and degraded-scope summaries for all read paths, but it deliberately does not
 turn topology-specific pairing gaps into a deep topology product view.
 
-This split is directionally correct.
+This split is now implemented correctly: the dedicated topology page remains the
+richest topology product surface, while Overview and Platform Health reuse the
+same backend-owned pairing vocabulary more coarsely.
 
-### 5. Observability is already using real topology signals without becoming the product
+### 5. Observability now uses the improved topology coverage signals without becoming the product
 
 The topology dashboard in
 `platform/grafana/dashboards/topology/topology-overview.json` is already aligned
@@ -225,12 +229,14 @@ It explicitly documents current limits in the dashboard scope text:
 - comparison panels are not drift truth
 - evidence posture is not validation logic
 
-The dashboard already visualizes real topology signals such as:
+The dashboard now visualizes real topology signals such as:
 
 - backend versus collector node delta
 - backend versus collector link delta
-- `platform_gnmi_collector_topology_single_sided_links`
-- single-sided link share
+- backend-owned paired-link counts
+- backend-owned single-sided-link counts
+- paired-link share
+- backend-owned topology pairing-posture label projections
 - topology sync age
 - topology state distribution
 - collector versus backend topology counts
@@ -240,7 +246,7 @@ This is a strong product-versus-observability split. Grafana mirrors numeric
 posture and agreement signals; it does not attempt to replace the backend-owned
 topology contract.
 
-### 6. Verification already treats the topology gap as real but bounded
+### 6. Verification now treats the improved topology coverage semantics as real but bounded
 
 `platform/scripts/verify-core-runtime.sh` now enforces the presence of the main
 topology contract fields and emits bounded notices and warnings for the current
@@ -252,14 +258,20 @@ It explicitly checks:
 - `serving_mode`
 - `sync_status`
 - `completeness`
+- topology `coverage_summary`
+- per-link `endpoint_pairing_state`
+- per-link `endpoint_evidence_count`
 - current comparison surface
+- backend topology pairing metrics
 - collector topology metrics including
-  `platform_gnmi_collector_topology_single_sided_links`
+  `platform_gnmi_collector_topology_paired_links`
+  and `platform_gnmi_collector_topology_single_sided_links`
 
 It also emits topology-specific messages when:
 
 - the topology read path is non-ok
-- `single_sided_link_count > 0`
+- `endpoint_pairing_posture=partially_paired`
+- `endpoint_pairing_posture=single_sided`
 - topology is served from persisted fallback
 - topology is blocked by collector loss with no persisted snapshot
 - `completeness` remains `partial`
@@ -276,43 +288,49 @@ Current strength:
 
 - pairing is deterministic inside the current lab because links are derived from
   interface naming and sorted endpoint pairs
-- paired evidence is preserved indirectly in `endpoint_evidence_count` and
-  `observed_interfaces`
+- pairing is now modeled explicitly as per-link `endpoint_pairing_state`
+- aggregate paired-versus-single-sided coverage is now exposed as
+  `endpoint_pairing_posture`, `paired_link_count`, and
+  `single_sided_link_count`
 
 Current weakness:
 
-- pairing is still implicit rather than first-class
-- the contract does not explicitly distinguish `fully_paired`, `single_sided`,
-  `peer_unrecognized`, or similar bounded pairing states
-- neither the topology response nor platform-status read paths expose a direct
-  paired-link coverage count
+- pairing is still ultimately driven by naming-based inference rather than
+  protocol-derived adjacency truth
+- the current bounded model still does not expose a larger family of reason
+  codes such as `peer_unrecognized` or other richer sub-causes, which is
+  appropriate for Phase 2 but remains a limit
 
 Review judgment:
 
-- this is the strongest remaining live truth-depth gap
-- it is narrow and implementable without redesigning the whole topology model
+- the original week 14 gap is now closed end to end
+- the remaining truth-depth question is no longer missing pairing vocabulary,
+  but how far the inferred topology slice can be deepened later without leaving
+  the current bounded model
 
 ### Single-sided inferred links
 
 Current strength:
 
 - the collector computes `single_sided_link_count`
-- the dedicated topology page derives and surfaces single-sided evidence posture
-- Grafana shows single-sided count and share
-- the verifier emits a topology-specific notice when the count is non-zero
+- the dedicated topology page now surfaces single-sided evidence through
+  backend-owned pairing fields rather than older derived posture inference
+- Grafana shows paired-versus-single-sided counts and share
+- the verifier emits topology-specific notices for `partially_paired` and
+  `single_sided` read-path posture
 
 Current weakness:
 
-- the current aggregate is useful but still coarse
-- the backend does not yet expose a richer endpoint-pairing summary than the raw
-  count plus degraded-scope prose
-- summary pages do not treat single-sided coverage as a dedicated, named trust
-  dimension beyond notes and aggregate posture
+- the current aggregate remains intentionally coarse and should not be mistaken
+  for protocol validation or measured topology completeness
+- the remaining limit is not absence of the signal, but the broader boundedness
+  of the inferred topology slice around it
 
 Review judgment:
 
-- this area is already strong enough to support a small improvement pass
-- it does not need reinvention, only clearer explicit semantics
+- this area is now strong enough for honest Phase 2 operator interpretation
+- further work should deepen truth carefully rather than reopening the same
+  week 14 pairing-semantics slice
 
 ### Partial completeness
 
@@ -397,39 +415,38 @@ were missing foundations.
 
 The remaining weakness is specific.
 
-- Endpoint pairing is naming-driven but not yet modeled explicitly enough as a
-  first-class bounded coverage posture.
-- Single-sided evidence is tracked, but mostly as an aggregate count rather than
-  a fuller pairing summary.
-- `partial` and `degraded_scope_summary` remain broader than they need to be for
-  the topology slice.
-- Overview and Platform Health surface topology trust cues honestly, but they do
-  not yet name endpoint-pairing coverage as directly as the dedicated topology
-  page and the Grafana dashboard imply.
+- The topology slice is still inference-based and intentionally partial.
+- `partial` and some `degraded_scope_summary` paths still carry broader meaning
+  than endpoint-pairing posture alone.
+- paired-versus-single-sided coverage is now explicit, but it still does not
+  imply protocol-derived adjacency truth, controller agreement, or path truth.
 
-## Smallest Honest Next Implementation Slice
+## Week 14 Implementation Outcome
 
-The smallest honest next slice should remain narrower than a generic topology
-redesign.
+The smallest honest week 14 slice identified by this review has now been
+implemented.
 
-Recommended slice:
+Implemented slice:
 
-1. tighten collector endpoint-pairing semantics inside the existing inference
-   path
-2. expose one explicit backend-owned pairing-coverage summary for topology
-3. surface that pairing posture in the topology page, Overview, Platform Health,
-   Grafana, and verifier only where each surface already carries topology trust
-   cues
+1. collector endpoint-pairing semantics were tightened inside the existing
+   inference path
+2. one explicit backend-owned pairing-coverage summary was exposed for topology
+3. that pairing posture now appears in the topology page, Overview, Platform
+   Health, Grafana, tests, and verifier only where each surface already carries
+   topology trust cues
 
-That slice should likely cover:
+That implemented slice now covers:
 
 - explicit bounded link pairing posture categories derived from current evidence
 - explicit aggregate counts such as fully paired versus single-sided inferred
   links
 - narrower degraded-scope wording that separates collection degradation from
   endpoint-pairing limitations
-- one verifier notice or assertion extension only for those new topology
-  coverage signals
+- bounded verifier notices and runtime assertions for those topology coverage
+  signals
+
+Any later follow-on should now be about broader truth depth only if it can stay
+similarly bounded.
 
 That slice should not attempt:
 
@@ -457,19 +474,18 @@ The next cycle must not do these things.
 
 ## Bottom Line
 
-The repository evidence supports the current week 14 direction.
+The repository evidence supports the completed week 14 direction.
 
-The strongest remaining live topology weakness is not absence of topology data in
-general. It is the narrower gap around endpoint-pairing semantics and the way
-single-sided inferred links are summarized and explained across the current
-Phase 2 product, observability, and verification surfaces.
+The strongest remaining live topology weakness is no longer absence of explicit
+endpoint-pairing semantics across the current product, observability, and
+verification surfaces. That part is now in place. The remaining limit is that
+the topology slice itself is still bounded, inferred, and intentionally partial.
 
-The next implementation slice should therefore stay small.
-
-It should tighten endpoint-pairing and single-sided-link coverage semantics end
-to end, while preserving the current backend-owned normalized topology model,
-the product-versus-observability split, and the explicit partial-truth posture
-already established across the repository.
+Any next implementation slice should therefore stay small and should not reopen
+the same pairing-semantics work unless new repository evidence changes the
+current boundary. It should preserve the current backend-owned normalized
+topology model, the product-versus-observability split, and the explicit
+partial-truth posture already established across the repository.
 
 The exact field, metric, and UI-separation rules for that slice are now defined
 in `platform/schemas/topology/topology-read-path-coverage-semantics.md`.
