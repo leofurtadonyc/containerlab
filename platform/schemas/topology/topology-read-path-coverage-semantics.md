@@ -134,7 +134,7 @@ Definitions:
 Do not add an `unknown_link_count` unless the runtime actually emits link
 records that can be honestly classified as `unknown`.
 
-Collector implementation status for this task:
+Implementation status after the first two bounded slices:
 
 - implemented now in `gnmi-collector`: per-link `endpoint_pairing_state` and
   `endpoint_evidence_count`
@@ -142,9 +142,16 @@ Collector implementation status for this task:
   `single_sided_link_count`, and `endpoint_pairing_posture`
 - implemented now in `gnmi-collector` metrics: paired-link and single-sided-link
   gauges
-- still pending in later slices: backend-owned coverage-summary propagation,
-  platform-status propagation, and product-surface consumption of these typed
-  fields
+- implemented now in `app-api` topology and platform-status contracts:
+  backend-owned response-level pairing posture and paired-versus-single-sided
+  counts
+- implemented now in `app-api` topology response: explicit per-link
+  `endpoint_pairing_state` and `endpoint_evidence_count` fields exposed through
+  backend-owned read models
+- implemented now in `app-api` metrics: bounded backend-owned topology pairing
+  posture plus paired-link and single-sided-link gauges
+- still pending in later slices: explicit WebUI, verifier, and any additional
+  observability-surface consumption of these backend-owned typed fields
 
 ### Bounded status fields
 
@@ -225,10 +232,18 @@ Planned topology-response aggregate fields:
 - `coverage_summary.paired_link_count`
 - `coverage_summary.single_sided_link_count`
 
+Current status:
+
+- implemented now in `app-api`
+
 Planned per-link topology fields:
 
 - `endpoint_pairing_state`
 - `endpoint_evidence_count`
+
+Current status:
+
+- implemented now in `app-api`
 
 Backend non-ownership on this slice:
 
@@ -248,6 +263,10 @@ Planned topology read-path fields:
 - `endpoint_pairing_posture`
 - `paired_link_count`
 - `single_sided_link_count`
+
+Current status:
+
+- implemented now in `app-api`
 
 Platform-status non-ownership:
 

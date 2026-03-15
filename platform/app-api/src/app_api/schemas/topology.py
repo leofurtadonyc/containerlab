@@ -28,7 +28,18 @@ class TopologyLinkRecord(BaseModel):
     target_node_id: str
     state: Literal["up", "down", "degraded", "unknown"]
     source: str
+    endpoint_pairing_state: Literal["paired", "single_sided", "unknown"]
+    endpoint_evidence_count: int | None = None
     attributes: dict[str, str]
+
+
+class TopologyCoverageSummaryRecord(BaseModel):
+    """Bounded response-level topology coverage summary."""
+
+    endpoint_pairing_posture: Literal["paired", "partially_paired", "single_sided", "unknown"]
+    paired_link_count: int
+    single_sided_link_count: int
+    summary: str
 
 
 class TopologyRecord(BaseModel):
@@ -77,4 +88,5 @@ class TopologyResponse(ApiResponseMetadata):
     summary: str
     served_persisted_at: datetime | None = None
     comparison_to_latest_persisted: TopologyComparisonSummary
+    coverage_summary: TopologyCoverageSummaryRecord
     topology: TopologyRecord

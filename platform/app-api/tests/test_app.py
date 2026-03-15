@@ -141,6 +141,9 @@ def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
         oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
         newest_observed_at="2026-03-09T19:25:08.500000+00:00",
         degraded_scope_summary="All configured topology targets returned usable live topology evidence within the current bounded inference slice.",
+        endpoint_pairing_posture="paired",
+        paired_link_count=1,
+        single_sided_link_count=0,
         topology_id="platform-observed-topology",
         topology_name="Platform Observed Topology",
         sync_source="gnmi_collector_topology_interface_inference",
@@ -188,6 +191,8 @@ def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
                 target_node_id="PE1",
                 state="up",
                 source="gnmi",
+                endpoint_pairing_state="paired",
+                endpoint_evidence_count=2,
                 attributes={
                     "knowledge_state": "partial",
                     "inference_method": "interface_name_and_oper_state",
@@ -195,6 +200,96 @@ def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
                     "observed_interfaces": "PE1:to-P1, P1:to-PE1",
                 },
             )
+        ],
+        fetch_error=None,
+    )
+
+
+def _build_live_mixed_topology_snapshot() -> CollectorTopologySnapshot:
+    return CollectorTopologySnapshot(
+        integration="gnmi_collector_topology",
+        status="partial_live_feed",
+        destination_service="app-api",
+        source_endpoint="http://gnmi-collector:9804/topology/snapshot",
+        configured_target_count=3,
+        observed_target_count=3,
+        collection_success_count=2,
+        collection_partial_count=1,
+        collection_failure_count=0,
+        oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        newest_observed_at="2026-03-09T19:25:11.500000+00:00",
+        degraded_scope_summary="Topology delivery remains bounded because one or more inferred links still rely on single-sided endpoint evidence.",
+        endpoint_pairing_posture="partially_paired",
+        paired_link_count=1,
+        single_sided_link_count=1,
+        topology_id="platform-observed-topology",
+        topology_name="Platform Observed Topology",
+        sync_source="gnmi_collector_topology_interface_inference",
+        sync_status="degraded",
+        completeness="partial",
+        observed_at="2026-03-09T19:25:11.500000+00:00",
+        notes=[
+            "Topology links are inferred from live router interface names and current interface operational state.",
+            "Collector endpoint-pairing posture is partially_paired, with 1 paired inferred links and 1 single-sided inferred links.",
+        ],
+        nodes=[
+            CollectorTopologyNodeRecord(
+                node_id="PE1",
+                display_name="PE1",
+                role="pe",
+                state="up",
+                source="gnmi",
+                device_id="PE1",
+                attributes={"vendor": "nokia"},
+            ),
+            CollectorTopologyNodeRecord(
+                node_id="P1",
+                display_name="P1",
+                role="p",
+                state="up",
+                source="gnmi",
+                device_id="P1",
+                attributes={"vendor": "nokia"},
+            ),
+            CollectorTopologyNodeRecord(
+                node_id="PE2",
+                display_name="PE2",
+                role="pe",
+                state="degraded",
+                source="gnmi",
+                device_id="PE2",
+                attributes={"vendor": "nokia"},
+            ),
+        ],
+        links=[
+            CollectorTopologyLinkRecord(
+                link_id="P1--PE1",
+                source_node_id="P1",
+                target_node_id="PE1",
+                state="up",
+                source="gnmi",
+                endpoint_pairing_state="paired",
+                endpoint_evidence_count=2,
+                attributes={
+                    "knowledge_state": "partial",
+                    "endpoint_pairing_state": "paired",
+                    "endpoint_evidence_count": "2",
+                },
+            ),
+            CollectorTopologyLinkRecord(
+                link_id="P1--PE2",
+                source_node_id="P1",
+                target_node_id="PE2",
+                state="degraded",
+                source="gnmi",
+                endpoint_pairing_state="single_sided",
+                endpoint_evidence_count=1,
+                attributes={
+                    "knowledge_state": "partial",
+                    "endpoint_pairing_state": "single_sided",
+                    "endpoint_evidence_count": "1",
+                },
+            ),
         ],
         fetch_error=None,
     )
@@ -991,10 +1086,13 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
         "All configured inventory targets returned normalized live inventory evidence."
     )
     assert payload["read_paths"][1]["model_family"] == "topology"
+    assert payload["read_paths"][1]["endpoint_pairing_posture"] == "paired"
+    assert payload["read_paths"][1]["paired_link_count"] == 1
     assert payload["read_paths"][1]["single_sided_link_count"] == 0
     assert payload["read_paths"][1]["degraded_scope_summary"] == (
         "All configured topology targets returned usable live topology evidence within the current bounded inference slice."
     )
+    assert "paired endpoint evidence" in payload["read_paths"][1]["summary"]
     assert payload["read_paths"][2]["model_family"] == "policy"
     assert payload["read_paths"][2]["policy_capable_target_count"] == 34
     assert payload["read_paths"][2]["detail_ready_target_count"] == 2
@@ -1005,6 +1103,7 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert "inventory: 2/2 targets, success 2, partial 0, failed 0" in gnmi_component["notes"][0]
     assert "freshness 2026-03-09T19:25:08.500000+00:00 -> 2026-03-09T19:25:08.500000+00:00" in gnmi_component["notes"][0]
     assert gnmi_component["notes"][1] == "All configured inventory targets returned normalized live inventory evidence."
+    assert "endpoint-pairing posture paired, paired links 1, single-sided links 0." in gnmi_component["notes"][2]
     assert "detail-ready targets 2." in gnmi_component["notes"][4]
     odl_component = payload["components"][-1]
     assert odl_component["name"] == "odl"
@@ -1084,6 +1183,10 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert payload["evidence_confidence"]["blocked_reason"] == "none"
     assert any("Coverage currently includes 2 of 2 configured topology targets" in note for note in payload["evidence_confidence"]["notes"])
     assert payload["served_persisted_at"] is None
+    assert payload["coverage_summary"]["endpoint_pairing_posture"] == "paired"
+    assert payload["coverage_summary"]["paired_link_count"] == 1
+    assert payload["coverage_summary"]["single_sided_link_count"] == 0
+    assert "paired endpoint evidence" in payload["coverage_summary"]["summary"]
     assert payload["topology"]["topology_id"] == "platform-observed-topology"
     assert payload["topology"]["topology_name"] == "Platform Observed Topology"
     assert payload["topology"]["sync_source"] == "gnmi_collector_topology_interface_inference"
@@ -1097,11 +1200,42 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert payload["topology"]["nodes"][0]["attributes"]["vendor"] == "nokia"
     assert payload["topology"]["links"][0]["state"] == "up"
     assert payload["topology"]["links"][0]["source"] == "gnmi"
+    assert payload["topology"]["links"][0]["endpoint_pairing_state"] == "paired"
+    assert payload["topology"]["links"][0]["endpoint_evidence_count"] == 2
     assert payload["topology"]["links"][0]["attributes"]["knowledge_state"] == "partial"
     assert "bounded interface-based link inference" in payload["summary"]
+    assert "paired endpoint evidence" in payload["summary"]
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
     assert "Topology links are inferred from live router interface names" in payload["topology"]["notes"][0]
     assert datetime.fromisoformat(payload["generated_at"]) is not None
+
+
+def test_topology_endpoint_exposes_mixed_pairing_coverage_semantics(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorTopologyClient:
+        def read_topology_snapshot(self) -> CollectorTopologySnapshot:
+            return _build_live_mixed_topology_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.topology.get_collector_topology_client",
+        lambda: StubCollectorTopologyClient(),
+    )
+
+    response = client.get("/api/v1/topology")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_status"] == "degraded"
+    assert payload["serving_mode"] == "live_collector"
+    assert payload["coverage_summary"]["endpoint_pairing_posture"] == "partially_paired"
+    assert payload["coverage_summary"]["paired_link_count"] == 1
+    assert payload["coverage_summary"]["single_sided_link_count"] == 1
+    assert "mix of paired and single-sided endpoint evidence" in payload["coverage_summary"]["summary"]
+    assert payload["topology"]["links"][0]["endpoint_pairing_state"] == "paired"
+    assert payload["topology"]["links"][1]["endpoint_pairing_state"] == "single_sided"
+    assert payload["topology"]["links"][1]["endpoint_evidence_count"] == 1
+    assert "mix of paired and single-sided endpoint evidence" in payload["summary"]
 
 
 def test_devices_endpoint_falls_back_to_persisted_inventory(monkeypatch) -> None:
@@ -1246,6 +1380,9 @@ def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None
     assert payload["evidence_confidence"]["confidence_posture"] == "degraded"
     assert payload["evidence_confidence"]["freshness_posture"] == "stale"
     assert payload["evidence_confidence"]["blocked_reason"] == "collector_unavailable"
+    assert payload["coverage_summary"]["endpoint_pairing_posture"] == "unknown"
+    assert payload["coverage_summary"]["paired_link_count"] == 0
+    assert payload["coverage_summary"]["single_sided_link_count"] == 0
     assert payload["topology"]["sync_source"] == "persisted_topology_snapshot"
     assert len(payload["topology"]["nodes"]) == 1
     assert len(payload["topology"]["links"]) == 1
@@ -1876,6 +2013,12 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert "platform_app_api_http_request_duration_seconds_sum" in response.text
     assert "platform_app_api_topology_nodes 2" in response.text
     assert "platform_app_api_topology_links 1" in response.text
+    assert "platform_app_api_topology_paired_links 1" in response.text
+    assert "platform_app_api_topology_single_sided_links 0" in response.text
+    assert (
+        'platform_app_api_topology_coverage_posture{endpoint_pairing_posture="paired"} 1'
+        in response.text
+    )
     assert (
         'data_status="live",serving_mode="live_collector",sync_status="ok",'
         'completeness="partial"'

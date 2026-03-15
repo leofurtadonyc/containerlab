@@ -7,6 +7,7 @@ from app_api.integrations.collector.inventory import get_collector_inventory_cli
 from app_api.integrations.collector.policies import get_collector_policy_client
 from app_api.integrations.collector.topology import get_collector_topology_client
 from app_api.integrations.odl import OdlControllerObservation, get_odl_client
+from app_api.models.topology import build_topology_coverage_summary
 from app_api.schemas.platform import (
     PlatformComponentStatus,
     PlatformReadPathStatus,
@@ -66,11 +67,12 @@ def _build_inventory_read_path_status() -> PlatformReadPathStatus:
 def _build_topology_read_path_status() -> PlatformReadPathStatus:
     """Build bounded platform status for the topology read path."""
     snapshot = get_collector_topology_client().read_topology_snapshot()
-    single_sided_link_count = 0
-    for note in snapshot.notes:
-        if "only one observed endpoint" in note:
-            single_sided_link_count = 1
-            break
+    coverage_summary = build_topology_coverage_summary(
+        links=snapshot.links,
+        endpoint_pairing_posture=snapshot.endpoint_pairing_posture,
+        paired_link_count=snapshot.paired_link_count,
+        single_sided_link_count=snapshot.single_sided_link_count,
+    )
     return PlatformReadPathStatus(
         model_family="topology",
         observation_state=_map_read_path_state(snapshot.status, snapshot.fetch_error),
@@ -81,12 +83,15 @@ def _build_topology_read_path_status() -> PlatformReadPathStatus:
         collection_failure_count=snapshot.collection_failure_count,
         oldest_observed_at=_parse_collector_timestamp(snapshot.oldest_observed_at),
         newest_observed_at=_parse_collector_timestamp(snapshot.newest_observed_at),
-        single_sided_link_count=single_sided_link_count,
+        endpoint_pairing_posture=coverage_summary.endpoint_pairing_posture,
+        paired_link_count=coverage_summary.paired_link_count,
+        single_sided_link_count=coverage_summary.single_sided_link_count,
         degraded_scope_summary=snapshot.degraded_scope_summary,
         summary=(
-            "Current topology read-path coverage is bounded to live interface evidence plus the current backend-owned inference rules."
+            "Current topology read-path coverage is bounded to live interface evidence plus the current backend-owned inference rules. "
+            f"{coverage_summary.summary}"
         ),
-        notes=snapshot.notes,
+        notes=[*snapshot.notes, coverage_summary.summary],
     )
 
 
@@ -130,6 +135,12 @@ def _build_gnmi_collector_component_status(
         )
         if read_path.detail_ready_target_count is not None:
             coverage_note += f" detail-ready targets {read_path.detail_ready_target_count}."
+        if read_path.endpoint_pairing_posture is not None:
+            coverage_note += (
+                f" endpoint-pairing posture {read_path.endpoint_pairing_posture}, "
+                f"paired links {read_path.paired_link_count}, "
+                f"single-sided links {read_path.single_sided_link_count}."
+            )
         read_path_notes.append(coverage_note)
         read_path_notes.append(read_path.degraded_scope_summary)
 
