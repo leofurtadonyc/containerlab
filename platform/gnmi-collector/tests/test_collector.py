@@ -211,6 +211,35 @@ class FakeGnmiClient:
         }
 
 
+class FakeSingleSidedTopologyGnmiClient(FakeGnmiClient):
+    def get(self, *, path, encoding):
+        del encoding
+        host = self.target[0]
+        device_name = _target_name_by_host()[host]
+        if any("router[router-name=Base]/interface" in item for item in path) and device_name == "PE1":
+            return {
+                "notification": [
+                    {
+                        "timestamp": 1773094131368820265,
+                        "update": [
+                            {
+                                "path": "state/router[router-name=Base]/interface[interface-name=system]",
+                                "val": {
+                                    "nokia-state:interface-name": "system",
+                                    "nokia-state:oper-state": "up",
+                                    "nokia-state:protocol": "ospfv2 mpls rsvp",
+                                    "nokia-state:ipv4": {
+                                        "primary": {"oper-address": "10.255.255.31"}
+                                    },
+                                },
+                            }
+                        ],
+                    }
+                ]
+            }
+        return super().get(path=path, encoding="json_ietf")
+
+
 def test_runtime_config_loads_live_nokia_targets() -> None:
     config = build_runtime_config()
 
@@ -270,6 +299,7 @@ def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
     assert f"platform_gnmi_collector_topology_observed_targets {expected_target_count}" in response.text
     assert "platform_gnmi_collector_topology_normalized_nodes 34" in response.text
     assert "platform_gnmi_collector_topology_normalized_links 17" in response.text
+    assert "platform_gnmi_collector_topology_paired_links 17" in response.text
     assert "platform_gnmi_collector_topology_single_sided_links 0" in response.text
     assert "platform_gnmi_collector_topology_oldest_observed_timestamp_seconds " in response.text
     assert "platform_gnmi_collector_topology_newest_observed_timestamp_seconds " in response.text
@@ -319,13 +349,54 @@ def test_topology_snapshot_endpoint_returns_normalized_live_records(monkeypatch)
     assert payload["collection_failure_count"] == 0
     assert payload["node_count"] == 34
     assert payload["link_count"] == 17
+    assert payload["endpoint_pairing_posture"] == "paired"
+    assert payload["paired_link_count"] == 17
+    assert payload["single_sided_link_count"] == 0
     assert payload["sync_source"] == "gnmi_collector_topology_interface_inference"
     assert payload["completeness"] == "partial"
     assert payload["oldest_observed_at"] is not None
     assert payload["newest_observed_at"] is not None
     assert payload["degraded_scope_summary"] == (
-        "All configured topology targets returned live evidence for the current bounded inference path."
+        "All configured topology targets returned live evidence for the current bounded inference path, and all emitted inferred links are backed by paired endpoint evidence."
     )
+    first_link = payload["links"][0]
+    assert first_link["endpoint_pairing_state"] == "paired"
+    assert first_link["endpoint_evidence_count"] == 2
+    assert first_link["attributes"]["endpoint_pairing_state"] == "paired"
+    assert first_link["attributes"]["endpoint_evidence_count"] == "2"
+
+
+def test_topology_snapshot_endpoint_marks_single_sided_coverage_explicit(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "gnmi_collector.adapters.nokia.sros.gNMIclient",
+        FakeSingleSidedTopologyGnmiClient,
+    )
+
+    response = client.get("/topology/snapshot")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["delivery_status"] == "live_ready"
+    assert payload["collection_partial_count"] == 0
+    assert payload["node_count"] == 34
+    assert payload["link_count"] == 17
+    assert payload["endpoint_pairing_posture"] == "partially_paired"
+    assert payload["paired_link_count"] == 16
+    assert payload["single_sided_link_count"] == 1
+    assert payload["degraded_scope_summary"] == (
+        "Topology delivery remains bounded because one or more inferred links still rely on single-sided endpoint evidence."
+    )
+    assert any(
+        "Collector endpoint-pairing posture is partially_paired" in note
+        for note in payload["notes"]
+    )
+    single_sided_link = next(
+        link for link in payload["links"] if link["endpoint_pairing_state"] == "single_sided"
+    )
+    assert single_sided_link["link_id"] == "PE1--PE2"
+    assert single_sided_link["endpoint_evidence_count"] == 1
+    assert single_sided_link["attributes"]["endpoint_pairing_state"] == "single_sided"
+    assert single_sided_link["attributes"]["endpoint_evidence_count"] == "1"
 
 
 def test_policy_snapshot_endpoint_returns_live_policy_observations(monkeypatch) -> None:
@@ -458,6 +529,8 @@ def test_topology_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> N
     assert snapshot.summary.newest_observed_at is not None
     assert snapshot.summary.normalized_node_count == expected_target_count
     assert snapshot.summary.normalized_link_count == expected_target_count // 2
+    assert snapshot.summary.endpoint_pairing_posture == "paired"
+    assert snapshot.summary.paired_link_count == expected_target_count // 2
     assert snapshot.summary.single_sided_link_count == 0
     assert snapshot.summary.node_state_counts == {"up": expected_target_count}
     assert snapshot.summary.link_state_counts == {"up": expected_target_count // 2}
@@ -468,9 +541,56 @@ def test_topology_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> N
     assert snapshot.delivery.model_family == "topology"
     assert snapshot.delivery.configured_target_count == expected_target_count
     assert snapshot.delivery.observed_target_count == expected_target_count
+    assert snapshot.delivery.endpoint_pairing_posture == "paired"
+    assert snapshot.delivery.paired_link_count == expected_target_count // 2
+    assert snapshot.delivery.single_sided_link_count == 0
     assert snapshot.delivery.degraded_scope_summary == (
-        "All configured topology targets returned live evidence for the current bounded inference path."
+        "All configured topology targets returned live evidence for the current bounded inference path, and all emitted inferred links are backed by paired endpoint evidence."
     )
+
+
+def test_topology_flow_snapshot_marks_single_sided_inference_explicit(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "gnmi_collector.adapters.nokia.sros.gNMIclient",
+        FakeSingleSidedTopologyGnmiClient,
+    )
+    snapshot = build_topology_flow_snapshot()
+
+    assert snapshot.summary.normalized_link_count == 17
+    assert snapshot.summary.endpoint_pairing_posture == "partially_paired"
+    assert snapshot.summary.paired_link_count == 16
+    assert snapshot.summary.single_sided_link_count == 1
+    assert snapshot.delivery.endpoint_pairing_posture == "partially_paired"
+    assert snapshot.delivery.paired_link_count == 16
+    assert snapshot.delivery.single_sided_link_count == 1
+    assert snapshot.delivery.degraded_scope_summary == (
+        "Topology delivery remains bounded because one or more inferred links still rely on single-sided endpoint evidence."
+    )
+    single_sided_link = next(
+        link for link in snapshot.delivery.links if link.endpoint_pairing_state == "single_sided"
+    )
+    assert single_sided_link.link_id == "PE1--PE2"
+    assert single_sided_link.endpoint_evidence_count == 1
+    assert single_sided_link.attributes["endpoint_pairing_state"] == "single_sided"
+    assert any(
+        "Collector endpoint-pairing posture is partially_paired" in note
+        for note in snapshot.delivery.notes
+    )
+
+
+def test_metrics_endpoint_surfaces_single_sided_topology_coverage_metrics(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "gnmi_collector.adapters.nokia.sros.gNMIclient",
+        FakeSingleSidedTopologyGnmiClient,
+    )
+    client.get("/topology/snapshot")
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert "platform_gnmi_collector_topology_normalized_links 17" in response.text
+    assert "platform_gnmi_collector_topology_paired_links 16" in response.text
+    assert "platform_gnmi_collector_topology_single_sided_links 1" in response.text
 
 
 def test_policy_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> None:

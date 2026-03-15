@@ -9,13 +9,20 @@ from app_api.integrations.collector.topology import (
     get_collector_topology_client,
 )
 from app_api.metrics.state import cache_topology_metrics
-from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
+from app_api.models.topology import (
+    TopologyLink,
+    TopologyNode,
+    TopologySnapshot,
+    build_topology_coverage_summary,
+    resolve_topology_link_endpoint_evidence,
+)
 from app_api.persistence.read_side import (
     load_latest_topology_snapshot,
     persist_topology_snapshot,
 )
 from app_api.schemas.topology import (
     TopologyComparisonSummary,
+    TopologyCoverageSummaryRecord,
     TopologyLinkRecord,
     TopologyNodeRecord,
     TopologyRecord,
@@ -330,6 +337,8 @@ def _build_topology_snapshot() -> tuple[
             target_node_id=link.target_node_id,
             state=link.state,
             source=link.source,
+            endpoint_pairing_state=resolve_topology_link_endpoint_evidence(link)[0],
+            endpoint_evidence_count=resolve_topology_link_endpoint_evidence(link)[1],
             attributes=link.attributes,
         )
         for link in collector_snapshot.links
@@ -375,10 +384,17 @@ def build_topology_response() -> TopologyResponse:
     """Build the topology response from a normalized backend model."""
     settings = get_settings()
     collector_snapshot, snapshot, persisted_at, comparison = _build_topology_snapshot()
+    coverage_summary = build_topology_coverage_summary(
+        links=snapshot.links,
+        endpoint_pairing_posture=collector_snapshot.endpoint_pairing_posture,
+        paired_link_count=collector_snapshot.paired_link_count,
+        single_sided_link_count=collector_snapshot.single_sided_link_count,
+    )
     evidence_confidence = _build_topology_evidence_confidence(
         collector_snapshot=collector_snapshot,
         persisted_at=persisted_at,
     )
+    evidence_confidence.notes.append(coverage_summary.summary)
     topology = TopologyRecord(
         topology_id=snapshot.topology_id,
         topology_name=snapshot.topology_name,
@@ -401,6 +417,8 @@ def build_topology_response() -> TopologyResponse:
                 target_node_id=link.target_node_id,
                 state=link.state,
                 source=link.source,
+                endpoint_pairing_state=resolve_topology_link_endpoint_evidence(link)[0],
+                endpoint_evidence_count=resolve_topology_link_endpoint_evidence(link)[1],
                 attributes=link.attributes,
             )
             for link in snapshot.links
@@ -417,7 +435,8 @@ def build_topology_response() -> TopologyResponse:
         summary = (
             "Topology is backed by live read-only Nokia gNMI collection and bounded "
             "interface-based link inference, with partial knowledge still explicit and usable live evidence from "
-            f"{collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured targets."
+            f"{collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured targets. "
+            f"{coverage_summary.summary}"
         )
     elif collector_snapshot.status == "partial_live_feed":
         data_status = "degraded"
@@ -425,7 +444,8 @@ def build_topology_response() -> TopologyResponse:
         summary = (
             "Topology is backed by live Nokia gNMI collection, but one or more "
             "targets or inferred links remain partial or degraded. "
-            f"Coverage currently includes {collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured targets."
+            f"Coverage currently includes {collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured targets. "
+            f"{coverage_summary.summary}"
         )
     else:
         data_status = "degraded"
@@ -433,17 +453,20 @@ def build_topology_response() -> TopologyResponse:
             serving_mode = "persisted_fallback"
             summary = (
                 "The backend could not load the live collector topology snapshot, so "
-                "the latest persisted normalized topology snapshot is being served."
+                f"the latest persisted normalized topology snapshot is being served. {coverage_summary.summary}"
             )
         else:
             serving_mode = "empty_scaffold"
             summary = (
                 "The backend could not load the live collector topology snapshot. "
-                "No raw vendor payloads are exposed through the topology API."
+                f"No raw vendor payloads are exposed through the topology API. {coverage_summary.summary}"
             )
     cache_topology_metrics(
         node_count=len(topology.nodes),
         link_count=len(topology.links),
+        endpoint_pairing_posture=coverage_summary.endpoint_pairing_posture,
+        paired_link_count=coverage_summary.paired_link_count,
+        single_sided_link_count=coverage_summary.single_sided_link_count,
         data_status=data_status,
         serving_mode=serving_mode,
         sync_status=topology.sync_status,
@@ -467,5 +490,11 @@ def build_topology_response() -> TopologyResponse:
         summary=summary,
         served_persisted_at=persisted_at,
         comparison_to_latest_persisted=comparison,
+        coverage_summary=TopologyCoverageSummaryRecord(
+            endpoint_pairing_posture=coverage_summary.endpoint_pairing_posture,
+            paired_link_count=coverage_summary.paired_link_count,
+            single_sided_link_count=coverage_summary.single_sided_link_count,
+            summary=coverage_summary.summary,
+        ),
         topology=topology,
     )

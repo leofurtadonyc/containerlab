@@ -17,6 +17,24 @@ from gnmi_collector.models.topology import (
 )
 
 
+def _derive_endpoint_pairing_posture(
+    *,
+    link_count: int,
+    paired_link_count: int,
+    single_sided_link_count: int,
+) -> str:
+    """Summarize the current endpoint-pairing posture for emitted links."""
+    if link_count == 0:
+        return "unknown"
+    if paired_link_count == link_count and single_sided_link_count == 0:
+        return "paired"
+    if paired_link_count > 0 and single_sided_link_count > 0:
+        return "partially_paired"
+    if paired_link_count == 0 and single_sided_link_count > 0:
+        return "single_sided"
+    return "unknown"
+
+
 def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
     """Build the current end-to-end live topology collection flow snapshot."""
     config = build_runtime_config()
@@ -25,7 +43,7 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
     plans = [adapter.build_topology_plan(target) for target in config.targets]
     raw_records = [adapter.collect_topology(target) for target in config.targets]
     normalized_nodes = map_topology_nodes(raw_records)
-    normalized_links, single_sided_link_count = map_topology_links(raw_records)
+    normalized_links, paired_link_count, single_sided_link_count = map_topology_links(raw_records)
     node_state_counts = dict(Counter(node.state for node in normalized_nodes))
     link_state_counts = dict(Counter(link.state for link in normalized_links))
     collection_success_count = sum(
@@ -43,6 +61,11 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
     observed_values = [record.observed_at for record in raw_records if record.observed_at is not None]
     oldest_observed_at = min(observed_values) if observed_values else None
     newest_observed_at = max(observed_values) if observed_values else None
+    endpoint_pairing_posture = _derive_endpoint_pairing_posture(
+        link_count=len(normalized_links),
+        paired_link_count=paired_link_count,
+        single_sided_link_count=single_sided_link_count,
+    )
 
     if normalized_nodes and collection_failure_count == 0 and partial_collection_count == 0:
         delivery_status = "live_ready"
@@ -56,7 +79,7 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
 
     if collection_failure_count == 0 and partial_collection_count == 0 and single_sided_link_count == 0:
         degraded_scope_summary = (
-            "All configured topology targets returned live evidence for the current bounded inference path."
+            "All configured topology targets returned live evidence for the current bounded inference path, and all emitted inferred links are backed by paired endpoint evidence."
         )
     elif observed_target_count == 0:
         degraded_scope_summary = (
@@ -68,7 +91,7 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         )
     else:
         degraded_scope_summary = (
-            "Topology delivery remains bounded because one or more inferred links still rely on only partial endpoint evidence."
+            "Topology delivery remains bounded because one or more inferred links still rely on single-sided endpoint evidence."
         )
 
     notes = [
@@ -79,9 +102,14 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         notes.append(
             f"Current topology freshness window spans from {oldest_observed_at.isoformat()} to {newest_observed_at.isoformat()} across targets that returned live evidence."
         )
+    if normalized_links:
+        notes.append(
+            "Collector endpoint-pairing posture is "
+            f"{endpoint_pairing_posture}, with {paired_link_count} paired inferred links and {single_sided_link_count} single-sided inferred links."
+        )
     if single_sided_link_count > 0:
         notes.append(
-            "One or more links were inferred from only one observed endpoint, so partial evidence remains explicit."
+            "One or more links were inferred from only one observed endpoint, so single-sided endpoint evidence remains explicit."
         )
     if collection_failure_count > 0:
         notes.append(
@@ -102,6 +130,9 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         oldest_observed_at=oldest_observed_at,
         newest_observed_at=newest_observed_at,
         degraded_scope_summary=degraded_scope_summary,
+        endpoint_pairing_posture=endpoint_pairing_posture,
+        paired_link_count=paired_link_count,
+        single_sided_link_count=single_sided_link_count,
         topology_id="platform-observed-topology",
         topology_name="Platform Observed Topology",
         node_count=len(normalized_nodes),
@@ -126,6 +157,8 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         normalized_node_count=len(normalized_nodes),
         normalized_link_count=len(normalized_links),
         inferred_link_count=len(normalized_links),
+        endpoint_pairing_posture=endpoint_pairing_posture,
+        paired_link_count=paired_link_count,
         single_sided_link_count=single_sided_link_count,
         node_state_counts=node_state_counts,
         link_state_counts=link_state_counts,

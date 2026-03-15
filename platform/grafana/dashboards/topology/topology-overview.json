@@ -44,7 +44,7 @@
       },
       "id": 19,
       "panels": [],
-      "title": "Bounded Comparison Evidence",
+      "title": "Bounded Comparison And Coverage Evidence",
       "type": "row"
     },
     {
@@ -206,11 +206,12 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_gnmi_collector_topology_single_sided_links / clamp_min(platform_gnmi_collector_topology_normalized_links, 1)",
+          "expr": "platform_app_api_topology_paired_links / clamp_min(platform_app_api_topology_links, 1)",
           "refId": "A"
         }
       ],
-      "title": "Single-Sided Link Share",
+      "description": "Share of current backend-owned normalized topology links backed by paired endpoint evidence. This remains a bounded observability signal, not validated adjacency truth.",
+      "title": "Paired Link Share",
       "type": "stat"
     },
     {
@@ -474,11 +475,12 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_gnmi_collector_topology_single_sided_links",
+          "expr": "platform_app_api_topology_paired_links",
           "refId": "A"
         }
       ],
-      "title": "Single-Sided Links",
+      "description": "Current backend-owned count of normalized topology links backed by both observed endpoints in the current bounded slice.",
+      "title": "Paired Links",
       "type": "stat"
     },
     {
@@ -629,7 +631,7 @@
       },
       "id": 12,
       "panels": [],
-      "title": "Topology Sync and Inference Signals",
+      "title": "Topology Sync and Coverage Signals",
       "type": "row"
     },
     {
@@ -971,17 +973,18 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_gnmi_collector_topology_single_sided_links",
-          "legendFormat": "single-sided links",
+          "expr": "platform_app_api_topology_paired_links",
+          "legendFormat": "paired links",
           "refId": "A"
         },
         {
-          "expr": "clamp_min(platform_gnmi_collector_topology_normalized_links - platform_gnmi_collector_topology_single_sided_links, 0)",
-          "legendFormat": "other inferred links",
+          "expr": "platform_app_api_topology_single_sided_links",
+          "legendFormat": "single-sided links",
           "refId": "B"
         }
       ],
-      "title": "Link Evidence Posture",
+      "description": "Backend-owned endpoint-pairing counts for the current normalized topology response. These counts improve trust interpretation, but do not imply protocol validation or controller agreement.",
+      "title": "Endpoint Pairing Counts",
       "type": "bargauge"
     },
     {
@@ -1020,9 +1023,15 @@
           "expr": "platform_app_api_topology_snapshot_status",
           "legendFormat": "{{serving_mode}} • {{data_status}} • {{sync_status}} • {{completeness}}",
           "refId": "A"
+        },
+        {
+          "expr": "platform_app_api_topology_coverage_posture",
+          "legendFormat": "pairing • {{endpoint_pairing_posture}}",
+          "refId": "B"
         }
       ],
-      "title": "Topology Snapshot Labels",
+      "description": "Backend-owned snapshot and endpoint-pairing posture labels exposed through metrics. Grafana projects these labels for observability only and does not define their semantics.",
+      "title": "Topology Snapshot And Coverage Labels",
       "type": "bargauge"
     },
     {

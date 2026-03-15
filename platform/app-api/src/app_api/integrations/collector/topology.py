@@ -31,6 +31,8 @@ class CollectorTopologyLinkRecord(BaseModel):
     target_node_id: str
     state: Literal["up", "down", "degraded", "unknown"]
     source: Literal["gnmi"]
+    endpoint_pairing_state: Literal["paired", "single_sided", "unknown"] | None = None
+    endpoint_evidence_count: int | None = None
     attributes: dict[str, str] = Field(default_factory=dict)
 
 
@@ -49,6 +51,11 @@ class CollectorTopologySnapshot(BaseModel):
     oldest_observed_at: str | None = None
     newest_observed_at: str | None = None
     degraded_scope_summary: str
+    endpoint_pairing_posture: Literal[
+        "paired", "partially_paired", "single_sided", "unknown"
+    ] | None = None
+    paired_link_count: int | None = None
+    single_sided_link_count: int | None = None
     topology_id: str
     topology_name: str
     sync_source: str
@@ -122,6 +129,9 @@ class CollectorTopologyClient:
                 "degraded_scope_summary",
                 "Topology degraded scope was not provided by the collector.",
             ),
+            endpoint_pairing_posture=payload.get("endpoint_pairing_posture"),
+            paired_link_count=payload.get("paired_link_count"),
+            single_sided_link_count=payload.get("single_sided_link_count"),
             topology_id=payload.get("topology_id", "platform-observed-topology"),
             topology_name=payload.get("topology_name", "Platform Observed Topology"),
             sync_source=payload.get("sync_source", "gnmi_collector_topology"),

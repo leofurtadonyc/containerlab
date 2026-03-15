@@ -81,7 +81,7 @@ def map_topology_nodes(raw_records: list[TopologyRawRecord]) -> list[NormalizedT
 
 def map_topology_links(
     raw_records: list[TopologyRawRecord],
-) -> tuple[list[NormalizedTopologyLinkRecord], int]:
+) -> tuple[list[NormalizedTopologyLinkRecord], int, int]:
     """Infer normalized link records from live interface evidence."""
     known_targets = {record.target_name for record in raw_records}
     evidence: dict[tuple[str, str], list[tuple[str, str, str]]] = {}
@@ -101,21 +101,32 @@ def map_topology_links(
             )
 
     links: list[NormalizedTopologyLinkRecord] = []
+    paired_link_count = 0
     single_sided_link_count = 0
     for source_node_id, target_node_id in sorted(evidence):
         endpoint_evidence = evidence[(source_node_id, target_node_id)]
+        endpoint_evidence_count = len(endpoint_evidence)
         states = {item[2] for item in endpoint_evidence}
-        if len(endpoint_evidence) < 2:
+        if endpoint_evidence_count < 2:
             state = "degraded"
+            endpoint_pairing_state = "single_sided"
             single_sided_link_count += 1
         elif states == {"up"}:
             state = "up"
+            endpoint_pairing_state = "paired"
+            paired_link_count += 1
         elif states == {"down"}:
             state = "down"
+            endpoint_pairing_state = "paired"
+            paired_link_count += 1
         elif "up" in states or "degraded" in states:
             state = "degraded"
+            endpoint_pairing_state = "paired"
+            paired_link_count += 1
         else:
             state = "unknown"
+            endpoint_pairing_state = "paired"
+            paired_link_count += 1
 
         links.append(
             NormalizedTopologyLinkRecord(
@@ -124,10 +135,15 @@ def map_topology_links(
                 target_node_id=target_node_id,
                 state=_topology_state(state),
                 source="gnmi",
+                endpoint_pairing_state=cast(
+                    Literal["paired", "single_sided", "unknown"], endpoint_pairing_state
+                ),
+                endpoint_evidence_count=endpoint_evidence_count,
                 attributes={
                     "knowledge_state": "partial",
                     "inference_method": "interface_name_and_oper_state",
-                    "endpoint_evidence_count": str(len(endpoint_evidence)),
+                    "endpoint_evidence_count": str(endpoint_evidence_count),
+                    "endpoint_pairing_state": endpoint_pairing_state,
                     "observed_interfaces": ", ".join(
                         f"{node}:{interface_name}" for node, interface_name, _ in endpoint_evidence
                     ),
@@ -135,7 +151,7 @@ def map_topology_links(
             )
         )
 
-    return links, single_sided_link_count
+    return links, paired_link_count, single_sided_link_count
 
 
 def derive_topology_observed_at(raw_records: list[TopologyRawRecord]) -> datetime | None:

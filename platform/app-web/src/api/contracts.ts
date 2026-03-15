@@ -64,6 +64,13 @@ export interface PlatformReadPathStatus {
   newest_observed_at: string | null;
   policy_capable_target_count: number | null;
   detail_ready_target_count: number | null;
+  endpoint_pairing_posture:
+    | "paired"
+    | "partially_paired"
+    | "single_sided"
+    | "unknown"
+    | null;
+  paired_link_count: number | null;
   single_sided_link_count: number | null;
   degraded_scope_summary: string;
   summary: string;
@@ -142,7 +149,16 @@ export interface TopologyLinkRecord {
   target_node_id: string;
   state: "up" | "down" | "degraded" | "unknown";
   source: string;
+  endpoint_pairing_state: "paired" | "single_sided" | "unknown";
+  endpoint_evidence_count: number | null;
   attributes: Record<string, string>;
+}
+
+export interface TopologyCoverageSummaryRecord {
+  endpoint_pairing_posture: "paired" | "partially_paired" | "single_sided" | "unknown";
+  paired_link_count: number;
+  single_sided_link_count: number;
+  summary: string;
 }
 
 export interface TopologyRecord {
@@ -185,6 +201,7 @@ export interface TopologyResponse extends ApiResponseMetadata {
   summary: string;
   served_persisted_at: string | null;
   comparison_to_latest_persisted: TopologyComparisonSummary;
+  coverage_summary: TopologyCoverageSummaryRecord;
   topology: TopologyRecord;
 }
 

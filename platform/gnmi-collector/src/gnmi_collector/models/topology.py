@@ -59,6 +59,8 @@ class NormalizedTopologyLinkRecord(BaseModel):
     target_node_id: str
     state: Literal["up", "down", "degraded", "unknown"]
     source: Literal["gnmi"]
+    endpoint_pairing_state: Literal["paired", "single_sided", "unknown"]
+    endpoint_evidence_count: int
     attributes: dict[str, str] = Field(default_factory=dict)
 
 
@@ -78,6 +80,9 @@ class BackendTopologyDeliveryEnvelope(BaseModel):
     oldest_observed_at: datetime | None = None
     newest_observed_at: datetime | None = None
     degraded_scope_summary: str
+    endpoint_pairing_posture: Literal["paired", "partially_paired", "single_sided", "unknown"]
+    paired_link_count: int
+    single_sided_link_count: int
     topology_id: str
     topology_name: str
     node_count: int
@@ -105,6 +110,8 @@ class TopologyFlowSummary(BaseModel):
     normalized_node_count: int
     normalized_link_count: int
     inferred_link_count: int
+    endpoint_pairing_posture: Literal["paired", "partially_paired", "single_sided", "unknown"]
+    paired_link_count: int
     single_sided_link_count: int
     node_state_counts: dict[str, int] = Field(default_factory=dict)
     link_state_counts: dict[str, int] = Field(default_factory=dict)

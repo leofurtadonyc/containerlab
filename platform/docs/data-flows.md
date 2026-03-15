@@ -117,6 +117,13 @@ Current state:
 - live transport from the collector process into `app-api` now exists for those bounded read-side slices
 - those bounded collector deliveries now also carry configured-target coverage, observed-target counts, freshness-window timestamps, degraded-scope summaries, and policy detail-ready posture so `app-api` can expose clearer product trust cues without inventing fuller truth
 
+Current topology coverage semantics:
+
+- the current topology path now uses the explicit coverage vocabulary defined in `platform/schemas/topology/topology-read-path-coverage-semantics.md`
+- collector delivery now carries the smallest honest endpoint-pairing signals the live evidence supports, centered on per-link `endpoint_pairing_state` plus aggregate `paired_link_count` and `single_sided_link_count`
+- collector delivery now also carries an aggregate `endpoint_pairing_posture`, but that remains a bounded coverage observation rather than a product verdict
+- collector-side endpoint-pairing semantics must not imply protocol adjacency truth, path validity, or controller agreement
+
 ## Backend To Frontend Flow
 
 This is the primary product flow.
@@ -141,12 +148,20 @@ Current state:
 - versioned read-only inventory, topology, policy, capability, and platform status endpoints now exist as bounded live product contracts
 - the current inventory API is fed by a bounded normalized live collector contract and now also exposes explicit serving-mode plus current-versus-latest-persisted comparison semantics where a persisted inventory snapshot exists
 - the current topology API is fed by a backend-owned normalized live read model that explicitly marks partial and unknown state and now also exposes explicit serving-mode plus current-versus-latest-persisted topology comparison semantics
+- the current topology API and the topology read-path row in platform status now also carry explicit endpoint-pairing posture plus paired-versus-single-sided inferred-link counts owned by the backend contract
 - the current policy API is fed by a backend-owned normalized live read model that explicitly marks support, observed, and unknown state and now also exposes explicit serving-mode plus current-versus-latest-persisted policy comparison semantics
 - inventory and topology may be served from the latest persisted normalized snapshot if the live collector boundary is temporarily unavailable
 - policy may now also be served from the latest persisted normalized policy snapshot if the live collector boundary is temporarily unavailable
 - useful frontend read-only pages now consume those stable contracts for overview, platform health, devices, topology, policies, and capabilities
 - overview and platform health now also surface the backend-owned bounded read-path coverage, freshness-window, and degraded-scope posture that the platform-status contract exposes for inventory, topology, and policy
 - workflow-history and audit-history pages now interpret persisted sync-derived evidence using bounded recency and comparison cues, but those remain product-facing explanations rather than workflow, audit-forensics, or validation conclusions
+
+Current topology coverage semantics:
+
+- the backend remains the owner of product-facing topology coverage semantics
+- the topology product contract now carries explicit bounded endpoint-pairing semantics rather than leaving all pairing posture implicit in generic attributes and prose
+- the implemented additions are aggregate `endpoint_pairing_posture`, `paired_link_count`, and `single_sided_link_count`, plus per-link `endpoint_pairing_state` and `endpoint_evidence_count`
+- these fields remain bounded trust cues only and must not be interpreted as topology validation, adjacency validation, or workflow eligibility
 
 Current comparison semantics:
 
@@ -182,6 +197,7 @@ What is real today:
 - the topology API returns a stable platform-owned structure for nodes, links, source, sync status, completeness, timestamps, and notes
 - partial and unknown states are explicit in the contract
 - the backend owns the read model rather than exposing collector or controller-native shapes
+- the topology response now also carries a bounded `coverage_summary` and per-link endpoint-pairing fields so operators can distinguish paired versus single-sided inferred evidence more directly
 - the backend now persists bounded normalized topology snapshots and can fall back to the latest persisted snapshot when live collection is unavailable
 - the topology response can now distinguish live collection, persisted fallback, and comparison-unavailable versus comparison-ready states explicitly
 
@@ -191,6 +207,14 @@ What remains partial:
 - the graph remains a bounded live slice rather than comprehensive operational truth
 - persisted topology support is intentionally limited to normalized snapshot history rather than a final topology database design
 - comparison counts describe bounded normalized node and link differences, not protocol-adjacency validation, path computation, or controller truth
+
+Current topology coverage interpretation:
+
+- the current topology contract now sharpens endpoint-pairing and single-sided-link interpretation inside the existing bounded inferred slice without redesigning the broader topology-source model
+- `paired` means both endpoints were observed for one emitted inferred link; it does not mean validated adjacency truth
+- `partially_paired` is an aggregate posture meaning the response includes both paired and single-sided links; it does not mean measured global topology completeness
+- `single_sided` means emitted inferred links currently rely on one observed endpoint; it does not automatically mean operational fault
+- `unknown` should remain rare and should only be used when the runtime cannot classify pairing honestly from emitted normalized evidence
 
 ## Policy Read-Model Limitations
 
@@ -254,8 +278,14 @@ Current state:
 Current product-versus-observability split:
 
 - `app-api` and `app-web` carry the human-readable degraded-scope summaries and bounded read-path explanations
-- Prometheus and Grafana carry the numeric proxies for those same conditions, such as observed-versus-configured target gaps, freshness age, single-sided topology evidence, and policy detail-ready gaps
+- Prometheus and Grafana carry the numeric proxies for those same conditions, such as observed-versus-configured target gaps, freshness age, paired-versus-single-sided topology evidence counts or shares, and policy detail-ready gaps
 - observability panels therefore reinforce the product posture without becoming a second product contract
+
+Week 14 topology split:
+
+- `app-api` and `app-web` should carry the human-readable endpoint-pairing vocabulary and the bounded aggregate pairing posture
+- Prometheus and Grafana should carry only numeric topology pairing projections such as `paired_link_count`, `single_sided_link_count`, and derived shares, plus any backend-owned pairing-posture labels projected directly from metrics
+- Grafana must not become the source of product-facing pairing posture language even when it displays those backend-owned label projections
 
 ## ODL Integration Flow
 

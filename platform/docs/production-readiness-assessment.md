@@ -51,19 +51,21 @@ evidence gathered from the running platform on `2026-03-14`.
 
 - `/api/v1/platform/status` reported `status=ok`, declared platform components,
   and bounded `read_paths` for inventory, topology, and policy carrying
-  target-coverage, freshness-window, degraded-scope, and policy detail-ready
-  posture
+  target-coverage, freshness-window, degraded-scope, topology endpoint-pairing
+  posture, and policy detail-ready posture
 - `/api/v1/devices` reported `data_status=live`,
   `serving_mode=live_collector`, `count=34`, and an explicit
   `comparison_snapshot_id`
 - `/api/v1/topology` reported `data_status=live`,
-  `serving_mode=live_collector`, `completeness=partial`, and an explicit
-  `comparison_snapshot_id`
+  `serving_mode=live_collector`, `completeness=partial`, a bounded
+  `coverage_summary` carrying endpoint-pairing posture plus paired-versus-
+  single-sided counts, and an explicit `comparison_snapshot_id`
 - `/api/v1/policies` reported `data_status=live`,
   `serving_mode=live_collector`, `completeness=partial`,
-  `detail_mode=counters_only`, `empty_reason=no_policies_observed`, `count=0`,
-  an explicit `comparison_snapshot_id`, and explicit persisted anchor IDs on
-  the previous-snapshot comparison surface
+  `detail_mode=counters_only`,
+  `empty_reason=per_policy_details_unavailable`, `observed_policy_count=2`,
+  `count=0`, an explicit `comparison_snapshot_id`, and explicit persisted
+  anchor IDs on the previous-snapshot comparison surface
 - `/api/v1/capabilities` reported `data_status=bounded_matrix`, `count=13`,
   `planning_readiness=readiness_planning_supported`,
   `phase_recommendation=remain_phase_2_read_only_foundation`, and an explicit
@@ -180,13 +182,16 @@ Why this is strong enough now:
 - `verify-core-runtime` checks startup contracts, support-service health,
   collector metrics, WebUI proxy health, read-side API contract presence,
   bounded platform-status `read_paths`, capability vendor-posture and roadmap
-  rollups, dashboard-critical metric families, and Prometheus target posture
+  rollups, backend-owned topology coverage fields on both the topology and
+  platform-status read paths, dashboard-critical metric families including
+  paired-link, single-sided-link, and pairing-posture signals, and Prometheus
+  target posture
 - `verify-odl-auth` validates the configured ODL credential path and rejects
   the default fallback
 - degraded but honest states such as partial topology, non-ok read-path
-  posture, single-sided topology evidence, live-empty policy posture, or zero
-  policy detail-ready targets are surfaced as bounded notices or warnings
-  instead of being hidden
+  posture, partially-paired or single-sided topology evidence, aggregate-only
+  or live-empty policy posture, or zero policy detail-ready targets are
+  surfaced as bounded notices or warnings instead of being hidden
 
 Why this is still bounded:
 
@@ -234,9 +239,10 @@ Posture: `mixed_and_explicitly_bounded`
 Current strengths:
 
 - inventory is live and useful for the current Nokia-first slice
-- topology is live and operationally useful, but explicitly partial
+- topology is live and operationally useful, explicitly partial, and now materially stronger after the accepted week 14 work because endpoint-pairing posture plus paired-versus-single-sided inferred-link counts are exposed across backend, product, observability, and verifier surfaces as bounded evidence-depth cues
 - policy surfaces preserve honest aggregate and per-target footprint evidence,
-  even when the current lab has no observed SR policies
+  and the current live stack now shows observed policies while keeping
+  per-policy detail-unavailable posture explicit
 - persisted comparison and bounded history surfaces now expose stronger anchor
   identity where underlying records exist
 
@@ -244,8 +250,9 @@ Current limits:
 
 - topology remains partial by design and must not be treated as complete
   topology truth
-- policy remains partial, aggregate-heavy, and currently live-empty for actual
-  observed SR policy items in the present lab
+- policy remains partial, aggregate-heavy, and currently blocked at
+  `per_policy_details_unavailable` for actual per-policy records in the
+  present lab even though live aggregate counters now show observed policies
 - workflow-history and audit-history remain sync-derived or readiness-derived
   platform history, not workflow lifecycle or operator-activity truth
 - readiness and capability surfaces remain planning-support truth, not
@@ -259,9 +266,9 @@ Assessment:
 
 ### Next-cycle implication
 
-Posture: `topology_truth_depth_is_the_next_highest_value_phase2_gap`
+Posture: `week14_pairing_slice_complete_but_broader_topology_truth_depth_still_bounded`
 
-Why this is the right next bounded focus now:
+Why this is the right checkpoint reading now:
 
 - the accepted week 13 identity review ended in a no-change decision for
   capability item IDs, so the default identity lane is no longer the strongest
@@ -269,20 +276,28 @@ Why this is the right next bounded focus now:
 - post-deploy verification now proves the bounded read-path and capability
   posture contracts end to end, so verification hardening is no longer the
   primary bottleneck either
-- the live stack still reports partial topology completeness and single-sided
-  topology evidence, which makes topology the clearest current truth-depth gap
-  on a slice that already has stable live data
-- policy remains important, but the current `no_policies_observed` and zero
-  detail-ready-target posture means a policy-first cycle would mostly run into
-  absent source detail rather than a clean, already-evidenced truth gap
+- the accepted week 14 topology cycle closed the narrower endpoint-pairing and
+  single-sided-link coverage gap across collector, backend, product,
+  observability, tests, and verifier behavior
+- the live stack still reports partial topology completeness, and some broad
+  topology `degraded_scope_summary` wording still compresses multiple causes,
+  which leaves topology as the clearest remaining truth-depth candidate only if
+  a later cycle can sharpen those broader bounded semantics honestly
+- policy remains important, but the current
+  `per_policy_details_unavailable`, `counters_only`, zero detail-ready-target,
+  and zero normalized-record posture means a policy-first cycle would mostly
+  run into absent derivable source detail rather than a clean,
+  already-evidenced truth gap
 
 Assessment:
 
-- the next bounded cycle should return to topology truth depth rather than
-  reopening item-identity work or a workflow-planning lane
-- that cycle should stay narrow: tighten endpoint-pairing and single-sided-link
-  coverage semantics where the collector and backend already have real signals,
-  while preserving `Phase 2` and the current safe-use boundary
+- the current checkpoint should preserve the accepted week 14 result rather
+  than recommending another automatic topology implementation pass
+- if a later bounded cycle reopens topology, it should stay narrow: sharpen
+  broad `partial` and topology `degraded_scope_summary` semantics where the
+  current evidence supports a cleaner split between inference-boundedness,
+  endpoint-coverage limits, and collection degradation, while preserving
+  `Phase 2` and the current safe-use boundary
 
 ### Trust-cue maturity
 
@@ -319,11 +334,14 @@ The current platform is safe to use for the following bounded jobs.
 - routine read-only visibility into the current live inventory slice for the
   onboarded Nokia-first lab topology
 - routine read-only visibility into the current bounded topology slice, with
-  explicit acceptance that it is partial rather than complete
+  explicit acceptance that it is partial rather than complete and that
+  `paired`, `partially_paired`, and `single_sided` topology cues describe
+  endpoint-evidence depth only rather than adjacency validation or full
+  topology truth
 - routine read-only visibility into the current bounded policy slice,
-  especially aggregate coverage, per-target footprint posture, live-empty
-  versus persisted context, and bounded current-versus-persisted comparison
-  signals
+  especially aggregate coverage, per-target footprint posture,
+  aggregate-only-versus-persisted context, and bounded current-versus-
+  persisted comparison signals
 - routine use of persisted anchors, comparison anchors, sync-run anchors, and
   readiness anchors where the backend now exposes them
 - routine use of the repo-owned rebuild, redeploy, and verification flow for

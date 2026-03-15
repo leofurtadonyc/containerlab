@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class CollectorMetricsSnapshot:
-    """Cached collector metrics summaries."""
+    """Cached collector metrics summaries, including topology pairing coverage."""
 
     inventory: "InventoryFlowSummary | None" = None
     topology: "TopologyFlowSummary | None" = None

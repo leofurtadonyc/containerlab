@@ -17,6 +17,9 @@ class CachedTopologyMetrics:
 
     node_count: int = 0
     link_count: int = 0
+    endpoint_pairing_posture: str = "unknown"
+    paired_link_count: int = 0
+    single_sided_link_count: int = 0
     data_status: str = "unknown"
     serving_mode: str = "unknown"
     sync_status: str = "unknown"
@@ -101,6 +104,9 @@ def cache_topology_metrics(
     *,
     node_count: int,
     link_count: int,
+    endpoint_pairing_posture: str,
+    paired_link_count: int,
+    single_sided_link_count: int,
     data_status: str,
     serving_mode: str,
     sync_status: str,
@@ -119,6 +125,9 @@ def cache_topology_metrics(
         _cached_topology_metrics = CachedTopologyMetrics(
             node_count=node_count,
             link_count=link_count,
+            endpoint_pairing_posture=endpoint_pairing_posture,
+            paired_link_count=paired_link_count,
+            single_sided_link_count=single_sided_link_count,
             data_status=data_status,
             serving_mode=serving_mode,
             sync_status=sync_status,
@@ -309,6 +318,33 @@ def render_prometheus_metrics(
                 "# HELP platform_app_api_topology_links Current normalized topology link count.",
                 "# TYPE platform_app_api_topology_links gauge",
                 f"platform_app_api_topology_links {topology_metrics['link_count']}",
+                (
+                    "# HELP platform_app_api_topology_paired_links "
+                    "Current backend-owned count of topology links with paired endpoint evidence."
+                ),
+                "# TYPE platform_app_api_topology_paired_links gauge",
+                (
+                    "platform_app_api_topology_paired_links "
+                    f"{topology_metrics['paired_link_count']}"
+                ),
+                (
+                    "# HELP platform_app_api_topology_single_sided_links "
+                    "Current backend-owned count of topology links with single-sided endpoint evidence."
+                ),
+                "# TYPE platform_app_api_topology_single_sided_links gauge",
+                (
+                    "platform_app_api_topology_single_sided_links "
+                    f"{topology_metrics['single_sided_link_count']}"
+                ),
+                (
+                    "# HELP platform_app_api_topology_coverage_posture "
+                    "Current backend-owned topology endpoint-pairing posture."
+                ),
+                "# TYPE platform_app_api_topology_coverage_posture gauge",
+                (
+                    "platform_app_api_topology_coverage_posture"
+                    f'{{endpoint_pairing_posture="{topology_metrics["endpoint_pairing_posture"]}"}} 1'
+                ),
                 (
                     "# HELP platform_app_api_topology_snapshot_status "
                     "Current topology snapshot status exposed by the backend."

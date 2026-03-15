@@ -2,20 +2,19 @@ import { EmptyState, ErrorState, LoadingState } from "../../components/query-sta
 import { StatusPill } from "../../components/status-pill";
 import { TrustCueCard } from "../../components/trust-cue-card";
 import type { PlatformReadPathStatus } from "../../api/contracts";
-import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
+import {
+  countBy,
+  describeTopologyCoveragePosture,
+  describeTopologyReadPathPairing,
+  formatDateTime,
+  formatLabel,
+} from "../../lib/presentation";
 import { normalizeDryRunReadiness, summarizeReadinessItemIdentitySupport } from "../../lib/readiness";
 import { useCapabilitiesQuery } from "../capabilities/api";
 import { useDevicesQuery } from "../devices/api";
-import { usePlatformStatusQuery } from "../platform-health/api";
+import { getPlatformReadPath, usePlatformStatusQuery } from "../platform-health/api";
 import { usePoliciesQuery } from "../policies/api";
-import { useTopologyQuery } from "../topology/api";
-
-function getReadPathStatus(
-  readPaths: PlatformReadPathStatus[],
-  modelFamily: PlatformReadPathStatus["model_family"],
-) {
-  return readPaths.find((readPath) => readPath.model_family === modelFamily) ?? null;
-}
+import { getTopologyCoverageSummary, useTopologyQuery } from "../topology/api";
 
 function formatReadPathCoverage(readPath: PlatformReadPathStatus | null): string {
   if (!readPath) {
@@ -150,9 +149,15 @@ export function OverviewView() {
     (sum, readPath) => sum + readPath.configured_target_count,
     0,
   );
-  const inventoryReadPath = getReadPathStatus(readPaths, "inventory");
-  const topologyReadPath = getReadPathStatus(readPaths, "topology");
-  const policyReadPath = getReadPathStatus(readPaths, "policy");
+  const inventoryReadPath = getPlatformReadPath(readPaths, "inventory");
+  const topologyReadPath = getPlatformReadPath(readPaths, "topology");
+  const policyReadPath = getPlatformReadPath(readPaths, "policy");
+  const topologyCoverageSummary = getTopologyCoverageSummary(topologyQuery.data);
+  const topologyCoverageReadout = describeTopologyCoveragePosture(
+    topologyCoverageSummary,
+    topologyQuery.data.topology.links.length,
+  );
+  const topologyReadPathPairing = describeTopologyReadPathPairing(topologyReadPath);
   const readiness = normalizeDryRunReadiness(capabilitiesQuery.data.dry_run_readiness);
   const readinessIdentity = summarizeReadinessItemIdentitySupport(readiness);
 
@@ -206,8 +211,8 @@ export function OverviewView() {
         </article>
         <article className="summary-card">
           <p className="summary-label">Topology coverage</p>
-          <strong>{topologyQuery.data.topology.nodes.length} nodes</strong>
-          <p>{formatLabel(topologyQuery.data.topology.completeness)}</p>
+          <strong>{topologyCoverageReadout.label}</strong>
+          <p>{topologyCoverageReadout.countDetail}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Policy inventory</p>
@@ -334,7 +339,7 @@ export function OverviewView() {
 
         <TrustCueCard
           title="Topology Trust Cues"
-          summary="Topology routine use depends on live-versus-fallback serving, partial completeness, and the bounded target coverage and freshness posture now exposed for the topology read path."
+          summary="Topology routine use depends on live-versus-fallback serving, partial completeness, backend-owned endpoint-pairing posture, and the bounded target coverage and freshness posture now exposed for the topology read path."
           rows={[
             {
               label: "Serving mode",
@@ -346,6 +351,12 @@ export function OverviewView() {
               label: "Freshness posture",
               kind: "status",
               value: topologyQuery.data.evidence_confidence.freshness_posture,
+            },
+            {
+              label: "Endpoint pairing",
+              kind: "status",
+              value: topologyReadPathPairing.status,
+              note: [topologyCoverageReadout.detail, topologyCoverageReadout.countDetail],
             },
             {
               label: "Target coverage",
@@ -378,9 +389,7 @@ export function OverviewView() {
               value: topologyReadPath?.observation_state ?? "unknown",
               note: [
                 topologyReadPath?.degraded_scope_summary ?? "No topology degraded-scope summary is exposed.",
-                ...(topologyReadPath?.single_sided_link_count
-                  ? [`Single-sided inferred links: ${topologyReadPath.single_sided_link_count}`]
-                  : []),
+                topologyReadPathPairing.countDetail,
               ],
             },
             {

@@ -71,6 +71,7 @@ Current state:
 - typed health endpoint exists
 - bounded HTTP request and latency metrics now exist at `/metrics`
 - live bounded inventory, topology, and policy integrations now exist from the collector boundary into backend read paths
+- `/api/v1/topology` and the topology row in `/api/v1/platform/status` now expose backend-owned endpoint-pairing posture plus paired-versus-single-sided inferred-link counts as bounded topology coverage semantics
 - Alembic-managed persistence now exists for normalized inventory snapshots, normalized topology snapshots, normalized policy snapshots, candidate-path records, and sync-run history
 - devices, topology, and policy can fall back to the latest persisted normalized snapshot when the collector boundary is temporarily unavailable
 - workflow-history and audit-history currently expose bounded views derived from persisted sync-run activity rather than full workflow or audit tables
@@ -104,6 +105,7 @@ Current state:
 - Python skeleton exists
 - bounded live inventory, topology, and policy snapshot delivery now exists for `app-api`
 - bounded inventory, topology, and policy collection and backend-readiness metrics now exist at `/metrics`
+- topology snapshot delivery and topology metrics now also expose explicit endpoint-pairing posture plus paired-versus-single-sided inferred-link counts for the current bounded inference path
 - Nokia-first adapter path exists
 - mapping and config scaffolding exist
 
@@ -184,6 +186,7 @@ Current state:
 - dashboard provisioning exists
 - real platform, topology, and SR policy dashboards now exist for current `app-api`, `gnmi-collector`, and Prometheus-backed observability
 - those dashboards now surface richer current evidence such as sync freshness, persisted sync results, topology agreement signals, bounded persisted policy sync evidence, and honest live-empty policy context where available
+- the topology and platform overview dashboards now also surface paired-link counts, single-sided-link counts, derived shares, and backend-owned topology pairing-posture labels projected from metrics only, while keeping Grafana observability-only
 - the current topology now runs a repo-built local Grafana image that validates provisioning and writable data-path mounts before startup
 - `verify-core-runtime` now checks Grafana API health, Prometheus datasource provisioning, and provisioned overview dashboard discovery after deploy or reconfigure
 - placeholder dashboards still exist for the remaining required dashboard families
@@ -238,6 +241,7 @@ Current state:
 - service directory and README exist
 - useful read-only pages now exist for overview, platform health, devices, topology, policies, workflow history, audit history, and capabilities
 - a typed API client layer now consumes stable backend contracts
+- topology, Overview, and Platform Health now surface backend-owned endpoint-pairing posture and paired-versus-single-sided inferred-link counts as bounded topology trust cues without turning the WebUI into a validation surface
 - workflow and audit views now surface bounded platform-side sync visibility rather than remaining placeholders
 
 ## Service Relationship Summary

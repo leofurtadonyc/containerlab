@@ -2,8 +2,13 @@ import { EmptyState, ErrorState, LoadingState } from "../../components/query-sta
 import { StatusPill } from "../../components/status-pill";
 import { TrustCueCard } from "../../components/trust-cue-card";
 import type { PlatformReadPathStatus } from "../../api/contracts";
-import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
-import { usePlatformStatusQuery } from "./api";
+import {
+  countBy,
+  describeTopologyReadPathPairing,
+  formatDateTime,
+  formatLabel,
+} from "../../lib/presentation";
+import { getPlatformReadPath, usePlatformStatusQuery } from "./api";
 
 function formatReadPathCoverage(readPath: PlatformReadPathStatus): string {
   return `${readPath.observed_target_count} of ${readPath.configured_target_count} configured targets`;
@@ -90,6 +95,8 @@ export function PlatformHealthView() {
   const freshnessWindowCount = readPaths.filter(
     (readPath) => readPath.oldest_observed_at && readPath.newest_observed_at,
   ).length;
+  const topologyReadPath = getPlatformReadPath(readPaths, "topology");
+  const topologyPairingReadout = describeTopologyReadPathPairing(topologyReadPath);
 
   return (
     <section>
@@ -183,7 +190,7 @@ export function PlatformHealthView() {
       <div className="content-grid">
         <TrustCueCard
           title="Routine-Use Trust Cues"
-          summary="Platform Health is a current API response rather than an anchored history surface, so the key cues are freshness, observation coverage, read-path scope, and how much of the page is probe-backed versus declared-only."
+          summary="Platform Health is a current API response rather than an anchored history surface, so the key cues are freshness, observation coverage, read-path scope, topology endpoint pairing posture, and how much of the page is probe-backed versus declared-only."
           rows={[
             {
               label: "API freshness",
@@ -212,6 +219,12 @@ export function PlatformHealthView() {
                         `${formatLabel(readPath.model_family)}: ${formatReadPathCoverage(readPath)}`,
                     )
                   : "No bounded read-path summaries are currently exposed.",
+            },
+            {
+              label: "Topology endpoint pairing",
+              kind: "status",
+              value: topologyPairingReadout.status,
+              note: [topologyPairingReadout.detail, topologyPairingReadout.countDetail],
             },
             {
               label: "Freshness windows",
@@ -282,7 +295,9 @@ export function PlatformHealthView() {
                 readPaths.length > 0
                   ? readPaths.map(
                       (readPath) =>
-                        `${formatLabel(readPath.model_family)}: ${formatReadPathCollection(readPath)}`,
+                        readPath.model_family === "topology"
+                          ? `${formatLabel(readPath.model_family)}: ${formatReadPathCollection(readPath)} • ${topologyPairingReadout.countDetail}`
+                          : `${formatLabel(readPath.model_family)}: ${formatReadPathCollection(readPath)}`,
                     )
                   : "No bounded read-path summaries are currently exposed.",
             },
@@ -324,6 +339,11 @@ export function PlatformHealthView() {
                   <td>{formatReadPathFreshness(readPath)}</td>
                   <td>
                     <p className="table-note">{readPath.degraded_scope_summary}</p>
+                    {readPath.model_family === "topology" ? (
+                      <p className="table-note">
+                        {topologyPairingReadout.detail} {topologyPairingReadout.countDetail}
+                      </p>
+                    ) : null}
                     {readPath.notes.length > 0 ? (
                       <ul className="notes-list">
                         {readPath.notes.map((note) => (

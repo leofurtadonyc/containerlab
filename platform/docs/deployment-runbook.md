@@ -13,6 +13,9 @@ It is intentionally practical rather than aspirational:
 - it keeps workflow, dry-run, and action semantics explicitly out of scope
 - it describes the current operational stop line honestly
 
+For the current packaged platform runtime, this runbook is also the preferred validation path.
+Do not default to host-side `npm` or `pytest` commands when validating normal frontend or backend changes; rebuild the repo-owned images, replace the topology, and rerun the verification scripts.
+
 Use this runbook for day-0 and day-1 style platform bring-up, rebuild, and first-response troubleshooting.
 
 ## What This Runbook Covers
@@ -86,6 +89,9 @@ This produces the current local images:
 - `platform-prometheus:0.1.0`
 - `platform-grafana:0.1.0`
 
+For the current stack, this image-build step is part of the normal validation path, not just packaging.
+Frontend toolchain execution belongs inside the `app-web` image build, and routine backend/frontend validation should continue through the packaged runtime plus the verification scripts below.
+
 ### 2. Deploy Or Replace The Topology
 
 For the first deploy in a workspace:
@@ -114,6 +120,8 @@ After deployment, run both verification steps before treating the platform as us
 These are required, not optional, for the current bounded operational slice.
 If either script fails, stop there and treat the deployment as not yet usable until the failing runtime contract is understood.
 
+This is the current documented replacement for ad hoc host-side validation of normal platform changes.
+
 ## What The Verification Scripts Prove
 
 ### `verify-core-runtime.sh`
@@ -129,8 +137,9 @@ This now validates:
 - `app-web` startup-contract readiness, static HTTP availability, and `/api` proxy reachability to `app-api`
 - Prometheus live scrape target posture for the current real targets
 - read-side API contract sanity for platform status, devices, topology, policies, and capabilities, now including bounded `read_paths` coverage and freshness fields plus capability vendor-posture and roadmap rollups
-- dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts, now including collector observation-age, topology single-sided-link, and policy detail-ready signals used by the platform overview dashboard
-- bounded warnings and notices when current read-side responses fall back to persisted data, become blocked, expose non-ok read-path posture, or surface other degraded-but-honest states such as partial topology and aggregate-only policy evidence
+- backend-owned topology coverage contract presence in both `/api/v1/platform/status` and `/api/v1/topology`, including endpoint-pairing posture, paired-link and single-sided-link counts, per-link pairing state, and per-link endpoint-evidence counts
+- dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts, now including backend and collector paired-link, single-sided-link, pairing-posture, collector observation-age, and policy detail-ready signals used by the current dashboards
+- bounded warnings and notices when current read-side responses fall back to persisted data, become blocked, expose non-ok read-path posture, or surface other degraded-but-honest states such as partial topology, partially-paired or single-sided topology coverage, and aggregate-only policy evidence
 - Grafana provisioned datasource presence and provisioned overview dashboards
 
 ### `verify-odl-auth.sh`
@@ -208,6 +217,7 @@ What healthy means here:
 - the response shape matches the current bounded contracts
 - live versus persisted-fallback posture is explicit where relevant
 - empty or partial data remains possible and may still be healthy if it is honest about current evidence limits
+- topology may still report `completeness=partial` and may honestly report `endpoint_pairing_posture=partially_paired` or `endpoint_pairing_posture=single_sided`; those are bounded evidence-depth cues, not validation failures
 
 ### Verification Warnings
 
@@ -215,7 +225,8 @@ What healthy means here:
 
 - hard failures still stop the deployment from being treated as usable
 - warnings call out degraded-but-honest current postures such as persisted fallback, blocked read-side evidence, or bounded policy and topology limits that remain visible by design
-- notices now also call out bounded read-path attention states such as single-sided topology evidence or zero policy detail-ready targets when those conditions are real
+- notices now also call out bounded read-path attention states such as partially-paired or single-sided topology endpoint coverage and zero policy detail-ready targets when those conditions are real
+- topology pairing notices mean the inferred topology slice still mixes stronger and weaker endpoint evidence; they do not mean the platform has proven an adjacency fault or protocol failure
 - a warning does not imply workflow semantics, remediation intent, or automatic rollback; it is an operator cue to inspect current truth posture more carefully
 
 ## What Remains Bootstrap-Grade
