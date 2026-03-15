@@ -18,6 +18,13 @@ It describes what the repository already does today across:
 
 It does not authorize code changes by itself.
 
+The follow-on design note for the next week 14 implementation slice now lives in
+`platform/schemas/topology/topology-read-path-coverage-semantics.md`.
+
+That design note turns this review into one concrete vocabulary and ownership
+contract for endpoint pairing, single-sided inferred-link posture, product trust
+cues, Grafana numeric projections, and verifier behavior.
+
 ## Review Scope
 
 This review inspected the current topology path in these files.
@@ -125,6 +132,13 @@ current contract weaker in three ways.
 This is why the current recommendation should stay focused on endpoint-pairing
 and single-sided-link semantics rather than drifting into a broad topology
 redesign.
+
+The newly added design note now also makes that narrower target concrete:
+
+- per-link `endpoint_pairing_state`
+- aggregate `endpoint_pairing_posture`
+- numeric `paired_link_count`
+- numeric `single_sided_link_count`
 
 ### 3. Backend contracts preserve the bounded topology model correctly
 
@@ -456,3 +470,6 @@ It should tighten endpoint-pairing and single-sided-link coverage semantics end
 to end, while preserving the current backend-owned normalized topology model,
 the product-versus-observability split, and the explicit partial-truth posture
 already established across the repository.
+
+The exact field, metric, and UI-separation rules for that slice are now defined
+in `platform/schemas/topology/topology-read-path-coverage-semantics.md`.

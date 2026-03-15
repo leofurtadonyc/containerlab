@@ -146,6 +146,7 @@ Expected emphasis over time:
 - sync timestamps
 - integration quality signals
 - bounded backend-versus-collector aggregate agreement cues where those metrics exist
+- explicit paired-versus-single-sided inferred-link counts and shares where those bounded collector metrics exist
 
 ### SR Policy
 
@@ -176,6 +177,7 @@ In `app-web`:
 - operators see backend-owned read-path summaries
 - degraded-scope explanations are shown as product trust cues
 - coverage and freshness remain tied to the bounded platform-status contract
+- topology endpoint-pairing posture should be shown as backend-owned product language, not as a Grafana-derived label
 
 In Grafana:
 
@@ -183,8 +185,15 @@ In Grafana:
 - coverage is represented through observed-versus-configured targets
 - freshness is represented through observation age from collector timestamps
 - degraded scope is approximated through numeric gaps such as missing targets, single-sided topology links, and policy detail-ready gaps
+- topology endpoint-pairing observability should stay numeric as paired-link counts, single-sided-link counts, and derived shares rather than becoming a product-owned status vocabulary inside dashboards
 
 Grafana does not attempt to reproduce the backend's human-readable degraded-scope summaries verbatim, because those are product semantics rather than durable metric labels.
+
+Week 14 topology coverage rule:
+
+- backend and WebUI may use the bounded topology pairing vocabulary defined in `platform/schemas/topology/topology-read-path-coverage-semantics.md`
+- Grafana should not become the surface that defines whether the topology slice is `paired`, `partially_paired`, `single_sided`, or `unknown`
+- Grafana may only project the numeric counts and derived ratios that support that product interpretation
 
 ### Change Validation
 

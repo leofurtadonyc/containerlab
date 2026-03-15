@@ -117,6 +117,13 @@ Current state:
 - live transport from the collector process into `app-api` now exists for those bounded read-side slices
 - those bounded collector deliveries now also carry configured-target coverage, observed-target counts, freshness-window timestamps, degraded-scope summaries, and policy detail-ready posture so `app-api` can expose clearer product trust cues without inventing fuller truth
 
+Week 14 topology coverage design:
+
+- the current topology path should now adopt the explicit coverage vocabulary defined in `platform/schemas/topology/topology-read-path-coverage-semantics.md`
+- collector delivery should carry only the smallest honest endpoint-pairing signals the live evidence supports, centered on per-link `endpoint_pairing_state` plus aggregate `paired_link_count` and `single_sided_link_count`
+- collector delivery may also carry an aggregate `endpoint_pairing_posture`, but that remains a bounded coverage observation rather than a product verdict
+- collector-side endpoint-pairing semantics must not imply protocol adjacency truth, path validity, or controller agreement
+
 ## Backend To Frontend Flow
 
 This is the primary product flow.
@@ -147,6 +154,13 @@ Current state:
 - useful frontend read-only pages now consume those stable contracts for overview, platform health, devices, topology, policies, and capabilities
 - overview and platform health now also surface the backend-owned bounded read-path coverage, freshness-window, and degraded-scope posture that the platform-status contract exposes for inventory, topology, and policy
 - workflow-history and audit-history pages now interpret persisted sync-derived evidence using bounded recency and comparison cues, but those remain product-facing explanations rather than workflow, audit-forensics, or validation conclusions
+
+Week 14 topology coverage design:
+
+- the backend remains the owner of product-facing topology coverage semantics
+- the topology product contract should carry explicit bounded endpoint-pairing semantics rather than leaving all pairing posture implicit in generic attributes and prose
+- the smallest honest additions are aggregate `endpoint_pairing_posture`, `paired_link_count`, and `single_sided_link_count`, plus per-link `endpoint_pairing_state` and `endpoint_evidence_count`
+- these fields remain bounded trust cues only and must not be interpreted as topology validation, adjacency validation, or workflow eligibility
 
 Current comparison semantics:
 
@@ -191,6 +205,14 @@ What remains partial:
 - the graph remains a bounded live slice rather than comprehensive operational truth
 - persisted topology support is intentionally limited to normalized snapshot history rather than a final topology database design
 - comparison counts describe bounded normalized node and link differences, not protocol-adjacency validation, path computation, or controller truth
+
+Week 14 design direction:
+
+- the next topology improvement should refine endpoint-pairing and single-sided-link interpretation inside the current bounded inferred slice rather than attempting a broader topology-source redesign
+- `paired` means both endpoints were observed for one emitted inferred link; it does not mean validated adjacency truth
+- `partially_paired` is an aggregate posture meaning the response includes both paired and single-sided links; it does not mean measured global topology completeness
+- `single_sided` means emitted inferred links currently rely on one observed endpoint; it does not automatically mean operational fault
+- `unknown` should remain rare and should only be used when the runtime cannot classify pairing honestly from emitted normalized evidence
 
 ## Policy Read-Model Limitations
 
@@ -256,6 +278,12 @@ Current product-versus-observability split:
 - `app-api` and `app-web` carry the human-readable degraded-scope summaries and bounded read-path explanations
 - Prometheus and Grafana carry the numeric proxies for those same conditions, such as observed-versus-configured target gaps, freshness age, single-sided topology evidence, and policy detail-ready gaps
 - observability panels therefore reinforce the product posture without becoming a second product contract
+
+Week 14 topology split:
+
+- `app-api` and `app-web` should carry the human-readable endpoint-pairing vocabulary and the bounded aggregate pairing posture
+- Prometheus and Grafana should carry only numeric topology pairing projections such as `paired_link_count`, `single_sided_link_count`, and derived shares
+- Grafana must not become the source of product-facing pairing posture language
 
 ## ODL Integration Flow
 

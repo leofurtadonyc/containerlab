@@ -38,6 +38,9 @@ So the next cycle should remain tightly focused on explicit endpoint-pairing
 posture, single-sided-link coverage semantics, and sharper bounded trust cues,
 not on broad topology redesign.
 
+The exact vocabulary and layer ownership for that implementation slice are now
+defined in `platform/schemas/topology/topology-read-path-coverage-semantics.md`.
+
 Interpret it narrowly.
 
 - stay fully in `Phase 2 — read-only product foundation`
