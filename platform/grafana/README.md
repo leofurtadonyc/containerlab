@@ -33,7 +33,7 @@ Operators need a time-series and event dashboard view that is decoupled from the
 - does not query the backend or Postgres directly
 
 ## Current status
-Provisioning from files is in place, and real platform, topology, and SR policy dashboards now exist. They visualize Prometheus scrape health plus real `app-api` and `gnmi-collector` metrics, while the remaining dashboard families still stay as clearly marked placeholders. `../scripts/verify-core-runtime.sh` now provides one bounded post-deploy regression check for Grafana API health, datasource provisioning, and provisioned overview dashboard discovery.
+Provisioning from files is in place, and real platform, topology, and SR policy dashboards now exist. They visualize Prometheus scrape health plus real `app-api` and `gnmi-collector` metrics, while the remaining dashboard families still stay as clearly marked placeholders. The topology and platform overview dashboards now also surface bounded topology coverage observability through paired-link counts, single-sided-link counts, derived shares, and backend-owned pairing-posture labels projected from metrics rather than invented in dashboard logic. `../scripts/verify-core-runtime.sh` now provides one bounded post-deploy regression check for Grafana API health, datasource provisioning, and provisioned overview dashboard discovery.
 
 ## Planned evolution
 - refine provisioned Prometheus datasource settings as observability needs grow
@@ -42,6 +42,7 @@ Provisioning from files is in place, and real platform, topology, and SR policy 
 
 ## Notes and caveats
 Grafana is observability-only. The product UI is `app-web`. Do not build operator workflows or product pages in Grafana.
+Topology coverage panels now exist to help operators see numeric endpoint-pairing posture faster, but those panels still do not imply protocol adjacency validation, controller agreement, or workflow meaning.
 The local runtime image is intentionally narrow: it keeps repo-managed provisioning as the source of truth, but fails fast when the provisioning contract is broken.
 The local runtime now also normalizes ownership on the bind-mounted data directory so a fresh clone on another Linux host does not depend on pre-created host-side `grafana` UID ownership just to start.
 When provisioning or dashboard files change, reconfigure the platform topology and rerun `../scripts/verify-core-runtime.sh` to confirm the mounted provisioning contract still loads cleanly.

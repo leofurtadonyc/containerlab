@@ -150,8 +150,12 @@ Implementation status after the first two bounded slices:
   backend-owned read models
 - implemented now in `app-api` metrics: bounded backend-owned topology pairing
   posture plus paired-link and single-sided-link gauges
-- still pending in later slices: explicit WebUI, verifier, and any additional
-  observability-surface consumption of these backend-owned typed fields
+- implemented now in `app-web`: primary topology, overview, and platform-health
+  trust-cue consumption of these backend-owned typed fields
+- implemented now in Grafana: paired-link, single-sided-link, share, and
+  backend-owned pairing-posture dashboard consumption from real metrics
+- still pending in later slices: any narrower verifier-specific refinement of
+  these backend-owned typed fields
 
 ### Bounded status fields
 
@@ -308,6 +312,8 @@ Allowed Grafana signals:
 - paired link count
 - single-sided link count
 - paired-versus-single-sided share
+- backend-owned `endpoint_pairing_posture` labels only when projected directly
+  from real metrics
 - existing collector-versus-backend count deltas
 - existing freshness and sync-age signals
 
@@ -315,6 +321,8 @@ Grafana non-ownership:
 
 - do not render `endpoint_pairing_posture` as a product contract or workflow
   state
+- do not invent dashboard-only pairing vocabulary beyond what backend-owned
+  metrics already expose
 - do not duplicate backend `degraded_scope_summary` prose verbatim
 - do not claim topology validation or protocol truth
 

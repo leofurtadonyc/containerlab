@@ -363,6 +363,40 @@ def test_topology_snapshot_endpoint_returns_normalized_live_records(monkeypatch)
     assert first_link["endpoint_pairing_state"] == "paired"
     assert first_link["endpoint_evidence_count"] == 2
     assert first_link["attributes"]["endpoint_pairing_state"] == "paired"
+    assert first_link["attributes"]["endpoint_evidence_count"] == "2"
+
+
+def test_topology_snapshot_endpoint_marks_single_sided_coverage_explicit(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "gnmi_collector.adapters.nokia.sros.gNMIclient",
+        FakeSingleSidedTopologyGnmiClient,
+    )
+
+    response = client.get("/topology/snapshot")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["delivery_status"] == "live_ready"
+    assert payload["collection_partial_count"] == 0
+    assert payload["node_count"] == 34
+    assert payload["link_count"] == 17
+    assert payload["endpoint_pairing_posture"] == "partially_paired"
+    assert payload["paired_link_count"] == 16
+    assert payload["single_sided_link_count"] == 1
+    assert payload["degraded_scope_summary"] == (
+        "Topology delivery remains bounded because one or more inferred links still rely on single-sided endpoint evidence."
+    )
+    assert any(
+        "Collector endpoint-pairing posture is partially_paired" in note
+        for note in payload["notes"]
+    )
+    single_sided_link = next(
+        link for link in payload["links"] if link["endpoint_pairing_state"] == "single_sided"
+    )
+    assert single_sided_link["link_id"] == "PE1--PE2"
+    assert single_sided_link["endpoint_evidence_count"] == 1
+    assert single_sided_link["attributes"]["endpoint_pairing_state"] == "single_sided"
+    assert single_sided_link["attributes"]["endpoint_evidence_count"] == "1"
 
 
 def test_policy_snapshot_endpoint_returns_live_policy_observations(monkeypatch) -> None:
@@ -535,13 +569,28 @@ def test_topology_flow_snapshot_marks_single_sided_inference_explicit(monkeypatc
     single_sided_link = next(
         link for link in snapshot.delivery.links if link.endpoint_pairing_state == "single_sided"
     )
-    assert single_sided_link.link_id == "P1--PE1"
+    assert single_sided_link.link_id == "PE1--PE2"
     assert single_sided_link.endpoint_evidence_count == 1
     assert single_sided_link.attributes["endpoint_pairing_state"] == "single_sided"
     assert any(
         "Collector endpoint-pairing posture is partially_paired" in note
         for note in snapshot.delivery.notes
     )
+
+
+def test_metrics_endpoint_surfaces_single_sided_topology_coverage_metrics(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "gnmi_collector.adapters.nokia.sros.gNMIclient",
+        FakeSingleSidedTopologyGnmiClient,
+    )
+    client.get("/topology/snapshot")
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert "platform_gnmi_collector_topology_normalized_links 17" in response.text
+    assert "platform_gnmi_collector_topology_paired_links 16" in response.text
+    assert "platform_gnmi_collector_topology_single_sided_links 1" in response.text
 
 
 def test_policy_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> None:

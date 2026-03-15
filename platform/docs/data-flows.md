@@ -276,14 +276,14 @@ Current state:
 Current product-versus-observability split:
 
 - `app-api` and `app-web` carry the human-readable degraded-scope summaries and bounded read-path explanations
-- Prometheus and Grafana carry the numeric proxies for those same conditions, such as observed-versus-configured target gaps, freshness age, single-sided topology evidence, and policy detail-ready gaps
+- Prometheus and Grafana carry the numeric proxies for those same conditions, such as observed-versus-configured target gaps, freshness age, paired-versus-single-sided topology evidence counts or shares, and policy detail-ready gaps
 - observability panels therefore reinforce the product posture without becoming a second product contract
 
 Week 14 topology split:
 
 - `app-api` and `app-web` should carry the human-readable endpoint-pairing vocabulary and the bounded aggregate pairing posture
-- Prometheus and Grafana should carry only numeric topology pairing projections such as `paired_link_count`, `single_sided_link_count`, and derived shares
-- Grafana must not become the source of product-facing pairing posture language
+- Prometheus and Grafana should carry only numeric topology pairing projections such as `paired_link_count`, `single_sided_link_count`, and derived shares, plus any backend-owned pairing-posture labels projected directly from metrics
+- Grafana must not become the source of product-facing pairing posture language even when it displays those backend-owned label projections
 
 ## ODL Integration Flow
 

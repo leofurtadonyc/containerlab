@@ -51,14 +51,15 @@ evidence gathered from the running platform on `2026-03-14`.
 
 - `/api/v1/platform/status` reported `status=ok`, declared platform components,
   and bounded `read_paths` for inventory, topology, and policy carrying
-  target-coverage, freshness-window, degraded-scope, and policy detail-ready
-  posture
+  target-coverage, freshness-window, degraded-scope, topology endpoint-pairing
+  posture, and policy detail-ready posture
 - `/api/v1/devices` reported `data_status=live`,
   `serving_mode=live_collector`, `count=34`, and an explicit
   `comparison_snapshot_id`
 - `/api/v1/topology` reported `data_status=live`,
-  `serving_mode=live_collector`, `completeness=partial`, and an explicit
-  `comparison_snapshot_id`
+  `serving_mode=live_collector`, `completeness=partial`, a bounded
+  `coverage_summary` carrying endpoint-pairing posture plus paired-versus-
+  single-sided counts, and an explicit `comparison_snapshot_id`
 - `/api/v1/policies` reported `data_status=live`,
   `serving_mode=live_collector`, `completeness=partial`,
   `detail_mode=counters_only`, `empty_reason=no_policies_observed`, `count=0`,
@@ -180,13 +181,16 @@ Why this is strong enough now:
 - `verify-core-runtime` checks startup contracts, support-service health,
   collector metrics, WebUI proxy health, read-side API contract presence,
   bounded platform-status `read_paths`, capability vendor-posture and roadmap
-  rollups, dashboard-critical metric families, and Prometheus target posture
+  rollups, backend-owned topology coverage fields on both the topology and
+  platform-status read paths, dashboard-critical metric families including
+  paired-link, single-sided-link, and pairing-posture signals, and Prometheus
+  target posture
 - `verify-odl-auth` validates the configured ODL credential path and rejects
   the default fallback
 - degraded but honest states such as partial topology, non-ok read-path
-  posture, single-sided topology evidence, live-empty policy posture, or zero
-  policy detail-ready targets are surfaced as bounded notices or warnings
-  instead of being hidden
+  posture, partially-paired or single-sided topology evidence, live-empty
+  policy posture, or zero policy detail-ready targets are surfaced as bounded
+  notices or warnings instead of being hidden
 
 Why this is still bounded:
 

@@ -198,6 +198,8 @@ assert_contains "platform status response" "$platform_status_response" '"collect
 assert_contains "platform status response" "$platform_status_response" '"oldest_observed_at":'
 assert_contains "platform status response" "$platform_status_response" '"newest_observed_at":'
 assert_contains "platform status response" "$platform_status_response" '"degraded_scope_summary":"'
+assert_contains "platform status response" "$platform_status_response" '"endpoint_pairing_posture":"'
+assert_contains "platform status response" "$platform_status_response" '"paired_link_count":'
 assert_contains "platform status response" "$platform_status_response" '"single_sided_link_count":'
 assert_contains "platform status response" "$platform_status_response" '"policy_capable_target_count":'
 assert_contains "platform status response" "$platform_status_response" '"detail_ready_target_count":'
@@ -212,6 +214,9 @@ assert_contains "topology response" "$topology_response" '"data_status":"'
 assert_contains "topology response" "$topology_response" '"serving_mode":"'
 assert_contains "topology response" "$topology_response" '"sync_status":"'
 assert_contains "topology response" "$topology_response" '"completeness":"'
+assert_contains "topology response" "$topology_response" '"coverage_summary":{'
+assert_contains "topology response" "$topology_response" '"endpoint_pairing_state":"'
+assert_contains "topology response" "$topology_response" '"endpoint_evidence_count":'
 assert_contains "topology response" "$topology_response" '"topology":{'
 assert_contains "topology response" "$topology_response" '"comparison_to_latest_persisted":{'
 
@@ -234,10 +239,14 @@ assert_contains "capabilities response" "$capabilities_response" '"vendor_postur
 assert_contains "capabilities response" "$capabilities_response" '"future_juniper_target":'
 
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_snapshot_status'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_paired_links'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_single_sided_links'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_coverage_posture'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshot_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_readiness_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_sync_runs_total'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_inventory_newest_observed_timestamp_seconds'
+assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_paired_links'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_single_sided_links'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_newest_observed_timestamp_seconds'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_policy_newest_observed_timestamp_seconds'
@@ -273,8 +282,11 @@ fi
 if printf '%s' "$platform_status_response" | grep -E '"model_family":"policy"[^}]*"observation_state":"(degraded|unreachable|unknown)"' >/dev/null 2>&1; then
   warn "Platform status reports a non-ok policy read path; inspect bounded policy coverage and freshness posture before treating the slice as current."
 fi
-if printf '%s' "$platform_status_response" | grep -E '"model_family":"topology"[^}]*"single_sided_link_count":[1-9][0-9]*' >/dev/null 2>&1; then
-  notice "Platform status reports single-sided topology evidence, so the current topology slice remains honest but has endpoint-coverage gaps."
+if printf '%s' "$platform_status_response" | grep -E '"model_family":"topology"[^}]*"endpoint_pairing_posture":"partially_paired"' >/dev/null 2>&1; then
+  notice "Platform status reports partially_paired topology endpoint coverage, so some inferred links still rely on single-sided endpoint evidence."
+fi
+if printf '%s' "$platform_status_response" | grep -E '"model_family":"topology"[^}]*"endpoint_pairing_posture":"single_sided"' >/dev/null 2>&1; then
+  notice "Platform status reports single_sided topology endpoint coverage, so the current inferred links remain bounded to one observed endpoint per link."
 fi
 if printf '%s' "$platform_status_response" | grep -E '"model_family":"policy"[^}]*"detail_ready_target_count":0' >/dev/null 2>&1; then
   notice "Platform status reports zero policy detail-ready targets, so current policy truth remains bounded to counters or other aggregate-only evidence."

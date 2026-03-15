@@ -137,8 +137,9 @@ This now validates:
 - `app-web` startup-contract readiness, static HTTP availability, and `/api` proxy reachability to `app-api`
 - Prometheus live scrape target posture for the current real targets
 - read-side API contract sanity for platform status, devices, topology, policies, and capabilities, now including bounded `read_paths` coverage and freshness fields plus capability vendor-posture and roadmap rollups
-- dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts, now including collector observation-age, topology single-sided-link, and policy detail-ready signals used by the platform overview dashboard
-- bounded warnings and notices when current read-side responses fall back to persisted data, become blocked, expose non-ok read-path posture, or surface other degraded-but-honest states such as partial topology and aggregate-only policy evidence
+- backend-owned topology coverage contract presence in both `/api/v1/platform/status` and `/api/v1/topology`, including endpoint-pairing posture, paired-link and single-sided-link counts, per-link pairing state, and per-link endpoint-evidence counts
+- dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts, now including backend and collector paired-link, single-sided-link, pairing-posture, collector observation-age, and policy detail-ready signals used by the current dashboards
+- bounded warnings and notices when current read-side responses fall back to persisted data, become blocked, expose non-ok read-path posture, or surface other degraded-but-honest states such as partial topology, partially-paired or single-sided topology coverage, and aggregate-only policy evidence
 - Grafana provisioned datasource presence and provisioned overview dashboards
 
 ### `verify-odl-auth.sh`
@@ -223,7 +224,7 @@ What healthy means here:
 
 - hard failures still stop the deployment from being treated as usable
 - warnings call out degraded-but-honest current postures such as persisted fallback, blocked read-side evidence, or bounded policy and topology limits that remain visible by design
-- notices now also call out bounded read-path attention states such as single-sided topology evidence or zero policy detail-ready targets when those conditions are real
+- notices now also call out bounded read-path attention states such as partially-paired or single-sided topology endpoint coverage and zero policy detail-ready targets when those conditions are real
 - a warning does not imply workflow semantics, remediation intent, or automatic rollback; it is an operator cue to inspect current truth posture more carefully
 
 ## What Remains Bootstrap-Grade

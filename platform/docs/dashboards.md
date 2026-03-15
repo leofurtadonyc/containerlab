@@ -15,6 +15,8 @@ The platform currently has:
 - real topology and SR policy overview dashboards backed by current Prometheus metrics for those bounded live slices
 - the platform, topology, and SR policy dashboards now surface bounded persisted sync evidence plus clearer aggregate freshness, agreement, and evidence-gap cues where those backend and collector metrics honestly exist
 - the platform overview dashboard now also surfaces collector-backed target coverage, observation-age, and policy detail-gap cues for inventory, topology, and policy, using real numeric signals rather than trying to serialize product-facing degraded-scope prose into Grafana
+- the topology overview dashboard now also surfaces paired-link counts, single-sided-link counts, paired-link share, and backend-owned topology pairing-posture labels as bounded observability projections for the current topology coverage slice
+- the platform overview dashboard now also mirrors the narrower topology read-path coverage posture through paired-versus-single-sided link counts and backend-owned pairing-posture labels without turning Grafana into the product contract
 - a bounded post-deploy core-runtime regression check that now validates Grafana API health, the provisioned Prometheus datasource, and the provisioned overview dashboards alongside Postgres and Prometheus readiness
 - clearly marked placeholder dashboard files for the dashboard families that do not yet have real backing metrics
 
@@ -147,6 +149,7 @@ Expected emphasis over time:
 - integration quality signals
 - bounded backend-versus-collector aggregate agreement cues where those metrics exist
 - explicit paired-versus-single-sided inferred-link counts and shares where those bounded collector metrics exist
+- backend-owned topology pairing-posture labels only as observability projections from real metrics, not as dashboard-authored business logic
 
 ### SR Policy
 
@@ -184,8 +187,9 @@ In Grafana:
 - operators see numeric observability signals only
 - coverage is represented through observed-versus-configured targets
 - freshness is represented through observation age from collector timestamps
-- degraded scope is approximated through numeric gaps such as missing targets, single-sided topology links, and policy detail-ready gaps
+- degraded scope is approximated through numeric gaps such as missing targets, paired-versus-single-sided topology link counts or shares, and policy detail-ready gaps
 - topology endpoint-pairing observability should stay numeric as paired-link counts, single-sided-link counts, and derived shares rather than becoming a product-owned status vocabulary inside dashboards
+- backend-owned topology pairing-posture labels may appear only as metric-backed label projections that support those numeric panels; Grafana still does not own that vocabulary
 
 Grafana does not attempt to reproduce the backend's human-readable degraded-scope summaries verbatim, because those are product semantics rather than durable metric labels.
 
@@ -269,6 +273,7 @@ Dashboard design should therefore assume Prometheus-backed metrics first, with a
 - dashboard family folders exist
 - the platform, topology, and SR policy families now include real Prometheus-backed dashboards for the services that expose meaningful metrics today, with those dashboards now also surfacing bounded freshness, agreement, and evidence-gap cues where the supporting signals are real
 - the platform overview dashboard now also uses the newer collector coverage and observation-age metrics to make read-path gaps faster to interpret without turning Grafana into a product-status surrogate
+- the topology and platform dashboards now also use the newer topology paired-link, single-sided-link, share, and backend-owned pairing-posture metrics to make endpoint-coverage gaps faster to interpret without inventing dashboard-only semantics
 - placeholder dashboards still exist for families whose underlying metrics are not yet real
 - the platform observability shape is documented
 

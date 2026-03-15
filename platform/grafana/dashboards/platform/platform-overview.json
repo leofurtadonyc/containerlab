@@ -1244,22 +1244,28 @@
           "refId": "B"
         },
         {
-          "expr": "platform_gnmi_collector_topology_single_sided_links",
-          "legendFormat": "single-sided topology links",
+          "expr": "platform_app_api_topology_paired_links",
+          "legendFormat": "paired topology links",
           "refId": "C"
+        },
+        {
+          "expr": "platform_app_api_topology_single_sided_links",
+          "legendFormat": "single-sided topology links",
+          "refId": "D"
         },
         {
           "expr": "clamp_min(platform_gnmi_collector_policy_targets - platform_gnmi_collector_policy_observed_targets, 0)",
           "legendFormat": "policy target gap",
-          "refId": "D"
+          "refId": "E"
         },
         {
           "expr": "clamp_min(platform_gnmi_collector_policy_observed_targets - platform_gnmi_collector_policy_detail_ready_targets, 0)",
           "legendFormat": "policy detail gap",
-          "refId": "E"
+          "refId": "F"
         }
       ],
-      "title": "Coverage And Detail Gaps",
+      "description": "Cross-slice gap counts plus the current topology paired-versus-single-sided link evidence split. Topology values remain bounded read-path observability, not validation verdicts.",
+      "title": "Coverage, Pairing, And Detail Gaps",
       "type": "bargauge"
     },
     {
@@ -1352,9 +1358,15 @@
           "expr": "platform_app_api_topology_snapshot_status",
           "legendFormat": "{{data_status}} • {{sync_status}} • {{completeness}}",
           "refId": "A"
+        },
+        {
+          "expr": "platform_app_api_topology_coverage_posture",
+          "legendFormat": "pairing • {{endpoint_pairing_posture}}",
+          "refId": "B"
         }
       ],
-      "title": "Topology Snapshot Labels",
+      "description": "Backend-owned topology snapshot and endpoint-pairing posture labels projected into Grafana for observability. These labels support interpretation but do not turn the dashboard into the product contract.",
+      "title": "Topology Snapshot And Pairing Labels",
       "type": "bargauge"
     },
     {
