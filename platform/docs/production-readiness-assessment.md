@@ -238,7 +238,7 @@ Posture: `mixed_and_explicitly_bounded`
 Current strengths:
 
 - inventory is live and useful for the current Nokia-first slice
-- topology is live and operationally useful, but explicitly partial
+- topology is live and operationally useful, explicitly partial, and now materially stronger after the accepted week 14 work because endpoint-pairing posture plus paired-versus-single-sided inferred-link counts are exposed across backend, product, observability, and verifier surfaces as bounded evidence-depth cues
 - policy surfaces preserve honest aggregate and per-target footprint evidence,
   even when the current lab has no observed SR policies
 - persisted comparison and bounded history surfaces now expose stronger anchor
@@ -263,9 +263,9 @@ Assessment:
 
 ### Next-cycle implication
 
-Posture: `topology_truth_depth_is_the_next_highest_value_phase2_gap`
+Posture: `week14_pairing_slice_complete_but_broader_topology_truth_depth_still_bounded`
 
-Why this is the right next bounded focus now:
+Why this is the right checkpoint reading now:
 
 - the accepted week 13 identity review ended in a no-change decision for
   capability item IDs, so the default identity lane is no longer the strongest
@@ -273,20 +273,26 @@ Why this is the right next bounded focus now:
 - post-deploy verification now proves the bounded read-path and capability
   posture contracts end to end, so verification hardening is no longer the
   primary bottleneck either
-- the live stack still reports partial topology completeness and single-sided
-  topology evidence, which makes topology the clearest current truth-depth gap
-  on a slice that already has stable live data
+- the accepted week 14 topology cycle closed the narrower endpoint-pairing and
+  single-sided-link coverage gap across collector, backend, product,
+  observability, tests, and verifier behavior
+- the live stack still reports partial topology completeness, and some broad
+  topology `degraded_scope_summary` wording still compresses multiple causes,
+  which leaves topology as the clearest remaining truth-depth candidate only if
+  a later cycle can sharpen those broader bounded semantics honestly
 - policy remains important, but the current `no_policies_observed` and zero
   detail-ready-target posture means a policy-first cycle would mostly run into
   absent source detail rather than a clean, already-evidenced truth gap
 
 Assessment:
 
-- the next bounded cycle should return to topology truth depth rather than
-  reopening item-identity work or a workflow-planning lane
-- that cycle should stay narrow: tighten endpoint-pairing and single-sided-link
-  coverage semantics where the collector and backend already have real signals,
-  while preserving `Phase 2` and the current safe-use boundary
+- the current checkpoint should preserve the accepted week 14 result rather
+  than recommending another automatic topology implementation pass
+- if a later bounded cycle reopens topology, it should stay narrow: sharpen
+  broad `partial` and topology `degraded_scope_summary` semantics where the
+  current evidence supports a cleaner split between inference-boundedness,
+  endpoint-coverage limits, and collection degradation, while preserving
+  `Phase 2` and the current safe-use boundary
 
 ### Trust-cue maturity
 
@@ -323,7 +329,10 @@ The current platform is safe to use for the following bounded jobs.
 - routine read-only visibility into the current live inventory slice for the
   onboarded Nokia-first lab topology
 - routine read-only visibility into the current bounded topology slice, with
-  explicit acceptance that it is partial rather than complete
+  explicit acceptance that it is partial rather than complete and that
+  `paired`, `partially_paired`, and `single_sided` topology cues describe
+  endpoint-evidence depth only rather than adjacency validation or full
+  topology truth
 - routine read-only visibility into the current bounded policy slice,
   especially aggregate coverage, per-target footprint posture, live-empty
   versus persisted context, and bounded current-versus-persisted comparison

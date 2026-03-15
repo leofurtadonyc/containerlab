@@ -18,7 +18,8 @@ It describes what the repository already does today across:
 
 It does not authorize code changes by itself.
 
-The follow-on design note for the next week 14 implementation slice now lives in
+The implemented field, metric, and UI-separation contract for the accepted week
+14 slice now lives in
 `platform/schemas/topology/topology-read-path-coverage-semantics.md`.
 
 That design note turns this review into one concrete vocabulary and ownership
@@ -97,6 +98,8 @@ summary:
 - success, partial, and failure counts
 - freshness window
 - normalized node and link counts
+- `endpoint_pairing_posture`
+- `paired_link_count`
 - `single_sided_link_count`
 - `degraded_scope_summary`
 - `completeness=partial`
@@ -112,33 +115,29 @@ Fourth, collector tests already pin the current topology shape in
 That means the collector path is not vague. It already exposes the right class
 of bounded evidence for a Phase 2 topology slice.
 
-### 2. The current endpoint-pairing gap is narrower than a generic topology gap
+### 2. The original endpoint-pairing gap was narrower than a generic topology gap
 
-The weakest current seam is not that the repo lacks topology evidence.
+The weakest week 14 seam was never that the repo lacked topology evidence in
+general.
 
-The weak seam is that endpoint pairing remains implicit and naming-driven.
+It was that the current inferred topology slice needed endpoint-pairing depth to
+be made explicit and backend-owned rather than left mostly implicit in naming-
+driven attributes.
 
-Today, pairing is determined by interface-name conventions plus sorted endpoint
-pairs. That is workable for the current Nokia-first lab, but it leaves the
-current contract weaker in three ways.
+That narrower gap is now closed.
 
-- There is no explicit per-link pairing posture beyond derived attributes such
-  as `endpoint_evidence_count` and `knowledge_state=partial`
-- There is no explicit reason code for why a link is single-sided versus fully
-  paired versus missing a recognizable peer name
-- The main aggregate signal is `single_sided_link_count`, which is useful but
-  still narrower than a full endpoint-pairing coverage summary
-
-This is why the current recommendation should stay focused on endpoint-pairing
-and single-sided-link semantics rather than drifting into a broad topology
-redesign.
-
-The newly added design note now also makes that narrower target concrete:
+The current contract now exposes:
 
 - per-link `endpoint_pairing_state`
+- per-link `endpoint_evidence_count`
 - aggregate `endpoint_pairing_posture`
 - numeric `paired_link_count`
 - numeric `single_sided_link_count`
+
+That means the remaining topology truth question is now broader but still
+bounded: whether the current Phase 2 model should later sharpen how it explains
+`completeness=partial` and broad topology `degraded_scope_summary`, not whether
+it still needs the week 14 pairing vocabulary itself.
 
 ### 3. Backend contracts preserve the bounded topology model correctly
 
@@ -164,6 +163,8 @@ also preserves topology read-path signals as product-owned status:
 
 - coverage counts
 - freshness window
+- `endpoint_pairing_posture`
+- `paired_link_count`
 - `single_sided_link_count`
 - `degraded_scope_summary`
 
@@ -421,6 +422,25 @@ The remaining weakness is specific.
 - paired-versus-single-sided coverage is now explicit, but it still does not
   imply protocol-derived adjacency truth, controller agreement, or path truth.
 
+## Safe Operational Interpretation After Week 14
+
+The improved topology slice is now safe to interpret in one bounded way.
+
+- use `paired`, `partially_paired`, and `single_sided` posture as endpoint-
+  evidence-depth cues inside the current inferred topology slice
+- use the dedicated topology page, Overview, Platform Health, and Grafana only
+  as bounded read-side trust surfaces for that evidence
+- treat `completeness=partial` as an explicit stop line against complete
+  topology truth
+
+It is not safe to interpret the week 14 result in these stronger ways.
+
+- do not treat pairing posture as adjacency validation
+- do not treat paired-versus-single-sided counts as controller agreement or
+  protocol-derived truth
+- do not treat the improved trust cues as permission to infer path truth,
+  workflow readiness, or network validation
+
 ## Week 14 Implementation Outcome
 
 The smallest honest week 14 slice identified by this review has now been
@@ -486,6 +506,11 @@ the same pairing-semantics work unless new repository evidence changes the
 current boundary. It should preserve the current backend-owned normalized
 topology model, the product-versus-observability split, and the explicit
 partial-truth posture already established across the repository.
+
+If topology is revisited again inside `Phase 2`, the first honest target is no
+longer pairing vocabulary. It is only any later broader truth-depth follow-on
+that can sharpen broad `partial` and topology `degraded_scope_summary`
+semantics without implying full truth.
 
 The exact field, metric, and UI-separation rules for that slice are now defined
 in `platform/schemas/topology/topology-read-path-coverage-semantics.md`.
