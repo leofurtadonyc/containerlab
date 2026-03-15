@@ -9,7 +9,14 @@ import { EmptyState, ErrorState, LoadingState } from "../../components/query-sta
 import { IdentifierChip } from "../../components/identifier-chip";
 import { StatusPill } from "../../components/status-pill";
 import { buildCrossSliceConsistencyReadout } from "../../lib/cross-slice-consistency";
-import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
+import {
+  countBy,
+  describeTopologyCoveragePosture,
+  describeTopologyLinkPairing,
+  formatCountLabel,
+  formatDateTime,
+  formatLabel,
+} from "../../lib/presentation";
 import {
   buildPolicyEvidenceFallback,
   buildTopologyEvidenceFallback,
@@ -20,24 +27,15 @@ import {
   normalizeEvidenceConfidence,
 } from "../../lib/evidence-confidence";
 import { usePoliciesQuery } from "../policies/api";
-import { useTopologyQuery } from "./api";
-
-function getLinkEvidenceCount(link: TopologyLinkRecord): number {
-  return Number.parseInt(link.attributes.endpoint_evidence_count ?? "0", 10) || 0;
-}
+import {
+  getTopologyCoverageSummary,
+  getTopologyLinkEndpointEvidenceCount,
+  getTopologyLinkEndpointPairingState,
+  useTopologyQuery,
+} from "./api";
 
 function getLinkKnowledgeState(link: TopologyLinkRecord): string {
   return link.attributes.knowledge_state ?? "unknown";
-}
-
-function getLinkEvidencePosture(link: TopologyLinkRecord): string {
-  const evidenceCount = getLinkEvidenceCount(link);
-
-  if (evidenceCount <= 1) {
-    return "single_sided";
-  }
-
-  return "multi_sided";
 }
 
 function formatSignedDelta(value: number): string {
@@ -116,31 +114,6 @@ function describeComparisonReadout(
   };
 }
 
-function describeInferenceReadout(
-  singleSidedLinkCount: number,
-  linkCount: number,
-  knowledgeCounts: Record<string, number>,
-): { label: string; detail: string } {
-  if (linkCount === 0) {
-    return {
-      label: "No inferred links",
-      detail: "No normalized link evidence is currently available in this topology response.",
-    };
-  }
-  if (singleSidedLinkCount === 0 && (knowledgeCounts.partial ?? 0) === 0) {
-    return {
-      label: "Stronger evidence",
-      detail:
-        "Current link evidence is still bounded, but it does not currently show any single-sided or explicitly partial inferred links.",
-    };
-  }
-  return {
-    label: "Bounded inference",
-    detail:
-      "Link evidence remains bounded and inference-based. Single-sided and partial counts help show how much of the graph is still interpretive rather than fully observed.",
-  };
-}
-
 function describeNodeEvidence(node: TopologyNodeRecord): string {
   const hasLoopback =
     node.attributes.loopback_ipv4 !== undefined && node.attributes.loopback_ipv4 !== "unknown";
@@ -158,12 +131,18 @@ function describeNodeEvidence(node: TopologyNodeRecord): string {
 
 function describeLinkEvidence(link: TopologyLinkRecord): string {
   const knowledgeState = getLinkKnowledgeState(link);
-  const posture = getLinkEvidencePosture(link);
-  if (knowledgeState === "partial" && posture === "single_sided") {
-    return "Partial single-sided inference";
+  const pairingState = getTopologyLinkEndpointPairingState(link);
+  if (knowledgeState === "partial" && pairingState === "single_sided") {
+    return "Partial single-sided endpoint inference";
   }
-  if (knowledgeState === "partial" && posture === "multi_sided") {
-    return "Partial multi-sided inference";
+  if (knowledgeState === "partial" && pairingState === "paired") {
+    return "Partial inferred link with paired endpoint evidence";
+  }
+  if (pairingState === "paired") {
+    return "Paired endpoint evidence";
+  }
+  if (pairingState === "single_sided") {
+    return "Single-sided endpoint evidence";
   }
   if (knowledgeState === "unknown") {
     return "Knowledge remains unknown";
@@ -231,10 +210,11 @@ export function TopologyView() {
   const links = topology?.links ?? [];
   const nodeCounts = countBy(nodes, (node) => node.state);
   const linkCounts = countBy(links, (link) => link.state);
+  const coverageSummary = useMemo(() => (data ? getTopologyCoverageSummary(data) : null), [data]);
   const roleCounts = useMemo(() => countBy(nodes, (node) => node.role), [nodes]);
   const knowledgeCounts = useMemo(() => countBy(links, (link) => getLinkKnowledgeState(link)), [links]);
-  const evidencePostureCounts = useMemo(
-    () => countBy(links, (link) => getLinkEvidencePosture(link)),
+  const pairingStateCounts = useMemo(
+    () => countBy(links, (link) => getTopologyLinkEndpointPairingState(link)),
     [links],
   );
   const sortedRoleCounts = useMemo(
@@ -244,10 +224,6 @@ export function TopologyView() {
   const sortedKnowledgeCounts = useMemo(
     () => Object.entries(knowledgeCounts).sort((left, right) => right[1] - left[1]),
     [knowledgeCounts],
-  );
-  const singleSidedLinkCount = useMemo(
-    () => links.filter((link) => getLinkEvidencePosture(link) === "single_sided").length,
-    [links],
   );
   const observedLoopbackCount = useMemo(
     () =>
@@ -312,7 +288,7 @@ export function TopologyView() {
     return links.filter((link) => {
       const matchesState = linkStateFilter === "all" || link.state === linkStateFilter;
       const knowledgeState = getLinkKnowledgeState(link);
-      const evidencePosture = getLinkEvidencePosture(link);
+      const evidencePosture = getTopologyLinkEndpointPairingState(link);
       const matchesKnowledge =
         linkKnowledgeFilter === "all" || knowledgeState === linkKnowledgeFilter;
       const matchesEvidence =
@@ -342,7 +318,8 @@ export function TopologyView() {
       switch (linkSortBy) {
         case "evidence_then_id":
           return (
-            getLinkEvidenceCount(left) - getLinkEvidenceCount(right) ||
+            getTopologyLinkEndpointEvidenceCount(right) -
+              getTopologyLinkEndpointEvidenceCount(left) ||
             left.link_id.localeCompare(right.link_id)
           );
         case "endpoint_then_id":
@@ -406,6 +383,10 @@ export function TopologyView() {
 
   const comparison = data.comparison_to_latest_persisted;
   const servingMode = getServingModeReadout(data.serving_mode);
+  const coverageReadout = describeTopologyCoveragePosture(
+    coverageSummary ?? getTopologyCoverageSummary(data),
+    topology.links.length,
+  );
   const evidenceConfidence = normalizeEvidenceConfidence(
     data.evidence_confidence,
     buildTopologyEvidenceFallback(data.serving_mode, data.data_status),
@@ -422,11 +403,6 @@ export function TopologyView() {
       )
     : null;
   const comparisonReadout = describeComparisonReadout(comparison.status, data.serving_mode);
-  const inferenceReadout = describeInferenceReadout(
-    singleSidedLinkCount,
-    topology.links.length,
-    knowledgeCounts,
-  );
   const policyConsistencyReadout = buildCrossSliceConsistencyReadout(
     {
       sliceLabel: "Topology",
@@ -513,7 +489,7 @@ export function TopologyView() {
         </article>
         <article className="summary-card">
           <p className="summary-label">Single-Sided Evidence</p>
-          <strong>{singleSidedLinkCount}</strong>
+          <strong>{coverageSummary?.single_sided_link_count ?? 0}</strong>
           <p>Links inferred from only one observed endpoint stay explicitly partial.</p>
         </article>
         <article className="summary-card">
@@ -523,8 +499,8 @@ export function TopologyView() {
         </article>
         <article className="summary-card">
           <p className="summary-label">Inference Posture</p>
-          <strong>{inferenceReadout.label}</strong>
-          <p>{inferenceReadout.detail}</p>
+          <strong>{coverageReadout.label}</strong>
+          <p>{coverageReadout.detail}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Observed to Generated</p>
@@ -575,8 +551,12 @@ export function TopologyView() {
               <strong>{comparisonReadout.label}</strong>
             </li>
             <li>
-              <span>Link evidence posture</span>
-              <strong>{inferenceReadout.label}</strong>
+              <span>Endpoint pairing posture</span>
+              <StatusPill value={coverageReadout.status} />
+            </li>
+            <li>
+              <span>Pairing counts</span>
+              <strong>{coverageReadout.countDetail}</strong>
             </li>
             <li>
               <span>Blocked reason</span>
@@ -607,6 +587,10 @@ export function TopologyView() {
               <strong>{formatLabel(evidenceConfidence.confidence_posture)}</strong>
             </li>
             <li>
+              <span>Endpoint pairing</span>
+              <StatusPill value={coverageReadout.status} />
+            </li>
+            <li>
               <span>Inference method</span>
               <strong>
                 {links[0]?.attributes.inference_method
@@ -619,8 +603,8 @@ export function TopologyView() {
               <strong>{knowledgeCounts.partial ?? 0}</strong>
             </li>
             <li>
-              <span>Single-sided inferred links</span>
-              <strong>{singleSidedLinkCount}</strong>
+              <span>Pairing counts</span>
+              <strong>{coverageReadout.countDetail}</strong>
             </li>
             <li>
               <span>Comparison-ready snapshot</span>
@@ -764,12 +748,10 @@ export function TopologyView() {
               <strong>{comparison.changed_link_count}</strong>
             </li>
             <li>
-              <span>Persisted node count</span>
-              <strong>{comparison.persisted_node_count}</strong>
-            </li>
-            <li>
-              <span>Persisted link count</span>
-              <strong>{comparison.persisted_link_count}</strong>
+              <span>Persisted node / link count</span>
+              <strong>
+                {comparison.persisted_node_count} / {comparison.persisted_link_count}
+              </strong>
             </li>
           </ul>
         </article>
@@ -777,25 +759,25 @@ export function TopologyView() {
           <h3>Link Evidence Distribution</h3>
           <ul className="compact-list">
             <li>
-              <span>Single-sided links</span>
-              <strong>{evidencePostureCounts.single_sided ?? 0}</strong>
+              <span>Paired links</span>
+              <strong>{pairingStateCounts.paired ?? 0}</strong>
             </li>
             <li>
-              <span>Multi-sided links</span>
-              <strong>{evidencePostureCounts.multi_sided ?? 0}</strong>
+              <span>Single-sided links</span>
+              <strong>{pairingStateCounts.single_sided ?? 0}</strong>
+            </li>
+            <li>
+              <span>Pairing: unknown</span>
+              <strong>{pairingStateCounts.unknown ?? 0}</strong>
             </li>
             <li>
               <span>Knowledge: partial</span>
               <strong>{knowledgeCounts.partial ?? 0}</strong>
             </li>
             <li>
-              <span>Knowledge: unknown</span>
-              <strong>{knowledgeCounts.unknown ?? 0}</strong>
-            </li>
-            <li>
               <span>Total link evidence endpoints</span>
               <strong>
-                {links.reduce((total, link) => total + getLinkEvidenceCount(link), 0)}
+                {links.reduce((total, link) => total + getTopologyLinkEndpointEvidenceCount(link), 0)}
               </strong>
             </li>
           </ul>
@@ -1074,14 +1056,15 @@ export function TopologyView() {
           </select>
         </label>
         <label className="field-group">
-          <span>Evidence posture</span>
+          <span>Endpoint pairing</span>
           <select
             value={linkEvidenceFilter}
             onChange={(event) => setLinkEvidenceFilter(event.target.value)}
           >
             <option value="all">All</option>
+            <option value="paired">Paired</option>
             <option value="single_sided">Single sided</option>
-            <option value="multi_sided">Multi sided</option>
+            <option value="unknown">Unknown</option>
           </select>
         </label>
         <label className="field-group">
@@ -1122,7 +1105,8 @@ export function TopologyView() {
               <tbody>
                 {sortedLinks.map((link) => {
                   const isSelected = selectedLink?.link_id === link.link_id;
-                  const evidenceCount = getLinkEvidenceCount(link);
+                  const evidenceCount = getTopologyLinkEndpointEvidenceCount(link);
+                  const endpointPairingState = getTopologyLinkEndpointPairingState(link);
                   return (
                     <tr key={link.link_id} className={isSelected ? "data-row-selected" : undefined}>
                       <td>
@@ -1145,11 +1129,12 @@ export function TopologyView() {
                       </td>
                       <td>{formatLabel(getLinkKnowledgeState(link))}</td>
                       <td>
-                        <strong>
-                          {evidenceCount} endpoint{evidenceCount === 1 ? "" : "s"}
-                        </strong>
+                        <StatusPill value={endpointPairingState} />
                         <div className="table-note">
-                          {link.attributes.observed_interfaces ?? "No observed interfaces recorded"}
+                          {formatCountLabel(evidenceCount, "endpoint")} observed
+                          {link.attributes.observed_interfaces
+                            ? ` • ${link.attributes.observed_interfaces}`
+                            : ""}
                         </div>
                       </td>
                       <td>{link.source}</td>
@@ -1166,7 +1151,7 @@ export function TopologyView() {
                 <div className="metadata-row">
                   <span>Link: {selectedLink.link_id}</span>
                   <span>Knowledge: {formatLabel(getLinkKnowledgeState(selectedLink))}</span>
-                  <span>Evidence: {formatLabel(getLinkEvidencePosture(selectedLink))}</span>
+                  <span>Pairing: {formatLabel(getTopologyLinkEndpointPairingState(selectedLink))}</span>
                   <span>Source: {selectedLink.source}</span>
                 </div>
                 <div className="key-value-list">
@@ -1185,8 +1170,12 @@ export function TopologyView() {
                     <strong>{formatLabel(getLinkKnowledgeState(selectedLink))}</strong>
                   </div>
                   <div className="key-value-row">
+                    <span>Endpoint pairing</span>
+                    <strong>{formatLabel(getTopologyLinkEndpointPairingState(selectedLink))}</strong>
+                  </div>
+                  <div className="key-value-row">
                     <span>Endpoint evidence</span>
-                    <strong>{getLinkEvidenceCount(selectedLink)}</strong>
+                    <strong>{formatCountLabel(getTopologyLinkEndpointEvidenceCount(selectedLink), "endpoint")}</strong>
                   </div>
                   <div className="key-value-row">
                     <span>Observed interfaces</span>
@@ -1202,6 +1191,10 @@ export function TopologyView() {
                   </div>
                   <div className="key-value-row">
                     <span>Evidence interpretation</span>
+                    <strong>{describeTopologyLinkPairing(selectedLink)}</strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>Inference detail</span>
                     <strong>{describeLinkEvidence(selectedLink)}</strong>
                   </div>
                 </div>
