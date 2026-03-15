@@ -13,6 +13,9 @@ It is intentionally practical rather than aspirational:
 - it keeps workflow, dry-run, and action semantics explicitly out of scope
 - it describes the current operational stop line honestly
 
+For the current packaged platform runtime, this runbook is also the preferred validation path.
+Do not default to host-side `npm` or `pytest` commands when validating normal frontend or backend changes; rebuild the repo-owned images, replace the topology, and rerun the verification scripts.
+
 Use this runbook for day-0 and day-1 style platform bring-up, rebuild, and first-response troubleshooting.
 
 ## What This Runbook Covers
@@ -86,6 +89,9 @@ This produces the current local images:
 - `platform-prometheus:0.1.0`
 - `platform-grafana:0.1.0`
 
+For the current stack, this image-build step is part of the normal validation path, not just packaging.
+Frontend toolchain execution belongs inside the `app-web` image build, and routine backend/frontend validation should continue through the packaged runtime plus the verification scripts below.
+
 ### 2. Deploy Or Replace The Topology
 
 For the first deploy in a workspace:
@@ -113,6 +119,8 @@ After deployment, run both verification steps before treating the platform as us
 
 These are required, not optional, for the current bounded operational slice.
 If either script fails, stop there and treat the deployment as not yet usable until the failing runtime contract is understood.
+
+This is the current documented replacement for ad hoc host-side validation of normal platform changes.
 
 ## What The Verification Scripts Prove
 

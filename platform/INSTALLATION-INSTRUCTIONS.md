@@ -76,6 +76,13 @@ Current tested assumptions:
 The standard recreate flow does not require host-installed Node.js, `npm`, or `pytest`.
 For the current Phase 2 platform workflow, those toolchains run inside the service image builds or are replaced by the bounded post-deploy verification scripts.
 
+Treat this as the current validation boundary as well:
+
+- do not default to host-side `npm` for frontend validation
+- do not default to host-side `pytest` for routine platform validation
+- prefer the repo-owned `./scripts/build-images.sh` then `clab deploy -t topology.clab.yml -c` flow
+- verify the resulting runtime with `./scripts/verify-core-runtime.sh` and `./scripts/verify-odl-auth.sh`
+
 Current external dependencies still required during a fresh rebuild:
 
 - Docker image registries for the pinned base images
@@ -132,6 +139,8 @@ Current reproducibility protections in this build flow:
 Operationally, this means a host without local `npm` can still rebuild `app-web`, because the Node toolchain runs inside the Docker build for that image.
 Likewise, routine recreate-time validation does not depend on host-installed `pytest`; the current bounded validation path is to rebuild the images, redeploy the topology, and rerun the verification scripts below.
 
+If a future context window needs only one rule to stay aligned here, it should remember this: validate platform changes through the repo-owned image-build, topology-redeploy, and verification-script flow first, not through ad hoc host-side `npm` or `pytest` commands.
+
 ## Deploy The Platform Topology
 
 From `platform/`, deploy the current topology:
@@ -158,6 +167,8 @@ After the topology comes up, run the bounded runtime verification scripts:
 ```
 
 If you changed source files on a host that does not have local frontend or Python test tooling installed, use this rebuild-and-verify path rather than trying to validate the services with host-side `npm` or `pytest` commands.
+
+This is not just a fallback for limited hosts; it is the preferred documented validation path for the current packaged platform runtime.
 
 These checks currently validate:
 
