@@ -674,6 +674,10 @@ def build_policies_list_response() -> PoliciesListResponse:
         )
         for policy in snapshot.records
     ]
+    detail_note = (
+        "Bounded per-target detail coverage currently exists for "
+        f"{collector_snapshot.detail_ready_target_count} observed targets."
+    )
     if collector_snapshot.status == "live_normalized_feed":
         data_status = "live"
         serving_mode = "live_collector"

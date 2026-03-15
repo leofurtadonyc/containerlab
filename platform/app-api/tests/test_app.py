@@ -413,6 +413,87 @@ def _build_live_empty_policy_snapshot() -> CollectorPolicySnapshot:
     )
 
 
+def _build_live_policy_snapshot_without_detail_records() -> CollectorPolicySnapshot:
+    return CollectorPolicySnapshot(
+        integration="gnmi_collector_policy",
+        status="live_normalized_feed",
+        destination_service="app-api",
+        source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+        configured_target_count=34,
+        collection_success_count=34,
+        collection_partial_count=0,
+        collection_failure_count=0,
+        oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        newest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        detail_ready_target_count=0,
+        degraded_scope_summary="All configured policy targets returned current counter evidence, but the currently observed policy types do not expose bounded per-policy detail records.",
+        sync_source="gnmi_collector_policy_sr_counters",
+        sync_status="ok",
+        completeness="partial",
+        detail_mode="counters_only",
+        observed_at="2026-03-09T19:25:08.500000+00:00",
+        observed_target_count=34,
+        policy_capable_target_count=34,
+        observed_target_role_counts={"cpe": 6, "isp": 2, "noc": 2, "p": 16, "pe": 8},
+        policy_capable_target_role_counts={"cpe": 6, "isp": 2, "noc": 2, "p": 16, "pe": 8},
+        policy_count=2,
+        active_policy_count=1,
+        static_policy_count=0,
+        static_local_policy_count=0,
+        static_non_local_policy_count=0,
+        bgp_policy_count=2,
+        ttm_preference_count=476,
+        binding_sid_count=0,
+        srv6_binding_sid_count=0,
+        target_footprints=[
+            {
+                "target_name": "PE1",
+                "target_role": "pe",
+                "collection_status": "success",
+                "policy_capable": True,
+                "observed_policy_count": 1,
+                "active_policy_count": 1,
+                "static_policy_count": 0,
+                "static_local_policy_count": 0,
+                "static_non_local_policy_count": 0,
+                "bgp_policy_count": 1,
+                "ttm_preference_count": 14,
+                "binding_sid_count": 0,
+                "srv6_binding_sid_count": 0,
+                "detail_record_count": 0,
+                "notes": [
+                    "Observed policy counters are present, but bounded per-policy detail records are unavailable for this target."
+                ],
+            },
+            {
+                "target_name": "P1",
+                "target_role": "p",
+                "collection_status": "success",
+                "policy_capable": True,
+                "observed_policy_count": 1,
+                "active_policy_count": 0,
+                "static_policy_count": 0,
+                "static_local_policy_count": 0,
+                "static_non_local_policy_count": 0,
+                "bgp_policy_count": 1,
+                "ttm_preference_count": 14,
+                "binding_sid_count": 0,
+                "srv6_binding_sid_count": 0,
+                "detail_record_count": 0,
+                "notes": [
+                    "Observed policy counters are present, but bounded per-policy detail records are unavailable for this target."
+                ],
+            },
+        ],
+        notes=[
+            "Policy inventory is currently bounded to live Nokia SR policy counters collected over gNMI.",
+            "Observed policy counters indicate SR policies are present even though bounded per-policy detail records are unavailable.",
+        ],
+        records=[],
+        fetch_error=None,
+    )
+
+
 def _build_persisted_inventory_snapshot() -> PersistedInventorySnapshot:
     return PersistedInventorySnapshot(
         snapshot_id="inventory-snapshot-1",
@@ -1339,6 +1420,42 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     assert payload["comparison_to_latest_persisted"]["change_preview"] == []
     assert payload["history"]["status"] == "unavailable"
     assert "stable per-target policy counter footprint and target-role coverage" in payload["summary"]
+
+
+def test_policies_endpoint_keeps_detail_unavailable_state_explicit(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return _build_live_policy_snapshot_without_detail_records()
+
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    response = client.get("/api/v1/policies")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_status"] == "live"
+    assert payload["serving_mode"] == "live_collector"
+    assert payload["evidence_confidence"]["source_posture"] == "live_observed"
+    assert payload["evidence_confidence"]["evidence_kind"] == "aggregate_only"
+    assert payload["evidence_confidence"]["confidence_posture"] == "blocked"
+    assert payload["evidence_confidence"]["freshness_posture"] == "current"
+    assert payload["evidence_confidence"]["blocked_reason"] == "per_record_detail_unavailable"
+    assert payload["count"] == 0
+    assert payload["observed_policy_count"] == 2
+    assert payload["empty_reason"] == "per_policy_details_unavailable"
+    assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
+    assert payload["history"]["status"] == "unavailable"
+    assert (
+        "could not derive per-policy detail records" in payload["summary"]
+    )
+    assert (
+        "Bounded per-target detail coverage currently exists for 0 observed targets."
+        in payload["summary"]
+    )
 
 
 def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) -> None:
