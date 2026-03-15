@@ -9,6 +9,7 @@ from urllib.request import urlopen
 from pydantic import BaseModel
 
 from app_api.config.settings import get_settings
+from app_api.integrations.collector.cache import SnapshotCache
 
 
 class CollectorInventoryRecord(BaseModel):
@@ -60,9 +61,11 @@ class CollectorInventoryClient:
 
     source_endpoint: str
     timeout_seconds: int
+    cache_ttl_seconds: int
+    unavailable_cache_ttl_seconds: int
 
-    def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
-        """Read the live normalized inventory snapshot from the collector."""
+    def _load_inventory_snapshot(self) -> CollectorInventorySnapshot:
+        """Load the live normalized inventory snapshot from the collector."""
         snapshot_url = f"{self.source_endpoint.rstrip('/')}/inventory/snapshot"
         try:
             with urlopen(snapshot_url, timeout=self.timeout_seconds) as response:
@@ -118,6 +121,28 @@ class CollectorInventoryClient:
             fetch_error=None,
         )
 
+    def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+        """Read the live normalized inventory snapshot from the collector."""
+        snapshot_key = (self.source_endpoint, self.timeout_seconds)
+        return _inventory_snapshot_cache.get_or_load(
+            snapshot_key=snapshot_key,
+            ttl_seconds=self.cache_ttl_seconds,
+            ttl_resolver=lambda snapshot: (
+                self.unavailable_cache_ttl_seconds
+                if snapshot.status == "collector_unavailable"
+                else self.cache_ttl_seconds
+            ),
+            loader=self._load_inventory_snapshot,
+        )
+
+
+_inventory_snapshot_cache: SnapshotCache[CollectorInventorySnapshot] = SnapshotCache()
+
+
+def clear_inventory_snapshot_cache() -> None:
+    """Clear the short-lived inventory snapshot cache."""
+    _inventory_snapshot_cache.clear()
+
 
 def get_collector_inventory_client() -> CollectorInventoryClient:
     """Return the current collector inventory boundary client."""
@@ -125,4 +150,6 @@ def get_collector_inventory_client() -> CollectorInventoryClient:
     return CollectorInventoryClient(
         source_endpoint=settings.gnmi_collector_url,
         timeout_seconds=settings.gnmi_collector_timeout_seconds,
+        cache_ttl_seconds=settings.gnmi_collector_snapshot_cache_ttl_seconds,
+        unavailable_cache_ttl_seconds=settings.gnmi_collector_unavailable_snapshot_cache_ttl_seconds,
     )

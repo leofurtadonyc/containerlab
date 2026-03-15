@@ -9,6 +9,7 @@ from urllib.request import urlopen
 from pydantic import BaseModel, Field
 
 from app_api.config.settings import get_settings
+from app_api.integrations.collector.cache import SnapshotCache
 
 
 class CollectorTopologyNodeRecord(BaseModel):
@@ -74,9 +75,11 @@ class CollectorTopologyClient:
 
     source_endpoint: str
     timeout_seconds: int
+    cache_ttl_seconds: int
+    unavailable_cache_ttl_seconds: int
 
-    def read_topology_snapshot(self) -> CollectorTopologySnapshot:
-        """Read the live normalized topology snapshot from the collector."""
+    def _load_topology_snapshot(self) -> CollectorTopologySnapshot:
+        """Load the live normalized topology snapshot from the collector."""
         snapshot_url = f"{self.source_endpoint.rstrip('/')}/topology/snapshot"
         try:
             with urlopen(snapshot_url, timeout=self.timeout_seconds) as response:
@@ -150,6 +153,28 @@ class CollectorTopologyClient:
             fetch_error=None,
         )
 
+    def read_topology_snapshot(self) -> CollectorTopologySnapshot:
+        """Read the live normalized topology snapshot from the collector."""
+        snapshot_key = (self.source_endpoint, self.timeout_seconds)
+        return _topology_snapshot_cache.get_or_load(
+            snapshot_key=snapshot_key,
+            ttl_seconds=self.cache_ttl_seconds,
+            ttl_resolver=lambda snapshot: (
+                self.unavailable_cache_ttl_seconds
+                if snapshot.status == "collector_unavailable"
+                else self.cache_ttl_seconds
+            ),
+            loader=self._load_topology_snapshot,
+        )
+
+
+_topology_snapshot_cache: SnapshotCache[CollectorTopologySnapshot] = SnapshotCache()
+
+
+def clear_topology_snapshot_cache() -> None:
+    """Clear the short-lived topology snapshot cache."""
+    _topology_snapshot_cache.clear()
+
 
 def get_collector_topology_client() -> CollectorTopologyClient:
     """Return the current collector topology boundary client."""
@@ -157,4 +182,6 @@ def get_collector_topology_client() -> CollectorTopologyClient:
     return CollectorTopologyClient(
         source_endpoint=settings.gnmi_collector_url,
         timeout_seconds=settings.gnmi_collector_timeout_seconds,
+        cache_ttl_seconds=settings.gnmi_collector_snapshot_cache_ttl_seconds,
+        unavailable_cache_ttl_seconds=settings.gnmi_collector_unavailable_snapshot_cache_ttl_seconds,
     )

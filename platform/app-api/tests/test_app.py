@@ -6,13 +6,18 @@ from fastapi.testclient import TestClient
 from app_api.integrations.collector.inventory import (
     CollectorInventoryRecord,
     CollectorInventorySnapshot,
+    clear_inventory_snapshot_cache,
+)
+from app_api.integrations.collector.policies import (
+    CollectorPolicySnapshot,
+    clear_policy_snapshot_cache,
 )
 from app_api.integrations.odl import OdlControllerObservation
-from app_api.integrations.collector.policies import CollectorPolicySnapshot
 from app_api.integrations.collector.topology import (
     CollectorTopologyLinkRecord,
     CollectorTopologyNodeRecord,
     CollectorTopologySnapshot,
+    clear_topology_snapshot_cache,
 )
 from app_api.main import app
 from app_api.models.inventory import InventoryDevice
@@ -39,6 +44,12 @@ from app_api.persistence.read_side import (
 
 
 client = TestClient(app)
+
+
+def setup_function() -> None:
+    clear_inventory_snapshot_cache()
+    clear_topology_snapshot_cache()
+    clear_policy_snapshot_cache()
 
 
 def _disable_read_side_persistence(monkeypatch) -> None:
@@ -1178,6 +1189,135 @@ def test_platform_status_endpoint_exposes_mixed_topology_pairing_coverage(monkey
         == "Topology delivery remains bounded because one or more inferred links still rely on single-sided endpoint evidence."
         for note in gnmi_component["notes"]
     )
+
+
+def test_inventory_collector_client_reuses_recent_snapshot(monkeypatch) -> None:
+    class StubResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return (
+                b'{"delivery_status":"live_ready","configured_target_count":2,'
+                b'"observed_target_count":2,"collection_success_count":2,'
+                b'"collection_partial_count":0,"collection_failure_count":0,'
+                b'"oldest_observed_at":"2026-03-09T19:25:08.500000+00:00",'
+                b'"newest_observed_at":"2026-03-09T19:25:08.500000+00:00",'
+                b'"degraded_scope_summary":"All configured inventory targets returned normalized live inventory evidence.",'
+                b'"records":[],"notes":[]}'
+            )
+
+    call_count = {"value": 0}
+
+    def fake_urlopen(url: str, timeout: int):
+        call_count["value"] += 1
+        return StubResponse()
+
+    monkeypatch.setattr("app_api.integrations.collector.inventory.urlopen", fake_urlopen)
+
+    from app_api.integrations.collector.inventory import CollectorInventoryClient
+
+    client = CollectorInventoryClient(
+        source_endpoint="http://gnmi-collector:9804",
+        timeout_seconds=8,
+        cache_ttl_seconds=15,
+        unavailable_cache_ttl_seconds=2,
+    )
+
+    first_snapshot = client.read_inventory_snapshot()
+    second_snapshot = client.read_inventory_snapshot()
+
+    assert first_snapshot.status == "live_normalized_feed"
+    assert second_snapshot.status == "live_normalized_feed"
+    assert call_count["value"] == 1
+
+
+def test_policy_collector_client_can_disable_snapshot_cache(monkeypatch) -> None:
+    class StubResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return (
+                b'{"delivery_status":"live_ready","configured_target_count":34,'
+                b'"collection_success_count":34,"collection_partial_count":0,'
+                b'"collection_failure_count":0,"oldest_observed_at":"2026-03-09T19:25:08.500000+00:00",'
+                b'"newest_observed_at":"2026-03-09T19:25:08.500000+00:00",'
+                b'"detail_ready_target_count":0,'
+                b'"degraded_scope_summary":"Policy counters indicate observed policies, but the current bounded path could not derive per-target detail records.",'
+                b'"sync_source":"gnmi_collector_policy_sr_counters","sync_status":"ok",'
+                b'"completeness":"partial","detail_mode":"counters_only",'
+                b'"observed_at":"2026-03-09T19:25:08.500000+00:00","observed_target_count":34,'
+                b'"policy_capable_target_count":34,"observed_target_role_counts":{},'
+                b'"policy_capable_target_role_counts":{},"policy_count":2,"active_policy_count":2,'
+                b'"static_policy_count":2,"static_local_policy_count":1,"static_non_local_policy_count":1,'
+                b'"bgp_policy_count":0,"ttm_preference_count":476,"binding_sid_count":0,'
+                b'"srv6_binding_sid_count":0,"target_footprints":[],"notes":[],"records":[]}'
+            )
+
+    call_count = {"value": 0}
+
+    def fake_urlopen(url: str, timeout: int):
+        call_count["value"] += 1
+        return StubResponse()
+
+    monkeypatch.setattr("app_api.integrations.collector.policies.urlopen", fake_urlopen)
+
+    from app_api.integrations.collector.policies import CollectorPolicyClient
+
+    client = CollectorPolicyClient(
+        source_endpoint="http://gnmi-collector:9804",
+        timeout_seconds=8,
+        cache_ttl_seconds=0,
+        unavailable_cache_ttl_seconds=0,
+    )
+
+    client.read_policy_snapshot()
+    client.read_policy_snapshot()
+
+    assert call_count["value"] == 2
+
+
+def test_topology_collector_client_uses_short_unavailable_cache_ttl(monkeypatch) -> None:
+    class StubResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return b"{}"
+
+    call_count = {"value": 0}
+
+    def fake_urlopen(url: str, timeout: int):
+        call_count["value"] += 1
+        raise TimeoutError("collector timed out")
+
+    monkeypatch.setattr("app_api.integrations.collector.topology.urlopen", fake_urlopen)
+
+    from app_api.integrations.collector.topology import CollectorTopologyClient
+
+    client = CollectorTopologyClient(
+        source_endpoint="http://gnmi-collector:9804",
+        timeout_seconds=8,
+        cache_ttl_seconds=15,
+        unavailable_cache_ttl_seconds=0,
+    )
+
+    first_snapshot = client.read_topology_snapshot()
+    second_snapshot = client.read_topology_snapshot()
+
+    assert first_snapshot.status == "collector_unavailable"
+    assert second_snapshot.status == "collector_unavailable"
+    assert call_count["value"] == 2
 
 
 def test_devices_endpoint_returns_live_inventory(monkeypatch) -> None:

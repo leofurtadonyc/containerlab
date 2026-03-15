@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://platform:change_me@postgres:5432/platform"
     gnmi_collector_url: str = "http://gnmi-collector:9804"
     gnmi_collector_timeout_seconds: int = 30
+    gnmi_collector_snapshot_cache_ttl_seconds: int = 15
+    gnmi_collector_unavailable_snapshot_cache_ttl_seconds: int = 2
     odl_url: str = "http://odl:8181"
     odl_username: str = "admin"
     odl_password: str = "admin"

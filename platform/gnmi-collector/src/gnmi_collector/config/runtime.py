@@ -116,6 +116,7 @@ def build_runtime_config() -> CollectorRuntimeConfig:
         mode=collector.get("mode", "phase_2_live_inventory"),
         config_path=settings.gnmi_config_path,
         metrics_port=settings.collector_metrics_port,
+        collector_target_concurrency=settings.collector_target_concurrency,
         delivery=CollectorDeliveryConfig(
             mode=delivery.get("mode", "backend_http_snapshot"),
             endpoint=delivery.get("endpoint", settings.app_api_url),

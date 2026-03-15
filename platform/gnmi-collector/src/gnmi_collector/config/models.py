@@ -64,6 +64,7 @@ class CollectorRuntimeConfig(BaseModel):
     mode: Literal["phase_2_live_inventory"]
     config_path: str
     metrics_port: int
+    collector_target_concurrency: int
     delivery: CollectorDeliveryConfig
     inventory_subscriptions: list[InventorySubscriptionConfig]
     topology_subscriptions: list[TopologySubscriptionConfig]

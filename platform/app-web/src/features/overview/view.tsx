@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { TrustCueCard } from "../../components/trust-cue-card";
@@ -12,6 +14,7 @@ import {
 import { normalizeDryRunReadiness, summarizeReadinessItemIdentitySupport } from "../../lib/readiness";
 import { useCapabilitiesQuery } from "../capabilities/api";
 import { useDevicesQuery } from "../devices/api";
+import { buildOverviewRenderState } from "./model";
 import { getPlatformReadPath, usePlatformStatusQuery } from "../platform-health/api";
 import { usePoliciesQuery } from "../policies/api";
 import { getTopologyCoverageSummary, useTopologyQuery } from "../topology/api";
@@ -47,21 +50,44 @@ export function OverviewView() {
   const policiesQuery = usePoliciesQuery();
   const capabilitiesQuery = useCapabilitiesQuery();
 
-  const isLoading =
-    platformQuery.isLoading ||
-    devicesQuery.isLoading ||
-    topologyQuery.isLoading ||
-    policiesQuery.isLoading ||
-    capabilitiesQuery.isLoading;
+  useEffect(() => {
+    const refreshTimer = window.setInterval(() => {
+      platformQuery.reload();
+      devicesQuery.reload();
+      topologyQuery.reload();
+      policiesQuery.reload();
+      capabilitiesQuery.reload();
+    }, 60000);
 
-  const error =
-    platformQuery.error ??
-    devicesQuery.error ??
-    topologyQuery.error ??
-    policiesQuery.error ??
-    capabilitiesQuery.error;
+    return () => {
+      window.clearInterval(refreshTimer);
+    };
+  }, [
+    capabilitiesQuery.reload,
+    devicesQuery.reload,
+    platformQuery.reload,
+    policiesQuery.reload,
+    topologyQuery.reload,
+  ]);
 
-  if (isLoading) {
+  const overviewState = buildOverviewRenderState(
+    [
+      { label: "Platform status", data: platformQuery.data, error: platformQuery.error, isLoading: platformQuery.isLoading },
+      { label: "Devices", data: devicesQuery.data, error: devicesQuery.error, isLoading: devicesQuery.isLoading },
+      { label: "Topology", data: topologyQuery.data, error: topologyQuery.error, isLoading: topologyQuery.isLoading },
+      { label: "Policies", data: policiesQuery.data, error: policiesQuery.error, isLoading: policiesQuery.isLoading },
+      { label: "Capabilities", data: capabilitiesQuery.data, error: capabilitiesQuery.error, isLoading: capabilitiesQuery.isLoading },
+    ],
+    Boolean(
+      platformQuery.data &&
+        devicesQuery.data &&
+        topologyQuery.data &&
+        policiesQuery.data &&
+        capabilitiesQuery.data,
+    ),
+  );
+
+  if (overviewState.mode === "loading") {
     return (
       <section>
         <h2>Overview</h2>
@@ -70,12 +96,12 @@ export function OverviewView() {
     );
   }
 
-  if (error) {
+  if (overviewState.mode === "error" && overviewState.firstError) {
     return (
       <section>
         <h2>Overview</h2>
         <ErrorState
-          error={error}
+          error={overviewState.firstError}
           onRetry={() => {
             platformQuery.reload();
             devicesQuery.reload();
@@ -84,6 +110,60 @@ export function OverviewView() {
             capabilitiesQuery.reload();
           }}
         />
+      </section>
+    );
+  }
+
+  if (overviewState.mode === "partial") {
+    return (
+      <section>
+        <div className="section-header">
+          <div>
+            <h2>Overview</h2>
+            <p>
+              The overview is showing partial product posture while one or more summary slices are
+              still loading, recovering, or temporarily unavailable.
+            </p>
+          </div>
+          <StatusPill value="degraded" />
+        </div>
+
+        <p className="callout">
+          Available slices remain usable here, and this page now auto-refreshes every minute so
+          it can recover when the lab or collector path returns.
+        </p>
+
+        <div className="summary-grid">
+          {overviewState.slices.map((slice) => (
+            <article className="summary-card" key={slice.label}>
+              <p className="summary-label">{slice.label}</p>
+              <strong>{formatLabel(slice.status)}</strong>
+              <p>{slice.detail}</p>
+            </article>
+          ))}
+        </div>
+
+        {overviewState.firstError ? (
+          <div className="query-message query-message-error">
+            <strong>Some overview slices could not be loaded yet</strong>
+            <div>
+              <p>{overviewState.firstError.message}</p>
+              <button
+                type="button"
+                className="inline-action"
+                onClick={() => {
+                  platformQuery.reload();
+                  devicesQuery.reload();
+                  topologyQuery.reload();
+                  policiesQuery.reload();
+                  capabilitiesQuery.reload();
+                }}
+              >
+                Retry all slices
+              </button>
+            </div>
+          </div>
+        ) : null}
       </section>
     );
   }

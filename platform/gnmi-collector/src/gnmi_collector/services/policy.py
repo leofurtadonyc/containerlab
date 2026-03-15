@@ -1,5 +1,7 @@
 """Policy-oriented collection flow helpers."""
 
+from concurrent.futures import ThreadPoolExecutor
+
 from gnmi_collector.adapters.nokia import NokiaSrosAdapter
 from gnmi_collector.config.runtime import build_runtime_config
 from gnmi_collector.mappings.policy import (
@@ -22,7 +24,9 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
     adapter = NokiaSrosAdapter()
 
     plans = [adapter.build_policy_plan(target) for target in config.targets]
-    raw_records = [adapter.collect_policy(target) for target in config.targets]
+    max_workers = max(1, min(config.collector_target_concurrency, len(config.targets)))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        raw_records = list(executor.map(adapter.collect_policy, config.targets))
     normalized_records = map_policy_records(raw_records)
     aggregated_counts = summarize_policy_counts(raw_records)
     target_footprints = summarize_policy_target_footprints(raw_records, normalized_records)

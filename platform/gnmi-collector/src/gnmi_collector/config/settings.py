@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     app_api_url: str = "http://app-api:8000"
     gnmi_config_path: str = Field(default_factory=_default_gnmi_config_path)
     collector_mode: str = "phase_2_live_inventory"
+    collector_target_concurrency: int = 12
 
     model_config = SettingsConfigDict(
         env_prefix="",

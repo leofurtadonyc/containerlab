@@ -1,5 +1,6 @@
 """Platform status service helpers."""
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 
 from app_api.config.settings import get_settings
@@ -194,11 +195,15 @@ def _build_odl_component_status() -> PlatformComponentStatus:
 def build_platform_status_response() -> PlatformStatusResponse:
     """Build the bounded platform status response for the current phase."""
     settings = get_settings()
-    read_paths = [
-        _build_inventory_read_path_status(),
-        _build_topology_read_path_status(),
-        _build_policy_read_path_status(),
-    ]
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        inventory_future = executor.submit(_build_inventory_read_path_status)
+        topology_future = executor.submit(_build_topology_read_path_status)
+        policy_future = executor.submit(_build_policy_read_path_status)
+        read_paths = [
+            inventory_future.result(),
+            topology_future.result(),
+            policy_future.result(),
+        ]
     return PlatformStatusResponse(
         status="ok",
         service="app-api",

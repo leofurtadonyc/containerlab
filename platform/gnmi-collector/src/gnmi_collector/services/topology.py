@@ -1,6 +1,7 @@
 """Topology-oriented collection flow helpers."""
 
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 
 from gnmi_collector.adapters.nokia import NokiaSrosAdapter
 from gnmi_collector.config.runtime import build_runtime_config
@@ -41,7 +42,9 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
     adapter = NokiaSrosAdapter()
 
     plans = [adapter.build_topology_plan(target) for target in config.targets]
-    raw_records = [adapter.collect_topology(target) for target in config.targets]
+    max_workers = max(1, min(config.collector_target_concurrency, len(config.targets)))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        raw_records = list(executor.map(adapter.collect_topology, config.targets))
     normalized_nodes = map_topology_nodes(raw_records)
     normalized_links, paired_link_count, single_sided_link_count = map_topology_links(raw_records)
     node_state_counts = dict(Counter(node.state for node in normalized_nodes))
