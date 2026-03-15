@@ -7,7 +7,12 @@ import {
   buildCrossSliceConsistencyReadout,
   buildPolicySupportObservedReadout,
 } from "../../lib/cross-slice-consistency";
-import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
+import {
+  buildFallbackAwareStatusDisplay,
+  countBy,
+  formatDateTime,
+  formatLabel,
+} from "../../lib/presentation";
 import {
   buildPolicyEvidenceFallback,
   buildTopologyEvidenceFallback,
@@ -467,6 +472,13 @@ export function PoliciesView() {
     observedPolicyCount: data.observed_policy_count,
     detailRecordCount: data.count,
   });
+  const policySyncDisplay = buildFallbackAwareStatusDisplay(
+    data.sync_status,
+    data.serving_mode,
+    "Last recorded sync",
+  );
+  const policySyncLabel =
+    data.serving_mode === "persisted_fallback" ? "Sync posture" : "Sync status";
 
   return (
     <section>
@@ -485,7 +497,7 @@ export function PoliciesView() {
         <span>Data status: {data.data_status}</span>
         <span>Serving mode: {formatLabel(data.serving_mode)}</span>
         <span>Sync source: {data.sync_source}</span>
-        <span>Sync status: {data.sync_status}</span>
+        <span>{policySyncLabel}: {formatLabel(policySyncDisplay.pillValue)}</span>
         <span>Completeness: {data.completeness}</span>
         <span>Detail mode: {formatLabel(data.detail_mode)}</span>
         <span>Detail records: {data.count}</span>
@@ -698,7 +710,12 @@ export function PoliciesView() {
             </li>
             <li>
               <span>Policy sync status</span>
-              <StatusPill value={data.sync_status} />
+              <div>
+                <StatusPill value={policySyncDisplay.pillValue} />
+                {policySyncDisplay.note ? (
+                  <div className="table-note">{policySyncDisplay.note}</div>
+                ) : null}
+              </div>
             </li>
             <li>
               <span>Explicit completeness</span>

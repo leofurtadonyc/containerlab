@@ -10,6 +10,7 @@ import { IdentifierChip } from "../../components/identifier-chip";
 import { StatusPill } from "../../components/status-pill";
 import { buildCrossSliceConsistencyReadout } from "../../lib/cross-slice-consistency";
 import {
+  buildFallbackAwareStatusDisplay,
   countBy,
   describeTopologyCoveragePosture,
   describeTopologyLinkPairing,
@@ -391,6 +392,13 @@ export function TopologyView() {
     data.evidence_confidence,
     buildTopologyEvidenceFallback(data.serving_mode, data.data_status),
   );
+  const topologySyncDisplay = buildFallbackAwareStatusDisplay(
+    topology.sync_status,
+    data.serving_mode,
+    "Last recorded sync",
+  );
+  const topologySyncLabel =
+    data.serving_mode === "persisted_fallback" ? "Sync posture" : "Sync status";
   const policyEvidenceConfidence = policyData
     ? normalizeEvidenceConfidence(
         policyData.evidence_confidence,
@@ -440,7 +448,7 @@ export function TopologyView() {
         <span>Data status: {data.data_status}</span>
         <span>Serving mode: {formatLabel(data.serving_mode)}</span>
         <span>Sync source: {topology.sync_source}</span>
-        <span>Sync status: {topology.sync_status}</span>
+        <span>{topologySyncLabel}: {formatLabel(topologySyncDisplay.pillValue)}</span>
         <span>Observed: {formatDateTime(topology.observed_at)}</span>
         <span>Served persisted at: {formatDateTime(data.served_persisted_at)}</span>
         <span>Generated: {formatDateTime(data.generated_at)}</span>
@@ -520,7 +528,12 @@ export function TopologyView() {
             </li>
             <li>
               <span>Topology sync status</span>
-              <StatusPill value={topology.sync_status} />
+              <div>
+                <StatusPill value={topologySyncDisplay.pillValue} />
+                {topologySyncDisplay.note ? (
+                  <div className="table-note">{topologySyncDisplay.note}</div>
+                ) : null}
+              </div>
             </li>
             <li>
               <span>Explicit completeness</span>
@@ -936,6 +949,11 @@ export function TopologyView() {
               <tbody>
                 {sortedNodes.map((node) => {
                   const isSelected = selectedNode?.node_id === node.node_id;
+                  const nodeStateDisplay = buildFallbackAwareStatusDisplay(
+                    node.state,
+                    data.serving_mode,
+                    "Last recorded state",
+                  );
                   return (
                     <tr key={node.node_id} className={isSelected ? "data-row-selected" : undefined}>
                       <td>
@@ -950,7 +968,10 @@ export function TopologyView() {
                       </td>
                       <td>{formatLabel(node.role)}</td>
                       <td>
-                        <StatusPill value={node.state} />
+                        <StatusPill value={nodeStateDisplay.pillValue} />
+                        {nodeStateDisplay.note ? (
+                          <div className="table-note">{nodeStateDisplay.note}</div>
+                        ) : null}
                       </td>
                       <td>{node.attributes.loopback_ipv4 ?? "Unknown"}</td>
                       <td>{node.attributes.management_address ?? "Unknown"}</td>
@@ -1107,6 +1128,11 @@ export function TopologyView() {
                   const isSelected = selectedLink?.link_id === link.link_id;
                   const evidenceCount = getTopologyLinkEndpointEvidenceCount(link);
                   const endpointPairingState = getTopologyLinkEndpointPairingState(link);
+                  const linkStateDisplay = buildFallbackAwareStatusDisplay(
+                    link.state,
+                    data.serving_mode,
+                    "Last recorded state",
+                  );
                   return (
                     <tr key={link.link_id} className={isSelected ? "data-row-selected" : undefined}>
                       <td>
@@ -1125,7 +1151,10 @@ export function TopologyView() {
                         {link.source_node_id} to {link.target_node_id}
                       </td>
                       <td>
-                        <StatusPill value={link.state} />
+                        <StatusPill value={linkStateDisplay.pillValue} />
+                        {linkStateDisplay.note ? (
+                          <div className="table-note">{linkStateDisplay.note}</div>
+                        ) : null}
                       </td>
                       <td>{formatLabel(getLinkKnowledgeState(link))}</td>
                       <td>

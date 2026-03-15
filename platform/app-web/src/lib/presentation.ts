@@ -85,6 +85,36 @@ export function formatCountLabel(
   return `${count} ${count === 1 ? singularLabel : pluralLabel}`;
 }
 
+export interface FallbackAwareStatusDisplay {
+  pillValue: string;
+  note: string | null;
+}
+
+export function buildFallbackAwareStatusDisplay(
+  value: string,
+  servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold",
+  notePrefix = "Last recorded",
+): FallbackAwareStatusDisplay {
+  if (servingMode === "persisted_fallback") {
+    return {
+      pillValue: "persisted_fallback",
+      note: `${notePrefix}: ${formatLabel(value)}`,
+    };
+  }
+
+  if (servingMode === "empty_scaffold") {
+    return {
+      pillValue: "empty_scaffold",
+      note: null,
+    };
+  }
+
+  return {
+    pillValue: value,
+    note: null,
+  };
+}
+
 function parseCount(value: number | string | null | undefined): number {
   if (typeof value === "number" && Number.isFinite(value)) {
     return Math.max(0, value);

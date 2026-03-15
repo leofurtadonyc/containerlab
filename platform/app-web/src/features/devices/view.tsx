@@ -4,7 +4,12 @@ import type { EvidenceConfidenceSummary } from "../../api/contracts";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
-import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
+import {
+  buildFallbackAwareStatusDisplay,
+  countBy,
+  formatDateTime,
+  formatLabel,
+} from "../../lib/presentation";
 import {
   describeBlockedReason,
   describeConfidencePosture,
@@ -167,6 +172,20 @@ export function DevicesView() {
     data.comparison_to_latest_persisted.status,
     data.serving_mode,
   );
+  const collectorOkLabel =
+    data.serving_mode === "persisted_fallback" ? "Last Recorded Collector OK" : "Collector OK";
+  const collectorOkDetail =
+    data.serving_mode === "persisted_fallback"
+      ? "Devices whose latest persisted snapshot last recorded healthy collector reachability."
+      : "Devices with healthy collector reachability.";
+  const collectorUnknownLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last Recorded Collector Unknown"
+      : "Collector Unknown";
+  const collectorUnknownDetail =
+    data.serving_mode === "persisted_fallback"
+      ? "Inventory exists, but the latest persisted snapshot still carries uncertain collector posture for these devices."
+      : "Inventory exists, but observed collector certainty remains partial.";
 
   return (
     <section>
@@ -219,14 +238,14 @@ export function DevicesView() {
           <p>{comparisonReadout.detail}</p>
         </article>
         <article className="summary-card">
-          <p className="summary-label">Collector OK</p>
+          <p className="summary-label">{collectorOkLabel}</p>
           <strong>{collectorCounts.ok ?? 0}</strong>
-          <p>Devices with healthy collector reachability.</p>
+          <p>{collectorOkDetail}</p>
         </article>
         <article className="summary-card">
-          <p className="summary-label">Collector Unknown</p>
+          <p className="summary-label">{collectorUnknownLabel}</p>
           <strong>{collectorCounts.unknown ?? 0}</strong>
-          <p>Inventory exists, but observed collector certainty remains partial.</p>
+          <p>{collectorUnknownDetail}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Capability Gaps</p>
@@ -499,27 +518,37 @@ export function DevicesView() {
               </tr>
             </thead>
             <tbody>
-              {filteredItems.map((device) => (
-                <tr key={device.device_id}>
-                  <td>
-                    <strong>{device.device_id}</strong>
-                    {device.software_version ? (
-                      <div className="table-note">{device.software_version}</div>
-                    ) : null}
-                  </td>
-                  <td>{device.vendor}</td>
-                  <td>{device.platform}</td>
-                  <td>{device.role ?? "Not set"}</td>
-                  <td>{device.management_address}</td>
-                  <td>
-                    <StatusPill value={device.collector_status} />
-                  </td>
-                  <td>
-                    <StatusPill value={device.capability_summary} />
-                    <div className="table-note">{device.capability_detail}</div>
-                  </td>
-                </tr>
-              ))}
+              {filteredItems.map((device) => {
+                const collectorStatusDisplay = buildFallbackAwareStatusDisplay(
+                  device.collector_status,
+                  data.serving_mode,
+                );
+
+                return (
+                  <tr key={device.device_id}>
+                    <td>
+                      <strong>{device.device_id}</strong>
+                      {device.software_version ? (
+                        <div className="table-note">{device.software_version}</div>
+                      ) : null}
+                    </td>
+                    <td>{device.vendor}</td>
+                    <td>{device.platform}</td>
+                    <td>{device.role ?? "Not set"}</td>
+                    <td>{device.management_address}</td>
+                    <td>
+                      <StatusPill value={collectorStatusDisplay.pillValue} />
+                      {collectorStatusDisplay.note ? (
+                        <div className="table-note">{collectorStatusDisplay.note}</div>
+                      ) : null}
+                    </td>
+                    <td>
+                      <StatusPill value={device.capability_summary} />
+                      <div className="table-note">{device.capability_detail}</div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
