@@ -145,18 +145,25 @@ Posture: `important_but_still_behind_topology`
 
 Reasoning:
 
-- the live stack still reports `no_policies_observed`
-- the verifier still reports zero policy detail-ready targets on the current
-  deployment
+- the live stack no longer reports a purely live-empty policy posture and now
+  shows observed policies on the current lab
+- the live slice still reports `detail_mode=counters_only`,
+  `empty_reason=per_policy_details_unavailable`, zero detail-ready targets,
+  and zero normalized policy records
+- the verifier now confirms the real blocker directly through zero
+  detail-ready-target and `counters_only` notices
 - that keeps policy important, but it also means a policy-first cycle would
-  mostly run into absent live source detail rather than a cleaner
-  already-evidenced truth gap
+  still mostly run into missing derivable per-policy source detail rather than
+  a cleaner already-evidenced product-semantics gap
 
 Conclusion:
 
 - policy should remain behind topology in the immediate next-cycle order
 - deeper policy truth should wait until live evidence supports more than the
-  current aggregate-only and live-empty posture
+  current aggregate-only and detail-unavailable posture
+- if policy is reopened later, the smallest honest slice should start at the
+  collector-source boundary for one supported policy type rather than at the
+  WebUI, dashboard, or verifier layer
 
 ### Workflow-planning maturity
 
@@ -244,7 +251,8 @@ The following should not happen next.
 - do not widen this follow-on into workflow-owned storage, workflow retrieval,
   or workflow-grade audit-linkage design
 - do not start a policy-first cycle that overreads the current
-  `no_policies_observed` and zero detail-ready-target posture
+  `per_policy_details_unavailable`, `counters_only`, and zero
+  detail-ready-target posture
 - do not treat capability-item identity or readiness child-item identity as an
   immediate implementation requirement unless a concrete bounded consumer proves
   the current anchors insufficient

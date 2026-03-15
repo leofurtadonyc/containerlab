@@ -26,6 +26,7 @@ Most of the week's work has established:
 - accepted week 13 identity consolidation, with explicit persisted and response-level anchors now exposed where real records exist and no immediate capability item-ID follow-on justified for the current bounded product slice
 - bounded platform-status `read_paths` coverage, freshness, degraded-scope, and policy detail-ready posture now carried through the backend, surfaced in the product, and mirrored numerically in the platform overview dashboard
 - accepted week 14 topology truth-depth work, with explicit endpoint-pairing posture and paired-versus-single-sided inferred-link counts now carried end to end through collector delivery, backend-owned topology and platform-status contracts, primary WebUI trust cues, Grafana observability, targeted tests, and the live verifier while preserving explicit partial-truth semantics
+- the strict policy truth-depth review is now also complete, and it confirms that the live lab is no longer purely `no_policies_observed` but still remains blocked at aggregate-only policy truth because the current slice shows observed policies with `detail_mode=counters_only`, `empty_reason=per_policy_details_unavailable`, zero detail-ready targets, and zero normalized policy records
 - stronger automated verification, with backend and collector tests plus `verify-core-runtime` now checking the accepted week 13 identity, read-path, and week 14 topology-coverage signals directly
 
 ## Updated Phase 2 Checkpoint Assessment
@@ -37,7 +38,7 @@ Current maturity by area:
 
 - runtime and verification maturity: strong for the current Phase 2 scope, because repo-built images, startup-contract validation, targeted pytest, and the live `verify-core-runtime` plus `verify-odl-auth` flow now prove the bounded runtime, read-path, and roadmap-posture contracts end to end
 - identity maturity: sufficient for bounded operations, because persisted and response-level anchors are explicit where real records exist and the accepted week 13 review closed the default capability item-ID lane with a documented no-change outcome
-- read-path maturity: mixed, because inventory is strong enough for routine bounded use, topology pairing semantics are now materially stronger after the accepted week 14 work but topology still remains the weakest current live slice due to partial completeness and still-coarse degraded-scope interpretation, and policy remains intentionally partial and currently live-empty with zero detail-ready targets in the present lab
+- read-path maturity: mixed, because inventory is strong enough for routine bounded use, topology pairing semantics are now materially stronger after the accepted week 14 work but topology still remains the weakest current live slice due to partial completeness and still-coarse degraded-scope interpretation, and policy remains intentionally partial with real observed policies but zero detail-ready targets and zero normalized records in the present lab
 - history maturity: mixed for read-side evidence but still blocked for workflow implementation, because workflow-history and audit-history now include bounded persisted context and anchors but still do not provide durable workflow lifecycle or operator-action history
 - capability maturity: strong for planning support and current product interpretation, because support state, implementation status, delivery tier, evidence basis, vendor posture, version scope, workflow-readiness interpretation, and blocker posture are now explicit enough for honest bounded use without implying workflow eligibility or Juniper parity
 - workflow-prerequisite clarity: still design-strong but implementation-deferred, because the repository has explicit ownership and sequencing guidance for future workflow-owned state while remaining fully in `Phase 2`
@@ -45,7 +46,7 @@ Current maturity by area:
 Strongest remaining evidence gap:
 
 - topology truth depth remains the clearest remaining bounded candidate because the live stack already exposes stable topology evidence and the accepted week 14 slice closed the narrower pairing-vocabulary gap end to end, leaving the broader still-bounded question of how explicitly the platform should decompose `completeness=partial` and topology `degraded_scope_summary` without pretending full truth
-- policy detail remains important but is not the best immediate next cycle, because the current lab still reports `no_policies_observed` and zero detail-ready targets, so a policy-first cycle would risk overreading absent source evidence
+- policy detail remains important but is not the best immediate next cycle, because the current lab now reports observed policies but still exposes `detail_mode=counters_only`, `empty_reason=per_policy_details_unavailable`, zero detail-ready targets, and zero normalized records, so a policy-first cycle would still risk overreading source detail that is not yet derivable
 - workflow implementation, dry-run behavior, and workflow-owned storage remain out of scope, but they are no longer the right immediate planning target for the next cycle either
 
 Bounded next steps:
@@ -54,6 +55,7 @@ Bounded next steps:
 - keep the accepted week 13 identity no-change outcome closed unless a later concrete consumer proves the remaining item-level identity gap matters in practice
 - keep the accepted week 14 endpoint-pairing implementation outcome closed as well; do not reopen pairing-consumption work across product, observability, tests, or verifier surfaces by default
 - only reopen topology for one further bounded truth-depth follow-on if there is a concrete next gain in sharpening broad `partial` and topology `degraded_scope_summary` semantics where current evidence already exists
+- keep any later policy follow-on conditional on nonzero detail-ready targets and nonzero normalized policy records from the live collector path rather than reopening product semantics by default
 - preserve `Phase 2 — read-only product foundation` until workflow records, workflow-owned APIs, and validation outputs are all real
 
 ## Recommendation For The Next Bounded Cycle
@@ -73,7 +75,7 @@ Why this is the right next-cycle focus:
 - the accepted week 13 work closed the default identity lane with a documented no-change decision rather than exposing a new must-build contract gap
 - the accepted week 14 work closed the narrower endpoint-pairing and single-sided-link coverage gap across collector, backend, product, observability, tests, and verifier behavior rather than leaving that slice as a pending recommendation
 - runtime hardening and verification are now strong enough for the current bounded scope and are no longer the primary bottleneck
-- topology still exposes the clearest remaining live truth gap, but the honest next question is no longer whether to add pairing vocabulary; it is whether one later bounded follow-on should sharpen broad `partial` and `degraded_scope_summary` semantics from the evidence already in hand, while policy remains more blocked by absent observed policy detail in the current lab
+- topology still exposes the clearest remaining live truth gap, but the honest next question is no longer whether to add pairing vocabulary; it is whether one later bounded follow-on should sharpen broad `partial` and `degraded_scope_summary` semantics from the evidence already in hand, while policy remains more blocked by absent derivable per-policy source detail in the current lab
 
 The recommended next-cycle slice should stay limited to:
 
