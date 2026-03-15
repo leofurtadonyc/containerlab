@@ -134,6 +134,18 @@ Definitions:
 Do not add an `unknown_link_count` unless the runtime actually emits link
 records that can be honestly classified as `unknown`.
 
+Collector implementation status for this task:
+
+- implemented now in `gnmi-collector`: per-link `endpoint_pairing_state` and
+  `endpoint_evidence_count`
+- implemented now in `gnmi-collector`: aggregate `paired_link_count`,
+  `single_sided_link_count`, and `endpoint_pairing_posture`
+- implemented now in `gnmi-collector` metrics: paired-link and single-sided-link
+  gauges
+- still pending in later slices: backend-owned coverage-summary propagation,
+  platform-status propagation, and product-surface consumption of these typed
+  fields
+
 ### Bounded status fields
 
 These should be bounded status fields, not scores.

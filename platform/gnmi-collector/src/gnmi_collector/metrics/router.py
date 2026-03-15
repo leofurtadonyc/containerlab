@@ -197,6 +197,15 @@ def get_metrics() -> Response:
                 f"{topology_summary.normalized_link_count if topology_summary else 0}"
             ),
             (
+                "# HELP platform_gnmi_collector_topology_paired_links "
+                "Topology links inferred from paired observed endpoints."
+            ),
+            "# TYPE platform_gnmi_collector_topology_paired_links gauge",
+            (
+                "platform_gnmi_collector_topology_paired_links "
+                f"{topology_summary.paired_link_count if topology_summary else 0}"
+            ),
+            (
                 "# HELP platform_gnmi_collector_topology_single_sided_links "
                 "Topology links inferred from only one observed endpoint."
             ),
