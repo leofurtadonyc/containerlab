@@ -6,10 +6,14 @@ from typing import Literal
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from app_api.config.settings import get_settings
 from app_api.integrations.collector.cache import SnapshotCache
+from app_api.integrations.collector.failure import (
+    CollectorFetchErrorKind,
+    classify_collector_fetch_failure,
+)
 
 
 class CollectorInventoryRecord(BaseModel):
@@ -52,6 +56,7 @@ class CollectorInventorySnapshot(BaseModel):
     degraded_scope_summary: str
     records: list[CollectorInventoryRecord]
     notes: list[str]
+    fetch_error_kind: CollectorFetchErrorKind | None = None
     fetch_error: str | None = None
 
 
@@ -70,7 +75,17 @@ class CollectorInventoryClient:
         try:
             with urlopen(snapshot_url, timeout=self.timeout_seconds) as response:
                 payload = json.loads(response.read().decode("utf-8"))
-        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+            records = [
+                CollectorInventoryRecord.model_validate(record)
+                for record in payload.get("records", [])
+            ]
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, ValidationError) as exc:
+            failure = classify_collector_fetch_failure(
+                exc,
+                boundary_label="inventory snapshot",
+                snapshot_url=snapshot_url,
+                timeout_seconds=self.timeout_seconds,
+            )
             return CollectorInventorySnapshot(
                 integration="gnmi_collector_inventory",
                 status="collector_unavailable",
@@ -88,7 +103,8 @@ class CollectorInventoryClient:
                 ),
                 records=[],
                 notes=[],
-                fetch_error=str(exc),
+                fetch_error_kind=failure.kind,
+                fetch_error=failure.detail,
             )
 
         status_map = {
@@ -96,10 +112,6 @@ class CollectorInventoryClient:
             "partial": "partial_live_feed",
             "failed": "collector_unavailable",
         }
-        records = [
-            CollectorInventoryRecord.model_validate(record)
-            for record in payload.get("records", [])
-        ]
         return CollectorInventorySnapshot(
             integration="gnmi_collector_inventory",
             status=status_map.get(payload.get("delivery_status"), "collector_unavailable"),
@@ -118,6 +130,7 @@ class CollectorInventoryClient:
             ),
             records=records,
             notes=payload.get("notes", []),
+            fetch_error_kind=None,
             fetch_error=None,
         )
 
@@ -149,7 +162,7 @@ def get_collector_inventory_client() -> CollectorInventoryClient:
     settings = get_settings()
     return CollectorInventoryClient(
         source_endpoint=settings.gnmi_collector_url,
-        timeout_seconds=settings.gnmi_collector_timeout_seconds,
+        timeout_seconds=settings.get_gnmi_collector_inventory_timeout_seconds(),
         cache_ttl_seconds=settings.gnmi_collector_snapshot_cache_ttl_seconds,
         unavailable_cache_ttl_seconds=settings.gnmi_collector_unavailable_snapshot_cache_ttl_seconds,
     )

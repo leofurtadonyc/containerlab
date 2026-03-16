@@ -33,14 +33,16 @@ def _parse_collector_timestamp(value: str | None) -> datetime | None:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
-def _map_read_path_state(status: str, fetch_error: str | None) -> str:
+def _map_read_path_state(status: str, fetch_error_kind: str | None) -> str:
     """Map collector snapshot status into a bounded platform observation state."""
     if status == "live_normalized_feed":
         return "ok"
     if status == "partial_live_feed":
         return "degraded"
-    if fetch_error:
+    if fetch_error_kind in {"timeout_budget_exceeded", "collector_connection_error"}:
         return "unreachable"
+    if fetch_error_kind in {"collector_http_error", "invalid_response_payload", "unknown_error"}:
+        return "degraded"
     return "unknown"
 
 
@@ -49,7 +51,7 @@ def _build_inventory_read_path_status() -> PlatformReadPathStatus:
     snapshot = get_collector_inventory_client().read_inventory_snapshot()
     return PlatformReadPathStatus(
         model_family="inventory",
-        observation_state=_map_read_path_state(snapshot.status, snapshot.fetch_error),
+        observation_state=_map_read_path_state(snapshot.status, snapshot.fetch_error_kind),
         configured_target_count=snapshot.configured_target_count,
         observed_target_count=snapshot.observed_target_count,
         collection_success_count=snapshot.collection_success_count,
@@ -61,7 +63,7 @@ def _build_inventory_read_path_status() -> PlatformReadPathStatus:
         summary=(
             "Current inventory read-path coverage is bounded to the targets that returned normalized live inventory evidence."
         ),
-        notes=snapshot.notes,
+        notes=[*snapshot.notes, *([snapshot.fetch_error] if snapshot.fetch_error else [])],
     )
 
 
@@ -81,7 +83,7 @@ def _build_topology_read_path_status() -> PlatformReadPathStatus:
     )
     return PlatformReadPathStatus(
         model_family="topology",
-        observation_state=_map_read_path_state(snapshot.status, snapshot.fetch_error),
+        observation_state=_map_read_path_state(snapshot.status, snapshot.fetch_error_kind),
         configured_target_count=snapshot.configured_target_count,
         observed_target_count=snapshot.observed_target_count,
         collection_success_count=snapshot.collection_success_count,
@@ -99,7 +101,11 @@ def _build_topology_read_path_status() -> PlatformReadPathStatus:
             "Current topology read-path coverage is bounded to live interface evidence plus the current backend-owned inference rules. "
             f"{coverage_summary.summary}"
         ),
-        notes=[*snapshot.notes, coverage_summary.summary],
+        notes=[
+            *snapshot.notes,
+            coverage_summary.summary,
+            *([snapshot.fetch_error] if snapshot.fetch_error else []),
+        ],
     )
 
 
@@ -108,7 +114,7 @@ def _build_policy_read_path_status() -> PlatformReadPathStatus:
     snapshot = get_collector_policy_client().read_policy_snapshot()
     return PlatformReadPathStatus(
         model_family="policy",
-        observation_state=_map_read_path_state(snapshot.status, snapshot.fetch_error),
+        observation_state=_map_read_path_state(snapshot.status, snapshot.fetch_error_kind),
         configured_target_count=snapshot.configured_target_count,
         observed_target_count=snapshot.observed_target_count,
         collection_success_count=snapshot.collection_success_count,
@@ -122,7 +128,7 @@ def _build_policy_read_path_status() -> PlatformReadPathStatus:
         summary=(
             "Current policy read-path coverage is bounded to live SR-policy counter evidence and the subset of targets that yield normalized detail records."
         ),
-        notes=snapshot.notes,
+        notes=[*snapshot.notes, *([snapshot.fetch_error] if snapshot.fetch_error else [])],
     )
 
 

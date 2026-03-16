@@ -6,10 +6,14 @@ from typing import Literal
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from app_api.config.settings import get_settings
 from app_api.integrations.collector.cache import SnapshotCache
+from app_api.integrations.collector.failure import (
+    CollectorFetchErrorKind,
+    classify_collector_fetch_failure,
+)
 
 
 class CollectorPolicyCandidatePathRecord(BaseModel):
@@ -108,6 +112,7 @@ class CollectorPolicySnapshot(BaseModel):
     target_footprints: list[CollectorPolicyTargetFootprintRecord] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
     records: list[CollectorPolicyRecord] = Field(default_factory=list)
+    fetch_error_kind: CollectorFetchErrorKind | None = None
     fetch_error: str | None = None
 
 
@@ -126,7 +131,21 @@ class CollectorPolicyClient:
         try:
             with urlopen(snapshot_url, timeout=self.timeout_seconds) as response:
                 payload = json.loads(response.read().decode("utf-8"))
-        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+            target_footprints = [
+                CollectorPolicyTargetFootprintRecord.model_validate(record)
+                for record in payload.get("target_footprints", [])
+            ]
+            records = [
+                CollectorPolicyRecord.model_validate(record)
+                for record in payload.get("records", [])
+            ]
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, ValidationError) as exc:
+            failure = classify_collector_fetch_failure(
+                exc,
+                boundary_label="policy snapshot",
+                snapshot_url=snapshot_url,
+                timeout_seconds=self.timeout_seconds,
+            )
             return CollectorPolicySnapshot(
                 integration="gnmi_collector_policy",
                 status="collector_unavailable",
@@ -163,7 +182,8 @@ class CollectorPolicyClient:
                 target_footprints=[],
                 notes=[],
                 records=[],
-                fetch_error=str(exc),
+                fetch_error_kind=failure.kind,
+                fetch_error=failure.detail,
             )
 
         status_map = {
@@ -205,15 +225,10 @@ class CollectorPolicyClient:
             ttm_preference_count=payload.get("ttm_preference_count", 0),
             binding_sid_count=payload.get("binding_sid_count", 0),
             srv6_binding_sid_count=payload.get("srv6_binding_sid_count", 0),
-            target_footprints=[
-                CollectorPolicyTargetFootprintRecord.model_validate(record)
-                for record in payload.get("target_footprints", [])
-            ],
+            target_footprints=target_footprints,
             notes=payload.get("notes", []),
-            records=[
-                CollectorPolicyRecord.model_validate(record)
-                for record in payload.get("records", [])
-            ],
+            records=records,
+            fetch_error_kind=None,
             fetch_error=None,
         )
 
@@ -245,7 +260,7 @@ def get_collector_policy_client() -> CollectorPolicyClient:
     settings = get_settings()
     return CollectorPolicyClient(
         source_endpoint=settings.gnmi_collector_url,
-        timeout_seconds=settings.gnmi_collector_timeout_seconds,
+        timeout_seconds=settings.get_gnmi_collector_policy_timeout_seconds(),
         cache_ttl_seconds=settings.gnmi_collector_snapshot_cache_ttl_seconds,
         unavailable_cache_ttl_seconds=settings.gnmi_collector_unavailable_snapshot_cache_ttl_seconds,
     )

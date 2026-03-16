@@ -1,5 +1,6 @@
 from datetime import datetime
 from types import SimpleNamespace
+from urllib.error import URLError
 
 from fastapi.testclient import TestClient
 
@@ -41,12 +42,14 @@ from app_api.persistence.read_side import (
     PersistedPolicySnapshotSummary,
     PersistedTopologySnapshot,
 )
+from app_api.config.settings import get_settings
 
 
 client = TestClient(app)
 
 
 def setup_function() -> None:
+    get_settings.cache_clear()
     clear_inventory_snapshot_cache()
     clear_topology_snapshot_cache()
     clear_policy_snapshot_cache()
@@ -1218,6 +1221,131 @@ def test_platform_status_endpoint_exposes_mixed_topology_pairing_coverage(monkey
     )
 
 
+def test_platform_status_endpoint_classifies_collector_boundary_failures(monkeypatch) -> None:
+    class StubOdlClient:
+        def read_controller_observation(self) -> OdlControllerObservation:
+            return OdlControllerObservation(
+                observation_state="ok",
+                observed_source="odl_restconf_capability_probe",
+                observation_summary="ODL probe succeeded.",
+                observed_capabilities=[],
+                notes=[],
+            )
+
+    monkeypatch.setattr(
+        "app_api.services.platform.get_odl_client",
+        lambda: StubOdlClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_inventory_client",
+        lambda: SimpleNamespace(
+            read_inventory_snapshot=lambda: CollectorInventorySnapshot(
+                integration="gnmi_collector_inventory",
+                status="collector_unavailable",
+                destination_service="app-api",
+                source_endpoint="http://gnmi-collector:9804/inventory/snapshot",
+                configured_target_count=0,
+                observed_target_count=0,
+                collection_success_count=0,
+                collection_partial_count=0,
+                collection_failure_count=0,
+                oldest_observed_at=None,
+                newest_observed_at=None,
+                degraded_scope_summary="No configured inventory targets returned usable live inventory evidence.",
+                records=[],
+                notes=[],
+                fetch_error_kind="timeout_budget_exceeded",
+                fetch_error="Collector boundary exceeded the 3s latency budget while reading inventory snapshot from http://gnmi-collector:9804/inventory/snapshot.",
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_topology_client",
+        lambda: SimpleNamespace(
+            read_topology_snapshot=lambda: CollectorTopologySnapshot(
+                integration="gnmi_collector_topology",
+                status="collector_unavailable",
+                destination_service="app-api",
+                source_endpoint="http://gnmi-collector:9804/topology/snapshot",
+                configured_target_count=0,
+                observed_target_count=0,
+                collection_success_count=0,
+                collection_partial_count=0,
+                collection_failure_count=0,
+                oldest_observed_at=None,
+                newest_observed_at=None,
+                inference_posture=None,
+                collection_posture="blocked",
+                degraded_scope_summary="No configured topology targets returned usable live topology evidence.",
+                topology_id="platform-observed-topology",
+                topology_name="Platform Observed Topology",
+                sync_source="gnmi_collector_topology",
+                sync_status="failed",
+                completeness="unknown",
+                observed_at=None,
+                notes=[],
+                nodes=[],
+                links=[],
+                fetch_error_kind="invalid_response_payload",
+                fetch_error="Collector boundary returned an invalid normalized payload while reading topology snapshot from http://gnmi-collector:9804/topology/snapshot.",
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_policy_client",
+        lambda: SimpleNamespace(
+            read_policy_snapshot=lambda: CollectorPolicySnapshot(
+                integration="gnmi_collector_policy",
+                status="collector_unavailable",
+                destination_service="app-api",
+                source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+                configured_target_count=0,
+                collection_success_count=0,
+                collection_partial_count=0,
+                collection_failure_count=0,
+                oldest_observed_at=None,
+                newest_observed_at=None,
+                detail_ready_target_count=0,
+                degraded_scope_summary="No configured policy targets returned usable live policy evidence.",
+                sync_source="gnmi_collector_policy",
+                sync_status="failed",
+                completeness="unknown",
+                detail_mode="unknown",
+                observed_at=None,
+                observed_target_count=0,
+                policy_capable_target_count=0,
+                observed_target_role_counts={},
+                policy_capable_target_role_counts={},
+                policy_count=0,
+                active_policy_count=0,
+                static_policy_count=0,
+                static_local_policy_count=0,
+                static_non_local_policy_count=0,
+                bgp_policy_count=0,
+                ttm_preference_count=0,
+                binding_sid_count=0,
+                srv6_binding_sid_count=0,
+                target_footprints=[],
+                notes=[],
+                records=[],
+                fetch_error_kind="collector_connection_error",
+                fetch_error="Collector boundary connection failed while reading policy snapshot from http://gnmi-collector:9804/policies/snapshot: Connection refused.",
+            )
+        ),
+    )
+
+    response = client.get("/api/v1/platform/status")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["read_paths"][0]["observation_state"] == "unreachable"
+    assert payload["read_paths"][1]["observation_state"] == "degraded"
+    assert payload["read_paths"][2]["observation_state"] == "unreachable"
+    assert any("3s latency budget" in note for note in payload["read_paths"][0]["notes"])
+    assert any("invalid normalized payload" in note for note in payload["read_paths"][1]["notes"])
+    assert any("connection failed" in note for note in payload["read_paths"][2]["notes"])
+
+
 def test_inventory_collector_client_reuses_recent_snapshot(monkeypatch) -> None:
     class StubResponse:
         def __enter__(self):
@@ -1260,6 +1388,45 @@ def test_inventory_collector_client_reuses_recent_snapshot(monkeypatch) -> None:
     assert first_snapshot.status == "live_normalized_feed"
     assert second_snapshot.status == "live_normalized_feed"
     assert call_count["value"] == 1
+
+
+def test_collector_timeout_settings_allow_path_specific_override(monkeypatch) -> None:
+    monkeypatch.setenv("GNMI_COLLECTOR_TIMEOUT_SECONDS", "3")
+    monkeypatch.setenv("GNMI_COLLECTOR_INVENTORY_TIMEOUT_SECONDS", "2")
+    monkeypatch.setenv("GNMI_COLLECTOR_TOPOLOGY_TIMEOUT_SECONDS", "4")
+    monkeypatch.setenv("GNMI_COLLECTOR_POLICY_TIMEOUT_SECONDS", "5")
+    get_settings.cache_clear()
+
+    from app_api.integrations.collector.inventory import get_collector_inventory_client
+    from app_api.integrations.collector.policies import get_collector_policy_client
+    from app_api.integrations.collector.topology import get_collector_topology_client
+
+    assert get_collector_inventory_client().timeout_seconds == 2
+    assert get_collector_topology_client().timeout_seconds == 4
+    assert get_collector_policy_client().timeout_seconds == 5
+
+
+def test_inventory_collector_client_classifies_timeout_budget_exceeded(monkeypatch) -> None:
+    def fake_urlopen(url: str, timeout: int):
+        raise TimeoutError("collector timed out")
+
+    monkeypatch.setattr("app_api.integrations.collector.inventory.urlopen", fake_urlopen)
+
+    from app_api.integrations.collector.inventory import CollectorInventoryClient
+
+    inventory_client = CollectorInventoryClient(
+        source_endpoint="http://gnmi-collector:9804",
+        timeout_seconds=3,
+        cache_ttl_seconds=0,
+        unavailable_cache_ttl_seconds=0,
+    )
+
+    snapshot = inventory_client.read_inventory_snapshot()
+
+    assert snapshot.status == "collector_unavailable"
+    assert snapshot.fetch_error_kind == "timeout_budget_exceeded"
+    assert snapshot.fetch_error is not None
+    assert "3s latency budget" in snapshot.fetch_error
 
 
 def test_policy_collector_client_can_disable_snapshot_cache(monkeypatch) -> None:
@@ -1344,7 +1511,33 @@ def test_topology_collector_client_uses_short_unavailable_cache_ttl(monkeypatch)
 
     assert first_snapshot.status == "collector_unavailable"
     assert second_snapshot.status == "collector_unavailable"
+    assert first_snapshot.fetch_error_kind == "timeout_budget_exceeded"
+    assert first_snapshot.fetch_error is not None
+    assert "8s latency budget" in first_snapshot.fetch_error
     assert call_count["value"] == 2
+
+
+def test_policy_collector_client_classifies_connection_failure(monkeypatch) -> None:
+    def fake_urlopen(url: str, timeout: int):
+        raise URLError("Connection refused")
+
+    monkeypatch.setattr("app_api.integrations.collector.policies.urlopen", fake_urlopen)
+
+    from app_api.integrations.collector.policies import CollectorPolicyClient
+
+    policy_client = CollectorPolicyClient(
+        source_endpoint="http://gnmi-collector:9804",
+        timeout_seconds=3,
+        cache_ttl_seconds=0,
+        unavailable_cache_ttl_seconds=0,
+    )
+
+    snapshot = policy_client.read_policy_snapshot()
+
+    assert snapshot.status == "collector_unavailable"
+    assert snapshot.fetch_error_kind == "collector_connection_error"
+    assert snapshot.fetch_error is not None
+    assert "connection failed" in snapshot.fetch_error
 
 
 def test_devices_endpoint_returns_live_inventory(monkeypatch) -> None:

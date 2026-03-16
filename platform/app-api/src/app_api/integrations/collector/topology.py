@@ -6,10 +6,14 @@ from typing import Literal
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from app_api.config.settings import get_settings
 from app_api.integrations.collector.cache import SnapshotCache
+from app_api.integrations.collector.failure import (
+    CollectorFetchErrorKind,
+    classify_collector_fetch_failure,
+)
 
 
 class CollectorTopologyNodeRecord(BaseModel):
@@ -68,6 +72,7 @@ class CollectorTopologySnapshot(BaseModel):
     notes: list[str] = Field(default_factory=list)
     nodes: list[CollectorTopologyNodeRecord] = Field(default_factory=list)
     links: list[CollectorTopologyLinkRecord] = Field(default_factory=list)
+    fetch_error_kind: CollectorFetchErrorKind | None = None
     fetch_error: str | None = None
 
 
@@ -86,7 +91,21 @@ class CollectorTopologyClient:
         try:
             with urlopen(snapshot_url, timeout=self.timeout_seconds) as response:
                 payload = json.loads(response.read().decode("utf-8"))
-        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+            nodes = [
+                CollectorTopologyNodeRecord.model_validate(record)
+                for record in payload.get("nodes", [])
+            ]
+            links = [
+                CollectorTopologyLinkRecord.model_validate(record)
+                for record in payload.get("links", [])
+            ]
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, ValidationError) as exc:
+            failure = classify_collector_fetch_failure(
+                exc,
+                boundary_label="topology snapshot",
+                snapshot_url=snapshot_url,
+                timeout_seconds=self.timeout_seconds,
+            )
             return CollectorTopologySnapshot(
                 integration="gnmi_collector_topology",
                 status="collector_unavailable",
@@ -112,7 +131,8 @@ class CollectorTopologyClient:
                 notes=[],
                 nodes=[],
                 links=[],
-                fetch_error=str(exc),
+                fetch_error_kind=failure.kind,
+                fetch_error=failure.detail,
             )
 
         status_map = {
@@ -148,14 +168,9 @@ class CollectorTopologyClient:
             completeness=payload.get("completeness", "unknown"),
             observed_at=payload.get("observed_at"),
             notes=payload.get("notes", []),
-            nodes=[
-                CollectorTopologyNodeRecord.model_validate(record)
-                for record in payload.get("nodes", [])
-            ],
-            links=[
-                CollectorTopologyLinkRecord.model_validate(record)
-                for record in payload.get("links", [])
-            ],
+            nodes=nodes,
+            links=links,
+            fetch_error_kind=None,
             fetch_error=None,
         )
 
@@ -187,7 +202,7 @@ def get_collector_topology_client() -> CollectorTopologyClient:
     settings = get_settings()
     return CollectorTopologyClient(
         source_endpoint=settings.gnmi_collector_url,
-        timeout_seconds=settings.gnmi_collector_timeout_seconds,
+        timeout_seconds=settings.get_gnmi_collector_topology_timeout_seconds(),
         cache_ttl_seconds=settings.gnmi_collector_snapshot_cache_ttl_seconds,
         unavailable_cache_ttl_seconds=settings.gnmi_collector_unavailable_snapshot_cache_ttl_seconds,
     )

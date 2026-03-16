@@ -26,7 +26,7 @@ The platform requires a single authoritative source of business logic. The backe
 - image: `platform-app-api:0.1.0`, built from the local service Dockerfile
 - startup: the packaged runtime now validates required env, waits for Postgres readiness, applies Alembic migrations, starts `uvicorn app_api.main:app`, and then runs the bounded read-side warm-up best-effort in the background with visible failure logging
 - ports: 8000 for the versioned API and `/metrics`
-- env vars: `API_PORT`, `DATABASE_URL`, `ODL_URL`, `ODL_USERNAME`, `ODL_PASSWORD`, `ODL_TIMEOUT_SECONDS`, and `PROMETHEUS_URL`
+- env vars: `API_PORT`, `DATABASE_URL`, `GNMI_COLLECTOR_TIMEOUT_SECONDS`, optional per-path overrides `GNMI_COLLECTOR_INVENTORY_TIMEOUT_SECONDS`, `GNMI_COLLECTOR_TOPOLOGY_TIMEOUT_SECONDS`, and `GNMI_COLLECTOR_POLICY_TIMEOUT_SECONDS`, `ODL_URL`, `ODL_USERNAME`, `ODL_PASSWORD`, `ODL_TIMEOUT_SECONDS`, and `PROMETHEUS_URL`
 - mounts: none required for the packaged runtime
 - persistence: writes bounded normalized inventory, topology, and policy snapshots, bounded policy candidate-path records, sync-run records, and deduplicated readiness-support snapshots to Postgres
 - dependencies: Postgres, `gnmi-collector`, and optional ODL integration
@@ -39,6 +39,12 @@ The platform requires a single authoritative source of business logic. The backe
 
 ## Current status
 Initial backend skeleton exists with a FastAPI application entrypoint, a versioned `/api/v1/...` route structure, typed read-only `/api/v1/health`, `/api/v1/platform/status`, `/api/v1/devices`, `/api/v1/topology`, `/api/v1/policies`, and `/api/v1/capabilities` endpoints, consistent error response scaffolding, live bounded collector-backed inventory, topology, and policy read paths, one bounded ODL-backed platform-status enrichment path, a more operational capability matrix that now distinguishes current supported, partially-supported, unknown, and not-implemented states across the delivered Nokia-first read-only slice, bounded in-memory HTTP request and latency metrics at `/metrics`, package structure for routers, services, repositories, models, schemas, integrations, adapters, metrics, and config, plus the first real Alembic-managed persistence slice for normalized inventory snapshots, normalized topology snapshots, normalized policy snapshots, bounded policy candidate-path records, and sync-run history.
+
+Current collector-boundary latency posture:
+
+- collector snapshot reads now default to a short bounded timeout budget so persisted fallback can appear quickly when the live collector path is slow or unavailable
+- the shared collector timeout can be overridden per model family for inventory, topology, or policy reads if a later bounded deployment needs different budgets
+- collector-boundary fetch failures are now classified into timeout-budget, connection, HTTP, or invalid-payload posture before fallback rather than exposing only raw exception text
 
 Current comparison-friendly API reality:
 
@@ -60,9 +66,11 @@ Current comparison-friendly API reality:
 The backend is the only service that writes to Postgres. Keep it as the single source of truth for application state.
 The current inventory, topology, and policy read models are intentionally bounded and honest: they provide stable product-owned contracts, but they do not yet claim live operational completeness, deep path computation, intended-state reconciliation, or workflow-grade policy semantics.
 Inventory, topology, and policy now persist normalized snapshot records and sync-run history in Postgres, and the API may fall back to the latest persisted snapshot when the live collector path is temporarily unavailable.
+The collector boundary now uses a short latency budget by default so slow live reads fail fast enough to surface explicit fallback posture instead of stalling the read-only product behind long collector waits.
 The capabilities path now also persists deduplicated readiness-support snapshots in Postgres so the latest readiness anchor and timestamp can survive normal service replacement in the same workspace.
 Live collector-backed reads remain the primary source for current observed state; persistence strengthens bounded fallback behavior and sync-derived history rather than replacing those live reads.
 Serving-mode fields explain whether the current response is live-backed, persisted fallback, or effectively empty because neither live nor persisted state is available.
+Collector-boundary failure details are now standardized around bounded timeout-budget, connection, HTTP, and invalid-payload classification so the backend can fail faster and report the boundary posture more clearly than a raw exception string alone.
 Comparison summaries explain bounded normalized current-versus-persisted or persisted-versus-previous differences only where the backend already has the necessary persisted evidence.
 The current response, readiness, and embedded history-support surfaces are now anchor-strong at the persisted snapshot or sync-run level, but they still do not claim durable per-change, per-capability-item, or per-readiness-item identities where no such persisted records exist yet.
 Topology may still include inferred truth within the current normalized slice, especially for link interpretation, while workflow-history and audit-history may label sync-derived evidence as recent, aging, stale, or unavailable in the product view without claiming a verified network mismatch.

@@ -80,7 +80,7 @@ topology:
       env:
         API_PORT: "8000"
         DATABASE_URL: postgresql://platform:change_me@postgres:5432/platform
-        GNMI_COLLECTOR_TIMEOUT_SECONDS: "8"
+        GNMI_COLLECTOR_TIMEOUT_SECONDS: "3" # Fail fast to explicit persisted fallback when the collector boundary stalls.
         ODL_URL: http://odl:8181
         ODL_USERNAME: admin
         ODL_PASSWORD: change_me
