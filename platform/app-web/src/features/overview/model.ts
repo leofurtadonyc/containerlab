@@ -24,6 +24,18 @@ export interface OverviewRenderState {
   firstError: ApiClientError | null;
 }
 
+export interface OverviewSliceReloader {
+  reload: () => Promise<void> | void;
+}
+
+export async function reloadOverviewSlicesSequentially(
+  slices: OverviewSliceReloader[],
+): Promise<void> {
+  for (const slice of slices) {
+    await slice.reload();
+  }
+}
+
 export function buildOverviewRenderState(
   slices: OverviewSliceSnapshot[],
   allRequiredDataReady: boolean,

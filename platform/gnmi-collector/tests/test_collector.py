@@ -85,21 +85,8 @@ class FakeGnmiClient:
                         "nokia-conf:endpoint": "192.0.2.11",
                         "nokia-conf:color": 100,
                         "nokia-conf:head-end": "local",
-                        "nokia-conf:candidate-path": [
-                            {
-                                "nokia-conf:candidate-path-name": "primary",
-                                "nokia-conf:preference": 200,
-                                "nokia-conf:active": True,
-                                "nokia-conf:protocol-origin": "static",
-                                "nokia-conf:validation-state": "valid",
-                            },
-                            {
-                                "nokia-conf:candidate-path-name": "backup",
-                                "nokia-conf:preference": 100,
-                                "nokia-conf:active": False,
-                                "nokia-conf:validation-state": "valid",
-                            },
-                        ],
+                        "nokia-conf:binding-sid": 200011,
+                        "nokia-conf:distinguisher": 100011011,
                     }
                 ]
             elif device_name == "P1":
@@ -133,6 +120,31 @@ class FakeGnmiClient:
                         "nokia-state:static-non-local-policies": static_non_local_policies,
                         "nokia-state:bgp-policies": 0,
                         "nokia-state:active-bgp-policies": 0,
+                        "nokia-state:sr-path": (
+                            [
+                                {
+                                    "nokia-state:head-end": "0.0.0.0",
+                                    "nokia-state:color": 100,
+                                    "nokia-state:endpoint": "192.0.2.11",
+                                    "nokia-state:owner": "static",
+                                    "nokia-state:preference": 100,
+                                    "nokia-state:distinguisher": 100011011,
+                                    "nokia-state:active": True,
+                                    "nokia-state:is-candidate-path-operational": True,
+                                    "nokia-state:binding-sid": 200011,
+                                    "nokia-state:path-age": 42,
+                                    "nokia-state:sr-path-seg-list": [
+                                        {
+                                            "segment": [
+                                                {"nokia-state:segment-state": "resolved-up"}
+                                            ]
+                                        }
+                                    ],
+                                }
+                            ]
+                            if device_name == "PE1"
+                            else []
+                        ),
                     },
                 }
             ]
@@ -454,6 +466,14 @@ def test_policy_snapshot_endpoint_returns_live_policy_observations(monkeypatch) 
     assert cpe_a1_footprint["detail_blocker_reason"] == "no_policies_observed"
     assert len(payload["records"]) == 2
     assert payload["records"][0]["policy_type"] == "static_local"
+    pe1_record = next(item for item in payload["records"] if item["source_target"] == "PE1")
+    assert pe1_record["observed_state"] == "active"
+    assert pe1_record["support_state"] == "supported"
+    assert pe1_record["health_state"] == "healthy"
+    assert pe1_record["candidate_paths"][0]["name"] == "runtime-sr-path"
+    assert any("Runtime status was correlated" in note for note in pe1_record["notes"])
+    p1_record = next(item for item in payload["records"] if item["source_target"] == "P1")
+    assert p1_record["support_state"] == "partially_supported"
 
 
 def test_nokia_adapter_collects_live_inventory_and_topology(monkeypatch) -> None:
@@ -485,6 +505,7 @@ def test_nokia_adapter_collects_live_inventory_and_topology(monkeypatch) -> None
     assert policy_record.sr_policy_counts["ttm-preferences"] == 14
     if target.name == "PE1":
         assert len(policy_record.raw_policies) == 1
+        assert len(policy_record.raw_runtime_paths) == 1
 
 
 def test_inventory_mapping_returns_normalized_live_record(monkeypatch) -> None:

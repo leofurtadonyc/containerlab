@@ -88,6 +88,20 @@ def _as_int(value: object) -> int | None:
     return None
 
 
+def _as_bool(value: object) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return bool(value)
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"true", "yes", "up", "active", "enabled"}:
+            return True
+        if lowered in {"false", "no", "down", "inactive", "disabled"}:
+            return False
+    return None
+
+
 def _candidate_path_nodes(node: object) -> list[dict[str, object]]:
     candidate_nodes: list[dict[str, object]] = []
     for item in _iter_nodes(node):
@@ -160,10 +174,112 @@ def _map_policy_type(payload: dict[str, object]) -> str:
     return "static_non_local"
 
 
+def _collect_segment_states(node: object) -> list[str]:
+    states: list[str] = []
+    for item in _iter_nodes(node):
+        if not isinstance(item, dict):
+            continue
+        for key, value in item.items():
+            if _normalize_key(key) != "segment-state":
+                continue
+            state = _as_str(value)
+            if state is not None:
+                states.append(state.lower())
+    return states
+
+
+def _runtime_path_state(payload: dict[str, object]) -> str:
+    active_value = _as_bool(_find_first(payload, {"active"}))
+    if active_value is True:
+        return "active"
+    candidate_operational = _as_bool(_find_first(payload, {"is-candidate-path-operational"}))
+    if candidate_operational is True:
+        return "active"
+    segment_states = _collect_segment_states(payload)
+    if any(state in {"resolved-down", "down", "failed", "unresolved"} for state in segment_states):
+        return "degraded"
+    if active_value is False or candidate_operational is False:
+        return "inactive"
+    return "unknown"
+
+
+def _runtime_path_candidate(payload: dict[str, object]) -> NormalizedPolicyCandidatePathRecord:
+    notes: list[str] = []
+    owner = _as_str(_find_first(payload, {"owner"}))
+    if owner is not None:
+        notes.append(f"owner: {owner}")
+    binding_sid = _as_str(_find_first(payload, {"binding-sid"}))
+    if binding_sid is not None:
+        notes.append(f"binding sid: {binding_sid}")
+    path_age = _as_int(_find_first(payload, {"path-age"}))
+    if path_age is not None:
+        notes.append(f"path age: {path_age}s")
+    segment_states = sorted(set(_collect_segment_states(payload)))
+    if segment_states:
+        notes.append(f"segment states: {', '.join(segment_states)}")
+    return NormalizedPolicyCandidatePathRecord(
+        name="runtime-sr-path",
+        path_state=_runtime_path_state(payload),
+        preference=_as_int(_find_first(payload, {"preference"})),
+        notes=notes,
+    )
+
+
+def _match_runtime_path(
+    payload: dict[str, object],
+    runtime_paths: list[dict[str, object]],
+) -> dict[str, object] | None:
+    endpoint = _as_str(_find_first(payload, {"endpoint"}))
+    color = _as_int(_find_first(payload, {"color"}))
+    if endpoint is None or color is None:
+        return None
+    config_binding_sid = _as_int(_find_first(payload, {"binding-sid"}))
+    config_distinguisher = _as_int(_find_first(payload, {"distinguisher"}))
+    best_match: dict[str, object] | None = None
+    best_score = -1
+    for runtime_path in runtime_paths:
+        runtime_endpoint = _as_str(_find_first(runtime_path, {"endpoint"}))
+        runtime_color = _as_int(_find_first(runtime_path, {"color"}))
+        if runtime_endpoint != endpoint or runtime_color != color:
+            continue
+        runtime_binding_sid = _as_int(_find_first(runtime_path, {"binding-sid"}))
+        if (
+            config_binding_sid is not None
+            and runtime_binding_sid is not None
+            and config_binding_sid != runtime_binding_sid
+        ):
+            continue
+        runtime_distinguisher = _as_int(_find_first(runtime_path, {"distinguisher"}))
+        if (
+            config_distinguisher is not None
+            and runtime_distinguisher is not None
+            and config_distinguisher != runtime_distinguisher
+        ):
+            continue
+        score = 4
+        if runtime_binding_sid is not None:
+            score += 1
+        if runtime_distinguisher is not None:
+            score += 1
+        if (_as_str(_find_first(runtime_path, {"owner"})) or "").lower() == "static":
+            score += 1
+        if _runtime_path_state(runtime_path) == "active":
+            score += 1
+        if score > best_score:
+            best_match = runtime_path
+            best_score = score
+    return best_match
+
+
 def _map_observed_state(
     payload: dict[str, object],
     candidate_paths: list[NormalizedPolicyCandidatePathRecord],
+    runtime_payload: dict[str, object] | None = None,
 ) -> str:
+    if runtime_payload is not None:
+        runtime_state = _runtime_path_state(runtime_payload)
+        if runtime_state != "unknown":
+            return runtime_state
     if any(path.path_state == "active" for path in candidate_paths):
         return "active"
     oper_state = _as_str(_find_first(payload, {"oper-state", "state"}))
@@ -192,6 +308,21 @@ def _map_health_state(observed_state: str) -> str:
         "degraded": "down",
         "unknown": "unknown",
     }.get(observed_state, "unknown")
+
+
+def _map_support_state(
+    *,
+    policy_type: str,
+    candidate_paths: list[NormalizedPolicyCandidatePathRecord],
+    runtime_path: dict[str, object] | None,
+) -> str:
+    if policy_type == "static_non_local":
+        return "partially_supported"
+    if policy_type == "static_local":
+        if runtime_path is not None or candidate_paths:
+            return "supported"
+        return "partially_supported"
+    return "unknown"
 
 
 def _policy_counts_from_raw_record(record: PolicyRawRecord) -> dict[str, int]:
@@ -246,12 +377,28 @@ def map_policy_records(raw_records: list[PolicyRawRecord]) -> list[NormalizedPol
             policy_type = _map_policy_type(payload)
             headend_value = _as_str(_find_first(payload, {"head-end"}))
             headend = raw_record.target_name if headend_value is None or headend_value.lower() == "local" else headend_value
+            runtime_path = _match_runtime_path(payload, raw_record.raw_runtime_paths)
             candidate_paths = _map_candidate_paths(payload)
-            observed_state = _map_observed_state(payload, candidate_paths)
+            if not candidate_paths and runtime_path is not None:
+                candidate_paths = [_runtime_path_candidate(runtime_path)]
+            observed_state = _map_observed_state(
+                payload,
+                candidate_paths,
+                runtime_payload=runtime_path,
+            )
+            support_state = _map_support_state(
+                policy_type=policy_type,
+                candidate_paths=candidate_paths,
+                runtime_path=runtime_path,
+            )
             notes = [
                 f"Observed from Nokia static-policy config on {raw_record.target_name} over gNMI.",
                 "This remains a bounded static-policy read slice rather than full SR policy truth.",
             ]
+            if runtime_path is not None:
+                notes.append(
+                    f"Runtime status was correlated from Nokia sr-path state on {raw_record.target_name} over gNMI."
+                )
             if policy_type == "static_non_local":
                 notes.append(
                     "Non-local static policy observations remain partial and do not imply remote installation truth."
@@ -276,7 +423,7 @@ def map_policy_records(raw_records: list[PolicyRawRecord]) -> list[NormalizedPol
                     candidate_paths=candidate_paths,
                     intent_state="declared",
                     observed_state=observed_state,
-                    support_state="partially_supported",
+                    support_state=support_state,
                     health_state=_map_health_state(observed_state),
                     source="gnmi",
                     notes=notes,

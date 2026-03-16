@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { ApiClientError } from "../src/api/client";
-import { buildOverviewRenderState } from "../src/features/overview/model";
+import {
+  buildOverviewRenderState,
+  reloadOverviewSlicesSequentially,
+} from "../src/features/overview/model";
 
 describe("overview render state", () => {
   it("returns loading when nothing has loaded yet", () => {
@@ -85,5 +88,42 @@ describe("overview render state", () => {
     expect(state.mode).toBe("partial");
     expect(state.slices[0].status).toBe("stale_error");
     expect(state.slices[0].hasData).toBe(true);
+  });
+
+  it("reloads overview slices sequentially", async () => {
+    const order: string[] = [];
+
+    await reloadOverviewSlicesSequentially([
+      {
+        reload: async () => {
+          order.push("devices:start");
+          await Promise.resolve();
+          order.push("devices:end");
+        },
+      },
+      {
+        reload: async () => {
+          order.push("topology:start");
+          await Promise.resolve();
+          order.push("topology:end");
+        },
+      },
+      {
+        reload: async () => {
+          order.push("policies:start");
+          await Promise.resolve();
+          order.push("policies:end");
+        },
+      },
+    ]);
+
+    expect(order).toEqual([
+      "devices:start",
+      "devices:end",
+      "topology:start",
+      "topology:end",
+      "policies:start",
+      "policies:end",
+    ]);
   });
 });

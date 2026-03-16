@@ -39,6 +39,7 @@ class PolicyRawRecord(BaseModel):
     observed_at: datetime | None = None
     sr_policy_counts: dict[str, int] = Field(default_factory=dict)
     raw_policies: list[dict[str, object]] = Field(default_factory=list)
+    raw_runtime_paths: list[dict[str, object]] = Field(default_factory=list)
 
 
 class NormalizedPolicyCandidatePathRecord(BaseModel):

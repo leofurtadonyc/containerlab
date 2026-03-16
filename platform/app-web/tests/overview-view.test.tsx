@@ -58,7 +58,7 @@ function createQueryState<T>(data: T | null, overrides: Partial<{ error: ApiClie
     error: overrides.error ?? null,
     isLoading: overrides.isLoading ?? false,
     isRefreshing: overrides.isRefreshing ?? false,
-    reload: vi.fn(),
+    reload: vi.fn(async () => undefined),
   };
 }
 

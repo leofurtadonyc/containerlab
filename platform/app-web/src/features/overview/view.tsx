@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import {
   EmptyState,
@@ -24,7 +24,11 @@ import {
 import { normalizeDryRunReadiness, summarizeReadinessItemIdentitySupport } from "../../lib/readiness";
 import { useCapabilitiesQuery } from "../capabilities/api";
 import { useDevicesQuery } from "../devices/api";
-import { buildOverviewRenderState, type OverviewSliceState } from "./model";
+import {
+  buildOverviewRenderState,
+  reloadOverviewSlicesSequentially,
+  type OverviewSliceState,
+} from "./model";
 import { getPlatformReadPath, usePlatformStatusQuery } from "../platform-health/api";
 import { usePoliciesQuery } from "../policies/api";
 import { getTopologyCoverageSummary, useTopologyQuery } from "../topology/api";
@@ -96,6 +100,7 @@ function renderMissingSliceDetailCard(
 }
 
 export function OverviewView() {
+  const refreshInFlightRef = useRef(false);
   const devicesQuery = useDevicesQuery();
   const devicesSettled = devicesQuery.data !== null || devicesQuery.error !== null;
   const topologyQuery = useTopologyQuery(devicesSettled);
@@ -105,12 +110,24 @@ export function OverviewView() {
   const platformQuery = usePlatformStatusQuery(policiesSettled);
   const capabilitiesQuery = useCapabilitiesQuery();
 
-  const reloadAllSlices = useCallback(() => {
-    platformQuery.reload();
-    devicesQuery.reload();
-    topologyQuery.reload();
-    policiesQuery.reload();
-    capabilitiesQuery.reload();
+  const reloadAllSlices = useCallback(async () => {
+    if (refreshInFlightRef.current) {
+      return;
+    }
+
+    refreshInFlightRef.current = true;
+
+    try {
+      await reloadOverviewSlicesSequentially([
+        devicesQuery,
+        topologyQuery,
+        policiesQuery,
+        platformQuery,
+        capabilitiesQuery,
+      ]);
+    } finally {
+      refreshInFlightRef.current = false;
+    }
   }, [
     capabilitiesQuery.reload,
     devicesQuery.reload,
@@ -169,7 +186,7 @@ export function OverviewView() {
 
   useEffect(() => {
     const refreshTimer = window.setInterval(() => {
-      reloadAllSlices();
+      void reloadAllSlices();
     }, 60000);
 
     return () => {
@@ -343,7 +360,7 @@ export function OverviewView() {
                 : `All overview slices still render, but ${impairedSliceCount} slice${impairedSliceCount === 1 ? " is" : "s are"} refreshing or showing last successful data after a failed refresh.`}
             </p>
             {overviewState.firstError ? <p>{overviewState.firstError.message}</p> : null}
-            <button type="button" className="inline-action" onClick={reloadAllSlices}>
+            <button type="button" className="inline-action" onClick={() => void reloadAllSlices()}>
               Retry all slices
             </button>
           </div>
@@ -492,7 +509,7 @@ export function OverviewView() {
             stateLabel="Unavailable"
             detail="Topology and policy slices are both unavailable, so overview cannot summarize immediate attention counts yet."
             tone="warn"
-            onRetry={reloadAllSlices}
+            onRetry={() => void reloadAllSlices()}
             retryLabel="Retry all slices"
           />
         )}
