@@ -22,6 +22,11 @@ without reopening the completed pairing work:
 - why those three causes should not stay compressed into one broad
   `completeness=partial` or `degraded_scope_summary` posture
 
+This document is the contract-definition step for that narrower follow-on.
+
+It defines the smallest backend-owned vocabulary that should exist before any
+later code change tries to sharpen topology partiality semantics.
+
 It does not authorize:
 
 - topology validation verdicts
@@ -51,11 +56,14 @@ is still bounded and not full topology truth.
 
 The next bounded follow-on should only decompose why the topology is partial.
 
-That decomposition should stay backend-owned and use only three bounded terms:
+That decomposition should stay backend-owned and use only these three response-
+level bounded terms:
 
 - `inference_posture`
 - `endpoint_pairing_posture`
 - `collection_posture`
+
+No fourth response-level topology partiality term is justified in this task.
 
 These three terms separate three different things that are currently too easy
 to blur together.
@@ -163,6 +171,26 @@ The follow-on should preserve this interpretation.
 This means the topology can remain honestly `partial` even when
 `collection_posture=ok`, because inference-boundedness and endpoint coverage are
 separate from collection degradation.
+
+This also means the topology can remain honestly `partial` even when
+`endpoint_pairing_posture=paired`, because paired endpoint evidence still does
+not turn an inferred topology slice into full adjacency truth.
+
+### Relationship to `degraded_scope_summary`
+
+`degraded_scope_summary` remains useful, but it must not remain the contract.
+
+Keep this split explicit:
+
+- `inference_posture` is the contract field for inference-boundedness
+- `endpoint_pairing_posture` is the contract field for endpoint-coverage limits
+- `collection_posture` is the contract field for current collection
+  degradation or blockage
+- `degraded_scope_summary` remains supporting prose that can explain those
+  fields in operator language when a short note is useful
+
+This keeps the contract boring and typed while preserving room for human-
+readable explanation.
 
 ## Vocabulary
 
@@ -290,6 +318,9 @@ These should remain prose rather than turning into new enum fields.
 - explanatory notes such as why the topology remains partial, why inference is
   bounded, and what the current endpoint-pairing limits mean
 
+These prose fields may mention one or more of the three partiality causes, but
+they must not replace the three-term backend-owned contract above.
+
 The design should not create a large family of enum values for every reason or
 sub-reason when a short explicit note is enough.
 
@@ -341,6 +372,8 @@ Backend ownership:
 - decompose topology partiality into inference-boundedness, endpoint-coverage,
   and collection-degradation dimensions without replacing `completeness`
 - preserve current evidence-confidence and serving-mode posture semantics
+- keep `degraded_scope_summary` as explanatory prose rather than the sole
+  machine-readable statement of topology partiality
 
 Topology-response aggregate fields:
 
@@ -380,6 +413,9 @@ Platform-status ownership:
 - carry topology read-path coverage aggregates as read-path posture
 - keep these values close to other bounded read-path cues such as target
   coverage, freshness window, and degraded scope
+- keep the topology read-path row explicit about which part of the posture is
+  inference-boundedness, which part is endpoint coverage, and which part is
+  collection degradation
 
 Topology read-path fields:
 
@@ -426,6 +462,8 @@ WebUI non-ownership:
 - do not use pairing posture as a proxy for eligibility, approval, or validation
 - do not convert `inference_posture` or `collection_posture` into a topology
   score
+- do not treat `degraded_scope_summary` as if it were the typed source of the
+  partiality contract
 
 ### 5. Grafana numeric observability views
 
@@ -481,6 +519,8 @@ Next follow-on verifier behavior:
   contract field
 - if `collection_posture` is implemented later, notice degraded or blocked
   collection posture without treating it as a topology validation verdict
+- continue treating `degraded_scope_summary` as supporting explanatory text
+  rather than the field that defines topology partiality categories
 
 Verifier non-ownership:
 
