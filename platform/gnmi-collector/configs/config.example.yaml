@@ -29,7 +29,7 @@ policies:
       path: /nokia-state:state/router[router-name=Base]/segment-routing/sr-policies
       cadence: poll
     - name: base-router-static-policies
-      path: /nokia-state:state/router[router-name=Base]/segment-routing/sr-policies/static-policy
+      path: /nokia-conf:configure/router[router-name=Base]/segment-routing/sr-policies/static-policy
       cadence: poll
 
 targets:
@@ -39,8 +39,8 @@ targets:
     management_address: 172.20.20.101
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -52,8 +52,8 @@ targets:
     management_address: 172.20.20.102
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -65,8 +65,8 @@ targets:
     management_address: 172.20.20.103
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -78,8 +78,8 @@ targets:
     management_address: 172.20.20.104
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -91,8 +91,8 @@ targets:
     management_address: 172.20.20.105
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -104,8 +104,8 @@ targets:
     management_address: 172.20.20.106
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -117,8 +117,8 @@ targets:
     management_address: 172.20.20.107
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -130,8 +130,8 @@ targets:
     management_address: 172.20.20.108
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -143,8 +143,8 @@ targets:
     management_address: 172.20.20.109
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -156,8 +156,8 @@ targets:
     management_address: 172.20.20.110
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -169,8 +169,8 @@ targets:
     management_address: 172.20.20.111
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -182,8 +182,8 @@ targets:
     management_address: 172.20.20.112
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -195,8 +195,8 @@ targets:
     management_address: 172.20.20.113
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -208,8 +208,8 @@ targets:
     management_address: 172.20.20.114
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -221,8 +221,8 @@ targets:
     management_address: 172.20.20.115
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -234,8 +234,8 @@ targets:
     management_address: 172.20.20.116
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -247,8 +247,8 @@ targets:
     management_address: 172.20.20.117
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -260,8 +260,8 @@ targets:
     management_address: 172.20.20.118
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -273,8 +273,8 @@ targets:
     management_address: 172.20.20.119
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -286,8 +286,8 @@ targets:
     management_address: 172.20.20.120
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -299,8 +299,8 @@ targets:
     management_address: 172.20.20.121
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -312,8 +312,8 @@ targets:
     management_address: 172.20.20.122
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -325,8 +325,8 @@ targets:
     management_address: 172.20.20.123
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -338,8 +338,8 @@ targets:
     management_address: 172.20.20.124
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -351,8 +351,8 @@ targets:
     management_address: 172.20.20.125
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -364,8 +364,8 @@ targets:
     management_address: 172.20.20.126
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -377,8 +377,8 @@ targets:
     management_address: 172.20.20.127
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -390,8 +390,8 @@ targets:
     management_address: 172.20.20.128
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -403,8 +403,8 @@ targets:
     management_address: 172.20.20.129
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -416,8 +416,8 @@ targets:
     management_address: 172.20.20.130
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -429,8 +429,8 @@ targets:
     management_address: 172.20.20.131
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -442,8 +442,8 @@ targets:
     management_address: 172.20.20.132
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -455,8 +455,8 @@ targets:
     management_address: 172.20.20.133
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name
@@ -468,8 +468,8 @@ targets:
     management_address: 172.20.20.134
     port: 57400
     auth:
-      username: platform-ro
-      password: PlatformReadOnly1!
+      username: admin
+      password: NokiaSros1!
     insecure: true
     inventory_paths:
       - /nokia-state:state/system/oper-name

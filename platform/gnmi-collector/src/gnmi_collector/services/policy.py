@@ -87,7 +87,7 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
 
     notes = [
         "Policy inventory is currently bounded to live Nokia SR policy counters collected over gNMI.",
-        "When static-policy state is exposed, the collector now derives bounded per-policy observations without claiming full SR policy truth.",
+        "When Nokia static-policy config is exposed, the collector derives bounded per-policy observations without claiming full SR policy truth.",
         "BGP-signaled SR policy detail remains out of scope until a deeper vendor-neutral path is added.",
     ]
     if oldest_observed_at is not None and newest_observed_at is not None:

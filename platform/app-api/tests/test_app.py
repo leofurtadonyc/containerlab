@@ -392,7 +392,7 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
         ],
         notes=[
             "Policy inventory is currently bounded to live Nokia SR policy counters collected over gNMI.",
-            "When static-policy state is exposed, the collector now derives bounded per-policy observations without claiming full SR policy truth.",
+            "When Nokia static-policy config is exposed, the collector derives bounded per-policy observations without claiming full SR policy truth.",
         ],
         records=[
             {
@@ -418,7 +418,7 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
                 "health_state": "healthy",
                 "source": "gnmi",
                 "notes": [
-                    "Observed from Nokia static-policy state on PE1 over gNMI.",
+                    "Observed from Nokia static-policy config on PE1 over gNMI.",
                     "This remains a bounded static-policy read slice rather than full SR policy truth.",
                 ],
             },
@@ -445,7 +445,7 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
                 "health_state": "degraded",
                 "source": "gnmi",
                 "notes": [
-                    "Observed from Nokia static-policy state on P1 over gNMI.",
+                    "Observed from Nokia static-policy config on P1 over gNMI.",
                     "This remains a bounded static-policy read slice rather than full SR policy truth.",
                 ],
             },

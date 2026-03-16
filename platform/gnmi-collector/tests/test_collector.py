@@ -81,23 +81,23 @@ class FakeGnmiClient:
                 active_static_local_policies = 1
                 static_policy_payload = [
                     {
-                        "nokia-state:policy-name": "sr-static-PE1-192.0.2.11-100",
-                        "nokia-state:endpoint": "192.0.2.11",
-                        "nokia-state:color": 100,
-                        "nokia-state:head-end": "local",
-                        "nokia-state:candidate-path": [
+                        "nokia-conf:policy-name": "sr-static-PE1-192.0.2.11-100",
+                        "nokia-conf:endpoint": "192.0.2.11",
+                        "nokia-conf:color": 100,
+                        "nokia-conf:head-end": "local",
+                        "nokia-conf:candidate-path": [
                             {
-                                "nokia-state:candidate-path-name": "primary",
-                                "nokia-state:preference": 200,
-                                "nokia-state:active": True,
-                                "nokia-state:protocol-origin": "static",
-                                "nokia-state:validation-state": "valid",
+                                "nokia-conf:candidate-path-name": "primary",
+                                "nokia-conf:preference": 200,
+                                "nokia-conf:active": True,
+                                "nokia-conf:protocol-origin": "static",
+                                "nokia-conf:validation-state": "valid",
                             },
                             {
-                                "nokia-state:candidate-path-name": "backup",
-                                "nokia-state:preference": 100,
-                                "nokia-state:active": False,
-                                "nokia-state:validation-state": "valid",
+                                "nokia-conf:candidate-path-name": "backup",
+                                "nokia-conf:preference": 100,
+                                "nokia-conf:active": False,
+                                "nokia-conf:validation-state": "valid",
                             },
                         ],
                     }
@@ -106,17 +106,17 @@ class FakeGnmiClient:
                 static_non_local_policies = 1
                 static_policy_payload = [
                     {
-                        "nokia-state:policy-name": "sr-static-P1-198.51.100.1-200",
-                        "nokia-state:endpoint": "198.51.100.1",
-                        "nokia-state:color": 200,
-                        "nokia-state:head-end": "100.64.0.1",
-                        "nokia-state:admin-state": "enable",
-                        "nokia-state:candidate-path": [
+                        "nokia-conf:policy-name": "sr-static-P1-198.51.100.1-200",
+                        "nokia-conf:endpoint": "198.51.100.1",
+                        "nokia-conf:color": 200,
+                        "nokia-conf:head-end": "100.64.0.1",
+                        "nokia-conf:admin-state": "enable",
+                        "nokia-conf:candidate-path": [
                             {
-                                "nokia-state:name": "secondary",
-                                "nokia-state:preference": 150,
-                                "nokia-state:active": False,
-                                "nokia-state:validation-state": "valid",
+                                "nokia-conf:name": "secondary",
+                                "nokia-conf:preference": 150,
+                                "nokia-conf:active": False,
+                                "nokia-conf:validation-state": "valid",
                             }
                         ],
                     }
@@ -138,7 +138,7 @@ class FakeGnmiClient:
             ]
             if any("static-policy" in item for item in path):
                 static_policy_update = {
-                    "path": "state/router[router-name=Base]/segment-routing/sr-policies/static-policy"
+                    "path": "configure/router[router-name=Base]/segment-routing/sr-policies/static-policy"
                 }
                 if static_policy_payload:
                     static_policy_update["val"] = static_policy_payload
@@ -262,7 +262,7 @@ def test_runtime_config_loads_live_nokia_targets() -> None:
     )
     assert (
         config.policy_subscriptions[1].path
-        == "/nokia-state:state/router[router-name=Base]/segment-routing/sr-policies/static-policy"
+        == "/nokia-conf:configure/router[router-name=Base]/segment-routing/sr-policies/static-policy"
     )
 
 

@@ -249,7 +249,7 @@ def map_policy_records(raw_records: list[PolicyRawRecord]) -> list[NormalizedPol
             candidate_paths = _map_candidate_paths(payload)
             observed_state = _map_observed_state(payload, candidate_paths)
             notes = [
-                f"Observed from Nokia static-policy state on {raw_record.target_name} over gNMI.",
+                f"Observed from Nokia static-policy config on {raw_record.target_name} over gNMI.",
                 "This remains a bounded static-policy read slice rather than full SR policy truth.",
             ]
             if policy_type == "static_non_local":
