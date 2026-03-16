@@ -36,7 +36,9 @@ class TopologyLinkRecord(BaseModel):
 class TopologyCoverageSummaryRecord(BaseModel):
     """Bounded response-level topology coverage summary."""
 
+    inference_posture: Literal["inferred", "unknown"]
     endpoint_pairing_posture: Literal["paired", "partially_paired", "single_sided", "unknown"]
+    collection_posture: Literal["ok", "degraded", "blocked", "unknown"]
     paired_link_count: int
     single_sided_link_count: int
     summary: str

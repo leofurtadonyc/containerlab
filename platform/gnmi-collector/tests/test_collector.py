@@ -349,6 +349,8 @@ def test_topology_snapshot_endpoint_returns_normalized_live_records(monkeypatch)
     assert payload["collection_failure_count"] == 0
     assert payload["node_count"] == 34
     assert payload["link_count"] == 17
+    assert payload["inference_posture"] == "inferred"
+    assert payload["collection_posture"] == "ok"
     assert payload["endpoint_pairing_posture"] == "paired"
     assert payload["paired_link_count"] == 17
     assert payload["single_sided_link_count"] == 0
@@ -380,6 +382,8 @@ def test_topology_snapshot_endpoint_marks_single_sided_coverage_explicit(monkeyp
     assert payload["collection_partial_count"] == 0
     assert payload["node_count"] == 34
     assert payload["link_count"] == 17
+    assert payload["inference_posture"] == "inferred"
+    assert payload["collection_posture"] == "ok"
     assert payload["endpoint_pairing_posture"] == "partially_paired"
     assert payload["paired_link_count"] == 16
     assert payload["single_sided_link_count"] == 1
@@ -529,6 +533,8 @@ def test_topology_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> N
     assert snapshot.summary.newest_observed_at is not None
     assert snapshot.summary.normalized_node_count == expected_target_count
     assert snapshot.summary.normalized_link_count == expected_target_count // 2
+    assert snapshot.summary.inference_posture == "inferred"
+    assert snapshot.summary.collection_posture == "ok"
     assert snapshot.summary.endpoint_pairing_posture == "paired"
     assert snapshot.summary.paired_link_count == expected_target_count // 2
     assert snapshot.summary.single_sided_link_count == 0
@@ -541,6 +547,8 @@ def test_topology_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> N
     assert snapshot.delivery.model_family == "topology"
     assert snapshot.delivery.configured_target_count == expected_target_count
     assert snapshot.delivery.observed_target_count == expected_target_count
+    assert snapshot.delivery.inference_posture == "inferred"
+    assert snapshot.delivery.collection_posture == "ok"
     assert snapshot.delivery.endpoint_pairing_posture == "paired"
     assert snapshot.delivery.paired_link_count == expected_target_count // 2
     assert snapshot.delivery.single_sided_link_count == 0
@@ -557,9 +565,13 @@ def test_topology_flow_snapshot_marks_single_sided_inference_explicit(monkeypatc
     snapshot = build_topology_flow_snapshot()
 
     assert snapshot.summary.normalized_link_count == 17
+    assert snapshot.summary.inference_posture == "inferred"
+    assert snapshot.summary.collection_posture == "ok"
     assert snapshot.summary.endpoint_pairing_posture == "partially_paired"
     assert snapshot.summary.paired_link_count == 16
     assert snapshot.summary.single_sided_link_count == 1
+    assert snapshot.delivery.inference_posture == "inferred"
+    assert snapshot.delivery.collection_posture == "ok"
     assert snapshot.delivery.endpoint_pairing_posture == "partially_paired"
     assert snapshot.delivery.paired_link_count == 16
     assert snapshot.delivery.single_sided_link_count == 1

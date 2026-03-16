@@ -79,6 +79,8 @@ class BackendTopologyDeliveryEnvelope(BaseModel):
     collection_failure_count: int
     oldest_observed_at: datetime | None = None
     newest_observed_at: datetime | None = None
+    inference_posture: Literal["inferred", "unknown"]
+    collection_posture: Literal["ok", "degraded", "blocked", "unknown"]
     degraded_scope_summary: str
     endpoint_pairing_posture: Literal["paired", "partially_paired", "single_sided", "unknown"]
     paired_link_count: int
@@ -110,6 +112,8 @@ class TopologyFlowSummary(BaseModel):
     normalized_node_count: int
     normalized_link_count: int
     inferred_link_count: int
+    inference_posture: Literal["inferred", "unknown"]
+    collection_posture: Literal["ok", "degraded", "blocked", "unknown"]
     endpoint_pairing_posture: Literal["paired", "partially_paired", "single_sided", "unknown"]
     paired_link_count: int
     single_sided_link_count: int

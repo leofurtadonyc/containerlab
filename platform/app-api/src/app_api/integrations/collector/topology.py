@@ -51,6 +51,8 @@ class CollectorTopologySnapshot(BaseModel):
     collection_failure_count: int
     oldest_observed_at: str | None = None
     newest_observed_at: str | None = None
+    inference_posture: Literal["inferred", "unknown"] | None = None
+    collection_posture: Literal["ok", "degraded", "blocked", "unknown"] | None = None
     degraded_scope_summary: str
     endpoint_pairing_posture: Literal[
         "paired", "partially_paired", "single_sided", "unknown"
@@ -97,6 +99,8 @@ class CollectorTopologyClient:
                 collection_failure_count=0,
                 oldest_observed_at=None,
                 newest_observed_at=None,
+                inference_posture=None,
+                collection_posture="blocked",
                 degraded_scope_summary=(
                     "No configured topology targets returned usable live topology evidence."
                 ),
@@ -128,6 +132,8 @@ class CollectorTopologyClient:
             collection_failure_count=payload.get("collection_failure_count", 0),
             oldest_observed_at=payload.get("oldest_observed_at"),
             newest_observed_at=payload.get("newest_observed_at"),
+            inference_posture=payload.get("inference_posture"),
+            collection_posture=payload.get("collection_posture"),
             degraded_scope_summary=payload.get(
                 "degraded_scope_summary",
                 "Topology degraded scope was not provided by the collector.",

@@ -35,9 +35,11 @@ class PlatformReadPathStatus(BaseModel):
     newest_observed_at: datetime | None = None
     policy_capable_target_count: int | None = None
     detail_ready_target_count: int | None = None
+    inference_posture: Literal["inferred", "unknown"] | None = None
     endpoint_pairing_posture: Literal[
         "paired", "partially_paired", "single_sided", "unknown"
     ] | None = None
+    collection_posture: Literal["ok", "degraded", "blocked", "unknown"] | None = None
     paired_link_count: int | None = None
     single_sided_link_count: int | None = None
     degraded_scope_summary: str

@@ -68,5 +68,7 @@ class SnapshotCache(Generic[SnapshotT]):
     def _is_fresh(self, *, snapshot_key: tuple[object, ...], ttl_seconds: int) -> bool:
         if self._snapshot is None or self._snapshot_key != snapshot_key:
             return False
-        effective_ttl_seconds = self._ttl_seconds if self._ttl_seconds > 0 else ttl_seconds
+        if self._ttl_seconds <= 0:
+            return False
+        effective_ttl_seconds = self._ttl_seconds
         return monotonic() - self._cached_at <= effective_ttl_seconds

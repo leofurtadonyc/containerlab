@@ -11,12 +11,16 @@ TopologyEndpointPairingState = Literal["paired", "single_sided", "unknown"]
 TopologyEndpointPairingPosture = Literal[
     "paired", "partially_paired", "single_sided", "unknown"
 ]
+TopologyInferencePosture = Literal["inferred", "unknown"]
+TopologyCollectionPosture = Literal["ok", "degraded", "blocked", "unknown"]
 
 
 class TopologyCoverageSummary(BaseModel):
     """Backend-owned bounded summary of endpoint-pairing coverage posture."""
 
+    inference_posture: TopologyInferencePosture
     endpoint_pairing_posture: TopologyEndpointPairingPosture
+    collection_posture: TopologyCollectionPosture
     paired_link_count: int
     single_sided_link_count: int
     summary: str
@@ -69,6 +73,18 @@ def _normalize_endpoint_pairing_state(value: object) -> TopologyEndpointPairingS
 
 def _normalize_endpoint_pairing_posture(value: object) -> TopologyEndpointPairingPosture | None:
     if value in {"paired", "partially_paired", "single_sided", "unknown"}:
+        return value
+    return None
+
+
+def _normalize_inference_posture(value: object) -> TopologyInferencePosture | None:
+    if value in {"inferred", "unknown"}:
+        return value
+    return None
+
+
+def _normalize_collection_posture(value: object) -> TopologyCollectionPosture | None:
+    if value in {"ok", "degraded", "blocked", "unknown"}:
         return value
     return None
 
@@ -140,15 +156,35 @@ def _derive_endpoint_pairing_posture(
     return "unknown"
 
 
+def _derive_inference_posture(*, link_count: int) -> TopologyInferencePosture:
+    if link_count > 0:
+        return "inferred"
+    return "unknown"
+
+
 def build_topology_coverage_summary(
     *,
     links: Sequence[Any],
+    inference_posture: object | None = None,
     endpoint_pairing_posture: object | None = None,
+    collection_posture: object | None = None,
     paired_link_count: int | None = None,
     single_sided_link_count: int | None = None,
 ) -> TopologyCoverageSummary:
     """Build a bounded backend-owned topology coverage summary."""
+    normalized_inference_posture = _normalize_inference_posture(inference_posture)
     normalized_posture = _normalize_endpoint_pairing_posture(endpoint_pairing_posture)
+    normalized_collection_posture = _normalize_collection_posture(collection_posture)
+    resolved_inference_posture = (
+        normalized_inference_posture
+        if normalized_inference_posture is not None
+        else _derive_inference_posture(link_count=len(links))
+    )
+    resolved_collection_posture = (
+        normalized_collection_posture
+        if normalized_collection_posture is not None
+        else "unknown"
+    )
     if (
         normalized_posture is not None
         and paired_link_count is not None
@@ -176,29 +212,55 @@ def build_topology_coverage_summary(
             unknown_link_count=unknown_link_count,
         )
 
+    if resolved_inference_posture == "inferred":
+        inference_summary = (
+            "Current normalized topology remains inference-bounded rather than direct adjacency truth."
+        )
+    else:
+        inference_summary = (
+            "Current topology response cannot classify inference posture more precisely from the available normalized link evidence."
+        )
+
+    if resolved_collection_posture == "ok":
+        collection_summary = "Current collection posture is healthy for the emitted live topology response."
+    elif resolved_collection_posture == "degraded":
+        collection_summary = (
+            "Current collection posture is degraded for the emitted live topology response."
+        )
+    elif resolved_collection_posture == "blocked":
+        collection_summary = "Current collection posture is blocked for the live topology path."
+    else:
+        collection_summary = (
+            "Current topology response cannot classify collection posture more precisely from the available normalized evidence."
+        )
+
     if len(links) == 0:
-        summary = (
+        endpoint_summary = (
             "Current topology response does not emit any normalized links, so endpoint-pairing posture remains unknown."
         )
     elif resolved_posture == "paired":
-        summary = (
+        endpoint_summary = (
             "All emitted normalized topology links are currently backed by paired endpoint evidence within the bounded inference slice."
         )
     elif resolved_posture == "partially_paired":
-        summary = (
+        endpoint_summary = (
             "Current normalized topology links include a mix of paired and single-sided endpoint evidence within the bounded inference slice."
         )
     elif resolved_posture == "single_sided":
-        summary = (
+        endpoint_summary = (
             "Current normalized topology links are inferred from single-sided endpoint evidence only within the bounded inference slice."
         )
     else:
-        summary = (
+        endpoint_summary = (
             "Current topology response cannot summarize endpoint-pairing posture honestly from the available normalized link evidence."
         )
 
+    summary = f"{inference_summary} {collection_summary} {endpoint_summary}"
+
     return TopologyCoverageSummary(
+        inference_posture=resolved_inference_posture,
         endpoint_pairing_posture=resolved_posture,
+        collection_posture=resolved_collection_posture,
         paired_link_count=resolved_paired_link_count,
         single_sided_link_count=resolved_single_sided_link_count,
         summary=summary,

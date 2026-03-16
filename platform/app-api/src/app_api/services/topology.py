@@ -384,9 +384,14 @@ def build_topology_response() -> TopologyResponse:
     """Build the topology response from a normalized backend model."""
     settings = get_settings()
     collector_snapshot, snapshot, persisted_at, comparison = _build_topology_snapshot()
+    collection_posture = collector_snapshot.collection_posture
+    if collection_posture is None and collector_snapshot.status == "collector_unavailable":
+        collection_posture = "blocked"
     coverage_summary = build_topology_coverage_summary(
         links=snapshot.links,
+        inference_posture=collector_snapshot.inference_posture,
         endpoint_pairing_posture=collector_snapshot.endpoint_pairing_posture,
+        collection_posture=collection_posture,
         paired_link_count=collector_snapshot.paired_link_count,
         single_sided_link_count=collector_snapshot.single_sided_link_count,
     )
@@ -491,7 +496,9 @@ def build_topology_response() -> TopologyResponse:
         served_persisted_at=persisted_at,
         comparison_to_latest_persisted=comparison,
         coverage_summary=TopologyCoverageSummaryRecord(
+            inference_posture=coverage_summary.inference_posture,
             endpoint_pairing_posture=coverage_summary.endpoint_pairing_posture,
+            collection_posture=coverage_summary.collection_posture,
             paired_link_count=coverage_summary.paired_link_count,
             single_sided_link_count=coverage_summary.single_sided_link_count,
             summary=coverage_summary.summary,

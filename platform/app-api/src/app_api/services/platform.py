@@ -68,9 +68,14 @@ def _build_inventory_read_path_status() -> PlatformReadPathStatus:
 def _build_topology_read_path_status() -> PlatformReadPathStatus:
     """Build bounded platform status for the topology read path."""
     snapshot = get_collector_topology_client().read_topology_snapshot()
+    collection_posture = snapshot.collection_posture
+    if collection_posture is None and snapshot.status == "collector_unavailable":
+        collection_posture = "blocked"
     coverage_summary = build_topology_coverage_summary(
         links=snapshot.links,
+        inference_posture=snapshot.inference_posture,
         endpoint_pairing_posture=snapshot.endpoint_pairing_posture,
+        collection_posture=collection_posture,
         paired_link_count=snapshot.paired_link_count,
         single_sided_link_count=snapshot.single_sided_link_count,
     )
@@ -84,7 +89,9 @@ def _build_topology_read_path_status() -> PlatformReadPathStatus:
         collection_failure_count=snapshot.collection_failure_count,
         oldest_observed_at=_parse_collector_timestamp(snapshot.oldest_observed_at),
         newest_observed_at=_parse_collector_timestamp(snapshot.newest_observed_at),
+        inference_posture=coverage_summary.inference_posture,
         endpoint_pairing_posture=coverage_summary.endpoint_pairing_posture,
+        collection_posture=coverage_summary.collection_posture,
         paired_link_count=coverage_summary.paired_link_count,
         single_sided_link_count=coverage_summary.single_sided_link_count,
         degraded_scope_summary=snapshot.degraded_scope_summary,
@@ -138,7 +145,9 @@ def _build_gnmi_collector_component_status(
             coverage_note += f" detail-ready targets {read_path.detail_ready_target_count}."
         if read_path.endpoint_pairing_posture is not None:
             coverage_note += (
-                f" endpoint-pairing posture {read_path.endpoint_pairing_posture}, "
+                f" inference posture {read_path.inference_posture}, "
+                f"collection posture {read_path.collection_posture}, "
+                f"endpoint-pairing posture {read_path.endpoint_pairing_posture}, "
                 f"paired links {read_path.paired_link_count}, "
                 f"single-sided links {read_path.single_sided_link_count}."
             )

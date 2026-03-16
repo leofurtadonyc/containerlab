@@ -151,6 +151,8 @@ def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
         collection_failure_count=0,
         oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
         newest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        inference_posture="inferred",
+        collection_posture="ok",
         degraded_scope_summary="All configured topology targets returned usable live topology evidence within the current bounded inference slice.",
         endpoint_pairing_posture="paired",
         paired_link_count=1,
@@ -229,6 +231,8 @@ def _build_live_mixed_topology_snapshot() -> CollectorTopologySnapshot:
         collection_failure_count=0,
         oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
         newest_observed_at="2026-03-09T19:25:11.500000+00:00",
+        inference_posture="inferred",
+        collection_posture="degraded",
         degraded_scope_summary="Topology delivery remains bounded because one or more inferred links still rely on single-sided endpoint evidence.",
         endpoint_pairing_posture="partially_paired",
         paired_link_count=1,
@@ -1097,7 +1101,9 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
         "All configured inventory targets returned normalized live inventory evidence."
     )
     assert payload["read_paths"][1]["model_family"] == "topology"
+    assert payload["read_paths"][1]["inference_posture"] == "inferred"
     assert payload["read_paths"][1]["endpoint_pairing_posture"] == "paired"
+    assert payload["read_paths"][1]["collection_posture"] == "ok"
     assert payload["read_paths"][1]["paired_link_count"] == 1
     assert payload["read_paths"][1]["single_sided_link_count"] == 0
     assert payload["read_paths"][1]["degraded_scope_summary"] == (
@@ -1114,7 +1120,7 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert "inventory: 2/2 targets, success 2, partial 0, failed 0" in gnmi_component["notes"][0]
     assert "freshness 2026-03-09T19:25:08.500000+00:00 -> 2026-03-09T19:25:08.500000+00:00" in gnmi_component["notes"][0]
     assert gnmi_component["notes"][1] == "All configured inventory targets returned normalized live inventory evidence."
-    assert "endpoint-pairing posture paired, paired links 1, single-sided links 0." in gnmi_component["notes"][2]
+    assert "inference posture inferred, collection posture ok, endpoint-pairing posture paired, paired links 1, single-sided links 0." in gnmi_component["notes"][2]
     assert "detail-ready targets 2." in gnmi_component["notes"][4]
     odl_component = payload["components"][-1]
     assert odl_component["name"] == "odl"
@@ -1171,7 +1177,9 @@ def test_platform_status_endpoint_exposes_mixed_topology_pairing_coverage(monkey
     topology_read_path = payload["read_paths"][1]
     assert topology_read_path["model_family"] == "topology"
     assert topology_read_path["observation_state"] == "degraded"
+    assert topology_read_path["inference_posture"] == "inferred"
     assert topology_read_path["endpoint_pairing_posture"] == "partially_paired"
+    assert topology_read_path["collection_posture"] == "degraded"
     assert topology_read_path["paired_link_count"] == 1
     assert topology_read_path["single_sided_link_count"] == 1
     assert topology_read_path["degraded_scope_summary"] == (
@@ -1180,7 +1188,7 @@ def test_platform_status_endpoint_exposes_mixed_topology_pairing_coverage(monkey
     assert "mix of paired and single-sided endpoint evidence" in topology_read_path["summary"]
     gnmi_component = payload["components"][2]
     assert any(
-        "endpoint-pairing posture partially_paired, paired links 1, single-sided links 1."
+        "inference posture inferred, collection posture degraded, endpoint-pairing posture partially_paired, paired links 1, single-sided links 1."
         in note
         for note in gnmi_component["notes"]
     )
@@ -1384,10 +1392,14 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert payload["evidence_confidence"]["blocked_reason"] == "none"
     assert any("Coverage currently includes 2 of 2 configured topology targets" in note for note in payload["evidence_confidence"]["notes"])
     assert payload["served_persisted_at"] is None
+    assert payload["coverage_summary"]["inference_posture"] == "inferred"
     assert payload["coverage_summary"]["endpoint_pairing_posture"] == "paired"
+    assert payload["coverage_summary"]["collection_posture"] == "ok"
     assert payload["coverage_summary"]["paired_link_count"] == 1
     assert payload["coverage_summary"]["single_sided_link_count"] == 0
     assert "paired endpoint evidence" in payload["coverage_summary"]["summary"]
+    assert "inference-bounded" in payload["coverage_summary"]["summary"]
+    assert "collection posture is healthy" in payload["coverage_summary"]["summary"]
     assert payload["topology"]["topology_id"] == "platform-observed-topology"
     assert payload["topology"]["topology_name"] == "Platform Observed Topology"
     assert payload["topology"]["sync_source"] == "gnmi_collector_topology_interface_inference"
@@ -1429,10 +1441,13 @@ def test_topology_endpoint_exposes_mixed_pairing_coverage_semantics(monkeypatch)
     payload = response.json()
     assert payload["data_status"] == "degraded"
     assert payload["serving_mode"] == "live_collector"
+    assert payload["coverage_summary"]["inference_posture"] == "inferred"
     assert payload["coverage_summary"]["endpoint_pairing_posture"] == "partially_paired"
+    assert payload["coverage_summary"]["collection_posture"] == "degraded"
     assert payload["coverage_summary"]["paired_link_count"] == 1
     assert payload["coverage_summary"]["single_sided_link_count"] == 1
     assert "mix of paired and single-sided endpoint evidence" in payload["coverage_summary"]["summary"]
+    assert "collection posture is degraded" in payload["coverage_summary"]["summary"]
     assert payload["topology"]["links"][0]["endpoint_pairing_state"] == "paired"
     assert payload["topology"]["links"][1]["endpoint_pairing_state"] == "single_sided"
     assert payload["topology"]["links"][1]["endpoint_evidence_count"] == 1
@@ -1581,7 +1596,9 @@ def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None
     assert payload["evidence_confidence"]["confidence_posture"] == "degraded"
     assert payload["evidence_confidence"]["freshness_posture"] == "stale"
     assert payload["evidence_confidence"]["blocked_reason"] == "collector_unavailable"
+    assert payload["coverage_summary"]["inference_posture"] == "inferred"
     assert payload["coverage_summary"]["endpoint_pairing_posture"] == "unknown"
+    assert payload["coverage_summary"]["collection_posture"] == "blocked"
     assert payload["coverage_summary"]["paired_link_count"] == 0
     assert payload["coverage_summary"]["single_sided_link_count"] == 0
     assert payload["topology"]["sync_source"] == "persisted_topology_snapshot"
