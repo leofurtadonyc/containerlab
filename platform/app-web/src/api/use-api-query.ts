@@ -6,6 +6,7 @@ export interface ApiQueryState<T> {
   data: T | null;
   error: ApiClientError | null;
   isLoading: boolean;
+  isRefreshing: boolean;
   reload: () => void;
 }
 
@@ -65,6 +66,7 @@ export function useApiQuery<T>(queryFn: () => Promise<T>): ApiQueryState<T> {
     data,
     error,
     isLoading,
+    isRefreshing: isLoading && data !== null,
     reload,
   };
 }

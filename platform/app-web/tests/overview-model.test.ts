@@ -7,8 +7,8 @@ describe("overview render state", () => {
   it("returns loading when nothing has loaded yet", () => {
     const state = buildOverviewRenderState(
       [
-        { label: "Platform status", data: null, error: null, isLoading: true },
-        { label: "Devices", data: null, error: null, isLoading: true },
+        { label: "Platform status", data: null, error: null, isLoading: true, isRefreshing: false },
+        { label: "Devices", data: null, error: null, isLoading: true, isRefreshing: false },
       ],
       false,
     );
@@ -19,8 +19,8 @@ describe("overview render state", () => {
   it("returns partial when some data is present and another slice is still loading", () => {
     const state = buildOverviewRenderState(
       [
-        { label: "Platform status", data: { ok: true }, error: null, isLoading: false },
-        { label: "Devices", data: null, error: null, isLoading: true },
+        { label: "Platform status", data: { ok: true }, error: null, isLoading: false, isRefreshing: false },
+        { label: "Devices", data: null, error: null, isLoading: true, isRefreshing: false },
       ],
       false,
     );
@@ -33,12 +33,13 @@ describe("overview render state", () => {
   it("returns partial when some data is present and another slice errors", () => {
     const state = buildOverviewRenderState(
       [
-        { label: "Platform status", data: { ok: true }, error: null, isLoading: false },
+        { label: "Platform status", data: { ok: true }, error: null, isLoading: false, isRefreshing: false },
         {
           label: "Devices",
           data: null,
           error: new ApiClientError("Devices failed", 500, "request_failed"),
           isLoading: false,
+          isRefreshing: false,
         },
       ],
       false,
@@ -57,12 +58,32 @@ describe("overview render state", () => {
           data: null,
           error: new ApiClientError("Platform failed", 500, "request_failed"),
           isLoading: false,
+          isRefreshing: false,
         },
-        { label: "Devices", data: null, error: null, isLoading: false },
+        { label: "Devices", data: null, error: null, isLoading: false, isRefreshing: false },
       ],
       false,
     );
 
     expect(state.mode).toBe("error");
+  });
+
+  it("returns partial when stale data remains visible after a refresh failure", () => {
+    const state = buildOverviewRenderState(
+      [
+        {
+          label: "Platform status",
+          data: { ok: true },
+          error: new ApiClientError("Reload timed out", 504, "request_failed"),
+          isLoading: false,
+          isRefreshing: false,
+        },
+      ],
+      true,
+    );
+
+    expect(state.mode).toBe("partial");
+    expect(state.slices[0].status).toBe("stale_error");
+    expect(state.slices[0].hasData).toBe(true);
   });
 });
