@@ -688,6 +688,25 @@ def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
             binding_sid_count=0,
             srv6_binding_sid_count=0,
             notes=["Served from the latest persisted policy snapshot."],
+            target_footprints=[
+                {
+                    "target_name": "PE1",
+                    "target_role": "pe",
+                    "collection_status": "partial",
+                    "policy_capable": True,
+                    "observed_policy_count": 1,
+                    "active_policy_count": 1,
+                    "static_policy_count": 1,
+                    "static_local_policy_count": 1,
+                    "static_non_local_policy_count": 0,
+                    "bgp_policy_count": 0,
+                    "ttm_preference_count": 28,
+                    "binding_sid_count": 0,
+                    "srv6_binding_sid_count": 0,
+                    "detail_record_count": 1,
+                    "notes": ["Persisted target footprint from the bounded policy read path."],
+                }
+            ],
             records=[
                 {
                     "policy_id": "persisted-policy-1",
@@ -1360,7 +1379,9 @@ def test_devices_endpoint_returns_live_inventory(monkeypatch) -> None:
     assert payload["items"][0]["device_id"] == "PE1"
     assert payload["items"][0]["vendor"] == "nokia"
     assert payload["items"][0]["management_address"] == "172.20.20.107"
+    assert payload["items"][0]["current_posture"] == "current"
     assert payload["items"][0]["collector_status"] == "ok"
+    assert payload["items"][0]["last_recorded_collector_status"] == "ok"
     assert payload["items"][0]["capability_summary"] == "partially_supported"
     assert "useful read-only data" in payload["items"][0]["capability_detail"]
     assert datetime.fromisoformat(payload["generated_at"]) is not None
@@ -1408,10 +1429,14 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert len(payload["topology"]["nodes"]) == 2
     assert len(payload["topology"]["links"]) == 1
     assert payload["topology"]["nodes"][0]["display_name"] == "PE1"
+    assert payload["topology"]["nodes"][0]["current_posture"] == "current"
     assert payload["topology"]["nodes"][0]["state"] == "up"
+    assert payload["topology"]["nodes"][0]["last_recorded_state"] == "up"
     assert payload["topology"]["nodes"][0]["source"] == "gnmi"
     assert payload["topology"]["nodes"][0]["attributes"]["vendor"] == "nokia"
+    assert payload["topology"]["links"][0]["current_posture"] == "current"
     assert payload["topology"]["links"][0]["state"] == "up"
+    assert payload["topology"]["links"][0]["last_recorded_state"] == "up"
     assert payload["topology"]["links"][0]["source"] == "gnmi"
     assert payload["topology"]["links"][0]["endpoint_pairing_state"] == "paired"
     assert payload["topology"]["links"][0]["endpoint_evidence_count"] == 2
@@ -1505,6 +1530,9 @@ def test_devices_endpoint_falls_back_to_persisted_inventory(monkeypatch) -> None
     assert payload["comparison_to_latest_persisted"]["current_device_count"] == 1
     assert "latest persisted normalized inventory snapshot" in payload["summary"]
     assert payload["items"][0]["device_id"] == "PE1"
+    assert payload["items"][0]["current_posture"] == "stale"
+    assert payload["items"][0]["collector_status"] == "degraded"
+    assert payload["items"][0]["last_recorded_collector_status"] == "degraded"
 
 
 def test_devices_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypatch) -> None:
@@ -1604,6 +1632,12 @@ def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None
     assert payload["topology"]["sync_source"] == "persisted_topology_snapshot"
     assert len(payload["topology"]["nodes"]) == 1
     assert len(payload["topology"]["links"]) == 1
+    assert payload["topology"]["nodes"][0]["current_posture"] == "stale"
+    assert payload["topology"]["nodes"][0]["state"] == "up"
+    assert payload["topology"]["nodes"][0]["last_recorded_state"] == "up"
+    assert payload["topology"]["links"][0]["current_posture"] == "stale"
+    assert payload["topology"]["links"][0]["state"] == "degraded"
+    assert payload["topology"]["links"][0]["last_recorded_state"] == "degraded"
     assert datetime.fromisoformat(
         payload["served_persisted_at"].replace("Z", "+00:00")
     ) == datetime.fromisoformat("2026-03-10T00:00:00+00:00")
@@ -1731,12 +1765,19 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["comparison_to_latest_persisted"]["change_preview"][2]["change_kind"] == "removed"
     assert len(payload["target_footprints"]) == 2
     assert payload["target_footprints"][0]["target_name"] == "PE1"
+    assert payload["target_footprints"][0]["current_posture"] == "current"
+    assert payload["target_footprints"][0]["last_recorded_collection_status"] == "success"
     assert payload["target_footprints"][0]["observed_policy_count"] == 1
     assert payload["target_footprints"][1]["target_name"] == "P1"
     assert payload["target_footprints"][1]["static_non_local_policy_count"] == 1
     assert "bounded static-policy observations" in payload["summary"]
     assert payload["items"][0]["policy_type"] == "static_local"
     assert payload["items"][0]["source_target"] == "PE1"
+    assert payload["items"][0]["current_posture"] == "current"
+    assert payload["items"][0]["last_recorded_observed_state"] == "active"
+    assert payload["items"][0]["last_recorded_health_state"] == "healthy"
+    assert payload["items"][0]["candidate_paths"][0]["current_posture"] == "current"
+    assert payload["items"][0]["candidate_paths"][0]["last_recorded_path_state"] == "active"
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
@@ -1894,6 +1935,17 @@ def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) 
     assert payload["history"]["comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-1"
     assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-0"
     assert payload["items"][0]["policy_id"] == "persisted-policy-1"
+    assert payload["items"][0]["current_posture"] == "stale"
+    assert payload["items"][0]["observed_state"] == "active"
+    assert payload["items"][0]["last_recorded_observed_state"] == "active"
+    assert payload["items"][0]["health_state"] == "healthy"
+    assert payload["items"][0]["last_recorded_health_state"] == "healthy"
+    assert payload["items"][0]["candidate_paths"][0]["current_posture"] == "stale"
+    assert payload["items"][0]["candidate_paths"][0]["path_state"] == "active"
+    assert payload["items"][0]["candidate_paths"][0]["last_recorded_path_state"] == "active"
+    assert payload["target_footprints"][0]["current_posture"] == "stale"
+    assert payload["target_footprints"][0]["collection_status"] == "partial"
+    assert payload["target_footprints"][0]["last_recorded_collection_status"] == "partial"
 
 
 def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) -> None:

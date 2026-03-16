@@ -8,6 +8,10 @@ from pydantic import BaseModel
 from app_api.schemas.common import ApiResponseMetadata, EvidenceConfidenceSummary
 
 
+CurrentRowPosture = Literal["current", "stale"]
+DeviceCollectorStatus = Literal["ok", "degraded", "unreachable", "unknown"]
+
+
 class DeviceRecord(BaseModel):
     """Vendor-neutral device inventory record for Phase 2 APIs."""
 
@@ -17,7 +21,9 @@ class DeviceRecord(BaseModel):
     software_version: str | None = None
     role: str | None = None
     management_address: str
-    collector_status: Literal["ok", "degraded", "unreachable", "unknown"]
+    current_posture: CurrentRowPosture
+    collector_status: DeviceCollectorStatus
+    last_recorded_collector_status: DeviceCollectorStatus
     capability_summary: Literal[
         "supported",
         "partially_supported",

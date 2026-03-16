@@ -384,6 +384,11 @@ def build_topology_response() -> TopologyResponse:
     """Build the topology response from a normalized backend model."""
     settings = get_settings()
     collector_snapshot, snapshot, persisted_at, comparison = _build_topology_snapshot()
+    row_current_posture = (
+        "stale"
+        if collector_snapshot.status == "collector_unavailable" and persisted_at is not None
+        else "current"
+    )
     collection_posture = collector_snapshot.collection_posture
     if collection_posture is None and collector_snapshot.status == "collector_unavailable":
         collection_posture = "blocked"
@@ -408,7 +413,9 @@ def build_topology_response() -> TopologyResponse:
                 node_id=node.node_id,
                 display_name=node.display_name,
                 role=node.role,
+                current_posture=row_current_posture,
                 state=node.state,
+                last_recorded_state=node.state,
                 source=node.source,
                 device_id=node.device_id,
                 attributes=node.attributes,
@@ -420,7 +427,9 @@ def build_topology_response() -> TopologyResponse:
                 link_id=link.link_id,
                 source_node_id=link.source_node_id,
                 target_node_id=link.target_node_id,
+                current_posture=row_current_posture,
                 state=link.state,
+                last_recorded_state=link.state,
                 source=link.source,
                 endpoint_pairing_state=resolve_topology_link_endpoint_evidence(link)[0],
                 endpoint_evidence_count=resolve_topology_link_endpoint_evidence(link)[1],

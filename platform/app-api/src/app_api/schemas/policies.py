@@ -8,11 +8,20 @@ from pydantic import BaseModel, Field
 from app_api.schemas.common import ApiResponseMetadata, EvidenceConfidenceSummary
 
 
+CurrentRowPosture = Literal["current", "stale"]
+CandidatePathState = Literal["active", "inactive", "unknown"]
+PolicyObservedState = Literal["active", "inactive", "degraded", "unknown"]
+PolicyHealthState = Literal["healthy", "degraded", "down", "unknown"]
+PolicyCollectionStatus = Literal["success", "failure", "partial"]
+
+
 class CandidatePathRecord(BaseModel):
     """Normalized candidate path record."""
 
     name: str
-    path_state: Literal["active", "inactive", "unknown"]
+    current_posture: CurrentRowPosture
+    path_state: CandidatePathState
+    last_recorded_path_state: CandidatePathState
     preference: int | None = None
     notes: list[str]
 
@@ -29,8 +38,10 @@ class PolicyRecord(BaseModel):
     source_target: str
     source_target_role: str | None = None
     candidate_paths: list[CandidatePathRecord]
+    current_posture: CurrentRowPosture
     intent_state: Literal["declared", "unknown"]
-    observed_state: Literal["active", "inactive", "degraded", "unknown"]
+    observed_state: PolicyObservedState
+    last_recorded_observed_state: PolicyObservedState
     support_state: Literal[
         "supported",
         "partially_supported",
@@ -38,7 +49,8 @@ class PolicyRecord(BaseModel):
         "unknown",
         "not_implemented_in_platform",
     ]
-    health_state: Literal["healthy", "degraded", "down", "unknown"]
+    health_state: PolicyHealthState
+    last_recorded_health_state: PolicyHealthState
     source: str
     notes: list[str]
 
@@ -48,7 +60,9 @@ class PolicyTargetFootprintRecord(BaseModel):
 
     target_name: str
     target_role: str | None = None
-    collection_status: Literal["success", "failure", "partial"]
+    current_posture: CurrentRowPosture
+    collection_status: PolicyCollectionStatus
+    last_recorded_collection_status: PolicyCollectionStatus
     policy_capable: bool
     observed_policy_count: int
     active_policy_count: int
