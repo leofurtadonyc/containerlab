@@ -32,6 +32,7 @@ class NokiaSrosAdapter:
             username=target.auth.username,
             password=target.auth.password,
             insecure=target.insecure,
+            gnmi_timeout=target.gnmi_request_timeout_seconds,
         ) as client:
             return client.get(path=paths, encoding="json_ietf")
 
@@ -52,6 +53,35 @@ class NokiaSrosAdapter:
         def walk(node: object) -> None:
             if isinstance(node, dict):
                 if looks_like_policy(node):
+                    payloads.append(node)
+                    return
+                for child in node.values():
+                    walk(child)
+                return
+            if isinstance(node, list):
+                for item in node:
+                    walk(item)
+
+        walk(value)
+        return payloads
+
+    def _extract_sr_path_payloads(self, value: object) -> list[dict[str, object]]:
+        """Extract likely sr-path runtime dictionaries from a subtree value."""
+        payloads: list[dict[str, object]] = []
+
+        def normalized_keys(node: dict[str, object]) -> set[str]:
+            return {key.split(":", 1)[-1] for key in node}
+
+        def looks_like_runtime_path(node: dict[str, object]) -> bool:
+            keys = normalized_keys(node)
+            return bool(
+                {"endpoint", "color", "owner", "preference"} <= keys
+                and ({"active", "is-candidate-path-operational"} & keys)
+            )
+
+        def walk(node: object) -> None:
+            if isinstance(node, dict):
+                if looks_like_runtime_path(node):
                     payloads.append(node)
                     return
                 for child in node.values():
@@ -268,6 +298,7 @@ class NokiaSrosAdapter:
 
         sr_policy_counts: dict[str, int] = {}
         raw_policies: list[dict[str, object]] = []
+        raw_runtime_paths: list[dict[str, object]] = []
         for notification in result.get("notification", []):
             for update in notification.get("update", []):
                 value = update.get("val")
@@ -281,10 +312,15 @@ class NokiaSrosAdapter:
                                 if isinstance(count, int)
                             }
                         )
+                        raw_runtime_paths.extend(self._extract_sr_path_payloads(value))
                     if "static-policy" in path:
                         raw_policies.extend(self._extract_policy_payloads(value))
+                    if "sr-path" in path:
+                        raw_runtime_paths.extend(self._extract_sr_path_payloads(value))
                 elif isinstance(value, list) and "static-policy" in path:
                     raw_policies.extend(self._extract_policy_payloads(value))
+                elif isinstance(value, list) and "sr-path" in path:
+                    raw_runtime_paths.extend(self._extract_sr_path_payloads(value))
 
         missing_fields = []
         if not sr_policy_counts:
@@ -305,4 +341,5 @@ class NokiaSrosAdapter:
             observed_at=observed_at,
             sr_policy_counts=sr_policy_counts,
             raw_policies=raw_policies,
+            raw_runtime_paths=raw_runtime_paths,
         )

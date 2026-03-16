@@ -335,6 +335,11 @@ def build_devices_list_response() -> DevicesListResponse:
     """Build the device inventory response from the live collector boundary."""
     settings = get_settings()
     snapshot, inventory_devices, persisted_at, comparison = _build_inventory_devices()
+    row_current_posture = (
+        "stale"
+        if snapshot.status == "collector_unavailable" and persisted_at is not None
+        else "current"
+    )
     evidence_confidence = _build_inventory_evidence_confidence(
         collector_snapshot=snapshot,
         persisted_at=persisted_at,
@@ -347,7 +352,9 @@ def build_devices_list_response() -> DevicesListResponse:
             software_version=device.software_version,
             role=device.role,
             management_address=device.management_address,
+            current_posture=row_current_posture,
             collector_status=device.collector_status,
+            last_recorded_collector_status=device.collector_status,
             capability_summary=device.capability_summary,
             capability_detail=_describe_capability_summary(device.capability_summary),
         )

@@ -8,13 +8,19 @@ from pydantic import BaseModel
 from app_api.schemas.common import ApiResponseMetadata, EvidenceConfidenceSummary
 
 
+CurrentRowPosture = Literal["current", "stale"]
+TopologyState = Literal["up", "down", "degraded", "unknown"]
+
+
 class TopologyNodeRecord(BaseModel):
     """Normalized topology node record."""
 
     node_id: str
     display_name: str
     role: str
-    state: Literal["up", "down", "degraded", "unknown"]
+    current_posture: CurrentRowPosture
+    state: TopologyState
+    last_recorded_state: TopologyState
     source: str
     device_id: str | None = None
     attributes: dict[str, str]
@@ -26,7 +32,9 @@ class TopologyLinkRecord(BaseModel):
     link_id: str
     source_node_id: str
     target_node_id: str
-    state: Literal["up", "down", "degraded", "unknown"]
+    current_posture: CurrentRowPosture
+    state: TopologyState
+    last_recorded_state: TopologyState
     source: str
     endpoint_pairing_state: Literal["paired", "single_sided", "unknown"]
     endpoint_evidence_count: int | None = None
@@ -36,7 +44,9 @@ class TopologyLinkRecord(BaseModel):
 class TopologyCoverageSummaryRecord(BaseModel):
     """Bounded response-level topology coverage summary."""
 
+    inference_posture: Literal["inferred", "unknown"]
     endpoint_pairing_posture: Literal["paired", "partially_paired", "single_sided", "unknown"]
+    collection_posture: Literal["ok", "degraded", "blocked", "unknown"]
     paired_link_count: int
     single_sided_link_count: int
     summary: str

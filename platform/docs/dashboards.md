@@ -14,9 +14,12 @@ The platform currently has:
 - a real platform overview dashboard backed by Prometheus scrape health plus current `app-api` and `gnmi-collector` metrics
 - real topology and SR policy overview dashboards backed by current Prometheus metrics for those bounded live slices
 - the platform, topology, and SR policy dashboards now surface bounded persisted sync evidence plus clearer aggregate freshness, agreement, and evidence-gap cues where those backend and collector metrics honestly exist
+- the SR policy dashboard now also mirrors policy detail blocker posture more directly through detail-ready-target share and blocker-presence flags derived from real collector and backend metrics, while keeping per-target blocker reason codes in the product and verifier
 - the platform overview dashboard now also surfaces collector-backed target coverage, observation-age, and policy detail-gap cues for inventory, topology, and policy, using real numeric signals rather than trying to serialize product-facing degraded-scope prose into Grafana
+- the platform overview dashboard now also surfaces backend-owned collector-boundary latest fetch duration, timeout budget, and latest timeout or failure posture signals so operators can distinguish slow fallback triggers from ordinary degraded live collection
 - the topology overview dashboard now also surfaces paired-link counts, single-sided-link counts, paired-link share, and backend-owned topology pairing-posture labels as bounded observability projections for the current topology coverage slice
-- the platform overview dashboard now also mirrors the narrower topology read-path coverage posture through paired-versus-single-sided link counts and backend-owned pairing-posture labels without turning Grafana into the product contract
+- the topology overview dashboard now also surfaces backend-owned inference, endpoint-pairing, and collection posture labels as bounded observability projections for the current topology partiality slice
+- the platform overview dashboard now also mirrors the narrower topology read-path coverage posture through paired-versus-single-sided link counts plus backend-owned inference, pairing, and collection posture labels without turning Grafana into the product contract
 - a bounded post-deploy core-runtime regression check that now validates Grafana API health, the provisioned Prometheus datasource, and the provisioned overview dashboards alongside Postgres and Prometheus readiness
 - clearly marked placeholder dashboard files for the dashboard families that do not yet have real backing metrics
 
@@ -96,6 +99,7 @@ More specifically, `./scripts/verify-core-runtime.sh` currently validates only t
 - the provisioned Prometheus datasource is present
 - provisioned overview dashboards can be discovered through the Grafana API
 - the current `app-api` and `gnmi-collector` metrics contracts still expose the metric families the platform overview dashboard depends on most directly
+- the current `app-api` metrics contract now also exposes the backend collector-boundary latest duration, timeout budget, and latest posture metric families required by the platform overview dashboard's latency-posture row
 
 It does not yet validate:
 
@@ -130,6 +134,7 @@ Expected emphasis over time:
 - persisted inventory, topology, and policy sync freshness and result posture where those metrics exist
 - bounded cross-slice freshness and agreement cues where those aggregate metrics exist
 - collector-backed read-path coverage percentages, observation age, and target/detail gaps where those collector metrics exist
+- collector-boundary latest fetch duration, timeout budget, and latest outcome posture where those backend metrics exist
 
 ### Topology
 
@@ -149,8 +154,9 @@ Expected emphasis over time:
 - integration quality signals
 - bounded backend-versus-collector aggregate agreement cues where those metrics exist
 - explicit paired-versus-single-sided inferred-link counts and shares where those bounded collector metrics exist
-- backend-owned topology pairing-posture labels only as observability projections from real metrics, not as dashboard-authored business logic
+- backend-owned topology inference, pairing, and collection posture labels only as observability projections from real metrics, not as dashboard-authored business logic
 - operators should interpret paired-versus-single-sided topology panels as endpoint-evidence depth only, not as protocol adjacency validation or controller-backed topology truth
+- operators should interpret topology collection posture as collection-window health only, not as a separate validation or workflow verdict
 
 ### SR Policy
 
@@ -171,6 +177,7 @@ Expected emphasis over time:
 - persisted policy sync freshness and result posture where that evidence exists
 - bounded target-coverage and observed-versus-detailed evidence-gap cues where those aggregate metrics exist
 - bounded detail-ready target gaps where collector metrics honestly expose that narrower policy detail posture
+- blocker-presence flags that mirror whether observed targets are still missing detail-ready policy evidence, without turning Grafana into the surface that authors blocker semantics
 
 ## Product Versus Observability Split
 
@@ -182,18 +189,28 @@ In `app-web`:
 - degraded-scope explanations are shown as product trust cues
 - coverage and freshness remain tied to the bounded platform-status contract
 - topology endpoint-pairing posture should be shown as backend-owned product language, not as a Grafana-derived label
+- topology inference posture and collection posture should also be shown as backend-owned product language, not as Grafana-authored semantics
 - `paired`, `partially_paired`, and `single_sided` remain bounded topology trust cues about inferred-link endpoint evidence, not workflow or validation language
+- `inferred` and `ok` or `degraded` or `blocked` remain bounded topology trust cues about inference-boundedness and collection-window posture, not validation language
 
 In Grafana:
 
 - operators see numeric observability signals only
 - coverage is represented through observed-versus-configured targets
 - freshness is represented through observation age from collector timestamps
-- degraded scope is approximated through numeric gaps such as missing targets, paired-versus-single-sided topology link counts or shares, and policy detail-ready gaps
+- degraded scope is approximated through numeric gaps such as missing targets, paired-versus-single-sided topology link counts or shares, policy detail-ready gaps, and collector-boundary duration-versus-budget posture
+- policy detail blockers are mirrored through detail-ready-target share and blocker-presence flags, while per-target blocker reason codes stay on the Policies page and in verifier output
 - topology endpoint-pairing observability should stay numeric as paired-link counts, single-sided-link counts, and derived shares rather than becoming a product-owned status vocabulary inside dashboards
-- backend-owned topology pairing-posture labels may appear only as metric-backed label projections that support those numeric panels; Grafana still does not own that vocabulary
+- backend-owned topology inference, pairing, and collection posture labels may appear only as metric-backed label projections that support those numeric panels; Grafana still does not own that vocabulary
+- collector-boundary timeout posture is an observability cue only; it explains whether the backend hit the fail-fast latency budget, not whether the product has emitted a workflow verdict or dependency-dashboard truth statement
 
 Grafana does not attempt to reproduce the backend's human-readable degraded-scope summaries verbatim, because those are product semantics rather than durable metric labels.
+
+Platform overview latency-posture rule:
+
+- duration and timeout-budget panels exist to show bounded collector-boundary timing posture by model family
+- latest outcome posture panels may distinguish `timeout_budget_exceeded` from `collector_connection_error`, `collector_http_error`, `invalid_response_payload`, `unknown_error`, and `partial_live_feed`
+- those panels help explain why persisted fallback happened, but the backend contracts and WebUI trust cues remain the product-facing source of truth
 
 Week 14 topology coverage rule:
 
@@ -276,6 +293,7 @@ Dashboard design should therefore assume Prometheus-backed metrics first, with a
 - the platform, topology, and SR policy families now include real Prometheus-backed dashboards for the services that expose meaningful metrics today, with those dashboards now also surfacing bounded freshness, agreement, and evidence-gap cues where the supporting signals are real
 - the platform overview dashboard now also uses the newer collector coverage and observation-age metrics to make read-path gaps faster to interpret without turning Grafana into a product-status surrogate
 - the topology and platform dashboards now also use the newer topology paired-link, single-sided-link, share, and backend-owned pairing-posture metrics to make endpoint-coverage gaps faster to interpret without inventing dashboard-only semantics
+- the topology and platform dashboards now also use the newer topology inference, collection, paired-link, single-sided-link, share, and backend-owned posture-label metrics to make topology partiality faster to interpret without inventing dashboard-only semantics
 - placeholder dashboards still exist for families whose underlying metrics are not yet real
 - the platform observability shape is documented
 

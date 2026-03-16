@@ -4,13 +4,13 @@ import type { PlatformReadPathStatus, PlatformStatusResponse } from "../../api/c
 import { apiClient } from "../../api/client";
 import { useApiQuery } from "../../api/use-api-query";
 
-export function usePlatformStatusQuery() {
+export function usePlatformStatusQuery(enabled = true) {
   const queryFn = useCallback<() => Promise<PlatformStatusResponse>>(
     () => apiClient.getPlatformStatus(),
     [],
   );
 
-  return useApiQuery(queryFn);
+  return useApiQuery(queryFn, { enabled });
 }
 
 export function getPlatformReadPath(

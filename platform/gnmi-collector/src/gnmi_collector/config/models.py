@@ -53,6 +53,7 @@ class GnmiTargetConfig(BaseModel):
     port: int = 57400
     auth: GnmiTargetAuthConfig
     insecure: bool = True
+    gnmi_request_timeout_seconds: int = Field(default=2, ge=1)
     inventory_paths: list[str] = Field(default_factory=list)
     topology_paths: list[str] = Field(default_factory=list)
     policy_paths: list[str] = Field(default_factory=list)
@@ -64,6 +65,7 @@ class CollectorRuntimeConfig(BaseModel):
     mode: Literal["phase_2_live_inventory"]
     config_path: str
     metrics_port: int
+    collector_target_concurrency: int
     delivery: CollectorDeliveryConfig
     inventory_subscriptions: list[InventorySubscriptionConfig]
     topology_subscriptions: list[TopologySubscriptionConfig]

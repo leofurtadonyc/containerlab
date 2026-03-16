@@ -6,6 +6,17 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+PolicyDetailBlockerReason = Literal[
+    "none",
+    "policy_capability_unavailable",
+    "no_policies_observed",
+    "per_policy_details_unavailable",
+    "partial_detail_coverage",
+    "collection_failed",
+    "collection_partial",
+]
+
+
 class PolicyCollectionPlan(BaseModel):
     """Vendor-neutral collection plan for one policy target."""
 
@@ -28,6 +39,7 @@ class PolicyRawRecord(BaseModel):
     observed_at: datetime | None = None
     sr_policy_counts: dict[str, int] = Field(default_factory=dict)
     raw_policies: list[dict[str, object]] = Field(default_factory=list)
+    raw_runtime_paths: list[dict[str, object]] = Field(default_factory=list)
 
 
 class NormalizedPolicyCandidatePathRecord(BaseModel):
@@ -82,6 +94,7 @@ class NormalizedPolicyTargetFootprint(BaseModel):
     binding_sid_count: int
     srv6_binding_sid_count: int
     detail_record_count: int
+    detail_blocker_reason: PolicyDetailBlockerReason
     notes: list[str] = Field(default_factory=list)
 
 

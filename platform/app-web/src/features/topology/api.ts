@@ -9,13 +9,13 @@ import {
   resolveTopologyLinkEndpointPairingState,
 } from "../../lib/presentation";
 
-export function useTopologyQuery() {
+export function useTopologyQuery(enabled = true) {
   const queryFn = useCallback<() => Promise<TopologyResponse>>(
     () => apiClient.getTopology(),
     [],
   );
 
-  return useApiQuery(queryFn);
+  return useApiQuery(queryFn, { enabled });
 }
 
 export function getTopologyCoverageSummary(topologyResponse: TopologyResponse) {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ApiClientError } from "./client";
 
@@ -6,65 +6,87 @@ export interface ApiQueryState<T> {
   data: T | null;
   error: ApiClientError | null;
   isLoading: boolean;
-  reload: () => void;
+  isRefreshing: boolean;
+  reload: () => Promise<void>;
 }
 
-export function useApiQuery<T>(queryFn: () => Promise<T>): ApiQueryState<T> {
+interface UseApiQueryOptions {
+  enabled?: boolean;
+}
+
+export function useApiQuery<T>(
+  queryFn: () => Promise<T>,
+  options: UseApiQueryOptions = {},
+): ApiQueryState<T> {
+  const { enabled = true } = options;
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<ApiClientError | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [reloadToken, setReloadToken] = useState(0);
-
-  const reload = useCallback(() => {
-    setReloadToken((currentValue) => currentValue + 1);
-  }, []);
+  const isMountedRef = useRef(true);
+  const latestRequestIdRef = useRef(0);
 
   useEffect(() => {
-    let isCancelled = false;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
-    async function load() {
-      setIsLoading(true);
-      setError(null);
+  const load = useCallback(async () => {
+    const requestId = latestRequestIdRef.current + 1;
+    latestRequestIdRef.current = requestId;
 
-      try {
-        const response = await queryFn();
+    setIsLoading(true);
+    setError(null);
 
-        if (!isCancelled) {
-          setData(response);
-        }
-      } catch (caughtError) {
-        if (isCancelled) {
-          return;
-        }
+    try {
+      const response = await queryFn();
 
-        if (caughtError instanceof ApiClientError) {
-          setError(caughtError);
-          return;
-        }
-
-        const message =
-          caughtError instanceof Error
-            ? caughtError.message
-            : "Unexpected error while loading data.";
-        setError(new ApiClientError(message, 0, "unexpected_error"));
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
-        }
+      if (isMountedRef.current && requestId === latestRequestIdRef.current) {
+        setData(response);
       }
+    } catch (caughtError) {
+      if (!isMountedRef.current || requestId !== latestRequestIdRef.current) {
+        return;
+      }
+
+      if (caughtError instanceof ApiClientError) {
+        setError(caughtError);
+        return;
+      }
+
+      const message =
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unexpected error while loading data.";
+      setError(new ApiClientError(message, 0, "unexpected_error"));
+    } finally {
+      if (isMountedRef.current && requestId === latestRequestIdRef.current) {
+        setIsLoading(false);
+      }
+    }
+  }, [queryFn]);
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
     }
 
     void load();
+  }, [enabled, load]);
 
-    return () => {
-      isCancelled = true;
-    };
-  }, [queryFn, reloadToken]);
+  const reload = useCallback(async () => {
+    if (!enabled) {
+      return;
+    }
+
+    await load();
+  }, [enabled, load]);
 
   return {
     data,
     error,
     isLoading,
+    isRefreshing: isLoading && data !== null,
     reload,
   };
 }

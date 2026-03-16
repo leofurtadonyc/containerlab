@@ -2,13 +2,19 @@
 
 import json
 from dataclasses import dataclass
+from time import perf_counter
 from typing import Literal
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from app_api.config.settings import get_settings
+from app_api.integrations.collector.cache import SnapshotCache
+from app_api.integrations.collector.failure import (
+    CollectorFetchErrorKind,
+    classify_collector_fetch_failure,
+)
 
 
 class CollectorPolicyCandidatePathRecord(BaseModel):
@@ -63,6 +69,15 @@ class CollectorPolicyTargetFootprintRecord(BaseModel):
     binding_sid_count: int
     srv6_binding_sid_count: int
     detail_record_count: int
+    detail_blocker_reason: Literal[
+        "none",
+        "policy_capability_unavailable",
+        "no_policies_observed",
+        "per_policy_details_unavailable",
+        "partial_detail_coverage",
+        "collection_failed",
+        "collection_partial",
+    ]
     notes: list[str] = Field(default_factory=list)
 
 
@@ -107,6 +122,9 @@ class CollectorPolicySnapshot(BaseModel):
     target_footprints: list[CollectorPolicyTargetFootprintRecord] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
     records: list[CollectorPolicyRecord] = Field(default_factory=list)
+    timeout_budget_seconds: int = 0
+    fetch_duration_seconds: float | None = None
+    fetch_error_kind: CollectorFetchErrorKind | None = None
     fetch_error: str | None = None
 
 
@@ -116,14 +134,32 @@ class CollectorPolicyClient:
 
     source_endpoint: str
     timeout_seconds: int
+    cache_ttl_seconds: int
+    unavailable_cache_ttl_seconds: int
 
-    def read_policy_snapshot(self) -> CollectorPolicySnapshot:
-        """Read the live normalized policy snapshot from the collector."""
+    def _load_policy_snapshot(self) -> CollectorPolicySnapshot:
+        """Load the live normalized policy snapshot from the collector."""
         snapshot_url = f"{self.source_endpoint.rstrip('/')}/policies/snapshot"
+        started_at = perf_counter()
         try:
             with urlopen(snapshot_url, timeout=self.timeout_seconds) as response:
                 payload = json.loads(response.read().decode("utf-8"))
-        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+            target_footprints = [
+                CollectorPolicyTargetFootprintRecord.model_validate(record)
+                for record in payload.get("target_footprints", [])
+            ]
+            records = [
+                CollectorPolicyRecord.model_validate(record)
+                for record in payload.get("records", [])
+            ]
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, ValidationError) as exc:
+            fetch_duration_seconds = perf_counter() - started_at
+            failure = classify_collector_fetch_failure(
+                exc,
+                boundary_label="policy snapshot",
+                snapshot_url=snapshot_url,
+                timeout_seconds=self.timeout_seconds,
+            )
             return CollectorPolicySnapshot(
                 integration="gnmi_collector_policy",
                 status="collector_unavailable",
@@ -160,7 +196,10 @@ class CollectorPolicyClient:
                 target_footprints=[],
                 notes=[],
                 records=[],
-                fetch_error=str(exc),
+                timeout_budget_seconds=self.timeout_seconds,
+                fetch_duration_seconds=fetch_duration_seconds,
+                fetch_error_kind=failure.kind,
+                fetch_error=failure.detail,
             )
 
         status_map = {
@@ -168,6 +207,7 @@ class CollectorPolicyClient:
             "partial": "partial_live_feed",
             "failed": "collector_unavailable",
         }
+        fetch_duration_seconds = perf_counter() - started_at
         return CollectorPolicySnapshot(
             integration="gnmi_collector_policy",
             status=status_map.get(payload.get("delivery_status"), "collector_unavailable"),
@@ -202,17 +242,36 @@ class CollectorPolicyClient:
             ttm_preference_count=payload.get("ttm_preference_count", 0),
             binding_sid_count=payload.get("binding_sid_count", 0),
             srv6_binding_sid_count=payload.get("srv6_binding_sid_count", 0),
-            target_footprints=[
-                CollectorPolicyTargetFootprintRecord.model_validate(record)
-                for record in payload.get("target_footprints", [])
-            ],
+            target_footprints=target_footprints,
             notes=payload.get("notes", []),
-            records=[
-                CollectorPolicyRecord.model_validate(record)
-                for record in payload.get("records", [])
-            ],
+            records=records,
+            timeout_budget_seconds=self.timeout_seconds,
+            fetch_duration_seconds=fetch_duration_seconds,
+            fetch_error_kind=None,
             fetch_error=None,
         )
+
+    def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+        """Read the live normalized policy snapshot from the collector."""
+        snapshot_key = (self.source_endpoint, self.timeout_seconds)
+        return _policy_snapshot_cache.get_or_load(
+            snapshot_key=snapshot_key,
+            ttl_seconds=self.cache_ttl_seconds,
+            ttl_resolver=lambda snapshot: (
+                self.unavailable_cache_ttl_seconds
+                if snapshot.status == "collector_unavailable"
+                else self.cache_ttl_seconds
+            ),
+            loader=self._load_policy_snapshot,
+        )
+
+
+_policy_snapshot_cache: SnapshotCache[CollectorPolicySnapshot] = SnapshotCache()
+
+
+def clear_policy_snapshot_cache() -> None:
+    """Clear the short-lived policy snapshot cache."""
+    _policy_snapshot_cache.clear()
 
 
 def get_collector_policy_client() -> CollectorPolicyClient:
@@ -220,5 +279,7 @@ def get_collector_policy_client() -> CollectorPolicyClient:
     settings = get_settings()
     return CollectorPolicyClient(
         source_endpoint=settings.gnmi_collector_url,
-        timeout_seconds=settings.gnmi_collector_timeout_seconds,
+        timeout_seconds=settings.get_gnmi_collector_policy_timeout_seconds(),
+        cache_ttl_seconds=settings.gnmi_collector_snapshot_cache_ttl_seconds,
+        unavailable_cache_ttl_seconds=settings.gnmi_collector_unavailable_snapshot_cache_ttl_seconds,
     )

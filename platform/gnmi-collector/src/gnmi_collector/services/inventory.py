@@ -1,5 +1,7 @@
 """Inventory-oriented collection flow scaffolding."""
 
+from concurrent.futures import ThreadPoolExecutor
+
 from gnmi_collector.adapters.nokia import NokiaSrosAdapter
 from gnmi_collector.config.runtime import build_runtime_config
 from gnmi_collector.mappings.inventory import (
@@ -20,7 +22,9 @@ def build_inventory_flow_snapshot() -> InventoryFlowSnapshot:
     adapter = NokiaSrosAdapter()
 
     plans = [adapter.build_inventory_plan(target) for target in config.targets]
-    raw_records = [adapter.collect_inventory(target) for target in config.targets]
+    max_workers = max(1, min(config.collector_target_concurrency, len(config.targets)))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        raw_records = list(executor.map(adapter.collect_inventory, config.targets))
     normalized_records = [map_inventory_record(record) for record in raw_records]
     collection_success_count = sum(
         1 for record in raw_records if record.collection_status == "success"

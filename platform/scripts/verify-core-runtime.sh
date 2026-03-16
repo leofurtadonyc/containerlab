@@ -198,7 +198,9 @@ assert_contains "platform status response" "$platform_status_response" '"collect
 assert_contains "platform status response" "$platform_status_response" '"oldest_observed_at":'
 assert_contains "platform status response" "$platform_status_response" '"newest_observed_at":'
 assert_contains "platform status response" "$platform_status_response" '"degraded_scope_summary":"'
+assert_contains "platform status response" "$platform_status_response" '"inference_posture":"'
 assert_contains "platform status response" "$platform_status_response" '"endpoint_pairing_posture":"'
+assert_contains "platform status response" "$platform_status_response" '"collection_posture":"'
 assert_contains "platform status response" "$platform_status_response" '"paired_link_count":'
 assert_contains "platform status response" "$platform_status_response" '"single_sided_link_count":'
 assert_contains "platform status response" "$platform_status_response" '"policy_capable_target_count":'
@@ -215,8 +217,10 @@ assert_contains "topology response" "$topology_response" '"serving_mode":"'
 assert_contains "topology response" "$topology_response" '"sync_status":"'
 assert_contains "topology response" "$topology_response" '"completeness":"'
 assert_contains "topology response" "$topology_response" '"coverage_summary":{'
+assert_contains "topology response" "$topology_response" '"inference_posture":"'
 assert_contains "topology response" "$topology_response" '"endpoint_pairing_state":"'
 assert_contains "topology response" "$topology_response" '"endpoint_evidence_count":'
+assert_contains "topology response" "$topology_response" '"collection_posture":"'
 assert_contains "topology response" "$topology_response" '"topology":{'
 assert_contains "topology response" "$topology_response" '"comparison_to_latest_persisted":{'
 
@@ -226,6 +230,7 @@ assert_contains "policies response" "$policies_response" '"sync_status":"'
 assert_contains "policies response" "$policies_response" '"detail_mode":"'
 assert_contains "policies response" "$policies_response" '"empty_reason":"'
 assert_contains "policies response" "$policies_response" '"target_footprints":['
+assert_contains "policies response" "$policies_response" '"detail_blocker_reason":"'
 assert_contains "policies response" "$policies_response" '"comparison_to_latest_persisted":{'
 assert_contains "policies response" "$policies_response" '"history":{'
 
@@ -241,8 +246,12 @@ assert_contains "capabilities response" "$capabilities_response" '"future_junipe
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_snapshot_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_paired_links'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_single_sided_links'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_coverage_posture{inference_posture="'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_coverage_posture'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshot_status'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_latest_fetch_duration_seconds'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_timeout_budget_seconds'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_latest_fetch_posture'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_readiness_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_sync_runs_total'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_inventory_newest_observed_timestamp_seconds'
@@ -288,8 +297,29 @@ fi
 if printf '%s' "$platform_status_response" | grep -E '"model_family":"topology"[^}]*"endpoint_pairing_posture":"single_sided"' >/dev/null 2>&1; then
   notice "Platform status reports single_sided topology endpoint coverage, so the current inferred links remain bounded to one observed endpoint per link."
 fi
+if printf '%s' "$platform_status_response" | grep -E '"model_family":"topology"[^}]*"collection_posture":"degraded"' >/dev/null 2>&1; then
+  warn "Platform status reports degraded topology collection posture, so the current topology slice should be treated as a partially degraded live window."
+fi
+if printf '%s' "$platform_status_response" | grep -E '"model_family":"topology"[^}]*"collection_posture":"blocked"' >/dev/null 2>&1; then
+  warn "Platform status reports blocked topology collection posture, so the current topology slice is not backed by a normal live collection window."
+fi
+if printf '%s' "$platform_status_response" | grep -E '"model_family":"topology"[^}]*"inference_posture":"inferred"' >/dev/null 2>&1; then
+  notice "Platform status reports inferred topology posture, so current topology links remain bounded inferred evidence rather than direct adjacency truth."
+fi
 if printf '%s' "$platform_status_response" | grep -E '"model_family":"policy"[^}]*"detail_ready_target_count":0' >/dev/null 2>&1; then
   notice "Platform status reports zero policy detail-ready targets, so current policy truth remains bounded to counters or other aggregate-only evidence."
+fi
+if printf '%s' "$app_api_metrics" | grep 'platform_app_api_collector_boundary_latest_fetch_posture{model_family="inventory",outcome="timeout_budget_exceeded"} 1' >/dev/null 2>&1; then
+  warn "App API metrics report that the latest inventory collector-boundary fetch exhausted its bounded timeout budget and triggered fallback posture."
+fi
+if printf '%s' "$app_api_metrics" | grep 'platform_app_api_collector_boundary_latest_fetch_posture{model_family="topology",outcome="timeout_budget_exceeded"} 1' >/dev/null 2>&1; then
+  warn "App API metrics report that the latest topology collector-boundary fetch exhausted its bounded timeout budget and triggered fallback posture."
+fi
+if printf '%s' "$app_api_metrics" | grep 'platform_app_api_collector_boundary_latest_fetch_posture{model_family="policy",outcome="timeout_budget_exceeded"} 1' >/dev/null 2>&1; then
+  warn "App API metrics report that the latest policy collector-boundary fetch exhausted its bounded timeout budget and triggered fallback posture."
+fi
+if printf '%s' "$app_api_metrics" | grep -E 'platform_app_api_collector_boundary_latest_fetch_posture\{model_family="(inventory|topology|policy)",outcome="(collector_connection_error|collector_http_error|invalid_response_payload|unknown_error)"\} 1' >/dev/null 2>&1; then
+  warn "App API metrics report a non-timeout collector-boundary failure outcome on at least one read path; inspect the latest collector-boundary posture panels before treating fallback as a pure latency-budget issue."
 fi
 
 if printf '%s' "$topology_response" | grep -F '"serving_mode":"persisted_fallback"' >/dev/null 2>&1; then
@@ -309,6 +339,15 @@ if printf '%s' "$topology_response" | grep -F '"blocked_reason":"collector_unava
 fi
 if printf '%s' "$topology_response" | grep -F '"completeness":"partial"' >/dev/null 2>&1; then
   notice "Topology completeness remains partial by design in the current Phase 2 slice."
+fi
+if printf '%s' "$topology_response" | grep -F '"collection_posture":"degraded"' >/dev/null 2>&1; then
+  warn "Topology API reports degraded collection posture, so the current topology slice is live but partially degraded."
+fi
+if printf '%s' "$topology_response" | grep -F '"collection_posture":"blocked"' >/dev/null 2>&1; then
+  warn "Topology API reports blocked collection posture, so current topology trust depends on fallback or blocked evidence rather than a normal live collection window."
+fi
+if printf '%s' "$topology_response" | grep -F '"inference_posture":"inferred"' >/dev/null 2>&1; then
+  notice "Topology API reports inferred topology posture, so current links remain a bounded inferred slice rather than direct adjacency truth."
 fi
 
 if printf '%s' "$policies_response" | grep -F '"serving_mode":"persisted_fallback"' >/dev/null 2>&1; then
@@ -331,6 +370,27 @@ if printf '%s' "$policies_response" | grep -F '"empty_reason":"no_policies_obser
 fi
 if printf '%s' "$policies_response" | grep -F '"detail_mode":"counters_only"' >/dev/null 2>&1; then
   notice "Policies API detail_mode remains counters_only, so current policy truth is still bounded to aggregate counters and per-target footprint evidence."
+fi
+if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"per_policy_details_unavailable"' >/dev/null 2>&1; then
+  notice "Policies API target footprints report per_policy_details_unavailable blockers, so per-target detail remains blocked even when aggregate policy presence is real."
+fi
+if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"no_policies_observed"' >/dev/null 2>&1; then
+  notice "Policies API target footprints report no_policies_observed blockers on at least one target, so some targets remain healthy live-empty rather than detail-ready."
+fi
+if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"partial_detail_coverage"' >/dev/null 2>&1; then
+  notice "Policies API target footprints report partial_detail_coverage, so only a subset of observed policy detail is normalized on at least one target."
+fi
+if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"collection_partial"' >/dev/null 2>&1; then
+  warn "Policies API target footprints report collection_partial, so at least one target has degraded policy collection and incomplete detail coverage."
+fi
+if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"collection_failed"' >/dev/null 2>&1; then
+  warn "Policies API target footprints report collection_failed, so at least one target currently has no live policy detail due to collection failure."
+fi
+if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"policy_capability_unavailable"' >/dev/null 2>&1; then
+  notice "Policies API target footprints report policy_capability_unavailable on at least one target, so that target cannot currently contribute bounded policy detail evidence."
+fi
+if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"not_recorded"' >/dev/null 2>&1; then
+  warn "Policies API target footprints still include not_recorded blocker posture on at least one target, so per-target blocker visibility is incomplete."
 fi
 
 if [ "$warning_count" -gt 0 ]; then

@@ -127,6 +127,7 @@ def _build_policy_inventory() -> tuple[
                 binding_sid_count=footprint.binding_sid_count,
                 srv6_binding_sid_count=footprint.srv6_binding_sid_count,
                 detail_record_count=footprint.detail_record_count,
+                detail_blocker_reason=footprint.detail_blocker_reason,
                 notes=footprint.notes,
             )
             for footprint in collector_snapshot.target_footprints
@@ -624,6 +625,11 @@ def build_policies_list_response() -> PoliciesListResponse:
     """Build the policy inventory response from the live collector boundary."""
     settings = get_settings()
     collector_snapshot, snapshot, persisted_at = _build_policy_inventory()
+    row_current_posture = (
+        "stale"
+        if collector_snapshot.status == "collector_unavailable" and persisted_at is not None
+        else "current"
+    )
     latest_persisted_snapshot = load_latest_policy_snapshot()
     history = _build_policy_history_window()
     evidence_confidence = _build_policy_evidence_confidence(
@@ -659,16 +665,21 @@ def build_policies_list_response() -> PoliciesListResponse:
             candidate_paths=[
                 CandidatePathRecord(
                     name=path.name,
+                    current_posture=row_current_posture,
                     path_state=path.path_state,
+                    last_recorded_path_state=path.path_state,
                     preference=path.preference,
                     notes=path.notes,
                 )
                 for path in policy.candidate_paths
             ],
+            current_posture=row_current_posture,
             intent_state=policy.intent_state,
             observed_state=policy.observed_state,
+            last_recorded_observed_state=policy.observed_state,
             support_state=policy.support_state,
             health_state=policy.health_state,
+            last_recorded_health_state=policy.health_state,
             source=policy.source,
             notes=policy.notes,
         )
@@ -811,7 +822,9 @@ def build_policies_list_response() -> PoliciesListResponse:
             PolicyTargetFootprintRecord(
                 target_name=footprint.target_name,
                 target_role=footprint.target_role,
+                current_posture=row_current_posture,
                 collection_status=footprint.collection_status,
+                last_recorded_collection_status=footprint.collection_status,
                 policy_capable=footprint.policy_capable,
                 observed_policy_count=footprint.observed_policy_count,
                 active_policy_count=footprint.active_policy_count,
@@ -823,6 +836,7 @@ def build_policies_list_response() -> PoliciesListResponse:
                 binding_sid_count=footprint.binding_sid_count,
                 srv6_binding_sid_count=footprint.srv6_binding_sid_count,
                 detail_record_count=footprint.detail_record_count,
+                detail_blocker_reason=footprint.detail_blocker_reason,
                 notes=footprint.notes,
             )
             for footprint in snapshot.target_footprints

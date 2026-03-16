@@ -14,7 +14,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## SR Policy Observability Overview\nThis dashboard summarizes the current bounded SR policy slice exposed by the platform. It focuses on real Prometheus-backed evidence: collector policy ingestion health, backend policy snapshot readiness, live-empty policy context, bounded static-policy detail when present, persisted policy sync evidence, serving-mode and evidence-posture labels, coverage-gap ratios, and API demand around the policy view.\n\nCurrent limits:\n- The live policy slice still starts with Nokia SR policy counters and only adds bounded static-policy observations where that state is actually exposed.\n- A zero-policy view can still be healthy; live-empty state is explicit and should not be confused with a placeholder response.\n- Observed policy counts and detailed policy record counts are intentionally separated because the bounded read path cannot yet derive per-policy detail for every observed type.\n- Evidence-posture panels here show source, freshness, and bounded-confidence labels only; they are not policy drift validation or pre-change intelligence.\n- Persisted policy sync evidence now exists, but richer per-policy validation history and drift history still do not.\n- Grafana remains observability-only. Policy exploration and future action flows stay in the WebUI and backend.",
+        "content": "## SR Policy Observability Overview\nThis dashboard summarizes the current bounded SR policy slice exposed by the platform. It focuses on real Prometheus-backed evidence: collector policy ingestion health, backend policy snapshot readiness, live-empty policy context, bounded static-policy detail when present, persisted policy sync evidence, serving-mode and evidence-posture labels, detail-ready target posture, coverage-gap ratios, and API demand around the policy view.\n\nCurrent limits:\n- The live policy slice still starts with Nokia SR policy counters and only adds bounded static-policy observations where that state is actually exposed.\n- A zero-policy view can still be healthy; live-empty state is explicit and should not be confused with a placeholder response.\n- Observed policy counts and detailed policy record counts are intentionally separated because the bounded read path cannot yet derive per-policy detail for every observed type.\n- Per-target blocker reasons belong to the Policies page and verifier. Grafana mirrors that blocker posture numerically through detail-ready-target gaps and live-or-detail-gap flags only.\n- Evidence-posture panels here show source, freshness, and bounded-confidence labels only; they are not policy drift validation or pre-change intelligence.\n- Persisted policy sync evidence now exists, but richer per-policy validation history and drift history still do not.\n- Grafana remains observability-only. Policy exploration and future action flows stay in the WebUI and backend.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -978,7 +978,7 @@
       },
       "id": 18,
       "options": {
-        "content": "### Policy History Status\nThe current policy path now has bounded persisted sync evidence, but it is still not a full policy history system.\n\nWhat this means right now:\n- policy counts and collection health are real and useful\n- bounded static-policy detail can appear when present, but detail coverage can still be lower than the observed policy count\n- a healthy live-empty policy view is expected when no SR policies are currently observed\n- persisted policy sync age, counts, and result posture are now visible\n- richer policy drift evidence and per-policy validation history still do not yet exist, so they remain intentionally unfaked in Grafana",
+        "content": "### Policy History Status\nThe current policy path now has bounded persisted sync evidence, but it is still not a full policy history system.\n\nWhat this means right now:\n- policy counts and collection health are real and useful\n- bounded static-policy detail can appear when present, but detail coverage can still be lower than the observed policy count\n- detail-ready target share shows whether the current slice can move beyond aggregate-only posture on any observed targets\n- a healthy live-empty policy view is expected when no SR policies are currently observed\n- persisted policy sync age, counts, and result posture are now visible\n- richer policy drift evidence and per-policy validation history still do not yet exist, so they remain intentionally unfaked in Grafana",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -1082,6 +1082,11 @@
           "expr": "platform_app_api_policy_records / clamp_min(platform_app_api_policy_observed_policy_count, 1)",
           "legendFormat": "detailed record coverage",
           "refId": "B"
+        },
+        {
+          "expr": "platform_gnmi_collector_policy_detail_ready_targets / clamp_min(platform_gnmi_collector_policy_observed_targets, 1)",
+          "legendFormat": "detail-ready target share",
+          "refId": "C"
         }
       ],
       "title": "Coverage Share",
@@ -1130,9 +1135,14 @@
           "expr": "(platform_app_api_policy_observed_policy_count > bool 0) * (platform_app_api_policy_records == bool 0)",
           "legendFormat": "detail gap posture",
           "refId": "B"
+        },
+        {
+          "expr": "(clamp_min(platform_gnmi_collector_policy_observed_targets - platform_gnmi_collector_policy_detail_ready_targets, 0) > bool 0)",
+          "legendFormat": "detail-blocked targets present",
+          "refId": "C"
         }
       ],
-      "title": "Current Evidence Flags",
+      "title": "Current Blocker Flags",
       "type": "bargauge"
     },
     {
@@ -1249,5 +1259,5 @@
   "timezone": "browser",
   "title": "SR Policy Overview",
   "uid": "sr-policy-overview",
-  "version": 8
+  "version": 9
 }

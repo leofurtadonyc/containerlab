@@ -45,7 +45,7 @@ Current maturity by area:
 
 Strongest remaining evidence gap:
 
-- topology truth depth remains the clearest remaining bounded candidate because the live stack already exposes stable topology evidence and the accepted week 14 slice closed the narrower pairing-vocabulary gap end to end, leaving the broader still-bounded question of how explicitly the platform should decompose `completeness=partial` and topology `degraded_scope_summary` without pretending full truth
+- topology truth depth remains the clearest remaining bounded candidate because the live stack already exposes stable topology evidence and the accepted week 14 slice closed the narrower pairing-vocabulary gap end to end; the next smaller follow-on is now defined in docs as one explicit topology partiality decomposition contract that separates inference-boundedness, endpoint-coverage limits, and collection degradation instead of compressing them into broad `completeness=partial` and topology `degraded_scope_summary` wording
 - policy detail remains important but is not the best immediate next cycle, because the current lab now reports observed policies but still exposes `detail_mode=counters_only`, `empty_reason=per_policy_details_unavailable`, zero detail-ready targets, and zero normalized records, so a policy-first cycle would still risk overreading source detail that is not yet derivable
 - workflow implementation, dry-run behavior, and workflow-owned storage remain out of scope, but they are no longer the right immediate planning target for the next cycle either
 
@@ -54,13 +54,15 @@ Bounded next steps:
 - preserve `Phase 2 — read-only product foundation` and the `conditionally_ready_with_explicit_limits` operating boundary
 - keep the accepted week 13 identity no-change outcome closed unless a later concrete consumer proves the remaining item-level identity gap matters in practice
 - keep the accepted week 14 endpoint-pairing implementation outcome closed as well; do not reopen pairing-consumption work across product, observability, tests, or verifier surfaces by default
-- only reopen topology for one further bounded truth-depth follow-on if there is a concrete next gain in sharpening broad `partial` and topology `degraded_scope_summary` semantics where current evidence already exists
+- keep the newly defined topology partiality decomposition contract as the only justified topology follow-on in this area, and only reopen topology code work if there is still a concrete next gain in implementing that already-bounded split where current evidence already exists
 - keep any later policy follow-on conditional on nonzero detail-ready targets and nonzero normalized policy records from the live collector path rather than reopening product semantics by default
 - preserve `Phase 2 — read-only product foundation` until workflow records, workflow-owned APIs, and validation outputs are all real
 
 ## Recommendation For The Next Bounded Cycle
 
-Recommendation: `reassess_one_bounded_topology_truth_follow_on`
+Recommendation: keep the next topology cycle limited to the now-defined bounded
+topology partiality decomposition contract, and only implement it later if a
+concrete truth-depth gain still justifies code changes.
 
 Interpret that recommendation narrowly.
 
@@ -74,14 +76,15 @@ Why this is the right next-cycle focus:
 
 - the accepted week 13 work closed the default identity lane with a documented no-change decision rather than exposing a new must-build contract gap
 - the accepted week 14 work closed the narrower endpoint-pairing and single-sided-link coverage gap across collector, backend, product, observability, tests, and verifier behavior rather than leaving that slice as a pending recommendation
+- the smaller topology partiality decomposition contract is now explicitly defined in `platform/schemas/topology/topology-read-path-coverage-semantics.md`, so the next cycle no longer needs another discovery pass in this area
 - runtime hardening and verification are now strong enough for the current bounded scope and are no longer the primary bottleneck
-- topology still exposes the clearest remaining live truth gap, but the honest next question is no longer whether to add pairing vocabulary; it is whether one later bounded follow-on should sharpen broad `partial` and `degraded_scope_summary` semantics from the evidence already in hand, while policy remains more blocked by absent derivable per-policy source detail in the current lab
+- topology still exposes the clearest remaining live truth gap, but the honest next question is no longer whether to add pairing vocabulary; that vocabulary is already complete, and the narrower remaining step is the now-defined contract for separating inference-boundedness, endpoint-coverage limits, and collection degradation from the evidence already in hand, while policy remains more blocked by absent derivable per-policy source detail in the current lab
 
 The recommended next-cycle slice should stay limited to:
 
 - checkpointing the accepted week 14 result honestly and preserving the current safe-use boundary first
 - reopening topology only if a concrete follow-on remains after that checkpoint review
-- if reopened, tightening only the still-broad `partial` and `degraded_scope_summary` semantics so collection degradation, inference-boundedness, and endpoint-coverage limits are separated more cleanly where the current evidence supports that split
+- if reopened, tightening only the still-broad `partial` and `degraded_scope_summary` semantics so inference-boundedness, endpoint-coverage limits, and collection degradation are separated more cleanly where the current evidence supports that split
 
 ## Phased Roadmap
 
@@ -151,7 +154,7 @@ Based on the current repo state, the next likely work should be:
 
 1. preserve the current `conditionally_ready_with_explicit_limits` operating boundary and keep all near-term work inside the Phase 2 read-only safe-use envelope
 2. keep the accepted week 13 identity outcome closed by default; only reopen deterministic or snapshot-scoped readiness/capability item IDs if a concrete later consumer proves the existing anchors insufficient
-3. only reopen one bounded topology truth-depth follow-on if the next concrete gain is sharper decomposition of broad `partial` and topology `degraded_scope_summary` semantics rather than any repeat of the completed week 14 pairing-consumption work; otherwise preserve the current checkpoint and continue bounded Phase 2 product deepening elsewhere
+3. treat the newly defined topology partiality decomposition contract as the only justified topology reopening in this area, and only implement it later if the concrete next gain is still explicit decomposition of broad `partial` and topology `degraded_scope_summary` semantics into inference-boundedness, endpoint-coverage limits, and collection degradation rather than any repeat of the completed week 14 pairing-consumption work; otherwise preserve the current checkpoint and continue bounded Phase 2 product deepening elsewhere
 
 ## Boundary Reminder
 

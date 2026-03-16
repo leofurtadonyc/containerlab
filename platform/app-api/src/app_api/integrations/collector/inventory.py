@@ -2,13 +2,19 @@
 
 import json
 from dataclasses import dataclass
+from time import perf_counter
 from typing import Literal
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from app_api.config.settings import get_settings
+from app_api.integrations.collector.cache import SnapshotCache
+from app_api.integrations.collector.failure import (
+    CollectorFetchErrorKind,
+    classify_collector_fetch_failure,
+)
 
 
 class CollectorInventoryRecord(BaseModel):
@@ -51,6 +57,9 @@ class CollectorInventorySnapshot(BaseModel):
     degraded_scope_summary: str
     records: list[CollectorInventoryRecord]
     notes: list[str]
+    timeout_budget_seconds: int = 0
+    fetch_duration_seconds: float | None = None
+    fetch_error_kind: CollectorFetchErrorKind | None = None
     fetch_error: str | None = None
 
 
@@ -60,14 +69,28 @@ class CollectorInventoryClient:
 
     source_endpoint: str
     timeout_seconds: int
+    cache_ttl_seconds: int
+    unavailable_cache_ttl_seconds: int
 
-    def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
-        """Read the live normalized inventory snapshot from the collector."""
+    def _load_inventory_snapshot(self) -> CollectorInventorySnapshot:
+        """Load the live normalized inventory snapshot from the collector."""
         snapshot_url = f"{self.source_endpoint.rstrip('/')}/inventory/snapshot"
+        started_at = perf_counter()
         try:
             with urlopen(snapshot_url, timeout=self.timeout_seconds) as response:
                 payload = json.loads(response.read().decode("utf-8"))
-        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+            records = [
+                CollectorInventoryRecord.model_validate(record)
+                for record in payload.get("records", [])
+            ]
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, ValidationError) as exc:
+            fetch_duration_seconds = perf_counter() - started_at
+            failure = classify_collector_fetch_failure(
+                exc,
+                boundary_label="inventory snapshot",
+                snapshot_url=snapshot_url,
+                timeout_seconds=self.timeout_seconds,
+            )
             return CollectorInventorySnapshot(
                 integration="gnmi_collector_inventory",
                 status="collector_unavailable",
@@ -85,7 +108,10 @@ class CollectorInventoryClient:
                 ),
                 records=[],
                 notes=[],
-                fetch_error=str(exc),
+                timeout_budget_seconds=self.timeout_seconds,
+                fetch_duration_seconds=fetch_duration_seconds,
+                fetch_error_kind=failure.kind,
+                fetch_error=failure.detail,
             )
 
         status_map = {
@@ -93,10 +119,7 @@ class CollectorInventoryClient:
             "partial": "partial_live_feed",
             "failed": "collector_unavailable",
         }
-        records = [
-            CollectorInventoryRecord.model_validate(record)
-            for record in payload.get("records", [])
-        ]
+        fetch_duration_seconds = perf_counter() - started_at
         return CollectorInventorySnapshot(
             integration="gnmi_collector_inventory",
             status=status_map.get(payload.get("delivery_status"), "collector_unavailable"),
@@ -115,8 +138,33 @@ class CollectorInventoryClient:
             ),
             records=records,
             notes=payload.get("notes", []),
+            timeout_budget_seconds=self.timeout_seconds,
+            fetch_duration_seconds=fetch_duration_seconds,
+            fetch_error_kind=None,
             fetch_error=None,
         )
+
+    def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+        """Read the live normalized inventory snapshot from the collector."""
+        snapshot_key = (self.source_endpoint, self.timeout_seconds)
+        return _inventory_snapshot_cache.get_or_load(
+            snapshot_key=snapshot_key,
+            ttl_seconds=self.cache_ttl_seconds,
+            ttl_resolver=lambda snapshot: (
+                self.unavailable_cache_ttl_seconds
+                if snapshot.status == "collector_unavailable"
+                else self.cache_ttl_seconds
+            ),
+            loader=self._load_inventory_snapshot,
+        )
+
+
+_inventory_snapshot_cache: SnapshotCache[CollectorInventorySnapshot] = SnapshotCache()
+
+
+def clear_inventory_snapshot_cache() -> None:
+    """Clear the short-lived inventory snapshot cache."""
+    _inventory_snapshot_cache.clear()
 
 
 def get_collector_inventory_client() -> CollectorInventoryClient:
@@ -124,5 +172,7 @@ def get_collector_inventory_client() -> CollectorInventoryClient:
     settings = get_settings()
     return CollectorInventoryClient(
         source_endpoint=settings.gnmi_collector_url,
-        timeout_seconds=settings.gnmi_collector_timeout_seconds,
+        timeout_seconds=settings.get_gnmi_collector_inventory_timeout_seconds(),
+        cache_ttl_seconds=settings.gnmi_collector_snapshot_cache_ttl_seconds,
+        unavailable_cache_ttl_seconds=settings.gnmi_collector_unavailable_snapshot_cache_ttl_seconds,
     )

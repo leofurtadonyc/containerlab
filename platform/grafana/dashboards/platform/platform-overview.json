@@ -15,7 +15,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## Platform Observability Overview\nThis dashboard follows the current read-only platform boundary: Prometheus scrape health, backend API responsiveness, collector-backed snapshot signals, bounded persisted sync-history evidence, one bounded readiness-support posture slice, and a small amount of honest live-versus-persisted or backend-versus-collector comparison context where those metrics already exist.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- Inventory, topology, policy, and bounded readiness-support freshness now surface where the backend already owns those metrics.\n- Collector read-path coverage, observation age, and detail-ready gaps are visualized here as numeric observability signals; the product-facing degraded-scope summaries still belong in `app-web`.\n- Cross-slice posture panels show freshness, persisted sync result mix, and current topology or policy snapshot labels where those backend metrics already exist.\n- Readiness panels here show blocker, coverage, and persisted-snapshot posture only; they are not workflow verdicts or phase-transition control.\n- Comparison panels here show bounded aggregate deltas only; they are not drift engines or product truth.\n- Policy operational truth remains intentionally partial even though bounded policy sync evidence now exists.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels.",
+          "content": "## Platform Observability Overview\nThis dashboard follows the current read-only platform boundary: Prometheus scrape health, backend API responsiveness, collector-backed snapshot signals, bounded persisted sync-history evidence, one bounded readiness-support posture slice, and a small amount of honest live-versus-persisted or backend-versus-collector comparison context where those metrics already exist.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- Inventory, topology, policy, and bounded readiness-support freshness now surface where the backend already owns those metrics.\n- Collector read-path coverage, observation age, and detail-ready gaps are visualized here as numeric observability signals; the product-facing degraded-scope summaries still belong in `app-web`.\n- Collector-boundary latest fetch duration, configured timeout budget, and latest timeout or failure outcome are visualized here as observability-only signals; they explain fallback triggers but do not become product truth records or workflow meaning.\n- Cross-slice posture panels show freshness, persisted sync result mix, and current topology snapshot labels where those backend metrics already exist.\n- Topology partiality is now mirrored through three backend-owned cues where metrics expose them: inference posture, endpoint-pairing posture, and collection posture.\n- Readiness panels here show blocker, coverage, and persisted-snapshot posture only; they are not workflow verdicts or phase-transition control.\n- Comparison panels here show bounded aggregate deltas only; they are not drift engines or product truth.\n- Policy operational truth remains intentionally partial even though bounded policy sync evidence now exists.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -1264,7 +1264,7 @@
           "refId": "F"
         }
       ],
-      "description": "Cross-slice gap counts plus the current topology paired-versus-single-sided link evidence split. Topology values remain bounded read-path observability, not validation verdicts.",
+      "description": "Cross-slice gap counts plus the current topology paired-versus-single-sided link evidence split. Topology values remain bounded read-path observability that supports endpoint-pairing interpretation, not validation verdicts.",
       "title": "Coverage, Pairing, And Detail Gaps",
       "type": "bargauge"
     },
@@ -1361,12 +1361,12 @@
         },
         {
           "expr": "platform_app_api_topology_coverage_posture",
-          "legendFormat": "pairing • {{endpoint_pairing_posture}}",
+          "legendFormat": "{{inference_posture}} • {{endpoint_pairing_posture}} • {{collection_posture}}",
           "refId": "B"
         }
       ],
-      "description": "Backend-owned topology snapshot and endpoint-pairing posture labels projected into Grafana for observability. These labels support interpretation but do not turn the dashboard into the product contract.",
-      "title": "Topology Snapshot And Pairing Labels",
+      "description": "Backend-owned topology snapshot and partiality posture labels projected into Grafana for observability. These labels support interpretation but do not turn the dashboard into the product contract.",
+      "title": "Topology Snapshot And Partiality Labels",
       "type": "bargauge"
     },
     {
@@ -1588,6 +1588,142 @@
       ],
       "title": "Readiness Evidence Coverage",
       "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 78
+      },
+      "id": 40,
+      "panels": [],
+      "title": "Collector Boundary Latency Posture",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 79
+      },
+      "id": 41,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_collector_boundary_latest_fetch_duration_seconds{model_family=~\"inventory|topology|policy\"}",
+          "legendFormat": "{{model_family}} • {{outcome}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Latest Collector Boundary Fetch Duration",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 79
+      },
+      "id": 42,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_collector_boundary_timeout_budget_seconds{model_family=~\"inventory|topology|policy\"}",
+          "legendFormat": "{{model_family}} budget",
+          "refId": "A"
+        }
+      ],
+      "title": "Collector Boundary Timeout Budgets",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 79
+      },
+      "id": 43,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "platform_app_api_collector_boundary_latest_fetch_posture{model_family=~\"inventory|topology|policy\"}",
+          "legendFormat": "{{model_family}} • {{outcome}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Latest Collector Boundary Outcome",
+      "type": "bargauge"
     }
   ],
   "refresh": "30s",
@@ -1608,5 +1744,5 @@
   "timezone": "browser",
   "title": "Platform Overview",
   "uid": "platform-overview",
-  "version": 7
+  "version": 8
 }

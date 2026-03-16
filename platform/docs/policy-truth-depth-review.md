@@ -42,6 +42,7 @@ collector metrics, app-api metrics, and `verify-core-runtime` currently shows:
 - `static_policy_count=2`
 - `count=0`
 - `detail_ready_target_count=0`
+- per-target `detail_blocker_reason` posture is now exposed through `target_footprints`
 
 The current evidence-confidence summary is therefore honest and important:
 
@@ -99,20 +100,22 @@ It is already expressing the stop line honestly.
 
 ### WebUI posture
 
-`app-web` already renders the important policy trust cues the current backend
-exposes.
+`app-web` now renders the important policy trust cues the current backend
+exposes, including the sharper per-target blocker slice added after the initial
+review.
 
-It already makes visible:
+It now makes visible:
 
 - live-empty posture when real
 - detail-limited posture when real
 - aggregate-only evidence posture
 - persisted fallback posture
 - coverage gaps between observed policies and detailed records
+- per-target `detail_blocker_reason` posture for each exposed target footprint
 - comparison posture without claiming drift or workflow truth
 
-There is no obvious frontend-semantic gap that justifies a policy-first cycle by
-itself.
+That means the product now explains the current stop line more directly, but it
+does not change the truth boundary that still blocks deeper policy work.
 
 ### Grafana posture
 
@@ -123,19 +126,24 @@ It shows:
 - policy ingestion health
 - observed-versus-detailed policy gaps
 - target coverage gaps
+- detail-ready target share and blocker-presence flags that mirror the same
+  bounded blocker posture numerically
 - backend-versus-collector deltas
 - bounded evidence-posture signals
 
-That is already the right role boundary.
+Per-target blocker reason codes still belong to the product and verifier until
+they exist as durable metric labels. That is still the right role boundary.
 
 ### Verifier posture
 
 `verify-core-runtime` already checks the important runtime policy signals.
 
-On the current live stack it emits the bounded notices that matter:
+On the current live stack it now emits the bounded notices that matter:
 
 - zero policy detail-ready targets
 - `detail_mode=counters_only`
+- per-target blocker reasons such as `per_policy_details_unavailable` when the
+  live response exposes them
 
 It no longer reports `no_policies_observed` on the current deployment because
 the live lab now shows observed policies.
@@ -246,6 +254,8 @@ It does support a clearer checkpoint:
 
 - policy is no longer purely live-empty on the current lab
 - policy remains aggregate-only and explicitly blocked at per-policy truth
+- the blocker posture is now surfaced more directly in product, verifier, and
+  observability without changing the truth boundary
 - the next honest policy move is conditional on nonzero detail-ready source
   evidence, not on more product semantics
 

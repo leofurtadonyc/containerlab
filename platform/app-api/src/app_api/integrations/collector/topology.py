@@ -2,13 +2,19 @@
 
 import json
 from dataclasses import dataclass
+from time import perf_counter
 from typing import Literal
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from app_api.config.settings import get_settings
+from app_api.integrations.collector.cache import SnapshotCache
+from app_api.integrations.collector.failure import (
+    CollectorFetchErrorKind,
+    classify_collector_fetch_failure,
+)
 
 
 class CollectorTopologyNodeRecord(BaseModel):
@@ -50,6 +56,8 @@ class CollectorTopologySnapshot(BaseModel):
     collection_failure_count: int
     oldest_observed_at: str | None = None
     newest_observed_at: str | None = None
+    inference_posture: Literal["inferred", "unknown"] | None = None
+    collection_posture: Literal["ok", "degraded", "blocked", "unknown"] | None = None
     degraded_scope_summary: str
     endpoint_pairing_posture: Literal[
         "paired", "partially_paired", "single_sided", "unknown"
@@ -65,6 +73,9 @@ class CollectorTopologySnapshot(BaseModel):
     notes: list[str] = Field(default_factory=list)
     nodes: list[CollectorTopologyNodeRecord] = Field(default_factory=list)
     links: list[CollectorTopologyLinkRecord] = Field(default_factory=list)
+    timeout_budget_seconds: int = 0
+    fetch_duration_seconds: float | None = None
+    fetch_error_kind: CollectorFetchErrorKind | None = None
     fetch_error: str | None = None
 
 
@@ -74,14 +85,32 @@ class CollectorTopologyClient:
 
     source_endpoint: str
     timeout_seconds: int
+    cache_ttl_seconds: int
+    unavailable_cache_ttl_seconds: int
 
-    def read_topology_snapshot(self) -> CollectorTopologySnapshot:
-        """Read the live normalized topology snapshot from the collector."""
+    def _load_topology_snapshot(self) -> CollectorTopologySnapshot:
+        """Load the live normalized topology snapshot from the collector."""
         snapshot_url = f"{self.source_endpoint.rstrip('/')}/topology/snapshot"
+        started_at = perf_counter()
         try:
             with urlopen(snapshot_url, timeout=self.timeout_seconds) as response:
                 payload = json.loads(response.read().decode("utf-8"))
-        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+            nodes = [
+                CollectorTopologyNodeRecord.model_validate(record)
+                for record in payload.get("nodes", [])
+            ]
+            links = [
+                CollectorTopologyLinkRecord.model_validate(record)
+                for record in payload.get("links", [])
+            ]
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, ValidationError) as exc:
+            fetch_duration_seconds = perf_counter() - started_at
+            failure = classify_collector_fetch_failure(
+                exc,
+                boundary_label="topology snapshot",
+                snapshot_url=snapshot_url,
+                timeout_seconds=self.timeout_seconds,
+            )
             return CollectorTopologySnapshot(
                 integration="gnmi_collector_topology",
                 status="collector_unavailable",
@@ -94,6 +123,8 @@ class CollectorTopologyClient:
                 collection_failure_count=0,
                 oldest_observed_at=None,
                 newest_observed_at=None,
+                inference_posture=None,
+                collection_posture="blocked",
                 degraded_scope_summary=(
                     "No configured topology targets returned usable live topology evidence."
                 ),
@@ -105,7 +136,10 @@ class CollectorTopologyClient:
                 notes=[],
                 nodes=[],
                 links=[],
-                fetch_error=str(exc),
+                timeout_budget_seconds=self.timeout_seconds,
+                fetch_duration_seconds=fetch_duration_seconds,
+                fetch_error_kind=failure.kind,
+                fetch_error=failure.detail,
             )
 
         status_map = {
@@ -113,6 +147,7 @@ class CollectorTopologyClient:
             "partial": "partial_live_feed",
             "failed": "collector_unavailable",
         }
+        fetch_duration_seconds = perf_counter() - started_at
         return CollectorTopologySnapshot(
             integration="gnmi_collector_topology",
             status=status_map.get(payload.get("delivery_status"), "collector_unavailable"),
@@ -125,6 +160,8 @@ class CollectorTopologyClient:
             collection_failure_count=payload.get("collection_failure_count", 0),
             oldest_observed_at=payload.get("oldest_observed_at"),
             newest_observed_at=payload.get("newest_observed_at"),
+            inference_posture=payload.get("inference_posture"),
+            collection_posture=payload.get("collection_posture"),
             degraded_scope_summary=payload.get(
                 "degraded_scope_summary",
                 "Topology degraded scope was not provided by the collector.",
@@ -139,16 +176,35 @@ class CollectorTopologyClient:
             completeness=payload.get("completeness", "unknown"),
             observed_at=payload.get("observed_at"),
             notes=payload.get("notes", []),
-            nodes=[
-                CollectorTopologyNodeRecord.model_validate(record)
-                for record in payload.get("nodes", [])
-            ],
-            links=[
-                CollectorTopologyLinkRecord.model_validate(record)
-                for record in payload.get("links", [])
-            ],
+            nodes=nodes,
+            links=links,
+            timeout_budget_seconds=self.timeout_seconds,
+            fetch_duration_seconds=fetch_duration_seconds,
+            fetch_error_kind=None,
             fetch_error=None,
         )
+
+    def read_topology_snapshot(self) -> CollectorTopologySnapshot:
+        """Read the live normalized topology snapshot from the collector."""
+        snapshot_key = (self.source_endpoint, self.timeout_seconds)
+        return _topology_snapshot_cache.get_or_load(
+            snapshot_key=snapshot_key,
+            ttl_seconds=self.cache_ttl_seconds,
+            ttl_resolver=lambda snapshot: (
+                self.unavailable_cache_ttl_seconds
+                if snapshot.status == "collector_unavailable"
+                else self.cache_ttl_seconds
+            ),
+            loader=self._load_topology_snapshot,
+        )
+
+
+_topology_snapshot_cache: SnapshotCache[CollectorTopologySnapshot] = SnapshotCache()
+
+
+def clear_topology_snapshot_cache() -> None:
+    """Clear the short-lived topology snapshot cache."""
+    _topology_snapshot_cache.clear()
 
 
 def get_collector_topology_client() -> CollectorTopologyClient:
@@ -156,5 +212,7 @@ def get_collector_topology_client() -> CollectorTopologyClient:
     settings = get_settings()
     return CollectorTopologyClient(
         source_endpoint=settings.gnmi_collector_url,
-        timeout_seconds=settings.gnmi_collector_timeout_seconds,
+        timeout_seconds=settings.get_gnmi_collector_topology_timeout_seconds(),
+        cache_ttl_seconds=settings.gnmi_collector_snapshot_cache_ttl_seconds,
+        unavailable_cache_ttl_seconds=settings.gnmi_collector_unavailable_snapshot_cache_ttl_seconds,
     )

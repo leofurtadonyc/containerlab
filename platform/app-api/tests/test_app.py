@@ -1,18 +1,26 @@
 from datetime import datetime
+from threading import Lock
+from time import sleep
 from types import SimpleNamespace
+from urllib.error import URLError
 
 from fastapi.testclient import TestClient
 
 from app_api.integrations.collector.inventory import (
     CollectorInventoryRecord,
     CollectorInventorySnapshot,
+    clear_inventory_snapshot_cache,
+)
+from app_api.integrations.collector.policies import (
+    CollectorPolicySnapshot,
+    clear_policy_snapshot_cache,
 )
 from app_api.integrations.odl import OdlControllerObservation
-from app_api.integrations.collector.policies import CollectorPolicySnapshot
 from app_api.integrations.collector.topology import (
     CollectorTopologyLinkRecord,
     CollectorTopologyNodeRecord,
     CollectorTopologySnapshot,
+    clear_topology_snapshot_cache,
 )
 from app_api.main import app
 from app_api.models.inventory import InventoryDevice
@@ -36,9 +44,18 @@ from app_api.persistence.read_side import (
     PersistedPolicySnapshotSummary,
     PersistedTopologySnapshot,
 )
+from app_api.config.settings import get_settings
+from app_api.schemas.platform import PlatformReadPathStatus
 
 
 client = TestClient(app)
+
+
+def setup_function() -> None:
+    get_settings.cache_clear()
+    clear_inventory_snapshot_cache()
+    clear_topology_snapshot_cache()
+    clear_policy_snapshot_cache()
 
 
 def _disable_read_side_persistence(monkeypatch) -> None:
@@ -123,6 +140,61 @@ def _build_live_inventory_snapshot() -> CollectorInventorySnapshot:
         notes=[
             "Inventory coverage is currently bounded to the targets that returned normalized live inventory evidence.",
         ],
+        timeout_budget_seconds=3,
+        fetch_duration_seconds=0.184,
+        fetch_error=None,
+    )
+
+
+def _build_partial_live_inventory_snapshot() -> CollectorInventorySnapshot:
+    return CollectorInventorySnapshot(
+        integration="gnmi_collector_inventory",
+        status="partial_live_feed",
+        destination_service="app-api",
+        source_endpoint="http://gnmi-collector:9804/inventory/snapshot",
+        configured_target_count=3,
+        observed_target_count=2,
+        collection_success_count=2,
+        collection_partial_count=0,
+        collection_failure_count=1,
+        oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        newest_observed_at="2026-03-09T19:25:10.500000+00:00",
+        degraded_scope_summary="Inventory delivery remains bounded because one configured target did not return usable live inventory evidence.",
+        records=[
+            CollectorInventoryRecord(
+                device_id="PE1",
+                vendor="nokia",
+                platform="7750 SR-1",
+                software_version="B-25.10.R2",
+                role="pe",
+                management_address="172.20.20.107",
+                collector_status="ok",
+                capability_summary="partially_supported",
+                normalization_status="normalized_live",
+                source="gnmi",
+                source_target="PE1",
+                notes=["Collected live over gNMI."],
+            ),
+            CollectorInventoryRecord(
+                device_id="P1",
+                vendor="nokia",
+                platform="7750 SR-1",
+                software_version="B-25.10.R2",
+                role="p",
+                management_address="172.20.20.109",
+                collector_status="ok",
+                capability_summary="partially_supported",
+                normalization_status="normalized_live",
+                source="gnmi",
+                source_target="P1",
+                notes=["Collected live over gNMI."],
+            ),
+        ],
+        notes=[
+            "Inventory coverage is currently bounded to the targets that returned normalized live inventory evidence.",
+        ],
+        timeout_budget_seconds=3,
+        fetch_duration_seconds=1.842,
         fetch_error=None,
     )
 
@@ -140,6 +212,8 @@ def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
         collection_failure_count=0,
         oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
         newest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        inference_posture="inferred",
+        collection_posture="ok",
         degraded_scope_summary="All configured topology targets returned usable live topology evidence within the current bounded inference slice.",
         endpoint_pairing_posture="paired",
         paired_link_count=1,
@@ -184,6 +258,8 @@ def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
                 },
             ),
         ],
+        timeout_budget_seconds=3,
+        fetch_duration_seconds=0.228,
         links=[
             CollectorTopologyLinkRecord(
                 link_id="P1--PE1",
@@ -218,6 +294,8 @@ def _build_live_mixed_topology_snapshot() -> CollectorTopologySnapshot:
         collection_failure_count=0,
         oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
         newest_observed_at="2026-03-09T19:25:11.500000+00:00",
+        inference_posture="inferred",
+        collection_posture="degraded",
         degraded_scope_summary="Topology delivery remains bounded because one or more inferred links still rely on single-sided endpoint evidence.",
         endpoint_pairing_posture="partially_paired",
         paired_link_count=1,
@@ -343,6 +421,7 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
                 "binding_sid_count": 0,
                 "srv6_binding_sid_count": 0,
                 "detail_record_count": 1,
+                "detail_blocker_reason": "none",
                 "notes": [],
             },
             {
@@ -360,12 +439,13 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
                 "binding_sid_count": 0,
                 "srv6_binding_sid_count": 0,
                 "detail_record_count": 1,
+                "detail_blocker_reason": "none",
                 "notes": [],
             },
         ],
         notes=[
             "Policy inventory is currently bounded to live Nokia SR policy counters collected over gNMI.",
-            "When static-policy state is exposed, the collector now derives bounded per-policy observations without claiming full SR policy truth.",
+            "When Nokia static-policy config is exposed, the collector derives bounded per-policy observations without claiming full SR policy truth.",
         ],
         records=[
             {
@@ -387,11 +467,11 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
                 ],
                 "intent_state": "declared",
                 "observed_state": "active",
-                "support_state": "partially_supported",
+                "support_state": "supported",
                 "health_state": "healthy",
                 "source": "gnmi",
                 "notes": [
-                    "Observed from Nokia static-policy state on PE1 over gNMI.",
+                    "Observed from Nokia static-policy config on PE1 over gNMI.",
                     "This remains a bounded static-policy read slice rather than full SR policy truth.",
                 ],
             },
@@ -418,11 +498,74 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
                 "health_state": "degraded",
                 "source": "gnmi",
                 "notes": [
-                    "Observed from Nokia static-policy state on P1 over gNMI.",
+                    "Observed from Nokia static-policy config on P1 over gNMI.",
                     "This remains a bounded static-policy read slice rather than full SR policy truth.",
                 ],
             },
         ],
+        timeout_budget_seconds=3,
+        fetch_duration_seconds=0.312,
+        fetch_error=None,
+    )
+
+
+def _build_partial_live_policy_snapshot() -> CollectorPolicySnapshot:
+    live_snapshot = _build_live_policy_snapshot()
+    partial_target_footprints = [dict(footprint) for footprint in live_snapshot.target_footprints]
+    partial_target_footprints[1]["collection_status"] = "partial"
+    partial_target_footprints[1]["notes"] = [
+        "One configured target did not return usable live policy evidence during this bounded collection window."
+    ]
+    return CollectorPolicySnapshot(
+        integration="gnmi_collector_policy",
+        status="partial_live_feed",
+        destination_service="app-api",
+        source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+        configured_target_count=34,
+        collection_success_count=33,
+        collection_partial_count=0,
+        collection_failure_count=1,
+        oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        newest_observed_at="2026-03-09T19:25:11.500000+00:00",
+        detail_ready_target_count=2,
+        degraded_scope_summary="Policy delivery remains bounded because one configured target did not return usable live policy evidence.",
+        sync_source="gnmi_collector_policy_sr_counters",
+        sync_status="degraded",
+        completeness="partial",
+        detail_mode="static_policies_when_present",
+        observed_at="2026-03-09T19:25:11.500000+00:00",
+        observed_target_count=33,
+        policy_capable_target_count=33,
+        observed_target_role_counts={
+            "cpe": 5,
+            "isp": 2,
+            "noc": 2,
+            "p": 16,
+            "pe": 8,
+        },
+        policy_capable_target_role_counts={
+            "cpe": 5,
+            "isp": 2,
+            "noc": 2,
+            "p": 16,
+            "pe": 8,
+        },
+        policy_count=2,
+        active_policy_count=1,
+        static_policy_count=2,
+        static_local_policy_count=1,
+        static_non_local_policy_count=1,
+        bgp_policy_count=0,
+        ttm_preference_count=476,
+        binding_sid_count=1,
+        srv6_binding_sid_count=0,
+        target_footprints=partial_target_footprints,
+        notes=[
+            "Policy coverage is currently bounded to the targets that returned usable live policy evidence.",
+        ],
+        records=live_snapshot.records,
+        timeout_budget_seconds=3,
+        fetch_duration_seconds=1.913,
         fetch_error=None,
     )
 
@@ -475,6 +618,7 @@ def _build_live_empty_policy_snapshot() -> CollectorPolicySnapshot:
                 "binding_sid_count": 0,
                 "srv6_binding_sid_count": 0,
                 "detail_record_count": 0,
+                "detail_blocker_reason": "no_policies_observed",
                 "notes": [
                     "Stable SR policy resource counters are visible on this target even though no SR policies are currently observed."
                 ],
@@ -494,6 +638,7 @@ def _build_live_empty_policy_snapshot() -> CollectorPolicySnapshot:
                 "binding_sid_count": 0,
                 "srv6_binding_sid_count": 0,
                 "detail_record_count": 0,
+                "detail_blocker_reason": "no_policies_observed",
                 "notes": [
                     "Stable SR policy resource counters are visible on this target even though no SR policies are currently observed."
                 ],
@@ -556,6 +701,7 @@ def _build_live_policy_snapshot_without_detail_records() -> CollectorPolicySnaps
                 "binding_sid_count": 0,
                 "srv6_binding_sid_count": 0,
                 "detail_record_count": 0,
+                "detail_blocker_reason": "per_policy_details_unavailable",
                 "notes": [
                     "Observed policy counters are present, but bounded per-policy detail records are unavailable for this target."
                 ],
@@ -575,6 +721,7 @@ def _build_live_policy_snapshot_without_detail_records() -> CollectorPolicySnaps
                 "binding_sid_count": 0,
                 "srv6_binding_sid_count": 0,
                 "detail_record_count": 0,
+                "detail_blocker_reason": "per_policy_details_unavailable",
                 "notes": [
                     "Observed policy counters are present, but bounded per-policy detail records are unavailable for this target."
                 ],
@@ -673,6 +820,26 @@ def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
             binding_sid_count=0,
             srv6_binding_sid_count=0,
             notes=["Served from the latest persisted policy snapshot."],
+            target_footprints=[
+                {
+                    "target_name": "PE1",
+                    "target_role": "pe",
+                    "collection_status": "partial",
+                    "policy_capable": True,
+                    "observed_policy_count": 1,
+                    "active_policy_count": 1,
+                    "static_policy_count": 1,
+                    "static_local_policy_count": 1,
+                    "static_non_local_policy_count": 0,
+                    "bgp_policy_count": 0,
+                    "ttm_preference_count": 28,
+                    "binding_sid_count": 0,
+                    "srv6_binding_sid_count": 0,
+                    "detail_record_count": 1,
+                    "detail_blocker_reason": "none",
+                    "notes": ["Persisted target footprint from the bounded policy read path."],
+                }
+            ],
             records=[
                 {
                     "policy_id": "persisted-policy-1",
@@ -693,7 +860,7 @@ def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
                     ],
                     "intent_state": "declared",
                     "observed_state": "active",
-                    "support_state": "partially_supported",
+                    "support_state": "supported",
                     "health_state": "healthy",
                     "source": "gnmi",
                     "notes": ["Persisted from the bounded policy read path."],
@@ -749,7 +916,7 @@ def _build_previous_persisted_policy_snapshot() -> PersistedPolicySnapshot:
                     ],
                     "intent_state": "declared",
                     "observed_state": "inactive",
-                    "support_state": "partially_supported",
+                    "support_state": "supported",
                     "health_state": "degraded",
                     "source": "gnmi",
                     "notes": ["Persisted from the previous bounded policy read path."],
@@ -1085,8 +1252,18 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert payload["read_paths"][0]["degraded_scope_summary"] == (
         "All configured inventory targets returned normalized live inventory evidence."
     )
+    assert any(
+        "completed in 0.184s within the 3s latency budget" in note
+        for note in payload["read_paths"][0]["notes"]
+    )
     assert payload["read_paths"][1]["model_family"] == "topology"
+    assert payload["read_paths"][1]["inference_posture"] == "inferred"
     assert payload["read_paths"][1]["endpoint_pairing_posture"] == "paired"
+    assert payload["read_paths"][1]["collection_posture"] == "ok"
+    assert any(
+        "completed in 0.228s within the 3s latency budget" in note
+        for note in payload["read_paths"][1]["notes"]
+    )
     assert payload["read_paths"][1]["paired_link_count"] == 1
     assert payload["read_paths"][1]["single_sided_link_count"] == 0
     assert payload["read_paths"][1]["degraded_scope_summary"] == (
@@ -1096,6 +1273,10 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert payload["read_paths"][2]["model_family"] == "policy"
     assert payload["read_paths"][2]["policy_capable_target_count"] == 34
     assert payload["read_paths"][2]["detail_ready_target_count"] == 2
+    assert any(
+        "completed in 0.312s within the 3s latency budget" in note
+        for note in payload["read_paths"][2]["notes"]
+    )
     assert payload["read_paths"][2]["degraded_scope_summary"] == (
         "All configured policy targets returned current counter evidence, but per-policy detail remains bounded to static-policy visibility."
     )
@@ -1103,7 +1284,7 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert "inventory: 2/2 targets, success 2, partial 0, failed 0" in gnmi_component["notes"][0]
     assert "freshness 2026-03-09T19:25:08.500000+00:00 -> 2026-03-09T19:25:08.500000+00:00" in gnmi_component["notes"][0]
     assert gnmi_component["notes"][1] == "All configured inventory targets returned normalized live inventory evidence."
-    assert "endpoint-pairing posture paired, paired links 1, single-sided links 0." in gnmi_component["notes"][2]
+    assert "inference posture inferred, collection posture ok, endpoint-pairing posture paired, paired links 1, single-sided links 0." in gnmi_component["notes"][2]
     assert "detail-ready targets 2." in gnmi_component["notes"][4]
     odl_component = payload["components"][-1]
     assert odl_component["name"] == "odl"
@@ -1160,7 +1341,9 @@ def test_platform_status_endpoint_exposes_mixed_topology_pairing_coverage(monkey
     topology_read_path = payload["read_paths"][1]
     assert topology_read_path["model_family"] == "topology"
     assert topology_read_path["observation_state"] == "degraded"
+    assert topology_read_path["inference_posture"] == "inferred"
     assert topology_read_path["endpoint_pairing_posture"] == "partially_paired"
+    assert topology_read_path["collection_posture"] == "degraded"
     assert topology_read_path["paired_link_count"] == 1
     assert topology_read_path["single_sided_link_count"] == 1
     assert topology_read_path["degraded_scope_summary"] == (
@@ -1169,7 +1352,7 @@ def test_platform_status_endpoint_exposes_mixed_topology_pairing_coverage(monkey
     assert "mix of paired and single-sided endpoint evidence" in topology_read_path["summary"]
     gnmi_component = payload["components"][2]
     assert any(
-        "endpoint-pairing posture partially_paired, paired links 1, single-sided links 1."
+        "inference posture inferred, collection posture degraded, endpoint-pairing posture partially_paired, paired links 1, single-sided links 1."
         in note
         for note in gnmi_component["notes"]
     )
@@ -1178,6 +1361,397 @@ def test_platform_status_endpoint_exposes_mixed_topology_pairing_coverage(monkey
         == "Topology delivery remains bounded because one or more inferred links still rely on single-sided endpoint evidence."
         for note in gnmi_component["notes"]
     )
+
+
+def test_platform_status_endpoint_classifies_collector_boundary_failures(monkeypatch) -> None:
+    class StubOdlClient:
+        def read_controller_observation(self) -> OdlControllerObservation:
+            return OdlControllerObservation(
+                observation_state="ok",
+                observed_source="odl_restconf_capability_probe",
+                observation_summary="ODL probe succeeded.",
+                observed_capabilities=[],
+                notes=[],
+            )
+
+    monkeypatch.setattr(
+        "app_api.services.platform.get_odl_client",
+        lambda: StubOdlClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_inventory_client",
+        lambda: SimpleNamespace(
+            read_inventory_snapshot=lambda: CollectorInventorySnapshot(
+                integration="gnmi_collector_inventory",
+                status="collector_unavailable",
+                destination_service="app-api",
+                source_endpoint="http://gnmi-collector:9804/inventory/snapshot",
+                configured_target_count=0,
+                observed_target_count=0,
+                collection_success_count=0,
+                collection_partial_count=0,
+                collection_failure_count=0,
+                oldest_observed_at=None,
+                newest_observed_at=None,
+                degraded_scope_summary="No configured inventory targets returned usable live inventory evidence.",
+                records=[],
+                notes=[],
+                timeout_budget_seconds=3,
+                fetch_duration_seconds=3.004,
+                fetch_error_kind="timeout_budget_exceeded",
+                fetch_error="Collector boundary exceeded the 3s latency budget while reading inventory snapshot from http://gnmi-collector:9804/inventory/snapshot.",
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_topology_client",
+        lambda: SimpleNamespace(
+            read_topology_snapshot=lambda: CollectorTopologySnapshot(
+                integration="gnmi_collector_topology",
+                status="collector_unavailable",
+                destination_service="app-api",
+                source_endpoint="http://gnmi-collector:9804/topology/snapshot",
+                configured_target_count=0,
+                observed_target_count=0,
+                collection_success_count=0,
+                collection_partial_count=0,
+                collection_failure_count=0,
+                oldest_observed_at=None,
+                newest_observed_at=None,
+                inference_posture=None,
+                collection_posture="blocked",
+                degraded_scope_summary="No configured topology targets returned usable live topology evidence.",
+                topology_id="platform-observed-topology",
+                topology_name="Platform Observed Topology",
+                sync_source="gnmi_collector_topology",
+                sync_status="failed",
+                completeness="unknown",
+                observed_at=None,
+                notes=[],
+                nodes=[],
+                links=[],
+                timeout_budget_seconds=3,
+                fetch_duration_seconds=0.241,
+                fetch_error_kind="invalid_response_payload",
+                fetch_error="Collector boundary returned an invalid normalized payload while reading topology snapshot from http://gnmi-collector:9804/topology/snapshot.",
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_policy_client",
+        lambda: SimpleNamespace(
+            read_policy_snapshot=lambda: CollectorPolicySnapshot(
+                integration="gnmi_collector_policy",
+                status="collector_unavailable",
+                destination_service="app-api",
+                source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+                configured_target_count=0,
+                collection_success_count=0,
+                collection_partial_count=0,
+                collection_failure_count=0,
+                oldest_observed_at=None,
+                newest_observed_at=None,
+                detail_ready_target_count=0,
+                degraded_scope_summary="No configured policy targets returned usable live policy evidence.",
+                sync_source="gnmi_collector_policy",
+                sync_status="failed",
+                completeness="unknown",
+                detail_mode="unknown",
+                observed_at=None,
+                observed_target_count=0,
+                policy_capable_target_count=0,
+                observed_target_role_counts={},
+                policy_capable_target_role_counts={},
+                policy_count=0,
+                active_policy_count=0,
+                static_policy_count=0,
+                static_local_policy_count=0,
+                static_non_local_policy_count=0,
+                bgp_policy_count=0,
+                ttm_preference_count=0,
+                binding_sid_count=0,
+                srv6_binding_sid_count=0,
+                target_footprints=[],
+                notes=[],
+                records=[],
+                timeout_budget_seconds=3,
+                fetch_duration_seconds=0.119,
+                fetch_error_kind="collector_connection_error",
+                fetch_error="Collector boundary connection failed while reading policy snapshot from http://gnmi-collector:9804/policies/snapshot: Connection refused.",
+            )
+        ),
+    )
+
+    response = client.get("/api/v1/platform/status")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["read_paths"][0]["observation_state"] == "unreachable"
+    assert payload["read_paths"][1]["observation_state"] == "degraded"
+    assert payload["read_paths"][2]["observation_state"] == "unreachable"
+    assert any(
+        "exhausted the 3s latency budget after 3.004s" in note
+        for note in payload["read_paths"][0]["notes"]
+    )
+    assert any("3s latency budget" in note for note in payload["read_paths"][0]["notes"])
+    assert any("invalid normalized payload" in note for note in payload["read_paths"][1]["notes"])
+    assert any("connection failed" in note for note in payload["read_paths"][2]["notes"])
+
+
+def test_platform_status_endpoint_reads_collector_paths_sequentially(monkeypatch) -> None:
+    class StubOdlClient:
+        def read_controller_observation(self) -> OdlControllerObservation:
+            return OdlControllerObservation(
+                observation_state="ok",
+                observed_source="odl_restconf_capability_probe",
+                observation_summary="ODL probe succeeded.",
+                observed_capabilities=[],
+                notes=[],
+            )
+
+    active_reads = {"count": 0, "max": 0}
+    read_lock = Lock()
+
+    def make_read_path(model_family: str) -> PlatformReadPathStatus:
+        with read_lock:
+            active_reads["count"] += 1
+            active_reads["max"] = max(active_reads["max"], active_reads["count"])
+
+        sleep(0.01)
+
+        with read_lock:
+            active_reads["count"] -= 1
+
+        return PlatformReadPathStatus(
+            model_family=model_family,
+            observation_state="ok",
+            configured_target_count=34,
+            observed_target_count=34,
+            collection_success_count=34,
+            collection_partial_count=0,
+            collection_failure_count=0,
+            oldest_observed_at=None,
+            newest_observed_at=None,
+            degraded_scope_summary="All configured targets returned usable live evidence.",
+            summary=f"{model_family} read path is healthy.",
+            notes=[],
+        )
+
+    monkeypatch.setattr(
+        "app_api.services.platform.get_odl_client",
+        lambda: StubOdlClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform._build_inventory_read_path_status",
+        lambda: make_read_path("inventory"),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform._build_topology_read_path_status",
+        lambda: make_read_path("topology"),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform._build_policy_read_path_status",
+        lambda: make_read_path("policy"),
+    )
+
+    response = client.get("/api/v1/platform/status")
+
+    assert response.status_code == 200
+    assert active_reads["max"] == 1
+
+
+def test_inventory_collector_client_reuses_recent_snapshot(monkeypatch) -> None:
+    class StubResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return (
+                b'{"delivery_status":"live_ready","configured_target_count":2,'
+                b'"observed_target_count":2,"collection_success_count":2,'
+                b'"collection_partial_count":0,"collection_failure_count":0,'
+                b'"oldest_observed_at":"2026-03-09T19:25:08.500000+00:00",'
+                b'"newest_observed_at":"2026-03-09T19:25:08.500000+00:00",'
+                b'"degraded_scope_summary":"All configured inventory targets returned normalized live inventory evidence.",'
+                b'"records":[],"notes":[]}'
+            )
+
+    call_count = {"value": 0}
+
+    def fake_urlopen(url: str, timeout: int):
+        call_count["value"] += 1
+        return StubResponse()
+
+    monkeypatch.setattr("app_api.integrations.collector.inventory.urlopen", fake_urlopen)
+
+    from app_api.integrations.collector.inventory import CollectorInventoryClient
+
+    client = CollectorInventoryClient(
+        source_endpoint="http://gnmi-collector:9804",
+        timeout_seconds=8,
+        cache_ttl_seconds=15,
+        unavailable_cache_ttl_seconds=2,
+    )
+
+    first_snapshot = client.read_inventory_snapshot()
+    second_snapshot = client.read_inventory_snapshot()
+
+    assert first_snapshot.status == "live_normalized_feed"
+    assert second_snapshot.status == "live_normalized_feed"
+    assert call_count["value"] == 1
+
+
+def test_collector_timeout_settings_allow_path_specific_override(monkeypatch) -> None:
+    monkeypatch.setenv("GNMI_COLLECTOR_TIMEOUT_SECONDS", "3")
+    monkeypatch.setenv("GNMI_COLLECTOR_INVENTORY_TIMEOUT_SECONDS", "2")
+    monkeypatch.setenv("GNMI_COLLECTOR_TOPOLOGY_TIMEOUT_SECONDS", "4")
+    monkeypatch.setenv("GNMI_COLLECTOR_POLICY_TIMEOUT_SECONDS", "5")
+    get_settings.cache_clear()
+
+    from app_api.integrations.collector.inventory import get_collector_inventory_client
+    from app_api.integrations.collector.policies import get_collector_policy_client
+    from app_api.integrations.collector.topology import get_collector_topology_client
+
+    assert get_collector_inventory_client().timeout_seconds == 2
+    assert get_collector_topology_client().timeout_seconds == 4
+    assert get_collector_policy_client().timeout_seconds == 5
+
+
+def test_inventory_collector_client_classifies_timeout_budget_exceeded(monkeypatch) -> None:
+    def fake_urlopen(url: str, timeout: int):
+        raise TimeoutError("collector timed out")
+
+    monkeypatch.setattr("app_api.integrations.collector.inventory.urlopen", fake_urlopen)
+
+    from app_api.integrations.collector.inventory import CollectorInventoryClient
+
+    inventory_client = CollectorInventoryClient(
+        source_endpoint="http://gnmi-collector:9804",
+        timeout_seconds=3,
+        cache_ttl_seconds=0,
+        unavailable_cache_ttl_seconds=0,
+    )
+
+    snapshot = inventory_client.read_inventory_snapshot()
+
+    assert snapshot.status == "collector_unavailable"
+    assert snapshot.fetch_error_kind == "timeout_budget_exceeded"
+    assert snapshot.fetch_error is not None
+    assert "3s latency budget" in snapshot.fetch_error
+
+
+def test_policy_collector_client_can_disable_snapshot_cache(monkeypatch) -> None:
+    class StubResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return (
+                b'{"delivery_status":"live_ready","configured_target_count":34,'
+                b'"collection_success_count":34,"collection_partial_count":0,'
+                b'"collection_failure_count":0,"oldest_observed_at":"2026-03-09T19:25:08.500000+00:00",'
+                b'"newest_observed_at":"2026-03-09T19:25:08.500000+00:00",'
+                b'"detail_ready_target_count":0,'
+                b'"degraded_scope_summary":"Policy counters indicate observed policies, but the current bounded path could not derive per-target detail records.",'
+                b'"sync_source":"gnmi_collector_policy_sr_counters","sync_status":"ok",'
+                b'"completeness":"partial","detail_mode":"counters_only",'
+                b'"observed_at":"2026-03-09T19:25:08.500000+00:00","observed_target_count":34,'
+                b'"policy_capable_target_count":34,"observed_target_role_counts":{},'
+                b'"policy_capable_target_role_counts":{},"policy_count":2,"active_policy_count":2,'
+                b'"static_policy_count":2,"static_local_policy_count":1,"static_non_local_policy_count":1,'
+                b'"bgp_policy_count":0,"ttm_preference_count":476,"binding_sid_count":0,'
+                b'"srv6_binding_sid_count":0,"target_footprints":[],"notes":[],"records":[]}'
+            )
+
+    call_count = {"value": 0}
+
+    def fake_urlopen(url: str, timeout: int):
+        call_count["value"] += 1
+        return StubResponse()
+
+    monkeypatch.setattr("app_api.integrations.collector.policies.urlopen", fake_urlopen)
+
+    from app_api.integrations.collector.policies import CollectorPolicyClient
+
+    client = CollectorPolicyClient(
+        source_endpoint="http://gnmi-collector:9804",
+        timeout_seconds=8,
+        cache_ttl_seconds=0,
+        unavailable_cache_ttl_seconds=0,
+    )
+
+    client.read_policy_snapshot()
+    client.read_policy_snapshot()
+
+    assert call_count["value"] == 2
+
+
+def test_topology_collector_client_uses_short_unavailable_cache_ttl(monkeypatch) -> None:
+    class StubResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return b"{}"
+
+    call_count = {"value": 0}
+
+    def fake_urlopen(url: str, timeout: int):
+        call_count["value"] += 1
+        raise TimeoutError("collector timed out")
+
+    monkeypatch.setattr("app_api.integrations.collector.topology.urlopen", fake_urlopen)
+
+    from app_api.integrations.collector.topology import CollectorTopologyClient
+
+    client = CollectorTopologyClient(
+        source_endpoint="http://gnmi-collector:9804",
+        timeout_seconds=8,
+        cache_ttl_seconds=15,
+        unavailable_cache_ttl_seconds=0,
+    )
+
+    first_snapshot = client.read_topology_snapshot()
+    second_snapshot = client.read_topology_snapshot()
+
+    assert first_snapshot.status == "collector_unavailable"
+    assert second_snapshot.status == "collector_unavailable"
+    assert first_snapshot.fetch_error_kind == "timeout_budget_exceeded"
+    assert first_snapshot.fetch_error is not None
+    assert "8s latency budget" in first_snapshot.fetch_error
+    assert call_count["value"] == 2
+
+
+def test_policy_collector_client_classifies_connection_failure(monkeypatch) -> None:
+    def fake_urlopen(url: str, timeout: int):
+        raise URLError("Connection refused")
+
+    monkeypatch.setattr("app_api.integrations.collector.policies.urlopen", fake_urlopen)
+
+    from app_api.integrations.collector.policies import CollectorPolicyClient
+
+    policy_client = CollectorPolicyClient(
+        source_endpoint="http://gnmi-collector:9804",
+        timeout_seconds=3,
+        cache_ttl_seconds=0,
+        unavailable_cache_ttl_seconds=0,
+    )
+
+    snapshot = policy_client.read_policy_snapshot()
+
+    assert snapshot.status == "collector_unavailable"
+    assert snapshot.fetch_error_kind == "collector_connection_error"
+    assert snapshot.fetch_error is not None
+    assert "connection failed" in snapshot.fetch_error
 
 
 def test_devices_endpoint_returns_live_inventory(monkeypatch) -> None:
@@ -1212,7 +1786,9 @@ def test_devices_endpoint_returns_live_inventory(monkeypatch) -> None:
     assert payload["items"][0]["device_id"] == "PE1"
     assert payload["items"][0]["vendor"] == "nokia"
     assert payload["items"][0]["management_address"] == "172.20.20.107"
+    assert payload["items"][0]["current_posture"] == "current"
     assert payload["items"][0]["collector_status"] == "ok"
+    assert payload["items"][0]["last_recorded_collector_status"] == "ok"
     assert payload["items"][0]["capability_summary"] == "partially_supported"
     assert "useful read-only data" in payload["items"][0]["capability_detail"]
     assert datetime.fromisoformat(payload["generated_at"]) is not None
@@ -1244,10 +1820,14 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert payload["evidence_confidence"]["blocked_reason"] == "none"
     assert any("Coverage currently includes 2 of 2 configured topology targets" in note for note in payload["evidence_confidence"]["notes"])
     assert payload["served_persisted_at"] is None
+    assert payload["coverage_summary"]["inference_posture"] == "inferred"
     assert payload["coverage_summary"]["endpoint_pairing_posture"] == "paired"
+    assert payload["coverage_summary"]["collection_posture"] == "ok"
     assert payload["coverage_summary"]["paired_link_count"] == 1
     assert payload["coverage_summary"]["single_sided_link_count"] == 0
     assert "paired endpoint evidence" in payload["coverage_summary"]["summary"]
+    assert "inference-bounded" in payload["coverage_summary"]["summary"]
+    assert "collection posture is healthy" in payload["coverage_summary"]["summary"]
     assert payload["topology"]["topology_id"] == "platform-observed-topology"
     assert payload["topology"]["topology_name"] == "Platform Observed Topology"
     assert payload["topology"]["sync_source"] == "gnmi_collector_topology_interface_inference"
@@ -1256,10 +1836,14 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert len(payload["topology"]["nodes"]) == 2
     assert len(payload["topology"]["links"]) == 1
     assert payload["topology"]["nodes"][0]["display_name"] == "PE1"
+    assert payload["topology"]["nodes"][0]["current_posture"] == "current"
     assert payload["topology"]["nodes"][0]["state"] == "up"
+    assert payload["topology"]["nodes"][0]["last_recorded_state"] == "up"
     assert payload["topology"]["nodes"][0]["source"] == "gnmi"
     assert payload["topology"]["nodes"][0]["attributes"]["vendor"] == "nokia"
+    assert payload["topology"]["links"][0]["current_posture"] == "current"
     assert payload["topology"]["links"][0]["state"] == "up"
+    assert payload["topology"]["links"][0]["last_recorded_state"] == "up"
     assert payload["topology"]["links"][0]["source"] == "gnmi"
     assert payload["topology"]["links"][0]["endpoint_pairing_state"] == "paired"
     assert payload["topology"]["links"][0]["endpoint_evidence_count"] == 2
@@ -1289,10 +1873,13 @@ def test_topology_endpoint_exposes_mixed_pairing_coverage_semantics(monkeypatch)
     payload = response.json()
     assert payload["data_status"] == "degraded"
     assert payload["serving_mode"] == "live_collector"
+    assert payload["coverage_summary"]["inference_posture"] == "inferred"
     assert payload["coverage_summary"]["endpoint_pairing_posture"] == "partially_paired"
+    assert payload["coverage_summary"]["collection_posture"] == "degraded"
     assert payload["coverage_summary"]["paired_link_count"] == 1
     assert payload["coverage_summary"]["single_sided_link_count"] == 1
     assert "mix of paired and single-sided endpoint evidence" in payload["coverage_summary"]["summary"]
+    assert "collection posture is degraded" in payload["coverage_summary"]["summary"]
     assert payload["topology"]["links"][0]["endpoint_pairing_state"] == "paired"
     assert payload["topology"]["links"][1]["endpoint_pairing_state"] == "single_sided"
     assert payload["topology"]["links"][1]["endpoint_evidence_count"] == 1
@@ -1350,6 +1937,9 @@ def test_devices_endpoint_falls_back_to_persisted_inventory(monkeypatch) -> None
     assert payload["comparison_to_latest_persisted"]["current_device_count"] == 1
     assert "latest persisted normalized inventory snapshot" in payload["summary"]
     assert payload["items"][0]["device_id"] == "PE1"
+    assert payload["items"][0]["current_posture"] == "stale"
+    assert payload["items"][0]["collector_status"] == "degraded"
+    assert payload["items"][0]["last_recorded_collector_status"] == "degraded"
 
 
 def test_devices_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypatch) -> None:
@@ -1390,6 +1980,35 @@ def test_devices_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypat
     assert payload["comparison_to_latest_persisted"]["persisted_capability_summary_counts"] == {
         "unknown": 1
     }
+
+
+def test_devices_endpoint_keeps_partial_live_inventory_in_live_collector_mode(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorInventoryClient:
+        def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+            return _build_partial_live_inventory_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.devices.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
+
+    response = client.get("/api/v1/devices")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_status"] == "degraded"
+    assert payload["serving_mode"] == "live_collector"
+    assert payload["evidence_confidence"]["source_posture"] == "live_observed"
+    assert payload["evidence_confidence"]["freshness_posture"] == "current"
+    assert payload["evidence_confidence"]["blocked_reason"] == "none"
+    assert payload["served_persisted_at"] is None
+    assert payload["count"] == 2
+    assert payload["summary"] == (
+        "Device inventory is backed by live Nokia gNMI collection, but one or more configured targets returned partial data. Coverage currently includes 2 of 3 configured targets."
+    )
+    assert payload["items"][0]["current_posture"] == "current"
 
 
 def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None:
@@ -1441,12 +2060,20 @@ def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None
     assert payload["evidence_confidence"]["confidence_posture"] == "degraded"
     assert payload["evidence_confidence"]["freshness_posture"] == "stale"
     assert payload["evidence_confidence"]["blocked_reason"] == "collector_unavailable"
+    assert payload["coverage_summary"]["inference_posture"] == "inferred"
     assert payload["coverage_summary"]["endpoint_pairing_posture"] == "unknown"
+    assert payload["coverage_summary"]["collection_posture"] == "blocked"
     assert payload["coverage_summary"]["paired_link_count"] == 0
     assert payload["coverage_summary"]["single_sided_link_count"] == 0
     assert payload["topology"]["sync_source"] == "persisted_topology_snapshot"
     assert len(payload["topology"]["nodes"]) == 1
     assert len(payload["topology"]["links"]) == 1
+    assert payload["topology"]["nodes"][0]["current_posture"] == "stale"
+    assert payload["topology"]["nodes"][0]["state"] == "up"
+    assert payload["topology"]["nodes"][0]["last_recorded_state"] == "up"
+    assert payload["topology"]["links"][0]["current_posture"] == "stale"
+    assert payload["topology"]["links"][0]["state"] == "degraded"
+    assert payload["topology"]["links"][0]["last_recorded_state"] == "degraded"
     assert datetime.fromisoformat(
         payload["served_persisted_at"].replace("Z", "+00:00")
     ) == datetime.fromisoformat("2026-03-10T00:00:00+00:00")
@@ -1574,12 +2201,21 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["comparison_to_latest_persisted"]["change_preview"][2]["change_kind"] == "removed"
     assert len(payload["target_footprints"]) == 2
     assert payload["target_footprints"][0]["target_name"] == "PE1"
+    assert payload["target_footprints"][0]["current_posture"] == "current"
+    assert payload["target_footprints"][0]["last_recorded_collection_status"] == "success"
+    assert payload["target_footprints"][0]["detail_blocker_reason"] == "none"
     assert payload["target_footprints"][0]["observed_policy_count"] == 1
     assert payload["target_footprints"][1]["target_name"] == "P1"
+    assert payload["target_footprints"][1]["detail_blocker_reason"] == "none"
     assert payload["target_footprints"][1]["static_non_local_policy_count"] == 1
     assert "bounded static-policy observations" in payload["summary"]
     assert payload["items"][0]["policy_type"] == "static_local"
     assert payload["items"][0]["source_target"] == "PE1"
+    assert payload["items"][0]["current_posture"] == "current"
+    assert payload["items"][0]["last_recorded_observed_state"] == "active"
+    assert payload["items"][0]["last_recorded_health_state"] == "healthy"
+    assert payload["items"][0]["candidate_paths"][0]["current_posture"] == "current"
+    assert payload["items"][0]["candidate_paths"][0]["last_recorded_path_state"] == "active"
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
@@ -1613,6 +2249,8 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     assert len(payload["target_footprints"]) == 2
     assert payload["target_footprints"][0]["policy_capable"] is True
     assert payload["target_footprints"][0]["detail_record_count"] == 0
+    assert payload["target_footprints"][0]["detail_blocker_reason"] == "no_policies_observed"
+    assert payload["target_footprints"][1]["detail_blocker_reason"] == "no_policies_observed"
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
     assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] is None
     assert payload["comparison_to_latest_persisted"]["change_preview"] == []
@@ -1645,6 +2283,8 @@ def test_policies_endpoint_keeps_detail_unavailable_state_explicit(monkeypatch) 
     assert payload["count"] == 0
     assert payload["observed_policy_count"] == 2
     assert payload["empty_reason"] == "per_policy_details_unavailable"
+    assert payload["target_footprints"][0]["detail_blocker_reason"] == "per_policy_details_unavailable"
+    assert payload["target_footprints"][1]["detail_blocker_reason"] == "per_policy_details_unavailable"
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
     assert payload["history"]["status"] == "unavailable"
     assert (
@@ -1737,6 +2377,62 @@ def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) 
     assert payload["history"]["comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-1"
     assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-0"
     assert payload["items"][0]["policy_id"] == "persisted-policy-1"
+    assert payload["items"][0]["current_posture"] == "stale"
+    assert payload["items"][0]["observed_state"] == "active"
+    assert payload["items"][0]["last_recorded_observed_state"] == "active"
+    assert payload["items"][0]["health_state"] == "healthy"
+    assert payload["items"][0]["last_recorded_health_state"] == "healthy"
+    assert payload["items"][0]["candidate_paths"][0]["current_posture"] == "stale"
+    assert payload["items"][0]["candidate_paths"][0]["path_state"] == "active"
+    assert payload["items"][0]["candidate_paths"][0]["last_recorded_path_state"] == "active"
+    assert payload["target_footprints"][0]["current_posture"] == "stale"
+
+
+def test_policies_endpoint_keeps_partial_live_policy_state_in_live_collector_mode(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return _build_partial_live_policy_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr("app_api.services.policies.persist_policy_snapshot", lambda **kwargs: None)
+    monkeypatch.setattr(
+        "app_api.services.policies.load_recent_policy_snapshot_summaries",
+        lambda limit=3: _build_recent_policy_snapshot_summaries()[:limit],
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_latest_policy_snapshot",
+        _build_persisted_policy_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_previous_policy_snapshot",
+        _build_previous_persisted_policy_snapshot,
+    )
+
+    response = client.get("/api/v1/policies")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_status"] == "degraded"
+    assert payload["serving_mode"] == "live_collector"
+    assert payload["evidence_confidence"]["source_posture"] == "live_observed"
+    assert payload["evidence_confidence"]["freshness_posture"] == "current"
+    assert payload["evidence_confidence"]["blocked_reason"] == "none"
+    assert payload["served_persisted_at"] is None
+    assert payload["observed_target_count"] == 33
+    assert payload["policy_capable_target_count"] == 33
+    assert payload["summary"] == (
+        "Policy inventory is backed by live Nokia SR policy counters and bounded static-policy observations, but one or more targets returned partial or degraded policy visibility. Coverage currently includes 33 of 34 configured targets."
+    )
+    assert any(
+        footprint["collection_status"] == "partial"
+        and footprint["last_recorded_collection_status"] == "partial"
+        for footprint in payload["target_footprints"]
+    )
 
 
 def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) -> None:
@@ -2021,6 +2717,16 @@ def test_unknown_route_returns_consistent_error_payload() -> None:
 def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     _disable_read_side_persistence(monkeypatch)
 
+    class StubOdlClient:
+        def read_controller_observation(self) -> OdlControllerObservation:
+            return OdlControllerObservation(
+                observation_state="ok",
+                observed_source="odl_restconf_capability_probe",
+                observation_summary="ODL probe succeeded.",
+                observed_capabilities=[],
+                notes=[],
+            )
+
     class StubCollectorInventoryClient:
         def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
             return _build_live_inventory_snapshot()
@@ -2046,6 +2752,22 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         lambda: StubCollectorPolicyClient(),
     )
     monkeypatch.setattr(
+        "app_api.services.platform.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_topology_client",
+        lambda: StubCollectorTopologyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_odl_client",
+        lambda: StubOdlClient(),
+    )
+    monkeypatch.setattr(
         "app_api.metrics.router.summarize_sync_run_history",
         _build_sync_run_history_summary,
     )
@@ -2061,6 +2783,7 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     client.get("/api/v1/devices")
     client.get("/api/v1/topology")
     client.get("/api/v1/policies")
+    client.get("/api/v1/platform/status")
     response = client.get("/metrics")
 
     assert response.status_code == 200
@@ -2072,12 +2795,28 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert 'endpoint="/api/v1/policies",method="GET",status_class="2xx"' in response.text
     assert "platform_app_api_http_request_duration_seconds_count" in response.text
     assert "platform_app_api_http_request_duration_seconds_sum" in response.text
+    assert "platform_app_api_collector_boundary_latest_fetch_duration_seconds" in response.text
+    assert "platform_app_api_collector_boundary_timeout_budget_seconds" in response.text
+    assert "platform_app_api_collector_boundary_latest_fetch_posture" in response.text
+    assert (
+        'platform_app_api_collector_boundary_latest_fetch_duration_seconds{model_family="inventory",outcome="live_normalized_feed"} 0.184000000'
+        in response.text
+    )
+    assert (
+        'platform_app_api_collector_boundary_timeout_budget_seconds{model_family="topology"}'
+        in response.text
+    )
+    assert (
+        'platform_app_api_collector_boundary_latest_fetch_posture{model_family="policy",outcome="live_normalized_feed"} 1'
+        in response.text
+    )
     assert "platform_app_api_topology_nodes 2" in response.text
     assert "platform_app_api_topology_links 1" in response.text
     assert "platform_app_api_topology_paired_links 1" in response.text
     assert "platform_app_api_topology_single_sided_links 0" in response.text
     assert (
-        'platform_app_api_topology_coverage_posture{endpoint_pairing_posture="paired"} 1'
+        'platform_app_api_topology_coverage_posture{inference_posture="inferred",'
+        'endpoint_pairing_posture="paired",collection_posture="ok"} 1'
         in response.text
     )
     assert (
@@ -2174,7 +2913,8 @@ def test_metrics_endpoint_exports_mixed_topology_pairing_posture(monkeypatch) ->
     assert "platform_app_api_topology_paired_links 1" in response.text
     assert "platform_app_api_topology_single_sided_links 1" in response.text
     assert (
-        'platform_app_api_topology_coverage_posture{endpoint_pairing_posture="partially_paired"} 1'
+        'platform_app_api_topology_coverage_posture{inference_posture="inferred",'
+        'endpoint_pairing_posture="partially_paired",collection_posture="degraded"} 1'
         in response.text
     )
     assert 'platform_app_api_readiness_blocked_scopes{scope="phase_transition"} 6' in response.text
@@ -2190,6 +2930,71 @@ def test_metrics_endpoint_exports_mixed_topology_pairing_posture(monkeypatch) ->
     ) in response.text
     assert (
         'platform_app_api_sync_run_latest_finished_at_seconds{model_family="inventory"} '
+        in response.text
+    )
+
+
+def test_metrics_endpoint_exports_timeout_boundary_posture(monkeypatch) -> None:
+    class StubOdlClient:
+        def read_controller_observation(self) -> OdlControllerObservation:
+            return OdlControllerObservation(
+                observation_state="ok",
+                observed_source="odl_restconf_capability_probe",
+                observation_summary="ODL probe succeeded.",
+                observed_capabilities=[],
+                notes=[],
+            )
+
+    monkeypatch.setattr(
+        "app_api.services.platform.get_odl_client",
+        lambda: StubOdlClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_inventory_client",
+        lambda: SimpleNamespace(
+            read_inventory_snapshot=lambda: CollectorInventorySnapshot(
+                integration="gnmi_collector_inventory",
+                status="collector_unavailable",
+                destination_service="app-api",
+                source_endpoint="http://gnmi-collector:9804/inventory/snapshot",
+                configured_target_count=0,
+                observed_target_count=0,
+                collection_success_count=0,
+                collection_partial_count=0,
+                collection_failure_count=0,
+                oldest_observed_at=None,
+                newest_observed_at=None,
+                degraded_scope_summary="No configured inventory targets returned usable live inventory evidence.",
+                records=[],
+                notes=[],
+                timeout_budget_seconds=3,
+                fetch_duration_seconds=3.021,
+                fetch_error_kind="timeout_budget_exceeded",
+                fetch_error="Collector boundary exceeded the 3s latency budget while reading inventory snapshot from http://gnmi-collector:9804/inventory/snapshot.",
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_topology_client",
+        lambda: SimpleNamespace(read_topology_snapshot=_build_live_topology_snapshot),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_policy_client",
+        lambda: SimpleNamespace(read_policy_snapshot=_build_live_policy_snapshot),
+    )
+
+    reset_metrics_registry()
+    client.get("/api/v1/platform/status")
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert (
+        'platform_app_api_collector_boundary_latest_fetch_duration_seconds{model_family="inventory",outcome="timeout_budget_exceeded"} 3.021000000'
+        in response.text
+    )
+    assert (
+        'platform_app_api_collector_boundary_latest_fetch_posture{model_family="inventory",outcome="timeout_budget_exceeded"} 1'
         in response.text
     )
 

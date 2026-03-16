@@ -6,7 +6,11 @@ import type {
   TopologyResponse,
 } from "../src/api/contracts";
 import {
+  describeTopologyCollectionPosture,
   describeTopologyCoveragePosture,
+  describeTopologyInferencePosture,
+  describeTopologyReadPathCollection,
+  describeTopologyReadPathInference,
   describeTopologyReadPathPairing,
   resolveTopologyCoverageSummary,
   resolveTopologyLinkEndpointPairingState,
@@ -17,7 +21,9 @@ function createLink(overrides: Partial<TopologyLinkRecord> = {}): TopologyLinkRe
     link_id: "link-1",
     source_node_id: "leaf-1",
     target_node_id: "spine-1",
+    current_posture: "current",
     state: "up",
+    last_recorded_state: "up",
     source: "collector",
     endpoint_pairing_state: "unknown",
     endpoint_evidence_count: null,
@@ -66,7 +72,9 @@ function createResponse(overrides: Partial<TopologyResponse> = {}): TopologyResp
       notes: [],
     },
     coverage_summary: {
+      inference_posture: "unknown",
       endpoint_pairing_posture: "unknown",
+      collection_posture: "unknown",
       paired_link_count: 0,
       single_sided_link_count: 0,
       summary: "unknown",
@@ -90,7 +98,9 @@ describe("topology trust cues", () => {
   it("preserves backend coverage summary when exposed", () => {
     const response = createResponse({
       coverage_summary: {
+        inference_posture: "inferred",
         endpoint_pairing_posture: "partially_paired",
+        collection_posture: "degraded",
         paired_link_count: 36,
         single_sided_link_count: 2,
         summary: "Current normalized topology links include a mix of paired and single-sided endpoint evidence.",
@@ -113,7 +123,9 @@ describe("topology trust cues", () => {
     });
 
     expect(resolveTopologyCoverageSummary(response)).toEqual({
+      inference_posture: "inferred",
       endpoint_pairing_posture: "partially_paired",
+      collection_posture: "ok",
       paired_link_count: 1,
       single_sided_link_count: 1,
       summary:
@@ -134,7 +146,9 @@ describe("topology trust cues", () => {
   it("builds operator-facing readout for partial topology pairing", () => {
     const readout = describeTopologyCoveragePosture(
       {
+        inference_posture: "inferred",
         endpoint_pairing_posture: "partially_paired",
+        collection_posture: "degraded",
         paired_link_count: 36,
         single_sided_link_count: 2,
         summary: "Current normalized topology links include a mix of paired and single-sided endpoint evidence within the bounded inference slice.",
@@ -144,6 +158,30 @@ describe("topology trust cues", () => {
 
     expect(readout.label).toBe("Partially paired");
     expect(readout.countDetail).toBe("36 paired • 2 single-sided • 38 total links.");
+  });
+
+  it("builds operator-facing inference and collection readouts", () => {
+    const coverageSummary = {
+      inference_posture: "inferred" as const,
+      endpoint_pairing_posture: "partially_paired" as const,
+      collection_posture: "degraded" as const,
+      paired_link_count: 36,
+      single_sided_link_count: 2,
+      summary: "Current normalized topology links include a mix of paired and single-sided endpoint evidence within the bounded inference slice.",
+    };
+
+    expect(describeTopologyInferencePosture(coverageSummary, 38)).toEqual({
+      status: "inferred",
+      label: "Inferred slice",
+      detail:
+        "Current normalized topology links remain a bounded inferred slice rather than direct adjacency or controller truth.",
+    });
+    expect(describeTopologyCollectionPosture(coverageSummary)).toEqual({
+      status: "degraded",
+      label: "Collection degraded",
+      detail:
+        "The current topology slice was collected with partial degradation, so operators should expect bounded gaps rather than full live coverage.",
+    });
   });
 
   it("builds a topology read-path pairing readout from platform-status data", () => {
@@ -159,7 +197,9 @@ describe("topology trust cues", () => {
       newest_observed_at: null,
       policy_capable_target_count: null,
       detail_ready_target_count: null,
+      inference_posture: "inferred",
       endpoint_pairing_posture: "partially_paired",
+      collection_posture: "blocked",
       paired_link_count: 36,
       single_sided_link_count: 2,
       degraded_scope_summary: "Two links remain single-sided.",
@@ -168,9 +208,23 @@ describe("topology trust cues", () => {
     };
 
     const readout = describeTopologyReadPathPairing(readPath);
+    const inferenceReadout = describeTopologyReadPathInference(readPath);
+    const collectionReadout = describeTopologyReadPathCollection(readPath);
 
     expect(readout.status).toBe("partially_paired");
     expect(readout.detail).toBe(readPath.summary);
     expect(readout.countDetail).toBe("36 paired • 2 single-sided • 38 total links.");
+    expect(inferenceReadout).toEqual({
+      status: "inferred",
+      label: "Inferred slice",
+      detail:
+        "Platform status reports that topology links remain bounded to inferred evidence rather than direct adjacency truth.",
+    });
+    expect(collectionReadout).toEqual({
+      status: "blocked",
+      label: "Collection blocked",
+      detail:
+        "Platform status reports that the current topology slice is blocked from normal live collection.",
+    });
   });
 });

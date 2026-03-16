@@ -22,9 +22,15 @@ The implemented field, metric, and UI-separation contract for the accepted week
 14 slice now lives in
 `platform/schemas/topology/topology-read-path-coverage-semantics.md`.
 
-That design note turns this review into one concrete vocabulary and ownership
-contract for endpoint pairing, single-sided inferred-link posture, product trust
-cues, Grafana numeric projections, and verifier behavior.
+That design note now does two things.
+
+First, it records the completed week 14 pairing vocabulary and ownership split
+for endpoint pairing, single-sided inferred-link posture, product trust cues,
+Grafana numeric projections, and verifier behavior.
+
+Second, it defines the next narrower follow-on contract for decomposing topology
+partiality into inference-boundedness, endpoint-coverage limits, and collection
+degradation without reopening the completed pairing work.
 
 ## Review Scope
 
@@ -135,9 +141,18 @@ The current contract now exposes:
 - numeric `single_sided_link_count`
 
 That means the remaining topology truth question is now broader but still
-bounded: whether the current Phase 2 model should later sharpen how it explains
+bounded: whether the current Phase 2 model should now sharpen how it explains
 `completeness=partial` and broad topology `degraded_scope_summary`, not whether
 it still needs the week 14 pairing vocabulary itself.
+
+The next honest target is therefore smaller than another broad truth-depth pass.
+It is one explicit topology partiality decomposition that keeps the completed
+pairing work intact while separating three causes that are still too easy to
+blur together:
+
+- inference-boundedness
+- endpoint-coverage limits
+- collection degradation
 
 ### 3. Backend contracts preserve the bounded topology model correctly
 
@@ -281,6 +296,28 @@ The current verifier behavior is therefore already aligned with the week 14
 goal. It treats the current truth-depth problem as endpoint coverage and partial
 completeness, not as workflow, validation, or controller-first semantics.
 
+### 7. The remaining wording problem is now narrower than the completed pairing work
+
+The current surfaces now expose enough evidence to see the remaining wording
+problem clearly.
+
+Across the reviewed repository surfaces:
+
+- collector delivery and backend contracts still carry `completeness=partial`
+  plus a broad `degraded_scope_summary`
+- the dedicated topology page now shows explicit pairing posture and counts, but
+  the broader product summary surfaces still need the reader to mentally
+  separate inference-boundedness from collection degradation
+- Grafana mirrors paired-versus-single-sided counts and pairing posture labels,
+  but it correctly does not define a fuller partiality taxonomy on its own
+- the verifier proves the current contract and emits bounded notices, but it
+  still relies on broad `partial` plus pairing notices rather than a smaller
+  three-cause decomposition
+
+That means the next honest step is not another pairing implementation slice.
+It is a documentation-first contract that states exactly how a later bounded
+code follow-on should separate the remaining causes of partiality.
+
 ## Surface-By-Surface Classification Of The Current Gap
 
 ### Endpoint pairing
@@ -354,6 +391,10 @@ Review judgment:
 - the repo is already honest here
 - the next slice should refine why the topology is partial, not remove the
   partial posture
+- the narrowest honest decomposition is to keep `completeness=partial` as the
+  umbrella boundary while adding explicit `inference_posture` and
+  `collection_posture` around the already-implemented
+  `endpoint_pairing_posture`
 
 ### Degraded-scope wording
 
@@ -376,6 +417,11 @@ Review judgment:
 - the wording is strong enough for honest Phase 2 use today
 - the next slice should sharpen its topology-specific coverage wording rather
   than invent new verdict classes
+- the right split is not a new taxonomy of failure reasons; it is one small
+  backend-owned decomposition that keeps collection degradation separate from
+  inference-boundedness and endpoint coverage
+- `degraded_scope_summary` should remain explanatory prose after that split,
+  not the typed contract source
 
 ### Product-versus-observability split
 
@@ -422,6 +468,59 @@ The remaining weakness is specific.
 - paired-versus-single-sided coverage is now explicit, but it still does not
   imply protocol-derived adjacency truth, controller agreement, or path truth.
 
+## Next Bounded Follow-On
+
+The next bounded topology follow-on should stay narrower than the completed week
+14 pairing slice.
+
+This review now treats the contract-definition step for that follow-on as
+complete in docs. No collector, backend, frontend, dashboard, or verifier code
+change is implied by this note alone.
+
+It should not revisit whether the repository needs endpoint-pairing vocabulary.
+That part is already implemented end to end.
+
+It should only define and later implement one backend-owned topology partiality
+decomposition.
+
+That decomposition should keep `completeness=partial` as the umbrella boundary
+and separate the three causes of remaining topology partiality like this.
+
+- `inference_posture`: the current topology slice remains inference-bounded
+- `endpoint_pairing_posture`: the current topology slice has stronger or weaker
+  endpoint evidence behind emitted inferred links
+- `collection_posture`: the current live collection window was healthy,
+  degraded, or blocked
+
+This is narrower than the completed week 14 slice in two important ways.
+
+First, it preserves the existing endpoint-pairing vocabulary rather than
+replacing it.
+
+Second, it does not authorize a broader topology redesign. It only decomposes
+the cause of partiality more clearly where current evidence already exists.
+
+Ownership for that follow-on should stay explicit.
+
+- collector continues to emit the bounded raw evidence and counts that inform
+  the topology path
+- backend owns the product-facing partiality decomposition terms
+- WebUI consumes those backend-owned terms as trust cues
+- Grafana mirrors only numeric or projected observability posture from real
+  metrics
+- verifier proves the runtime contract and emits notices rather than topology
+  verdicts
+
+The exact contract for that narrower follow-on is now explicitly defined in
+`platform/schemas/topology/topology-read-path-coverage-semantics.md` as:
+
+- `inference_posture` for inference-boundedness
+- existing `endpoint_pairing_posture` for endpoint-coverage limits
+- `collection_posture` for collection degradation or blockage
+
+That contract is intentionally smaller than a broader topology redesign and
+intentionally preserves `degraded_scope_summary` as supporting prose.
+
 ## Safe Operational Interpretation After Week 14
 
 The improved topology slice is now safe to interpret in one bounded way.
@@ -460,13 +559,19 @@ That implemented slice now covers:
 - explicit bounded link pairing posture categories derived from current evidence
 - explicit aggregate counts such as fully paired versus single-sided inferred
   links
-- narrower degraded-scope wording that separates collection degradation from
-  endpoint-pairing limitations
 - bounded verifier notices and runtime assertions for those topology coverage
   signals
 
+That implemented slice does not yet cover the next narrower decomposition of
+topology partiality into explicit inference-boundedness, endpoint-coverage, and
+collection-degradation dimensions.
+
 Any later follow-on should now be about broader truth depth only if it can stay
 similarly bounded.
+
+At this checkpoint, the smaller documentation task is complete: the next cycle
+no longer needs to rediscover the vocabulary, only to decide later whether one
+bounded code implementation of that already-defined contract is still justified.
 
 That slice should not attempt:
 
@@ -499,7 +604,9 @@ The repository evidence supports the completed week 14 direction.
 The strongest remaining live topology weakness is no longer absence of explicit
 endpoint-pairing semantics across the current product, observability, and
 verification surfaces. That part is now in place. The remaining limit is that
-the topology slice itself is still bounded, inferred, and intentionally partial.
+the topology slice itself is still bounded, inferred, and intentionally partial,
+and the current contracts still compress too much of that partiality into broad
+`partial` and `degraded_scope_summary` wording.
 
 Any next implementation slice should therefore stay small and should not reopen
 the same pairing-semantics work unless new repository evidence changes the
@@ -508,9 +615,13 @@ topology model, the product-versus-observability split, and the explicit
 partial-truth posture already established across the repository.
 
 If topology is revisited again inside `Phase 2`, the first honest target is no
-longer pairing vocabulary. It is only any later broader truth-depth follow-on
+longer pairing vocabulary. It is one bounded topology partiality decomposition
 that can sharpen broad `partial` and topology `degraded_scope_summary`
-semantics without implying full truth.
+semantics by separating inference-boundedness, endpoint-coverage limits, and
+collection degradation without implying full truth.
+
+That narrower follow-on is now ready as a documented contract rather than a
+still-undefined idea.
 
 The exact field, metric, and UI-separation rules for that slice are now defined
 in `platform/schemas/topology/topology-read-path-coverage-semantics.md`.

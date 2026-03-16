@@ -7,6 +7,8 @@ from gnmi_collector.config.runtime import build_runtime_config
 from gnmi_collector.config.settings import get_settings
 from gnmi_collector.main import app
 from gnmi_collector.mappings.inventory import map_inventory_record
+from gnmi_collector.mappings.policy import summarize_policy_target_footprints
+from gnmi_collector.models.policy import PolicyRawRecord
 from gnmi_collector.services.inventory import build_inventory_flow_snapshot
 from gnmi_collector.services.policy import build_policy_flow_snapshot
 from gnmi_collector.services.topology import build_topology_flow_snapshot
@@ -79,42 +81,29 @@ class FakeGnmiClient:
                 active_static_local_policies = 1
                 static_policy_payload = [
                     {
-                        "nokia-state:policy-name": "sr-static-PE1-192.0.2.11-100",
-                        "nokia-state:endpoint": "192.0.2.11",
-                        "nokia-state:color": 100,
-                        "nokia-state:head-end": "local",
-                        "nokia-state:candidate-path": [
-                            {
-                                "nokia-state:candidate-path-name": "primary",
-                                "nokia-state:preference": 200,
-                                "nokia-state:active": True,
-                                "nokia-state:protocol-origin": "static",
-                                "nokia-state:validation-state": "valid",
-                            },
-                            {
-                                "nokia-state:candidate-path-name": "backup",
-                                "nokia-state:preference": 100,
-                                "nokia-state:active": False,
-                                "nokia-state:validation-state": "valid",
-                            },
-                        ],
+                        "nokia-conf:policy-name": "sr-static-PE1-192.0.2.11-100",
+                        "nokia-conf:endpoint": "192.0.2.11",
+                        "nokia-conf:color": 100,
+                        "nokia-conf:head-end": "local",
+                        "nokia-conf:binding-sid": 200011,
+                        "nokia-conf:distinguisher": 100011011,
                     }
                 ]
             elif device_name == "P1":
                 static_non_local_policies = 1
                 static_policy_payload = [
                     {
-                        "nokia-state:policy-name": "sr-static-P1-198.51.100.1-200",
-                        "nokia-state:endpoint": "198.51.100.1",
-                        "nokia-state:color": 200,
-                        "nokia-state:head-end": "100.64.0.1",
-                        "nokia-state:admin-state": "enable",
-                        "nokia-state:candidate-path": [
+                        "nokia-conf:policy-name": "sr-static-P1-198.51.100.1-200",
+                        "nokia-conf:endpoint": "198.51.100.1",
+                        "nokia-conf:color": 200,
+                        "nokia-conf:head-end": "100.64.0.1",
+                        "nokia-conf:admin-state": "enable",
+                        "nokia-conf:candidate-path": [
                             {
-                                "nokia-state:name": "secondary",
-                                "nokia-state:preference": 150,
-                                "nokia-state:active": False,
-                                "nokia-state:validation-state": "valid",
+                                "nokia-conf:name": "secondary",
+                                "nokia-conf:preference": 150,
+                                "nokia-conf:active": False,
+                                "nokia-conf:validation-state": "valid",
                             }
                         ],
                     }
@@ -131,12 +120,37 @@ class FakeGnmiClient:
                         "nokia-state:static-non-local-policies": static_non_local_policies,
                         "nokia-state:bgp-policies": 0,
                         "nokia-state:active-bgp-policies": 0,
+                        "nokia-state:sr-path": (
+                            [
+                                {
+                                    "nokia-state:head-end": "0.0.0.0",
+                                    "nokia-state:color": 100,
+                                    "nokia-state:endpoint": "192.0.2.11",
+                                    "nokia-state:owner": "static",
+                                    "nokia-state:preference": 100,
+                                    "nokia-state:distinguisher": 100011011,
+                                    "nokia-state:active": True,
+                                    "nokia-state:is-candidate-path-operational": True,
+                                    "nokia-state:binding-sid": 200011,
+                                    "nokia-state:path-age": 42,
+                                    "nokia-state:sr-path-seg-list": [
+                                        {
+                                            "segment": [
+                                                {"nokia-state:segment-state": "resolved-up"}
+                                            ]
+                                        }
+                                    ],
+                                }
+                            ]
+                            if device_name == "PE1"
+                            else []
+                        ),
                     },
                 }
             ]
             if any("static-policy" in item for item in path):
                 static_policy_update = {
-                    "path": "state/router[router-name=Base]/segment-routing/sr-policies/static-policy"
+                    "path": "configure/router[router-name=Base]/segment-routing/sr-policies/static-policy"
                 }
                 if static_policy_payload:
                     static_policy_update["val"] = static_policy_payload
@@ -240,6 +254,14 @@ class FakeSingleSidedTopologyGnmiClient(FakeGnmiClient):
         return super().get(path=path, encoding="json_ietf")
 
 
+class RecordingGnmiClient(FakeGnmiClient):
+    last_init_kwargs: dict[str, object] | None = None
+
+    def __init__(self, **kwargs):
+        RecordingGnmiClient.last_init_kwargs = dict(kwargs)
+        super().__init__(**kwargs)
+
+
 def test_runtime_config_loads_live_nokia_targets() -> None:
     config = build_runtime_config()
 
@@ -260,8 +282,31 @@ def test_runtime_config_loads_live_nokia_targets() -> None:
     )
     assert (
         config.policy_subscriptions[1].path
-        == "/nokia-state:state/router[router-name=Base]/segment-routing/sr-policies/static-policy"
+        == "/nokia-conf:configure/router[router-name=Base]/segment-routing/sr-policies/static-policy"
     )
+    assert all(target.gnmi_request_timeout_seconds == 2 for target in config.targets)
+
+
+def test_runtime_config_honors_env_override_for_gnmi_request_timeout(monkeypatch) -> None:
+    monkeypatch.setenv("COLLECTOR_GNMI_REQUEST_TIMEOUT_SECONDS", "4")
+    _clear_settings_cache()
+
+    config = build_runtime_config()
+
+    assert all(target.gnmi_request_timeout_seconds == 4 for target in config.targets)
+
+    _clear_settings_cache()
+
+
+def test_nokia_adapter_passes_configured_gnmi_timeout(monkeypatch) -> None:
+    monkeypatch.setattr("gnmi_collector.adapters.nokia.sros.gNMIclient", RecordingGnmiClient)
+    RecordingGnmiClient.last_init_kwargs = None
+
+    adapter = NokiaSrosAdapter()
+    adapter.collect_inventory(_targets()[0])
+
+    assert RecordingGnmiClient.last_init_kwargs is not None
+    assert RecordingGnmiClient.last_init_kwargs["gnmi_timeout"] == 2
 
 
 def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
@@ -349,6 +394,8 @@ def test_topology_snapshot_endpoint_returns_normalized_live_records(monkeypatch)
     assert payload["collection_failure_count"] == 0
     assert payload["node_count"] == 34
     assert payload["link_count"] == 17
+    assert payload["inference_posture"] == "inferred"
+    assert payload["collection_posture"] == "ok"
     assert payload["endpoint_pairing_posture"] == "paired"
     assert payload["paired_link_count"] == 17
     assert payload["single_sided_link_count"] == 0
@@ -380,6 +427,8 @@ def test_topology_snapshot_endpoint_marks_single_sided_coverage_explicit(monkeyp
     assert payload["collection_partial_count"] == 0
     assert payload["node_count"] == 34
     assert payload["link_count"] == 17
+    assert payload["inference_posture"] == "inferred"
+    assert payload["collection_posture"] == "ok"
     assert payload["endpoint_pairing_posture"] == "partially_paired"
     assert payload["paired_link_count"] == 16
     assert payload["single_sided_link_count"] == 1
@@ -441,8 +490,21 @@ def test_policy_snapshot_endpoint_returns_live_policy_observations(monkeypatch) 
     assert pe1_footprint["policy_capable"] is True
     assert pe1_footprint["observed_policy_count"] == 1
     assert pe1_footprint["detail_record_count"] == 1
+    assert pe1_footprint["detail_blocker_reason"] == "none"
+    cpe_a1_footprint = next(
+        item for item in payload["target_footprints"] if item["target_name"] == "CPE-A1"
+    )
+    assert cpe_a1_footprint["detail_blocker_reason"] == "no_policies_observed"
     assert len(payload["records"]) == 2
     assert payload["records"][0]["policy_type"] == "static_local"
+    pe1_record = next(item for item in payload["records"] if item["source_target"] == "PE1")
+    assert pe1_record["observed_state"] == "active"
+    assert pe1_record["support_state"] == "supported"
+    assert pe1_record["health_state"] == "healthy"
+    assert pe1_record["candidate_paths"][0]["name"] == "runtime-sr-path"
+    assert any("Runtime status was correlated" in note for note in pe1_record["notes"])
+    p1_record = next(item for item in payload["records"] if item["source_target"] == "P1")
+    assert p1_record["support_state"] == "partially_supported"
 
 
 def test_nokia_adapter_collects_live_inventory_and_topology(monkeypatch) -> None:
@@ -474,6 +536,7 @@ def test_nokia_adapter_collects_live_inventory_and_topology(monkeypatch) -> None
     assert policy_record.sr_policy_counts["ttm-preferences"] == 14
     if target.name == "PE1":
         assert len(policy_record.raw_policies) == 1
+        assert len(policy_record.raw_runtime_paths) == 1
 
 
 def test_inventory_mapping_returns_normalized_live_record(monkeypatch) -> None:
@@ -529,6 +592,8 @@ def test_topology_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> N
     assert snapshot.summary.newest_observed_at is not None
     assert snapshot.summary.normalized_node_count == expected_target_count
     assert snapshot.summary.normalized_link_count == expected_target_count // 2
+    assert snapshot.summary.inference_posture == "inferred"
+    assert snapshot.summary.collection_posture == "ok"
     assert snapshot.summary.endpoint_pairing_posture == "paired"
     assert snapshot.summary.paired_link_count == expected_target_count // 2
     assert snapshot.summary.single_sided_link_count == 0
@@ -541,6 +606,8 @@ def test_topology_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> N
     assert snapshot.delivery.model_family == "topology"
     assert snapshot.delivery.configured_target_count == expected_target_count
     assert snapshot.delivery.observed_target_count == expected_target_count
+    assert snapshot.delivery.inference_posture == "inferred"
+    assert snapshot.delivery.collection_posture == "ok"
     assert snapshot.delivery.endpoint_pairing_posture == "paired"
     assert snapshot.delivery.paired_link_count == expected_target_count // 2
     assert snapshot.delivery.single_sided_link_count == 0
@@ -557,9 +624,13 @@ def test_topology_flow_snapshot_marks_single_sided_inference_explicit(monkeypatc
     snapshot = build_topology_flow_snapshot()
 
     assert snapshot.summary.normalized_link_count == 17
+    assert snapshot.summary.inference_posture == "inferred"
+    assert snapshot.summary.collection_posture == "ok"
     assert snapshot.summary.endpoint_pairing_posture == "partially_paired"
     assert snapshot.summary.paired_link_count == 16
     assert snapshot.summary.single_sided_link_count == 1
+    assert snapshot.delivery.inference_posture == "inferred"
+    assert snapshot.delivery.collection_posture == "ok"
     assert snapshot.delivery.endpoint_pairing_posture == "partially_paired"
     assert snapshot.delivery.paired_link_count == 16
     assert snapshot.delivery.single_sided_link_count == 1
@@ -636,3 +707,34 @@ def test_policy_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> Non
     assert pe1_footprint.policy_capable is True
     assert pe1_footprint.observed_policy_count == 1
     assert pe1_footprint.detail_record_count == 1
+    assert pe1_footprint.detail_blocker_reason == "none"
+
+
+def test_policy_target_footprints_expose_detail_blocker_reasons() -> None:
+    raw_records = [
+        PolicyRawRecord(
+            target_name="PE1",
+            vendor="nokia",
+            platform_hint="sros",
+            role="pe",
+            management_address="172.20.20.107",
+            collection_status="success",
+            sr_policy_counts={
+                "bgp-policies": 1,
+                "active-bgp-policies": 1,
+                "ttm-preferences": 14,
+                "binding-sids-allocated": 0,
+                "srv6-binding-sids-allocated": 0,
+                "static-local-policies": 0,
+                "static-non-local-policies": 0,
+            },
+            raw_policies=[],
+        )
+    ]
+
+    footprints = summarize_policy_target_footprints(raw_records, normalized_records=[])
+
+    assert len(footprints) == 1
+    assert footprints[0].observed_policy_count == 1
+    assert footprints[0].detail_record_count == 0
+    assert footprints[0].detail_blocker_reason == "per_policy_details_unavailable"

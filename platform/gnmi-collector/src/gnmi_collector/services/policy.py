@@ -1,5 +1,7 @@
 """Policy-oriented collection flow helpers."""
 
+from concurrent.futures import ThreadPoolExecutor
+
 from gnmi_collector.adapters.nokia import NokiaSrosAdapter
 from gnmi_collector.config.runtime import build_runtime_config
 from gnmi_collector.mappings.policy import (
@@ -22,7 +24,9 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
     adapter = NokiaSrosAdapter()
 
     plans = [adapter.build_policy_plan(target) for target in config.targets]
-    raw_records = [adapter.collect_policy(target) for target in config.targets]
+    max_workers = max(1, min(config.collector_target_concurrency, len(config.targets)))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        raw_records = list(executor.map(adapter.collect_policy, config.targets))
     normalized_records = map_policy_records(raw_records)
     aggregated_counts = summarize_policy_counts(raw_records)
     target_footprints = summarize_policy_target_footprints(raw_records, normalized_records)
@@ -83,7 +87,7 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
 
     notes = [
         "Policy inventory is currently bounded to live Nokia SR policy counters collected over gNMI.",
-        "When static-policy state is exposed, the collector now derives bounded per-policy observations without claiming full SR policy truth.",
+        "When Nokia static-policy config is exposed, the collector derives bounded per-policy observations without claiming full SR policy truth.",
         "BGP-signaled SR policy detail remains out of scope until a deeper vendor-neutral path is added.",
     ]
     if oldest_observed_at is not None and newest_observed_at is not None:
@@ -107,6 +111,13 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
     if collection_failure_count > 0:
         notes.append(
             "One or more policy targets could not be collected, so degraded and unknown states remain explicit."
+        )
+    detail_blocked_target_count = sum(
+        1 for footprint in target_footprints if footprint.detail_blocker_reason != "none"
+    )
+    if detail_blocked_target_count > 0:
+        notes.append(
+            f"{detail_blocked_target_count} targets currently expose an explicit per-target detail blocker reason in the bounded policy footprint contract."
         )
 
     delivery = BackendPolicyDeliveryEnvelope(

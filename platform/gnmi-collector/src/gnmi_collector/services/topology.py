@@ -1,6 +1,7 @@
 """Topology-oriented collection flow helpers."""
 
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 
 from gnmi_collector.adapters.nokia import NokiaSrosAdapter
 from gnmi_collector.config.runtime import build_runtime_config
@@ -35,13 +36,36 @@ def _derive_endpoint_pairing_posture(
     return "unknown"
 
 
+def _derive_inference_posture(*, link_count: int) -> str:
+    """Summarize whether the emitted topology slice remains inference-bounded."""
+    if link_count > 0:
+        return "inferred"
+    return "unknown"
+
+
+def _derive_collection_posture(
+    *,
+    observed_target_count: int,
+    collection_partial_count: int,
+    collection_failure_count: int,
+) -> str:
+    """Summarize whether the current collection window is healthy or degraded."""
+    if observed_target_count == 0:
+        return "blocked"
+    if collection_partial_count > 0 or collection_failure_count > 0:
+        return "degraded"
+    return "ok"
+
+
 def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
     """Build the current end-to-end live topology collection flow snapshot."""
     config = build_runtime_config()
     adapter = NokiaSrosAdapter()
 
     plans = [adapter.build_topology_plan(target) for target in config.targets]
-    raw_records = [adapter.collect_topology(target) for target in config.targets]
+    max_workers = max(1, min(config.collector_target_concurrency, len(config.targets)))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        raw_records = list(executor.map(adapter.collect_topology, config.targets))
     normalized_nodes = map_topology_nodes(raw_records)
     normalized_links, paired_link_count, single_sided_link_count = map_topology_links(raw_records)
     node_state_counts = dict(Counter(node.state for node in normalized_nodes))
@@ -65,6 +89,12 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         link_count=len(normalized_links),
         paired_link_count=paired_link_count,
         single_sided_link_count=single_sided_link_count,
+    )
+    inference_posture = _derive_inference_posture(link_count=len(normalized_links))
+    collection_posture = _derive_collection_posture(
+        observed_target_count=observed_target_count,
+        collection_partial_count=partial_collection_count,
+        collection_failure_count=collection_failure_count,
     )
 
     if normalized_nodes and collection_failure_count == 0 and partial_collection_count == 0:
@@ -129,6 +159,8 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         collection_failure_count=collection_failure_count,
         oldest_observed_at=oldest_observed_at,
         newest_observed_at=newest_observed_at,
+        inference_posture=inference_posture,
+        collection_posture=collection_posture,
         degraded_scope_summary=degraded_scope_summary,
         endpoint_pairing_posture=endpoint_pairing_posture,
         paired_link_count=paired_link_count,
@@ -157,6 +189,8 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         normalized_node_count=len(normalized_nodes),
         normalized_link_count=len(normalized_links),
         inferred_link_count=len(normalized_links),
+        inference_posture=inference_posture,
+        collection_posture=collection_posture,
         endpoint_pairing_posture=endpoint_pairing_posture,
         paired_link_count=paired_link_count,
         single_sided_link_count=single_sided_link_count,

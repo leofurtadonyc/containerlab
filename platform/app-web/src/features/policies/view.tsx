@@ -7,7 +7,14 @@ import {
   buildCrossSliceConsistencyReadout,
   buildPolicySupportObservedReadout,
 } from "../../lib/cross-slice-consistency";
-import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
+import {
+  buildFallbackAwareStatusDisplay,
+  buildRowPostureStatusDisplay,
+  countBy,
+  formatRowCurrentPosture,
+  formatDateTime,
+  formatLabel,
+} from "../../lib/presentation";
 import {
   buildPolicyEvidenceFallback,
   buildTopologyEvidenceFallback,
@@ -19,6 +26,31 @@ import {
 } from "../../lib/evidence-confidence";
 import { useTopologyQuery } from "../topology/api";
 import { usePoliciesQuery } from "./api";
+
+type PolicyDetailBlockerReason =
+  | "none"
+  | "policy_capability_unavailable"
+  | "no_policies_observed"
+  | "per_policy_details_unavailable"
+  | "partial_detail_coverage"
+  | "collection_failed"
+  | "collection_partial"
+  | "not_recorded";
+
+interface PolicyDetailBlockerReadout {
+  pillValue: "ok" | "degraded" | "blocked" | "unknown";
+  label: string;
+  detail: string;
+}
+
+interface PolicyDetailBlockerSummary {
+  label: string;
+  detail: string;
+  breakdown: string;
+  blockedTargetCount: number;
+  detailReadyTargetCount: number;
+  notRecordedTargetCount: number;
+}
 
 function buildFreshnessSummary(observedAt: string | null, generatedAt: string) {
   if (!observedAt) {
@@ -193,6 +225,122 @@ function getEmptyReasonReadout(
         detail: "Current policy evidence includes bounded detail without an empty-state qualifier.",
       };
   }
+}
+
+export function describePolicyDetailBlockerReason(
+  reason: PolicyDetailBlockerReason,
+): PolicyDetailBlockerReadout {
+  switch (reason) {
+    case "none":
+      return {
+        pillValue: "ok",
+        label: "Detail ready",
+        detail:
+          "This target currently exposes stable bounded per-policy detail records in the current read-only slice.",
+      };
+    case "policy_capability_unavailable":
+      return {
+        pillValue: "blocked",
+        label: "Policy capability unavailable",
+        detail:
+          "This target does not currently expose bounded policy-capability evidence, so per-target detail cannot be derived here.",
+      };
+    case "no_policies_observed":
+      return {
+        pillValue: "blocked",
+        label: "No policies observed",
+        detail:
+          "Stable counters are visible, but no SR policies are currently observed on this target.",
+      };
+    case "per_policy_details_unavailable":
+      return {
+        pillValue: "blocked",
+        label: "Per-policy detail unavailable",
+        detail:
+          "Counters show policy presence on this target, but the bounded path cannot yet derive stable per-policy records.",
+      };
+    case "partial_detail_coverage":
+      return {
+        pillValue: "degraded",
+        label: "Partial detail coverage",
+        detail:
+          "Only a subset of the observed policies on this target currently has bounded normalized detail records.",
+      };
+    case "collection_failed":
+      return {
+        pillValue: "blocked",
+        label: "Collection failed",
+        detail:
+          "Live policy collection failed for this target, so current per-target policy detail is unavailable.",
+      };
+    case "collection_partial":
+      return {
+        pillValue: "degraded",
+        label: "Collection partial",
+        detail:
+          "Policy collection was partial for this target, so degraded and unknown policy states remain explicit.",
+      };
+    default:
+      return {
+        pillValue: "unknown",
+        label: "Not recorded",
+        detail:
+          "The backend did not supply a per-target detail blocker reason on this response.",
+      };
+  }
+}
+
+export function buildPolicyDetailBlockerSummary(
+  blockerReasons: PolicyDetailBlockerReason[],
+): PolicyDetailBlockerSummary {
+  const explicitReasons = blockerReasons.filter((reason) => reason !== "not_recorded");
+  const blockedReasons = explicitReasons.filter((reason) => reason !== "none");
+  const blockedCounts = countBy(blockedReasons, (reason) => reason);
+  const breakdown = Object.entries(blockedCounts)
+    .sort(([leftReason], [rightReason]) => leftReason.localeCompare(rightReason))
+    .map(
+      ([reason, count]) =>
+        `${describePolicyDetailBlockerReason(reason as PolicyDetailBlockerReason).label}: ${count}`,
+    )
+    .join(" • ");
+
+  if (explicitReasons.length === 0) {
+    return {
+      label: "Not recorded",
+      detail:
+        "The backend did not expose explicit per-target detail blocker reasons on this response.",
+      breakdown: "",
+      blockedTargetCount: 0,
+      detailReadyTargetCount: 0,
+      notRecordedTargetCount: blockerReasons.length,
+    };
+  }
+
+  const blockedTargetCount = blockedReasons.length;
+  const detailReadyTargetCount = explicitReasons.filter((reason) => reason === "none").length;
+  const notRecordedTargetCount = blockerReasons.length - explicitReasons.length;
+
+  if (blockedTargetCount === 0) {
+    return {
+      label: "No explicit blockers",
+      detail:
+        "Every target with an exposed blocker reason is currently detail-ready in the bounded policy slice.",
+      breakdown: "",
+      blockedTargetCount,
+      detailReadyTargetCount,
+      notRecordedTargetCount,
+    };
+  }
+
+  return {
+    label: `${blockedTargetCount} blocked`,
+    detail:
+      `${blockedTargetCount} of ${explicitReasons.length} targets with explicit blocker posture remain blocked from stable per-policy detail records. ${detailReadyTargetCount} targets are currently detail-ready.`,
+    breakdown,
+    blockedTargetCount,
+    detailReadyTargetCount,
+    notRecordedTargetCount,
+  };
 }
 
 function getCurrentPostureReadout(
@@ -376,11 +524,30 @@ export function PoliciesView() {
   }, [filteredPolicies, sortBy]);
   const selectedPolicy =
     sortedPolicies.find((policy) => policy.policy_id === selectedPolicyId) ?? sortedPolicies[0] ?? null;
+  const selectedObservedStateDisplay = selectedPolicy
+    ? buildRowPostureStatusDisplay(
+        selectedPolicy.current_posture,
+        selectedPolicy.observed_state,
+        selectedPolicy.last_recorded_observed_state,
+        "Last recorded observed",
+      )
+    : null;
+  const selectedHealthStateDisplay = selectedPolicy
+    ? buildRowPostureStatusDisplay(
+        selectedPolicy.current_posture,
+        selectedPolicy.health_state,
+        selectedPolicy.last_recorded_health_state,
+        "Last recorded health",
+      )
+    : null;
   const detailCoveragePercentage =
     data && data.observed_policy_count > 0
       ? Math.round((data.count / data.observed_policy_count) * 100)
       : 0;
   const evidenceGapCount = data ? Math.max(data.observed_policy_count - data.count, 0) : 0;
+  const detailBlockerSummary = buildPolicyDetailBlockerSummary(
+    data?.target_footprints.map((footprint) => footprint.detail_blocker_reason) ?? [],
+  );
 
   if (isLoading) {
     return (
@@ -467,6 +634,39 @@ export function PoliciesView() {
     observedPolicyCount: data.observed_policy_count,
     detailRecordCount: data.count,
   });
+  const policySyncDisplay = buildFallbackAwareStatusDisplay(
+    data.sync_status,
+    data.serving_mode,
+    "Last recorded sync",
+  );
+  const policySyncLabel =
+    data.serving_mode === "persisted_fallback" ? "Sync posture" : "Sync status";
+  const observedPoliciesLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last Recorded Observed Policies"
+      : "Observed Policies";
+  const observedStateFilterLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last recorded observed state"
+      : "Observed state";
+  const healthFilterLabel =
+    data.serving_mode === "persisted_fallback" ? "Last recorded health state" : "Health state";
+  const observedActiveLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last recorded observed active"
+      : "Observed active";
+  const observedInactiveLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last recorded observed inactive"
+      : "Observed inactive";
+  const observedDegradedLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last recorded observed degraded"
+      : "Observed degraded";
+  const healthDegradedLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last recorded health degraded"
+      : "Health degraded";
 
   return (
     <section>
@@ -485,7 +685,7 @@ export function PoliciesView() {
         <span>Data status: {data.data_status}</span>
         <span>Serving mode: {formatLabel(data.serving_mode)}</span>
         <span>Sync source: {data.sync_source}</span>
-        <span>Sync status: {data.sync_status}</span>
+        <span>{policySyncLabel}: {formatLabel(policySyncDisplay.pillValue)}</span>
         <span>Completeness: {data.completeness}</span>
         <span>Detail mode: {formatLabel(data.detail_mode)}</span>
         <span>Detail records: {data.count}</span>
@@ -520,7 +720,7 @@ export function PoliciesView() {
           </p>
         </article>
         <article className="summary-card">
-          <p className="summary-label">Observed Policies</p>
+          <p className="summary-label">{observedPoliciesLabel}</p>
           <strong>{data.observed_policy_count}</strong>
           <p>
             Active: {data.active_policy_count} • Static local: {data.static_local_policy_count} •
@@ -534,6 +734,19 @@ export function PoliciesView() {
             TTM preferences • Binding SIDs: {data.binding_sid_count} • SRv6 binding SIDs:{" "}
             {data.srv6_binding_sid_count}
           </p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Detail-Ready Targets</p>
+          <strong>{detailBlockerSummary.detailReadyTargetCount}</strong>
+          <p>
+            Explicit blocker posture is exposed for {data.target_footprints.length} targets on this
+            response.
+          </p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Detail Blockers</p>
+          <strong>{detailBlockerSummary.label}</strong>
+          <p>{detailBlockerSummary.detail}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Current Posture</p>
@@ -641,6 +854,22 @@ export function PoliciesView() {
         </div>
       ) : null}
 
+      {detailBlockerSummary.blockedTargetCount > 0 ? (
+        <div className="callout">
+          <strong>Per-target detail blockers remain explicit</strong>
+          <p>{detailBlockerSummary.detail}</p>
+          {detailBlockerSummary.breakdown ? (
+            <p className="table-note">Current blocker mix: {detailBlockerSummary.breakdown}</p>
+          ) : null}
+          {detailBlockerSummary.notRecordedTargetCount > 0 ? (
+            <p className="table-note">
+              {detailBlockerSummary.notRecordedTargetCount} targets still lack an explicit blocker
+              code on this response.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       {evidenceGapCount > 0 ? (
         <div className="callout">
           <strong>Evidence gap remains explicit</strong>
@@ -698,7 +927,12 @@ export function PoliciesView() {
             </li>
             <li>
               <span>Policy sync status</span>
-              <StatusPill value={data.sync_status} />
+              <div>
+                <StatusPill value={policySyncDisplay.pillValue} />
+                {policySyncDisplay.note ? (
+                  <div className="table-note">{policySyncDisplay.note}</div>
+                ) : null}
+              </div>
             </li>
             <li>
               <span>Explicit completeness</span>
@@ -948,19 +1182,19 @@ export function PoliciesView() {
           <h3>State Distribution</h3>
           <ul className="compact-list">
             <li>
-              <span>Observed active</span>
+              <span>{observedActiveLabel}</span>
               <strong>{observedStateCounts.active ?? 0}</strong>
             </li>
             <li>
-              <span>Observed inactive</span>
+              <span>{observedInactiveLabel}</span>
               <strong>{observedStateCounts.inactive ?? 0}</strong>
             </li>
             <li>
-              <span>Observed degraded</span>
+              <span>{observedDegradedLabel}</span>
               <strong>{observedStateCounts.degraded ?? 0}</strong>
             </li>
             <li>
-              <span>Health degraded</span>
+              <span>{healthDegradedLabel}</span>
               <strong>{healthCounts.degraded ?? 0}</strong>
             </li>
             <li>
@@ -1134,7 +1368,9 @@ export function PoliciesView() {
         </p>
         <p className="table-note">
           Where the backend now exposes explicit persisted anchors, this page surfaces those
-          snapshot identifiers as trust cues rather than as workflow state.
+          snapshot identifiers as trust cues rather than as workflow state. Per-target detail
+          blocker rows explain why policy detail is blocked on each target without pretending that
+          the platform already has full per-policy truth.
         </p>
       </div>
 
@@ -1160,6 +1396,100 @@ export function PoliciesView() {
         </div>
       ) : null}
 
+      <div className="table-card">
+        <h3>Per-Target Detail Blockers</h3>
+        <p className="table-note">
+          The backend-owned target footprint contract explains why each target is or is not
+          detail-ready. This remains a blocker view for the bounded read-only slice, not a claim of
+          full per-policy truth.
+        </p>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Target</th>
+              <th>Collection</th>
+              <th>Observed Footprint</th>
+              <th>Detail Records</th>
+              <th>Blocker Posture</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.target_footprints.length > 0 ? (
+              data.target_footprints.map((footprint) => {
+                const blockerReadout = describePolicyDetailBlockerReason(
+                  footprint.detail_blocker_reason,
+                );
+                const collectionDisplay =
+                  footprint.current_posture === "stale"
+                    ? {
+                        pillValue: "stale",
+                        note: `Last recorded collection: ${formatLabel(footprint.last_recorded_collection_status)}`,
+                      }
+                    : {
+                        pillValue:
+                          footprint.collection_status === "success"
+                            ? "ok"
+                            : footprint.collection_status === "partial"
+                              ? "degraded"
+                              : "blocked",
+                        note: `Current collection: ${formatLabel(footprint.collection_status)}`,
+                      };
+
+                return (
+                  <tr key={footprint.target_name}>
+                    <td>
+                      <strong>{footprint.target_name}</strong>
+                      <div className="table-note">{footprint.target_role ?? "unknown role"}</div>
+                    </td>
+                    <td>
+                      <StatusPill value={collectionDisplay.pillValue} />
+                      {collectionDisplay.note ? (
+                        <div className="table-note">{collectionDisplay.note}</div>
+                      ) : null}
+                    </td>
+                    <td>
+                      <div>{footprint.observed_policy_count} observed</div>
+                      <div className="table-note">
+                        Active {footprint.active_policy_count} • Static {footprint.static_policy_count}
+                        • BGP {footprint.bgp_policy_count}
+                      </div>
+                    </td>
+                    <td>
+                      <strong>{footprint.detail_record_count}</strong>
+                      <div className="table-note">
+                        TTM {footprint.ttm_preference_count} • Binding SIDs {footprint.binding_sid_count}
+                      </div>
+                    </td>
+                    <td>
+                      <StatusPill value={blockerReadout.pillValue} />
+                      <div className="table-note">
+                        <strong>{blockerReadout.label}</strong>
+                      </div>
+                      <div className="table-note">{blockerReadout.detail}</div>
+                      {footprint.notes.length > 0 ? (
+                        <ul className="notes-list">
+                          {footprint.notes.map((note) => (
+                            <li key={`${footprint.target_name}-${note}`}>{note}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={5}>
+                  <span className="meta-copy">
+                    No per-target policy footprint evidence is currently exposed on this response.
+                  </span>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
       <div className="toolbar">
         <label className="field-group">
           <span>Search policies</span>
@@ -1170,7 +1500,7 @@ export function PoliciesView() {
           />
         </label>
         <label className="field-group">
-          <span>Health state</span>
+          <span>{healthFilterLabel}</span>
           <select
             value={healthFilter}
             onChange={(event) => setHealthFilter(event.target.value)}
@@ -1197,7 +1527,7 @@ export function PoliciesView() {
           </select>
         </label>
         <label className="field-group">
-          <span>Observed state</span>
+          <span>{observedStateFilterLabel}</span>
           <select
             value={observedFilter}
             onChange={(event) => setObservedFilter(event.target.value)}
@@ -1293,6 +1623,18 @@ export function PoliciesView() {
               <tbody>
                 {sortedPolicies.map((policy) => {
                   const isSelected = selectedPolicy?.policy_id === policy.policy_id;
+                  const observedStateDisplay = buildRowPostureStatusDisplay(
+                    policy.current_posture,
+                    policy.observed_state,
+                    policy.last_recorded_observed_state,
+                    "Last recorded observed",
+                  );
+                  const healthStateDisplay = buildRowPostureStatusDisplay(
+                    policy.current_posture,
+                    policy.health_state,
+                    policy.last_recorded_health_state,
+                    "Last recorded health",
+                  );
                   return (
                     <tr key={policy.policy_id} className={isSelected ? "data-row-selected" : undefined}>
                       <td>
@@ -1321,13 +1663,19 @@ export function PoliciesView() {
                         <StatusPill value={policy.intent_state} />
                       </td>
                       <td>
-                        <StatusPill value={policy.observed_state} />
+                        <StatusPill value={observedStateDisplay.pillValue} />
+                        {observedStateDisplay.note ? (
+                          <div className="table-note">{observedStateDisplay.note}</div>
+                        ) : null}
                       </td>
                       <td>
                         <StatusPill value={policy.support_state} />
                       </td>
                       <td>
-                        <StatusPill value={policy.health_state} />
+                        <StatusPill value={healthStateDisplay.pillValue} />
+                        {healthStateDisplay.note ? (
+                          <div className="table-note">{healthStateDisplay.note}</div>
+                        ) : null}
                         {policy.notes.length > 0 ? (
                           <div className="table-note">{policy.notes.join(" ")}</div>
                         ) : null}
@@ -1346,7 +1694,7 @@ export function PoliciesView() {
                   <span>Policy: {selectedPolicy.policy_name}</span>
                   <span>Type: {formatLabel(selectedPolicy.policy_type)}</span>
                   <span>Source target: {selectedPolicy.source_target}</span>
-                  <span>Role: {selectedPolicy.source_target_role ?? "unknown"}</span>
+                  <span>Current posture: {formatRowCurrentPosture(selectedPolicy.current_posture)}</span>
                 </div>
                 <div className="content-grid">
                   <article>
@@ -1360,9 +1708,12 @@ export function PoliciesView() {
                       </div>
                       <div className="key-value-row">
                         <span>Observed state</span>
-                        <strong>
-                          <StatusPill value={selectedPolicy.observed_state} />
-                        </strong>
+                        <div>
+                          <StatusPill value={selectedObservedStateDisplay?.pillValue ?? "unknown"} />
+                          {selectedObservedStateDisplay?.note ? (
+                            <div className="table-note">{selectedObservedStateDisplay.note}</div>
+                          ) : null}
+                        </div>
                       </div>
                       <div className="key-value-row">
                         <span>Support state</span>
@@ -1372,9 +1723,12 @@ export function PoliciesView() {
                       </div>
                       <div className="key-value-row">
                         <span>Health state</span>
-                        <strong>
-                          <StatusPill value={selectedPolicy.health_state} />
-                        </strong>
+                        <div>
+                          <StatusPill value={selectedHealthStateDisplay?.pillValue ?? "unknown"} />
+                          {selectedHealthStateDisplay?.note ? (
+                            <div className="table-note">{selectedHealthStateDisplay.note}</div>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                     <p className="footnote">{describeSupportState(selectedPolicy.support_state)}</p>
@@ -1405,6 +1759,10 @@ export function PoliciesView() {
                       <div className="key-value-row">
                         <span>Source role</span>
                         <strong>{selectedPolicy.source_target_role ?? "unknown"}</strong>
+                      </div>
+                      <div className="key-value-row">
+                        <span>Source</span>
+                        <strong>{selectedPolicy.source}</strong>
                       </div>
                     </div>
                   </article>
@@ -1451,15 +1809,27 @@ export function PoliciesView() {
                   </p>
                 ) : (
                   <ul className="notes-list">
-                    {selectedPolicy.candidate_paths.map((candidatePath) => (
-                      <li key={`${selectedPolicy.policy_id}-${candidatePath.name}`}>
-                        <strong>{candidatePath.name}</strong> - {formatLabel(candidatePath.path_state)}
-                        {candidatePath.preference === null ? "" : `, pref ${candidatePath.preference}`}
-                        {candidatePath.notes.length > 0
-                          ? `, ${candidatePath.notes.join(", ")}`
-                          : ""}
-                      </li>
-                    ))}
+                    {selectedPolicy.candidate_paths.map((candidatePath) => {
+                      const candidatePathDisplay = buildRowPostureStatusDisplay(
+                        candidatePath.current_posture,
+                        candidatePath.path_state,
+                        candidatePath.last_recorded_path_state,
+                        "Last recorded path",
+                      );
+
+                      return (
+                        <li key={`${selectedPolicy.policy_id}-${candidatePath.name}`}>
+                          <strong>{candidatePath.name}</strong>
+                          {" - "}
+                          {formatLabel(candidatePathDisplay.pillValue)}
+                          {candidatePathDisplay.note ? ` • ${candidatePathDisplay.note}` : ""}
+                          {candidatePath.preference === null ? "" : `, pref ${candidatePath.preference}`}
+                          {candidatePath.notes.length > 0
+                            ? `, ${candidatePath.notes.join(", ")}`
+                            : ""}
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
                 {selectedPolicy.notes.length > 0 ? (
