@@ -9,7 +9,9 @@ import {
 } from "../../lib/cross-slice-consistency";
 import {
   buildFallbackAwareStatusDisplay,
+  buildRowPostureStatusDisplay,
   countBy,
+  formatRowCurrentPosture,
   formatDateTime,
   formatLabel,
 } from "../../lib/presentation";
@@ -381,6 +383,22 @@ export function PoliciesView() {
   }, [filteredPolicies, sortBy]);
   const selectedPolicy =
     sortedPolicies.find((policy) => policy.policy_id === selectedPolicyId) ?? sortedPolicies[0] ?? null;
+  const selectedObservedStateDisplay = selectedPolicy
+    ? buildRowPostureStatusDisplay(
+        selectedPolicy.current_posture,
+        selectedPolicy.observed_state,
+        selectedPolicy.last_recorded_observed_state,
+        "Last recorded observed",
+      )
+    : null;
+  const selectedHealthStateDisplay = selectedPolicy
+    ? buildRowPostureStatusDisplay(
+        selectedPolicy.current_posture,
+        selectedPolicy.health_state,
+        selectedPolicy.last_recorded_health_state,
+        "Last recorded health",
+      )
+    : null;
   const detailCoveragePercentage =
     data && data.observed_policy_count > 0
       ? Math.round((data.count / data.observed_policy_count) * 100)
@@ -479,6 +497,32 @@ export function PoliciesView() {
   );
   const policySyncLabel =
     data.serving_mode === "persisted_fallback" ? "Sync posture" : "Sync status";
+  const observedPoliciesLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last Recorded Observed Policies"
+      : "Observed Policies";
+  const observedStateFilterLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last recorded observed state"
+      : "Observed state";
+  const healthFilterLabel =
+    data.serving_mode === "persisted_fallback" ? "Last recorded health state" : "Health state";
+  const observedActiveLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last recorded observed active"
+      : "Observed active";
+  const observedInactiveLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last recorded observed inactive"
+      : "Observed inactive";
+  const observedDegradedLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last recorded observed degraded"
+      : "Observed degraded";
+  const healthDegradedLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last recorded health degraded"
+      : "Health degraded";
 
   return (
     <section>
@@ -532,7 +576,7 @@ export function PoliciesView() {
           </p>
         </article>
         <article className="summary-card">
-          <p className="summary-label">Observed Policies</p>
+          <p className="summary-label">{observedPoliciesLabel}</p>
           <strong>{data.observed_policy_count}</strong>
           <p>
             Active: {data.active_policy_count} • Static local: {data.static_local_policy_count} •
@@ -965,19 +1009,19 @@ export function PoliciesView() {
           <h3>State Distribution</h3>
           <ul className="compact-list">
             <li>
-              <span>Observed active</span>
+              <span>{observedActiveLabel}</span>
               <strong>{observedStateCounts.active ?? 0}</strong>
             </li>
             <li>
-              <span>Observed inactive</span>
+              <span>{observedInactiveLabel}</span>
               <strong>{observedStateCounts.inactive ?? 0}</strong>
             </li>
             <li>
-              <span>Observed degraded</span>
+              <span>{observedDegradedLabel}</span>
               <strong>{observedStateCounts.degraded ?? 0}</strong>
             </li>
             <li>
-              <span>Health degraded</span>
+              <span>{healthDegradedLabel}</span>
               <strong>{healthCounts.degraded ?? 0}</strong>
             </li>
             <li>
@@ -1187,7 +1231,7 @@ export function PoliciesView() {
           />
         </label>
         <label className="field-group">
-          <span>Health state</span>
+          <span>{healthFilterLabel}</span>
           <select
             value={healthFilter}
             onChange={(event) => setHealthFilter(event.target.value)}
@@ -1214,7 +1258,7 @@ export function PoliciesView() {
           </select>
         </label>
         <label className="field-group">
-          <span>Observed state</span>
+          <span>{observedStateFilterLabel}</span>
           <select
             value={observedFilter}
             onChange={(event) => setObservedFilter(event.target.value)}
@@ -1310,6 +1354,18 @@ export function PoliciesView() {
               <tbody>
                 {sortedPolicies.map((policy) => {
                   const isSelected = selectedPolicy?.policy_id === policy.policy_id;
+                  const observedStateDisplay = buildRowPostureStatusDisplay(
+                    policy.current_posture,
+                    policy.observed_state,
+                    policy.last_recorded_observed_state,
+                    "Last recorded observed",
+                  );
+                  const healthStateDisplay = buildRowPostureStatusDisplay(
+                    policy.current_posture,
+                    policy.health_state,
+                    policy.last_recorded_health_state,
+                    "Last recorded health",
+                  );
                   return (
                     <tr key={policy.policy_id} className={isSelected ? "data-row-selected" : undefined}>
                       <td>
@@ -1338,13 +1394,19 @@ export function PoliciesView() {
                         <StatusPill value={policy.intent_state} />
                       </td>
                       <td>
-                        <StatusPill value={policy.observed_state} />
+                        <StatusPill value={observedStateDisplay.pillValue} />
+                        {observedStateDisplay.note ? (
+                          <div className="table-note">{observedStateDisplay.note}</div>
+                        ) : null}
                       </td>
                       <td>
                         <StatusPill value={policy.support_state} />
                       </td>
                       <td>
-                        <StatusPill value={policy.health_state} />
+                        <StatusPill value={healthStateDisplay.pillValue} />
+                        {healthStateDisplay.note ? (
+                          <div className="table-note">{healthStateDisplay.note}</div>
+                        ) : null}
                         {policy.notes.length > 0 ? (
                           <div className="table-note">{policy.notes.join(" ")}</div>
                         ) : null}
@@ -1363,7 +1425,7 @@ export function PoliciesView() {
                   <span>Policy: {selectedPolicy.policy_name}</span>
                   <span>Type: {formatLabel(selectedPolicy.policy_type)}</span>
                   <span>Source target: {selectedPolicy.source_target}</span>
-                  <span>Role: {selectedPolicy.source_target_role ?? "unknown"}</span>
+                  <span>Current posture: {formatRowCurrentPosture(selectedPolicy.current_posture)}</span>
                 </div>
                 <div className="content-grid">
                   <article>
@@ -1377,9 +1439,12 @@ export function PoliciesView() {
                       </div>
                       <div className="key-value-row">
                         <span>Observed state</span>
-                        <strong>
-                          <StatusPill value={selectedPolicy.observed_state} />
-                        </strong>
+                        <div>
+                          <StatusPill value={selectedObservedStateDisplay?.pillValue ?? "unknown"} />
+                          {selectedObservedStateDisplay?.note ? (
+                            <div className="table-note">{selectedObservedStateDisplay.note}</div>
+                          ) : null}
+                        </div>
                       </div>
                       <div className="key-value-row">
                         <span>Support state</span>
@@ -1389,9 +1454,12 @@ export function PoliciesView() {
                       </div>
                       <div className="key-value-row">
                         <span>Health state</span>
-                        <strong>
-                          <StatusPill value={selectedPolicy.health_state} />
-                        </strong>
+                        <div>
+                          <StatusPill value={selectedHealthStateDisplay?.pillValue ?? "unknown"} />
+                          {selectedHealthStateDisplay?.note ? (
+                            <div className="table-note">{selectedHealthStateDisplay.note}</div>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                     <p className="footnote">{describeSupportState(selectedPolicy.support_state)}</p>
@@ -1422,6 +1490,10 @@ export function PoliciesView() {
                       <div className="key-value-row">
                         <span>Source role</span>
                         <strong>{selectedPolicy.source_target_role ?? "unknown"}</strong>
+                      </div>
+                      <div className="key-value-row">
+                        <span>Source</span>
+                        <strong>{selectedPolicy.source}</strong>
                       </div>
                     </div>
                   </article>
@@ -1468,15 +1540,27 @@ export function PoliciesView() {
                   </p>
                 ) : (
                   <ul className="notes-list">
-                    {selectedPolicy.candidate_paths.map((candidatePath) => (
-                      <li key={`${selectedPolicy.policy_id}-${candidatePath.name}`}>
-                        <strong>{candidatePath.name}</strong> - {formatLabel(candidatePath.path_state)}
-                        {candidatePath.preference === null ? "" : `, pref ${candidatePath.preference}`}
-                        {candidatePath.notes.length > 0
-                          ? `, ${candidatePath.notes.join(", ")}`
-                          : ""}
-                      </li>
-                    ))}
+                    {selectedPolicy.candidate_paths.map((candidatePath) => {
+                      const candidatePathDisplay = buildRowPostureStatusDisplay(
+                        candidatePath.current_posture,
+                        candidatePath.path_state,
+                        candidatePath.last_recorded_path_state,
+                        "Last recorded path",
+                      );
+
+                      return (
+                        <li key={`${selectedPolicy.policy_id}-${candidatePath.name}`}>
+                          <strong>{candidatePath.name}</strong>
+                          {" - "}
+                          {formatLabel(candidatePathDisplay.pillValue)}
+                          {candidatePathDisplay.note ? ` • ${candidatePathDisplay.note}` : ""}
+                          {candidatePath.preference === null ? "" : `, pref ${candidatePath.preference}`}
+                          {candidatePath.notes.length > 0
+                            ? `, ${candidatePath.notes.join(", ")}`
+                            : ""}
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
                 {selectedPolicy.notes.length > 0 ? (

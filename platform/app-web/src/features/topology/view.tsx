@@ -11,11 +11,13 @@ import { StatusPill } from "../../components/status-pill";
 import { buildCrossSliceConsistencyReadout } from "../../lib/cross-slice-consistency";
 import {
   buildFallbackAwareStatusDisplay,
+  buildRowPostureStatusDisplay,
   countBy,
   describeTopologyCollectionPosture,
   describeTopologyCoveragePosture,
   describeTopologyInferencePosture,
   describeTopologyLinkPairing,
+  formatRowCurrentPosture,
   formatCountLabel,
   formatDateTime,
   formatLabel,
@@ -285,6 +287,14 @@ export function TopologyView() {
   }, [filteredNodes, nodeSortBy]);
   const selectedNode =
     sortedNodes.find((node) => node.node_id === selectedNodeId) ?? sortedNodes[0] ?? null;
+  const selectedNodeStateDisplay = selectedNode
+    ? buildRowPostureStatusDisplay(
+        selectedNode.current_posture,
+        selectedNode.state,
+        selectedNode.last_recorded_state,
+        "Last recorded state",
+      )
+    : null;
   const filteredLinks = useMemo(() => {
     const normalizedSearch = linkSearchValue.trim().toLowerCase();
 
@@ -341,6 +351,14 @@ export function TopologyView() {
   }, [filteredLinks, linkSortBy]);
   const selectedLink =
     sortedLinks.find((link) => link.link_id === selectedLinkId) ?? sortedLinks[0] ?? null;
+  const selectedLinkStateDisplay = selectedLink
+    ? buildRowPostureStatusDisplay(
+        selectedLink.current_posture,
+        selectedLink.state,
+        selectedLink.last_recorded_state,
+        "Last recorded state",
+      )
+    : null;
 
   if (isLoading) {
     return (
@@ -408,6 +426,24 @@ export function TopologyView() {
   );
   const topologySyncLabel =
     data.serving_mode === "persisted_fallback" ? "Sync posture" : "Sync status";
+  const nodeStateFilterLabel =
+    data.serving_mode === "persisted_fallback" ? "Last recorded node state" : "Node state";
+  const linkStateFilterLabel =
+    data.serving_mode === "persisted_fallback" ? "Last recorded link state" : "Link state";
+  const degradedLinksLabel =
+    data.serving_mode === "persisted_fallback" ? "Last Recorded Degraded Links" : "Degraded Links";
+  const nodesUpLabel =
+    data.serving_mode === "persisted_fallback" ? "Last recorded nodes up" : "Nodes up";
+  const nodesDegradedLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last recorded nodes degraded"
+      : "Nodes degraded";
+  const linksUpLabel =
+    data.serving_mode === "persisted_fallback" ? "Last recorded links up" : "Links up";
+  const linksDegradedLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last recorded links degraded"
+      : "Links degraded";
   const policyEvidenceConfidence = policyData
     ? normalizeEvidenceConfidence(
         policyData.evidence_confidence,
@@ -500,7 +536,7 @@ export function TopologyView() {
           <p>{policyConsistencyReadout.detail}</p>
         </article>
         <article className="summary-card">
-          <p className="summary-label">Degraded Links</p>
+          <p className="summary-label">{degradedLinksLabel}</p>
           <strong>{linkCounts.degraded ?? 0}</strong>
           <p>Links whose evidence or state is degraded remain explicit.</p>
         </article>
@@ -767,19 +803,19 @@ export function TopologyView() {
           <h3>State and Change Distribution</h3>
           <ul className="compact-list">
             <li>
-              <span>Nodes up</span>
+              <span>{nodesUpLabel}</span>
               <strong>{nodeCounts.up ?? 0}</strong>
             </li>
             <li>
-              <span>Nodes degraded</span>
+              <span>{nodesDegradedLabel}</span>
               <strong>{nodeCounts.degraded ?? 0}</strong>
             </li>
             <li>
-              <span>Links up</span>
+              <span>{linksUpLabel}</span>
               <strong>{linkCounts.up ?? 0}</strong>
             </li>
             <li>
-              <span>Links degraded</span>
+              <span>{linksDegradedLabel}</span>
               <strong>{linkCounts.degraded ?? 0}</strong>
             </li>
             <li>
@@ -937,7 +973,7 @@ export function TopologyView() {
           />
         </label>
         <label className="field-group">
-          <span>Node state</span>
+          <span>{nodeStateFilterLabel}</span>
           <select
             value={nodeStateFilter}
             onChange={(event) => setNodeStateFilter(event.target.value)}
@@ -1002,9 +1038,10 @@ export function TopologyView() {
               <tbody>
                 {sortedNodes.map((node) => {
                   const isSelected = selectedNode?.node_id === node.node_id;
-                  const nodeStateDisplay = buildFallbackAwareStatusDisplay(
+                  const nodeStateDisplay = buildRowPostureStatusDisplay(
+                    node.current_posture,
                     node.state,
-                    data.serving_mode,
+                    node.last_recorded_state,
                     "Last recorded state",
                   );
                   return (
@@ -1043,7 +1080,7 @@ export function TopologyView() {
                 <div className="metadata-row">
                   <span>Node: {selectedNode.display_name}</span>
                   <span>Role: {formatLabel(selectedNode.role)}</span>
-                  <span>State: {formatLabel(selectedNode.state)}</span>
+                  <span>Current posture: {formatRowCurrentPosture(selectedNode.current_posture)}</span>
                   <span>Source: {selectedNode.source}</span>
                 </div>
                 <div className="key-value-list">
@@ -1070,6 +1107,15 @@ export function TopologyView() {
                   <div className="key-value-row">
                     <span>Platform hint</span>
                     <strong>{selectedNode.attributes.platform_hint ?? "Unknown"}</strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>Node state</span>
+                    <div>
+                      <StatusPill value={selectedNodeStateDisplay?.pillValue ?? "unknown"} />
+                      {selectedNodeStateDisplay?.note ? (
+                        <div className="table-note">{selectedNodeStateDisplay.note}</div>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="key-value-row">
                     <span>Evidence posture</span>
@@ -1103,7 +1149,7 @@ export function TopologyView() {
           />
         </label>
         <label className="field-group">
-          <span>Link state</span>
+          <span>{linkStateFilterLabel}</span>
           <select
             value={linkStateFilter}
             onChange={(event) => setLinkStateFilter(event.target.value)}
@@ -1181,9 +1227,10 @@ export function TopologyView() {
                   const isSelected = selectedLink?.link_id === link.link_id;
                   const evidenceCount = getTopologyLinkEndpointEvidenceCount(link);
                   const endpointPairingState = getTopologyLinkEndpointPairingState(link);
-                  const linkStateDisplay = buildFallbackAwareStatusDisplay(
+                  const linkStateDisplay = buildRowPostureStatusDisplay(
+                    link.current_posture,
                     link.state,
-                    data.serving_mode,
+                    link.last_recorded_state,
                     "Last recorded state",
                   );
                   return (
@@ -1234,7 +1281,7 @@ export function TopologyView() {
                   <span>Link: {selectedLink.link_id}</span>
                   <span>Knowledge: {formatLabel(getLinkKnowledgeState(selectedLink))}</span>
                   <span>Pairing: {formatLabel(getTopologyLinkEndpointPairingState(selectedLink))}</span>
-                  <span>Source: {selectedLink.source}</span>
+                  <span>Current posture: {formatRowCurrentPosture(selectedLink.current_posture)}</span>
                 </div>
                 <div className="key-value-list">
                   <div className="key-value-row">
@@ -1245,7 +1292,12 @@ export function TopologyView() {
                   </div>
                   <div className="key-value-row">
                     <span>Link state</span>
-                    <strong>{formatLabel(selectedLink.state)}</strong>
+                    <div>
+                      <StatusPill value={selectedLinkStateDisplay?.pillValue ?? "unknown"} />
+                      {selectedLinkStateDisplay?.note ? (
+                        <div className="table-note">{selectedLinkStateDisplay.note}</div>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="key-value-row">
                     <span>Knowledge state</span>
@@ -1270,6 +1322,10 @@ export function TopologyView() {
                     <strong>
                       {selectedLink.attributes.inference_method ?? "No inference method recorded"}
                     </strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>Source</span>
+                    <strong>{selectedLink.source}</strong>
                   </div>
                   <div className="key-value-row">
                     <span>Evidence interpretation</span>

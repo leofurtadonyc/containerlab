@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { buildFallbackAwareStatusDisplay } from "../src/lib/presentation";
+import {
+  buildFallbackAwareStatusDisplay,
+  buildRowPostureStatusDisplay,
+  formatRowCurrentPosture,
+} from "../src/lib/presentation";
 
 describe("fallback-aware status display", () => {
   it("keeps live status values unchanged", () => {
@@ -24,5 +28,31 @@ describe("fallback-aware status display", () => {
       pillValue: "empty_scaffold",
       note: null,
     });
+  });
+
+  it("keeps current row values unchanged when backend posture is current", () => {
+    expect(buildRowPostureStatusDisplay("current", "ok", "ok", "Last recorded collector")).toEqual({
+      pillValue: "ok",
+      note: null,
+    });
+  });
+
+  it("shows stale row posture with a last-recorded note", () => {
+    expect(
+      buildRowPostureStatusDisplay(
+        "stale",
+        "degraded",
+        "degraded",
+        "Last recorded state",
+      ),
+    ).toEqual({
+      pillValue: "stale",
+      note: "Last recorded state: degraded",
+    });
+  });
+
+  it("formats row current posture for operator-facing detail panels", () => {
+    expect(formatRowCurrentPosture("current")).toBe("Current");
+    expect(formatRowCurrentPosture("stale")).toBe("Stale fallback");
   });
 });

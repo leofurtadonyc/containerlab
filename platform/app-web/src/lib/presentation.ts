@@ -1,4 +1,5 @@
 import type {
+  CurrentRowPosture,
   PlatformReadPathStatus,
   TopologyCollectionPosture,
   TopologyCoverageSummaryRecord,
@@ -94,6 +95,11 @@ export interface FallbackAwareStatusDisplay {
   note: string | null;
 }
 
+export interface RowPostureAwareStatusDisplay {
+  pillValue: string;
+  note: string | null;
+}
+
 export function buildFallbackAwareStatusDisplay(
   value: string,
   servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold",
@@ -117,6 +123,29 @@ export function buildFallbackAwareStatusDisplay(
     pillValue: value,
     note: null,
   };
+}
+
+export function buildRowPostureStatusDisplay(
+  currentPosture: CurrentRowPosture,
+  currentValue: string,
+  lastRecordedValue: string,
+  notePrefix = "Last recorded",
+): RowPostureAwareStatusDisplay {
+  if (currentPosture === "stale") {
+    return {
+      pillValue: "stale",
+      note: `${notePrefix}: ${formatLabel(lastRecordedValue)}`,
+    };
+  }
+
+  return {
+    pillValue: currentValue,
+    note: null,
+  };
+}
+
+export function formatRowCurrentPosture(currentPosture: CurrentRowPosture): string {
+  return currentPosture === "stale" ? "Stale fallback" : "Current";
 }
 
 function parseCount(value: number | string | null | undefined): number {

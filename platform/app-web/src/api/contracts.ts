@@ -92,6 +92,8 @@ export interface PlatformStatusResponse extends ApiResponseMetadata {
   read_paths?: PlatformReadPathStatus[];
 }
 
+export type CurrentRowPosture = "current" | "stale";
+
 export interface DeviceRecord {
   device_id: string;
   vendor: string;
@@ -99,7 +101,9 @@ export interface DeviceRecord {
   software_version: string | null;
   role: string | null;
   management_address: string;
+  current_posture: CurrentRowPosture;
   collector_status: "ok" | "degraded" | "unreachable" | "unknown";
+  last_recorded_collector_status: "ok" | "degraded" | "unreachable" | "unknown";
   capability_summary:
     | "supported"
     | "partially_supported"
@@ -144,7 +148,9 @@ export interface TopologyNodeRecord {
   node_id: string;
   display_name: string;
   role: string;
+  current_posture: CurrentRowPosture;
   state: "up" | "down" | "degraded" | "unknown";
+  last_recorded_state: "up" | "down" | "degraded" | "unknown";
   source: string;
   device_id: string | null;
   attributes: Record<string, string>;
@@ -154,7 +160,9 @@ export interface TopologyLinkRecord {
   link_id: string;
   source_node_id: string;
   target_node_id: string;
+  current_posture: CurrentRowPosture;
   state: "up" | "down" | "degraded" | "unknown";
+  last_recorded_state: "up" | "down" | "degraded" | "unknown";
   source: string;
   endpoint_pairing_state: "paired" | "single_sided" | "unknown";
   endpoint_evidence_count: number | null;
@@ -216,7 +224,9 @@ export interface TopologyResponse extends ApiResponseMetadata {
 
 export interface CandidatePathRecord {
   name: string;
+  current_posture: CurrentRowPosture;
   path_state: "active" | "inactive" | "unknown";
+  last_recorded_path_state: "active" | "inactive" | "unknown";
   preference: number | null;
   notes: string[];
 }
@@ -231,8 +241,10 @@ export interface PolicyRecord {
   source_target: string;
   source_target_role: string | null;
   candidate_paths: CandidatePathRecord[];
+  current_posture: CurrentRowPosture;
   intent_state: "declared" | "unknown";
   observed_state: "active" | "inactive" | "degraded" | "unknown";
+  last_recorded_observed_state: "active" | "inactive" | "degraded" | "unknown";
   support_state:
     | "supported"
     | "partially_supported"
@@ -240,7 +252,28 @@ export interface PolicyRecord {
     | "unknown"
     | "not_implemented_in_platform";
   health_state: "healthy" | "degraded" | "down" | "unknown";
+  last_recorded_health_state: "healthy" | "degraded" | "down" | "unknown";
   source: string;
+  notes: string[];
+}
+
+export interface PolicyTargetFootprintRecord {
+  target_name: string;
+  target_role: string | null;
+  current_posture: CurrentRowPosture;
+  collection_status: "success" | "failure" | "partial";
+  last_recorded_collection_status: "success" | "failure" | "partial";
+  policy_capable: boolean;
+  observed_policy_count: number;
+  active_policy_count: number;
+  static_policy_count: number;
+  static_local_policy_count: number;
+  static_non_local_policy_count: number;
+  bgp_policy_count: number;
+  ttm_preference_count: number;
+  binding_sid_count: number;
+  srv6_binding_sid_count: number;
+  detail_record_count: number;
   notes: string[];
 }
 
@@ -408,6 +441,7 @@ export interface PoliciesListResponse extends ApiResponseMetadata {
   srv6_binding_sid_count: number;
   count: number;
   notes: string[];
+  target_footprints: PolicyTargetFootprintRecord[];
   comparison_to_latest_persisted: PolicyCurrentComparison;
   history: PolicyHistoryWindow;
   items: PolicyRecord[];

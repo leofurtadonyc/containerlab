@@ -5,7 +5,7 @@ import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import {
-  buildFallbackAwareStatusDisplay,
+  buildRowPostureStatusDisplay,
   countBy,
   formatDateTime,
   formatLabel,
@@ -172,6 +172,10 @@ export function DevicesView() {
     data.comparison_to_latest_persisted.status,
     data.serving_mode,
   );
+  const collectorFilterLabel =
+    data.serving_mode === "persisted_fallback"
+      ? "Last recorded collector state"
+      : "Collector state";
   const collectorOkLabel =
     data.serving_mode === "persisted_fallback" ? "Last Recorded Collector OK" : "Collector OK";
   const collectorOkDetail =
@@ -465,7 +469,7 @@ export function DevicesView() {
           />
         </label>
         <label className="field-group">
-          <span>Collector state</span>
+          <span>{collectorFilterLabel}</span>
           <select
             value={collectorFilter}
             onChange={(event) => setCollectorFilter(event.target.value)}
@@ -519,9 +523,11 @@ export function DevicesView() {
             </thead>
             <tbody>
               {filteredItems.map((device) => {
-                const collectorStatusDisplay = buildFallbackAwareStatusDisplay(
+                const collectorStatusDisplay = buildRowPostureStatusDisplay(
+                  device.current_posture,
                   device.collector_status,
-                  data.serving_mode,
+                  device.last_recorded_collector_status,
+                  "Last recorded collector",
                 );
 
                 return (
