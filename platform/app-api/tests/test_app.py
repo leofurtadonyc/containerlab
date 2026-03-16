@@ -2234,7 +2234,8 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert "platform_app_api_topology_paired_links 1" in response.text
     assert "platform_app_api_topology_single_sided_links 0" in response.text
     assert (
-        'platform_app_api_topology_coverage_posture{endpoint_pairing_posture="paired"} 1'
+        'platform_app_api_topology_coverage_posture{inference_posture="inferred",'
+        'endpoint_pairing_posture="paired",collection_posture="ok"} 1'
         in response.text
     )
     assert (
@@ -2331,7 +2332,8 @@ def test_metrics_endpoint_exports_mixed_topology_pairing_posture(monkeypatch) ->
     assert "platform_app_api_topology_paired_links 1" in response.text
     assert "platform_app_api_topology_single_sided_links 1" in response.text
     assert (
-        'platform_app_api_topology_coverage_posture{endpoint_pairing_posture="partially_paired"} 1'
+        'platform_app_api_topology_coverage_posture{inference_posture="inferred",'
+        'endpoint_pairing_posture="partially_paired",collection_posture="degraded"} 1'
         in response.text
     )
     assert 'platform_app_api_readiness_blocked_scopes{scope="phase_transition"} 6' in response.text

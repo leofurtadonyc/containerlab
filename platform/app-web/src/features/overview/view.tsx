@@ -6,7 +6,11 @@ import { TrustCueCard } from "../../components/trust-cue-card";
 import type { PlatformReadPathStatus } from "../../api/contracts";
 import {
   countBy,
+  describeTopologyCollectionPosture,
   describeTopologyCoveragePosture,
+  describeTopologyInferencePosture,
+  describeTopologyReadPathCollection,
+  describeTopologyReadPathInference,
   describeTopologyReadPathPairing,
   formatDateTime,
   formatLabel,
@@ -237,7 +241,14 @@ export function OverviewView() {
     topologyCoverageSummary,
     topologyQuery.data.topology.links.length,
   );
+  const topologyInferenceReadout = describeTopologyInferencePosture(
+    topologyCoverageSummary,
+    topologyQuery.data.topology.links.length,
+  );
+  const topologyCollectionReadout = describeTopologyCollectionPosture(topologyCoverageSummary);
   const topologyReadPathPairing = describeTopologyReadPathPairing(topologyReadPath);
+  const topologyReadPathInference = describeTopologyReadPathInference(topologyReadPath);
+  const topologyReadPathCollection = describeTopologyReadPathCollection(topologyReadPath);
   const readiness = normalizeDryRunReadiness(capabilitiesQuery.data.dry_run_readiness);
   const readinessIdentity = summarizeReadinessItemIdentitySupport(readiness);
 
@@ -292,7 +303,9 @@ export function OverviewView() {
         <article className="summary-card">
           <p className="summary-label">Topology coverage</p>
           <strong>{topologyCoverageReadout.label}</strong>
-          <p>{topologyCoverageReadout.countDetail}</p>
+          <p>
+            {topologyInferenceReadout.label} • {topologyCollectionReadout.label} • {topologyCoverageReadout.countDetail}
+          </p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Policy inventory</p>
@@ -419,7 +432,7 @@ export function OverviewView() {
 
         <TrustCueCard
           title="Topology Trust Cues"
-          summary="Topology routine use depends on live-versus-fallback serving, partial completeness, backend-owned endpoint-pairing posture, and the bounded target coverage and freshness posture now exposed for the topology read path."
+          summary="Topology routine use depends on live-versus-fallback serving, partial completeness, backend-owned inference posture, endpoint-pairing posture, collection posture, and the bounded target coverage and freshness posture now exposed for the topology read path."
           rows={[
             {
               label: "Serving mode",
@@ -433,10 +446,22 @@ export function OverviewView() {
               value: topologyQuery.data.evidence_confidence.freshness_posture,
             },
             {
+              label: "Inference posture",
+              kind: "status",
+              value: topologyReadPathInference.status,
+              note: topologyInferenceReadout.detail,
+            },
+            {
               label: "Endpoint pairing",
               kind: "status",
               value: topologyReadPathPairing.status,
               note: [topologyCoverageReadout.detail, topologyCoverageReadout.countDetail],
+            },
+            {
+              label: "Collection posture",
+              kind: "status",
+              value: topologyReadPathCollection.status,
+              note: topologyCollectionReadout.detail,
             },
             {
               label: "Target coverage",
@@ -444,7 +469,7 @@ export function OverviewView() {
               value: formatReadPathCoverage(topologyReadPath),
             },
             {
-              label: "Collection posture",
+              label: "Collection counts",
               kind: "text",
               value: formatReadPathCollection(topologyReadPath),
             },
@@ -469,6 +494,8 @@ export function OverviewView() {
               value: topologyReadPath?.observation_state ?? "unknown",
               note: [
                 topologyReadPath?.degraded_scope_summary ?? "No topology degraded-scope summary is exposed.",
+                topologyReadPathInference.detail,
+                topologyReadPathCollection.detail,
                 topologyReadPathPairing.countDetail,
               ],
             },

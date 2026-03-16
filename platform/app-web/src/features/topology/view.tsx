@@ -12,7 +12,9 @@ import { buildCrossSliceConsistencyReadout } from "../../lib/cross-slice-consist
 import {
   buildFallbackAwareStatusDisplay,
   countBy,
+  describeTopologyCollectionPosture,
   describeTopologyCoveragePosture,
+  describeTopologyInferencePosture,
   describeTopologyLinkPairing,
   formatCountLabel,
   formatDateTime,
@@ -388,6 +390,13 @@ export function TopologyView() {
     coverageSummary ?? getTopologyCoverageSummary(data),
     topology.links.length,
   );
+  const inferenceReadout = describeTopologyInferencePosture(
+    coverageSummary ?? getTopologyCoverageSummary(data),
+    topology.links.length,
+  );
+  const collectionReadout = describeTopologyCollectionPosture(
+    coverageSummary ?? getTopologyCoverageSummary(data),
+  );
   const evidenceConfidence = normalizeEvidenceConfidence(
     data.evidence_confidence,
     buildTopologyEvidenceFallback(data.serving_mode, data.data_status),
@@ -507,8 +516,13 @@ export function TopologyView() {
         </article>
         <article className="summary-card">
           <p className="summary-label">Inference Posture</p>
-          <strong>{coverageReadout.label}</strong>
-          <p>{coverageReadout.detail}</p>
+          <strong>{inferenceReadout.label}</strong>
+          <p>{inferenceReadout.detail}</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Collection Posture</p>
+          <strong>{collectionReadout.label}</strong>
+          <p>{collectionReadout.detail}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Observed to Generated</p>
@@ -564,8 +578,16 @@ export function TopologyView() {
               <strong>{comparisonReadout.label}</strong>
             </li>
             <li>
+              <span>Inference posture</span>
+              <StatusPill value={inferenceReadout.status} />
+            </li>
+            <li>
               <span>Endpoint pairing posture</span>
               <StatusPill value={coverageReadout.status} />
+            </li>
+            <li>
+              <span>Collection posture</span>
+              <StatusPill value={collectionReadout.status} />
             </li>
             <li>
               <span>Pairing counts</span>
@@ -600,8 +622,16 @@ export function TopologyView() {
               <strong>{formatLabel(evidenceConfidence.confidence_posture)}</strong>
             </li>
             <li>
+              <span>Inference posture</span>
+              <StatusPill value={inferenceReadout.status} />
+            </li>
+            <li>
               <span>Endpoint pairing</span>
               <StatusPill value={coverageReadout.status} />
+            </li>
+            <li>
+              <span>Collection posture</span>
+              <StatusPill value={collectionReadout.status} />
             </li>
             <li>
               <span>Inference method</span>
@@ -801,9 +831,11 @@ export function TopologyView() {
         <strong>How to read this page</strong>
         <p>
           Live collector data remains the primary current truth source. Persisted fallback
-          snapshots keep the page usable when live collection is unavailable. Comparison
-          summaries show bounded normalized differences only and should not be read as
-          path-validation, controller truth, or drift verdicts.
+          snapshots keep the page usable when live collection is unavailable. Inference
+          posture, endpoint pairing, and collection posture are shown separately so operators
+          can see why topology remains partial. Comparison summaries show bounded normalized
+          differences only and should not be read as path-validation, controller truth, or
+          drift verdicts.
         </p>
         <p className="table-note">
           When the backend can identify the compared persisted topology record explicitly, this
@@ -839,6 +871,27 @@ export function TopologyView() {
             The backend does not currently have enough live or persisted topology evidence to
             support a stronger truth claim for this page. The UI keeps that blocked posture
             visible instead of inventing graph certainty.
+          </p>
+        </div>
+      ) : null}
+
+      {collectionReadout.status === "degraded" ? (
+        <div className="callout">
+          <strong>Collection degradation remains explicit</strong>
+          <p>
+            The current topology slice came through a degraded collection window. The page stays
+            usable, but it keeps that bounded collection limit visible instead of collapsing it
+            into one generic partiality sentence.
+          </p>
+        </div>
+      ) : null}
+
+      {collectionReadout.status === "blocked" ? (
+        <div className="callout">
+          <strong>Collection blockage remains explicit</strong>
+          <p>
+            The current topology slice is not backed by a normal live collection window. This is
+            distinct from endpoint pairing limits and remains visible as its own trust cue.
           </p>
         </div>
       ) : null}

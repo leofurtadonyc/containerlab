@@ -469,7 +469,9 @@ def build_topology_response() -> TopologyResponse:
     cache_topology_metrics(
         node_count=len(topology.nodes),
         link_count=len(topology.links),
+        inference_posture=coverage_summary.inference_posture,
         endpoint_pairing_posture=coverage_summary.endpoint_pairing_posture,
+        collection_posture=coverage_summary.collection_posture,
         paired_link_count=coverage_summary.paired_link_count,
         single_sided_link_count=coverage_summary.single_sided_link_count,
         data_status=data_status,

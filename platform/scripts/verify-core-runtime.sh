@@ -198,7 +198,9 @@ assert_contains "platform status response" "$platform_status_response" '"collect
 assert_contains "platform status response" "$platform_status_response" '"oldest_observed_at":'
 assert_contains "platform status response" "$platform_status_response" '"newest_observed_at":'
 assert_contains "platform status response" "$platform_status_response" '"degraded_scope_summary":"'
+assert_contains "platform status response" "$platform_status_response" '"inference_posture":"'
 assert_contains "platform status response" "$platform_status_response" '"endpoint_pairing_posture":"'
+assert_contains "platform status response" "$platform_status_response" '"collection_posture":"'
 assert_contains "platform status response" "$platform_status_response" '"paired_link_count":'
 assert_contains "platform status response" "$platform_status_response" '"single_sided_link_count":'
 assert_contains "platform status response" "$platform_status_response" '"policy_capable_target_count":'
@@ -215,8 +217,10 @@ assert_contains "topology response" "$topology_response" '"serving_mode":"'
 assert_contains "topology response" "$topology_response" '"sync_status":"'
 assert_contains "topology response" "$topology_response" '"completeness":"'
 assert_contains "topology response" "$topology_response" '"coverage_summary":{'
+assert_contains "topology response" "$topology_response" '"inference_posture":"'
 assert_contains "topology response" "$topology_response" '"endpoint_pairing_state":"'
 assert_contains "topology response" "$topology_response" '"endpoint_evidence_count":'
+assert_contains "topology response" "$topology_response" '"collection_posture":"'
 assert_contains "topology response" "$topology_response" '"topology":{'
 assert_contains "topology response" "$topology_response" '"comparison_to_latest_persisted":{'
 
@@ -241,6 +245,7 @@ assert_contains "capabilities response" "$capabilities_response" '"future_junipe
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_snapshot_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_paired_links'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_single_sided_links'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_coverage_posture{inference_posture="'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_coverage_posture'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshot_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_readiness_status'
@@ -288,6 +293,15 @@ fi
 if printf '%s' "$platform_status_response" | grep -E '"model_family":"topology"[^}]*"endpoint_pairing_posture":"single_sided"' >/dev/null 2>&1; then
   notice "Platform status reports single_sided topology endpoint coverage, so the current inferred links remain bounded to one observed endpoint per link."
 fi
+if printf '%s' "$platform_status_response" | grep -E '"model_family":"topology"[^}]*"collection_posture":"degraded"' >/dev/null 2>&1; then
+  warn "Platform status reports degraded topology collection posture, so the current topology slice should be treated as a partially degraded live window."
+fi
+if printf '%s' "$platform_status_response" | grep -E '"model_family":"topology"[^}]*"collection_posture":"blocked"' >/dev/null 2>&1; then
+  warn "Platform status reports blocked topology collection posture, so the current topology slice is not backed by a normal live collection window."
+fi
+if printf '%s' "$platform_status_response" | grep -E '"model_family":"topology"[^}]*"inference_posture":"inferred"' >/dev/null 2>&1; then
+  notice "Platform status reports inferred topology posture, so current topology links remain bounded inferred evidence rather than direct adjacency truth."
+fi
 if printf '%s' "$platform_status_response" | grep -E '"model_family":"policy"[^}]*"detail_ready_target_count":0' >/dev/null 2>&1; then
   notice "Platform status reports zero policy detail-ready targets, so current policy truth remains bounded to counters or other aggregate-only evidence."
 fi
@@ -309,6 +323,15 @@ if printf '%s' "$topology_response" | grep -F '"blocked_reason":"collector_unava
 fi
 if printf '%s' "$topology_response" | grep -F '"completeness":"partial"' >/dev/null 2>&1; then
   notice "Topology completeness remains partial by design in the current Phase 2 slice."
+fi
+if printf '%s' "$topology_response" | grep -F '"collection_posture":"degraded"' >/dev/null 2>&1; then
+  warn "Topology API reports degraded collection posture, so the current topology slice is live but partially degraded."
+fi
+if printf '%s' "$topology_response" | grep -F '"collection_posture":"blocked"' >/dev/null 2>&1; then
+  warn "Topology API reports blocked collection posture, so current topology trust depends on fallback or blocked evidence rather than a normal live collection window."
+fi
+if printf '%s' "$topology_response" | grep -F '"inference_posture":"inferred"' >/dev/null 2>&1; then
+  notice "Topology API reports inferred topology posture, so current links remain a bounded inferred slice rather than direct adjacency truth."
 fi
 
 if printf '%s' "$policies_response" | grep -F '"serving_mode":"persisted_fallback"' >/dev/null 2>&1; then

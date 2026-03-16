@@ -52,6 +52,16 @@ export interface PlatformComponentStatus {
   notes: string[];
 }
 
+export type TopologyInferencePosture = "inferred" | "unknown";
+
+export type TopologyCollectionPosture = "ok" | "degraded" | "blocked" | "unknown";
+
+export type TopologyEndpointPairingPosture =
+  | "paired"
+  | "partially_paired"
+  | "single_sided"
+  | "unknown";
+
 export interface PlatformReadPathStatus {
   model_family: "inventory" | "topology" | "policy";
   observation_state: "ok" | "degraded" | "unreachable" | "unknown";
@@ -64,12 +74,9 @@ export interface PlatformReadPathStatus {
   newest_observed_at: string | null;
   policy_capable_target_count: number | null;
   detail_ready_target_count: number | null;
-  endpoint_pairing_posture:
-    | "paired"
-    | "partially_paired"
-    | "single_sided"
-    | "unknown"
-    | null;
+  inference_posture: TopologyInferencePosture | null;
+  endpoint_pairing_posture: TopologyEndpointPairingPosture | null;
+  collection_posture: TopologyCollectionPosture | null;
   paired_link_count: number | null;
   single_sided_link_count: number | null;
   degraded_scope_summary: string;
@@ -155,7 +162,9 @@ export interface TopologyLinkRecord {
 }
 
 export interface TopologyCoverageSummaryRecord {
-  endpoint_pairing_posture: "paired" | "partially_paired" | "single_sided" | "unknown";
+  inference_posture: TopologyInferencePosture;
+  endpoint_pairing_posture: TopologyEndpointPairingPosture;
+  collection_posture: TopologyCollectionPosture;
   paired_link_count: number;
   single_sided_link_count: number;
   summary: string;

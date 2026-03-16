@@ -32,7 +32,9 @@ def get_metrics() -> Response:
         topology_metrics={
             "node_count": topology.node_count,
             "link_count": topology.link_count,
+            "inference_posture": topology.inference_posture,
             "endpoint_pairing_posture": topology.endpoint_pairing_posture,
+            "collection_posture": topology.collection_posture,
             "paired_link_count": topology.paired_link_count,
             "single_sided_link_count": topology.single_sided_link_count,
             "data_status": topology.data_status,

@@ -17,7 +17,9 @@ class CachedTopologyMetrics:
 
     node_count: int = 0
     link_count: int = 0
+    inference_posture: str = "unknown"
     endpoint_pairing_posture: str = "unknown"
+    collection_posture: str = "unknown"
     paired_link_count: int = 0
     single_sided_link_count: int = 0
     data_status: str = "unknown"
@@ -104,7 +106,9 @@ def cache_topology_metrics(
     *,
     node_count: int,
     link_count: int,
+    inference_posture: str,
     endpoint_pairing_posture: str,
+    collection_posture: str,
     paired_link_count: int,
     single_sided_link_count: int,
     data_status: str,
@@ -125,7 +129,9 @@ def cache_topology_metrics(
         _cached_topology_metrics = CachedTopologyMetrics(
             node_count=node_count,
             link_count=link_count,
+            inference_posture=inference_posture,
             endpoint_pairing_posture=endpoint_pairing_posture,
+            collection_posture=collection_posture,
             paired_link_count=paired_link_count,
             single_sided_link_count=single_sided_link_count,
             data_status=data_status,
@@ -343,7 +349,9 @@ def render_prometheus_metrics(
                 "# TYPE platform_app_api_topology_coverage_posture gauge",
                 (
                     "platform_app_api_topology_coverage_posture"
-                    f'{{endpoint_pairing_posture="{topology_metrics["endpoint_pairing_posture"]}"}} 1'
+                    f'{{inference_posture="{topology_metrics["inference_posture"]}",'
+                    f'endpoint_pairing_posture="{topology_metrics["endpoint_pairing_posture"]}",'
+                    f'collection_posture="{topology_metrics["collection_posture"]}"}} 1'
                 ),
                 (
                     "# HELP platform_app_api_topology_snapshot_status "

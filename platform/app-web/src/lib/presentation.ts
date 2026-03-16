@@ -1,6 +1,9 @@
 import type {
   PlatformReadPathStatus,
+  TopologyCollectionPosture,
   TopologyCoverageSummaryRecord,
+  TopologyEndpointPairingPosture,
+  TopologyInferencePosture,
   TopologyLinkRecord,
   TopologyResponse,
 } from "../api/contracts";
@@ -46,6 +49,7 @@ export function getStatusTone(value: string): "good" | "warn" | "bad" | "neutral
     case "planned":
     case "placeholder":
     case "stale":
+    case "inferred":
     case "persisted_fallback":
     case "observed_plus_inferred":
     case "aggregate_only":
@@ -136,7 +140,7 @@ export function resolveTopologyLinkEndpointEvidenceCount(link: TopologyLinkRecor
 
 export function resolveTopologyLinkEndpointPairingState(
   link: TopologyLinkRecord,
-): TopologyCoverageSummaryRecord["endpoint_pairing_posture"] {
+): TopologyEndpointPairingPosture {
   if (
     link.endpoint_pairing_state === "paired" ||
     link.endpoint_pairing_state === "single_sided" ||
@@ -165,11 +169,58 @@ export function resolveTopologyLinkEndpointPairingState(
   return "unknown";
 }
 
-export function resolveTopologyCoverageSummary(
+function resolveTopologyInferencePosture(
   response: Pick<TopologyResponse, "coverage_summary" | "topology">,
+): TopologyInferencePosture {
+  if (
+    response.coverage_summary &&
+    (response.coverage_summary.inference_posture === "inferred" ||
+      response.coverage_summary.inference_posture === "unknown")
+  ) {
+    return response.coverage_summary.inference_posture;
+  }
+
+  return response.topology.links.length > 0 ? "inferred" : "unknown";
+}
+
+function resolveTopologyCollectionPosture(
+  response: Pick<TopologyResponse, "coverage_summary" | "topology" | "serving_mode">,
+): TopologyCollectionPosture {
+  if (
+    response.coverage_summary &&
+    (response.coverage_summary.collection_posture === "ok" ||
+      response.coverage_summary.collection_posture === "degraded" ||
+      response.coverage_summary.collection_posture === "blocked" ||
+      response.coverage_summary.collection_posture === "unknown")
+  ) {
+    return response.coverage_summary.collection_posture;
+  }
+
+  if (response.serving_mode !== "live_collector") {
+    return "blocked";
+  }
+
+  switch (response.topology.sync_status) {
+    case "ok":
+      return "ok";
+    case "degraded":
+      return "degraded";
+    case "failed":
+      return "blocked";
+    default:
+      return "unknown";
+  }
+}
+
+export function resolveTopologyCoverageSummary(
+  response: Pick<TopologyResponse, "coverage_summary" | "topology" | "serving_mode">,
 ): TopologyCoverageSummaryRecord {
   if (response.coverage_summary) {
-    return response.coverage_summary;
+    return {
+      ...response.coverage_summary,
+      inference_posture: resolveTopologyInferencePosture(response),
+      collection_posture: resolveTopologyCollectionPosture(response),
+    };
   }
 
   const pairedLinkCount = response.topology.links.filter(
@@ -209,18 +260,86 @@ export function resolveTopologyCoverageSummary(
   }
 
   return {
+    inference_posture: resolveTopologyInferencePosture(response),
     endpoint_pairing_posture: endpointPairingPosture,
+    collection_posture: resolveTopologyCollectionPosture(response),
     paired_link_count: pairedLinkCount,
     single_sided_link_count: singleSidedLinkCount,
     summary,
   };
 }
 
+export interface TopologyPostureReadout<TStatus extends string> {
+  status: TStatus;
+  label: string;
+  detail: string;
+}
+
 export interface TopologyCoverageReadout {
-  status: TopologyCoverageSummaryRecord["endpoint_pairing_posture"];
+  status: TopologyEndpointPairingPosture;
   label: string;
   detail: string;
   countDetail: string;
+}
+
+export function describeTopologyInferencePosture(
+  coverageSummary: TopologyCoverageSummaryRecord,
+  linkCount: number,
+): TopologyPostureReadout<TopologyInferencePosture> {
+  if (coverageSummary.inference_posture === "inferred") {
+    return {
+      status: "inferred",
+      label: "Inferred slice",
+      detail:
+        linkCount === 0
+          ? "Topology currently exposes no normalized links, but any future link slice remains bounded to inferred evidence rather than protocol-derived adjacency truth."
+          : "Current normalized topology links remain a bounded inferred slice rather than direct adjacency or controller truth.",
+    };
+  }
+
+  return {
+    status: "unknown",
+    label: linkCount === 0 ? "No inferred links" : "Inference unclear",
+    detail:
+      linkCount === 0
+        ? "No normalized links are currently emitted, so inference posture stays unknown."
+        : "The current topology response does not expose enough evidence to classify inference posture more clearly.",
+  };
+}
+
+export function describeTopologyCollectionPosture(
+  coverageSummary: TopologyCoverageSummaryRecord,
+): TopologyPostureReadout<TopologyCollectionPosture> {
+  switch (coverageSummary.collection_posture) {
+    case "ok":
+      return {
+        status: "ok",
+        label: "Collection ok",
+        detail:
+          "The current topology slice comes from a usable live collection window rather than a blocked or degraded one.",
+      };
+    case "degraded":
+      return {
+        status: "degraded",
+        label: "Collection degraded",
+        detail:
+          "The current topology slice was collected with partial degradation, so operators should expect bounded gaps rather than full live coverage.",
+      };
+    case "blocked":
+      return {
+        status: "blocked",
+        label: "Collection blocked",
+        detail:
+          "The current topology slice is not backed by a normal live collection window and should be treated as fallback or blocked posture.",
+      };
+    default:
+      return {
+        status: "unknown",
+        label: "Collection unclear",
+        detail:
+          "The current topology response does not expose a clearer collection posture for this slice.",
+      };
+  }
 }
 
 export function describeTopologyCoveragePosture(
@@ -278,13 +397,86 @@ export function describeTopologyReadPathPairing(
 
   return describeTopologyCoveragePosture(
     {
+      inference_posture: readPath.inference_posture ?? "unknown",
       endpoint_pairing_posture: readPath.endpoint_pairing_posture,
+      collection_posture: readPath.collection_posture ?? "unknown",
       paired_link_count: readPath.paired_link_count ?? 0,
       single_sided_link_count: readPath.single_sided_link_count ?? 0,
       summary: readPath.summary,
     },
     (readPath.paired_link_count ?? 0) + (readPath.single_sided_link_count ?? 0),
   );
+}
+
+export function describeTopologyReadPathInference(
+  readPath: PlatformReadPathStatus | null,
+): TopologyPostureReadout<TopologyInferencePosture | "unknown"> {
+  if (!readPath || readPath.inference_posture === null) {
+    return {
+      status: "unknown",
+      label: "Not exposed",
+      detail: "The current platform-status response does not expose topology inference posture.",
+    };
+  }
+
+  if (readPath.inference_posture === "inferred") {
+    return {
+      status: "inferred",
+      label: "Inferred slice",
+      detail:
+        "Platform status reports that topology links remain bounded to inferred evidence rather than direct adjacency truth.",
+    };
+  }
+
+  return {
+    status: "unknown",
+    label: "Inference unclear",
+    detail:
+      "Platform status does not provide enough evidence to classify topology inference posture more strongly.",
+  };
+}
+
+export function describeTopologyReadPathCollection(
+  readPath: PlatformReadPathStatus | null,
+): TopologyPostureReadout<TopologyCollectionPosture | "unknown"> {
+  if (!readPath || readPath.collection_posture === null) {
+    return {
+      status: "unknown",
+      label: "Not exposed",
+      detail: "The current platform-status response does not expose topology collection posture.",
+    };
+  }
+
+  switch (readPath.collection_posture) {
+    case "ok":
+      return {
+        status: "ok",
+        label: "Collection ok",
+        detail:
+          "Platform status reports a usable live topology collection window for the current bounded slice.",
+      };
+    case "degraded":
+      return {
+        status: "degraded",
+        label: "Collection degraded",
+        detail:
+          "Platform status reports partial degradation in the current topology collection window.",
+      };
+    case "blocked":
+      return {
+        status: "blocked",
+        label: "Collection blocked",
+        detail:
+          "Platform status reports that the current topology slice is blocked from normal live collection.",
+      };
+    default:
+      return {
+        status: "unknown",
+        label: "Collection unclear",
+        detail:
+          "Platform status does not provide enough evidence to classify topology collection posture more strongly.",
+      };
+  }
 }
 
 export function describeTopologyLinkPairing(link: TopologyLinkRecord): string {

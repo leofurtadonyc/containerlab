@@ -4,6 +4,8 @@ import { TrustCueCard } from "../../components/trust-cue-card";
 import type { PlatformReadPathStatus } from "../../api/contracts";
 import {
   countBy,
+  describeTopologyReadPathCollection,
+  describeTopologyReadPathInference,
   describeTopologyReadPathPairing,
   formatDateTime,
   formatLabel,
@@ -96,6 +98,8 @@ export function PlatformHealthView() {
     (readPath) => readPath.oldest_observed_at && readPath.newest_observed_at,
   ).length;
   const topologyReadPath = getPlatformReadPath(readPaths, "topology");
+  const topologyInferenceReadout = describeTopologyReadPathInference(topologyReadPath);
+  const topologyCollectionReadout = describeTopologyReadPathCollection(topologyReadPath);
   const topologyPairingReadout = describeTopologyReadPathPairing(topologyReadPath);
 
   return (
@@ -221,10 +225,22 @@ export function PlatformHealthView() {
                   : "No bounded read-path summaries are currently exposed.",
             },
             {
+              label: "Topology inference",
+              kind: "status",
+              value: topologyInferenceReadout.status,
+              note: topologyInferenceReadout.detail,
+            },
+            {
               label: "Topology endpoint pairing",
               kind: "status",
               value: topologyPairingReadout.status,
               note: [topologyPairingReadout.detail, topologyPairingReadout.countDetail],
+            },
+            {
+              label: "Topology collection posture",
+              kind: "status",
+              value: topologyCollectionReadout.status,
+              note: topologyCollectionReadout.detail,
             },
             {
               label: "Freshness windows",
@@ -296,7 +312,7 @@ export function PlatformHealthView() {
                   ? readPaths.map(
                       (readPath) =>
                         readPath.model_family === "topology"
-                          ? `${formatLabel(readPath.model_family)}: ${formatReadPathCollection(readPath)} • ${topologyPairingReadout.countDetail}`
+                          ? `${formatLabel(readPath.model_family)}: ${topologyInferenceReadout.label} • ${topologyCollectionReadout.label} • ${formatReadPathCollection(readPath)} • ${topologyPairingReadout.countDetail}`
                           : `${formatLabel(readPath.model_family)}: ${formatReadPathCollection(readPath)}`,
                     )
                   : "No bounded read-path summaries are currently exposed.",
@@ -341,7 +357,7 @@ export function PlatformHealthView() {
                     <p className="table-note">{readPath.degraded_scope_summary}</p>
                     {readPath.model_family === "topology" ? (
                       <p className="table-note">
-                        {topologyPairingReadout.detail} {topologyPairingReadout.countDetail}
+                        {topologyInferenceReadout.detail} {topologyCollectionReadout.detail} {topologyPairingReadout.detail} {topologyPairingReadout.countDetail}
                       </p>
                     ) : null}
                     {readPath.notes.length > 0 ? (
