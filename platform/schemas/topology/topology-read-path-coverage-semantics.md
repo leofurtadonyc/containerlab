@@ -387,7 +387,7 @@ Current status:
 
 - `endpoint_pairing_posture`, `paired_link_count`, and
   `single_sided_link_count` are implemented now in `app-api`
-- `inference_posture` and `collection_posture` are not implemented yet in
+- `inference_posture` and `collection_posture` are implemented now in
   `app-api`
 
 Per-link topology fields:
@@ -429,7 +429,7 @@ Current status:
 
 - `endpoint_pairing_posture`, `paired_link_count`, and
   `single_sided_link_count` are implemented now in `app-api`
-- `inference_posture` and `collection_posture` are not implemented yet in
+- `inference_posture` and `collection_posture` are implemented now in
   `app-api`
 
 Platform-status non-ownership:
@@ -508,17 +508,22 @@ Current verifier behavior:
 - continue noticing when `completeness=partial`
 - continue proving that the topology can be honestly partial even when current
   collection posture is otherwise healthy
+- continue proving the live presence of backend-owned `inference_posture` and
+  `collection_posture` fields
 - continue noticing when `endpoint_pairing_posture=partially_paired`
   or `endpoint_pairing_posture=single_sided`
+- continue noticing when `collection_posture=degraded`
+  or `collection_posture=blocked`
 - continue proving the live presence of backend-owned topology coverage fields
   and backend plus collector pairing metrics as runtime-contract checks
 
 Next follow-on verifier behavior:
 
-- if `inference_posture` is implemented later, prove its presence as a runtime
-  contract field
-- if `collection_posture` is implemented later, notice degraded or blocked
-  collection posture without treating it as a topology validation verdict
+- if a later node-participation follow-on is implemented, prove the presence of
+  `linked_node_count` and `isolated_node_count` or equivalent backend-owned
+  fields as runtime-contract fields
+- if a later node-participation follow-on is implemented, notice nonzero
+  isolated-node counts without treating them as topology validation verdicts
 - continue treating `degraded_scope_summary` as supporting explanatory text
   rather than the field that defines topology partiality categories
 
@@ -587,13 +592,15 @@ That completed slice should not be reopened by default.
 The next bounded follow-on should do only this.
 
 1. preserve `completeness=partial` as the umbrella topology truth boundary
-2. preserve the completed week 14 endpoint-pairing vocabulary as the
-  endpoint-coverage dimension
-3. add `inference_posture` so inference-boundedness is no longer compressed
-  into broad `partial` wording alone
-4. add `collection_posture` so collection degradation is no longer compressed
-  into broad `degraded_scope_summary` wording alone
-5. keep the backend as the owner of this decomposition, with Grafana limited to
+2. preserve the completed inference, endpoint-pairing, and collection
+  partiality decomposition exactly as the current backend-owned contract
+3. add one backend-owned node participation coverage summary so the read path
+  can state how many observed nodes are represented by at least one emitted
+  inferred link
+4. if topology is reopened, limit that follow-on to `linked_node_count` and
+  `isolated_node_count` or equivalent counts derived from the normalized nodes
+  and links already in hand
+5. keep the backend as the owner of that follow-on, with Grafana limited to
   numeric or projected observability signals and verifier behavior limited to
   bounded runtime-contract checks and notices
 

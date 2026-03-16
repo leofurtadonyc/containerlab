@@ -141,18 +141,19 @@ The current contract now exposes:
 - numeric `single_sided_link_count`
 
 That means the remaining topology truth question is now broader but still
-bounded: whether the current Phase 2 model should now sharpen how it explains
-`completeness=partial` and broad topology `degraded_scope_summary`, not whether
-it still needs the week 14 pairing vocabulary itself.
+bounded: whether the current Phase 2 model explains node participation inside
+the inferred slice clearly enough, not whether it still needs the week 14
+pairing vocabulary or the now-implemented partiality decomposition itself.
 
-The next honest target is therefore smaller than another broad truth-depth pass.
-It is one explicit topology partiality decomposition that keeps the completed
-pairing work intact while separating three causes that are still too easy to
-blur together:
+The next honest target is therefore not another semantics pass.
+It is one backend-owned node participation coverage follow-on that keeps the
+completed pairing and partiality work intact while exposing the smallest
+remaining gap the current evidence can support honestly:
 
-- inference-boundedness
-- endpoint-coverage limits
-- collection degradation
+- `linked_node_count`: observed nodes represented by at least one emitted
+  inferred link
+- `isolated_node_count`: observed nodes that are present in the normalized
+  topology response but not represented by any emitted inferred link
 
 ### 3. Backend contracts preserve the bounded topology model correctly
 
@@ -463,60 +464,71 @@ were missing foundations.
 The remaining weakness is specific.
 
 - The topology slice is still inference-based and intentionally partial.
-- `partial` and some `degraded_scope_summary` paths still carry broader meaning
-  than endpoint-pairing posture alone.
+- The current contracts now separate inference-boundedness, endpoint coverage,
+  and collection degradation explicitly.
+- The current response still does not summarize how much of the observed node
+  set is actually represented by at least one inferred link versus remaining
+  isolated in the current slice.
 - paired-versus-single-sided coverage is now explicit, but it still does not
   imply protocol-derived adjacency truth, controller agreement, or path truth.
 
 ## Next Bounded Follow-On
 
 The next bounded topology follow-on should stay narrower than the completed week
-14 pairing slice.
+14 pairing slice and narrower than the already-implemented partiality
+decomposition follow-on.
 
-This review now treats the contract-definition step for that follow-on as
-complete in docs. No collector, backend, frontend, dashboard, or verifier code
-change is implied by this note alone.
+This review now treats the contract-definition and implementation step for that
+partiality decomposition as complete. No collector, backend, frontend,
+dashboard, or verifier rework is implied by this checkpoint alone.
 
-It should not revisit whether the repository needs endpoint-pairing vocabulary.
-That part is already implemented end to end.
+It should not revisit whether the repository needs endpoint-pairing vocabulary
+or whether it needs `inference_posture` and `collection_posture`.
+Those parts are already implemented end to end.
 
-It should only define and later implement one backend-owned topology partiality
-decomposition.
+It should only define and later implement one backend-owned node participation
+coverage follow-on.
 
-That decomposition should keep `completeness=partial` as the umbrella boundary
-and separate the three causes of remaining topology partiality like this.
+That follow-on should keep `completeness=partial` as the umbrella boundary,
+preserve the current inference, endpoint-pairing, and collection posture terms,
+and add only these two typed counts derived from the normalized nodes and links
+already in hand.
 
-- `inference_posture`: the current topology slice remains inference-bounded
-- `endpoint_pairing_posture`: the current topology slice has stronger or weaker
-  endpoint evidence behind emitted inferred links
-- `collection_posture`: the current live collection window was healthy,
-  degraded, or blocked
+- `linked_node_count`: the number of observed nodes that participate in at
+  least one emitted inferred link
+- `isolated_node_count`: the number of observed nodes that do not participate
+  in any emitted inferred link
 
-This is narrower than the completed week 14 slice in two important ways.
+This is narrower than the completed work in two important ways.
 
-First, it preserves the existing endpoint-pairing vocabulary rather than
-replacing it.
+First, it preserves the existing partiality decomposition rather than replacing
+or reinterpreting it.
 
-Second, it does not authorize a broader topology redesign. It only decomposes
-the cause of partiality more clearly where current evidence already exists.
+Second, it does not authorize a broader topology redesign. It only explains how
+much of the observed node set is represented by the current inferred link slice
+where current evidence already exists.
 
 Ownership for that follow-on should stay explicit.
 
 - collector continues to emit the bounded raw evidence and counts that inform
   the topology path
-- backend owns the product-facing partiality decomposition terms
+- backend owns the product-facing node participation counts and preserves the
+  already-implemented partiality decomposition terms
 - WebUI consumes those backend-owned terms as trust cues
 - Grafana mirrors only numeric or projected observability posture from real
   metrics
 - verifier proves the runtime contract and emits notices rather than topology
   verdicts
 
-The exact contract for that narrower follow-on is now explicitly defined in
-`platform/schemas/topology/topology-read-path-coverage-semantics.md` as:
+The exact checkpoint for that narrower follow-on is now explicit:
 
-- `inference_posture` for inference-boundedness
-- existing `endpoint_pairing_posture` for endpoint-coverage limits
-- `collection_posture` for collection degradation or blockage
+- keep `inference_posture`, `endpoint_pairing_posture`, and
+  `collection_posture` closed as the current partiality contract
+- reopen topology later only if node participation coverage is still the
+  smallest honest truth-depth gain
+- if reopened, limit the follow-on to `linked_node_count` and
+  `isolated_node_count` or equivalent backend-owned counts derived from the
+  existing normalized response
 
 That contract is intentionally smaller than a broader topology redesign and
 intentionally preserves `degraded_scope_summary` as supporting prose.
@@ -559,19 +571,18 @@ That implemented slice now covers:
 - explicit bounded link pairing posture categories derived from current evidence
 - explicit aggregate counts such as fully paired versus single-sided inferred
   links
-- bounded verifier notices and runtime assertions for those topology coverage
-  signals
-
-That implemented slice does not yet cover the next narrower decomposition of
-topology partiality into explicit inference-boundedness, endpoint-coverage, and
-collection-degradation dimensions.
+ - explicit inference-boundedness and collection-degradation posture alongside
+   the existing endpoint-pairing posture
+ - bounded verifier notices and runtime assertions for those topology coverage
+   signals
 
 Any later follow-on should now be about broader truth depth only if it can stay
 similarly bounded.
 
 At this checkpoint, the smaller documentation task is complete: the next cycle
-no longer needs to rediscover the vocabulary, only to decide later whether one
-bounded code implementation of that already-defined contract is still justified.
+no longer needs to rediscover or reimplement the partiality vocabulary, only to
+decide later whether one bounded node-participation follow-on is still
+justified.
 
 That slice should not attempt:
 
@@ -585,6 +596,11 @@ That slice should not attempt:
 
 The next cycle must not do these things.
 
+- do not reopen the completed week 14 endpoint-pairing vocabulary or its
+  already-complete product, observability, test, or verifier consumption by
+  default
+- do not reopen the already-implemented inference, endpoint-pairing, and
+  collection partiality decomposition except to keep docs aligned to live code
 - do not reinterpret the topology gap as permission to build validation or drift
   verdicts
 - do not let Grafana become the main topology product surface
@@ -603,10 +619,11 @@ The repository evidence supports the completed week 14 direction.
 
 The strongest remaining live topology weakness is no longer absence of explicit
 endpoint-pairing semantics across the current product, observability, and
-verification surfaces. That part is now in place. The remaining limit is that
-the topology slice itself is still bounded, inferred, and intentionally partial,
-and the current contracts still compress too much of that partiality into broad
-`partial` and `degraded_scope_summary` wording.
+verification surfaces or absence of explicit partiality decomposition. Those
+parts are now in place. The remaining limit is that the topology slice itself
+is still bounded, inferred, and intentionally partial, and the current response
+still says more about emitted link evidence than about how much of the observed
+node set participates in that inferred link slice.
 
 Any next implementation slice should therefore stay small and should not reopen
 the same pairing-semantics work unless new repository evidence changes the
@@ -615,13 +632,15 @@ topology model, the product-versus-observability split, and the explicit
 partial-truth posture already established across the repository.
 
 If topology is revisited again inside `Phase 2`, the first honest target is no
-longer pairing vocabulary. It is one bounded topology partiality decomposition
-that can sharpen broad `partial` and topology `degraded_scope_summary`
-semantics by separating inference-boundedness, endpoint-coverage limits, and
-collection degradation without implying full truth.
+longer pairing vocabulary or another partiality-semantics pass. It is one
+bounded node-participation coverage follow-on that can expose how many observed
+nodes are represented by emitted inferred links versus still isolated without
+implying protocol truth, controller truth, or full-topology truth.
 
-That narrower follow-on is now ready as a documented contract rather than a
-still-undefined idea.
+That narrower follow-on is now ready as a documented checkpoint rather than a
+still-vague idea.
 
-The exact field, metric, and UI-separation rules for that slice are now defined
-in `platform/schemas/topology/topology-read-path-coverage-semantics.md`.
+The exact field, metric, and UI-separation rules for keeping the current
+partiality contract closed and reopening topology only for node participation
+coverage are now aligned with
+`platform/schemas/topology/topology-read-path-coverage-semantics.md`.
