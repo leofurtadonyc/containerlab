@@ -441,8 +441,10 @@ export function OverviewView() {
         {policiesData ? (
           <article className="summary-card">
             <p className="summary-label">Policy inventory</p>
-            <strong>{policiesData.count}</strong>
-            <p>{formatLabel(policiesData.data_status)}</p>
+            <strong>{policiesData.observed_policy_count}</strong>
+            <p>
+              Observed policies • Detailed records: {policiesData.count} • {formatLabel(policiesData.data_status)}
+            </p>
             {buildSliceAvailabilityNote(policiesSliceState) ? (
               <p className="table-note">{buildSliceAvailabilityNote(policiesSliceState)}</p>
             ) : null}

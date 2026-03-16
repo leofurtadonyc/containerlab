@@ -190,8 +190,28 @@ function createPoliciesData() {
     },
     summary: "Policies summary.",
     served_persisted_at: null,
+    sync_source: "collector",
+    sync_status: "ok",
+    completeness: "partial",
+    detail_mode: "counters_only",
     empty_reason: "none",
+    observed_at: "2025-01-01T00:00:00Z",
+    observed_target_count: 4,
+    policy_capable_target_count: 4,
+    observed_target_role_counts: { pe: 2, p: 2 },
+    policy_capable_target_role_counts: { pe: 2, p: 2 },
+    observed_policy_count: 2,
+    active_policy_count: 2,
+    static_policy_count: 2,
+    static_local_policy_count: 2,
+    static_non_local_policy_count: 0,
+    bgp_policy_count: 0,
+    ttm_preference_count: 14,
+    binding_sid_count: 2,
+    srv6_binding_sid_count: 0,
     count: 1,
+    notes: [],
+    target_footprints: [],
     items: [
       {
         policy_id: "policy-1",
@@ -211,13 +231,23 @@ function createPoliciesData() {
       comparison_snapshot_id: null,
       comparison_persisted_at: null,
       current_observed_at: null,
-      current_record_count: 0,
-      persisted_record_count: 0,
-      record_count_delta: 0,
-      added_record_count: 0,
-      removed_record_count: 0,
-      changed_record_count: 0,
+      current_observed_policy_count: 2,
+      persisted_observed_policy_count: 0,
+      current_detail_record_count: 1,
+      persisted_detail_record_count: 0,
+      observed_policy_delta: 2,
+      detail_record_delta: 1,
+      added_policy_count: 1,
+      removed_policy_count: 0,
+      changed_policy_count: 0,
+      change_preview: [],
       notes: [],
+    },
+    history: {
+      status: "unavailable",
+      summary: "No history yet.",
+      entries: [],
+      comparison_to_previous: null,
     },
   };
 }
@@ -287,6 +317,62 @@ describe("overview view", () => {
     expect(html).toContain("Policies Trust Cues");
     expect(html).toContain("Devices Trust Cues");
     expect(html).toContain("Inventory trust cues are temporarily unavailable");
+  });
+
+  it("surfaces observed policy count separately from detailed records in the overview summary", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
+    useDevicesQuery.mockReturnValue(createQueryState({
+      service: "app-api",
+      version: "test",
+      phase: "phase_2_read_only_foundation",
+      generated_at: "2025-01-01T00:00:00Z",
+      data_status: "live",
+      serving_mode: "live_collector",
+      evidence_confidence: {
+        source_posture: "live_observed",
+        evidence_kind: "observed_records",
+        confidence_posture: "strong_for_current_slice",
+        freshness_posture: "current",
+        blocked_reason: "none",
+        summary: "Inventory summary.",
+        notes: [],
+      },
+      summary: "Inventory summary.",
+      served_persisted_at: null,
+      sync_source: "collector",
+      sync_status: "ok",
+      count: 4,
+      data: [],
+      comparison_to_latest_persisted: {
+        status: "unavailable",
+        summary: "No comparison snapshot.",
+        comparison_snapshot_id: null,
+        comparison_persisted_at: null,
+        current_observed_at: null,
+        current_device_count: 0,
+        persisted_device_count: 0,
+        device_count_delta: 0,
+        added_device_count: 0,
+        removed_device_count: 0,
+        changed_device_count: 0,
+        notes: [],
+      },
+    }));
+    useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
+    usePoliciesQuery.mockReturnValue(createQueryState({
+      ...createPoliciesData(),
+      count: 0,
+      observed_policy_count: 2,
+      empty_reason: "per_policy_details_unavailable",
+      detail_mode: "counters_only",
+      items: [],
+    }));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    const html = renderToStaticMarkup(<OverviewView />);
+
+    expect(html).toContain("Policy inventory");
+    expect(html).toContain("Observed policies • Detailed records: 0 • live");
   });
 
   it("does not show a partial-failure banner while remaining slices are still loading", () => {
