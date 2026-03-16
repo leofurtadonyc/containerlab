@@ -14,7 +14,7 @@ from gnmi_collector.config.models import (
     PolicySubscriptionConfig,
     TopologySubscriptionConfig,
 )
-from gnmi_collector.config.settings import get_settings
+from gnmi_collector.config.settings import Settings, get_settings
 
 
 def _load_config_document(config_path: str) -> dict[str, Any]:
@@ -72,6 +72,7 @@ def _build_policy_subscriptions(document: dict[str, Any]) -> list[PolicySubscrip
 
 
 def _build_targets(
+    settings: Settings,
     document: dict[str, Any],
     inventory_subscriptions: list[InventorySubscriptionConfig],
     topology_subscriptions: list[TopologySubscriptionConfig],
@@ -94,6 +95,7 @@ def _build_targets(
                 password=item["auth"]["password"],
             ),
             insecure=item.get("insecure", True),
+            gnmi_request_timeout_seconds=settings.collector_gnmi_request_timeout_seconds,
             inventory_paths=item.get("inventory_paths", default_inventory_paths),
             topology_paths=item.get("topology_paths", default_topology_paths),
             policy_paths=item.get("policy_paths", default_policy_paths),
@@ -125,6 +127,7 @@ def build_runtime_config() -> CollectorRuntimeConfig:
         topology_subscriptions=topology_subscriptions,
         policy_subscriptions=policy_subscriptions,
         targets=_build_targets(
+            settings,
             document,
             inventory_subscriptions,
             topology_subscriptions,

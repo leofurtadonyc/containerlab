@@ -71,6 +71,7 @@ topology:
         COLLECTOR_METRICS_PORT: "9804"
         APP_API_URL: http://app-api:8000
         GNMI_CONFIG_PATH: /app/configs/config.example.yaml
+        COLLECTOR_GNMI_REQUEST_TIMEOUT_SECONDS: "2" # Bound dead-target gNMI waits below the app-api collector boundary budget.
 
     app-api:
       kind: linux

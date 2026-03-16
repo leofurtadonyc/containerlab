@@ -146,6 +146,59 @@ def _build_live_inventory_snapshot() -> CollectorInventorySnapshot:
     )
 
 
+def _build_partial_live_inventory_snapshot() -> CollectorInventorySnapshot:
+    return CollectorInventorySnapshot(
+        integration="gnmi_collector_inventory",
+        status="partial_live_feed",
+        destination_service="app-api",
+        source_endpoint="http://gnmi-collector:9804/inventory/snapshot",
+        configured_target_count=3,
+        observed_target_count=2,
+        collection_success_count=2,
+        collection_partial_count=0,
+        collection_failure_count=1,
+        oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        newest_observed_at="2026-03-09T19:25:10.500000+00:00",
+        degraded_scope_summary="Inventory delivery remains bounded because one configured target did not return usable live inventory evidence.",
+        records=[
+            CollectorInventoryRecord(
+                device_id="PE1",
+                vendor="nokia",
+                platform="7750 SR-1",
+                software_version="B-25.10.R2",
+                role="pe",
+                management_address="172.20.20.107",
+                collector_status="ok",
+                capability_summary="partially_supported",
+                normalization_status="normalized_live",
+                source="gnmi",
+                source_target="PE1",
+                notes=["Collected live over gNMI."],
+            ),
+            CollectorInventoryRecord(
+                device_id="P1",
+                vendor="nokia",
+                platform="7750 SR-1",
+                software_version="B-25.10.R2",
+                role="p",
+                management_address="172.20.20.109",
+                collector_status="ok",
+                capability_summary="partially_supported",
+                normalization_status="normalized_live",
+                source="gnmi",
+                source_target="P1",
+                notes=["Collected live over gNMI."],
+            ),
+        ],
+        notes=[
+            "Inventory coverage is currently bounded to the targets that returned normalized live inventory evidence.",
+        ],
+        timeout_budget_seconds=3,
+        fetch_duration_seconds=1.842,
+        fetch_error=None,
+    )
+
+
 def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
     return CollectorTopologySnapshot(
         integration="gnmi_collector_topology",
@@ -452,6 +505,67 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
         ],
         timeout_budget_seconds=3,
         fetch_duration_seconds=0.312,
+        fetch_error=None,
+    )
+
+
+def _build_partial_live_policy_snapshot() -> CollectorPolicySnapshot:
+    live_snapshot = _build_live_policy_snapshot()
+    partial_target_footprints = [dict(footprint) for footprint in live_snapshot.target_footprints]
+    partial_target_footprints[1]["collection_status"] = "partial"
+    partial_target_footprints[1]["notes"] = [
+        "One configured target did not return usable live policy evidence during this bounded collection window."
+    ]
+    return CollectorPolicySnapshot(
+        integration="gnmi_collector_policy",
+        status="partial_live_feed",
+        destination_service="app-api",
+        source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+        configured_target_count=34,
+        collection_success_count=33,
+        collection_partial_count=0,
+        collection_failure_count=1,
+        oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        newest_observed_at="2026-03-09T19:25:11.500000+00:00",
+        detail_ready_target_count=2,
+        degraded_scope_summary="Policy delivery remains bounded because one configured target did not return usable live policy evidence.",
+        sync_source="gnmi_collector_policy_sr_counters",
+        sync_status="degraded",
+        completeness="partial",
+        detail_mode="static_policies_when_present",
+        observed_at="2026-03-09T19:25:11.500000+00:00",
+        observed_target_count=33,
+        policy_capable_target_count=33,
+        observed_target_role_counts={
+            "cpe": 5,
+            "isp": 2,
+            "noc": 2,
+            "p": 16,
+            "pe": 8,
+        },
+        policy_capable_target_role_counts={
+            "cpe": 5,
+            "isp": 2,
+            "noc": 2,
+            "p": 16,
+            "pe": 8,
+        },
+        policy_count=2,
+        active_policy_count=1,
+        static_policy_count=2,
+        static_local_policy_count=1,
+        static_non_local_policy_count=1,
+        bgp_policy_count=0,
+        ttm_preference_count=476,
+        binding_sid_count=1,
+        srv6_binding_sid_count=0,
+        target_footprints=partial_target_footprints,
+        notes=[
+            "Policy coverage is currently bounded to the targets that returned usable live policy evidence.",
+        ],
+        records=live_snapshot.records,
+        timeout_budget_seconds=3,
+        fetch_duration_seconds=1.913,
         fetch_error=None,
     )
 
@@ -1868,6 +1982,35 @@ def test_devices_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypat
     }
 
 
+def test_devices_endpoint_keeps_partial_live_inventory_in_live_collector_mode(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorInventoryClient:
+        def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+            return _build_partial_live_inventory_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.devices.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
+
+    response = client.get("/api/v1/devices")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_status"] == "degraded"
+    assert payload["serving_mode"] == "live_collector"
+    assert payload["evidence_confidence"]["source_posture"] == "live_observed"
+    assert payload["evidence_confidence"]["freshness_posture"] == "current"
+    assert payload["evidence_confidence"]["blocked_reason"] == "none"
+    assert payload["served_persisted_at"] is None
+    assert payload["count"] == 2
+    assert payload["summary"] == (
+        "Device inventory is backed by live Nokia gNMI collection, but one or more configured targets returned partial data. Coverage currently includes 2 of 3 configured targets."
+    )
+    assert payload["items"][0]["current_posture"] == "current"
+
+
 def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None:
     _disable_read_side_persistence(monkeypatch)
 
@@ -2243,8 +2386,53 @@ def test_policies_endpoint_falls_back_to_persisted_policy_snapshot(monkeypatch) 
     assert payload["items"][0]["candidate_paths"][0]["path_state"] == "active"
     assert payload["items"][0]["candidate_paths"][0]["last_recorded_path_state"] == "active"
     assert payload["target_footprints"][0]["current_posture"] == "stale"
-    assert payload["target_footprints"][0]["collection_status"] == "partial"
-    assert payload["target_footprints"][0]["last_recorded_collection_status"] == "partial"
+
+
+def test_policies_endpoint_keeps_partial_live_policy_state_in_live_collector_mode(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return _build_partial_live_policy_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr("app_api.services.policies.persist_policy_snapshot", lambda **kwargs: None)
+    monkeypatch.setattr(
+        "app_api.services.policies.load_recent_policy_snapshot_summaries",
+        lambda limit=3: _build_recent_policy_snapshot_summaries()[:limit],
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_latest_policy_snapshot",
+        _build_persisted_policy_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_previous_policy_snapshot",
+        _build_previous_persisted_policy_snapshot,
+    )
+
+    response = client.get("/api/v1/policies")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_status"] == "degraded"
+    assert payload["serving_mode"] == "live_collector"
+    assert payload["evidence_confidence"]["source_posture"] == "live_observed"
+    assert payload["evidence_confidence"]["freshness_posture"] == "current"
+    assert payload["evidence_confidence"]["blocked_reason"] == "none"
+    assert payload["served_persisted_at"] is None
+    assert payload["observed_target_count"] == 33
+    assert payload["policy_capable_target_count"] == 33
+    assert payload["summary"] == (
+        "Policy inventory is backed by live Nokia SR policy counters and bounded static-policy observations, but one or more targets returned partial or degraded policy visibility. Coverage currently includes 33 of 34 configured targets."
+    )
+    assert any(
+        footprint["collection_status"] == "partial"
+        and footprint["last_recorded_collection_status"] == "partial"
+        for footprint in payload["target_footprints"]
+    )
 
 
 def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) -> None:

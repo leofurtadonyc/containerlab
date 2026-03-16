@@ -23,7 +23,7 @@ The platform must observe live device state without hard-coding vendor assumptio
 - image: `platform-gnmi-collector:0.1.0`, built from the local service Dockerfile
 - startup: the packaged runtime now validates required env, validates the mounted runtime config by building the typed collector runtime document, waits for `app-api` health, and only then starts the collector service
 - ports: 9804 for metrics; additional runtime ports are TBD
-- env vars: `COLLECTOR_METRICS_PORT`, `APP_API_URL`, and optional `GNMI_CONFIG_PATH` override
+- env vars: `COLLECTOR_METRICS_PORT`, `APP_API_URL`, optional `GNMI_CONFIG_PATH` override, and `COLLECTOR_GNMI_REQUEST_TIMEOUT_SECONDS` for the per-target gNMI request budget used by live inventory, topology, and policy reads
 - mounts: `./gnmi-collector/configs:/app/configs` for runtime config overrides
 - persistence: none — stateless observer; all durable read-side storage is owned by `app-api` through Postgres
 - dependencies: `app-api`
@@ -45,5 +45,6 @@ The collector now exposes bounded live normalized inventory, topology, and polic
 The collector is Nokia-first but must not be Nokia-bound. All vendor-specific normalization logic must live in named adapter modules. The core collector pipeline must remain vendor-neutral.
 The collector is intentionally transient. It provides current observed-state slices and observability signals, but it does not become the durable system of record.
 When `GNMI_CONFIG_PATH` is not set, source-based runs resolve the committed repo-local `configs/config.example.yaml`; the container topology still sets `GNMI_CONFIG_PATH=/app/configs/config.example.yaml` explicitly so packaged runtime behavior stays deterministic.
+The packaged topology now also sets `COLLECTOR_GNMI_REQUEST_TIMEOUT_SECONDS=2` so one dead target fails fast enough for the collector to keep returning bounded partial-live snapshots before `app-api` exhausts its 3 second collector-boundary timeout.
 The current policy-detail slice reads Nokia SR policy counters and runtime `sr-path` state from the `nokia-state` subtree, then correlates that live status with bounded static-policy detail from the `nokia-conf` subtree. The mounted lab runtime therefore uses the built-in `admin` gNMI credential until a narrower profile is proven to expose that config subtree correctly.
 The startup contract is now less fragile for the packaged topology runtime, but it is still bootstrap-grade beyond that narrow scope: target reachability, collector scheduling depth, retry orchestration after downstream outages, and broader delivery resilience remain intentionally limited.

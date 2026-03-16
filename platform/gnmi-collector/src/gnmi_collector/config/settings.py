@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     gnmi_config_path: str = Field(default_factory=_default_gnmi_config_path)
     collector_mode: str = "phase_2_live_inventory"
     collector_target_concurrency: int = 12
+    collector_gnmi_request_timeout_seconds: int = Field(default=2, ge=1)
 
     model_config = SettingsConfigDict(
         env_prefix="",

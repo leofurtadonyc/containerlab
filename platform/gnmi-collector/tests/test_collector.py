@@ -254,6 +254,14 @@ class FakeSingleSidedTopologyGnmiClient(FakeGnmiClient):
         return super().get(path=path, encoding="json_ietf")
 
 
+class RecordingGnmiClient(FakeGnmiClient):
+    last_init_kwargs: dict[str, object] | None = None
+
+    def __init__(self, **kwargs):
+        RecordingGnmiClient.last_init_kwargs = dict(kwargs)
+        super().__init__(**kwargs)
+
+
 def test_runtime_config_loads_live_nokia_targets() -> None:
     config = build_runtime_config()
 
@@ -276,6 +284,29 @@ def test_runtime_config_loads_live_nokia_targets() -> None:
         config.policy_subscriptions[1].path
         == "/nokia-conf:configure/router[router-name=Base]/segment-routing/sr-policies/static-policy"
     )
+    assert all(target.gnmi_request_timeout_seconds == 2 for target in config.targets)
+
+
+def test_runtime_config_honors_env_override_for_gnmi_request_timeout(monkeypatch) -> None:
+    monkeypatch.setenv("COLLECTOR_GNMI_REQUEST_TIMEOUT_SECONDS", "4")
+    _clear_settings_cache()
+
+    config = build_runtime_config()
+
+    assert all(target.gnmi_request_timeout_seconds == 4 for target in config.targets)
+
+    _clear_settings_cache()
+
+
+def test_nokia_adapter_passes_configured_gnmi_timeout(monkeypatch) -> None:
+    monkeypatch.setattr("gnmi_collector.adapters.nokia.sros.gNMIclient", RecordingGnmiClient)
+    RecordingGnmiClient.last_init_kwargs = None
+
+    adapter = NokiaSrosAdapter()
+    adapter.collect_inventory(_targets()[0])
+
+    assert RecordingGnmiClient.last_init_kwargs is not None
+    assert RecordingGnmiClient.last_init_kwargs["gnmi_timeout"] == 2
 
 
 def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(

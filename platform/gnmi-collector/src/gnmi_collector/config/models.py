@@ -53,6 +53,7 @@ class GnmiTargetConfig(BaseModel):
     port: int = 57400
     auth: GnmiTargetAuthConfig
     insecure: bool = True
+    gnmi_request_timeout_seconds: int = Field(default=2, ge=1)
     inventory_paths: list[str] = Field(default_factory=list)
     topology_paths: list[str] = Field(default_factory=list)
     policy_paths: list[str] = Field(default_factory=list)

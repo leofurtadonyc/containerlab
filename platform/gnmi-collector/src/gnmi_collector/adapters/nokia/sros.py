@@ -32,6 +32,7 @@ class NokiaSrosAdapter:
             username=target.auth.username,
             password=target.auth.password,
             insecure=target.insecure,
+            gnmi_timeout=target.gnmi_request_timeout_seconds,
         ) as client:
             return client.get(path=paths, encoding="json_ietf")
 
