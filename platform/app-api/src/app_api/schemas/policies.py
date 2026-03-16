@@ -13,6 +13,16 @@ CandidatePathState = Literal["active", "inactive", "unknown"]
 PolicyObservedState = Literal["active", "inactive", "degraded", "unknown"]
 PolicyHealthState = Literal["healthy", "degraded", "down", "unknown"]
 PolicyCollectionStatus = Literal["success", "failure", "partial"]
+PolicyDetailBlockerReason = Literal[
+    "none",
+    "policy_capability_unavailable",
+    "no_policies_observed",
+    "per_policy_details_unavailable",
+    "partial_detail_coverage",
+    "collection_failed",
+    "collection_partial",
+    "not_recorded",
+]
 
 
 class CandidatePathRecord(BaseModel):
@@ -74,6 +84,7 @@ class PolicyTargetFootprintRecord(BaseModel):
     binding_sid_count: int
     srv6_binding_sid_count: int
     detail_record_count: int
+    detail_blocker_reason: PolicyDetailBlockerReason
     notes: list[str]
 
 

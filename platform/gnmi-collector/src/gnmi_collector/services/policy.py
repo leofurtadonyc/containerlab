@@ -112,6 +112,13 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
         notes.append(
             "One or more policy targets could not be collected, so degraded and unknown states remain explicit."
         )
+    detail_blocked_target_count = sum(
+        1 for footprint in target_footprints if footprint.detail_blocker_reason != "none"
+    )
+    if detail_blocked_target_count > 0:
+        notes.append(
+            f"{detail_blocked_target_count} targets currently expose an explicit per-target detail blocker reason in the bounded policy footprint contract."
+        )
 
     delivery = BackendPolicyDeliveryEnvelope(
         destination_service="app-api",

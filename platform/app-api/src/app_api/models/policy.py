@@ -6,6 +6,18 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+PolicyDetailBlockerReason = Literal[
+    "none",
+    "policy_capability_unavailable",
+    "no_policies_observed",
+    "per_policy_details_unavailable",
+    "partial_detail_coverage",
+    "collection_failed",
+    "collection_partial",
+    "not_recorded",
+]
+
+
 class CandidatePath(BaseModel):
     """Backend-owned normalized candidate path summary."""
 
@@ -58,6 +70,7 @@ class PolicyTargetFootprint(BaseModel):
     binding_sid_count: int
     srv6_binding_sid_count: int
     detail_record_count: int
+    detail_blocker_reason: PolicyDetailBlockerReason = "not_recorded"
     notes: list[str] = Field(default_factory=list)
 
 

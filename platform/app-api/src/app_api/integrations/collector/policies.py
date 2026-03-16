@@ -69,6 +69,15 @@ class CollectorPolicyTargetFootprintRecord(BaseModel):
     binding_sid_count: int
     srv6_binding_sid_count: int
     detail_record_count: int
+    detail_blocker_reason: Literal[
+        "none",
+        "policy_capability_unavailable",
+        "no_policies_observed",
+        "per_policy_details_unavailable",
+        "partial_detail_coverage",
+        "collection_failed",
+        "collection_partial",
+    ]
     notes: list[str] = Field(default_factory=list)
 
 

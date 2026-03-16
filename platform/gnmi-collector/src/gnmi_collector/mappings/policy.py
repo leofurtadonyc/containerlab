@@ -7,8 +7,32 @@ from gnmi_collector.models.policy import (
     NormalizedPolicyCandidatePathRecord,
     NormalizedPolicyRecord,
     NormalizedPolicyTargetFootprint,
+    PolicyDetailBlockerReason,
     PolicyRawRecord,
 )
+
+
+def _resolve_detail_blocker_reason(
+    *,
+    raw_record: PolicyRawRecord,
+    policy_capable: bool,
+    observed_policy_count: int,
+    detail_record_count: int,
+) -> PolicyDetailBlockerReason:
+    """Return one bounded reason code for why per-target policy detail is limited."""
+    if raw_record.collection_status == "failure":
+        return "collection_failed"
+    if raw_record.collection_status == "partial":
+        return "collection_partial"
+    if not policy_capable:
+        return "policy_capability_unavailable"
+    if observed_policy_count == 0:
+        return "no_policies_observed"
+    if detail_record_count == 0:
+        return "per_policy_details_unavailable"
+    if detail_record_count < observed_policy_count:
+        return "partial_detail_coverage"
+    return "none"
 
 
 def _normalize_key(value: str) -> str:
@@ -315,24 +339,34 @@ def summarize_policy_target_footprints(
         target_counts = _policy_counts_from_raw_record(raw_record)
         detail_record_count = detail_counts.get(raw_record.target_name, 0)
         policy_capable = _target_has_policy_capability(target_counts, len(raw_record.raw_policies))
+        detail_blocker_reason = _resolve_detail_blocker_reason(
+            raw_record=raw_record,
+            policy_capable=policy_capable,
+            observed_policy_count=target_counts["policy_count"],
+            detail_record_count=detail_record_count,
+        )
         notes: list[str] = []
-        if raw_record.collection_status == "failure":
+        if detail_blocker_reason == "collection_failed":
             notes.append(
                 "Live policy collection failed for this target, so per-target policy truth is currently unavailable."
             )
-        elif target_counts["policy_count"] == 0 and policy_capable:
+        elif detail_blocker_reason == "policy_capability_unavailable":
+            notes.append(
+                "This target does not currently expose bounded policy-capability evidence, so per-target policy detail is unavailable."
+            )
+        elif detail_blocker_reason == "no_policies_observed":
             notes.append(
                 "Stable SR policy resource counters are visible on this target even though no SR policies are currently observed."
             )
-        elif target_counts["policy_count"] > 0 and detail_record_count == 0:
+        elif detail_blocker_reason == "per_policy_details_unavailable":
             notes.append(
                 "Counters indicate SR policies on this target, but the current bounded path could not derive per-policy detail records."
             )
-        elif detail_record_count < target_counts["policy_count"]:
+        elif detail_blocker_reason == "partial_detail_coverage":
             notes.append(
                 "Only a subset of the observed policies on this target currently has bounded normalized detail records."
             )
-        if raw_record.collection_status == "partial":
+        if detail_blocker_reason == "collection_partial":
             notes.append(
                 "Policy collection for this target was partial, so degraded and unknown states remain explicit."
             )
@@ -352,6 +386,7 @@ def summarize_policy_target_footprints(
                 binding_sid_count=target_counts["binding_sid_count"],
                 srv6_binding_sid_count=target_counts["srv6_binding_sid_count"],
                 detail_record_count=detail_record_count,
+                detail_blocker_reason=detail_blocker_reason,
                 notes=notes,
             )
         )

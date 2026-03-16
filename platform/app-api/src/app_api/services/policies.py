@@ -127,6 +127,7 @@ def _build_policy_inventory() -> tuple[
                 binding_sid_count=footprint.binding_sid_count,
                 srv6_binding_sid_count=footprint.srv6_binding_sid_count,
                 detail_record_count=footprint.detail_record_count,
+                detail_blocker_reason=footprint.detail_blocker_reason,
                 notes=footprint.notes,
             )
             for footprint in collector_snapshot.target_footprints
@@ -835,6 +836,7 @@ def build_policies_list_response() -> PoliciesListResponse:
                 binding_sid_count=footprint.binding_sid_count,
                 srv6_binding_sid_count=footprint.srv6_binding_sid_count,
                 detail_record_count=footprint.detail_record_count,
+                detail_blocker_reason=footprint.detail_blocker_reason,
                 notes=footprint.notes,
             )
             for footprint in snapshot.target_footprints

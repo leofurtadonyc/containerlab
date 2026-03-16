@@ -6,6 +6,17 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+PolicyDetailBlockerReason = Literal[
+    "none",
+    "policy_capability_unavailable",
+    "no_policies_observed",
+    "per_policy_details_unavailable",
+    "partial_detail_coverage",
+    "collection_failed",
+    "collection_partial",
+]
+
+
 class PolicyCollectionPlan(BaseModel):
     """Vendor-neutral collection plan for one policy target."""
 
@@ -82,6 +93,7 @@ class NormalizedPolicyTargetFootprint(BaseModel):
     binding_sid_count: int
     srv6_binding_sid_count: int
     detail_record_count: int
+    detail_blocker_reason: PolicyDetailBlockerReason
     notes: list[str] = Field(default_factory=list)
 
 

@@ -368,6 +368,7 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
                 "binding_sid_count": 0,
                 "srv6_binding_sid_count": 0,
                 "detail_record_count": 1,
+                "detail_blocker_reason": "none",
                 "notes": [],
             },
             {
@@ -385,6 +386,7 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
                 "binding_sid_count": 0,
                 "srv6_binding_sid_count": 0,
                 "detail_record_count": 1,
+                "detail_blocker_reason": "none",
                 "notes": [],
             },
         ],
@@ -502,6 +504,7 @@ def _build_live_empty_policy_snapshot() -> CollectorPolicySnapshot:
                 "binding_sid_count": 0,
                 "srv6_binding_sid_count": 0,
                 "detail_record_count": 0,
+                "detail_blocker_reason": "no_policies_observed",
                 "notes": [
                     "Stable SR policy resource counters are visible on this target even though no SR policies are currently observed."
                 ],
@@ -521,6 +524,7 @@ def _build_live_empty_policy_snapshot() -> CollectorPolicySnapshot:
                 "binding_sid_count": 0,
                 "srv6_binding_sid_count": 0,
                 "detail_record_count": 0,
+                "detail_blocker_reason": "no_policies_observed",
                 "notes": [
                     "Stable SR policy resource counters are visible on this target even though no SR policies are currently observed."
                 ],
@@ -583,6 +587,7 @@ def _build_live_policy_snapshot_without_detail_records() -> CollectorPolicySnaps
                 "binding_sid_count": 0,
                 "srv6_binding_sid_count": 0,
                 "detail_record_count": 0,
+                "detail_blocker_reason": "per_policy_details_unavailable",
                 "notes": [
                     "Observed policy counters are present, but bounded per-policy detail records are unavailable for this target."
                 ],
@@ -602,6 +607,7 @@ def _build_live_policy_snapshot_without_detail_records() -> CollectorPolicySnaps
                 "binding_sid_count": 0,
                 "srv6_binding_sid_count": 0,
                 "detail_record_count": 0,
+                "detail_blocker_reason": "per_policy_details_unavailable",
                 "notes": [
                     "Observed policy counters are present, but bounded per-policy detail records are unavailable for this target."
                 ],
@@ -716,6 +722,7 @@ def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
                     "binding_sid_count": 0,
                     "srv6_binding_sid_count": 0,
                     "detail_record_count": 1,
+                    "detail_blocker_reason": "none",
                     "notes": ["Persisted target footprint from the bounded policy read path."],
                 }
             ],
@@ -2053,8 +2060,10 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["target_footprints"][0]["target_name"] == "PE1"
     assert payload["target_footprints"][0]["current_posture"] == "current"
     assert payload["target_footprints"][0]["last_recorded_collection_status"] == "success"
+    assert payload["target_footprints"][0]["detail_blocker_reason"] == "none"
     assert payload["target_footprints"][0]["observed_policy_count"] == 1
     assert payload["target_footprints"][1]["target_name"] == "P1"
+    assert payload["target_footprints"][1]["detail_blocker_reason"] == "none"
     assert payload["target_footprints"][1]["static_non_local_policy_count"] == 1
     assert "bounded static-policy observations" in payload["summary"]
     assert payload["items"][0]["policy_type"] == "static_local"
@@ -2097,6 +2106,8 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     assert len(payload["target_footprints"]) == 2
     assert payload["target_footprints"][0]["policy_capable"] is True
     assert payload["target_footprints"][0]["detail_record_count"] == 0
+    assert payload["target_footprints"][0]["detail_blocker_reason"] == "no_policies_observed"
+    assert payload["target_footprints"][1]["detail_blocker_reason"] == "no_policies_observed"
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
     assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] is None
     assert payload["comparison_to_latest_persisted"]["change_preview"] == []
@@ -2129,6 +2140,8 @@ def test_policies_endpoint_keeps_detail_unavailable_state_explicit(monkeypatch) 
     assert payload["count"] == 0
     assert payload["observed_policy_count"] == 2
     assert payload["empty_reason"] == "per_policy_details_unavailable"
+    assert payload["target_footprints"][0]["detail_blocker_reason"] == "per_policy_details_unavailable"
+    assert payload["target_footprints"][1]["detail_blocker_reason"] == "per_policy_details_unavailable"
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
     assert payload["history"]["status"] == "unavailable"
     assert (

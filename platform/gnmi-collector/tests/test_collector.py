@@ -7,6 +7,8 @@ from gnmi_collector.config.runtime import build_runtime_config
 from gnmi_collector.config.settings import get_settings
 from gnmi_collector.main import app
 from gnmi_collector.mappings.inventory import map_inventory_record
+from gnmi_collector.mappings.policy import summarize_policy_target_footprints
+from gnmi_collector.models.policy import PolicyRawRecord
 from gnmi_collector.services.inventory import build_inventory_flow_snapshot
 from gnmi_collector.services.policy import build_policy_flow_snapshot
 from gnmi_collector.services.topology import build_topology_flow_snapshot
@@ -445,6 +447,11 @@ def test_policy_snapshot_endpoint_returns_live_policy_observations(monkeypatch) 
     assert pe1_footprint["policy_capable"] is True
     assert pe1_footprint["observed_policy_count"] == 1
     assert pe1_footprint["detail_record_count"] == 1
+    assert pe1_footprint["detail_blocker_reason"] == "none"
+    cpe_a1_footprint = next(
+        item for item in payload["target_footprints"] if item["target_name"] == "CPE-A1"
+    )
+    assert cpe_a1_footprint["detail_blocker_reason"] == "no_policies_observed"
     assert len(payload["records"]) == 2
     assert payload["records"][0]["policy_type"] == "static_local"
 
@@ -648,3 +655,34 @@ def test_policy_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> Non
     assert pe1_footprint.policy_capable is True
     assert pe1_footprint.observed_policy_count == 1
     assert pe1_footprint.detail_record_count == 1
+    assert pe1_footprint.detail_blocker_reason == "none"
+
+
+def test_policy_target_footprints_expose_detail_blocker_reasons() -> None:
+    raw_records = [
+        PolicyRawRecord(
+            target_name="PE1",
+            vendor="nokia",
+            platform_hint="sros",
+            role="pe",
+            management_address="172.20.20.107",
+            collection_status="success",
+            sr_policy_counts={
+                "bgp-policies": 1,
+                "active-bgp-policies": 1,
+                "ttm-preferences": 14,
+                "binding-sids-allocated": 0,
+                "srv6-binding-sids-allocated": 0,
+                "static-local-policies": 0,
+                "static-non-local-policies": 0,
+            },
+            raw_policies=[],
+        )
+    ]
+
+    footprints = summarize_policy_target_footprints(raw_records, normalized_records=[])
+
+    assert len(footprints) == 1
+    assert footprints[0].observed_policy_count == 1
+    assert footprints[0].detail_record_count == 0
+    assert footprints[0].detail_blocker_reason == "per_policy_details_unavailable"
