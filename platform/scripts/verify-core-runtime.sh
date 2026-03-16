@@ -230,6 +230,7 @@ assert_contains "policies response" "$policies_response" '"sync_status":"'
 assert_contains "policies response" "$policies_response" '"detail_mode":"'
 assert_contains "policies response" "$policies_response" '"empty_reason":"'
 assert_contains "policies response" "$policies_response" '"target_footprints":['
+assert_contains "policies response" "$policies_response" '"detail_blocker_reason":"'
 assert_contains "policies response" "$policies_response" '"comparison_to_latest_persisted":{'
 assert_contains "policies response" "$policies_response" '"history":{'
 
@@ -369,6 +370,27 @@ if printf '%s' "$policies_response" | grep -F '"empty_reason":"no_policies_obser
 fi
 if printf '%s' "$policies_response" | grep -F '"detail_mode":"counters_only"' >/dev/null 2>&1; then
   notice "Policies API detail_mode remains counters_only, so current policy truth is still bounded to aggregate counters and per-target footprint evidence."
+fi
+if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"per_policy_details_unavailable"' >/dev/null 2>&1; then
+  notice "Policies API target footprints report per_policy_details_unavailable blockers, so per-target detail remains blocked even when aggregate policy presence is real."
+fi
+if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"no_policies_observed"' >/dev/null 2>&1; then
+  notice "Policies API target footprints report no_policies_observed blockers on at least one target, so some targets remain healthy live-empty rather than detail-ready."
+fi
+if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"partial_detail_coverage"' >/dev/null 2>&1; then
+  notice "Policies API target footprints report partial_detail_coverage, so only a subset of observed policy detail is normalized on at least one target."
+fi
+if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"collection_partial"' >/dev/null 2>&1; then
+  warn "Policies API target footprints report collection_partial, so at least one target has degraded policy collection and incomplete detail coverage."
+fi
+if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"collection_failed"' >/dev/null 2>&1; then
+  warn "Policies API target footprints report collection_failed, so at least one target currently has no live policy detail due to collection failure."
+fi
+if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"policy_capability_unavailable"' >/dev/null 2>&1; then
+  notice "Policies API target footprints report policy_capability_unavailable on at least one target, so that target cannot currently contribute bounded policy detail evidence."
+fi
+if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"not_recorded"' >/dev/null 2>&1; then
+  warn "Policies API target footprints still include not_recorded blocker posture on at least one target, so per-target blocker visibility is incomplete."
 fi
 
 if [ "$warning_count" -gt 0 ]; then

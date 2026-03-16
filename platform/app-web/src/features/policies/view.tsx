@@ -27,6 +27,31 @@ import {
 import { useTopologyQuery } from "../topology/api";
 import { usePoliciesQuery } from "./api";
 
+type PolicyDetailBlockerReason =
+  | "none"
+  | "policy_capability_unavailable"
+  | "no_policies_observed"
+  | "per_policy_details_unavailable"
+  | "partial_detail_coverage"
+  | "collection_failed"
+  | "collection_partial"
+  | "not_recorded";
+
+interface PolicyDetailBlockerReadout {
+  pillValue: "ok" | "degraded" | "blocked" | "unknown";
+  label: string;
+  detail: string;
+}
+
+interface PolicyDetailBlockerSummary {
+  label: string;
+  detail: string;
+  breakdown: string;
+  blockedTargetCount: number;
+  detailReadyTargetCount: number;
+  notRecordedTargetCount: number;
+}
+
 function buildFreshnessSummary(observedAt: string | null, generatedAt: string) {
   if (!observedAt) {
     return {
@@ -200,6 +225,122 @@ function getEmptyReasonReadout(
         detail: "Current policy evidence includes bounded detail without an empty-state qualifier.",
       };
   }
+}
+
+export function describePolicyDetailBlockerReason(
+  reason: PolicyDetailBlockerReason,
+): PolicyDetailBlockerReadout {
+  switch (reason) {
+    case "none":
+      return {
+        pillValue: "ok",
+        label: "Detail ready",
+        detail:
+          "This target currently exposes stable bounded per-policy detail records in the current read-only slice.",
+      };
+    case "policy_capability_unavailable":
+      return {
+        pillValue: "blocked",
+        label: "Policy capability unavailable",
+        detail:
+          "This target does not currently expose bounded policy-capability evidence, so per-target detail cannot be derived here.",
+      };
+    case "no_policies_observed":
+      return {
+        pillValue: "blocked",
+        label: "No policies observed",
+        detail:
+          "Stable counters are visible, but no SR policies are currently observed on this target.",
+      };
+    case "per_policy_details_unavailable":
+      return {
+        pillValue: "blocked",
+        label: "Per-policy detail unavailable",
+        detail:
+          "Counters show policy presence on this target, but the bounded path cannot yet derive stable per-policy records.",
+      };
+    case "partial_detail_coverage":
+      return {
+        pillValue: "degraded",
+        label: "Partial detail coverage",
+        detail:
+          "Only a subset of the observed policies on this target currently has bounded normalized detail records.",
+      };
+    case "collection_failed":
+      return {
+        pillValue: "blocked",
+        label: "Collection failed",
+        detail:
+          "Live policy collection failed for this target, so current per-target policy detail is unavailable.",
+      };
+    case "collection_partial":
+      return {
+        pillValue: "degraded",
+        label: "Collection partial",
+        detail:
+          "Policy collection was partial for this target, so degraded and unknown policy states remain explicit.",
+      };
+    default:
+      return {
+        pillValue: "unknown",
+        label: "Not recorded",
+        detail:
+          "The backend did not supply a per-target detail blocker reason on this response.",
+      };
+  }
+}
+
+export function buildPolicyDetailBlockerSummary(
+  blockerReasons: PolicyDetailBlockerReason[],
+): PolicyDetailBlockerSummary {
+  const explicitReasons = blockerReasons.filter((reason) => reason !== "not_recorded");
+  const blockedReasons = explicitReasons.filter((reason) => reason !== "none");
+  const blockedCounts = countBy(blockedReasons, (reason) => reason);
+  const breakdown = Object.entries(blockedCounts)
+    .sort(([leftReason], [rightReason]) => leftReason.localeCompare(rightReason))
+    .map(
+      ([reason, count]) =>
+        `${describePolicyDetailBlockerReason(reason as PolicyDetailBlockerReason).label}: ${count}`,
+    )
+    .join(" • ");
+
+  if (explicitReasons.length === 0) {
+    return {
+      label: "Not recorded",
+      detail:
+        "The backend did not expose explicit per-target detail blocker reasons on this response.",
+      breakdown: "",
+      blockedTargetCount: 0,
+      detailReadyTargetCount: 0,
+      notRecordedTargetCount: blockerReasons.length,
+    };
+  }
+
+  const blockedTargetCount = blockedReasons.length;
+  const detailReadyTargetCount = explicitReasons.filter((reason) => reason === "none").length;
+  const notRecordedTargetCount = blockerReasons.length - explicitReasons.length;
+
+  if (blockedTargetCount === 0) {
+    return {
+      label: "No explicit blockers",
+      detail:
+        "Every target with an exposed blocker reason is currently detail-ready in the bounded policy slice.",
+      breakdown: "",
+      blockedTargetCount,
+      detailReadyTargetCount,
+      notRecordedTargetCount,
+    };
+  }
+
+  return {
+    label: `${blockedTargetCount} blocked`,
+    detail:
+      `${blockedTargetCount} of ${explicitReasons.length} targets with explicit blocker posture remain blocked from stable per-policy detail records. ${detailReadyTargetCount} targets are currently detail-ready.`,
+    breakdown,
+    blockedTargetCount,
+    detailReadyTargetCount,
+    notRecordedTargetCount,
+  };
 }
 
 function getCurrentPostureReadout(
@@ -404,6 +545,9 @@ export function PoliciesView() {
       ? Math.round((data.count / data.observed_policy_count) * 100)
       : 0;
   const evidenceGapCount = data ? Math.max(data.observed_policy_count - data.count, 0) : 0;
+  const detailBlockerSummary = buildPolicyDetailBlockerSummary(
+    data?.target_footprints.map((footprint) => footprint.detail_blocker_reason) ?? [],
+  );
 
   if (isLoading) {
     return (
@@ -592,6 +736,19 @@ export function PoliciesView() {
           </p>
         </article>
         <article className="summary-card">
+          <p className="summary-label">Detail-Ready Targets</p>
+          <strong>{detailBlockerSummary.detailReadyTargetCount}</strong>
+          <p>
+            Explicit blocker posture is exposed for {data.target_footprints.length} targets on this
+            response.
+          </p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Detail Blockers</p>
+          <strong>{detailBlockerSummary.label}</strong>
+          <p>{detailBlockerSummary.detail}</p>
+        </article>
+        <article className="summary-card">
           <p className="summary-label">Current Posture</p>
           <strong>{currentPosture.label}</strong>
           <p>{currentPosture.detail}</p>
@@ -694,6 +851,22 @@ export function PoliciesView() {
             stable per-policy detail for every observed type. The page keeps that coverage gap
             visible instead of implying full per-policy truth.
           </p>
+        </div>
+      ) : null}
+
+      {detailBlockerSummary.blockedTargetCount > 0 ? (
+        <div className="callout">
+          <strong>Per-target detail blockers remain explicit</strong>
+          <p>{detailBlockerSummary.detail}</p>
+          {detailBlockerSummary.breakdown ? (
+            <p className="table-note">Current blocker mix: {detailBlockerSummary.breakdown}</p>
+          ) : null}
+          {detailBlockerSummary.notRecordedTargetCount > 0 ? (
+            <p className="table-note">
+              {detailBlockerSummary.notRecordedTargetCount} targets still lack an explicit blocker
+              code on this response.
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -1195,7 +1368,9 @@ export function PoliciesView() {
         </p>
         <p className="table-note">
           Where the backend now exposes explicit persisted anchors, this page surfaces those
-          snapshot identifiers as trust cues rather than as workflow state.
+          snapshot identifiers as trust cues rather than as workflow state. Per-target detail
+          blocker rows explain why policy detail is blocked on each target without pretending that
+          the platform already has full per-policy truth.
         </p>
       </div>
 
@@ -1220,6 +1395,100 @@ export function PoliciesView() {
           </ul>
         </div>
       ) : null}
+
+      <div className="table-card">
+        <h3>Per-Target Detail Blockers</h3>
+        <p className="table-note">
+          The backend-owned target footprint contract explains why each target is or is not
+          detail-ready. This remains a blocker view for the bounded read-only slice, not a claim of
+          full per-policy truth.
+        </p>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Target</th>
+              <th>Collection</th>
+              <th>Observed Footprint</th>
+              <th>Detail Records</th>
+              <th>Blocker Posture</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.target_footprints.length > 0 ? (
+              data.target_footprints.map((footprint) => {
+                const blockerReadout = describePolicyDetailBlockerReason(
+                  footprint.detail_blocker_reason,
+                );
+                const collectionDisplay =
+                  footprint.current_posture === "stale"
+                    ? {
+                        pillValue: "stale",
+                        note: `Last recorded collection: ${formatLabel(footprint.last_recorded_collection_status)}`,
+                      }
+                    : {
+                        pillValue:
+                          footprint.collection_status === "success"
+                            ? "ok"
+                            : footprint.collection_status === "partial"
+                              ? "degraded"
+                              : "blocked",
+                        note: `Current collection: ${formatLabel(footprint.collection_status)}`,
+                      };
+
+                return (
+                  <tr key={footprint.target_name}>
+                    <td>
+                      <strong>{footprint.target_name}</strong>
+                      <div className="table-note">{footprint.target_role ?? "unknown role"}</div>
+                    </td>
+                    <td>
+                      <StatusPill value={collectionDisplay.pillValue} />
+                      {collectionDisplay.note ? (
+                        <div className="table-note">{collectionDisplay.note}</div>
+                      ) : null}
+                    </td>
+                    <td>
+                      <div>{footprint.observed_policy_count} observed</div>
+                      <div className="table-note">
+                        Active {footprint.active_policy_count} • Static {footprint.static_policy_count}
+                        • BGP {footprint.bgp_policy_count}
+                      </div>
+                    </td>
+                    <td>
+                      <strong>{footprint.detail_record_count}</strong>
+                      <div className="table-note">
+                        TTM {footprint.ttm_preference_count} • Binding SIDs {footprint.binding_sid_count}
+                      </div>
+                    </td>
+                    <td>
+                      <StatusPill value={blockerReadout.pillValue} />
+                      <div className="table-note">
+                        <strong>{blockerReadout.label}</strong>
+                      </div>
+                      <div className="table-note">{blockerReadout.detail}</div>
+                      {footprint.notes.length > 0 ? (
+                        <ul className="notes-list">
+                          {footprint.notes.map((note) => (
+                            <li key={`${footprint.target_name}-${note}`}>{note}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={5}>
+                  <span className="meta-copy">
+                    No per-target policy footprint evidence is currently exposed on this response.
+                  </span>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <div className="toolbar">
         <label className="field-group">

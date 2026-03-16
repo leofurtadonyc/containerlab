@@ -28,6 +28,54 @@ function formatReadPathFreshness(readPath: PlatformReadPathStatus): string {
   return `${formatDateTime(readPath.oldest_observed_at)} -> ${formatDateTime(readPath.newest_observed_at)}`;
 }
 
+function buildPolicyDetailReadinessReadout(readPath: PlatformReadPathStatus | null): {
+  label: string;
+  detail: string;
+  blockedTargetCount: number;
+} {
+  if (
+    !readPath ||
+    readPath.policy_capable_target_count === null ||
+    readPath.detail_ready_target_count === null
+  ) {
+    return {
+      label: "Not exposed",
+      detail:
+        "Platform status does not currently expose policy detail-readiness counts on this response.",
+      blockedTargetCount: 0,
+    };
+  }
+
+  const blockedTargetCount = Math.max(
+    readPath.policy_capable_target_count - readPath.detail_ready_target_count,
+    0,
+  );
+
+  if (readPath.policy_capable_target_count === 0) {
+    return {
+      label: "0/0",
+      detail: "No policy-capable targets are currently exposed on the bounded policy read path.",
+      blockedTargetCount,
+    };
+  }
+
+  if (blockedTargetCount === 0) {
+    return {
+      label: `${readPath.detail_ready_target_count}/${readPath.policy_capable_target_count}`,
+      detail:
+        "All currently exposed policy-capable targets are detail-ready on the bounded policy read path.",
+      blockedTargetCount,
+    };
+  }
+
+  return {
+    label: `${readPath.detail_ready_target_count}/${readPath.policy_capable_target_count}`,
+    detail:
+      `${blockedTargetCount} policy-capable targets remain blocked to aggregate-only or partial policy detail on the current read path. See the Policies page for per-target blocker reasons.`,
+    blockedTargetCount,
+  };
+}
+
 export function PlatformHealthView() {
   const { data, error, isLoading, reload } = usePlatformStatusQuery();
 
@@ -98,9 +146,11 @@ export function PlatformHealthView() {
     (readPath) => readPath.oldest_observed_at && readPath.newest_observed_at,
   ).length;
   const topologyReadPath = getPlatformReadPath(readPaths, "topology");
+  const policyReadPath = getPlatformReadPath(readPaths, "policy");
   const topologyInferenceReadout = describeTopologyReadPathInference(topologyReadPath);
   const topologyCollectionReadout = describeTopologyReadPathCollection(topologyReadPath);
   const topologyPairingReadout = describeTopologyReadPathPairing(topologyReadPath);
+  const policyDetailReadiness = buildPolicyDetailReadinessReadout(policyReadPath);
 
   return (
     <section>
@@ -138,6 +188,13 @@ export function PlatformHealthView() {
           Readiness page, not on this bounded current-status surface.
         </p>
       </div>
+
+      {policyDetailReadiness.blockedTargetCount > 0 ? (
+        <div className="callout">
+          <strong>Policy detail blockers remain explicit</strong>
+          <p>{policyDetailReadiness.detail}</p>
+        </div>
+      ) : null}
 
       <div className="summary-grid">
         <article className="summary-card">
@@ -189,6 +246,11 @@ export function PlatformHealthView() {
           <strong>{Object.keys(observationSourceCounts).length}</strong>
           <p>Distinct bounded observation-source families currently exposed in product status.</p>
         </article>
+        <article className="summary-card">
+          <p className="summary-label">Policy Detail Readiness</p>
+          <strong>{policyDetailReadiness.label}</strong>
+          <p>{policyDetailReadiness.detail}</p>
+        </article>
       </div>
 
       <div className="content-grid">
@@ -220,7 +282,9 @@ export function PlatformHealthView() {
                 readPaths.length > 0
                   ? readPaths.map(
                       (readPath) =>
-                        `${formatLabel(readPath.model_family)}: ${formatReadPathCoverage(readPath)}`,
+                        readPath.model_family === "policy"
+                          ? `${formatLabel(readPath.model_family)}: ${formatReadPathCoverage(readPath)} • ${buildPolicyDetailReadinessReadout(readPath).detail}`
+                          : `${formatLabel(readPath.model_family)}: ${formatReadPathCoverage(readPath)}`,
                     )
                   : "No bounded read-path summaries are currently exposed.",
             },
@@ -313,6 +377,8 @@ export function PlatformHealthView() {
                       (readPath) =>
                         readPath.model_family === "topology"
                           ? `${formatLabel(readPath.model_family)}: ${topologyInferenceReadout.label} • ${topologyCollectionReadout.label} • ${formatReadPathCollection(readPath)} • ${topologyPairingReadout.countDetail}`
+                          : readPath.model_family === "policy"
+                            ? `${formatLabel(readPath.model_family)}: ${formatReadPathCollection(readPath)} • ${buildPolicyDetailReadinessReadout(readPath).detail}`
                           : `${formatLabel(readPath.model_family)}: ${formatReadPathCollection(readPath)}`,
                     )
                   : "No bounded read-path summaries are currently exposed.",
@@ -359,6 +425,9 @@ export function PlatformHealthView() {
                       <p className="table-note">
                         {topologyInferenceReadout.detail} {topologyCollectionReadout.detail} {topologyPairingReadout.detail} {topologyPairingReadout.countDetail}
                       </p>
+                    ) : null}
+                    {readPath.model_family === "policy" ? (
+                      <p className="table-note">{buildPolicyDetailReadinessReadout(readPath).detail}</p>
                     ) : null}
                     {readPath.notes.length > 0 ? (
                       <ul className="notes-list">

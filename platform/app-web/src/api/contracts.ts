@@ -274,6 +274,15 @@ export interface PolicyTargetFootprintRecord {
   binding_sid_count: number;
   srv6_binding_sid_count: number;
   detail_record_count: number;
+  detail_blocker_reason:
+    | "none"
+    | "policy_capability_unavailable"
+    | "no_policies_observed"
+    | "per_policy_details_unavailable"
+    | "partial_detail_coverage"
+    | "collection_failed"
+    | "collection_partial"
+    | "not_recorded";
   notes: string[];
 }
 
