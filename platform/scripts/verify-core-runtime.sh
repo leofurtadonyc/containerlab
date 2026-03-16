@@ -248,6 +248,9 @@ assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_coverage_posture{inference_posture="'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_coverage_posture'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshot_status'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_latest_fetch_duration_seconds'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_timeout_budget_seconds'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_latest_fetch_posture'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_readiness_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_sync_runs_total'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_inventory_newest_observed_timestamp_seconds'
@@ -304,6 +307,18 @@ if printf '%s' "$platform_status_response" | grep -E '"model_family":"topology"[
 fi
 if printf '%s' "$platform_status_response" | grep -E '"model_family":"policy"[^}]*"detail_ready_target_count":0' >/dev/null 2>&1; then
   notice "Platform status reports zero policy detail-ready targets, so current policy truth remains bounded to counters or other aggregate-only evidence."
+fi
+if printf '%s' "$app_api_metrics" | grep 'platform_app_api_collector_boundary_latest_fetch_posture{model_family="inventory",outcome="timeout_budget_exceeded"} 1' >/dev/null 2>&1; then
+  warn "App API metrics report that the latest inventory collector-boundary fetch exhausted its bounded timeout budget and triggered fallback posture."
+fi
+if printf '%s' "$app_api_metrics" | grep 'platform_app_api_collector_boundary_latest_fetch_posture{model_family="topology",outcome="timeout_budget_exceeded"} 1' >/dev/null 2>&1; then
+  warn "App API metrics report that the latest topology collector-boundary fetch exhausted its bounded timeout budget and triggered fallback posture."
+fi
+if printf '%s' "$app_api_metrics" | grep 'platform_app_api_collector_boundary_latest_fetch_posture{model_family="policy",outcome="timeout_budget_exceeded"} 1' >/dev/null 2>&1; then
+  warn "App API metrics report that the latest policy collector-boundary fetch exhausted its bounded timeout budget and triggered fallback posture."
+fi
+if printf '%s' "$app_api_metrics" | grep -E 'platform_app_api_collector_boundary_latest_fetch_posture\{model_family="(inventory|topology|policy)",outcome="(collector_connection_error|collector_http_error|invalid_response_payload|unknown_error)"\} 1' >/dev/null 2>&1; then
+  warn "App API metrics report a non-timeout collector-boundary failure outcome on at least one read path; inspect the latest collector-boundary posture panels before treating fallback as a pure latency-budget issue."
 fi
 
 if printf '%s' "$topology_response" | grep -F '"serving_mode":"persisted_fallback"' >/dev/null 2>&1; then

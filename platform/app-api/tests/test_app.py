@@ -140,6 +140,8 @@ def _build_live_inventory_snapshot() -> CollectorInventorySnapshot:
         notes=[
             "Inventory coverage is currently bounded to the targets that returned normalized live inventory evidence.",
         ],
+        timeout_budget_seconds=3,
+        fetch_duration_seconds=0.184,
         fetch_error=None,
     )
 
@@ -203,6 +205,8 @@ def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
                 },
             ),
         ],
+        timeout_budget_seconds=3,
+        fetch_duration_seconds=0.228,
         links=[
             CollectorTopologyLinkRecord(
                 link_id="P1--PE1",
@@ -444,6 +448,8 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
                 ],
             },
         ],
+        timeout_budget_seconds=3,
+        fetch_duration_seconds=0.312,
         fetch_error=None,
     )
 
@@ -1125,10 +1131,18 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert payload["read_paths"][0]["degraded_scope_summary"] == (
         "All configured inventory targets returned normalized live inventory evidence."
     )
+    assert any(
+        "completed in 0.184s within the 3s latency budget" in note
+        for note in payload["read_paths"][0]["notes"]
+    )
     assert payload["read_paths"][1]["model_family"] == "topology"
     assert payload["read_paths"][1]["inference_posture"] == "inferred"
     assert payload["read_paths"][1]["endpoint_pairing_posture"] == "paired"
     assert payload["read_paths"][1]["collection_posture"] == "ok"
+    assert any(
+        "completed in 0.228s within the 3s latency budget" in note
+        for note in payload["read_paths"][1]["notes"]
+    )
     assert payload["read_paths"][1]["paired_link_count"] == 1
     assert payload["read_paths"][1]["single_sided_link_count"] == 0
     assert payload["read_paths"][1]["degraded_scope_summary"] == (
@@ -1138,6 +1152,10 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert payload["read_paths"][2]["model_family"] == "policy"
     assert payload["read_paths"][2]["policy_capable_target_count"] == 34
     assert payload["read_paths"][2]["detail_ready_target_count"] == 2
+    assert any(
+        "completed in 0.312s within the 3s latency budget" in note
+        for note in payload["read_paths"][2]["notes"]
+    )
     assert payload["read_paths"][2]["degraded_scope_summary"] == (
         "All configured policy targets returned current counter evidence, but per-policy detail remains bounded to static-policy visibility."
     )
@@ -1257,6 +1275,8 @@ def test_platform_status_endpoint_classifies_collector_boundary_failures(monkeyp
                 degraded_scope_summary="No configured inventory targets returned usable live inventory evidence.",
                 records=[],
                 notes=[],
+                timeout_budget_seconds=3,
+                fetch_duration_seconds=3.004,
                 fetch_error_kind="timeout_budget_exceeded",
                 fetch_error="Collector boundary exceeded the 3s latency budget while reading inventory snapshot from http://gnmi-collector:9804/inventory/snapshot.",
             )
@@ -1289,6 +1309,8 @@ def test_platform_status_endpoint_classifies_collector_boundary_failures(monkeyp
                 notes=[],
                 nodes=[],
                 links=[],
+                timeout_budget_seconds=3,
+                fetch_duration_seconds=0.241,
                 fetch_error_kind="invalid_response_payload",
                 fetch_error="Collector boundary returned an invalid normalized payload while reading topology snapshot from http://gnmi-collector:9804/topology/snapshot.",
             )
@@ -1331,6 +1353,8 @@ def test_platform_status_endpoint_classifies_collector_boundary_failures(monkeyp
                 target_footprints=[],
                 notes=[],
                 records=[],
+                timeout_budget_seconds=3,
+                fetch_duration_seconds=0.119,
                 fetch_error_kind="collector_connection_error",
                 fetch_error="Collector boundary connection failed while reading policy snapshot from http://gnmi-collector:9804/policies/snapshot: Connection refused.",
             )
@@ -1344,6 +1368,10 @@ def test_platform_status_endpoint_classifies_collector_boundary_failures(monkeyp
     assert payload["read_paths"][0]["observation_state"] == "unreachable"
     assert payload["read_paths"][1]["observation_state"] == "degraded"
     assert payload["read_paths"][2]["observation_state"] == "unreachable"
+    assert any(
+        "exhausted the 3s latency budget after 3.004s" in note
+        for note in payload["read_paths"][0]["notes"]
+    )
     assert any("3s latency budget" in note for note in payload["read_paths"][0]["notes"])
     assert any("invalid normalized payload" in note for note in payload["read_paths"][1]["notes"])
     assert any("connection failed" in note for note in payload["read_paths"][2]["notes"])
@@ -2488,6 +2516,16 @@ def test_unknown_route_returns_consistent_error_payload() -> None:
 def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     _disable_read_side_persistence(monkeypatch)
 
+    class StubOdlClient:
+        def read_controller_observation(self) -> OdlControllerObservation:
+            return OdlControllerObservation(
+                observation_state="ok",
+                observed_source="odl_restconf_capability_probe",
+                observation_summary="ODL probe succeeded.",
+                observed_capabilities=[],
+                notes=[],
+            )
+
     class StubCollectorInventoryClient:
         def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
             return _build_live_inventory_snapshot()
@@ -2513,6 +2551,22 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         lambda: StubCollectorPolicyClient(),
     )
     monkeypatch.setattr(
+        "app_api.services.platform.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_topology_client",
+        lambda: StubCollectorTopologyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_odl_client",
+        lambda: StubOdlClient(),
+    )
+    monkeypatch.setattr(
         "app_api.metrics.router.summarize_sync_run_history",
         _build_sync_run_history_summary,
     )
@@ -2528,6 +2582,7 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     client.get("/api/v1/devices")
     client.get("/api/v1/topology")
     client.get("/api/v1/policies")
+    client.get("/api/v1/platform/status")
     response = client.get("/metrics")
 
     assert response.status_code == 200
@@ -2539,6 +2594,21 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert 'endpoint="/api/v1/policies",method="GET",status_class="2xx"' in response.text
     assert "platform_app_api_http_request_duration_seconds_count" in response.text
     assert "platform_app_api_http_request_duration_seconds_sum" in response.text
+    assert "platform_app_api_collector_boundary_latest_fetch_duration_seconds" in response.text
+    assert "platform_app_api_collector_boundary_timeout_budget_seconds" in response.text
+    assert "platform_app_api_collector_boundary_latest_fetch_posture" in response.text
+    assert (
+        'platform_app_api_collector_boundary_latest_fetch_duration_seconds{model_family="inventory",outcome="live_normalized_feed"} 0.184000000'
+        in response.text
+    )
+    assert (
+        'platform_app_api_collector_boundary_timeout_budget_seconds{model_family="topology"}'
+        in response.text
+    )
+    assert (
+        'platform_app_api_collector_boundary_latest_fetch_posture{model_family="policy",outcome="live_normalized_feed"} 1'
+        in response.text
+    )
     assert "platform_app_api_topology_nodes 2" in response.text
     assert "platform_app_api_topology_links 1" in response.text
     assert "platform_app_api_topology_paired_links 1" in response.text
@@ -2659,6 +2729,71 @@ def test_metrics_endpoint_exports_mixed_topology_pairing_posture(monkeypatch) ->
     ) in response.text
     assert (
         'platform_app_api_sync_run_latest_finished_at_seconds{model_family="inventory"} '
+        in response.text
+    )
+
+
+def test_metrics_endpoint_exports_timeout_boundary_posture(monkeypatch) -> None:
+    class StubOdlClient:
+        def read_controller_observation(self) -> OdlControllerObservation:
+            return OdlControllerObservation(
+                observation_state="ok",
+                observed_source="odl_restconf_capability_probe",
+                observation_summary="ODL probe succeeded.",
+                observed_capabilities=[],
+                notes=[],
+            )
+
+    monkeypatch.setattr(
+        "app_api.services.platform.get_odl_client",
+        lambda: StubOdlClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_inventory_client",
+        lambda: SimpleNamespace(
+            read_inventory_snapshot=lambda: CollectorInventorySnapshot(
+                integration="gnmi_collector_inventory",
+                status="collector_unavailable",
+                destination_service="app-api",
+                source_endpoint="http://gnmi-collector:9804/inventory/snapshot",
+                configured_target_count=0,
+                observed_target_count=0,
+                collection_success_count=0,
+                collection_partial_count=0,
+                collection_failure_count=0,
+                oldest_observed_at=None,
+                newest_observed_at=None,
+                degraded_scope_summary="No configured inventory targets returned usable live inventory evidence.",
+                records=[],
+                notes=[],
+                timeout_budget_seconds=3,
+                fetch_duration_seconds=3.021,
+                fetch_error_kind="timeout_budget_exceeded",
+                fetch_error="Collector boundary exceeded the 3s latency budget while reading inventory snapshot from http://gnmi-collector:9804/inventory/snapshot.",
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_topology_client",
+        lambda: SimpleNamespace(read_topology_snapshot=_build_live_topology_snapshot),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_policy_client",
+        lambda: SimpleNamespace(read_policy_snapshot=_build_live_policy_snapshot),
+    )
+
+    reset_metrics_registry()
+    client.get("/api/v1/platform/status")
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert (
+        'platform_app_api_collector_boundary_latest_fetch_duration_seconds{model_family="inventory",outcome="timeout_budget_exceeded"} 3.021000000'
+        in response.text
+    )
+    assert (
+        'platform_app_api_collector_boundary_latest_fetch_posture{model_family="inventory",outcome="timeout_budget_exceeded"} 1'
         in response.text
     )
 

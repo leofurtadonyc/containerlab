@@ -138,8 +138,8 @@ This now validates:
 - Prometheus live scrape target posture for the current real targets
 - read-side API contract sanity for platform status, devices, topology, policies, and capabilities, now including bounded `read_paths` coverage and freshness fields plus capability vendor-posture and roadmap rollups
 - backend-owned topology coverage contract presence in both `/api/v1/platform/status` and `/api/v1/topology`, including endpoint-pairing posture, paired-link and single-sided-link counts, per-link pairing state, and per-link endpoint-evidence counts
-- dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts, now including backend and collector paired-link, single-sided-link, pairing-posture, collector observation-age, and policy detail-ready signals used by the current dashboards
-- bounded warnings and notices when current read-side responses fall back to persisted data, become blocked, expose non-ok read-path posture, or surface other degraded-but-honest states such as partial topology, partially-paired or single-sided topology coverage, and aggregate-only policy evidence
+- dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts, now including backend and collector paired-link, single-sided-link, pairing-posture, collector observation-age, policy detail-ready signals, and the backend collector-boundary latest duration, timeout budget, and latest timeout or failure posture signals used by the current dashboards
+- bounded warnings and notices when current read-side responses fall back to persisted data, become blocked, expose non-ok read-path posture, surface other degraded-but-honest states such as partial topology, partially-paired or single-sided topology coverage, and aggregate-only policy evidence, or show that fallback was triggered by a bounded collector-boundary timeout posture rather than ordinary degraded live collection
 - Grafana provisioned datasource presence and provisioned overview dashboards
 
 ### `verify-odl-auth.sh`
@@ -226,8 +226,26 @@ What healthy means here:
 - hard failures still stop the deployment from being treated as usable
 - warnings call out degraded-but-honest current postures such as persisted fallback, blocked read-side evidence, or bounded policy and topology limits that remain visible by design
 - notices now also call out bounded read-path attention states such as partially-paired or single-sided topology endpoint coverage and zero policy detail-ready targets when those conditions are real
+- collector-boundary timeout warnings mean the backend hit the bounded latency budget and chose fail-fast fallback; they do not mean workflow semantics or a generic dependency-dashboard verdict
 - topology pairing notices mean the inferred topology slice still mixes stronger and weaker endpoint evidence; they do not mean the platform has proven an adjacency fault or protocol failure
 - a warning does not imply workflow semantics, remediation intent, or automatic rollback; it is an operator cue to inspect current truth posture more carefully
+
+### Collector-Boundary Latency Posture
+
+The current platform now exposes one small additional observability slice for collector-boundary latency posture.
+
+These signals are intentionally bounded:
+
+- `platform_app_api_collector_boundary_latest_fetch_duration_seconds` records the latest bounded collector-boundary fetch duration by model family
+- `platform_app_api_collector_boundary_timeout_budget_seconds` records the configured timeout budget by model family
+- `platform_app_api_collector_boundary_latest_fetch_posture` records whether the latest bounded fetch stayed live, remained partial, or ended in a timeout or other classified boundary failure outcome
+
+Interpret them this way:
+
+- `timeout_budget_exceeded` means persisted fallback or unreachable posture was triggered by the bounded fail-fast timeout path
+- `collector_connection_error`, `collector_http_error`, `invalid_response_payload`, and `unknown_error` mean the boundary failed for a reason other than slowness alone
+- `partial_live_feed` means the fetch completed within the current timeout budget but still returned bounded degraded live coverage
+- these metrics remain observability signals only; the product-facing truth still lives in the backend contracts and the WebUI trust cues
 
 ## What Remains Bootstrap-Grade
 

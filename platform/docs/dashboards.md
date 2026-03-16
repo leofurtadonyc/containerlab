@@ -15,6 +15,7 @@ The platform currently has:
 - real topology and SR policy overview dashboards backed by current Prometheus metrics for those bounded live slices
 - the platform, topology, and SR policy dashboards now surface bounded persisted sync evidence plus clearer aggregate freshness, agreement, and evidence-gap cues where those backend and collector metrics honestly exist
 - the platform overview dashboard now also surfaces collector-backed target coverage, observation-age, and policy detail-gap cues for inventory, topology, and policy, using real numeric signals rather than trying to serialize product-facing degraded-scope prose into Grafana
+- the platform overview dashboard now also surfaces backend-owned collector-boundary latest fetch duration, timeout budget, and latest timeout or failure posture signals so operators can distinguish slow fallback triggers from ordinary degraded live collection
 - the topology overview dashboard now also surfaces paired-link counts, single-sided-link counts, paired-link share, and backend-owned topology pairing-posture labels as bounded observability projections for the current topology coverage slice
 - the topology overview dashboard now also surfaces backend-owned inference, endpoint-pairing, and collection posture labels as bounded observability projections for the current topology partiality slice
 - the platform overview dashboard now also mirrors the narrower topology read-path coverage posture through paired-versus-single-sided link counts plus backend-owned inference, pairing, and collection posture labels without turning Grafana into the product contract
@@ -97,6 +98,7 @@ More specifically, `./scripts/verify-core-runtime.sh` currently validates only t
 - the provisioned Prometheus datasource is present
 - provisioned overview dashboards can be discovered through the Grafana API
 - the current `app-api` and `gnmi-collector` metrics contracts still expose the metric families the platform overview dashboard depends on most directly
+- the current `app-api` metrics contract now also exposes the backend collector-boundary latest duration, timeout budget, and latest posture metric families required by the platform overview dashboard's latency-posture row
 
 It does not yet validate:
 
@@ -131,6 +133,7 @@ Expected emphasis over time:
 - persisted inventory, topology, and policy sync freshness and result posture where those metrics exist
 - bounded cross-slice freshness and agreement cues where those aggregate metrics exist
 - collector-backed read-path coverage percentages, observation age, and target/detail gaps where those collector metrics exist
+- collector-boundary latest fetch duration, timeout budget, and latest outcome posture where those backend metrics exist
 
 ### Topology
 
@@ -193,11 +196,18 @@ In Grafana:
 - operators see numeric observability signals only
 - coverage is represented through observed-versus-configured targets
 - freshness is represented through observation age from collector timestamps
-- degraded scope is approximated through numeric gaps such as missing targets, paired-versus-single-sided topology link counts or shares, and policy detail-ready gaps
+- degraded scope is approximated through numeric gaps such as missing targets, paired-versus-single-sided topology link counts or shares, policy detail-ready gaps, and collector-boundary duration-versus-budget posture
 - topology endpoint-pairing observability should stay numeric as paired-link counts, single-sided-link counts, and derived shares rather than becoming a product-owned status vocabulary inside dashboards
 - backend-owned topology inference, pairing, and collection posture labels may appear only as metric-backed label projections that support those numeric panels; Grafana still does not own that vocabulary
+- collector-boundary timeout posture is an observability cue only; it explains whether the backend hit the fail-fast latency budget, not whether the product has emitted a workflow verdict or dependency-dashboard truth statement
 
 Grafana does not attempt to reproduce the backend's human-readable degraded-scope summaries verbatim, because those are product semantics rather than durable metric labels.
+
+Platform overview latency-posture rule:
+
+- duration and timeout-budget panels exist to show bounded collector-boundary timing posture by model family
+- latest outcome posture panels may distinguish `timeout_budget_exceeded` from `collector_connection_error`, `collector_http_error`, `invalid_response_payload`, `unknown_error`, and `partial_live_feed`
+- those panels help explain why persisted fallback happened, but the backend contracts and WebUI trust cues remain the product-facing source of truth
 
 Week 14 topology coverage rule:
 

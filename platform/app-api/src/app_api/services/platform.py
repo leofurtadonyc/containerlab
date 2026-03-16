@@ -7,6 +7,10 @@ from app_api.integrations.collector.inventory import get_collector_inventory_cli
 from app_api.integrations.collector.policies import get_collector_policy_client
 from app_api.integrations.collector.topology import get_collector_topology_client
 from app_api.integrations.odl import OdlControllerObservation, get_odl_client
+from app_api.metrics.state import (
+    observe_collector_boundary_fetch,
+    resolve_collector_boundary_fetch_outcome,
+)
 from app_api.models.topology import build_topology_coverage_summary
 from app_api.schemas.platform import (
     PlatformComponentStatus,
@@ -45,9 +49,77 @@ def _map_read_path_state(status: str, fetch_error_kind: str | None) -> str:
     return "unknown"
 
 
+def _build_latency_budget_note(
+    *,
+    status: str,
+    fetch_error_kind: str | None,
+    timeout_budget_seconds: int,
+    fetch_duration_seconds: float | None,
+) -> str | None:
+    """Summarize the latest collector-boundary latency posture for operators."""
+    if timeout_budget_seconds <= 0 or fetch_duration_seconds is None:
+        return None
+
+    if fetch_error_kind == "timeout_budget_exceeded":
+        return (
+            "Latest backend collector fetch exhausted the "
+            f"{timeout_budget_seconds}s latency budget after {fetch_duration_seconds:.3f}s, "
+            "so this read path fell back instead of waiting longer."
+        )
+    if fetch_error_kind is not None:
+        return (
+            "Latest backend collector fetch completed in "
+            f"{fetch_duration_seconds:.3f}s under the {timeout_budget_seconds}s latency budget "
+            f"with {fetch_error_kind}."
+        )
+    if status == "partial_live_feed":
+        return (
+            "Latest backend collector fetch completed in "
+            f"{fetch_duration_seconds:.3f}s within the {timeout_budget_seconds}s latency budget, "
+            "but still returned only bounded partial live coverage."
+        )
+    return (
+        "Latest backend collector fetch completed in "
+        f"{fetch_duration_seconds:.3f}s within the {timeout_budget_seconds}s latency budget."
+    )
+
+
+def _observe_snapshot_fetch(
+    *,
+    model_family: str,
+    status: str,
+    fetch_error_kind: str | None,
+    timeout_budget_seconds: int,
+    fetch_duration_seconds: float | None,
+) -> None:
+    """Update bounded collector-boundary observability from one snapshot read."""
+    observe_collector_boundary_fetch(
+        model_family=model_family,
+        duration_seconds=fetch_duration_seconds,
+        timeout_budget_seconds=timeout_budget_seconds,
+        outcome=resolve_collector_boundary_fetch_outcome(
+            status=status,
+            fetch_error_kind=fetch_error_kind,
+        ),
+    )
+
+
 def _build_inventory_read_path_status() -> PlatformReadPathStatus:
     """Build bounded platform status for the inventory read path."""
     snapshot = get_collector_inventory_client().read_inventory_snapshot()
+    _observe_snapshot_fetch(
+        model_family="inventory",
+        status=snapshot.status,
+        fetch_error_kind=snapshot.fetch_error_kind,
+        timeout_budget_seconds=snapshot.timeout_budget_seconds,
+        fetch_duration_seconds=snapshot.fetch_duration_seconds,
+    )
+    latency_note = _build_latency_budget_note(
+        status=snapshot.status,
+        fetch_error_kind=snapshot.fetch_error_kind,
+        timeout_budget_seconds=snapshot.timeout_budget_seconds,
+        fetch_duration_seconds=snapshot.fetch_duration_seconds,
+    )
     return PlatformReadPathStatus(
         model_family="inventory",
         observation_state=_map_read_path_state(snapshot.status, snapshot.fetch_error_kind),
@@ -62,13 +134,30 @@ def _build_inventory_read_path_status() -> PlatformReadPathStatus:
         summary=(
             "Current inventory read-path coverage is bounded to the targets that returned normalized live inventory evidence."
         ),
-        notes=[*snapshot.notes, *([snapshot.fetch_error] if snapshot.fetch_error else [])],
+        notes=[
+            *snapshot.notes,
+            *([latency_note] if latency_note else []),
+            *([snapshot.fetch_error] if snapshot.fetch_error else []),
+        ],
     )
 
 
 def _build_topology_read_path_status() -> PlatformReadPathStatus:
     """Build bounded platform status for the topology read path."""
     snapshot = get_collector_topology_client().read_topology_snapshot()
+    _observe_snapshot_fetch(
+        model_family="topology",
+        status=snapshot.status,
+        fetch_error_kind=snapshot.fetch_error_kind,
+        timeout_budget_seconds=snapshot.timeout_budget_seconds,
+        fetch_duration_seconds=snapshot.fetch_duration_seconds,
+    )
+    latency_note = _build_latency_budget_note(
+        status=snapshot.status,
+        fetch_error_kind=snapshot.fetch_error_kind,
+        timeout_budget_seconds=snapshot.timeout_budget_seconds,
+        fetch_duration_seconds=snapshot.fetch_duration_seconds,
+    )
     collection_posture = snapshot.collection_posture
     if collection_posture is None and snapshot.status == "collector_unavailable":
         collection_posture = "blocked"
@@ -103,6 +192,7 @@ def _build_topology_read_path_status() -> PlatformReadPathStatus:
         notes=[
             *snapshot.notes,
             coverage_summary.summary,
+            *([latency_note] if latency_note else []),
             *([snapshot.fetch_error] if snapshot.fetch_error else []),
         ],
     )
@@ -111,6 +201,19 @@ def _build_topology_read_path_status() -> PlatformReadPathStatus:
 def _build_policy_read_path_status() -> PlatformReadPathStatus:
     """Build bounded platform status for the policy read path."""
     snapshot = get_collector_policy_client().read_policy_snapshot()
+    _observe_snapshot_fetch(
+        model_family="policy",
+        status=snapshot.status,
+        fetch_error_kind=snapshot.fetch_error_kind,
+        timeout_budget_seconds=snapshot.timeout_budget_seconds,
+        fetch_duration_seconds=snapshot.fetch_duration_seconds,
+    )
+    latency_note = _build_latency_budget_note(
+        status=snapshot.status,
+        fetch_error_kind=snapshot.fetch_error_kind,
+        timeout_budget_seconds=snapshot.timeout_budget_seconds,
+        fetch_duration_seconds=snapshot.fetch_duration_seconds,
+    )
     return PlatformReadPathStatus(
         model_family="policy",
         observation_state=_map_read_path_state(snapshot.status, snapshot.fetch_error_kind),
@@ -127,7 +230,11 @@ def _build_policy_read_path_status() -> PlatformReadPathStatus:
         summary=(
             "Current policy read-path coverage is bounded to live SR-policy counter evidence and the subset of targets that yield normalized detail records."
         ),
-        notes=[*snapshot.notes, *([snapshot.fetch_error] if snapshot.fetch_error else [])],
+        notes=[
+            *snapshot.notes,
+            *([latency_note] if latency_note else []),
+            *([snapshot.fetch_error] if snapshot.fetch_error else []),
+        ],
     )
 
 

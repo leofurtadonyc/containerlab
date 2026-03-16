@@ -2,6 +2,7 @@
 
 import json
 from dataclasses import dataclass
+from time import perf_counter
 from typing import Literal
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
@@ -56,6 +57,8 @@ class CollectorInventorySnapshot(BaseModel):
     degraded_scope_summary: str
     records: list[CollectorInventoryRecord]
     notes: list[str]
+    timeout_budget_seconds: int = 0
+    fetch_duration_seconds: float | None = None
     fetch_error_kind: CollectorFetchErrorKind | None = None
     fetch_error: str | None = None
 
@@ -72,6 +75,7 @@ class CollectorInventoryClient:
     def _load_inventory_snapshot(self) -> CollectorInventorySnapshot:
         """Load the live normalized inventory snapshot from the collector."""
         snapshot_url = f"{self.source_endpoint.rstrip('/')}/inventory/snapshot"
+        started_at = perf_counter()
         try:
             with urlopen(snapshot_url, timeout=self.timeout_seconds) as response:
                 payload = json.loads(response.read().decode("utf-8"))
@@ -80,6 +84,7 @@ class CollectorInventoryClient:
                 for record in payload.get("records", [])
             ]
         except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, ValidationError) as exc:
+            fetch_duration_seconds = perf_counter() - started_at
             failure = classify_collector_fetch_failure(
                 exc,
                 boundary_label="inventory snapshot",
@@ -103,6 +108,8 @@ class CollectorInventoryClient:
                 ),
                 records=[],
                 notes=[],
+                timeout_budget_seconds=self.timeout_seconds,
+                fetch_duration_seconds=fetch_duration_seconds,
                 fetch_error_kind=failure.kind,
                 fetch_error=failure.detail,
             )
@@ -112,6 +119,7 @@ class CollectorInventoryClient:
             "partial": "partial_live_feed",
             "failed": "collector_unavailable",
         }
+        fetch_duration_seconds = perf_counter() - started_at
         return CollectorInventorySnapshot(
             integration="gnmi_collector_inventory",
             status=status_map.get(payload.get("delivery_status"), "collector_unavailable"),
@@ -130,6 +138,8 @@ class CollectorInventoryClient:
             ),
             records=records,
             notes=payload.get("notes", []),
+            timeout_budget_seconds=self.timeout_seconds,
+            fetch_duration_seconds=fetch_duration_seconds,
             fetch_error_kind=None,
             fetch_error=None,
         )

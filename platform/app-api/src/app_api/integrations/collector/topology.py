@@ -2,6 +2,7 @@
 
 import json
 from dataclasses import dataclass
+from time import perf_counter
 from typing import Literal
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
@@ -72,6 +73,8 @@ class CollectorTopologySnapshot(BaseModel):
     notes: list[str] = Field(default_factory=list)
     nodes: list[CollectorTopologyNodeRecord] = Field(default_factory=list)
     links: list[CollectorTopologyLinkRecord] = Field(default_factory=list)
+    timeout_budget_seconds: int = 0
+    fetch_duration_seconds: float | None = None
     fetch_error_kind: CollectorFetchErrorKind | None = None
     fetch_error: str | None = None
 
@@ -88,6 +91,7 @@ class CollectorTopologyClient:
     def _load_topology_snapshot(self) -> CollectorTopologySnapshot:
         """Load the live normalized topology snapshot from the collector."""
         snapshot_url = f"{self.source_endpoint.rstrip('/')}/topology/snapshot"
+        started_at = perf_counter()
         try:
             with urlopen(snapshot_url, timeout=self.timeout_seconds) as response:
                 payload = json.loads(response.read().decode("utf-8"))
@@ -100,6 +104,7 @@ class CollectorTopologyClient:
                 for record in payload.get("links", [])
             ]
         except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, ValidationError) as exc:
+            fetch_duration_seconds = perf_counter() - started_at
             failure = classify_collector_fetch_failure(
                 exc,
                 boundary_label="topology snapshot",
@@ -131,6 +136,8 @@ class CollectorTopologyClient:
                 notes=[],
                 nodes=[],
                 links=[],
+                timeout_budget_seconds=self.timeout_seconds,
+                fetch_duration_seconds=fetch_duration_seconds,
                 fetch_error_kind=failure.kind,
                 fetch_error=failure.detail,
             )
@@ -140,6 +147,7 @@ class CollectorTopologyClient:
             "partial": "partial_live_feed",
             "failed": "collector_unavailable",
         }
+        fetch_duration_seconds = perf_counter() - started_at
         return CollectorTopologySnapshot(
             integration="gnmi_collector_topology",
             status=status_map.get(payload.get("delivery_status"), "collector_unavailable"),
@@ -170,6 +178,8 @@ class CollectorTopologyClient:
             notes=payload.get("notes", []),
             nodes=nodes,
             links=links,
+            timeout_budget_seconds=self.timeout_seconds,
+            fetch_duration_seconds=fetch_duration_seconds,
             fetch_error_kind=None,
             fetch_error=None,
         )

@@ -12,6 +12,15 @@ _request_duration_sums: dict[tuple[str, str], float] = defaultdict(float)
 
 
 @dataclass(frozen=True)
+class CachedCollectorBoundaryFetchMetrics:
+    """Latest collector-boundary fetch posture for one read-path family."""
+
+    latest_duration_seconds: float = 0.0
+    timeout_budget_seconds: int = 0
+    outcome: str = "not_observed"
+
+
+@dataclass(frozen=True)
 class CachedTopologyMetrics:
     """Latest topology snapshot metrics cached for scrape-safe exposition."""
 
@@ -83,6 +92,11 @@ class CachedReadinessMetrics:
 _cached_topology_metrics = CachedTopologyMetrics()
 _cached_policy_metrics = CachedPolicyMetrics()
 _cached_readiness_metrics = CachedReadinessMetrics()
+_cached_collector_boundary_fetch_metrics: dict[str, CachedCollectorBoundaryFetchMetrics] = {
+    "inventory": CachedCollectorBoundaryFetchMetrics(),
+    "topology": CachedCollectorBoundaryFetchMetrics(),
+    "policy": CachedCollectorBoundaryFetchMetrics(),
+}
 
 
 def observe_http_request(
@@ -100,6 +114,37 @@ def observe_http_request(
         _request_counts[request_key] += 1
         _request_duration_counts[duration_key] += 1
         _request_duration_sums[duration_key] += duration_seconds
+
+
+def resolve_collector_boundary_fetch_outcome(
+    *,
+    status: str,
+    fetch_error_kind: str | None,
+) -> str:
+    """Return one bounded collector-boundary outcome label."""
+    if fetch_error_kind:
+        return fetch_error_kind
+    return status
+
+
+def observe_collector_boundary_fetch(
+    *,
+    model_family: str,
+    duration_seconds: float | None,
+    timeout_budget_seconds: int,
+    outcome: str,
+) -> None:
+    """Store the latest bounded collector-boundary fetch posture for scrape exposition."""
+    global _cached_collector_boundary_fetch_metrics
+    with _lock:
+        _cached_collector_boundary_fetch_metrics = {
+            **_cached_collector_boundary_fetch_metrics,
+            model_family: CachedCollectorBoundaryFetchMetrics(
+                latest_duration_seconds=max(0.0, duration_seconds or 0.0),
+                timeout_budget_seconds=max(0, timeout_budget_seconds),
+                outcome=outcome,
+            ),
+        }
 
 
 def cache_topology_metrics(
@@ -263,6 +308,7 @@ def render_prometheus_metrics(
         request_counts = dict(_request_counts)
         duration_counts = dict(_request_duration_counts)
         duration_sums = dict(_request_duration_sums)
+        collector_boundary_fetch_metrics = dict(_cached_collector_boundary_fetch_metrics)
 
     lines = [
         "# HELP platform_app_api_info Backend service build information.",
@@ -314,6 +360,48 @@ def render_prometheus_metrics(
                 f'{{endpoint="{endpoint}",method="{method}"}} {duration_sum:.9f}'
             )
         )
+
+    lines.extend(
+        [
+            (
+                "# HELP platform_app_api_collector_boundary_latest_fetch_duration_seconds "
+                "Latest observed collector-boundary fetch duration in seconds by model family."
+            ),
+            "# TYPE platform_app_api_collector_boundary_latest_fetch_duration_seconds gauge",
+            *[
+                (
+                    "platform_app_api_collector_boundary_latest_fetch_duration_seconds"
+                    f'{{model_family="{model_family}",outcome="{metrics.outcome}"}} '
+                    f"{metrics.latest_duration_seconds:.9f}"
+                )
+                for model_family, metrics in sorted(collector_boundary_fetch_metrics.items())
+            ],
+            (
+                "# HELP platform_app_api_collector_boundary_timeout_budget_seconds "
+                "Configured collector-boundary timeout budget in seconds by model family."
+            ),
+            "# TYPE platform_app_api_collector_boundary_timeout_budget_seconds gauge",
+            *[
+                (
+                    "platform_app_api_collector_boundary_timeout_budget_seconds"
+                    f'{{model_family="{model_family}"}} {metrics.timeout_budget_seconds}'
+                )
+                for model_family, metrics in sorted(collector_boundary_fetch_metrics.items())
+            ],
+            (
+                "# HELP platform_app_api_collector_boundary_latest_fetch_posture "
+                "Latest observed collector-boundary fetch outcome by model family."
+            ),
+            "# TYPE platform_app_api_collector_boundary_latest_fetch_posture gauge",
+            *[
+                (
+                    "platform_app_api_collector_boundary_latest_fetch_posture"
+                    f'{{model_family="{model_family}",outcome="{metrics.outcome}"}} 1'
+                )
+                for model_family, metrics in sorted(collector_boundary_fetch_metrics.items())
+            ],
+        ]
+    )
 
     if topology_metrics is not None:
         lines.extend(
@@ -761,6 +849,7 @@ def render_prometheus_metrics(
 def reset_metrics_registry() -> None:
     """Reset in-memory metrics for tests."""
     global _cached_topology_metrics, _cached_policy_metrics, _cached_readiness_metrics
+    global _cached_collector_boundary_fetch_metrics
     with _lock:
         _request_counts.clear()
         _request_duration_counts.clear()
@@ -768,3 +857,8 @@ def reset_metrics_registry() -> None:
         _cached_topology_metrics = CachedTopologyMetrics()
         _cached_policy_metrics = CachedPolicyMetrics()
         _cached_readiness_metrics = CachedReadinessMetrics()
+        _cached_collector_boundary_fetch_metrics = {
+            "inventory": CachedCollectorBoundaryFetchMetrics(),
+            "topology": CachedCollectorBoundaryFetchMetrics(),
+            "policy": CachedCollectorBoundaryFetchMetrics(),
+        }

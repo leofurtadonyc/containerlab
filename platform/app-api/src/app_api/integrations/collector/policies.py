@@ -2,6 +2,7 @@
 
 import json
 from dataclasses import dataclass
+from time import perf_counter
 from typing import Literal
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
@@ -112,6 +113,8 @@ class CollectorPolicySnapshot(BaseModel):
     target_footprints: list[CollectorPolicyTargetFootprintRecord] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
     records: list[CollectorPolicyRecord] = Field(default_factory=list)
+    timeout_budget_seconds: int = 0
+    fetch_duration_seconds: float | None = None
     fetch_error_kind: CollectorFetchErrorKind | None = None
     fetch_error: str | None = None
 
@@ -128,6 +131,7 @@ class CollectorPolicyClient:
     def _load_policy_snapshot(self) -> CollectorPolicySnapshot:
         """Load the live normalized policy snapshot from the collector."""
         snapshot_url = f"{self.source_endpoint.rstrip('/')}/policies/snapshot"
+        started_at = perf_counter()
         try:
             with urlopen(snapshot_url, timeout=self.timeout_seconds) as response:
                 payload = json.loads(response.read().decode("utf-8"))
@@ -140,6 +144,7 @@ class CollectorPolicyClient:
                 for record in payload.get("records", [])
             ]
         except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, ValidationError) as exc:
+            fetch_duration_seconds = perf_counter() - started_at
             failure = classify_collector_fetch_failure(
                 exc,
                 boundary_label="policy snapshot",
@@ -182,6 +187,8 @@ class CollectorPolicyClient:
                 target_footprints=[],
                 notes=[],
                 records=[],
+                timeout_budget_seconds=self.timeout_seconds,
+                fetch_duration_seconds=fetch_duration_seconds,
                 fetch_error_kind=failure.kind,
                 fetch_error=failure.detail,
             )
@@ -191,6 +198,7 @@ class CollectorPolicyClient:
             "partial": "partial_live_feed",
             "failed": "collector_unavailable",
         }
+        fetch_duration_seconds = perf_counter() - started_at
         return CollectorPolicySnapshot(
             integration="gnmi_collector_policy",
             status=status_map.get(payload.get("delivery_status"), "collector_unavailable"),
@@ -228,6 +236,8 @@ class CollectorPolicyClient:
             target_footprints=target_footprints,
             notes=payload.get("notes", []),
             records=records,
+            timeout_budget_seconds=self.timeout_seconds,
+            fetch_duration_seconds=fetch_duration_seconds,
             fetch_error_kind=None,
             fetch_error=None,
         )
