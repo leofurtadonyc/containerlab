@@ -96,10 +96,13 @@ function renderMissingSliceDetailCard(
 }
 
 export function OverviewView() {
-  const platformQuery = usePlatformStatusQuery();
   const devicesQuery = useDevicesQuery();
-  const topologyQuery = useTopologyQuery();
-  const policiesQuery = usePoliciesQuery();
+  const devicesSettled = devicesQuery.data !== null || devicesQuery.error !== null;
+  const topologyQuery = useTopologyQuery(devicesSettled);
+  const topologySettled = topologyQuery.data !== null || topologyQuery.error !== null;
+  const policiesQuery = usePoliciesQuery(topologySettled);
+  const policiesSettled = policiesQuery.data !== null || policiesQuery.error !== null;
+  const platformQuery = usePlatformStatusQuery(policiesSettled);
   const capabilitiesQuery = useCapabilitiesQuery();
 
   const reloadAllSlices = useCallback(() => {
@@ -195,6 +198,9 @@ export function OverviewView() {
   const readySliceCount = overviewState.slices.filter((slice) => slice.hasData).length;
   const missingSliceCount = overviewState.slices.filter((slice) => !slice.hasData).length;
   const impairedSliceCount = overviewState.slices.filter((slice) => slice.status !== "ready").length;
+  const showPartialWarning = overviewState.slices.some((slice) =>
+    ["error", "stale_error", "waiting"].includes(slice.status),
+  );
 
   if (overviewState.mode === "loading") {
     return (
@@ -324,10 +330,10 @@ export function OverviewView() {
             partial.
           </p>
         </div>
-        <StatusPill value={platformData?.status ?? (overviewState.mode === "partial" ? "degraded" : "unknown")} />
+        <StatusPill value={platformData?.status ?? (showPartialWarning ? "degraded" : "unknown")} />
       </div>
 
-      {overviewState.mode === "partial" ? (
+      {overviewState.mode === "partial" && showPartialWarning ? (
         <div className="query-message query-message-error">
           <strong>Overview is currently partial</strong>
           <div>

@@ -1,4 +1,6 @@
 from datetime import datetime
+from threading import Lock
+from time import sleep
 from types import SimpleNamespace
 from urllib.error import URLError
 
@@ -43,6 +45,7 @@ from app_api.persistence.read_side import (
     PersistedTopologySnapshot,
 )
 from app_api.config.settings import get_settings
+from app_api.schemas.platform import PlatformReadPathStatus
 
 
 client = TestClient(app)
@@ -1344,6 +1347,68 @@ def test_platform_status_endpoint_classifies_collector_boundary_failures(monkeyp
     assert any("3s latency budget" in note for note in payload["read_paths"][0]["notes"])
     assert any("invalid normalized payload" in note for note in payload["read_paths"][1]["notes"])
     assert any("connection failed" in note for note in payload["read_paths"][2]["notes"])
+
+
+def test_platform_status_endpoint_reads_collector_paths_sequentially(monkeypatch) -> None:
+    class StubOdlClient:
+        def read_controller_observation(self) -> OdlControllerObservation:
+            return OdlControllerObservation(
+                observation_state="ok",
+                observed_source="odl_restconf_capability_probe",
+                observation_summary="ODL probe succeeded.",
+                observed_capabilities=[],
+                notes=[],
+            )
+
+    active_reads = {"count": 0, "max": 0}
+    read_lock = Lock()
+
+    def make_read_path(model_family: str) -> PlatformReadPathStatus:
+        with read_lock:
+            active_reads["count"] += 1
+            active_reads["max"] = max(active_reads["max"], active_reads["count"])
+
+        sleep(0.01)
+
+        with read_lock:
+            active_reads["count"] -= 1
+
+        return PlatformReadPathStatus(
+            model_family=model_family,
+            observation_state="ok",
+            configured_target_count=34,
+            observed_target_count=34,
+            collection_success_count=34,
+            collection_partial_count=0,
+            collection_failure_count=0,
+            oldest_observed_at=None,
+            newest_observed_at=None,
+            degraded_scope_summary="All configured targets returned usable live evidence.",
+            summary=f"{model_family} read path is healthy.",
+            notes=[],
+        )
+
+    monkeypatch.setattr(
+        "app_api.services.platform.get_odl_client",
+        lambda: StubOdlClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform._build_inventory_read_path_status",
+        lambda: make_read_path("inventory"),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform._build_topology_read_path_status",
+        lambda: make_read_path("topology"),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform._build_policy_read_path_status",
+        lambda: make_read_path("policy"),
+    )
+
+    response = client.get("/api/v1/platform/status")
+
+    assert response.status_code == 200
+    assert active_reads["max"] == 1
 
 
 def test_inventory_collector_client_reuses_recent_snapshot(monkeypatch) -> None:

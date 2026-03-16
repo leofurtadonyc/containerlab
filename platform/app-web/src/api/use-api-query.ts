@@ -10,18 +10,32 @@ export interface ApiQueryState<T> {
   reload: () => void;
 }
 
-export function useApiQuery<T>(queryFn: () => Promise<T>): ApiQueryState<T> {
+interface UseApiQueryOptions {
+  enabled?: boolean;
+}
+
+export function useApiQuery<T>(
+  queryFn: () => Promise<T>,
+  options: UseApiQueryOptions = {},
+): ApiQueryState<T> {
+  const { enabled = true } = options;
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<ApiClientError | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [reloadToken, setReloadToken] = useState(0);
 
   const reload = useCallback(() => {
-    setReloadToken((currentValue) => currentValue + 1);
+    setReloadToken((currentValue: number) => currentValue + 1);
   }, []);
 
   useEffect(() => {
     let isCancelled = false;
+
+    if (!enabled) {
+      return () => {
+        isCancelled = true;
+      };
+    }
 
     async function load() {
       setIsLoading(true);
@@ -60,7 +74,7 @@ export function useApiQuery<T>(queryFn: () => Promise<T>): ApiQueryState<T> {
     return () => {
       isCancelled = true;
     };
-  }, [queryFn, reloadToken]);
+  }, [enabled, queryFn, reloadToken]);
 
   return {
     data,

@@ -252,6 +252,20 @@ beforeEach(() => {
 });
 
 describe("overview view", () => {
+  it("stages collector-backed overview queries instead of starting them all at once", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+    useDevicesQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+    useTopologyQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+    usePoliciesQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    renderToStaticMarkup(<OverviewView />);
+
+    expect(useTopologyQuery).toHaveBeenCalledWith(false);
+    expect(usePoliciesQuery).toHaveBeenCalledWith(false);
+    expect(usePlatformStatusQuery).toHaveBeenCalledWith(false);
+  });
+
   it("renders available slices when one core query fails", () => {
     usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
     useDevicesQuery.mockReturnValue(
@@ -273,5 +287,20 @@ describe("overview view", () => {
     expect(html).toContain("Policies Trust Cues");
     expect(html).toContain("Devices Trust Cues");
     expect(html).toContain("Inventory trust cues are temporarily unavailable");
+  });
+
+  it("does not show a partial-failure banner while remaining slices are still loading", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
+    useDevicesQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+    useTopologyQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+    usePoliciesQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+
+    const html = renderToStaticMarkup(<OverviewView />);
+
+    expect(html).not.toContain("Overview is currently partial");
+    expect(html).toContain("Platform status");
+    expect(html).toContain("Device inventory");
+    expect(html).toContain("Loading");
   });
 });
