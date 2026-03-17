@@ -15,7 +15,7 @@
       },
       "id": 1,
       "options": {
-          "content": "## Platform Observability Overview\nThis dashboard follows the current read-only platform boundary: Prometheus scrape health, backend API responsiveness, collector-backed snapshot signals, bounded persisted sync-history evidence, one bounded readiness-support posture slice, and a small amount of honest live-versus-persisted or backend-versus-collector comparison context where those metrics already exist.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- Inventory, topology, policy, and bounded readiness-support freshness now surface where the backend already owns those metrics.\n- Collector read-path coverage, observation age, and detail-ready gaps are visualized here as numeric observability signals; the product-facing degraded-scope summaries still belong in `app-web`.\n- Collector-boundary latest fetch duration, configured timeout budget, and latest timeout or failure outcome are visualized here as observability-only signals; they explain fallback triggers but do not become product truth records or workflow meaning.\n- Cross-slice posture panels show freshness, persisted sync result mix, and current topology snapshot labels where those backend metrics already exist.\n- Topology partiality is now mirrored through three backend-owned cues where metrics expose them: inference posture, endpoint-pairing posture, and collection posture.\n- Readiness panels here show blocker, coverage, and persisted-snapshot posture only; they are not workflow verdicts or phase-transition control.\n- Comparison panels here show bounded aggregate deltas only; they are not drift engines or product truth.\n- Policy operational truth remains intentionally partial even though bounded policy sync evidence now exists.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels.",
+          "content": "## Platform Observability Overview\nThis dashboard follows the current read-only platform boundary: Prometheus scrape health, backend API responsiveness, collector-backed snapshot signals, bounded persisted sync-history evidence, one bounded readiness-support posture slice, and a small amount of honest live-versus-persisted or backend-versus-collector comparison context where those metrics already exist.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- Inventory, topology, policy, and bounded readiness-support freshness now surface where the backend already owns those metrics.\n- Collector read-path coverage, observation age, and detail-ready gaps are visualized here as numeric observability signals; the product-facing degraded-scope summaries still belong in `app-web`.\n- Collector-boundary latest fetch duration, configured timeout budget, and latest timeout or failure outcome are visualized here as observability-only signals; they explain fallback triggers but do not become product truth records or workflow meaning.\n- Cross-slice posture panels show freshness, persisted sync result mix, and current topology snapshot labels where those backend metrics already exist.\n- Topology partiality is now mirrored through three backend-owned cues where metrics expose them: inference posture, endpoint-pairing posture, and collection posture.\n- Readiness panels now separate latest bounded evaluation sample age from persisted snapshot age so operators can distinguish Prometheus-observed recomputation cadence from durable snapshot chronology; they are not workflow verdicts or phase-transition control.\n- Comparison panels here show bounded aggregate deltas only; they are not drift engines or product truth.\n- Policy operational truth remains intentionally partial even though bounded policy sync evidence now exists.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -1459,11 +1459,56 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "clamp_min(time() - platform_app_api_readiness_snapshot_persisted_at_seconds, 0) unless platform_app_api_readiness_snapshot_persisted_at_seconds == 0",
+          "expr": "clamp_min(time() - platform_app_api_readiness_latest_evaluation_at_seconds, 0) unless platform_app_api_readiness_latest_evaluation_at_seconds == 0",
+          "instant": true,
           "refId": "A"
         }
       ],
-      "title": "Readiness Snapshot Age",
+      "title": "Readiness Evaluation Sample Age",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 70
+      },
+      "id": 44,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "expr": "clamp_min(time() - platform_app_api_readiness_snapshot_persisted_at_seconds, 0) unless platform_app_api_readiness_snapshot_persisted_at_seconds == 0",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Readiness Persisted Snapshot Age",
       "type": "stat"
     },
     {
@@ -1480,7 +1525,7 @@
       "gridPos": {
         "h": 8,
         "w": 6,
-        "x": 6,
+        "x": 12,
         "y": 70
       },
       "id": 37,
@@ -1521,7 +1566,7 @@
       "gridPos": {
         "h": 8,
         "w": 6,
-        "x": 12,
+        "x": 18,
         "y": 70
       },
       "id": 38,
@@ -1561,9 +1606,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 6,
-        "x": 18,
-        "y": 70
+        "w": 24,
+        "x": 0,
+        "y": 78
       },
       "id": 39,
       "options": {
@@ -1595,7 +1640,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 78
+        "y": 86
       },
       "id": 40,
       "panels": [],
@@ -1618,7 +1663,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 79
+        "y": 87
       },
       "id": 41,
       "options": {
@@ -1658,7 +1703,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 79
+        "y": 87
       },
       "id": 42,
       "options": {
@@ -1699,7 +1744,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 79
+        "y": 87
       },
       "id": 43,
       "options": {
@@ -1744,5 +1789,5 @@
   "timezone": "browser",
   "title": "Platform Overview",
   "uid": "platform-overview",
-  "version": 8
+  "version": 9
 }

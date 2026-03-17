@@ -80,6 +80,7 @@ def get_metrics() -> Response:
             "status": readiness.status,
             "planning_readiness": readiness.planning_readiness,
             "phase_recommendation": readiness.phase_recommendation,
+            "evaluation_at_seconds": readiness.evaluation_at_seconds,
             "persisted_at_seconds": readiness.persisted_at_seconds,
             "evidence_coverage_counts": readiness.evidence_coverage_counts,
             "support_posture_counts": readiness.support_posture_counts,

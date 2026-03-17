@@ -17,6 +17,7 @@ The platform currently has:
 - the SR policy dashboard now also mirrors policy detail blocker posture more directly through detail-ready-target share and blocker-presence flags derived from real collector and backend metrics, while keeping per-target blocker reason codes in the product and verifier
 - the platform overview dashboard now also surfaces collector-backed target coverage, observation-age, and policy detail-gap cues for inventory, topology, and policy, using real numeric signals rather than trying to serialize product-facing degraded-scope prose into Grafana
 - the platform overview dashboard now also surfaces backend-owned collector-boundary latest fetch duration, timeout budget, and latest timeout or failure posture signals so operators can distinguish slow fallback triggers from ordinary degraded live collection
+- the platform overview dashboard now also separates readiness evaluation sample age from readiness persisted-snapshot age so operators can distinguish Prometheus-observed recomputation cadence from the chronology of the last materially changed persisted readiness snapshot
 - the topology overview dashboard now also surfaces paired-link counts, single-sided-link counts, paired-link share, and backend-owned topology pairing-posture labels as bounded observability projections for the current topology coverage slice
 - the topology overview dashboard now also surfaces backend-owned inference, endpoint-pairing, and collection posture labels as bounded observability projections for the current topology partiality slice
 - the platform overview dashboard now also mirrors the narrower topology read-path coverage posture through paired-versus-single-sided link counts plus backend-owned inference, pairing, and collection posture labels without turning Grafana into the product contract
@@ -135,6 +136,7 @@ Expected emphasis over time:
 - bounded cross-slice freshness and agreement cues where those aggregate metrics exist
 - collector-backed read-path coverage percentages, observation age, and target/detail gaps where those collector metrics exist
 - collector-boundary latest fetch duration, timeout budget, and latest outcome posture where those backend metrics exist
+- readiness evaluation sample age versus persisted readiness snapshot age where those backend metrics exist
 
 ### Topology
 
@@ -203,6 +205,7 @@ In Grafana:
 - topology endpoint-pairing observability should stay numeric as paired-link counts, single-sided-link counts, and derived shares rather than becoming a product-owned status vocabulary inside dashboards
 - backend-owned topology inference, pairing, and collection posture labels may appear only as metric-backed label projections that support those numeric panels; Grafana still does not own that vocabulary
 - collector-boundary timeout posture is an observability cue only; it explains whether the backend hit the fail-fast latency budget, not whether the product has emitted a workflow verdict or dependency-dashboard truth statement
+- readiness evaluation sample age is an observability cue about the latest Prometheus-observed bounded recomputation, while persisted readiness snapshot age remains the chronology of the last materially changed persisted snapshot; operators should not treat them as interchangeable freshness claims
 
 Grafana does not attempt to reproduce the backend's human-readable degraded-scope summaries verbatim, because those are product semantics rather than durable metric labels.
 

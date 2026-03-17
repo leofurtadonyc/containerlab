@@ -2984,6 +2984,7 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         'planning_readiness="readiness_planning_supported",'
         'phase_recommendation="remain_phase_2_read_only_foundation"} 1'
     ) in response.text
+    assert "platform_app_api_readiness_latest_evaluation_at_seconds " in response.text
     assert (
         "platform_app_api_readiness_snapshot_persisted_at_seconds 1773656100.000"
         in response.text

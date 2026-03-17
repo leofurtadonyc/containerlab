@@ -289,6 +289,33 @@ class FakeIsolatedNodeTopologyGnmiClient(FakeGnmiClient):
         return super().get(path=path, encoding="json_ietf")
 
 
+class FakeDegradedPolicyGnmiClient(FakeGnmiClient):
+    def get(self, *, path, encoding):
+        del encoding
+        response = super().get(path=path, encoding="json_ietf")
+        host = self.target[0]
+        device_name = _target_name_by_host()[host]
+        if device_name != "PE1" or not any("segment-routing/sr-policies" in item for item in path):
+            return response
+        for notification in response.get("notification", []):
+            for update in notification.get("update", []):
+                if update.get("path") != "state/router[router-name=Base]/segment-routing/sr-policies":
+                    continue
+                runtime_paths = update.get("val", {}).get("nokia-state:sr-path", [])
+                if not runtime_paths:
+                    continue
+                runtime_paths[0]["nokia-state:active"] = False
+                runtime_paths[0]["nokia-state:is-candidate-path-operational"] = False
+                runtime_paths[0]["nokia-state:sr-path-seg-list"] = [
+                    {
+                        "segment": [
+                            {"nokia-state:segment-state": "failed"},
+                        ]
+                    }
+                ]
+        return response
+
+
 class RecordingGnmiClient(FakeGnmiClient):
     last_init_kwargs: dict[str, object] | None = None
 
@@ -581,6 +608,27 @@ def test_policy_snapshot_endpoint_returns_live_policy_observations(monkeypatch) 
     assert any("Runtime status was correlated" in note for note in pe1_record["notes"])
     p1_record = next(item for item in payload["records"] if item["source_target"] == "P1")
     assert p1_record["support_state"] == "partially_supported"
+
+
+def test_policy_snapshot_endpoint_preserves_degraded_runtime_paths_without_failing(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "gnmi_collector.adapters.nokia.sros.gNMIclient",
+        FakeDegradedPolicyGnmiClient,
+    )
+
+    response = client.get("/policies/snapshot")
+
+    assert response.status_code == 200
+    payload = response.json()
+    pe1_record = next(item for item in payload["records"] if item["source_target"] == "PE1")
+    assert pe1_record["observed_state"] == "degraded"
+    assert pe1_record["support_state"] == "supported"
+    assert pe1_record["health_state"] == "down"
+    assert pe1_record["candidate_paths"][0]["name"] == "runtime-sr-path"
+    assert pe1_record["candidate_paths"][0]["path_state"] == "inactive"
+    assert "segment states: failed" in pe1_record["candidate_paths"][0]["notes"]
 
 
 def test_nokia_adapter_collects_live_inventory_and_topology(monkeypatch) -> None:

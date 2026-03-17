@@ -203,6 +203,13 @@ def _runtime_path_state(payload: dict[str, object]) -> str:
     return "unknown"
 
 
+def _runtime_candidate_path_state(payload: dict[str, object]) -> str:
+    runtime_state = _runtime_path_state(payload)
+    if runtime_state == "degraded":
+        return "inactive"
+    return runtime_state
+
+
 def _runtime_path_candidate(payload: dict[str, object]) -> NormalizedPolicyCandidatePathRecord:
     notes: list[str] = []
     owner = _as_str(_find_first(payload, {"owner"}))
@@ -219,7 +226,7 @@ def _runtime_path_candidate(payload: dict[str, object]) -> NormalizedPolicyCandi
         notes.append(f"segment states: {', '.join(segment_states)}")
     return NormalizedPolicyCandidatePathRecord(
         name="runtime-sr-path",
-        path_state=_runtime_path_state(payload),
+        path_state=_runtime_candidate_path_state(payload),
         preference=_as_int(_find_first(payload, {"preference"})),
         notes=notes,
     )

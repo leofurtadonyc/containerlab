@@ -253,6 +253,7 @@ assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_timeout_budget_seconds'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_latest_fetch_posture'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_readiness_status'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_readiness_latest_evaluation_at_seconds'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_sync_runs_total'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_inventory_newest_observed_timestamp_seconds'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_paired_links'
