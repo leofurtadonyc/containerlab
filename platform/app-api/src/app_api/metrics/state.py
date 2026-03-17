@@ -29,8 +29,11 @@ class CachedTopologyMetrics:
     inference_posture: str = "unknown"
     endpoint_pairing_posture: str = "unknown"
     collection_posture: str = "unknown"
+    node_participation_posture: str = "unknown"
     paired_link_count: int = 0
     single_sided_link_count: int = 0
+    linked_node_count: int = 0
+    isolated_node_count: int = 0
     data_status: str = "unknown"
     serving_mode: str = "unknown"
     sync_status: str = "unknown"
@@ -154,8 +157,11 @@ def cache_topology_metrics(
     inference_posture: str,
     endpoint_pairing_posture: str,
     collection_posture: str,
+    node_participation_posture: str,
     paired_link_count: int,
     single_sided_link_count: int,
+    linked_node_count: int,
+    isolated_node_count: int,
     data_status: str,
     serving_mode: str,
     sync_status: str,
@@ -177,8 +183,11 @@ def cache_topology_metrics(
             inference_posture=inference_posture,
             endpoint_pairing_posture=endpoint_pairing_posture,
             collection_posture=collection_posture,
+            node_participation_posture=node_participation_posture,
             paired_link_count=paired_link_count,
             single_sided_link_count=single_sided_link_count,
+            linked_node_count=linked_node_count,
+            isolated_node_count=isolated_node_count,
             data_status=data_status,
             serving_mode=serving_mode,
             sync_status=sync_status,
@@ -431,6 +440,24 @@ def render_prometheus_metrics(
                     f"{topology_metrics['single_sided_link_count']}"
                 ),
                 (
+                    "# HELP platform_app_api_topology_linked_nodes "
+                    "Current backend-owned count of observed topology nodes represented by at least one emitted inferred link."
+                ),
+                "# TYPE platform_app_api_topology_linked_nodes gauge",
+                (
+                    "platform_app_api_topology_linked_nodes "
+                    f"{topology_metrics['linked_node_count']}"
+                ),
+                (
+                    "# HELP platform_app_api_topology_isolated_nodes "
+                    "Current backend-owned count of observed topology nodes not represented by emitted inferred links."
+                ),
+                "# TYPE platform_app_api_topology_isolated_nodes gauge",
+                (
+                    "platform_app_api_topology_isolated_nodes "
+                    f"{topology_metrics['isolated_node_count']}"
+                ),
+                (
                     "# HELP platform_app_api_topology_coverage_posture "
                     "Current backend-owned topology endpoint-pairing posture."
                 ),
@@ -439,7 +466,8 @@ def render_prometheus_metrics(
                     "platform_app_api_topology_coverage_posture"
                     f'{{inference_posture="{topology_metrics["inference_posture"]}",'
                     f'endpoint_pairing_posture="{topology_metrics["endpoint_pairing_posture"]}",'
-                    f'collection_posture="{topology_metrics["collection_posture"]}"}} 1'
+                    f'collection_posture="{topology_metrics["collection_posture"]}",'
+                    f'node_participation_posture="{topology_metrics["node_participation_posture"]}"}} 1'
                 ),
                 (
                     "# HELP platform_app_api_topology_snapshot_status "

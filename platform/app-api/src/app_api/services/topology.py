@@ -393,12 +393,16 @@ def build_topology_response() -> TopologyResponse:
     if collection_posture is None and collector_snapshot.status == "collector_unavailable":
         collection_posture = "blocked"
     coverage_summary = build_topology_coverage_summary(
+        nodes=snapshot.nodes,
         links=snapshot.links,
         inference_posture=collector_snapshot.inference_posture,
         endpoint_pairing_posture=collector_snapshot.endpoint_pairing_posture,
         collection_posture=collection_posture,
+        node_participation_posture=collector_snapshot.node_participation_posture,
         paired_link_count=collector_snapshot.paired_link_count,
         single_sided_link_count=collector_snapshot.single_sided_link_count,
+        linked_node_count=collector_snapshot.linked_node_count,
+        isolated_node_count=collector_snapshot.isolated_node_count,
     )
     evidence_confidence = _build_topology_evidence_confidence(
         collector_snapshot=collector_snapshot,
@@ -481,8 +485,11 @@ def build_topology_response() -> TopologyResponse:
         inference_posture=coverage_summary.inference_posture,
         endpoint_pairing_posture=coverage_summary.endpoint_pairing_posture,
         collection_posture=coverage_summary.collection_posture,
+        node_participation_posture=coverage_summary.node_participation_posture,
         paired_link_count=coverage_summary.paired_link_count,
         single_sided_link_count=coverage_summary.single_sided_link_count,
+        linked_node_count=coverage_summary.linked_node_count,
+        isolated_node_count=coverage_summary.isolated_node_count,
         data_status=data_status,
         serving_mode=serving_mode,
         sync_status=topology.sync_status,
@@ -510,8 +517,11 @@ def build_topology_response() -> TopologyResponse:
             inference_posture=coverage_summary.inference_posture,
             endpoint_pairing_posture=coverage_summary.endpoint_pairing_posture,
             collection_posture=coverage_summary.collection_posture,
+            node_participation_posture=coverage_summary.node_participation_posture,
             paired_link_count=coverage_summary.paired_link_count,
             single_sided_link_count=coverage_summary.single_sided_link_count,
+            linked_node_count=coverage_summary.linked_node_count,
+            isolated_node_count=coverage_summary.isolated_node_count,
             summary=coverage_summary.summary,
         ),
         topology=topology,

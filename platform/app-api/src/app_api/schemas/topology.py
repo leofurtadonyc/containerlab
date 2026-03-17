@@ -47,8 +47,13 @@ class TopologyCoverageSummaryRecord(BaseModel):
     inference_posture: Literal["inferred", "unknown"]
     endpoint_pairing_posture: Literal["paired", "partially_paired", "single_sided", "unknown"]
     collection_posture: Literal["ok", "degraded", "blocked", "unknown"]
+    node_participation_posture: Literal[
+        "fully_linked", "partially_isolated", "isolated_only", "unknown"
+    ]
     paired_link_count: int
     single_sided_link_count: int
+    linked_node_count: int
+    isolated_node_count: int
     summary: str
 
 

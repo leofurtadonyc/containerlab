@@ -162,12 +162,16 @@ def _build_topology_read_path_status() -> PlatformReadPathStatus:
     if collection_posture is None and snapshot.status == "collector_unavailable":
         collection_posture = "blocked"
     coverage_summary = build_topology_coverage_summary(
+        nodes=snapshot.nodes,
         links=snapshot.links,
         inference_posture=snapshot.inference_posture,
         endpoint_pairing_posture=snapshot.endpoint_pairing_posture,
         collection_posture=collection_posture,
+        node_participation_posture=snapshot.node_participation_posture,
         paired_link_count=snapshot.paired_link_count,
         single_sided_link_count=snapshot.single_sided_link_count,
+        linked_node_count=snapshot.linked_node_count,
+        isolated_node_count=snapshot.isolated_node_count,
     )
     return PlatformReadPathStatus(
         model_family="topology",
@@ -182,8 +186,11 @@ def _build_topology_read_path_status() -> PlatformReadPathStatus:
         inference_posture=coverage_summary.inference_posture,
         endpoint_pairing_posture=coverage_summary.endpoint_pairing_posture,
         collection_posture=coverage_summary.collection_posture,
+        node_participation_posture=coverage_summary.node_participation_posture,
         paired_link_count=coverage_summary.paired_link_count,
         single_sided_link_count=coverage_summary.single_sided_link_count,
+        linked_node_count=coverage_summary.linked_node_count,
+        isolated_node_count=coverage_summary.isolated_node_count,
         degraded_scope_summary=snapshot.degraded_scope_summary,
         summary=(
             "Current topology read-path coverage is bounded to live interface evidence plus the current backend-owned inference rules. "
@@ -260,8 +267,11 @@ def _build_gnmi_collector_component_status(
                 f" inference posture {read_path.inference_posture}, "
                 f"collection posture {read_path.collection_posture}, "
                 f"endpoint-pairing posture {read_path.endpoint_pairing_posture}, "
+                f"node participation posture {read_path.node_participation_posture}, "
                 f"paired links {read_path.paired_link_count}, "
-                f"single-sided links {read_path.single_sided_link_count}."
+                f"single-sided links {read_path.single_sided_link_count}, "
+                f"linked nodes {read_path.linked_node_count}, "
+                f"isolated nodes {read_path.isolated_node_count}."
             )
         read_path_notes.append(coverage_note)
         read_path_notes.append(read_path.degraded_scope_summary)
