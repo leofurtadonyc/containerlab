@@ -273,6 +273,8 @@ These should be numeric counts.
 
 - `paired_link_count`
 - `single_sided_link_count`
+- `linked_node_count`
+- `isolated_node_count`
 
 Definitions:
 
@@ -280,6 +282,10 @@ Definitions:
   `endpoint_pairing_state` is `paired`.
 - `single_sided_link_count`: number of emitted normalized topology links whose
   `endpoint_pairing_state` is `single_sided`.
+- `linked_node_count`: number of observed normalized topology nodes that are
+  represented by at least one emitted inferred link.
+- `isolated_node_count`: number of observed normalized topology nodes that are
+  not represented by any emitted inferred link.
 
 Do not add an `unknown_link_count` unless the runtime actually emits link
 records that can be honestly classified as `unknown`.
@@ -309,6 +315,45 @@ Implementation status after the accepted week 14 slice:
   alongside collector and backend pytest coverage for the newer topology
   pairing contracts
 
+Collector-owned node participation evidence status after the bounded week 15
+collector slice:
+
+- implemented now in `gnmi-collector`: aggregate `linked_node_count`,
+  `isolated_node_count`, and `node_participation_posture` derived only from the
+  current normalized nodes and inferred links already in hand
+- implemented now in `gnmi-collector` metrics: linked-node,
+  isolated-node, and current node-participation-posture gauges
+- implemented now in collector tests: healthy fully-linked and isolated-node
+  evidence cases pinned end to end
+- not implemented yet in `app-api`
+- not implemented yet in `app-web`, Grafana, or verifier behavior
+
+### Collector-owned supporting posture
+
+The bounded collector-side evidence-gap slice may emit one supporting posture
+as part of the topology delivery envelope so later layers do not need to guess
+from prose.
+
+- `node_participation_posture`
+
+Allowed values:
+
+- `fully_linked`
+- `partially_isolated`
+- `isolated_only`
+- `unknown`
+
+Definitions:
+
+- `fully_linked`: all observed normalized nodes participate in at least one
+  emitted inferred link.
+- `partially_isolated`: the current response includes both linked and isolated
+  observed nodes.
+- `isolated_only`: observed normalized nodes are present, but none of them are
+  represented by any emitted inferred link.
+- `unknown`: the current response cannot honestly classify node participation
+  from the normalized nodes and emitted links in hand.
+
 ### Prose-only notes
 
 These should remain prose rather than turning into new enum fields.
@@ -335,6 +380,9 @@ Collector ownership:
 - emit aggregate `paired_link_count`
 - emit aggregate `single_sided_link_count`
 - emit aggregate `endpoint_pairing_posture`
+- emit aggregate `linked_node_count`
+- emit aggregate `isolated_node_count`
+- emit aggregate `node_participation_posture`
 - preserve current collection counts, freshness window, and degraded-scope
   summary
 
@@ -355,6 +403,12 @@ Collector metric semantics:
   normalized topology links with `endpoint_pairing_state=paired`
 - `platform_gnmi_collector_topology_single_sided_links`: gauge count of emitted
   normalized topology links with `endpoint_pairing_state=single_sided`
+- `platform_gnmi_collector_topology_linked_nodes`: gauge count of observed
+  normalized topology nodes represented by at least one emitted inferred link
+- `platform_gnmi_collector_topology_isolated_nodes`: gauge count of observed
+  normalized topology nodes not represented by any emitted inferred link
+- `platform_gnmi_collector_topology_node_participation_posture`: one-hot gauge
+  for the current collector-owned node participation posture
 
 Do not add:
 

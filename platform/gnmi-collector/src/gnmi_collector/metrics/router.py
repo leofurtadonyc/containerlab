@@ -215,6 +215,33 @@ def get_metrics() -> Response:
                 f"{topology_summary.single_sided_link_count if topology_summary else 0}"
             ),
             (
+                "# HELP platform_gnmi_collector_topology_linked_nodes "
+                "Observed topology nodes represented by at least one emitted inferred link."
+            ),
+            "# TYPE platform_gnmi_collector_topology_linked_nodes gauge",
+            (
+                "platform_gnmi_collector_topology_linked_nodes "
+                f"{topology_summary.linked_node_count if topology_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_topology_isolated_nodes "
+                "Observed topology nodes not represented by any emitted inferred link."
+            ),
+            "# TYPE platform_gnmi_collector_topology_isolated_nodes gauge",
+            (
+                "platform_gnmi_collector_topology_isolated_nodes "
+                f"{topology_summary.isolated_node_count if topology_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_topology_node_participation_posture "
+                "Current topology node participation posture as a one-hot gauge."
+            ),
+            "# TYPE platform_gnmi_collector_topology_node_participation_posture gauge",
+            (
+                "platform_gnmi_collector_topology_node_participation_posture"
+                f'{{posture="{topology_summary.node_participation_posture if topology_summary else "unknown"}"}} 1'
+            ),
+            (
                 "# HELP platform_gnmi_collector_topology_oldest_observed_timestamp_seconds "
                 "Oldest current topology observation timestamp across targets that returned live evidence."
             ),

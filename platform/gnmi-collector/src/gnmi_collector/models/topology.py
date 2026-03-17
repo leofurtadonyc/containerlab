@@ -83,8 +83,13 @@ class BackendTopologyDeliveryEnvelope(BaseModel):
     collection_posture: Literal["ok", "degraded", "blocked", "unknown"]
     degraded_scope_summary: str
     endpoint_pairing_posture: Literal["paired", "partially_paired", "single_sided", "unknown"]
+    node_participation_posture: Literal[
+        "fully_linked", "partially_isolated", "isolated_only", "unknown"
+    ]
     paired_link_count: int
     single_sided_link_count: int
+    linked_node_count: int
+    isolated_node_count: int
     topology_id: str
     topology_name: str
     node_count: int
@@ -115,8 +120,13 @@ class TopologyFlowSummary(BaseModel):
     inference_posture: Literal["inferred", "unknown"]
     collection_posture: Literal["ok", "degraded", "blocked", "unknown"]
     endpoint_pairing_posture: Literal["paired", "partially_paired", "single_sided", "unknown"]
+    node_participation_posture: Literal[
+        "fully_linked", "partially_isolated", "isolated_only", "unknown"
+    ]
     paired_link_count: int
     single_sided_link_count: int
+    linked_node_count: int
+    isolated_node_count: int
     node_state_counts: dict[str, int] = Field(default_factory=dict)
     link_state_counts: dict[str, int] = Field(default_factory=dict)
     backend_ready_node_count: int
