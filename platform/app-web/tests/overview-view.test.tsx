@@ -94,8 +94,11 @@ function createPlatformStatusData() {
         inference_posture: "inferred",
         endpoint_pairing_posture: "partially_paired",
         collection_posture: "degraded",
+        node_participation_posture: "partially_isolated",
         paired_link_count: 2,
         single_sided_link_count: 1,
+        linked_node_count: 2,
+        isolated_node_count: 1,
         degraded_scope_summary: "One topology target is degraded.",
         summary: "Topology read path is partially degraded.",
         notes: [],
@@ -147,8 +150,11 @@ function createTopologyData() {
       inference_posture: "inferred",
       endpoint_pairing_posture: "partially_paired",
       collection_posture: "degraded",
+      node_participation_posture: "partially_isolated",
       paired_link_count: 2,
       single_sided_link_count: 1,
+      linked_node_count: 2,
+      isolated_node_count: 1,
       summary: "Some links remain single-sided.",
     },
     topology: {
@@ -314,6 +320,8 @@ describe("overview view", () => {
     expect(html).toContain("Devices timed out");
     expect(html).toContain("Retry devices");
     expect(html).toContain("Topology coverage");
+    expect(html).toContain("Node participation");
+    expect(html).toContain("Partially isolated");
     expect(html).toContain("Policies Trust Cues");
     expect(html).toContain("Devices Trust Cues");
     expect(html).toContain("Inventory trust cues are temporarily unavailable");

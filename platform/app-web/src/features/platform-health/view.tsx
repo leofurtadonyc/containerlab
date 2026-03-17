@@ -4,6 +4,7 @@ import { TrustCueCard } from "../../components/trust-cue-card";
 import type { PlatformReadPathStatus } from "../../api/contracts";
 import {
   countBy,
+  describeTopologyReadPathNodeParticipation,
   describeTopologyReadPathCollection,
   describeTopologyReadPathInference,
   describeTopologyReadPathPairing,
@@ -150,6 +151,7 @@ export function PlatformHealthView() {
   const topologyInferenceReadout = describeTopologyReadPathInference(topologyReadPath);
   const topologyCollectionReadout = describeTopologyReadPathCollection(topologyReadPath);
   const topologyPairingReadout = describeTopologyReadPathPairing(topologyReadPath);
+  const topologyNodeParticipationReadout = describeTopologyReadPathNodeParticipation(topologyReadPath);
   const policyDetailReadiness = buildPolicyDetailReadinessReadout(policyReadPath);
 
   return (
@@ -247,6 +249,11 @@ export function PlatformHealthView() {
           <p>Distinct bounded observation-source families currently exposed in product status.</p>
         </article>
         <article className="summary-card">
+          <p className="summary-label">Topology Node Participation</p>
+          <strong>{topologyNodeParticipationReadout.label}</strong>
+          <p>{topologyNodeParticipationReadout.countDetail}</p>
+        </article>
+        <article className="summary-card">
           <p className="summary-label">Policy Detail Readiness</p>
           <strong>{policyDetailReadiness.label}</strong>
           <p>{policyDetailReadiness.detail}</p>
@@ -256,7 +263,7 @@ export function PlatformHealthView() {
       <div className="content-grid">
         <TrustCueCard
           title="Routine-Use Trust Cues"
-          summary="Platform Health is a current API response rather than an anchored history surface, so the key cues are freshness, observation coverage, read-path scope, topology endpoint pairing posture, and how much of the page is probe-backed versus declared-only."
+          summary="Platform Health is a current API response rather than an anchored history surface, so the key cues are freshness, observation coverage, read-path scope, topology endpoint pairing posture, topology node participation posture, and how much of the page is probe-backed versus declared-only."
           rows={[
             {
               label: "API freshness",
@@ -299,6 +306,15 @@ export function PlatformHealthView() {
               kind: "status",
               value: topologyPairingReadout.status,
               note: [topologyPairingReadout.detail, topologyPairingReadout.countDetail],
+            },
+            {
+              label: "Topology node participation",
+              kind: "status",
+              value: topologyNodeParticipationReadout.status,
+              note: [
+                topologyNodeParticipationReadout.detail,
+                topologyNodeParticipationReadout.countDetail,
+              ],
             },
             {
               label: "Topology collection posture",
@@ -376,7 +392,7 @@ export function PlatformHealthView() {
                   ? readPaths.map(
                       (readPath) =>
                         readPath.model_family === "topology"
-                          ? `${formatLabel(readPath.model_family)}: ${topologyInferenceReadout.label} • ${topologyCollectionReadout.label} • ${formatReadPathCollection(readPath)} • ${topologyPairingReadout.countDetail}`
+                          ? `${formatLabel(readPath.model_family)}: ${topologyInferenceReadout.label} • ${topologyCollectionReadout.label} • ${topologyNodeParticipationReadout.label} • ${formatReadPathCollection(readPath)} • ${topologyPairingReadout.countDetail} • ${topologyNodeParticipationReadout.countDetail}`
                           : readPath.model_family === "policy"
                             ? `${formatLabel(readPath.model_family)}: ${formatReadPathCollection(readPath)} • ${buildPolicyDetailReadinessReadout(readPath).detail}`
                           : `${formatLabel(readPath.model_family)}: ${formatReadPathCollection(readPath)}`,
@@ -423,7 +439,7 @@ export function PlatformHealthView() {
                     <p className="table-note">{readPath.degraded_scope_summary}</p>
                     {readPath.model_family === "topology" ? (
                       <p className="table-note">
-                        {topologyInferenceReadout.detail} {topologyCollectionReadout.detail} {topologyPairingReadout.detail} {topologyPairingReadout.countDetail}
+                        {topologyInferenceReadout.detail} {topologyCollectionReadout.detail} {topologyPairingReadout.detail} {topologyPairingReadout.countDetail} {topologyNodeParticipationReadout.detail} {topologyNodeParticipationReadout.countDetail}
                       </p>
                     ) : null}
                     {readPath.model_family === "policy" ? (

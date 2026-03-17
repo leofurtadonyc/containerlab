@@ -62,6 +62,12 @@ export type TopologyEndpointPairingPosture =
   | "single_sided"
   | "unknown";
 
+export type TopologyNodeParticipationPosture =
+  | "fully_linked"
+  | "partially_isolated"
+  | "isolated_only"
+  | "unknown";
+
 export interface PlatformReadPathStatus {
   model_family: "inventory" | "topology" | "policy";
   observation_state: "ok" | "degraded" | "unreachable" | "unknown";
@@ -77,8 +83,11 @@ export interface PlatformReadPathStatus {
   inference_posture: TopologyInferencePosture | null;
   endpoint_pairing_posture: TopologyEndpointPairingPosture | null;
   collection_posture: TopologyCollectionPosture | null;
+  node_participation_posture: TopologyNodeParticipationPosture | null;
   paired_link_count: number | null;
   single_sided_link_count: number | null;
+  linked_node_count: number | null;
+  isolated_node_count: number | null;
   degraded_scope_summary: string;
   summary: string;
   notes: string[];
@@ -173,8 +182,11 @@ export interface TopologyCoverageSummaryRecord {
   inference_posture: TopologyInferencePosture;
   endpoint_pairing_posture: TopologyEndpointPairingPosture;
   collection_posture: TopologyCollectionPosture;
+  node_participation_posture: TopologyNodeParticipationPosture;
   paired_link_count: number;
   single_sided_link_count: number;
+  linked_node_count: number;
+  isolated_node_count: number;
   summary: string;
 }
 

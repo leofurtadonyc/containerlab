@@ -13,6 +13,16 @@ It is intentionally practical rather than aspirational:
 - it keeps workflow, dry-run, and action semantics explicitly out of scope
 - it describes the current operational stop line honestly
 
+## Quick Validation Rule
+
+For normal platform frontend or backend changes, this runbook is the preferred validation path:
+
+- rebuild with `./scripts/build-images.sh`
+- replace with `clab deploy -t topology.clab.yml -c`
+- rerun `./scripts/verify-core-runtime.sh` and `./scripts/verify-odl-auth.sh`
+
+Do not default to host-side `npm` or `pytest` for routine validation of the packaged platform runtime.
+
 For the current packaged platform runtime, this runbook is also the preferred validation path.
 Do not default to host-side `npm` or `pytest` commands when validating normal frontend or backend changes; rebuild the repo-owned images, replace the topology, and rerun the verification scripts.
 

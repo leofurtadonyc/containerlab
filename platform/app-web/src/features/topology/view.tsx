@@ -36,6 +36,7 @@ import {
   getTopologyCoverageSummary,
   getTopologyLinkEndpointEvidenceCount,
   getTopologyLinkEndpointPairingState,
+  getTopologyNodeParticipationReadout,
   useTopologyQuery,
 } from "./api";
 
@@ -216,6 +217,10 @@ export function TopologyView() {
   const nodeCounts = countBy(nodes, (node) => node.state);
   const linkCounts = countBy(links, (link) => link.state);
   const coverageSummary = useMemo(() => (data ? getTopologyCoverageSummary(data) : null), [data]);
+  const nodeParticipationReadout = useMemo(
+    () => (data ? getTopologyNodeParticipationReadout(data) : null),
+    [data],
+  );
   const roleCounts = useMemo(() => countBy(nodes, (node) => node.role), [nodes]);
   const knowledgeCounts = useMemo(() => countBy(links, (link) => getLinkKnowledgeState(link)), [links]);
   const pairingStateCounts = useMemo(
@@ -546,6 +551,14 @@ export function TopologyView() {
           <p>Links inferred from only one observed endpoint stay explicitly partial.</p>
         </article>
         <article className="summary-card">
+          <p className="summary-label">Node Participation</p>
+          <strong>{nodeParticipationReadout?.label ?? "Not exposed"}</strong>
+          <p>
+            {nodeParticipationReadout?.countDetail ??
+              "Linked-versus-isolated node counts are not exposed."}
+          </p>
+        </article>
+        <article className="summary-card">
           <p className="summary-label">Observed Loopbacks</p>
           <strong>{observedLoopbackCount}</strong>
           <p>Nodes with a live loopback carried into the normalized topology view.</p>
@@ -626,8 +639,16 @@ export function TopologyView() {
               <StatusPill value={collectionReadout.status} />
             </li>
             <li>
+              <span>Node participation</span>
+              <StatusPill value={nodeParticipationReadout?.status ?? "unknown"} />
+            </li>
+            <li>
               <span>Pairing counts</span>
               <strong>{coverageReadout.countDetail}</strong>
+            </li>
+            <li>
+              <span>Participation counts</span>
+              <strong>{nodeParticipationReadout?.countDetail ?? "Not exposed"}</strong>
             </li>
             <li>
               <span>Blocked reason</span>
@@ -670,6 +691,10 @@ export function TopologyView() {
               <StatusPill value={collectionReadout.status} />
             </li>
             <li>
+              <span>Node participation</span>
+              <StatusPill value={nodeParticipationReadout?.status ?? "unknown"} />
+            </li>
+            <li>
               <span>Inference method</span>
               <strong>
                 {links[0]?.attributes.inference_method
@@ -684,6 +709,10 @@ export function TopologyView() {
             <li>
               <span>Pairing counts</span>
               <strong>{coverageReadout.countDetail}</strong>
+            </li>
+            <li>
+              <span>Participation counts</span>
+              <strong>{nodeParticipationReadout?.countDetail ?? "Not exposed"}</strong>
             </li>
             <li>
               <span>Comparison-ready snapshot</span>
@@ -835,6 +864,35 @@ export function TopologyView() {
           </ul>
         </article>
         <article className="detail-card">
+          <h3>Node Participation Distribution</h3>
+          <p>
+            {nodeParticipationReadout?.detail ??
+              "Node-participation posture is not exposed on the current topology response."}
+          </p>
+          <ul className="compact-list">
+            <li>
+              <span>Participation posture</span>
+              <StatusPill value={nodeParticipationReadout?.status ?? "unknown"} />
+            </li>
+            <li>
+              <span>Linked nodes</span>
+              <strong>{coverageSummary?.linked_node_count ?? 0}</strong>
+            </li>
+            <li>
+              <span>Isolated nodes</span>
+              <strong>{coverageSummary?.isolated_node_count ?? 0}</strong>
+            </li>
+            <li>
+              <span>Total nodes</span>
+              <strong>{topology.nodes.length}</strong>
+            </li>
+            <li>
+              <span>Observed loopbacks</span>
+              <strong>{observedLoopbackCount}</strong>
+            </li>
+          </ul>
+        </article>
+        <article className="detail-card">
           <h3>Link Evidence Distribution</h3>
           <ul className="compact-list">
             <li>
@@ -868,7 +926,7 @@ export function TopologyView() {
         <p>
           Live collector data remains the primary current truth source. Persisted fallback
           snapshots keep the page usable when live collection is unavailable. Inference
-          posture, endpoint pairing, and collection posture are shown separately so operators
+          posture, endpoint pairing, node participation, and collection posture are shown separately so operators
           can see why topology remains partial. Comparison summaries show bounded normalized
           differences only and should not be read as path-validation, controller truth, or
           drift verdicts.
@@ -928,6 +986,24 @@ export function TopologyView() {
           <p>
             The current topology slice is not backed by a normal live collection window. This is
             distinct from endpoint pairing limits and remains visible as its own trust cue.
+          </p>
+        </div>
+      ) : null}
+
+      {nodeParticipationReadout?.status === "partially_isolated" ? (
+        <div className="callout">
+          <strong>Isolated observed nodes remain explicit</strong>
+          <p>
+            The current topology slice includes observed nodes that do not currently participate in a normalized link. This stays separate from endpoint-pairing posture so operators can distinguish isolated nodes from single-sided link evidence.
+          </p>
+        </div>
+      ) : null}
+
+      {nodeParticipationReadout?.status === "isolated_only" ? (
+        <div className="callout">
+          <strong>Only isolated observed nodes are currently linked into the slice</strong>
+          <p>
+            The current topology response includes nodes, but none currently participate in a normalized link. The page keeps that limitation explicit instead of implying adjacency certainty.
           </p>
         </div>
       ) : null}

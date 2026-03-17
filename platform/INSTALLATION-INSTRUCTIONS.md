@@ -11,6 +11,16 @@ It is written for the current implementation reality:
 - the platform is a peer project, not a child of any lab
 - the platform is rebuilt from local repository source into local container images
 
+## Quick Validation Rule
+
+For future context windows and normal operator use, keep this rule explicit:
+
+- do not default to host-side `npm` for frontend validation
+- do not default to host-side `pytest` for routine platform validation
+- validate through `./scripts/build-images.sh`, `clab deploy -t topology.clab.yml -c`, `./scripts/verify-core-runtime.sh`, and `./scripts/verify-odl-auth.sh`
+
+The current packaged platform treats that rebuild, redeploy, and verify flow as the primary documented validation boundary.
+
 ## Scope
 
 These instructions cover:
