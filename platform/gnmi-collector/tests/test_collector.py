@@ -289,6 +289,33 @@ class FakeIsolatedNodeTopologyGnmiClient(FakeGnmiClient):
         return super().get(path=path, encoding="json_ietf")
 
 
+class FakeFullyIsolatedNodeTopologyGnmiClient(FakeGnmiClient):
+    def get(self, *, path, encoding):
+        del encoding
+        if any("router[router-name=Base]/interface" in item for item in path):
+            return {
+                "notification": [
+                    {
+                        "timestamp": 1773094131368820265,
+                        "update": [
+                            {
+                                "path": "state/router[router-name=Base]/interface[interface-name=system]",
+                                "val": {
+                                    "nokia-state:interface-name": "system",
+                                    "nokia-state:oper-state": "up",
+                                    "nokia-state:protocol": "ospfv2 mpls rsvp",
+                                    "nokia-state:ipv4": {
+                                        "primary": {"oper-address": "10.255.255.31"}
+                                    },
+                                },
+                            }
+                        ],
+                    }
+                ]
+            }
+        return super().get(path=path, encoding="json_ietf")
+
+
 class FakeDegradedPolicyGnmiClient(FakeGnmiClient):
     def get(self, *, path, encoding):
         del encoding
@@ -852,6 +879,27 @@ def test_metrics_endpoint_surfaces_isolated_node_topology_coverage_metrics(monke
     assert "platform_gnmi_collector_topology_isolated_nodes 2" in response.text
     assert (
         'platform_gnmi_collector_topology_node_participation_posture{posture="partially_isolated"} 1'
+        in response.text
+    )
+
+
+def test_metrics_endpoint_surfaces_fully_isolated_node_topology_coverage_metrics(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "gnmi_collector.adapters.nokia.sros.gNMIclient",
+        FakeFullyIsolatedNodeTopologyGnmiClient,
+    )
+    client.get("/topology/snapshot")
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert "platform_gnmi_collector_topology_normalized_links 0" in response.text
+    assert "platform_gnmi_collector_topology_paired_links 0" in response.text
+    assert "platform_gnmi_collector_topology_single_sided_links 0" in response.text
+    assert "platform_gnmi_collector_topology_linked_nodes 0" in response.text
+    assert f"platform_gnmi_collector_topology_isolated_nodes {len(_targets())}" in response.text
+    assert (
+        'platform_gnmi_collector_topology_node_participation_posture{posture="isolated_only"} 1'
         in response.text
     )
 

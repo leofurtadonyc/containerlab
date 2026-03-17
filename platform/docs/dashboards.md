@@ -19,8 +19,8 @@ The platform currently has:
 - the platform overview dashboard now also surfaces backend-owned collector-boundary latest fetch duration, timeout budget, and latest timeout or failure posture signals so operators can distinguish slow fallback triggers from ordinary degraded live collection
 - the platform overview dashboard now also separates readiness evaluation sample age from readiness persisted-snapshot age so operators can distinguish Prometheus-observed recomputation cadence from the chronology of the last materially changed persisted readiness snapshot
 - the topology overview dashboard now also surfaces paired-link counts, single-sided-link counts, paired-link share, and backend-owned topology pairing-posture labels as bounded observability projections for the current topology coverage slice
-- the topology overview dashboard now also surfaces backend-owned inference, endpoint-pairing, and collection posture labels as bounded observability projections for the current topology partiality slice
-- the platform overview dashboard now also mirrors the narrower topology read-path coverage posture through paired-versus-single-sided link counts plus backend-owned inference, pairing, and collection posture labels without turning Grafana into the product contract
+- the topology overview dashboard now also surfaces paired-link counts, single-sided-link counts, linked-node counts, isolated-node counts, and backend-owned inference, endpoint-pairing, node-participation, and collection posture labels as bounded observability projections for the current topology partiality slice
+- the platform overview dashboard now also mirrors the narrower topology read-path coverage posture through paired-versus-single-sided link counts, linked-versus-isolated node counts, and backend-owned inference, pairing, node-participation, and collection posture labels without turning Grafana into the product contract
 - a bounded post-deploy core-runtime regression check that now validates Grafana API health, the provisioned Prometheus datasource, and the provisioned overview dashboards alongside Postgres and Prometheus readiness
 - clearly marked placeholder dashboard files for the dashboard families that do not yet have real backing metrics
 
@@ -155,9 +155,10 @@ Expected emphasis over time:
 - sync timestamps
 - integration quality signals
 - bounded backend-versus-collector aggregate agreement cues where those metrics exist
-- explicit paired-versus-single-sided inferred-link counts and shares where those bounded collector metrics exist
-- backend-owned topology inference, pairing, and collection posture labels only as observability projections from real metrics, not as dashboard-authored business logic
+- explicit paired-versus-single-sided inferred-link counts and shares plus linked-versus-isolated node counts where those bounded collector or backend metrics exist
+- backend-owned topology inference, pairing, node-participation, and collection posture labels only as observability projections from real metrics, not as dashboard-authored business logic
 - operators should interpret paired-versus-single-sided topology panels as endpoint-evidence depth only, not as protocol adjacency validation or controller-backed topology truth
+- operators should interpret linked-versus-isolated node panels as inferred participation depth only, not as end-to-end path validation or controller-backed topology truth
 - operators should interpret topology collection posture as collection-window health only, not as a separate validation or workflow verdict
 
 ### SR Policy
@@ -191,8 +192,9 @@ In `app-web`:
 - degraded-scope explanations are shown as product trust cues
 - coverage and freshness remain tied to the bounded platform-status contract
 - topology endpoint-pairing posture should be shown as backend-owned product language, not as a Grafana-derived label
-- topology inference posture and collection posture should also be shown as backend-owned product language, not as Grafana-authored semantics
+- topology inference posture, node-participation posture, and collection posture should also be shown as backend-owned product language, not as Grafana-authored semantics
 - `paired`, `partially_paired`, and `single_sided` remain bounded topology trust cues about inferred-link endpoint evidence, not workflow or validation language
+- `fully_linked`, `partially_isolated`, `isolated_only`, and `unknown` remain bounded topology trust cues about inferred node participation, not workflow or validation language
 - `inferred` and `ok` or `degraded` or `blocked` remain bounded topology trust cues about inference-boundedness and collection-window posture, not validation language
 
 In Grafana:
@@ -200,10 +202,10 @@ In Grafana:
 - operators see numeric observability signals only
 - coverage is represented through observed-versus-configured targets
 - freshness is represented through observation age from collector timestamps
-- degraded scope is approximated through numeric gaps such as missing targets, paired-versus-single-sided topology link counts or shares, policy detail-ready gaps, and collector-boundary duration-versus-budget posture
+- degraded scope is approximated through numeric gaps such as missing targets, paired-versus-single-sided topology link counts or shares, linked-versus-isolated node counts, policy detail-ready gaps, and collector-boundary duration-versus-budget posture
 - policy detail blockers are mirrored through detail-ready-target share and blocker-presence flags, while per-target blocker reason codes stay on the Policies page and in verifier output
-- topology endpoint-pairing observability should stay numeric as paired-link counts, single-sided-link counts, and derived shares rather than becoming a product-owned status vocabulary inside dashboards
-- backend-owned topology inference, pairing, and collection posture labels may appear only as metric-backed label projections that support those numeric panels; Grafana still does not own that vocabulary
+- topology endpoint-pairing and node-participation observability should stay numeric as paired-link counts, single-sided-link counts, linked-node counts, isolated-node counts, and derived shares rather than becoming a product-owned status vocabulary inside dashboards
+- backend-owned topology inference, pairing, node-participation, and collection posture labels may appear only as metric-backed label projections that support those numeric panels; Grafana still does not own that vocabulary
 - collector-boundary timeout posture is an observability cue only; it explains whether the backend hit the fail-fast latency budget, not whether the product has emitted a workflow verdict or dependency-dashboard truth statement
 - readiness evaluation sample age is an observability cue about the latest Prometheus-observed bounded recomputation, while persisted readiness snapshot age remains the chronology of the last materially changed persisted snapshot; operators should not treat them as interchangeable freshness claims
 

@@ -460,6 +460,72 @@ def _build_live_isolated_topology_snapshot() -> CollectorTopologySnapshot:
     )
 
 
+def _build_live_fully_isolated_topology_snapshot() -> CollectorTopologySnapshot:
+    return CollectorTopologySnapshot(
+        integration="gnmi_collector_topology",
+        status="live_normalized_feed",
+        destination_service="app-api",
+        source_endpoint="http://gnmi-collector:9804/topology/snapshot",
+        configured_target_count=3,
+        observed_target_count=3,
+        collection_success_count=3,
+        collection_partial_count=0,
+        collection_failure_count=0,
+        oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        newest_observed_at="2026-03-09T19:25:09.500000+00:00",
+        inference_posture="unknown",
+        collection_posture="ok",
+        degraded_scope_summary="Topology delivery remains bounded because one or more observed nodes are not represented by any emitted inferred link.",
+        endpoint_pairing_posture="unknown",
+        node_participation_posture="isolated_only",
+        paired_link_count=0,
+        single_sided_link_count=0,
+        linked_node_count=0,
+        isolated_node_count=3,
+        topology_id="platform-observed-topology",
+        topology_name="Platform Observed Topology",
+        sync_source="gnmi_collector_topology_interface_inference",
+        sync_status="ok",
+        completeness="partial",
+        observed_at="2026-03-09T19:25:09.500000+00:00",
+        notes=[
+            "Topology links are inferred from live router interface names and current interface operational state.",
+            "Collector node-participation posture is isolated_only, with 0 observed nodes represented by at least one emitted inferred link and 3 observed nodes remaining isolated from the emitted inferred link slice.",
+        ],
+        nodes=[
+            CollectorTopologyNodeRecord(
+                node_id="PE1",
+                display_name="PE1",
+                role="pe",
+                state="up",
+                source="gnmi",
+                device_id="PE1",
+                attributes={"vendor": "nokia"},
+            ),
+            CollectorTopologyNodeRecord(
+                node_id="P1",
+                display_name="P1",
+                role="p",
+                state="up",
+                source="gnmi",
+                device_id="P1",
+                attributes={"vendor": "nokia"},
+            ),
+            CollectorTopologyNodeRecord(
+                node_id="PE2",
+                display_name="PE2",
+                role="pe",
+                state="up",
+                source="gnmi",
+                device_id="PE2",
+                attributes={"vendor": "nokia"},
+            ),
+        ],
+        links=[],
+        fetch_error=None,
+    )
+
+
 def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
     return CollectorPolicySnapshot(
         integration="gnmi_collector_policy",
@@ -3118,6 +3184,59 @@ def test_metrics_endpoint_exports_isolated_topology_node_participation(monkeypat
     ) in response.text
     assert (
         'platform_app_api_sync_run_latest_finished_at_seconds{model_family="inventory"} '
+        in response.text
+    )
+
+
+def test_metrics_endpoint_exports_fully_isolated_topology_node_participation(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorInventoryClient:
+        def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+            return _build_live_inventory_snapshot()
+
+    class StubCollectorTopologyClient:
+        def read_topology_snapshot(self) -> CollectorTopologySnapshot:
+            return _build_live_fully_isolated_topology_snapshot()
+
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return _build_live_policy_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.devices.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.topology.get_collector_topology_client",
+        lambda: StubCollectorTopologyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.metrics.router.summarize_sync_run_history",
+        _build_sync_run_history_summary,
+    )
+    monkeypatch.setattr(
+        "app_api.services.capabilities.load_latest_readiness_snapshot_reference",
+        lambda: SimpleNamespace(
+            snapshot_id="readiness-snapshot-metrics",
+            persisted_at=datetime.fromisoformat("2026-03-16T10:15:00+00:00"),
+        ),
+    )
+    reset_metrics_registry()
+    client.get("/api/v1/topology")
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert "platform_app_api_topology_linked_nodes 0" in response.text
+    assert "platform_app_api_topology_isolated_nodes 3" in response.text
+    assert (
+        'platform_app_api_topology_coverage_posture{inference_posture="unknown",'
+        'endpoint_pairing_posture="unknown",collection_posture="ok",node_participation_posture="isolated_only"} 1'
         in response.text
     )
 
