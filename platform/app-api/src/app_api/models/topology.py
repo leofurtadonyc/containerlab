@@ -71,6 +71,53 @@ class TopologySnapshot(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class TopologyHistorySnapshotRecord(BaseModel):
+    """Bounded summary of one persisted topology snapshot."""
+
+    snapshot_id: str
+    persisted_at: datetime
+    observed_at: datetime | None = None
+    topology_name: str
+    sync_source: str
+    sync_status: Literal["ok", "degraded", "failed", "unknown"]
+    completeness: Literal["complete", "partial", "unknown"]
+    node_count: int
+    link_count: int
+    node_state_counts: dict[str, int] = Field(default_factory=dict)
+    link_state_counts: dict[str, int] = Field(default_factory=dict)
+
+
+class TopologyHistoryComparison(BaseModel):
+    """Bounded comparison of the latest two persisted topology snapshots."""
+
+    current_snapshot_id: str
+    previous_snapshot_id: str
+    current_persisted_at: datetime
+    previous_persisted_at: datetime
+    current_node_count: int
+    previous_node_count: int
+    current_link_count: int
+    previous_link_count: int
+    node_count_delta: int
+    link_count_delta: int
+    added_node_count: int
+    removed_node_count: int
+    changed_node_count: int
+    added_link_count: int
+    removed_link_count: int
+    changed_link_count: int
+    notes: list[str] = Field(default_factory=list)
+
+
+class TopologyHistoryWindow(BaseModel):
+    """Bounded persisted history window for topology comparison support."""
+
+    status: Literal["unavailable", "current_only", "comparison_ready"]
+    summary: str
+    recent_snapshots: list[TopologyHistorySnapshotRecord] = Field(default_factory=list)
+    comparison_to_previous: TopologyHistoryComparison | None = None
+
+
 def _normalize_endpoint_pairing_state(value: object) -> TopologyEndpointPairingState | None:
     if value in {"paired", "single_sided", "unknown"}:
         return value

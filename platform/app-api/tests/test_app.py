@@ -29,20 +29,22 @@ from app_api.models.policy import PolicyInventorySnapshot
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.persistence.history import (
     PersistedInventorySnapshotComparison,
-    PersistedInventorySnapshotSummary,
+    PersistedInventorySnapshotSummary as PersistedInventoryHistorySummary,
     PersistedPolicySnapshotComparison,
     PersistedPolicySnapshotSummary as PersistedPolicyHistorySummary,
     PersistedReadinessSnapshotHistoryRecord,
     PersistedSyncRun,
     SyncRunHistorySummary,
     PersistedTopologySnapshotComparison,
-    PersistedTopologySnapshotSummary,
+    PersistedTopologySnapshotSummary as PersistedTopologyHistorySummary,
 )
 from app_api.persistence.read_side import (
     PersistedInventorySnapshot,
+    PersistedInventorySnapshotSummary as PersistedInventoryReadSideSnapshotSummary,
     PersistedPolicySnapshot,
     PersistedPolicySnapshotSummary,
     PersistedTopologySnapshot,
+    PersistedTopologySnapshotSummary as PersistedTopologyReadSideSnapshotSummary,
 )
 from app_api.config.settings import get_settings
 from app_api.schemas.platform import PlatformReadPathStatus
@@ -68,12 +70,28 @@ def _disable_read_side_persistence(monkeypatch) -> None:
         lambda: None,
     )
     monkeypatch.setattr(
+        "app_api.services.devices.load_previous_inventory_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.devices.load_recent_inventory_snapshot_summaries",
+        lambda limit=3: [],
+    )
+    monkeypatch.setattr(
         "app_api.services.topology.persist_topology_snapshot",
         lambda **kwargs: None,
     )
     monkeypatch.setattr(
         "app_api.services.topology.load_latest_topology_snapshot",
         lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.topology.load_previous_topology_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.topology.load_recent_topology_snapshot_summaries",
+        lambda limit=3: [],
     )
     monkeypatch.setattr(
         "app_api.services.policies.persist_policy_snapshot",
@@ -909,6 +927,89 @@ def _build_persisted_inventory_snapshot() -> PersistedInventorySnapshot:
     )
 
 
+def _build_previous_persisted_inventory_snapshot() -> PersistedInventorySnapshot:
+    return PersistedInventorySnapshot(
+        snapshot_id="inventory-snapshot-0",
+        sync_run_id="sync-inventory-previous",
+        persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+        devices=[
+            InventoryDevice(
+                device_id="PE1",
+                vendor="nokia",
+                platform="7750 SR-1",
+                software_version="B-25.10.R0",
+                role="pe",
+                management_address="172.20.20.107",
+                collector_status="ok",
+                capability_summary="partially_supported",
+            ),
+            InventoryDevice(
+                device_id="P1",
+                vendor="nokia",
+                platform="7750 SR-1",
+                software_version="B-25.10.R0",
+                role="p",
+                management_address="172.20.20.109",
+                collector_status="ok",
+                capability_summary="partially_supported",
+            ),
+        ],
+    )
+
+
+def _build_recent_inventory_snapshot_summaries() -> list[PersistedInventoryReadSideSnapshotSummary]:
+    return [
+        PersistedInventoryReadSideSnapshotSummary(
+            snapshot_id="inventory-snapshot-1",
+            persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+            snapshot={
+                "snapshot_id": "inventory-snapshot-1",
+                "persisted_at": datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+                "observed_at": None,
+                "sync_source": "gnmi_collector_inventory",
+                "sync_status": "partial_live_feed",
+                "data_status": "degraded",
+                "device_count": 1,
+                "role_counts": {"pe": 1},
+                "collector_status_counts": {"degraded": 1},
+                "capability_summary_counts": {"unknown": 1},
+            },
+        ),
+        PersistedInventoryReadSideSnapshotSummary(
+            snapshot_id="inventory-snapshot-0",
+            persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+            snapshot={
+                "snapshot_id": "inventory-snapshot-0",
+                "persisted_at": datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+                "observed_at": None,
+                "sync_source": "gnmi_collector_inventory",
+                "sync_status": "live_normalized_feed",
+                "data_status": "live",
+                "device_count": 2,
+                "role_counts": {"p": 1, "pe": 1},
+                "collector_status_counts": {"ok": 2},
+                "capability_summary_counts": {"partially_supported": 2},
+            },
+        ),
+        PersistedInventoryReadSideSnapshotSummary(
+            snapshot_id="inventory-snapshot-minus-1",
+            persisted_at=datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
+            snapshot={
+                "snapshot_id": "inventory-snapshot-minus-1",
+                "persisted_at": datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
+                "observed_at": None,
+                "sync_source": "gnmi_collector_inventory",
+                "sync_status": "live_normalized_feed",
+                "data_status": "live",
+                "device_count": 2,
+                "role_counts": {"p": 1, "pe": 1},
+                "collector_status_counts": {"ok": 2},
+                "capability_summary_counts": {"partially_supported": 2},
+            },
+        ),
+    ]
+
+
 def _build_persisted_topology_snapshot() -> PersistedTopologySnapshot:
     return PersistedTopologySnapshot(
         snapshot_id="topology-snapshot-1",
@@ -945,6 +1046,109 @@ def _build_persisted_topology_snapshot() -> PersistedTopologySnapshot:
             notes=["Served from the latest persisted topology snapshot."],
         ),
     )
+
+
+def _build_previous_persisted_topology_snapshot() -> PersistedTopologySnapshot:
+    return PersistedTopologySnapshot(
+        snapshot_id="topology-snapshot-0",
+        sync_run_id="sync-topology-previous",
+        persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+        snapshot=TopologySnapshot(
+            topology_id="platform-observed-topology",
+            topology_name="Platform Observed Topology",
+            nodes=[
+                TopologyNode(
+                    node_id="PE1",
+                    display_name="PE1",
+                    role="pe",
+                    state="up",
+                    source="gnmi",
+                    device_id="PE1",
+                    attributes={"vendor": "nokia"},
+                ),
+                TopologyNode(
+                    node_id="P1",
+                    display_name="P1",
+                    role="p",
+                    state="up",
+                    source="gnmi",
+                    device_id="P1",
+                    attributes={"vendor": "nokia"},
+                ),
+            ],
+            links=[
+                TopologyLink(
+                    link_id="PE1--P1",
+                    source_node_id="PE1",
+                    target_node_id="P1",
+                    state="up",
+                    source="gnmi",
+                    attributes={"knowledge_state": "partial"},
+                )
+            ],
+            sync_source="persisted_topology_snapshot",
+            sync_status="ok",
+            completeness="partial",
+            observed_at=datetime.fromisoformat("2026-03-09T23:29:00+00:00"),
+            notes=["Served from the previous persisted topology snapshot."],
+        ),
+    )
+
+
+def _build_recent_topology_snapshot_summaries() -> list[PersistedTopologyReadSideSnapshotSummary]:
+    return [
+        PersistedTopologyReadSideSnapshotSummary(
+            snapshot_id="topology-snapshot-1",
+            persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+            snapshot={
+                "snapshot_id": "topology-snapshot-1",
+                "persisted_at": datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+                "observed_at": datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+                "topology_name": "Platform Observed Topology",
+                "sync_source": "persisted_topology_snapshot",
+                "sync_status": "degraded",
+                "completeness": "partial",
+                "node_count": 1,
+                "link_count": 1,
+                "node_state_counts": {"up": 1},
+                "link_state_counts": {"degraded": 1},
+            },
+        ),
+        PersistedTopologyReadSideSnapshotSummary(
+            snapshot_id="topology-snapshot-0",
+            persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+            snapshot={
+                "snapshot_id": "topology-snapshot-0",
+                "persisted_at": datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+                "observed_at": datetime.fromisoformat("2026-03-09T23:29:00+00:00"),
+                "topology_name": "Platform Observed Topology",
+                "sync_source": "persisted_topology_snapshot",
+                "sync_status": "ok",
+                "completeness": "partial",
+                "node_count": 2,
+                "link_count": 1,
+                "node_state_counts": {"up": 2},
+                "link_state_counts": {"up": 1},
+            },
+        ),
+        PersistedTopologyReadSideSnapshotSummary(
+            snapshot_id="topology-snapshot-minus-1",
+            persisted_at=datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
+            snapshot={
+                "snapshot_id": "topology-snapshot-minus-1",
+                "persisted_at": datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
+                "observed_at": datetime.fromisoformat("2026-03-09T22:59:00+00:00"),
+                "topology_name": "Platform Observed Topology",
+                "sync_source": "persisted_topology_snapshot",
+                "sync_status": "ok",
+                "completeness": "partial",
+                "node_count": 2,
+                "link_count": 1,
+                "node_state_counts": {"up": 2},
+                "link_state_counts": {"up": 1},
+            },
+        ),
+    ]
 
 
 def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
@@ -1212,7 +1416,7 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             started_at=datetime.fromisoformat("2026-03-10T01:00:00+00:00"),
             finished_at=datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
             persisted_artifacts=["topology_snapshot"],
-            topology_snapshot_summary=PersistedTopologySnapshotSummary(
+            topology_snapshot_summary=PersistedTopologyHistorySummary(
                 snapshot_id="topology-snapshot-sync-1",
                 persisted_at=datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
                 observed_at=datetime.fromisoformat("2026-03-10T01:00:00+00:00"),
@@ -1257,7 +1461,7 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             started_at=datetime.fromisoformat("2026-03-10T00:30:00+00:00"),
             finished_at=datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
             persisted_artifacts=["inventory_snapshot"],
-            inventory_snapshot_summary=PersistedInventorySnapshotSummary(
+            inventory_snapshot_summary=PersistedInventoryHistorySummary(
                 snapshot_id="inventory-snapshot-sync-1",
                 persisted_at=datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
                 observed_at=None,
@@ -2110,6 +2314,10 @@ def test_devices_endpoint_falls_back_to_persisted_inventory(monkeypatch) -> None
         "app_api.services.devices.load_latest_inventory_snapshot",
         _build_persisted_inventory_snapshot,
     )
+    monkeypatch.setattr(
+        "app_api.services.devices.load_recent_inventory_snapshot_summaries",
+        lambda limit=3: _build_recent_inventory_snapshot_summaries()[:1],
+    )
 
     response = client.get("/api/v1/devices")
 
@@ -2127,6 +2335,9 @@ def test_devices_endpoint_falls_back_to_persisted_inventory(monkeypatch) -> None
         payload["served_persisted_at"].replace("Z", "+00:00")
     ) == datetime.fromisoformat("2026-03-10T00:00:00+00:00")
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
+    assert payload["history"]["status"] == "current_only"
+    assert len(payload["history"]["recent_snapshots"]) == 1
+    assert payload["history"]["recent_snapshots"][0]["snapshot_id"] == "inventory-snapshot-1"
     assert payload["comparison_to_latest_persisted"]["current_device_count"] == 1
     assert "latest persisted normalized inventory snapshot" in payload["summary"]
     assert payload["items"][0]["device_id"] == "PE1"
@@ -2149,6 +2360,14 @@ def test_devices_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypat
     monkeypatch.setattr(
         "app_api.services.devices.load_latest_inventory_snapshot",
         _build_persisted_inventory_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.devices.load_previous_inventory_snapshot",
+        _build_previous_persisted_inventory_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.devices.load_recent_inventory_snapshot_summaries",
+        lambda limit=3: _build_recent_inventory_snapshot_summaries()[:limit],
     )
 
     response = client.get("/api/v1/devices")
@@ -2173,6 +2392,13 @@ def test_devices_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypat
     assert payload["comparison_to_latest_persisted"]["persisted_capability_summary_counts"] == {
         "unknown": 1
     }
+    assert payload["history"]["status"] == "comparison_ready"
+    assert payload["history"]["comparison_to_previous"]["current_snapshot_id"] == "inventory-snapshot-1"
+    assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "inventory-snapshot-0"
+    assert payload["history"]["comparison_to_previous"]["device_count_delta"] == -1
+    assert payload["history"]["comparison_to_previous"]["removed_device_count"] == 1
+    assert payload["history"]["comparison_to_previous"]["changed_device_count"] == 1
+    assert len(payload["history"]["recent_snapshots"]) == 3
 
 
 def test_devices_endpoint_keeps_partial_live_inventory_in_live_collector_mode(monkeypatch) -> None:
@@ -2241,6 +2467,10 @@ def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None
         "app_api.services.topology.load_latest_topology_snapshot",
         _build_persisted_topology_snapshot,
     )
+    monkeypatch.setattr(
+        "app_api.services.topology.load_recent_topology_snapshot_summaries",
+        lambda limit=3: _build_recent_topology_snapshot_summaries()[:1],
+    )
 
     response = client.get("/api/v1/topology")
 
@@ -2275,6 +2505,9 @@ def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None
     ) == datetime.fromisoformat("2026-03-10T00:00:00+00:00")
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
     assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] == "topology-snapshot-1"
+    assert payload["history"]["status"] == "current_only"
+    assert len(payload["history"]["recent_snapshots"]) == 1
+    assert payload["history"]["recent_snapshots"][0]["snapshot_id"] == "topology-snapshot-1"
     assert "latest persisted normalized topology snapshot" in payload["summary"]
 
 
@@ -2293,6 +2526,14 @@ def test_topology_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypa
         "app_api.services.topology.load_latest_topology_snapshot",
         _build_persisted_topology_snapshot,
     )
+    monkeypatch.setattr(
+        "app_api.services.topology.load_previous_topology_snapshot",
+        _build_previous_persisted_topology_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.topology.load_recent_topology_snapshot_summaries",
+        lambda limit=3: _build_recent_topology_snapshot_summaries()[:limit],
+    )
 
     response = client.get("/api/v1/topology")
 
@@ -2306,6 +2547,12 @@ def test_topology_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypa
     assert payload["comparison_to_latest_persisted"]["added_node_count"] == 1
     assert payload["comparison_to_latest_persisted"]["added_link_count"] == 1
     assert payload["comparison_to_latest_persisted"]["removed_link_count"] == 1
+    assert payload["history"]["status"] == "comparison_ready"
+    assert payload["history"]["comparison_to_previous"]["current_snapshot_id"] == "topology-snapshot-1"
+    assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "topology-snapshot-0"
+    assert payload["history"]["comparison_to_previous"]["node_count_delta"] == -1
+    assert payload["history"]["comparison_to_previous"]["changed_link_count"] == 1
+    assert len(payload["history"]["recent_snapshots"]) == 3
 
 
 def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:

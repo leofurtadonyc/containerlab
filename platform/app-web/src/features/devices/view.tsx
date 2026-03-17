@@ -172,6 +172,7 @@ export function DevicesView() {
     data.comparison_to_latest_persisted.status,
     data.serving_mode,
   );
+  const historyComparison = data.history.comparison_to_previous;
   const collectorFilterLabel =
     data.serving_mode === "persisted_fallback"
       ? "Last recorded collector state"
@@ -240,6 +241,11 @@ export function DevicesView() {
           <p className="summary-label">Current vs Latest Persisted</p>
           <strong>{comparisonReadout.label}</strong>
           <p>{comparisonReadout.detail}</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Persisted History</p>
+          <strong>{formatLabel(data.history.status)}</strong>
+          <p>{data.history.summary}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">{collectorOkLabel}</p>
@@ -415,6 +421,80 @@ export function DevicesView() {
             </li>
           </ul>
         </article>
+        <article className="detail-card">
+          <h3>Persisted History And Comparison</h3>
+          <p>{data.history.summary}</p>
+          {historyComparison ? (
+            <ul className="compact-list">
+              <li>
+                <span>Current snapshot anchor</span>
+                <IdentifierChip value={historyComparison.current_snapshot_id} />
+              </li>
+              <li>
+                <span>Previous snapshot anchor</span>
+                <IdentifierChip value={historyComparison.previous_snapshot_id} />
+              </li>
+              <li>
+                <span>Current / previous persisted</span>
+                <strong>
+                  {formatDateTime(historyComparison.current_persisted_at)} /{" "}
+                  {formatDateTime(historyComparison.previous_persisted_at)}
+                </strong>
+              </li>
+              <li>
+                <span>Device delta</span>
+                <strong>{formatSignedDelta(historyComparison.device_count_delta)}</strong>
+              </li>
+              <li>
+                <span>Current / previous devices</span>
+                <strong>
+                  {historyComparison.current_device_count} / {historyComparison.previous_device_count}
+                </strong>
+              </li>
+              <li>
+                <span>Added / removed devices</span>
+                <strong>
+                  {historyComparison.added_device_count} / {historyComparison.removed_device_count}
+                </strong>
+              </li>
+              <li>
+                <span>Changed devices</span>
+                <strong>{historyComparison.changed_device_count}</strong>
+              </li>
+            </ul>
+          ) : (
+            <p className="footnote">
+              Bounded comparison is only available once at least two persisted normalized inventory
+              snapshots exist.
+            </p>
+          )}
+        </article>
+        <article className="detail-card">
+          <h3>Recent Persisted Snapshots</h3>
+          {data.history.recent_snapshots.length > 0 ? (
+            <ul className="notes-list">
+              {data.history.recent_snapshots.map((entry) => (
+                <li key={entry.snapshot_id}>
+                  <strong>{formatDateTime(entry.persisted_at)}</strong>
+                  {" • anchor "}
+                  <IdentifierChip value={entry.snapshot_id} />
+                  {" • "}
+                  {formatLabel(entry.data_status)}
+                  {" • devices "}
+                  {entry.device_count}
+                  {" • sync "}
+                  {formatLabel(entry.sync_status)}
+                  {entry.observed_at ? ` • observed at ${formatDateTime(entry.observed_at)}` : ""}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="footnote">
+              No persisted normalized inventory snapshots are currently available for this bounded
+              view.
+            </p>
+          )}
+        </article>
       </div>
 
       {evidenceConfidence.notes.length > 0 ? (
@@ -433,6 +513,17 @@ export function DevicesView() {
           <strong>Comparison limits</strong>
           <ul className="notes-list">
             {data.comparison_to_latest_persisted.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {historyComparison && historyComparison.notes.length > 0 ? (
+        <div className="callout">
+          <strong>Persisted history limits</strong>
+          <ul className="notes-list">
+            {historyComparison.notes.map((note) => (
               <li key={note}>{note}</li>
             ))}
           </ul>

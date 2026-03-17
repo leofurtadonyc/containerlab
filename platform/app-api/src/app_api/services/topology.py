@@ -10,6 +10,8 @@ from app_api.integrations.collector.topology import (
 )
 from app_api.metrics.state import cache_topology_metrics
 from app_api.models.topology import (
+    TopologyHistoryComparison,
+    TopologyHistoryWindow,
     TopologyLink,
     TopologyNode,
     TopologySnapshot,
@@ -18,11 +20,16 @@ from app_api.models.topology import (
 )
 from app_api.persistence.read_side import (
     load_latest_topology_snapshot,
+    load_previous_topology_snapshot,
+    load_recent_topology_snapshot_summaries,
     persist_topology_snapshot,
 )
 from app_api.schemas.topology import (
     TopologyComparisonSummary,
     TopologyCoverageSummaryRecord,
+    TopologyHistoryComparison as TopologyHistoryComparisonResponse,
+    TopologyHistorySnapshotRecord as TopologyHistorySnapshotResponseRecord,
+    TopologyHistoryWindow as TopologyHistoryWindowResponse,
     TopologyLinkRecord,
     TopologyNodeRecord,
     TopologyRecord,
@@ -235,6 +242,110 @@ def _build_topology_evidence_confidence(
     )
 
 
+def _build_topology_history_window() -> TopologyHistoryWindow:
+    """Build a bounded persisted history/comparison view for topology snapshots."""
+    recent_snapshots = load_recent_topology_snapshot_summaries(limit=3)
+    if not recent_snapshots:
+        return TopologyHistoryWindow(
+            status="unavailable",
+            summary=(
+                "No persisted normalized topology snapshots are currently available for "
+                "bounded topology history or comparison."
+            ),
+        )
+
+    if len(recent_snapshots) == 1:
+        return TopologyHistoryWindow(
+            status="current_only",
+            summary=(
+                "One persisted normalized topology snapshot is currently available, so "
+                "bounded current-versus-previous topology comparison is not yet available."
+            ),
+            recent_snapshots=[entry.snapshot for entry in recent_snapshots],
+        )
+
+    current_snapshot = load_latest_topology_snapshot()
+    previous_snapshot = load_previous_topology_snapshot()
+    if current_snapshot is None or previous_snapshot is None:
+        return TopologyHistoryWindow(
+            status="current_only",
+            summary=(
+                "Recent persisted topology snapshot summaries are available, but the "
+                "bounded comparison view could not load both full snapshots."
+            ),
+            recent_snapshots=[entry.snapshot for entry in recent_snapshots],
+        )
+
+    current_node_signatures = {
+        node.node_id: _node_signature(node) for node in current_snapshot.snapshot.nodes
+    }
+    previous_node_signatures = {
+        node.node_id: _node_signature(node) for node in previous_snapshot.snapshot.nodes
+    }
+    current_link_signatures = {
+        link.link_id: _link_signature(link) for link in current_snapshot.snapshot.links
+    }
+    previous_link_signatures = {
+        link.link_id: _link_signature(link) for link in previous_snapshot.snapshot.links
+    }
+    current_node_ids = set(current_node_signatures)
+    previous_node_ids = set(previous_node_signatures)
+    current_link_ids = set(current_link_signatures)
+    previous_link_ids = set(previous_link_signatures)
+    changed_node_ids = {
+        node_id
+        for node_id in current_node_ids & previous_node_ids
+        if current_node_signatures[node_id] != previous_node_signatures[node_id]
+    }
+    changed_link_ids = {
+        link_id
+        for link_id in current_link_ids & previous_link_ids
+        if current_link_signatures[link_id] != previous_link_signatures[link_id]
+    }
+    notes = [
+        "This comparison is derived from the latest two persisted normalized topology snapshots.",
+        "Counts describe bounded normalized node and link changes, not path computation, protocol adjacency truth, or controller-derived intent.",
+    ]
+    if (
+        current_snapshot.snapshot.completeness != "complete"
+        or previous_snapshot.snapshot.completeness != "complete"
+    ):
+        notes.append(
+            "One or both topology snapshots are explicitly partial, so comparison counts remain bounded to the currently normalized topology slice."
+        )
+    return TopologyHistoryWindow(
+        status="comparison_ready",
+        summary=(
+            "Recent persisted normalized topology snapshots are available for bounded "
+            "current-versus-previous comparison."
+        ),
+        recent_snapshots=[entry.snapshot for entry in recent_snapshots],
+        comparison_to_previous=TopologyHistoryComparison(
+            current_snapshot_id=current_snapshot.snapshot_id,
+            previous_snapshot_id=previous_snapshot.snapshot_id,
+            current_persisted_at=current_snapshot.persisted_at,
+            previous_persisted_at=previous_snapshot.persisted_at,
+            current_node_count=len(current_snapshot.snapshot.nodes),
+            previous_node_count=len(previous_snapshot.snapshot.nodes),
+            current_link_count=len(current_snapshot.snapshot.links),
+            previous_link_count=len(previous_snapshot.snapshot.links),
+            node_count_delta=(
+                len(current_snapshot.snapshot.nodes) - len(previous_snapshot.snapshot.nodes)
+            ),
+            link_count_delta=(
+                len(current_snapshot.snapshot.links) - len(previous_snapshot.snapshot.links)
+            ),
+            added_node_count=len(current_node_ids - previous_node_ids),
+            removed_node_count=len(previous_node_ids - current_node_ids),
+            changed_node_count=len(changed_node_ids),
+            added_link_count=len(current_link_ids - previous_link_ids),
+            removed_link_count=len(previous_link_ids - current_link_ids),
+            changed_link_count=len(changed_link_ids),
+            notes=notes,
+        ),
+    )
+
+
 def _build_topology_snapshot() -> tuple[
     CollectorTopologySnapshot, TopologySnapshot, datetime | None, TopologyComparisonSummary
 ]:
@@ -384,6 +495,7 @@ def build_topology_response() -> TopologyResponse:
     """Build the topology response from a normalized backend model."""
     settings = get_settings()
     collector_snapshot, snapshot, persisted_at, comparison = _build_topology_snapshot()
+    history = _build_topology_history_window()
     row_current_posture = (
         "stale"
         if collector_snapshot.status == "collector_unavailable" and persisted_at is not None
@@ -513,6 +625,49 @@ def build_topology_response() -> TopologyResponse:
         summary=summary,
         served_persisted_at=persisted_at,
         comparison_to_latest_persisted=comparison,
+        history=TopologyHistoryWindowResponse(
+            status=history.status,
+            summary=history.summary,
+            recent_snapshots=[
+                TopologyHistorySnapshotResponseRecord(
+                    snapshot_id=entry.snapshot_id,
+                    persisted_at=entry.persisted_at,
+                    observed_at=entry.observed_at,
+                    topology_name=entry.topology_name,
+                    sync_source=entry.sync_source,
+                    sync_status=entry.sync_status,
+                    completeness=entry.completeness,
+                    node_count=entry.node_count,
+                    link_count=entry.link_count,
+                    node_state_counts=entry.node_state_counts,
+                    link_state_counts=entry.link_state_counts,
+                )
+                for entry in history.recent_snapshots
+            ],
+            comparison_to_previous=(
+                TopologyHistoryComparisonResponse(
+                    current_snapshot_id=history.comparison_to_previous.current_snapshot_id,
+                    previous_snapshot_id=history.comparison_to_previous.previous_snapshot_id,
+                    current_persisted_at=history.comparison_to_previous.current_persisted_at,
+                    previous_persisted_at=history.comparison_to_previous.previous_persisted_at,
+                    current_node_count=history.comparison_to_previous.current_node_count,
+                    previous_node_count=history.comparison_to_previous.previous_node_count,
+                    current_link_count=history.comparison_to_previous.current_link_count,
+                    previous_link_count=history.comparison_to_previous.previous_link_count,
+                    node_count_delta=history.comparison_to_previous.node_count_delta,
+                    link_count_delta=history.comparison_to_previous.link_count_delta,
+                    added_node_count=history.comparison_to_previous.added_node_count,
+                    removed_node_count=history.comparison_to_previous.removed_node_count,
+                    changed_node_count=history.comparison_to_previous.changed_node_count,
+                    added_link_count=history.comparison_to_previous.added_link_count,
+                    removed_link_count=history.comparison_to_previous.removed_link_count,
+                    changed_link_count=history.comparison_to_previous.changed_link_count,
+                    notes=history.comparison_to_previous.notes,
+                )
+                if history.comparison_to_previous is not None
+                else None
+            ),
+        ),
         coverage_summary=TopologyCoverageSummaryRecord(
             inference_posture=coverage_summary.inference_posture,
             endpoint_pairing_posture=coverage_summary.endpoint_pairing_posture,

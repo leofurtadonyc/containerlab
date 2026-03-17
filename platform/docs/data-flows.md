@@ -166,7 +166,9 @@ Current topology coverage semantics:
 Current comparison semantics:
 
 - devices compare the current normalized inventory response against the latest persisted normalized inventory snapshot when one exists and the current response is still live-backed
+- devices also expose a short recent persisted inventory snapshot window and a bounded latest-versus-previous persisted inventory comparison when those persisted records exist
 - topology compares the current normalized topology response against the latest persisted normalized topology snapshot when one exists and the current response is still live-backed
+- topology also exposes a short recent persisted topology snapshot window and a bounded latest-versus-previous persisted topology comparison when those persisted records exist
 - policies compare the current normalized policy response against the latest persisted normalized policy snapshot, and may also compare the latest persisted policy snapshot against the immediately previous persisted policy snapshot for bounded history support
 - workflow-history and audit-history may attach bounded inventory, topology, and policy snapshot context plus immediate previous-snapshot comparison evidence where those persisted sync-run records exist
 - none of these comparisons currently claim policy correctness, topology validity, intended-versus-observed reconciliation, or automated remediation guidance
@@ -181,6 +183,7 @@ What is real today:
 - live collector-backed inventory remains the primary read path
 - the backend now persists bounded normalized inventory snapshots and can fall back to the latest persisted snapshot when live collection is unavailable
 - the devices response can now distinguish live collection, persisted fallback, and comparison-unavailable versus comparison-ready states explicitly
+- the devices response now also exposes a short recent persisted snapshot window plus bounded latest-versus-previous persisted comparison support where those normalized persisted records exist
 
 What remains partial:
 
@@ -200,6 +203,7 @@ What is real today:
 - the topology response now also carries a bounded `coverage_summary` and per-link endpoint-pairing fields so operators can distinguish paired versus single-sided inferred evidence more directly
 - the backend now persists bounded normalized topology snapshots and can fall back to the latest persisted snapshot when live collection is unavailable
 - the topology response can now distinguish live collection, persisted fallback, and comparison-unavailable versus comparison-ready states explicitly
+- the topology response now also exposes a short recent persisted snapshot window plus bounded latest-versus-previous persisted comparison support where those normalized persisted records exist
 
 What remains partial:
 

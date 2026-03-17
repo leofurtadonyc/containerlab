@@ -149,6 +149,7 @@ export interface DevicesListResponse extends ApiResponseMetadata {
   summary: string;
   served_persisted_at: string | null;
   comparison_to_latest_persisted: InventoryCurrentComparison;
+  history: InventoryHistoryWindow;
   count: number;
   items: DeviceRecord[];
 }
@@ -230,6 +231,7 @@ export interface TopologyResponse extends ApiResponseMetadata {
   summary: string;
   served_persisted_at: string | null;
   comparison_to_latest_persisted: TopologyComparisonSummary;
+  history: TopologyHistoryWindow;
   coverage_summary: TopologyCoverageSummaryRecord;
   topology: TopologyRecord;
 }
@@ -353,6 +355,13 @@ export interface InventoryHistoryComparison {
   notes: string[];
 }
 
+export interface InventoryHistoryWindow {
+  status: "unavailable" | "current_only" | "comparison_ready";
+  summary: string;
+  recent_snapshots: InventoryHistorySnapshotRecord[];
+  comparison_to_previous: InventoryHistoryComparison | null;
+}
+
 export interface TopologyHistorySnapshotRecord {
   snapshot_id: string;
   persisted_at: string;
@@ -385,6 +394,13 @@ export interface TopologyHistoryComparison {
   removed_link_count: number;
   changed_link_count: number;
   notes: string[];
+}
+
+export interface TopologyHistoryWindow {
+  status: "unavailable" | "current_only" | "comparison_ready";
+  summary: string;
+  recent_snapshots: TopologyHistorySnapshotRecord[];
+  comparison_to_previous: TopologyHistoryComparison | null;
 }
 
 export interface PolicyHistoryComparison {

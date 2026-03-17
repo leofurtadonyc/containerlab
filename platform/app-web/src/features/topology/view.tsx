@@ -461,6 +461,7 @@ export function TopologyView() {
       )
     : null;
   const comparisonReadout = describeComparisonReadout(comparison.status, data.serving_mode);
+  const historyComparison = data.history.comparison_to_previous;
   const policyConsistencyReadout = buildCrossSliceConsistencyReadout(
     {
       sliceLabel: "Topology",
@@ -534,6 +535,11 @@ export function TopologyView() {
           <p className="summary-label">Comparison Status</p>
           <strong>{comparisonReadout.label}</strong>
           <p>{comparisonReadout.detail}</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Persisted History</p>
+          <strong>{formatLabel(data.history.status)}</strong>
+          <p>{data.history.summary}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Policy Slice Posture</p>
@@ -773,6 +779,86 @@ export function TopologyView() {
           </ul>
         </article>
         <article className="detail-card">
+          <h3>Persisted History And Comparison</h3>
+          <p>{data.history.summary}</p>
+          {historyComparison ? (
+            <ul className="compact-list">
+              <li>
+                <span>Current snapshot anchor</span>
+                <IdentifierChip value={historyComparison.current_snapshot_id} />
+              </li>
+              <li>
+                <span>Previous snapshot anchor</span>
+                <IdentifierChip value={historyComparison.previous_snapshot_id} />
+              </li>
+              <li>
+                <span>Current / previous persisted</span>
+                <strong>
+                  {formatDateTime(historyComparison.current_persisted_at)} /{" "}
+                  {formatDateTime(historyComparison.previous_persisted_at)}
+                </strong>
+              </li>
+              <li>
+                <span>Node delta</span>
+                <strong>{formatSignedDelta(historyComparison.node_count_delta)}</strong>
+              </li>
+              <li>
+                <span>Link delta</span>
+                <strong>{formatSignedDelta(historyComparison.link_count_delta)}</strong>
+              </li>
+              <li>
+                <span>Added / removed nodes</span>
+                <strong>
+                  {historyComparison.added_node_count} / {historyComparison.removed_node_count}
+                </strong>
+              </li>
+              <li>
+                <span>Added / removed links</span>
+                <strong>
+                  {historyComparison.added_link_count} / {historyComparison.removed_link_count}
+                </strong>
+              </li>
+              <li>
+                <span>Changed nodes / links</span>
+                <strong>
+                  {historyComparison.changed_node_count} / {historyComparison.changed_link_count}
+                </strong>
+              </li>
+            </ul>
+          ) : (
+            <p className="footnote">
+              Bounded comparison is only available once at least two persisted normalized topology
+              snapshots exist.
+            </p>
+          )}
+        </article>
+        <article className="detail-card">
+          <h3>Recent Persisted Snapshots</h3>
+          {data.history.recent_snapshots.length > 0 ? (
+            <ul className="notes-list">
+              {data.history.recent_snapshots.map((entry) => (
+                <li key={entry.snapshot_id}>
+                  <strong>{formatDateTime(entry.persisted_at)}</strong>
+                  {" • anchor "}
+                  <IdentifierChip value={entry.snapshot_id} />
+                  {" • nodes "}
+                  {entry.node_count}
+                  {" • links "}
+                  {entry.link_count}
+                  {" • "}
+                  {formatLabel(entry.completeness)}
+                  {entry.observed_at ? ` • observed at ${formatDateTime(entry.observed_at)}` : ""}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="footnote">
+              No persisted normalized topology snapshots are currently available for this bounded
+              view.
+            </p>
+          )}
+        </article>
+        <article className="detail-card">
           <h3>Policy Slice Consistency</h3>
           <p>{policyConsistencyReadout.detail}</p>
           {policyData && policyEvidenceConfidence ? (
@@ -920,6 +1006,17 @@ export function TopologyView() {
           </ul>
         </article>
       </div>
+
+      {historyComparison && historyComparison.notes.length > 0 ? (
+        <div className="callout">
+          <strong>Persisted history limits</strong>
+          <ul className="notes-list">
+            {historyComparison.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="callout">
         <strong>How to read this page</strong>
