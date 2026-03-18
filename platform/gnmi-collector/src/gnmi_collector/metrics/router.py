@@ -390,6 +390,32 @@ def get_metrics() -> Response:
                 f"{policy_summary.detail_ready_target_count if policy_summary else 0}"
             ),
             (
+                "# HELP platform_gnmi_collector_policy_detail_source_readiness "
+                "Current bounded policy detail source-readiness posture."
+            ),
+            "# TYPE platform_gnmi_collector_policy_detail_source_readiness gauge",
+            (
+                "platform_gnmi_collector_policy_detail_source_readiness"
+                f'{{posture="{policy_summary.detail_source_readiness.posture if policy_summary else "unknown"}"}} 1'
+            ),
+            (
+                "# HELP platform_gnmi_collector_policy_detail_source_targets "
+                "Current bounded counts of source-visible policy targets by detail-source reason."
+            ),
+            "# TYPE platform_gnmi_collector_policy_detail_source_targets gauge",
+            (
+                "platform_gnmi_collector_policy_detail_source_targets"
+                f'{{reason="no_policies_observed"}} {policy_summary.detail_source_readiness.no_policies_observed_target_count if policy_summary else 0}'
+            ),
+            (
+                "platform_gnmi_collector_policy_detail_source_targets"
+                f'{{reason="detail_unavailable"}} {policy_summary.detail_source_readiness.detail_unavailable_target_count if policy_summary else 0}'
+            ),
+            (
+                "platform_gnmi_collector_policy_detail_source_targets"
+                f'{{reason="partial_detail"}} {policy_summary.detail_source_readiness.partial_detail_target_count if policy_summary else 0}'
+            ),
+            (
                 "# HELP platform_gnmi_collector_policy_observed_policies "
                 "Bounded live SR policy count observed across all targets."
             ),

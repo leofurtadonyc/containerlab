@@ -33,18 +33,25 @@ runtime verifier currently shows:
 - collector `/policies/snapshot` reports `policy_count=4`
 - collector `/policies/snapshot` reports `static_policy_count=4`
 - collector `/policies/snapshot` reports `detail_ready_target_count=4`
+- collector `/policies/snapshot` now exposes `detail_source_readiness.posture=partially_ready`
+- collector `/policies/snapshot` now exposes `detail_source_readiness.no_policies_observed_target_count=30`
+- collector `/policies/snapshot` now exposes `detail_source_readiness.detail_unavailable_target_count=0`
+- collector `/policies/snapshot` now exposes `detail_source_readiness.partial_detail_target_count=0`
 - collector `/policies/snapshot` shows 4 target footprints with `detail_blocker_reason=none`
 - collector `/policies/snapshot` shows 30 target footprints with `detail_blocker_reason=no_policies_observed`
 - backend `/api/v1/policies` reports `data_status=live`
 - backend `/api/v1/policies` reports `serving_mode=live_collector`
 - backend `/api/v1/policies` reports `detail_mode=static_policies_when_present`
+- backend `/api/v1/policies` now exposes the same bounded `detail_source_readiness` slice from the collector-first path
 - backend `/api/v1/policies` reports `empty_reason=none`
 - backend `/api/v1/policies` reports `count=4`
 - backend `/api/v1/policies` reports `evidence_kind=aggregate_plus_bounded_records`
 - backend `/api/v1/policies` reports `confidence_posture=bounded_partial`
 - backend `/api/v1/platform/status` reports `policy_capable_target_count=34` and `detail_ready_target_count=4` on the policy read path
 - collector metrics report `platform_gnmi_collector_policy_detail_ready_targets 4`
+- collector metrics now expose a low-cardinality `platform_gnmi_collector_policy_detail_source_readiness` posture plus `platform_gnmi_collector_policy_detail_source_targets{reason=...}` counts
 - backend metrics report `platform_app_api_policy_snapshot_status{data_status="live",serving_mode="live_collector",sync_status="ok",completeness="partial",detail_mode="static_policies_when_present",empty_reason="none"} 1`
+- backend metrics now expose the same bounded `platform_app_api_policy_detail_source_readiness` posture and `platform_app_api_policy_detail_source_targets{reason=...}` counts
 - `verify-core-runtime` now passes and emits the bounded notice that some targets remain `no_policies_observed`; it no longer warns about zero detail-ready targets
 
 The current live normalized records are also concrete.
@@ -81,6 +88,7 @@ The collector then derives:
 - aggregate policy counts
 - per-target policy footprints
 - `detail_ready_target_count`
+- one bounded `detail_source_readiness` slice that separates live-empty targets from detail-unavailable or partially covered source-visible targets
 - normalized bounded policy records where the source detail is strong enough
 
 The current live evidence proves that this collector-first path can now derive
@@ -94,6 +102,7 @@ It now exposes:
 
 - live collector serving for the current policy slice
 - `detail_mode=static_policies_when_present`
+- explicit bounded `detail_source_readiness` posture and reason counts
 - `empty_reason=none`
 - 4 normalized live records on the current response
 - aggregate-plus-bounded-records evidence posture
@@ -118,6 +127,20 @@ collector or backend truth cues that matter:
 
 That means the gating question has moved back to source detail scope, not UI
 wording.
+
+The repository can now explain that scope more precisely than before.
+
+For the current live checkpoint, the stronger instrumentation says:
+
+- posture is `partially_ready`
+- 4 targets are detail-ready
+- 30 source-visible targets are still `no_policies_observed`
+- 0 current targets are in the bounded `detail_unavailable` bucket
+- 0 current targets are in the bounded `partial_detail` bucket
+
+That is stronger than the older checkpoint because the repository no longer has
+to infer whether zero or partial coverage comes from source absence or source
+detail limits.
 
 ## What Source Detail Is Actually Available Now
 

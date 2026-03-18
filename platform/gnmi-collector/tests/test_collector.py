@@ -7,7 +7,10 @@ from gnmi_collector.config.runtime import build_runtime_config
 from gnmi_collector.config.settings import get_settings
 from gnmi_collector.main import app
 from gnmi_collector.mappings.inventory import map_inventory_record
-from gnmi_collector.mappings.policy import summarize_policy_target_footprints
+from gnmi_collector.mappings.policy import (
+    summarize_policy_detail_source_readiness,
+    summarize_policy_target_footprints,
+)
 from gnmi_collector.models.policy import PolicyRawRecord
 from gnmi_collector.services.inventory import build_inventory_flow_snapshot
 from gnmi_collector.services.policy import build_policy_flow_snapshot
@@ -451,6 +454,22 @@ def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
     assert f"platform_gnmi_collector_policy_observed_targets {expected_target_count}" in response.text
     assert f"platform_gnmi_collector_policy_capable_targets {expected_target_count}" in response.text
     assert "platform_gnmi_collector_policy_detail_ready_targets 2" in response.text
+    assert (
+        'platform_gnmi_collector_policy_detail_source_readiness{posture="partially_ready"} 1'
+        in response.text
+    )
+    assert (
+        'platform_gnmi_collector_policy_detail_source_targets{reason="no_policies_observed"} 32'
+        in response.text
+    )
+    assert (
+        'platform_gnmi_collector_policy_detail_source_targets{reason="detail_unavailable"} 0'
+        in response.text
+    )
+    assert (
+        'platform_gnmi_collector_policy_detail_source_targets{reason="partial_detail"} 0'
+        in response.text
+    )
     assert "platform_gnmi_collector_policy_observed_policies 2" in response.text
     assert "platform_gnmi_collector_metrics_cache_updated_timestamp_seconds" in response.text
 
@@ -596,6 +615,12 @@ def test_policy_snapshot_endpoint_returns_live_policy_observations(monkeypatch) 
     assert payload["collection_failure_count"] == 0
     assert payload["policy_capable_target_count"] == expected_target_count
     assert payload["detail_ready_target_count"] == 2
+    assert payload["detail_source_readiness"] == {
+        "posture": "partially_ready",
+        "no_policies_observed_target_count": expected_target_count - 2,
+        "detail_unavailable_target_count": 0,
+        "partial_detail_target_count": 0,
+    }
     assert payload["observed_target_role_counts"] == {
         "cpe": 6,
         "isp": 2,
@@ -916,6 +941,10 @@ def test_policy_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> Non
     assert snapshot.summary.partial_collection_count == 0
     assert snapshot.summary.observed_target_count == expected_target_count
     assert snapshot.summary.detail_ready_target_count == 2
+    assert snapshot.summary.detail_source_readiness.posture == "partially_ready"
+    assert snapshot.summary.detail_source_readiness.no_policies_observed_target_count == (
+        expected_target_count - 2
+    )
     assert snapshot.summary.oldest_observed_at is not None
     assert snapshot.summary.newest_observed_at is not None
     assert snapshot.summary.policy_capable_target_count == expected_target_count
@@ -937,6 +966,7 @@ def test_policy_flow_snapshot_prepares_live_backend_delivery(monkeypatch) -> Non
     assert snapshot.delivery.model_family == "policy_inventory"
     assert snapshot.delivery.configured_target_count == expected_target_count
     assert snapshot.delivery.detail_ready_target_count == 2
+    assert snapshot.delivery.detail_source_readiness.posture == "partially_ready"
     assert snapshot.delivery.degraded_scope_summary == (
         "Policy delivery remains bounded because only a subset of observed targets currently has per-target detail coverage."
     )
@@ -973,8 +1003,13 @@ def test_policy_target_footprints_expose_detail_blocker_reasons() -> None:
     ]
 
     footprints = summarize_policy_target_footprints(raw_records, normalized_records=[])
+    detail_source_readiness = summarize_policy_detail_source_readiness(footprints)
 
     assert len(footprints) == 1
     assert footprints[0].observed_policy_count == 1
     assert footprints[0].detail_record_count == 0
     assert footprints[0].detail_blocker_reason == "per_policy_details_unavailable"
+    assert detail_source_readiness.posture == "source_detail_unavailable"
+    assert detail_source_readiness.no_policies_observed_target_count == 0
+    assert detail_source_readiness.detail_unavailable_target_count == 1
+    assert detail_source_readiness.partial_detail_target_count == 0

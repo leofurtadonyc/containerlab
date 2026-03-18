@@ -69,6 +69,14 @@ def get_metrics() -> Response:
             "sync_status": policies.sync_status,
             "completeness": policies.completeness,
             "detail_mode": policies.detail_mode,
+            "detail_source_posture": policies.detail_source_posture,
+            "detail_source_no_policies_observed_target_count": (
+                policies.detail_source_no_policies_observed_target_count
+            ),
+            "detail_source_unavailable_target_count": (
+                policies.detail_source_unavailable_target_count
+            ),
+            "detail_source_partial_target_count": policies.detail_source_partial_target_count,
             "empty_reason": policies.empty_reason,
             "source_posture": policies.source_posture,
             "evidence_kind": policies.evidence_kind,

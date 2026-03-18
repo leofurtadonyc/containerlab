@@ -16,6 +16,23 @@ PolicyDetailBlockerReason = Literal[
     "collection_partial",
 ]
 
+PolicyDetailSourceReadinessPosture = Literal[
+    "unknown",
+    "no_policies_observed",
+    "source_detail_unavailable",
+    "partially_ready",
+    "ready",
+]
+
+
+class PolicyDetailSourceReadiness(BaseModel):
+    """Bounded summary of source-side policy detail readiness."""
+
+    posture: PolicyDetailSourceReadinessPosture = "unknown"
+    no_policies_observed_target_count: int = 0
+    detail_unavailable_target_count: int = 0
+    partial_detail_target_count: int = 0
+
 
 class PolicyCollectionPlan(BaseModel):
     """Vendor-neutral collection plan for one policy target."""
@@ -113,6 +130,9 @@ class BackendPolicyDeliveryEnvelope(BaseModel):
     oldest_observed_at: datetime | None = None
     newest_observed_at: datetime | None = None
     detail_ready_target_count: int
+    detail_source_readiness: PolicyDetailSourceReadiness = Field(
+        default_factory=PolicyDetailSourceReadiness
+    )
     degraded_scope_summary: str
     sync_source: str
     sync_status: Literal["ok", "degraded", "failed", "unknown"]
@@ -166,6 +186,9 @@ class PolicyFlowSummary(BaseModel):
     binding_sid_count: int
     srv6_binding_sid_count: int
     detail_ready_target_count: int
+    detail_source_readiness: PolicyDetailSourceReadiness = Field(
+        default_factory=PolicyDetailSourceReadiness
+    )
     normalized_policy_record_count: int
     backend_ready_policy_count: int
     backend_delivery_error_count: int

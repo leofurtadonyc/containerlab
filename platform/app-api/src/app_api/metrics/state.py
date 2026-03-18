@@ -67,6 +67,10 @@ class CachedPolicyMetrics:
     sync_status: str = "unknown"
     completeness: str = "unknown"
     detail_mode: str = "unknown"
+    detail_source_posture: str = "unknown"
+    detail_source_no_policies_observed_target_count: int = 0
+    detail_source_unavailable_target_count: int = 0
+    detail_source_partial_target_count: int = 0
     empty_reason: str = "unknown"
     source_posture: str = "unknown"
     evidence_kind: str = "unknown"
@@ -227,6 +231,10 @@ def cache_policy_metrics(
     sync_status: str,
     completeness: str,
     detail_mode: str,
+    detail_source_posture: str,
+    detail_source_no_policies_observed_target_count: int,
+    detail_source_unavailable_target_count: int,
+    detail_source_partial_target_count: int,
     empty_reason: str,
     source_posture: str,
     evidence_kind: str,
@@ -254,6 +262,12 @@ def cache_policy_metrics(
             sync_status=sync_status,
             completeness=completeness,
             detail_mode=detail_mode,
+            detail_source_posture=detail_source_posture,
+            detail_source_no_policies_observed_target_count=(
+                detail_source_no_policies_observed_target_count
+            ),
+            detail_source_unavailable_target_count=detail_source_unavailable_target_count,
+            detail_source_partial_target_count=detail_source_partial_target_count,
             empty_reason=empty_reason,
             source_posture=source_posture,
             evidence_kind=evidence_kind,
@@ -580,6 +594,32 @@ def render_prometheus_metrics(
                     f'completeness="{policy_metrics["completeness"]}",'
                     f'detail_mode="{policy_metrics["detail_mode"]}",'
                     f'empty_reason="{policy_metrics["empty_reason"]}"}} 1'
+                ),
+                (
+                    "# HELP platform_app_api_policy_detail_source_readiness "
+                    "Current bounded backend-owned policy detail source-readiness posture."
+                ),
+                "# TYPE platform_app_api_policy_detail_source_readiness gauge",
+                (
+                    "platform_app_api_policy_detail_source_readiness"
+                    f'{{posture="{policy_metrics["detail_source_posture"]}"}} 1'
+                ),
+                (
+                    "# HELP platform_app_api_policy_detail_source_targets "
+                    "Current backend-owned counts of source-visible policy targets by detail-source reason."
+                ),
+                "# TYPE platform_app_api_policy_detail_source_targets gauge",
+                (
+                    "platform_app_api_policy_detail_source_targets"
+                    f'{{reason="no_policies_observed"}} {policy_metrics["detail_source_no_policies_observed_target_count"]}'
+                ),
+                (
+                    "platform_app_api_policy_detail_source_targets"
+                    f'{{reason="detail_unavailable"}} {policy_metrics["detail_source_unavailable_target_count"]}'
+                ),
+                (
+                    "platform_app_api_policy_detail_source_targets"
+                    f'{{reason="partial_detail"}} {policy_metrics["detail_source_partial_target_count"]}'
                 ),
                 (
                     "# HELP platform_app_api_policy_evidence_posture "

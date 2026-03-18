@@ -557,6 +557,12 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
         oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
         newest_observed_at="2026-03-09T19:25:08.500000+00:00",
         detail_ready_target_count=2,
+        detail_source_readiness={
+            "posture": "partially_ready",
+            "no_policies_observed_target_count": 32,
+            "detail_unavailable_target_count": 0,
+            "partial_detail_target_count": 0,
+        },
         degraded_scope_summary="All configured policy targets returned current counter evidence, but per-policy detail remains bounded to static-policy visibility.",
         sync_source="gnmi_collector_policy_sr_counters",
         sync_status="ok",
@@ -699,6 +705,12 @@ def _build_partial_live_policy_snapshot() -> CollectorPolicySnapshot:
         oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
         newest_observed_at="2026-03-09T19:25:11.500000+00:00",
         detail_ready_target_count=2,
+        detail_source_readiness={
+            "posture": "partially_ready",
+            "no_policies_observed_target_count": 31,
+            "detail_unavailable_target_count": 0,
+            "partial_detail_target_count": 0,
+        },
         degraded_scope_summary="Policy delivery remains bounded because one configured target did not return usable live policy evidence.",
         sync_source="gnmi_collector_policy_sr_counters",
         sync_status="degraded",
@@ -754,6 +766,12 @@ def _build_live_empty_policy_snapshot() -> CollectorPolicySnapshot:
         oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
         newest_observed_at="2026-03-09T19:25:08.500000+00:00",
         detail_ready_target_count=0,
+        detail_source_readiness={
+            "posture": "no_policies_observed",
+            "no_policies_observed_target_count": 34,
+            "detail_unavailable_target_count": 0,
+            "partial_detail_target_count": 0,
+        },
         degraded_scope_summary="All configured policy targets returned current counter evidence, but no per-policy detail records are presently available because no SR policies are observed.",
         sync_source="gnmi_collector_policy_sr_counters",
         sync_status="ok",
@@ -837,6 +855,12 @@ def _build_live_policy_snapshot_without_detail_records() -> CollectorPolicySnaps
         oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
         newest_observed_at="2026-03-09T19:25:08.500000+00:00",
         detail_ready_target_count=0,
+        detail_source_readiness={
+            "posture": "source_detail_unavailable",
+            "no_policies_observed_target_count": 0,
+            "detail_unavailable_target_count": 34,
+            "partial_detail_target_count": 0,
+        },
         degraded_scope_summary="All configured policy targets returned current counter evidence, but the currently observed policy types do not expose bounded per-policy detail records.",
         sync_source="gnmi_collector_policy_sr_counters",
         sync_status="ok",
@@ -2597,6 +2621,12 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["sync_status"] == "ok"
     assert payload["completeness"] == "partial"
     assert payload["detail_mode"] == "static_policies_when_present"
+    assert payload["detail_source_readiness"] == {
+        "posture": "partially_ready",
+        "no_policies_observed_target_count": 32,
+        "detail_unavailable_target_count": 0,
+        "partial_detail_target_count": 0,
+    }
     assert payload["empty_reason"] == "none"
     assert payload["observed_target_count"] == 34
     assert payload["policy_capable_target_count"] == 34
@@ -2686,6 +2716,8 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     assert payload["evidence_confidence"]["blocked_reason"] == "none"
     assert payload["count"] == 0
     assert payload["observed_policy_count"] == 0
+    assert payload["detail_source_readiness"]["posture"] == "no_policies_observed"
+    assert payload["detail_source_readiness"]["no_policies_observed_target_count"] == 34
     assert payload["empty_reason"] == "no_policies_observed"
     assert payload["ttm_preference_count"] == 476
     assert payload["observed_target_role_counts"]["p"] == 16
@@ -2725,6 +2757,8 @@ def test_policies_endpoint_keeps_detail_unavailable_state_explicit(monkeypatch) 
     assert payload["evidence_confidence"]["blocked_reason"] == "per_record_detail_unavailable"
     assert payload["count"] == 0
     assert payload["observed_policy_count"] == 2
+    assert payload["detail_source_readiness"]["posture"] == "source_detail_unavailable"
+    assert payload["detail_source_readiness"]["detail_unavailable_target_count"] == 34
     assert payload["empty_reason"] == "per_policy_details_unavailable"
     assert payload["target_footprints"][0]["detail_blocker_reason"] == "per_policy_details_unavailable"
     assert payload["target_footprints"][1]["detail_blocker_reason"] == "per_policy_details_unavailable"
@@ -3284,6 +3318,21 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         'serving_mode="live_collector",sync_status="ok",completeness="partial",'
         'detail_mode="static_policies_when_present",empty_reason="none"} 1'
     ) in response.text
+    assert (
+        'platform_app_api_policy_detail_source_readiness{posture="partially_ready"} 1'
+    ) in response.text
+    assert (
+        'platform_app_api_policy_detail_source_targets{reason="no_policies_observed"} 32'
+        in response.text
+    )
+    assert (
+        'platform_app_api_policy_detail_source_targets{reason="detail_unavailable"} 0'
+        in response.text
+    )
+    assert (
+        'platform_app_api_policy_detail_source_targets{reason="partial_detail"} 0'
+        in response.text
+    )
     assert (
         'platform_app_api_policy_evidence_posture{source_posture="live_observed",'
         'evidence_kind="aggregate_plus_bounded_records",'
