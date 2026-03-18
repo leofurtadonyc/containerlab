@@ -70,6 +70,19 @@ function createPlatformStatusData() {
     generated_at: "2025-01-01T00:00:00Z",
     status: "ok",
     summary: "Platform is healthy.",
+    recovery: {
+      baseline_posture: "preserved_same_workspace_baseline" as const,
+      read_side_posture: "live_recollection_ready" as const,
+      summary: "Same-workspace persisted baseline is present.",
+      persisted_artifacts: {
+        inventory_snapshot: true,
+        topology_snapshot: true,
+        policy_snapshot: true,
+        sync_history: true,
+        readiness_snapshot: true,
+      },
+      notes: [],
+    },
     components: [
       {
         name: "app-api",
@@ -331,6 +344,22 @@ describe("overview view", () => {
     expect(html).toContain("Policies Trust Cues");
     expect(html).toContain("Devices Trust Cues");
     expect(html).toContain("Inventory trust cues are temporarily unavailable");
+  });
+
+  it("surfaces recovery posture when platform status includes recovery contract", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
+    useDevicesQuery.mockReturnValue(createQueryState(null));
+    useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    const html = renderToStaticMarkup(<OverviewView />);
+
+    expect(html).toContain("Recovery Posture");
+    expect(html).toContain("Same-Workspace Recovery");
+    expect(html).toContain("Preserved same-workspace baseline");
+    expect(html).toContain("Live recollection ready");
+    expect(html).toContain("Preserved baseline and fresh live recollection are not the same thing");
   });
 
   it("surfaces observed policy count separately from detailed records in the overview summary", () => {

@@ -12,6 +12,7 @@ import { TrustCueCard } from "../../components/trust-cue-card";
 import type { PlatformReadPathStatus } from "../../api/contracts";
 import {
   countBy,
+  describeRecoveryPosture,
   describeTopologyCollectionPosture,
   describeTopologyCoveragePosture,
   describeTopologyInferencePosture,
@@ -327,6 +328,7 @@ export function OverviewView() {
   const topologyReadPathNodeParticipation = describeTopologyReadPathNodeParticipation(topologyReadPath);
   const readiness = normalizeDryRunReadiness(capabilitiesData?.dry_run_readiness);
   const readinessIdentity = summarizeReadinessItemIdentitySupport(readiness);
+  const recoveryReadout = describeRecoveryPosture(platformData?.recovery);
   const degradedPolicyCount = policiesData
     ? countBy(policiesData.items, (policy) => policy.health_state).degraded ?? 0
     : 0;
@@ -537,6 +539,18 @@ export function OverviewView() {
           <strong>{staleSliceCount}</strong>
           <p>Core slices whose current evidence is explicitly stale rather than current.</p>
         </article>
+        {platformData && recoveryReadout ? (
+          <article className="summary-card">
+            <p className="summary-label">Same-Workspace Recovery</p>
+            <strong>{recoveryReadout.baselineLabel}</strong>
+            <p>
+              {recoveryReadout.readSideLabel} • {recoveryReadout.artifactCount}/{recoveryReadout.artifactTotal} persisted artifacts
+            </p>
+            {buildSliceAvailabilityNote(platformSliceState) ? (
+              <p className="table-note">{buildSliceAvailabilityNote(platformSliceState)}</p>
+            ) : null}
+          </article>
+        ) : null}
         {platformData ? (
           <article className="summary-card">
             <p className="summary-label">Read-Path Coverage</p>
@@ -580,6 +594,52 @@ export function OverviewView() {
       </div>
 
       <div className="content-grid">
+        {platformData && platformData.recovery ? (
+          <TrustCueCard
+            title="Recovery Posture"
+            summary={buildSliceAvailabilitySummary(
+              "Same-workspace recovery distinguishes preserved baseline versus new baseline after restart or replace. A preserved baseline means persisted snapshots from a prior run in this workspace are still present; it does not guarantee that live recollection is fresh or complete. The backend summary and read-side posture explain the current bounded state.",
+              platformSliceState,
+            )}
+            rows={[
+              {
+                label: "Baseline posture",
+                kind: "status",
+                value: platformData.recovery.baseline_posture,
+                note: platformData.recovery.summary,
+              },
+              {
+                label: "Read-side posture",
+                kind: "status",
+                value: platformData.recovery.read_side_posture,
+                note: "Preserved baseline and fresh live recollection are not the same thing; read-side posture explains whether live collector-backed paths are ready or degraded.",
+              },
+              {
+                label: "Persisted artifacts",
+                kind: "text",
+                value: [
+                  platformData.recovery.persisted_artifacts.inventory_snapshot && "inventory",
+                  platformData.recovery.persisted_artifacts.topology_snapshot && "topology",
+                  platformData.recovery.persisted_artifacts.policy_snapshot && "policy",
+                  platformData.recovery.persisted_artifacts.sync_history && "sync_history",
+                  platformData.recovery.persisted_artifacts.readiness_snapshot && "readiness",
+                ]
+                  .filter(Boolean)
+                  .join(", ") || "None",
+                note: buildSliceAvailabilityNote(platformSliceState) ?? undefined,
+              },
+              ...(platformData.recovery.notes.length > 0
+                ? [
+                    {
+                      label: "Notes",
+                      kind: "text" as const,
+                      value: platformData.recovery.notes.join("; "),
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        ) : null}
         {platformData ? (
           <article className="detail-card">
             <h3>Platform status</h3>

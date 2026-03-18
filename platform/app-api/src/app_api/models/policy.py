@@ -156,6 +156,11 @@ class PolicyHistorySnapshotRecord(BaseModel):
     observed_policy_count: int
     active_policy_count: int
     detail_record_count: int
+    detail_source_readiness_posture: PolicyDetailSourceReadinessPosture = "unknown"
+    detail_ready_target_count: int = 0
+    no_policies_observed_target_count: int = 0
+    detail_unavailable_target_count: int = 0
+    partial_detail_target_count: int = 0
 
 
 class PolicyComparisonChangePreview(BaseModel):
@@ -187,6 +192,12 @@ class PolicyHistoryComparison(BaseModel):
     changed_policy_count: int
     change_preview: list[PolicyComparisonChangePreview] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+    current_detail_source_readiness_posture: PolicyDetailSourceReadinessPosture = "unknown"
+    previous_detail_source_readiness_posture: PolicyDetailSourceReadinessPosture = "unknown"
+    current_detail_ready_target_count: int = 0
+    previous_detail_ready_target_count: int = 0
+    current_no_policies_observed_target_count: int = 0
+    previous_no_policies_observed_target_count: int = 0
 
 
 class PolicyHistoryWindow(BaseModel):

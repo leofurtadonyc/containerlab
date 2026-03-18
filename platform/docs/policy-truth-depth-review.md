@@ -232,6 +232,35 @@ The following should not happen next.
 - do not relabel this review as permission to leave `Phase 2`
 - do not turn this checkpoint into capability redesign, workflow planning, or vendor-parity work
 
+## Persisted Policy History Source-Readiness
+
+Policy snapshot persistence now carries source-readiness posture and supporting counts
+so operators can tell whether supported policy detail coverage improved or regressed
+over time.
+
+When policy snapshots are persisted, the backend stores:
+
+- `detail_source_readiness_posture` (e.g. `partially_ready`, `no_policies_observed`)
+- `detail_ready_target_count`
+- `no_policies_observed_target_count`
+- `detail_unavailable_target_count`
+- `partial_detail_target_count`
+
+These fields flow through:
+
+- `/api/v1/policies` history `recent_snapshots` and `comparison_to_previous`
+- workflow-history and audit-history policy snapshot summaries and comparisons
+
+The Policies page is the product-facing surface for persisted policy history and
+comparison: it exposes source-readiness posture and supporting counts per snapshot
+and in the latest-versus-previous comparison so operators can see how coverage
+changed across persisted snapshots. Grafana mirrors only bounded current metrics
+(e.g. `platform_app_api_policy_detail_source_readiness`); it does not become the
+primary policy-history UI.
+
+Scope remains strictly collector-first and limited to the proven Nokia `static_local`
+slice. These are coverage and trust cues, not validation verdicts or workflow semantics.
+
 ## Conservative Bottom Line
 
 The current review lands on a narrow `go`, not on the old aggregate-only `no-go`.

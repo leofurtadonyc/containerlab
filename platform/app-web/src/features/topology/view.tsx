@@ -824,6 +824,47 @@ export function TopologyView() {
                   {historyComparison.changed_node_count} / {historyComparison.changed_link_count}
                 </strong>
               </li>
+              {historyComparison.current_endpoint_pairing_posture != null ||
+              historyComparison.previous_endpoint_pairing_posture != null ? (
+                <>
+                  <li>
+                    <span>Current endpoint pairing</span>
+                    <StatusPill
+                      value={
+                        historyComparison.current_endpoint_pairing_posture ?? "unknown"
+                      }
+                    />
+                  </li>
+                  <li>
+                    <span>Previous endpoint pairing</span>
+                    <StatusPill
+                      value={
+                        historyComparison.previous_endpoint_pairing_posture ?? "unknown"
+                      }
+                    />
+                  </li>
+                </>
+              ) : null}
+              {historyComparison.current_paired_link_count != null ||
+              historyComparison.previous_paired_link_count != null ? (
+                <li>
+                  <span>Current / previous paired links</span>
+                  <strong>
+                    {historyComparison.current_paired_link_count ?? "—"} /{" "}
+                    {historyComparison.previous_paired_link_count ?? "—"}
+                  </strong>
+                </li>
+              ) : null}
+              {historyComparison.current_linked_node_count != null ||
+              historyComparison.previous_linked_node_count != null ? (
+                <li>
+                  <span>Current / previous linked nodes</span>
+                  <strong>
+                    {historyComparison.current_linked_node_count ?? "—"} /{" "}
+                    {historyComparison.previous_linked_node_count ?? "—"}
+                  </strong>
+                </li>
+              ) : null}
             </ul>
           ) : (
             <p className="footnote">
@@ -834,6 +875,10 @@ export function TopologyView() {
         </article>
         <article className="detail-card">
           <h3>Recent Persisted Snapshots</h3>
+          <p className="table-note">
+            Persisted coverage posture reflects derived endpoint-pairing and node-participation
+            cues per snapshot. These are trust cues, not validation verdicts.
+          </p>
           {data.history.recent_snapshots.length > 0 ? (
             <ul className="notes-list">
               {data.history.recent_snapshots.map((entry) => (
@@ -847,6 +892,26 @@ export function TopologyView() {
                   {entry.link_count}
                   {" • "}
                   {formatLabel(entry.completeness)}
+                  {entry.endpoint_pairing_posture != null ? (
+                    <>
+                      {" • pairing "}
+                      <StatusPill value={entry.endpoint_pairing_posture} />
+                    </>
+                  ) : null}
+                  {entry.paired_link_count != null || entry.single_sided_link_count != null ? (
+                    <>
+                      {" • "}
+                      {entry.paired_link_count ?? 0} paired / {entry.single_sided_link_count ?? 0}{" "}
+                      single-sided
+                    </>
+                  ) : null}
+                  {entry.linked_node_count != null || entry.isolated_node_count != null ? (
+                    <>
+                      {" • "}
+                      {entry.linked_node_count ?? 0} linked / {entry.isolated_node_count ?? 0}{" "}
+                      isolated
+                    </>
+                  ) : null}
                   {entry.observed_at ? ` • observed at ${formatDateTime(entry.observed_at)}` : ""}
                 </li>
               ))}
@@ -1030,7 +1095,10 @@ export function TopologyView() {
         </p>
         <p className="table-note">
           When the backend can identify the compared persisted topology record explicitly, this
-          page now shows that snapshot anchor alongside the comparison timestamp.
+          page now shows that snapshot anchor alongside the comparison timestamp. Persisted
+          history and comparison also expose derived coverage posture (endpoint pairing,
+          paired/single-sided counts, linked/isolated nodes) per snapshot. These are persisted
+          coverage cues only, not validation verdicts.
         </p>
       </div>
 

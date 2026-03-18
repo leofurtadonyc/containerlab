@@ -37,7 +37,8 @@ It is not ready to be treated as:
 ## Evidence Basis
 
 This assessment is grounded in the current repository state plus live runtime
-evidence gathered from the running platform on `2026-03-14`.
+evidence gathered from the running platform, updated through the week 16
+operational checkpoint.
 
 ### Live runtime verification
 
@@ -71,10 +72,12 @@ evidence gathered from the running platform on `2026-03-14`.
   `phase_recommendation=remain_phase_2_read_only_foundation`, and an explicit
   `readiness_snapshot_id`
 - `/api/v1/workflow-history` reported `data_status=persisted_activity_history`,
-  `count=50`, and current records carrying explicit `workflow_id` plus embedded
+  `count=50`, response-level `baseline_summary` (preserved versus new baseline),
+  and current records carrying explicit `workflow_id` plus embedded
   persisted comparison anchors where they exist
 - `/api/v1/audit-history` reported `data_status=persisted_activity_history`,
-  `count=51`, synthesized `event_id` values correlated back to stronger
+  `count=51`, response-level `baseline_summary` (preserved versus new baseline),
+  synthesized `event_id` values correlated back to stronger
   underlying IDs, and explicit embedded persisted comparison anchors where they
   exist
 
@@ -89,6 +92,8 @@ The current repository now explicitly documents:
   data
 - restart and redeploy expectations
 - safe-use versus unsafe-claim boundaries for the current slice
+- same-workspace restart drill (`./scripts/drill-same-workspace-restart.sh`) and
+  preserved-baseline verifier checks
 
 ## Assessment By Area
 
@@ -222,6 +227,10 @@ Why this is strong enough now:
 - the current verifier now cross-checks persisted Postgres row presence against
   the corresponding API history and anchor surfaces, so a preserved same-
   workspace baseline is tested more explicitly than before
+- a repo-owned same-workspace restart drill (`./scripts/drill-same-workspace-restart.sh`)
+  exercises container replacement without deleting host-backed data directories,
+  then reruns the verifiers and asserts preserved-baseline contract when
+  persisted artifacts exist
 
 Why this is still bounded:
 
@@ -229,6 +238,9 @@ Why this is still bounded:
   history, or Grafana local state by themselves
 - the current slice still lacks backup automation, restore automation, and
   disaster-recovery discipline
+- the restart drill proves same-workspace recovery only; it does not prove
+  disaster recovery, backup, restore, cross-host migration, or data-directory-loss
+  recovery
 
 Assessment:
 

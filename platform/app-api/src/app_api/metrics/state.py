@@ -97,9 +97,19 @@ class CachedReadinessMetrics:
     blocked_scope_counts: dict[str, int] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class CachedRecoveryMetrics:
+    """Latest bounded same-workspace recovery posture for scrape-safe exposition."""
+
+    baseline_posture: str = "unknown"
+    read_side_posture: str = "unknown"
+    persisted_artifact_availability: dict[str, int] = field(default_factory=dict)
+
+
 _cached_topology_metrics = CachedTopologyMetrics()
 _cached_policy_metrics = CachedPolicyMetrics()
 _cached_readiness_metrics = CachedReadinessMetrics()
+_cached_recovery_metrics = CachedRecoveryMetrics()
 _cached_collector_boundary_fetch_metrics: dict[str, CachedCollectorBoundaryFetchMetrics] = {
     "inventory": CachedCollectorBoundaryFetchMetrics(),
     "topology": CachedCollectorBoundaryFetchMetrics(),
@@ -321,12 +331,35 @@ def get_cached_readiness_metrics() -> CachedReadinessMetrics:
         return _cached_readiness_metrics
 
 
+def cache_recovery_metrics(
+    *,
+    baseline_posture: str,
+    read_side_posture: str,
+    persisted_artifact_availability: dict[str, int],
+) -> None:
+    """Store the latest bounded same-workspace recovery posture for metrics."""
+    global _cached_recovery_metrics
+    with _lock:
+        _cached_recovery_metrics = CachedRecoveryMetrics(
+            baseline_posture=baseline_posture,
+            read_side_posture=read_side_posture,
+            persisted_artifact_availability=dict(persisted_artifact_availability),
+        )
+
+
+def get_cached_recovery_metrics() -> CachedRecoveryMetrics:
+    """Return the latest cached same-workspace recovery posture metrics."""
+    with _lock:
+        return _cached_recovery_metrics
+
+
 def render_prometheus_metrics(
     app_version: str,
     *,
     topology_metrics: dict[str, object] | None = None,
     policy_metrics: dict[str, object] | None = None,
     readiness_metrics: dict[str, object] | None = None,
+    recovery_metrics: dict[str, object] | None = None,
     history_metrics: dict[str, object] | None = None,
 ) -> str:
     """Render backend metrics in Prometheus text format."""
@@ -854,6 +887,42 @@ def render_prometheus_metrics(
             ]
         )
 
+    if recovery_metrics is not None:
+        artifact_availability = {
+            "inventory_snapshot": 0,
+            "topology_snapshot": 0,
+            "policy_snapshot": 0,
+            "sync_history": 0,
+            "readiness_snapshot": 0,
+            **dict(recovery_metrics.get("persisted_artifact_availability", {})),
+        }
+        lines.extend(
+            [
+                (
+                    "# HELP platform_app_api_recovery_posture "
+                    "Current bounded same-workspace recovery posture exposed by the backend."
+                ),
+                "# TYPE platform_app_api_recovery_posture gauge",
+                (
+                    "platform_app_api_recovery_posture"
+                    f'{{baseline_posture="{recovery_metrics["baseline_posture"]}",'
+                    f'read_side_posture="{recovery_metrics["read_side_posture"]}"}} 1'
+                ),
+                (
+                    "# HELP platform_app_api_recovery_persisted_artifacts "
+                    "Current bounded persisted artifact availability by artifact family."
+                ),
+                "# TYPE platform_app_api_recovery_persisted_artifacts gauge",
+                *[
+                    (
+                        "platform_app_api_recovery_persisted_artifacts"
+                        f'{{artifact="{artifact_name}"}} {artifact_value}'
+                    )
+                    for artifact_name, artifact_value in sorted(artifact_availability.items())
+                ],
+            ]
+        )
+
     if history_metrics is not None:
         history_families = {"inventory", "topology", "policy"}
         history_results = {"completed", "partial", "failed", "unknown"}
@@ -933,6 +1002,7 @@ def render_prometheus_metrics(
 def reset_metrics_registry() -> None:
     """Reset in-memory metrics for tests."""
     global _cached_topology_metrics, _cached_policy_metrics, _cached_readiness_metrics
+    global _cached_recovery_metrics
     global _cached_collector_boundary_fetch_metrics
     with _lock:
         _request_counts.clear()
@@ -941,6 +1011,7 @@ def reset_metrics_registry() -> None:
         _cached_topology_metrics = CachedTopologyMetrics()
         _cached_policy_metrics = CachedPolicyMetrics()
         _cached_readiness_metrics = CachedReadinessMetrics()
+        _cached_recovery_metrics = CachedRecoveryMetrics()
         _cached_collector_boundary_fetch_metrics = {
             "inventory": CachedCollectorBoundaryFetchMetrics(),
             "topology": CachedCollectorBoundaryFetchMetrics(),

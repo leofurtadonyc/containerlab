@@ -52,11 +52,36 @@ class PlatformReadPathStatus(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class PlatformRecoveryPersistedArtifacts(BaseModel):
+    """Bounded persisted artifact availability for same-workspace recovery posture."""
+
+    inventory_snapshot: bool
+    topology_snapshot: bool
+    policy_snapshot: bool
+    sync_history: bool
+    readiness_snapshot: bool
+
+
+class PlatformRecoveryStatus(BaseModel):
+    """Backend-owned same-workspace recovery posture for the current runtime."""
+
+    baseline_posture: Literal["preserved_same_workspace_baseline", "new_baseline"]
+    read_side_posture: Literal[
+        "live_recollection_ready",
+        "degraded_with_persisted_baseline",
+        "degraded_without_persisted_baseline",
+    ]
+    summary: str
+    persisted_artifacts: PlatformRecoveryPersistedArtifacts
+    notes: list[str] = Field(default_factory=list)
+
+
 class PlatformStatusResponse(ApiResponseMetadata):
     """Read-only platform status response for Phase 2."""
 
     status: Literal["ok"]
     topology_name: Literal["platform"]
     summary: str
+    recovery: PlatformRecoveryStatus
     components: list[PlatformComponentStatus]
     read_paths: list[PlatformReadPathStatus] = Field(default_factory=list)

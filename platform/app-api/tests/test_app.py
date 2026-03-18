@@ -25,7 +25,7 @@ from app_api.integrations.collector.topology import (
 from app_api.main import app
 from app_api.models.inventory import InventoryDevice
 from app_api.metrics.state import reset_metrics_registry
-from app_api.models.policy import PolicyInventorySnapshot
+from app_api.models.policy import PolicyDetailSourceReadiness, PolicyInventorySnapshot
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.persistence.history import (
     PersistedInventorySnapshotComparison,
@@ -1185,6 +1185,12 @@ def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
             sync_status="degraded",
             completeness="partial",
             detail_mode="static_policies_when_present",
+            detail_source_readiness=PolicyDetailSourceReadiness(
+                posture="partially_ready",
+                no_policies_observed_target_count=0,
+                detail_unavailable_target_count=0,
+                partial_detail_target_count=0,
+            ),
             empty_reason="none",
             observed_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
             observed_target_count=2,
@@ -1261,6 +1267,12 @@ def _build_previous_persisted_policy_snapshot() -> PersistedPolicySnapshot:
             sync_status="ok",
             completeness="partial",
             detail_mode="static_policies_when_present",
+            detail_source_readiness=PolicyDetailSourceReadiness(
+                posture="partially_ready",
+                no_policies_observed_target_count=0,
+                detail_unavailable_target_count=0,
+                partial_detail_target_count=0,
+            ),
             empty_reason="none",
             observed_at=datetime.fromisoformat("2026-03-09T23:29:00+00:00"),
             observed_target_count=2,
@@ -1342,6 +1354,11 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
                 "observed_policy_count": 1,
                 "active_policy_count": 1,
                 "detail_record_count": 1,
+                "detail_source_readiness_posture": "partially_ready",
+                "detail_ready_target_count": 1,
+                "no_policies_observed_target_count": 0,
+                "detail_unavailable_target_count": 0,
+                "partial_detail_target_count": 0,
             },
         ),
         PersistedPolicySnapshotSummary(
@@ -1360,6 +1377,11 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
                 "observed_policy_count": 2,
                 "active_policy_count": 1,
                 "detail_record_count": 2,
+                "detail_source_readiness_posture": "partially_ready",
+                "detail_ready_target_count": 2,
+                "no_policies_observed_target_count": 0,
+                "detail_unavailable_target_count": 0,
+                "partial_detail_target_count": 0,
             },
         ),
         PersistedPolicySnapshotSummary(
@@ -1378,6 +1400,11 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
                 "observed_policy_count": 2,
                 "active_policy_count": 0,
                 "detail_record_count": 0,
+                "detail_source_readiness_posture": "source_detail_unavailable",
+                "detail_ready_target_count": 0,
+                "no_policies_observed_target_count": 0,
+                "detail_unavailable_target_count": 2,
+                "partial_detail_target_count": 0,
             },
         ),
     ]
@@ -1408,6 +1435,11 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
                 observed_policy_count=1,
                 active_policy_count=1,
                 detail_record_count=1,
+                detail_source_readiness_posture="partially_ready",
+                detail_ready_target_count=1,
+                no_policies_observed_target_count=0,
+                detail_unavailable_target_count=0,
+                partial_detail_target_count=0,
             ),
             policy_comparison_to_previous=PersistedPolicySnapshotComparison(
                 current_snapshot_id="policy-snapshot-sync-1",
@@ -1551,6 +1583,10 @@ def _build_sync_run_history_summary() -> SyncRunHistorySummary:
     )
 
 
+def _build_empty_sync_run_history_summary() -> SyncRunHistorySummary:
+    return SyncRunHistorySummary()
+
+
 def test_health_endpoint_returns_typed_payload() -> None:
     response = client.get("/api/v1/health", headers={"X-Request-ID": "health-test"})
 
@@ -1598,6 +1634,29 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
         "app_api.services.platform.get_collector_policy_client",
         lambda: SimpleNamespace(read_policy_snapshot=_build_live_policy_snapshot),
     )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_inventory_snapshot",
+        _build_persisted_inventory_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_topology_snapshot",
+        _build_persisted_topology_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_policy_snapshot",
+        _build_persisted_policy_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.summarize_sync_run_history",
+        _build_sync_run_history_summary,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_readiness_snapshot_reference",
+        lambda: SimpleNamespace(
+            snapshot_id="readiness-snapshot-1",
+            persisted_at=datetime.fromisoformat("2026-03-10T02:00:00+00:00"),
+        ),
+    )
     response = client.get(
         "/api/v1/platform/status",
         headers={"X-Request-ID": "platform-status-test"},
@@ -1610,6 +1669,17 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert payload["status"] == "ok"
     assert payload["service"] == "app-api"
     assert payload["topology_name"] == "platform"
+    assert payload["recovery"]["baseline_posture"] == "preserved_same_workspace_baseline"
+    assert payload["recovery"]["read_side_posture"] == "live_recollection_ready"
+    assert payload["recovery"]["persisted_artifacts"] == {
+        "inventory_snapshot": True,
+        "topology_snapshot": True,
+        "policy_snapshot": True,
+        "sync_history": True,
+        "readiness_snapshot": True,
+    }
+    assert "Same-workspace persisted baseline is present" in payload["recovery"]["summary"]
+    assert any("per-slice coverage" in note for note in payload["recovery"]["notes"])
     assert "bounded ODL RESTCONF capability probe" in payload["summary"]
     assert "collector read-path coverage summaries" in payload["summary"]
     assert len(payload["components"]) == 7
@@ -1750,6 +1820,75 @@ def test_platform_status_endpoint_exposes_mixed_topology_pairing_coverage(monkey
     )
 
 
+def test_platform_status_endpoint_reports_new_baseline_during_live_recollection(monkeypatch) -> None:
+    class StubOdlClient:
+        def read_controller_observation(self) -> OdlControllerObservation:
+            return OdlControllerObservation(
+                observation_state="ok",
+                observed_source="odl_restconf_capability_probe",
+                observation_summary="ODL probe succeeded.",
+                observed_capabilities=[],
+                notes=[],
+            )
+
+    monkeypatch.setattr(
+        "app_api.services.platform.get_odl_client",
+        lambda: StubOdlClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_inventory_client",
+        lambda: SimpleNamespace(read_inventory_snapshot=_build_live_inventory_snapshot),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_topology_client",
+        lambda: SimpleNamespace(read_topology_snapshot=_build_live_topology_snapshot),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_policy_client",
+        lambda: SimpleNamespace(read_policy_snapshot=_build_live_policy_snapshot),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_inventory_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_topology_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_policy_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.summarize_sync_run_history",
+        _build_empty_sync_run_history_summary,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_readiness_snapshot_reference",
+        lambda: None,
+    )
+
+    response = client.get("/api/v1/platform/status")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["recovery"]["baseline_posture"] == "new_baseline"
+    assert payload["recovery"]["read_side_posture"] == "live_recollection_ready"
+    assert payload["recovery"]["persisted_artifacts"] == {
+        "inventory_snapshot": False,
+        "topology_snapshot": False,
+        "policy_snapshot": False,
+        "sync_history": False,
+        "readiness_snapshot": False,
+    }
+    assert "Current runtime is on a new baseline" in payload["recovery"]["summary"]
+    assert any(
+        "No bounded persisted inventory, topology, policy, sync-history, or readiness artifacts"
+        in note
+        for note in payload["recovery"]["notes"]
+    )
+
+
 def test_platform_status_endpoint_classifies_collector_boundary_failures(monkeypatch) -> None:
     class StubOdlClient:
         def read_controller_observation(self) -> OdlControllerObservation:
@@ -1868,11 +2007,33 @@ def test_platform_status_endpoint_classifies_collector_boundary_failures(monkeyp
             )
         ),
     )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_inventory_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_topology_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_policy_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.summarize_sync_run_history",
+        _build_empty_sync_run_history_summary,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_readiness_snapshot_reference",
+        lambda: None,
+    )
 
     response = client.get("/api/v1/platform/status")
 
     assert response.status_code == 200
     payload = response.json()
+    assert payload["recovery"]["baseline_posture"] == "new_baseline"
+    assert payload["recovery"]["read_side_posture"] == "degraded_without_persisted_baseline"
     assert payload["read_paths"][0]["observation_state"] == "unreachable"
     assert payload["read_paths"][1]["observation_state"] == "degraded"
     assert payload["read_paths"][2]["observation_state"] == "unreachable"
@@ -2576,7 +2737,14 @@ def test_topology_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypa
     assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "topology-snapshot-0"
     assert payload["history"]["comparison_to_previous"]["node_count_delta"] == -1
     assert payload["history"]["comparison_to_previous"]["changed_link_count"] == 1
+    assert "current_inference_posture" in payload["history"]["comparison_to_previous"]
+    assert "previous_inference_posture" in payload["history"]["comparison_to_previous"]
+    assert "current_endpoint_pairing_posture" in payload["history"]["comparison_to_previous"]
+    assert "current_paired_link_count" in payload["history"]["comparison_to_previous"]
+    assert "current_linked_node_count" in payload["history"]["comparison_to_previous"]
     assert len(payload["history"]["recent_snapshots"]) == 3
+    assert "inference_posture" in payload["history"]["recent_snapshots"][0]
+    assert "paired_link_count" in payload["history"]["recent_snapshots"][0]
 
 
 def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
@@ -2651,8 +2819,17 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["history"]["status"] == "comparison_ready"
     assert len(payload["history"]["recent_snapshots"]) == 3
     assert payload["history"]["recent_snapshots"][0]["snapshot_id"] == "policy-snapshot-1"
+    assert payload["history"]["recent_snapshots"][0]["detail_source_readiness_posture"] == "partially_ready"
+    assert payload["history"]["recent_snapshots"][0]["detail_ready_target_count"] == 1
+    assert payload["history"]["recent_snapshots"][0]["no_policies_observed_target_count"] == 0
     assert payload["history"]["recent_snapshots"][1]["snapshot_id"] == "policy-snapshot-0"
+    assert payload["history"]["recent_snapshots"][1]["detail_source_readiness_posture"] == "partially_ready"
+    assert payload["history"]["recent_snapshots"][1]["detail_ready_target_count"] == 2
     assert payload["history"]["comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-1"
+    assert payload["history"]["comparison_to_previous"]["current_detail_source_readiness_posture"] == "partially_ready"
+    assert payload["history"]["comparison_to_previous"]["previous_detail_source_readiness_posture"] == "partially_ready"
+    assert payload["history"]["comparison_to_previous"]["current_detail_ready_target_count"] == 1
+    assert payload["history"]["comparison_to_previous"]["previous_detail_ready_target_count"] == 2
     assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-0"
     assert payload["history"]["comparison_to_previous"]["observed_policy_delta"] == -1
     assert payload["history"]["comparison_to_previous"]["detail_record_delta"] == -1
@@ -2941,9 +3118,12 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert payload["items"][1]["persisted_artifacts"] == ["topology_snapshot"]
     assert payload["items"][1]["topology_snapshot_summary"]["snapshot_id"] == "topology-snapshot-sync-1"
     assert payload["items"][1]["topology_snapshot_summary"]["node_count"] == 2
+    assert "inference_posture" in payload["items"][1]["topology_snapshot_summary"]
+    assert "paired_link_count" in payload["items"][1]["topology_snapshot_summary"]
     assert payload["items"][1]["topology_comparison_to_previous"]["current_snapshot_id"] == "topology-snapshot-sync-1"
     assert payload["items"][1]["topology_comparison_to_previous"]["previous_snapshot_id"] == "topology-snapshot-sync-0"
     assert payload["items"][1]["topology_comparison_to_previous"]["added_link_count"] == 1
+    assert "current_endpoint_pairing_posture" in payload["items"][1]["topology_comparison_to_previous"]
     assert payload["items"][1]["policy_snapshot_summary"] is None
     assert payload["items"][2]["workflow_name"] == "inventory_snapshot_sync"
     assert payload["items"][2]["status"] == "completed"
@@ -2956,6 +3136,13 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert payload["items"][2]["inventory_comparison_to_previous"]["previous_snapshot_id"] == "inventory-snapshot-sync-0"
     assert payload["items"][2]["inventory_comparison_to_previous"]["changed_device_count"] == 2
     assert datetime.fromisoformat(payload["generated_at"]) is not None
+    assert "baseline_summary" in payload
+    assert payload["baseline_summary"]["baseline_posture"] in (
+        "preserved_same_workspace_baseline",
+        "new_baseline",
+    )
+    assert "summary" in payload["baseline_summary"]
+    assert len(payload["baseline_summary"]["notes"]) >= 1
 
 
 def test_workflow_history_endpoint_handles_empty_persisted_history(monkeypatch) -> None:
@@ -2968,6 +3155,76 @@ def test_workflow_history_endpoint_handles_empty_persisted_history(monkeypatch) 
     assert payload["data_status"] == "empty"
     assert payload["count"] == 0
     assert "No persisted platform-side sync activity" in payload["summary"]
+    assert "baseline_summary" in payload
+    assert payload["baseline_summary"]["baseline_posture"] in (
+        "preserved_same_workspace_baseline",
+        "new_baseline",
+    )
+
+
+def test_workflow_history_baseline_summary_preserved_baseline(monkeypatch) -> None:
+    """Workflow history exposes preserved_same_workspace_baseline when persisted artifacts exist."""
+    monkeypatch.setattr(
+        "app_api.services.workflow_history.load_sync_runs",
+        _build_persisted_sync_runs,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_inventory_snapshot",
+        lambda: SimpleNamespace(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_topology_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_policy_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.summarize_sync_run_history",
+        lambda limit=200: SyncRunHistorySummary(total_count=3, model_family_counts={}),
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_readiness_snapshot_reference",
+        lambda: None,
+    )
+
+    response = client.get("/api/v1/workflow-history")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["baseline_summary"]["baseline_posture"] == "preserved_same_workspace_baseline"
+    assert "preserved sync-derived history" in payload["baseline_summary"]["summary"]
+
+
+def test_workflow_history_baseline_summary_new_baseline(monkeypatch) -> None:
+    """Workflow history exposes new_baseline when no persisted artifacts exist."""
+    monkeypatch.setattr("app_api.services.workflow_history.load_sync_runs", lambda: [])
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_inventory_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_topology_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_policy_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.summarize_sync_run_history",
+        lambda limit=200: SyncRunHistorySummary(total_count=0, model_family_counts={}),
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_readiness_snapshot_reference",
+        lambda: None,
+    )
+
+    response = client.get("/api/v1/workflow-history")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["baseline_summary"]["baseline_posture"] == "new_baseline"
+    assert "new baseline" in payload["baseline_summary"]["summary"]
 
 
 def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> None:
@@ -3014,9 +3271,11 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert "persisted policy_snapshot" in payload["items"][1]["message"]
     assert payload["items"][2]["topology_snapshot_summary"]["snapshot_id"] == "topology-snapshot-sync-1"
     assert payload["items"][2]["topology_snapshot_summary"]["topology_name"] == "Platform Observed Topology"
+    assert "paired_link_count" in payload["items"][2]["topology_snapshot_summary"]
     assert payload["items"][2]["topology_comparison_to_previous"]["current_snapshot_id"] == "topology-snapshot-sync-1"
     assert payload["items"][2]["topology_comparison_to_previous"]["previous_snapshot_id"] == "topology-snapshot-sync-0"
     assert payload["items"][2]["topology_comparison_to_previous"]["node_count_delta"] == 1
+    assert "current_paired_link_count" in payload["items"][2]["topology_comparison_to_previous"]
     assert payload["items"][2]["policy_snapshot_summary"] is None
     assert payload["items"][3]["inventory_snapshot_summary"]["snapshot_id"] == "inventory-snapshot-sync-1"
     assert payload["items"][3]["inventory_snapshot_summary"]["role_counts"]["pe"] == 8
@@ -3024,6 +3283,12 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert payload["items"][3]["inventory_comparison_to_previous"]["previous_snapshot_id"] == "inventory-snapshot-sync-0"
     assert payload["items"][3]["inventory_comparison_to_previous"]["added_device_count"] == 1
     assert datetime.fromisoformat(payload["generated_at"]) is not None
+    assert "baseline_summary" in payload
+    assert payload["baseline_summary"]["baseline_posture"] in (
+        "preserved_same_workspace_baseline",
+        "new_baseline",
+    )
+    assert "summary" in payload["baseline_summary"]
 
 
 def test_audit_history_endpoint_handles_empty_persisted_history(monkeypatch) -> None:
@@ -3040,6 +3305,80 @@ def test_audit_history_endpoint_handles_empty_persisted_history(monkeypatch) -> 
     assert payload["data_status"] == "empty"
     assert payload["count"] == 0
     assert "No persisted platform audit-style sync events or readiness-support snapshots" in payload["summary"]
+    assert "baseline_summary" in payload
+
+
+def test_audit_history_baseline_summary_preserved_baseline(monkeypatch) -> None:
+    """Audit history exposes preserved_same_workspace_baseline when persisted artifacts exist."""
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_sync_runs",
+        _build_persisted_sync_runs,
+    )
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_readiness_snapshot_history",
+        _build_persisted_readiness_snapshot_history,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_inventory_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_topology_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_policy_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.summarize_sync_run_history",
+        lambda limit=200: SyncRunHistorySummary(total_count=3, model_family_counts={}),
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_readiness_snapshot_reference",
+        lambda: SimpleNamespace(),
+    )
+
+    response = client.get("/api/v1/audit-history")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["baseline_summary"]["baseline_posture"] == "preserved_same_workspace_baseline"
+    assert "preserved sync-derived history" in payload["baseline_summary"]["summary"]
+
+
+def test_audit_history_baseline_summary_new_baseline(monkeypatch) -> None:
+    """Audit history exposes new_baseline when no persisted artifacts exist."""
+    monkeypatch.setattr("app_api.services.audit_history.load_sync_runs", lambda: [])
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_readiness_snapshot_history",
+        lambda: [],
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_inventory_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_topology_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_policy_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.summarize_sync_run_history",
+        lambda limit=200: SyncRunHistorySummary(total_count=0, model_family_counts={}),
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_readiness_snapshot_reference",
+        lambda: None,
+    )
+
+    response = client.get("/api/v1/audit-history")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["baseline_summary"]["baseline_posture"] == "new_baseline"
+    assert "new baseline" in payload["baseline_summary"]["summary"]
 
 
 def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
@@ -3245,6 +3584,29 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         lambda: StubOdlClient(),
     )
     monkeypatch.setattr(
+        "app_api.services.platform.load_latest_inventory_snapshot",
+        _build_persisted_inventory_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_topology_snapshot",
+        _build_persisted_topology_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_policy_snapshot",
+        _build_persisted_policy_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.summarize_sync_run_history",
+        _build_sync_run_history_summary,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_readiness_snapshot_reference",
+        lambda: SimpleNamespace(
+            snapshot_id="readiness-snapshot-1",
+            persisted_at=datetime.fromisoformat("2026-03-10T02:00:00+00:00"),
+        ),
+    )
+    monkeypatch.setattr(
         "app_api.metrics.router.summarize_sync_run_history",
         _build_sync_run_history_summary,
     )
@@ -3359,6 +3721,106 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         'platform_app_api_readiness_blockers_by_category_and_severity{category="contract",'
         'severity="critical"} 3'
     ) in response.text
+    assert (
+        'platform_app_api_recovery_posture{baseline_posture="preserved_same_workspace_baseline",read_side_posture="live_recollection_ready"} 1'
+        in response.text
+    )
+    assert (
+        'platform_app_api_recovery_persisted_artifacts{artifact="inventory_snapshot"} 1'
+        in response.text
+    )
+    assert (
+        'platform_app_api_recovery_persisted_artifacts{artifact="readiness_snapshot"} 1'
+        in response.text
+    )
+
+
+def test_metrics_endpoint_exports_new_baseline_recovery_posture(monkeypatch) -> None:
+    class StubOdlClient:
+        def read_controller_observation(self) -> OdlControllerObservation:
+            return OdlControllerObservation(
+                observation_state="ok",
+                observed_source="odl_restconf_capability_probe",
+                observation_summary="ODL probe succeeded.",
+                observed_capabilities=[],
+                notes=[],
+            )
+
+    class StubCollectorInventoryClient:
+        def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+            return _build_live_inventory_snapshot()
+
+    class StubCollectorTopologyClient:
+        def read_topology_snapshot(self) -> CollectorTopologySnapshot:
+            return _build_live_topology_snapshot()
+
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return _build_live_policy_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_topology_client",
+        lambda: StubCollectorTopologyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_odl_client",
+        lambda: StubOdlClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_inventory_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_topology_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_policy_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.summarize_sync_run_history",
+        _build_empty_sync_run_history_summary,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_readiness_snapshot_reference",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.metrics.router.summarize_sync_run_history",
+        _build_empty_sync_run_history_summary,
+    )
+    monkeypatch.setattr(
+        "app_api.services.capabilities.load_latest_readiness_snapshot_reference",
+        lambda: None,
+    )
+
+    reset_metrics_registry()
+    client.get("/api/v1/platform/status")
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert (
+        'platform_app_api_recovery_posture{baseline_posture="new_baseline",read_side_posture="live_recollection_ready"} 1'
+        in response.text
+    )
+    assert (
+        'platform_app_api_recovery_persisted_artifacts{artifact="inventory_snapshot"} 0'
+        in response.text
+    )
+    assert (
+        'platform_app_api_recovery_persisted_artifacts{artifact="sync_history"} 0'
+        in response.text
+    )
 
 
 def test_metrics_endpoint_exports_mixed_topology_pairing_posture(monkeypatch) -> None:

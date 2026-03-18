@@ -206,6 +206,8 @@ These checks currently validate:
 After restart or redeploy, operators should also confirm whether the platform came back with live recollection or persisted fallback where relevant by checking `serving_mode`, `data_status`, `served_persisted_at`, and readiness timestamps through the product-owned API paths.
 `./scripts/verify-core-runtime.sh` now also distinguishes between a preserved persisted baseline and a new baseline: it fails if Postgres still contains persisted read-side rows but the API no longer exposes the matching bounded history or anchor surfaces, and it emits a notice instead when the persisted tables are simply empty because the runtime was recreated without prior data.
 
+For a repeatable same-workspace restart drill that exercises container replacement without deleting host-backed data directories, run `./scripts/drill-same-workspace-restart.sh`. See `docs/deployment-runbook.md` for when to use the drill and what it does not prove (disaster recovery, backup, restore, cross-host migration).
+
 ## Access The Running Services
 
 The current host port bindings are:

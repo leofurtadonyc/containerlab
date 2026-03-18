@@ -297,7 +297,36 @@ The current verifier behavior is therefore already aligned with the week 14
 goal. It treats the current truth-depth problem as endpoint coverage and partial
 completeness, not as workflow, validation, or controller-first semantics.
 
-### 7. The remaining wording problem is now narrower than the completed pairing work
+### 7. Persisted topology history now carries coverage posture
+
+The topology snapshot history and comparison contract has been extended so
+persisted records include coverage posture. When loading recent topology
+snapshot summaries or building current-versus-previous comparisons, the backend
+derives coverage from persisted nodes and links (including `endpoint_pairing_state`
+and `endpoint_evidence_count` stored in link attributes).
+
+These coverage fields are coverage and trust cues only, not topology-validation
+conclusions:
+
+- `inference_posture`, `endpoint_pairing_posture`, `collection_posture`,
+  `node_participation_posture`
+- `paired_link_count`, `single_sided_link_count`, `linked_node_count`,
+  `isolated_node_count`
+
+They appear in:
+
+- `/api/v1/topology` history `recent_snapshots` and `comparison_to_previous`
+- workflow-history and audit-history topology snapshot summaries and
+  comparisons where honest persisted records exist
+- the topology product page, which surfaces persisted coverage posture in
+  recent-snapshot and comparison readouts so operators can see how coverage
+  changed across persisted snapshots
+
+The topology page remains the primary explanation surface for topology history.
+These persisted coverage cues must not be interpreted as drift verdicts, fault
+conclusions, or topology-validation outcomes.
+
+### 8. The remaining wording problem is now narrower than the completed pairing work
 
 The current surfaces now expose enough evidence to see the remaining wording
 problem clearly.

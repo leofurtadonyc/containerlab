@@ -8,13 +8,23 @@ from app_api.integrations.collector.policies import get_collector_policy_client
 from app_api.integrations.collector.topology import get_collector_topology_client
 from app_api.integrations.odl import OdlControllerObservation, get_odl_client
 from app_api.metrics.state import (
+    cache_recovery_metrics,
     observe_collector_boundary_fetch,
     resolve_collector_boundary_fetch_outcome,
 )
 from app_api.models.topology import build_topology_coverage_summary
+from app_api.persistence.history import summarize_sync_run_history
+from app_api.persistence.read_side import (
+    load_latest_inventory_snapshot,
+    load_latest_policy_snapshot,
+    load_latest_topology_snapshot,
+)
+from app_api.persistence.readiness import load_latest_readiness_snapshot_reference
 from app_api.schemas.platform import (
     PlatformComponentStatus,
     PlatformReadPathStatus,
+    PlatformRecoveryPersistedArtifacts,
+    PlatformRecoveryStatus,
     PlatformStatusResponse,
 )
 
@@ -245,6 +255,108 @@ def _build_policy_read_path_status() -> PlatformReadPathStatus:
     )
 
 
+def _build_recovery_persisted_artifacts() -> PlatformRecoveryPersistedArtifacts:
+    """Return bounded same-workspace persisted artifact availability."""
+    sync_history = summarize_sync_run_history()
+    return PlatformRecoveryPersistedArtifacts(
+        inventory_snapshot=load_latest_inventory_snapshot() is not None,
+        topology_snapshot=load_latest_topology_snapshot() is not None,
+        policy_snapshot=load_latest_policy_snapshot() is not None,
+        sync_history=sync_history.total_count > 0,
+        readiness_snapshot=load_latest_readiness_snapshot_reference() is not None,
+    )
+
+
+def _build_recovery_status(
+    read_paths: list[PlatformReadPathStatus],
+) -> PlatformRecoveryStatus:
+    """Summarize the current same-workspace recovery posture for operators."""
+    persisted_artifacts = _build_recovery_persisted_artifacts()
+    persisted_artifact_map = persisted_artifacts.model_dump()
+    has_preserved_baseline = any(persisted_artifact_map.values())
+    degraded_model_families = [
+        read_path.model_family
+        for read_path in read_paths
+        if read_path.observation_state != "ok"
+    ]
+
+    baseline_posture = (
+        "preserved_same_workspace_baseline" if has_preserved_baseline else "new_baseline"
+    )
+    if not degraded_model_families:
+        read_side_posture = "live_recollection_ready"
+    elif has_preserved_baseline:
+        read_side_posture = "degraded_with_persisted_baseline"
+    else:
+        read_side_posture = "degraded_without_persisted_baseline"
+
+    if baseline_posture == "preserved_same_workspace_baseline":
+        if read_side_posture == "live_recollection_ready":
+            summary = (
+                "Same-workspace persisted baseline is present and the current bounded read paths are recollecting live evidence."
+            )
+        else:
+            summary = (
+                "Same-workspace persisted baseline is present while one or more bounded live read paths are degraded, so preserved persisted anchors remain available where fallback is implemented."
+            )
+    elif read_side_posture == "live_recollection_ready":
+        summary = (
+            "Current runtime is on a new baseline and the bounded read paths are recollecting live evidence to establish fresh persisted anchors."
+        )
+    else:
+        summary = (
+            "Current runtime is on a new baseline and one or more bounded live read paths are degraded, so preserved same-workspace persisted anchors are not available yet."
+        )
+
+    present_artifacts = [
+        artifact_name for artifact_name, present in persisted_artifact_map.items() if present
+    ]
+    if present_artifacts:
+        artifact_note = (
+            "Persisted application artifacts currently present in Postgres: "
+            + ", ".join(present_artifacts)
+            + "."
+        )
+    else:
+        artifact_note = (
+            "No bounded persisted inventory, topology, policy, sync-history, or readiness artifacts are currently present in Postgres."
+        )
+
+    if not degraded_model_families:
+        read_path_note = (
+            "Current live recollection is healthy across inventory, topology, and policy read paths."
+        )
+    else:
+        read_path_note = (
+            "Current live recollection is degraded for: "
+            + ", ".join(degraded_model_families)
+            + "."
+        )
+
+    notes = [
+        "Preserved same-workspace baseline means at least one bounded persisted application artifact still exists in Postgres; inspect persisted_artifacts for per-slice coverage.",
+        artifact_note,
+        read_path_note,
+    ]
+
+    recovery_status = PlatformRecoveryStatus(
+        baseline_posture=baseline_posture,
+        read_side_posture=read_side_posture,
+        summary=summary,
+        persisted_artifacts=persisted_artifacts,
+        notes=notes,
+    )
+    cache_recovery_metrics(
+        baseline_posture=recovery_status.baseline_posture,
+        read_side_posture=recovery_status.read_side_posture,
+        persisted_artifact_availability={
+            artifact_name: int(present)
+            for artifact_name, present in persisted_artifact_map.items()
+        },
+    )
+    return recovery_status
+
+
 def _build_gnmi_collector_component_status(
     read_paths: list[PlatformReadPathStatus],
 ) -> PlatformComponentStatus:
@@ -331,6 +443,7 @@ def build_platform_status_response() -> PlatformStatusResponse:
         _build_topology_read_path_status(),
         _build_policy_read_path_status(),
     ]
+    recovery = _build_recovery_status(read_paths)
     return PlatformStatusResponse(
         status="ok",
         service="app-api",
@@ -343,6 +456,7 @@ def build_platform_status_response() -> PlatformStatusResponse:
             "RESTCONF capability probe plus bounded inventory, topology, and policy "
             "collector read-path coverage summaries; deeper dependency health checks remain intentionally narrow."
         ),
+        recovery=recovery,
         components=[
             _build_declared_component("app-api", "backend-api"),
             _build_declared_component("app-web", "operator-webui"),

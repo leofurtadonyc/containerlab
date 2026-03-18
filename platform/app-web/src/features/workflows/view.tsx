@@ -401,6 +401,11 @@ export function WorkflowsView() {
 
       <div className="summary-grid">
         <article className="summary-card">
+          <p className="summary-label">Baseline Posture</p>
+          <StatusPill value={data.baseline_summary.baseline_posture} />
+          <p>{data.baseline_summary.summary}</p>
+        </article>
+        <article className="summary-card">
           <p className="summary-label">Completed Syncs</p>
           <strong>{statusCounts.completed ?? 0}</strong>
           <p>Persisted read-side sync runs that finished without degraded fetch status.</p>
@@ -473,6 +478,23 @@ export function WorkflowsView() {
       </div>
 
       <div className="content-grid">
+        <article className="detail-card">
+          <h3>Baseline Summary</h3>
+          <p>{data.baseline_summary.summary}</p>
+          <ul className="compact-list">
+            <li>
+              <span>Baseline posture</span>
+              <StatusPill value={data.baseline_summary.baseline_posture} />
+            </li>
+          </ul>
+          {data.baseline_summary.notes.length > 0 ? (
+            <ul className="notes-list">
+              {data.baseline_summary.notes.map((note, idx) => (
+                <li key={idx}>{note}</li>
+              ))}
+            </ul>
+          ) : null}
+        </article>
         <article className="detail-card">
           <h3>What This Means</h3>
           <p>{data.summary}</p>

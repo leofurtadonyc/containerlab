@@ -58,3 +58,16 @@ class ErrorResponse(BaseModel):
     message: str
     details: list[ErrorDetail] = Field(default_factory=list)
     request_id: str
+
+
+class HistoryBaselineSummary(BaseModel):
+    """Bounded baseline summary for workflow and audit history responses.
+
+    Helps operators interpret whether the history view reflects preserved sync-derived
+    history from the current workspace baseline or is effectively starting from a new
+    baseline after restart or redeploy.
+    """
+
+    baseline_posture: Literal["preserved_same_workspace_baseline", "new_baseline"]
+    summary: str
+    notes: list[str] = Field(default_factory=list)

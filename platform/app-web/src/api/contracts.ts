@@ -93,10 +93,36 @@ export interface PlatformReadPathStatus {
   notes: string[];
 }
 
+export interface PlatformRecoveryPersistedArtifacts {
+  inventory_snapshot: boolean;
+  topology_snapshot: boolean;
+  policy_snapshot: boolean;
+  sync_history: boolean;
+  readiness_snapshot: boolean;
+}
+
+export type PlatformRecoveryBaselinePosture =
+  | "preserved_same_workspace_baseline"
+  | "new_baseline";
+
+export type PlatformRecoveryReadSidePosture =
+  | "live_recollection_ready"
+  | "degraded_with_persisted_baseline"
+  | "degraded_without_persisted_baseline";
+
+export interface PlatformRecoveryStatus {
+  baseline_posture: PlatformRecoveryBaselinePosture;
+  read_side_posture: PlatformRecoveryReadSidePosture;
+  summary: string;
+  persisted_artifacts: PlatformRecoveryPersistedArtifacts;
+  notes: string[];
+}
+
 export interface PlatformStatusResponse extends ApiResponseMetadata {
   status: "ok";
   topology_name: "platform";
   summary: string;
+  recovery: PlatformRecoveryStatus;
   components: PlatformComponentStatus[];
   read_paths?: PlatformReadPathStatus[];
 }
@@ -331,6 +357,11 @@ export interface PolicyHistorySnapshotRecord {
   observed_policy_count: number;
   active_policy_count: number;
   detail_record_count: number;
+  detail_source_readiness_posture?: PolicyDetailSourceReadinessPosture;
+  detail_ready_target_count?: number;
+  no_policies_observed_target_count?: number;
+  detail_unavailable_target_count?: number;
+  partial_detail_target_count?: number;
 }
 
 export interface PolicyComparisonChangePreview {
@@ -388,6 +419,14 @@ export interface TopologyHistorySnapshotRecord {
   link_count: number;
   node_state_counts: Record<string, number>;
   link_state_counts: Record<string, number>;
+  inference_posture?: TopologyInferencePosture;
+  endpoint_pairing_posture?: TopologyEndpointPairingPosture;
+  collection_posture?: TopologyCollectionPosture;
+  node_participation_posture?: TopologyNodeParticipationPosture;
+  paired_link_count?: number;
+  single_sided_link_count?: number;
+  linked_node_count?: number;
+  isolated_node_count?: number;
 }
 
 export interface TopologyHistoryComparison {
@@ -408,6 +447,22 @@ export interface TopologyHistoryComparison {
   removed_link_count: number;
   changed_link_count: number;
   notes: string[];
+  current_inference_posture?: TopologyInferencePosture;
+  previous_inference_posture?: TopologyInferencePosture;
+  current_endpoint_pairing_posture?: TopologyEndpointPairingPosture;
+  previous_endpoint_pairing_posture?: TopologyEndpointPairingPosture;
+  current_collection_posture?: TopologyCollectionPosture;
+  previous_collection_posture?: TopologyCollectionPosture;
+  current_node_participation_posture?: TopologyNodeParticipationPosture;
+  previous_node_participation_posture?: TopologyNodeParticipationPosture;
+  current_paired_link_count?: number;
+  previous_paired_link_count?: number;
+  current_single_sided_link_count?: number;
+  previous_single_sided_link_count?: number;
+  current_linked_node_count?: number;
+  previous_linked_node_count?: number;
+  current_isolated_node_count?: number;
+  previous_isolated_node_count?: number;
 }
 
 export interface TopologyHistoryWindow {
@@ -433,6 +488,12 @@ export interface PolicyHistoryComparison {
   changed_policy_count: number;
   change_preview: PolicyComparisonChangePreview[];
   notes: string[];
+  current_detail_source_readiness_posture?: PolicyDetailSourceReadinessPosture;
+  previous_detail_source_readiness_posture?: PolicyDetailSourceReadinessPosture;
+  current_detail_ready_target_count?: number;
+  previous_detail_ready_target_count?: number;
+  current_no_policies_observed_target_count?: number;
+  previous_no_policies_observed_target_count?: number;
 }
 
 export interface PolicyHistoryWindow {
@@ -522,9 +583,16 @@ export interface WorkflowHistoryItem {
   notes: string[];
 }
 
+export interface HistoryBaselineSummary {
+  baseline_posture: "preserved_same_workspace_baseline" | "new_baseline";
+  summary: string;
+  notes: string[];
+}
+
 export interface WorkflowHistoryResponse extends ApiResponseMetadata {
   data_status: "persisted_activity_history" | "empty";
   summary: string;
+  baseline_summary: HistoryBaselineSummary;
   count: number;
   items: WorkflowHistoryItem[];
 }
@@ -565,6 +633,7 @@ export interface AuditReadinessSnapshotSummary {
 export interface AuditHistoryResponse extends ApiResponseMetadata {
   data_status: "persisted_activity_history" | "empty";
   summary: string;
+  baseline_summary: HistoryBaselineSummary;
   count: number;
   items: AuditHistoryItem[];
 }

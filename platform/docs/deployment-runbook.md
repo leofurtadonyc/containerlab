@@ -32,7 +32,8 @@ Use this runbook for day-0 and day-1 style platform bring-up, rebuild, and first
 
 - building the repo-owned platform images
 - deploying or replacing the current platform topology
-- verifying the current bounded runtime contract
+- verifying the current bounded runtime contract, including preserved-baseline checks when persisted artifacts exist
+- the same-workspace restart drill for bounded recovery validation
 - checking the expected healthy state of the core services
 - troubleshooting common startup and verification failures
 - stating what the platform is and is not safe to rely on right now
@@ -152,6 +153,7 @@ This now validates:
 - backend-owned topology coverage contract presence in both `/api/v1/platform/status` and `/api/v1/topology`, including endpoint-pairing posture, paired-link and single-sided-link counts, per-link pairing state, and per-link endpoint-evidence counts
 - dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts, now including backend and collector paired-link, single-sided-link, pairing-posture, collector observation-age, policy detail-ready signals, and the backend collector-boundary latest duration, timeout budget, and latest timeout or failure posture signals used by the current dashboards
 - bounded persisted-state exposure checks: when Postgres already holds snapshot, sync-run, or readiness rows, the API must still expose the matching history windows, comparison anchors, workflow-history, audit-history, and readiness anchor surfaces after restart or replacement
+- preserved-baseline contract checks: when persisted artifacts exist, platform status `recovery.baseline_posture`, workflow-history `baseline_summary.baseline_posture`, and audit-history `baseline_summary.baseline_posture` must report `preserved_same_workspace_baseline`
 - bounded warnings and notices when current read-side responses fall back to persisted data, become blocked, expose non-ok read-path posture, surface other degraded-but-honest states such as partial topology, partially-paired or single-sided topology coverage, and aggregate-only policy evidence, or show that fallback was triggered by a bounded collector-boundary timeout posture rather than ordinary degraded live collection
 - Grafana provisioned datasource presence and provisioned overview dashboards
 
@@ -527,6 +529,43 @@ curl -s http://localhost:8000/api/v1/platform/status | python -m json.tool
 curl -s http://localhost:9090/api/v1/targets | python -m json.tool
 ```
 
+## Same-Workspace Restart Drill
+
+A repo-owned restart drill script exercises the bounded same-workspace recovery boundary without mutating or deleting host-backed data directories.
+
+### When to use the drill
+
+Use the drill when you want to:
+
+- validate that the platform recovers correctly after container replacement
+- prove the preserved-baseline contract when Postgres data survives in the same workspace
+- rerun the drill on another Linux host with the repo and required tools (Docker, Containerlab)
+
+### What the drill does
+
+```bash
+cd platform
+./scripts/drill-same-workspace-restart.sh
+```
+
+The drill:
+
+1. destroys the current topology (containers only; host-backed data directories are preserved)
+2. deploys the topology again
+3. runs `./scripts/verify-core-runtime.sh`
+4. runs `./scripts/verify-odl-auth.sh`
+
+When Postgres already holds persisted snapshots, sync runs, or readiness rows, the verifier asserts that platform status, workflow-history, and audit-history report `preserved_same_workspace_baseline`.
+
+### What the drill does NOT prove
+
+- disaster recovery (data-directory loss, cross-host migration)
+- backup or restore automation
+- HA or clustering behavior
+- workflow or actuation behavior
+
+This is a same-workspace restart drill only. It proves that when the host-backed data directories remain in place, the platform recovers from them after container replacement.
+
 ## Reset And Recovery Posture
 
 The current platform is only partially durable.
@@ -598,9 +637,10 @@ After a container restart, `clab deploy -t topology.clab.yml -c`, or other bound
 
 1. run `./scripts/verify-core-runtime.sh`
 2. run `./scripts/verify-odl-auth.sh`
-3. confirm `serving_mode`, `data_status`, and any `served_persisted_at` fields on `/api/v1/devices`, `/api/v1/topology`, and `/api/v1/policies`
-4. confirm `/api/v1/capabilities` still exposes the latest `readiness_snapshot_id` and `readiness_persisted_at` when Postgres state was expected to survive
-5. confirm workflow-history and audit-history still show the expected bounded persisted evidence if Postgres state was expected to survive
+3. confirm `/api/v1/platform/status` exposes the expected `recovery.baseline_posture`, `recovery.read_side_posture`, and per-slice `recovery.persisted_artifacts` values for the current restart or redeploy case
+4. confirm `serving_mode`, `data_status`, and any `served_persisted_at` fields on `/api/v1/devices`, `/api/v1/topology`, and `/api/v1/policies`
+5. confirm `/api/v1/capabilities` still exposes the latest `readiness_snapshot_id` and `readiness_persisted_at` when Postgres state was expected to survive
+6. confirm workflow-history and audit-history still show the expected bounded persisted evidence if Postgres state was expected to survive
 
 Useful checks:
 
@@ -615,6 +655,11 @@ curl -s http://localhost:8000/api/v1/audit-history | python -m json.tool
 
 Interpret the results honestly:
 
+- `recovery.baseline_posture=preserved_same_workspace_baseline` means at least one bounded persisted application artifact survived in Postgres; use `recovery.persisted_artifacts` to see which slices still have preserved anchors
+- `recovery.baseline_posture=new_baseline` means the current runtime is rebuilding persisted anchors from the current environment rather than exposing a preserved same-workspace baseline
+- `recovery.read_side_posture=live_recollection_ready` means the bounded live inventory, topology, and policy read paths are currently recollecting usable live evidence
+- `recovery.read_side_posture=degraded_with_persisted_baseline` means one or more live read paths are degraded while preserved persisted anchors still exist for the runtime
+- `recovery.read_side_posture=degraded_without_persisted_baseline` means one or more live read paths are degraded and the runtime does not currently have a preserved same-workspace baseline to lean on
 - `live_collector` means current recollection succeeded
 - `persisted_fallback` means restart succeeded but live recollection is not currently available
 - `empty_scaffold` means neither live evidence nor a persisted fallback record is available

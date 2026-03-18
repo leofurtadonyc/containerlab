@@ -227,6 +227,15 @@ assert_contains "platform status response" "$platform_status_response" '"degrade
 assert_contains "platform status response" "$platform_status_response" '"inference_posture":"'
 assert_contains "platform status response" "$platform_status_response" '"endpoint_pairing_posture":"'
 assert_contains "platform status response" "$platform_status_response" '"collection_posture":"'
+assert_contains "platform status response" "$platform_status_response" '"recovery":{'
+assert_contains "platform status response" "$platform_status_response" '"baseline_posture":"'
+assert_contains "platform status response" "$platform_status_response" '"read_side_posture":"'
+assert_contains "platform status response" "$platform_status_response" '"persisted_artifacts":{'
+assert_contains "platform status response" "$platform_status_response" '"inventory_snapshot":'
+assert_contains "platform status response" "$platform_status_response" '"topology_snapshot":'
+assert_contains "platform status response" "$platform_status_response" '"policy_snapshot":'
+assert_contains "platform status response" "$platform_status_response" '"sync_history":'
+assert_contains "platform status response" "$platform_status_response" '"readiness_snapshot":'
 assert_contains "platform status response" "$platform_status_response" '"node_participation_posture":"'
 assert_contains "platform status response" "$platform_status_response" '"paired_link_count":'
 assert_contains "platform status response" "$platform_status_response" '"single_sided_link_count":'
@@ -305,11 +314,24 @@ fi
 if [ "$topology_snapshots_count" -gt 0 ]; then
   assert_not_contains "topology response" "$topology_response" '"history":{"status":"unavailable"'
   assert_contains "topology response" "$topology_response" '"snapshot_id":"'
+  assert_contains "topology response" "$topology_response" '"recent_snapshots":['
+  if printf '%s' "$topology_response" | grep -F '"comparison_to_previous":{' | grep -F '"current_snapshot_id"' >/dev/null 2>&1; then
+    assert_contains "topology response" "$topology_response" '"current_endpoint_pairing_posture"'
+    assert_contains "topology response" "$topology_response" '"current_paired_link_count"'
+  fi
 fi
 
 if [ "$policy_snapshots_count" -gt 0 ]; then
   assert_not_contains "policies response" "$policies_response" '"history":{"status":"unavailable"'
   assert_contains "policies response" "$policies_response" '"snapshot_id":"'
+  assert_contains "policies response" "$policies_response" '"recent_snapshots":['
+  if printf '%s' "$policies_response" | grep -F '"comparison_to_previous":{' | grep -F '"current_snapshot_id"' >/dev/null 2>&1; then
+    assert_contains "policies response" "$policies_response" '"current_detail_source_readiness_posture"'
+    assert_contains "policies response" "$policies_response" '"previous_detail_source_readiness_posture"'
+  fi
+  if printf '%s' "$policies_response" | grep -F '"recent_snapshots":[' | grep -F '"snapshot_id"' >/dev/null 2>&1; then
+    assert_contains "policies response" "$policies_response" '"detail_source_readiness_posture"'
+  fi
 fi
 
 if [ "$readiness_snapshots_count" -gt 0 ]; then
@@ -331,6 +353,8 @@ assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_de
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_latest_fetch_duration_seconds'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_timeout_budget_seconds'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_latest_fetch_posture'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_recovery_posture'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_recovery_persisted_artifacts'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_readiness_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_readiness_latest_evaluation_at_seconds'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_sync_runs_total'
@@ -354,6 +378,9 @@ fi
 
 if [ "$persisted_artifact_count" -gt 0 ]; then
   notice "Postgres persisted read-side baseline present: sync_runs=$sync_runs_count inventory_snapshots=$inventory_snapshots_count topology_snapshots=$topology_snapshots_count policy_snapshots=$policy_snapshots_count readiness_snapshots=$readiness_snapshots_count."
+  assert_contains "platform status recovery (preserved-baseline)" "$platform_status_response" '"baseline_posture":"preserved_same_workspace_baseline"'
+  assert_contains "workflow history baseline_summary (preserved-baseline)" "$workflow_history_response" '"baseline_posture":"preserved_same_workspace_baseline"'
+  assert_contains "audit history baseline_summary (preserved-baseline)" "$audit_history_response" '"baseline_posture":"preserved_same_workspace_baseline"'
 else
   notice "Postgres currently has no persisted read-side snapshots, sync runs, or readiness snapshots; this is consistent with a first deploy or missing-data-dir recovery, and historical recovery is starting from a new baseline."
 fi

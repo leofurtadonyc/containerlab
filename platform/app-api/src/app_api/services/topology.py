@@ -313,6 +313,14 @@ def _build_topology_history_window() -> TopologyHistoryWindow:
         notes.append(
             "One or both topology snapshots are explicitly partial, so comparison counts remain bounded to the currently normalized topology slice."
         )
+    current_coverage = build_topology_coverage_summary(
+        nodes=current_snapshot.snapshot.nodes,
+        links=current_snapshot.snapshot.links,
+    )
+    previous_coverage = build_topology_coverage_summary(
+        nodes=previous_snapshot.snapshot.nodes,
+        links=previous_snapshot.snapshot.links,
+    )
     return TopologyHistoryWindow(
         status="comparison_ready",
         summary=(
@@ -342,6 +350,22 @@ def _build_topology_history_window() -> TopologyHistoryWindow:
             removed_link_count=len(previous_link_ids - current_link_ids),
             changed_link_count=len(changed_link_ids),
             notes=notes,
+            current_inference_posture=current_coverage.inference_posture,
+            previous_inference_posture=previous_coverage.inference_posture,
+            current_endpoint_pairing_posture=current_coverage.endpoint_pairing_posture,
+            previous_endpoint_pairing_posture=previous_coverage.endpoint_pairing_posture,
+            current_collection_posture=current_coverage.collection_posture,
+            previous_collection_posture=previous_coverage.collection_posture,
+            current_node_participation_posture=current_coverage.node_participation_posture,
+            previous_node_participation_posture=previous_coverage.node_participation_posture,
+            current_paired_link_count=current_coverage.paired_link_count,
+            previous_paired_link_count=previous_coverage.paired_link_count,
+            current_single_sided_link_count=current_coverage.single_sided_link_count,
+            previous_single_sided_link_count=previous_coverage.single_sided_link_count,
+            current_linked_node_count=current_coverage.linked_node_count,
+            previous_linked_node_count=previous_coverage.linked_node_count,
+            current_isolated_node_count=current_coverage.isolated_node_count,
+            previous_isolated_node_count=previous_coverage.isolated_node_count,
         ),
     )
 
@@ -641,6 +665,14 @@ def build_topology_response() -> TopologyResponse:
                     link_count=entry.link_count,
                     node_state_counts=entry.node_state_counts,
                     link_state_counts=entry.link_state_counts,
+                    inference_posture=entry.inference_posture,
+                    endpoint_pairing_posture=entry.endpoint_pairing_posture,
+                    collection_posture=entry.collection_posture,
+                    node_participation_posture=entry.node_participation_posture,
+                    paired_link_count=entry.paired_link_count,
+                    single_sided_link_count=entry.single_sided_link_count,
+                    linked_node_count=entry.linked_node_count,
+                    isolated_node_count=entry.isolated_node_count,
                 )
                 for entry in history.recent_snapshots
             ],
@@ -663,6 +695,22 @@ def build_topology_response() -> TopologyResponse:
                     removed_link_count=history.comparison_to_previous.removed_link_count,
                     changed_link_count=history.comparison_to_previous.changed_link_count,
                     notes=history.comparison_to_previous.notes,
+                    current_inference_posture=history.comparison_to_previous.current_inference_posture,
+                    previous_inference_posture=history.comparison_to_previous.previous_inference_posture,
+                    current_endpoint_pairing_posture=history.comparison_to_previous.current_endpoint_pairing_posture,
+                    previous_endpoint_pairing_posture=history.comparison_to_previous.previous_endpoint_pairing_posture,
+                    current_collection_posture=history.comparison_to_previous.current_collection_posture,
+                    previous_collection_posture=history.comparison_to_previous.previous_collection_posture,
+                    current_node_participation_posture=history.comparison_to_previous.current_node_participation_posture,
+                    previous_node_participation_posture=history.comparison_to_previous.previous_node_participation_posture,
+                    current_paired_link_count=history.comparison_to_previous.current_paired_link_count,
+                    previous_paired_link_count=history.comparison_to_previous.previous_paired_link_count,
+                    current_single_sided_link_count=history.comparison_to_previous.current_single_sided_link_count,
+                    previous_single_sided_link_count=history.comparison_to_previous.previous_single_sided_link_count,
+                    current_linked_node_count=history.comparison_to_previous.current_linked_node_count,
+                    previous_linked_node_count=history.comparison_to_previous.previous_linked_node_count,
+                    current_isolated_node_count=history.comparison_to_previous.current_isolated_node_count,
+                    previous_isolated_node_count=history.comparison_to_previous.previous_isolated_node_count,
                 )
                 if history.comparison_to_previous is not None
                 else None

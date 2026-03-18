@@ -6,6 +6,7 @@ from app_api.config.settings import get_settings
 from app_api.metrics.state import (
     get_cached_readiness_metrics,
     get_cached_policy_metrics,
+    get_cached_recovery_metrics,
     get_cached_topology_metrics,
     render_prometheus_metrics,
 )
@@ -24,6 +25,7 @@ def get_metrics() -> Response:
     settings = get_settings()
     refresh_readiness_metrics()
     readiness = get_cached_readiness_metrics()
+    recovery = get_cached_recovery_metrics()
     topology = get_cached_topology_metrics()
     policies = get_cached_policy_metrics()
     sync_history = summarize_sync_run_history()
@@ -97,6 +99,11 @@ def get_metrics() -> Response:
                 readiness.blocker_counts_by_category_and_severity
             ),
             "blocked_scope_counts": readiness.blocked_scope_counts,
+        },
+        recovery_metrics={
+            "baseline_posture": recovery.baseline_posture,
+            "read_side_posture": recovery.read_side_posture,
+            "persisted_artifact_availability": recovery.persisted_artifact_availability,
         },
         history_metrics={
             "total_count": sync_history.total_count,

@@ -26,8 +26,9 @@ The current repository state includes:
 It does not yet include:
 
 - durable persistence for every intended product domain
-- workflow and audit-oriented frontend views beyond the current read-only product pages
 - substantive ODL integration logic
+
+The workflow-history and audit-history frontend views are now read-only product pages with persisted context, coverage and source-readiness posture, baseline summaries (preserved versus new baseline), and a same-workspace restart drill that proves preserved-baseline recovery.
 
 This document therefore explains the current flow direction honestly, including which paths are useful today and which remain scaffolded.
 
@@ -59,6 +60,8 @@ Current truth labels today:
 
 - `live` means the response is primarily backed by the active collector-to-backend read path
 - `persisted_fallback` means the live collector path could not be used and the response is serving the latest persisted normalized snapshot
+- `preserved_same_workspace_baseline` means at least one bounded persisted application artifact still exists in Postgres after restart or redeploy in the same workspace; it does not mean every read-side slice has a persisted fallback anchor
+- `new_baseline` means the current runtime is rebuilding its persisted anchors from the current environment because no bounded persisted application artifacts are presently available in Postgres
 - `inferred` currently describes bounded topology knowledge that is derived from interface-state interpretation rather than protocol-derived adjacency truth
 - `partial` means the platform is intentionally exposing bounded read-side knowledge rather than claiming full operational truth
 - `unavailable` means the backend does not currently have the additional persisted evidence required to build a bounded comparison view
@@ -154,7 +157,8 @@ Current state:
 - policy may now also be served from the latest persisted normalized policy snapshot if the live collector boundary is temporarily unavailable
 - useful frontend read-only pages now consume those stable contracts for overview, platform health, devices, topology, policies, and capabilities
 - overview and platform health now also surface the backend-owned bounded read-path coverage, freshness-window, and degraded-scope posture that the platform-status contract exposes for inventory, topology, and policy
-- workflow-history and audit-history pages now interpret persisted sync-derived evidence using bounded recency and comparison cues, but those remain product-facing explanations rather than workflow, audit-forensics, or validation conclusions
+- the platform-status contract now also exposes a backend-owned `recovery` summary so product, verifier, and observability consumers can reuse one bounded same-workspace preserved-baseline versus new-baseline contract instead of inferring recovery posture independently
+- workflow-history and audit-history pages now interpret persisted sync-derived evidence using bounded recency and comparison cues, and surface the response-level baseline summary so operators can see preserved-baseline versus new-baseline posture directly; those remain product-facing explanations rather than workflow, audit-forensics, or validation conclusions
 
 Current topology coverage semantics:
 
@@ -169,8 +173,12 @@ Current comparison semantics:
 - devices also expose a short recent persisted inventory snapshot window and a bounded latest-versus-previous persisted inventory comparison when those persisted records exist
 - topology compares the current normalized topology response against the latest persisted normalized topology snapshot when one exists and the current response is still live-backed
 - topology also exposes a short recent persisted topology snapshot window and a bounded latest-versus-previous persisted topology comparison when those persisted records exist
+- topology history and comparison now carry derived coverage posture (inference, endpoint-pairing, collection, node-participation postures plus paired/single-sided and linked/isolated counts) as trust cues, not validation conclusions
+- the topology product page surfaces persisted coverage posture in recent-snapshot and comparison readouts so operators can see how coverage changed across persisted snapshots; these remain persisted coverage cues only, not drift or fault verdicts
 - policies compare the current normalized policy response against the latest persisted normalized policy snapshot, and may also compare the latest persisted policy snapshot against the immediately previous persisted policy snapshot for bounded history support
+- policy history and comparison now expose persisted source-readiness posture and counts (detail-ready targets, no-policies-observed targets, etc.) so operators can see how coverage changed across persisted snapshots; these remain coverage cues only, not validation verdicts
 - workflow-history and audit-history may attach bounded inventory, topology, and policy snapshot context plus immediate previous-snapshot comparison evidence where those persisted sync-run records exist
+- workflow-history and audit-history responses now expose a response-level `baseline_summary` so operators can tell whether those views reflect preserved sync-derived history from the current workspace baseline or are effectively starting from a new baseline after restart or redeploy; the summary is derived from persisted sync-run and readiness-snapshot presence plus current response posture and remains bounded to preserved-baseline versus new-baseline and available-history-window interpretation
 - none of these comparisons currently claim policy correctness, topology validity, intended-versus-observed reconciliation, or automated remediation guidance
 
 ## Inventory Read-Model Limitations
@@ -204,6 +212,7 @@ What is real today:
 - the backend now persists bounded normalized topology snapshots and can fall back to the latest persisted snapshot when live collection is unavailable
 - the topology response can now distinguish live collection, persisted fallback, and comparison-unavailable versus comparison-ready states explicitly
 - the topology response now also exposes a short recent persisted snapshot window plus bounded latest-versus-previous persisted comparison support where those normalized persisted records exist
+- topology history snapshots and comparisons now include derived coverage posture (inference, endpoint-pairing, collection, node-participation postures and paired/single-sided/linked/isolated counts) as bounded trust cues; workflow-history and audit-history topology summaries carry the same coverage context where honest persisted records exist
 
 What remains partial:
 
@@ -231,6 +240,7 @@ What is real today:
 - candidate paths are represented in a normalized form rather than as vendor-native payloads
 - the backend exposes current live policy observations and now persists bounded normalized policy snapshots plus candidate-path records to Postgres
 - the policy response can now distinguish live collection, persisted fallback, and comparison-unavailable versus comparison-ready states explicitly, both for current-versus-latest-persisted and bounded persisted-versus-previous history views
+- policy history snapshots and comparisons now include source-readiness posture and counts (detail-ready targets, no-policies-observed targets, etc.) as bounded trust cues; workflow-history and audit-history policy summaries carry the same source-readiness context where honest persisted records exist
 
 What remains partial:
 

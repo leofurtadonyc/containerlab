@@ -108,6 +108,18 @@ class TopologyHistorySnapshotRecord(BaseModel):
     link_count: int
     node_state_counts: dict[str, int]
     link_state_counts: dict[str, int]
+    inference_posture: Literal["inferred", "unknown"] = "unknown"
+    endpoint_pairing_posture: Literal[
+        "paired", "partially_paired", "single_sided", "unknown"
+    ] = "unknown"
+    collection_posture: Literal["ok", "degraded", "blocked", "unknown"] = "unknown"
+    node_participation_posture: Literal[
+        "fully_linked", "partially_isolated", "isolated_only", "unknown"
+    ] = "unknown"
+    paired_link_count: int = 0
+    single_sided_link_count: int = 0
+    linked_node_count: int = 0
+    isolated_node_count: int = 0
 
 
 class TopologyHistoryComparison(BaseModel):
@@ -130,6 +142,30 @@ class TopologyHistoryComparison(BaseModel):
     removed_link_count: int
     changed_link_count: int
     notes: list[str]
+    current_inference_posture: Literal["inferred", "unknown"] = "unknown"
+    previous_inference_posture: Literal["inferred", "unknown"] = "unknown"
+    current_endpoint_pairing_posture: Literal[
+        "paired", "partially_paired", "single_sided", "unknown"
+    ] = "unknown"
+    previous_endpoint_pairing_posture: Literal[
+        "paired", "partially_paired", "single_sided", "unknown"
+    ] = "unknown"
+    current_collection_posture: Literal["ok", "degraded", "blocked", "unknown"] = "unknown"
+    previous_collection_posture: Literal["ok", "degraded", "blocked", "unknown"] = "unknown"
+    current_node_participation_posture: Literal[
+        "fully_linked", "partially_isolated", "isolated_only", "unknown"
+    ] = "unknown"
+    previous_node_participation_posture: Literal[
+        "fully_linked", "partially_isolated", "isolated_only", "unknown"
+    ] = "unknown"
+    current_paired_link_count: int = 0
+    previous_paired_link_count: int = 0
+    current_single_sided_link_count: int = 0
+    previous_single_sided_link_count: int = 0
+    current_linked_node_count: int = 0
+    previous_linked_node_count: int = 0
+    current_isolated_node_count: int = 0
+    previous_isolated_node_count: int = 0
 
 
 class TopologyHistoryWindow(BaseModel):

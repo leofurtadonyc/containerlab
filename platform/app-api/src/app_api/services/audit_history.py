@@ -14,6 +14,7 @@ from app_api.models.audit import (
     AuditTopologySnapshotSummary,
 )
 from app_api.persistence.history import load_readiness_snapshot_history, load_sync_runs
+from app_api.services.history_baseline import build_history_baseline_summary
 from app_api.schemas.audit_history import (
     AuditHistoryItem,
     AuditHistoryResponse,
@@ -180,6 +181,14 @@ def build_audit_history_response() -> AuditHistoryResponse:
                     link_count=sync_run.topology_snapshot_summary.link_count,
                     node_state_counts=sync_run.topology_snapshot_summary.node_state_counts,
                     link_state_counts=sync_run.topology_snapshot_summary.link_state_counts,
+                    inference_posture=sync_run.topology_snapshot_summary.inference_posture,
+                    endpoint_pairing_posture=sync_run.topology_snapshot_summary.endpoint_pairing_posture,
+                    collection_posture=sync_run.topology_snapshot_summary.collection_posture,
+                    node_participation_posture=sync_run.topology_snapshot_summary.node_participation_posture,
+                    paired_link_count=sync_run.topology_snapshot_summary.paired_link_count,
+                    single_sided_link_count=sync_run.topology_snapshot_summary.single_sided_link_count,
+                    linked_node_count=sync_run.topology_snapshot_summary.linked_node_count,
+                    isolated_node_count=sync_run.topology_snapshot_summary.isolated_node_count,
                 )
                 if sync_run.topology_snapshot_summary is not None
                 else None
@@ -203,6 +212,22 @@ def build_audit_history_response() -> AuditHistoryResponse:
                     removed_link_count=sync_run.topology_comparison_to_previous.removed_link_count,
                     changed_link_count=sync_run.topology_comparison_to_previous.changed_link_count,
                     notes=sync_run.topology_comparison_to_previous.notes,
+                    current_inference_posture=sync_run.topology_comparison_to_previous.current_inference_posture,
+                    previous_inference_posture=sync_run.topology_comparison_to_previous.previous_inference_posture,
+                    current_endpoint_pairing_posture=sync_run.topology_comparison_to_previous.current_endpoint_pairing_posture,
+                    previous_endpoint_pairing_posture=sync_run.topology_comparison_to_previous.previous_endpoint_pairing_posture,
+                    current_collection_posture=sync_run.topology_comparison_to_previous.current_collection_posture,
+                    previous_collection_posture=sync_run.topology_comparison_to_previous.previous_collection_posture,
+                    current_node_participation_posture=sync_run.topology_comparison_to_previous.current_node_participation_posture,
+                    previous_node_participation_posture=sync_run.topology_comparison_to_previous.previous_node_participation_posture,
+                    current_paired_link_count=sync_run.topology_comparison_to_previous.current_paired_link_count,
+                    previous_paired_link_count=sync_run.topology_comparison_to_previous.previous_paired_link_count,
+                    current_single_sided_link_count=sync_run.topology_comparison_to_previous.current_single_sided_link_count,
+                    previous_single_sided_link_count=sync_run.topology_comparison_to_previous.previous_single_sided_link_count,
+                    current_linked_node_count=sync_run.topology_comparison_to_previous.current_linked_node_count,
+                    previous_linked_node_count=sync_run.topology_comparison_to_previous.previous_linked_node_count,
+                    current_isolated_node_count=sync_run.topology_comparison_to_previous.current_isolated_node_count,
+                    previous_isolated_node_count=sync_run.topology_comparison_to_previous.previous_isolated_node_count,
                 )
                 if sync_run.topology_comparison_to_previous is not None
                 else None
@@ -220,6 +245,11 @@ def build_audit_history_response() -> AuditHistoryResponse:
                     observed_policy_count=sync_run.policy_snapshot_summary.observed_policy_count,
                     active_policy_count=sync_run.policy_snapshot_summary.active_policy_count,
                     detail_record_count=sync_run.policy_snapshot_summary.detail_record_count,
+                    detail_source_readiness_posture=sync_run.policy_snapshot_summary.detail_source_readiness_posture,
+                    detail_ready_target_count=sync_run.policy_snapshot_summary.detail_ready_target_count,
+                    no_policies_observed_target_count=sync_run.policy_snapshot_summary.no_policies_observed_target_count,
+                    detail_unavailable_target_count=sync_run.policy_snapshot_summary.detail_unavailable_target_count,
+                    partial_detail_target_count=sync_run.policy_snapshot_summary.partial_detail_target_count,
                 )
                 if sync_run.policy_snapshot_summary is not None
                 else None
@@ -240,6 +270,12 @@ def build_audit_history_response() -> AuditHistoryResponse:
                     removed_policy_count=sync_run.policy_comparison_to_previous.removed_policy_count,
                     changed_policy_count=sync_run.policy_comparison_to_previous.changed_policy_count,
                     notes=sync_run.policy_comparison_to_previous.notes,
+                    current_detail_source_readiness_posture=sync_run.policy_comparison_to_previous.current_detail_source_readiness_posture,
+                    previous_detail_source_readiness_posture=sync_run.policy_comparison_to_previous.previous_detail_source_readiness_posture,
+                    current_detail_ready_target_count=sync_run.policy_comparison_to_previous.current_detail_ready_target_count,
+                    previous_detail_ready_target_count=sync_run.policy_comparison_to_previous.previous_detail_ready_target_count,
+                    current_no_policies_observed_target_count=sync_run.policy_comparison_to_previous.current_no_policies_observed_target_count,
+                    previous_no_policies_observed_target_count=sync_run.policy_comparison_to_previous.previous_no_policies_observed_target_count,
                 )
                 if sync_run.policy_comparison_to_previous is not None
                 else None
@@ -310,6 +346,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
         summary = (
             "No persisted platform audit-style sync events or readiness-support snapshots are currently available."
         )
+    baseline_summary = build_history_baseline_summary(data_status, len(records))
     return AuditHistoryResponse(
         service="app-api",
         version=settings.app_version,
@@ -317,6 +354,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
         generated_at=datetime.now(UTC),
         data_status=data_status,
         summary=summary,
+        baseline_summary=baseline_summary,
         count=len(records),
         items=[
             AuditHistoryItem(
@@ -377,6 +415,14 @@ def build_audit_history_response() -> AuditHistoryResponse:
                         link_count=record.topology_snapshot_summary.link_count,
                         node_state_counts=record.topology_snapshot_summary.node_state_counts,
                         link_state_counts=record.topology_snapshot_summary.link_state_counts,
+                        inference_posture=record.topology_snapshot_summary.inference_posture,
+                        endpoint_pairing_posture=record.topology_snapshot_summary.endpoint_pairing_posture,
+                        collection_posture=record.topology_snapshot_summary.collection_posture,
+                        node_participation_posture=record.topology_snapshot_summary.node_participation_posture,
+                        paired_link_count=record.topology_snapshot_summary.paired_link_count,
+                        single_sided_link_count=record.topology_snapshot_summary.single_sided_link_count,
+                        linked_node_count=record.topology_snapshot_summary.linked_node_count,
+                        isolated_node_count=record.topology_snapshot_summary.isolated_node_count,
                     )
                     if record.topology_snapshot_summary is not None
                     else None
@@ -400,6 +446,22 @@ def build_audit_history_response() -> AuditHistoryResponse:
                         removed_link_count=record.topology_comparison_to_previous.removed_link_count,
                         changed_link_count=record.topology_comparison_to_previous.changed_link_count,
                         notes=record.topology_comparison_to_previous.notes,
+                        current_inference_posture=record.topology_comparison_to_previous.current_inference_posture,
+                        previous_inference_posture=record.topology_comparison_to_previous.previous_inference_posture,
+                        current_endpoint_pairing_posture=record.topology_comparison_to_previous.current_endpoint_pairing_posture,
+                        previous_endpoint_pairing_posture=record.topology_comparison_to_previous.previous_endpoint_pairing_posture,
+                        current_collection_posture=record.topology_comparison_to_previous.current_collection_posture,
+                        previous_collection_posture=record.topology_comparison_to_previous.previous_collection_posture,
+                        current_node_participation_posture=record.topology_comparison_to_previous.current_node_participation_posture,
+                        previous_node_participation_posture=record.topology_comparison_to_previous.previous_node_participation_posture,
+                        current_paired_link_count=record.topology_comparison_to_previous.current_paired_link_count,
+                        previous_paired_link_count=record.topology_comparison_to_previous.previous_paired_link_count,
+                        current_single_sided_link_count=record.topology_comparison_to_previous.current_single_sided_link_count,
+                        previous_single_sided_link_count=record.topology_comparison_to_previous.previous_single_sided_link_count,
+                        current_linked_node_count=record.topology_comparison_to_previous.current_linked_node_count,
+                        previous_linked_node_count=record.topology_comparison_to_previous.previous_linked_node_count,
+                        current_isolated_node_count=record.topology_comparison_to_previous.current_isolated_node_count,
+                        previous_isolated_node_count=record.topology_comparison_to_previous.previous_isolated_node_count,
                     )
                     if record.topology_comparison_to_previous is not None
                     else None
@@ -417,6 +479,11 @@ def build_audit_history_response() -> AuditHistoryResponse:
                         observed_policy_count=record.policy_snapshot_summary.observed_policy_count,
                         active_policy_count=record.policy_snapshot_summary.active_policy_count,
                         detail_record_count=record.policy_snapshot_summary.detail_record_count,
+                        detail_source_readiness_posture=record.policy_snapshot_summary.detail_source_readiness_posture,
+                        detail_ready_target_count=record.policy_snapshot_summary.detail_ready_target_count,
+                        no_policies_observed_target_count=record.policy_snapshot_summary.no_policies_observed_target_count,
+                        detail_unavailable_target_count=record.policy_snapshot_summary.detail_unavailable_target_count,
+                        partial_detail_target_count=record.policy_snapshot_summary.partial_detail_target_count,
                     )
                     if record.policy_snapshot_summary is not None
                     else None
@@ -437,6 +504,12 @@ def build_audit_history_response() -> AuditHistoryResponse:
                         removed_policy_count=record.policy_comparison_to_previous.removed_policy_count,
                         changed_policy_count=record.policy_comparison_to_previous.changed_policy_count,
                         notes=record.policy_comparison_to_previous.notes,
+                        current_detail_source_readiness_posture=record.policy_comparison_to_previous.current_detail_source_readiness_posture,
+                        previous_detail_source_readiness_posture=record.policy_comparison_to_previous.previous_detail_source_readiness_posture,
+                        current_detail_ready_target_count=record.policy_comparison_to_previous.current_detail_ready_target_count,
+                        previous_detail_ready_target_count=record.policy_comparison_to_previous.previous_detail_ready_target_count,
+                        current_no_policies_observed_target_count=record.policy_comparison_to_previous.current_no_policies_observed_target_count,
+                        previous_no_policies_observed_target_count=record.policy_comparison_to_previous.previous_no_policies_observed_target_count,
                     )
                     if record.policy_comparison_to_previous is not None
                     else None

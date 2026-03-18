@@ -88,6 +88,14 @@ function createTopologyData() {
           link_count: 1,
           node_state_counts: { up: 1 },
           link_state_counts: { degraded: 1 },
+          inference_posture: "inferred",
+          endpoint_pairing_posture: "paired",
+          collection_posture: "unknown",
+          node_participation_posture: "fully_linked",
+          paired_link_count: 1,
+          single_sided_link_count: 0,
+          linked_node_count: 1,
+          isolated_node_count: 0,
         },
         {
           snapshot_id: "topology-snapshot-older",
@@ -101,6 +109,14 @@ function createTopologyData() {
           link_count: 1,
           node_state_counts: { up: 2 },
           link_state_counts: { up: 1 },
+          inference_posture: "inferred",
+          endpoint_pairing_posture: "partially_paired",
+          collection_posture: "unknown",
+          node_participation_posture: "partially_isolated",
+          paired_link_count: 1,
+          single_sided_link_count: 0,
+          linked_node_count: 2,
+          isolated_node_count: 0,
         },
       ],
       comparison_to_previous: {
@@ -121,6 +137,22 @@ function createTopologyData() {
         removed_link_count: 0,
         changed_link_count: 1,
         notes: ["Bounded topology history note."],
+        current_inference_posture: "inferred",
+        previous_inference_posture: "inferred",
+        current_endpoint_pairing_posture: "paired",
+        previous_endpoint_pairing_posture: "partially_paired",
+        current_collection_posture: "unknown",
+        previous_collection_posture: "unknown",
+        current_node_participation_posture: "fully_linked",
+        previous_node_participation_posture: "partially_isolated",
+        current_paired_link_count: 1,
+        previous_paired_link_count: 1,
+        current_single_sided_link_count: 0,
+        previous_single_sided_link_count: 0,
+        current_linked_node_count: 1,
+        previous_linked_node_count: 2,
+        current_isolated_node_count: 0,
+        previous_isolated_node_count: 0,
       },
     },
     coverage_summary: {
@@ -203,5 +235,19 @@ describe("topology view", () => {
     expect(html).toContain("topology-snapshot-current");
     expect(html).toContain("topology-snapshot-older");
     expect(html).toContain("Bounded topology history note.");
+  });
+
+  it("renders persisted coverage posture in history and comparison", () => {
+    useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
+    usePoliciesQuery.mockReturnValue(createQueryState(null));
+
+    const html = renderToStaticMarkup(<TopologyView />);
+
+    expect(html).toContain("trust cues, not validation verdicts");
+    expect(html).toContain("persisted coverage cues");
+    expect(html).toContain("Current endpoint pairing");
+    expect(html).toContain("Previous endpoint pairing");
+    expect(html).toContain("Current / previous paired links");
+    expect(html).toContain("Current / previous linked nodes");
   });
 });
