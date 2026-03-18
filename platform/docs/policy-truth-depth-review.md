@@ -2,263 +2,225 @@
 
 ## Purpose
 
-This document reviews the current bounded policy truth posture after the week 14
-topology checkpoint.
+This document reassesses the current bounded policy truth posture after the
+earlier aggregate-only checkpoint.
 
 It answers one narrow question.
 
-Should the project begin a bounded policy truth-depth implementation cycle now,
-or should policy remain deferred until the live lab exposes stronger source
-detail?
+Can the current collector-first live path now produce nonzero detail-ready
+policy targets for any supported policy type, and if so, does that justify a
+later bounded policy truth-depth cycle?
 
 This is a review and recommendation note only.
 
 It does not authorize:
 
-- policy implementation by default
 - workflow or dry-run work
-- broad capability redesign
+- broad policy redesign
 - fake per-policy truth claims
-- multi-vendor expansion claims
+- Juniper or multi-vendor policy parity claims
+- any phase change beyond `Phase 2`
 
 ## Current Live Evidence Snapshot
 
-The current live stack shows that policy is no longer purely live-empty, but it
-is still blocked at aggregate-only truth.
+The current live stack now proves a narrow but real detail-ready policy slice.
 
-Live runtime evidence from `/api/v1/policies`, `/api/v1/platform/status`,
-collector metrics, app-api metrics, and `verify-core-runtime` currently shows:
+Live runtime evidence from the collector, backend, metrics, and the documented
+runtime verifier currently shows:
 
-- `data_status=live`
-- `serving_mode=live_collector`
-- `sync_status=ok`
-- `completeness=partial`
-- `detail_mode=counters_only`
-- `empty_reason=per_policy_details_unavailable`
-- `observed_target_count=34`
-- `policy_capable_target_count=34`
-- `observed_policy_count=2`
-- `active_policy_count=2`
-- `static_policy_count=2`
-- `count=0`
-- `detail_ready_target_count=0`
-- per-target `detail_blocker_reason` posture is now exposed through `target_footprints`
+- collector `/policies/snapshot` reports `delivery_status=live_ready`
+- collector `/policies/snapshot` reports `observed_target_count=34`
+- collector `/policies/snapshot` reports `policy_count=4`
+- collector `/policies/snapshot` reports `static_policy_count=4`
+- collector `/policies/snapshot` reports `detail_ready_target_count=4`
+- collector `/policies/snapshot` shows 4 target footprints with `detail_blocker_reason=none`
+- collector `/policies/snapshot` shows 30 target footprints with `detail_blocker_reason=no_policies_observed`
+- backend `/api/v1/policies` reports `data_status=live`
+- backend `/api/v1/policies` reports `serving_mode=live_collector`
+- backend `/api/v1/policies` reports `detail_mode=static_policies_when_present`
+- backend `/api/v1/policies` reports `empty_reason=none`
+- backend `/api/v1/policies` reports `count=4`
+- backend `/api/v1/policies` reports `evidence_kind=aggregate_plus_bounded_records`
+- backend `/api/v1/policies` reports `confidence_posture=bounded_partial`
+- backend `/api/v1/platform/status` reports `policy_capable_target_count=34` and `detail_ready_target_count=4` on the policy read path
+- collector metrics report `platform_gnmi_collector_policy_detail_ready_targets 4`
+- backend metrics report `platform_app_api_policy_snapshot_status{data_status="live",serving_mode="live_collector",sync_status="ok",completeness="partial",detail_mode="static_policies_when_present",empty_reason="none"} 1`
+- `verify-core-runtime` now passes and emits the bounded notice that some targets remain `no_policies_observed`; it no longer warns about zero detail-ready targets
 
-The current evidence-confidence summary is therefore honest and important:
+The current live normalized records are also concrete.
 
-- source posture is live observed
-- evidence kind is aggregate only
-- confidence posture is blocked
-- blocked reason is `per_record_detail_unavailable`
+The backend currently exposes 4 live normalized policy records, all with:
 
-That is the real policy checkpoint.
+- `policy_type=static_local`
+- `support_state=supported`
+- `source_target_role=pe`
+- source targets `PE1`, `PE2`, `PE3`, and `PE4`
 
-The platform is receiving live policy evidence from all configured targets, and
-it can prove aggregate policy presence plus per-target policy footprint.
+That is the new checkpoint.
 
-The platform still cannot derive bounded normalized per-policy records from the
-current live source detail.
+The platform is no longer limited to aggregate-only policy evidence on the live
+slice.
 
-## Current Repository Posture By Layer
+It now has one supported detail-ready policy shape with nonzero normalized live
+records.
+
+## Current Source Detail By Layer
 
 ### Collector posture
 
-`gnmi-collector` already computes and exports the current bounded policy trust
-signals the platform needs.
+`gnmi-collector` is still the gating layer.
 
-It now exposes:
+The live policy source path currently combines:
 
-- configured-versus-observed target coverage
-- observed policy counts
+- Nokia `nokia-state` SR policy counters from `/state/router[router-name=Base]/segment-routing/sr-policies`
+- Nokia `nokia-state` runtime `sr-path` payloads discovered in that same subtree
+- Nokia `nokia-conf` static-policy detail from `/configure/router[router-name=Base]/segment-routing/sr-policies/static-policy`
+
+The collector then derives:
+
+- aggregate policy counts
 - per-target policy footprints
 - `detail_ready_target_count`
-- `detail_mode`
-- freshness-window timestamps
-- bounded degraded-scope summaries
+- normalized bounded policy records where the source detail is strong enough
 
-The remaining collector-side gap is not missing aggregate vocabulary.
-
-The remaining gap is that the live path still cannot derive stable bounded
-detail records from the currently observed policy evidence.
+The current live evidence proves that this collector-first path can now derive
+bounded normalized records for Nokia `static_local` policies.
 
 ### Backend posture
 
-`app-api` already preserves the right policy semantics for the current slice.
+`app-api` is carrying the stronger live policy evidence honestly.
 
-It now distinguishes:
+It now exposes:
 
-- `no_policies_observed`
-- `per_policy_details_unavailable`
-- live collector serving versus persisted fallback
-- aggregate counts versus normalized record counts
-- bounded current-versus-persisted and persisted-versus-previous comparison
-  posture
+- live collector serving for the current policy slice
+- `detail_mode=static_policies_when_present`
+- `empty_reason=none`
+- 4 normalized live records on the current response
+- aggregate-plus-bounded-records evidence posture
+- explicit per-target blocker posture for the remaining live-empty targets
 
-The backend is not the current bottleneck.
+The backend is not inventing broader truth.
 
-It is already expressing the stop line honestly.
+It still keeps the bounded stop line explicit through `bounded_partial`
+confidence posture and through target footprints that remain
+`no_policies_observed` on 30 targets.
 
-### WebUI posture
+### Product and observability posture
 
-`app-web` now renders the important policy trust cues the current backend
-exposes, including the sharper per-target blocker slice added after the initial
-review.
+The product and observability layers are no longer the gating issue.
 
-It now makes visible:
+`app-web`, Grafana, and `verify-core-runtime` are already able to present the
+collector or backend truth cues that matter:
 
-- live-empty posture when real
-- detail-limited posture when real
-- aggregate-only evidence posture
-- persisted fallback posture
-- coverage gaps between observed policies and detailed records
-- per-target `detail_blocker_reason` posture for each exposed target footprint
-- comparison posture without claiming drift or workflow truth
+- some targets are genuinely detail-ready
+- many targets remain healthy live-empty
+- the current detail-ready slice is bounded rather than broad policy truth
 
-That means the product now explains the current stop line more directly, but it
-does not change the truth boundary that still blocks deeper policy work.
+That means the gating question has moved back to source detail scope, not UI
+wording.
 
-### Grafana posture
+## What Source Detail Is Actually Available Now
 
-The SR policy dashboard already behaves as observability, not product logic.
+The current lab now proves the following live source-detail availability.
 
-It shows:
+### Proven now
 
-- policy ingestion health
-- observed-versus-detailed policy gaps
-- target coverage gaps
-- detail-ready target share and blocker-presence flags that mirror the same
-  bounded blocker posture numerically
-- backend-versus-collector deltas
-- bounded evidence-posture signals
+- nonzero detail-ready policy targets exist on the live collector path
+- nonzero live normalized policy records exist on the current backend response
+- the proven record family is Nokia `static_local`
+- the proven current live targets are `PE1`, `PE2`, `PE3`, and `PE4`
+- the current collector path can correlate static-policy config detail with live SR policy counters and runtime state strongly enough to surface bounded records
 
-Per-target blocker reason codes still belong to the product and verifier until
-they exist as durable metric labels. That is still the right role boundary.
+### Not proven now
 
-### Verifier posture
-
-`verify-core-runtime` already checks the important runtime policy signals.
-
-On the current live stack it now emits the bounded notices that matter:
-
-- zero policy detail-ready targets
-- `detail_mode=counters_only`
-- per-target blocker reasons such as `per_policy_details_unavailable` when the
-  live response exposes them
-
-It no longer reports `no_policies_observed` on the current deployment because
-the live lab now shows observed policies.
-
-That is an important change in evidence, not in phase.
+- live normalized detail for `static_non_local` policies is not yet proven by the current checkpoint
+- live normalized detail for BGP-signaled SR policy is not yet proven by the current checkpoint
+- broad per-target detail coverage is not present, because 30 targets still report `no_policies_observed`
+- any Juniper or broader multi-vendor policy detail path remains out of scope
 
 ## Assessment
 
 ### Policy truth maturity
 
-Posture: `aggregate_evidence_is_real_but_per_policy_truth_is_still_blocked`
+Posture: `narrow_detail_ready_policy_truth_now_exists`
 
 Reasoning:
 
-- the live stack now observes real policy presence rather than only a live-empty
-  posture
-- the platform sees `observed_policy_count=2` and `static_policy_count=2`
-- all configured policy-capable targets are still being observed successfully
-- the current backend and product already preserve the difference between
-  aggregate presence and bounded per-policy truth
-- the live stack still reports `detail_mode=counters_only`,
-  `empty_reason=per_policy_details_unavailable`, `count=0`, and
-  `detail_ready_target_count=0`
+- the collector now proves nonzero detail-ready targets on the live path
+- the backend now serves nonzero live normalized policy records
+- the current record family is explicit and bounded rather than inferred from counters alone
+- the product continues to preserve live-empty targets and bounded evidence posture honestly
 
 Conclusion:
 
-- policy is not blocked by missing product semantics
-- policy is blocked by missing derivable per-policy source detail on the current
-  live path
+- policy is no longer source-blocked at aggregate-only truth
+- policy is now source-proven for one narrow supported live shape only
 
 ### Recommendation posture
 
-Posture: `no_go_for_immediate_policy_implementation_but_define_one_conditional_follow_on`
+Posture: `go_for_one_bounded_collector_first_policy_cycle`
 
 Reasoning:
 
-- the review does not justify immediate backend, frontend, Grafana, or verifier
-  redesign, because those layers already expose the bounded policy stop line
-  honestly
-- the smallest honest next policy slice would have to begin at the live source
-  evidence boundary, not at the product-presentation boundary
-- starting policy implementation now without stronger detail-ready evidence
-  would risk building against counters and footprints rather than against real
-  normalized policy records
+- the old `no_go` checkpoint is no longer honest because the live collector path now yields nonzero detail-ready targets and nonzero normalized live records
+- the proven source shape is narrow enough that a follow-on can stay bounded and collector-first
+- the remaining risk is overreading this proof into unsupported policy types or broad policy parity, not lack of any detail-ready source evidence
 
 Conclusion:
 
-- do not begin a default policy implementation cycle now
-- do preserve one tightly bounded future candidate, but reopen it only when the
-  current live path proves it can produce real bounded policy records
+- a later bounded policy truth-depth cycle is now justified
+- that cycle must stay explicitly limited to the currently proven Nokia `static_local` live path unless new source evidence appears
 
-## Exact Prerequisites For Any Later Policy Cycle
+## Concrete Prerequisites For Any Later Detail-Ready Policy Follow-On
 
-Any later bounded policy truth-depth cycle should require all of the following.
+Any later bounded policy cycle should require all of the following.
 
-1. The live lab must expose enough source detail for at least one supported
-   policy type to yield nonzero bounded normalized policy records.
-2. `detail_ready_target_count` must become nonzero on the live collector path.
-3. `/api/v1/policies` must move beyond `count=0` for the live slice, not only
-   for persisted fallback.
-4. The derived records must preserve the current honesty boundary: bounded
-   static or other explicitly supported policy types only, with no claim of full
-   SR policy truth.
-5. The cycle must start by proving the collector-source path, not by widening
-   WebUI or Grafana semantics that are already present.
+1. Keep the scope collector-first and limited to the currently proven Nokia `static_local` source path unless new live evidence independently proves another policy type.
+2. Preserve live proof in the runtime contract: the collector and backend must continue to expose nonzero `detail_ready_target_count` and nonzero live normalized `count` for the bounded slice.
+3. Preserve the current honesty split between detail-ready targets and healthy live-empty targets; `no_policies_observed` must remain explicit for the 30 targets that are not currently part of the detail-ready slice.
+4. Do not generalize the current proof into `static_non_local`, BGP-signaled SR policy, Juniper, or broad multi-vendor policy truth without separate live source evidence.
+5. Start any later work at the collector and mapping boundary, then propagate only the real new detail through backend contracts, product views, dashboards, and verifier surfaces as needed.
 
-## Smallest Honest Future Candidate If Those Prerequisites Become True
+## Smallest Honest Future Candidate
 
-If the prerequisites above become true later, the smallest honest future policy
-follow-on would be:
+The smallest honest future policy candidate is now:
 
-- one bounded collector-first truth-depth slice that converts already-exposed
-  live source detail for one supported policy type into nonzero normalized
-  policy records
-- backend propagation only where required to carry those real new records
-  through the existing contract
-- minimal WebUI, dashboard, and verifier adjustments only if the existing
-  bounded semantics cannot already present that new evidence honestly
+- one bounded collector-first policy truth-depth slice limited to the currently proven Nokia `static_local` live path
+- backend propagation only where additional proven source detail needs to be surfaced beyond the current 4 normalized live records
+- minimal product, dashboard, and verifier changes only when the existing bounded semantics cannot already present that new detail honestly
 
-That would still remain inside `Phase 2`.
+That future slice would still remain inside `Phase 2`.
 
-It would not justify:
+It would still not justify:
 
-- BGP-signaled policy truth claims
+- broad policy redesign
 - workflow or pre-change intelligence semantics
+- BGP-signaled policy truth claims
+- static-non-local policy truth claims without new source proof
 - multi-vendor policy parity claims
-- broader policy redesign
 
 ## Anti-Goals
 
 The following should not happen next.
 
-- do not start policy implementation just because policy remains a known weak
-  slice
-- do not treat aggregate counters as if they were stable per-policy records
-- do not widen the backend, WebUI, or Grafana semantics before the collector
-  path can actually derive bounded policy records
-- do not infer missing policy truth from `observed_policy_count` alone
+- do not treat the current `static_local` proof as permission to claim broad per-policy truth everywhere
+- do not infer missing policy truth from counters alone on targets that still report `no_policies_observed`
+- do not widen the backend, WebUI, or Grafana semantics ahead of the collector evidence boundary
 - do not relabel this review as permission to leave `Phase 2`
-- do not treat policy comparison surfaces as proof of workflow-grade policy
-  intelligence
+- do not turn this checkpoint into capability redesign, workflow planning, or vendor-parity work
 
 ## Conservative Bottom Line
 
-The current review does not support immediate policy implementation.
+The current review lands on a narrow `go`, not on the old aggregate-only `no-go`.
 
-It does support a clearer checkpoint:
+The exact checkpoint is now:
 
-- policy is no longer purely live-empty on the current lab
-- policy remains aggregate-only and explicitly blocked at per-policy truth
-- the blocker posture is now surfaced more directly in product, verifier, and
-  observability without changing the truth boundary
-- the next honest policy move is conditional on nonzero detail-ready source
-  evidence, not on more product semantics
+- the live collector path proves 4 detail-ready targets and 4 normalized live policy records
+- the proven detail-ready record family is Nokia `static_local`
+- 30 targets still remain explicitly `no_policies_observed`
+- broader policy truth beyond that current `static_local` slice remains intentionally partial and still requires new live source evidence
 
-That means the project should keep policy deferred for now, preserve the week 14
-topology checkpoint, and only reopen one bounded policy truth-depth slice when
-the live collector path can produce real normalized policy records.
+That means the repository now has one unambiguous policy checkpoint:
+
+- go for one bounded collector-first future policy cycle if it stays inside the proven `static_local` source boundary
+- no-go for any broader policy truth claims until new live evidence proves them
