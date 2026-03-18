@@ -357,6 +357,11 @@ export interface PolicyHistorySnapshotRecord {
   observed_policy_count: number;
   active_policy_count: number;
   detail_record_count: number;
+  detail_source_readiness_posture?: PolicyDetailSourceReadinessPosture;
+  detail_ready_target_count?: number;
+  no_policies_observed_target_count?: number;
+  detail_unavailable_target_count?: number;
+  partial_detail_target_count?: number;
 }
 
 export interface PolicyComparisonChangePreview {
@@ -483,6 +488,12 @@ export interface PolicyHistoryComparison {
   changed_policy_count: number;
   change_preview: PolicyComparisonChangePreview[];
   notes: string[];
+  current_detail_source_readiness_posture?: PolicyDetailSourceReadinessPosture;
+  previous_detail_source_readiness_posture?: PolicyDetailSourceReadinessPosture;
+  current_detail_ready_target_count?: number;
+  previous_detail_ready_target_count?: number;
+  current_no_policies_observed_target_count?: number;
+  previous_no_policies_observed_target_count?: number;
 }
 
 export interface PolicyHistoryWindow {
@@ -572,9 +583,16 @@ export interface WorkflowHistoryItem {
   notes: string[];
 }
 
+export interface HistoryBaselineSummary {
+  baseline_posture: "preserved_same_workspace_baseline" | "new_baseline";
+  summary: string;
+  notes: string[];
+}
+
 export interface WorkflowHistoryResponse extends ApiResponseMetadata {
   data_status: "persisted_activity_history" | "empty";
   summary: string;
+  baseline_summary: HistoryBaselineSummary;
   count: number;
   items: WorkflowHistoryItem[];
 }
@@ -615,6 +633,7 @@ export interface AuditReadinessSnapshotSummary {
 export interface AuditHistoryResponse extends ApiResponseMetadata {
   data_status: "persisted_activity_history" | "empty";
   summary: string;
+  baseline_summary: HistoryBaselineSummary;
   count: number;
   items: AuditHistoryItem[];
 }

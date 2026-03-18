@@ -14,6 +14,7 @@ from app_api.models.audit import (
     AuditTopologySnapshotSummary,
 )
 from app_api.persistence.history import load_readiness_snapshot_history, load_sync_runs
+from app_api.services.history_baseline import build_history_baseline_summary
 from app_api.schemas.audit_history import (
     AuditHistoryItem,
     AuditHistoryResponse,
@@ -345,6 +346,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
         summary = (
             "No persisted platform audit-style sync events or readiness-support snapshots are currently available."
         )
+    baseline_summary = build_history_baseline_summary(data_status, len(records))
     return AuditHistoryResponse(
         service="app-api",
         version=settings.app_version,
@@ -352,6 +354,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
         generated_at=datetime.now(UTC),
         data_status=data_status,
         summary=summary,
+        baseline_summary=baseline_summary,
         count=len(records),
         items=[
             AuditHistoryItem(

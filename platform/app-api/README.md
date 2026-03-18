@@ -55,6 +55,7 @@ Current comparison-friendly API reality:
 - the current comparison surfaces now expose explicit persisted snapshot anchors alongside timestamps: `comparison_snapshot_id` for current-versus-latest-persisted views and `current_snapshot_id` / `previous_snapshot_id` for persisted-versus-previous history views
 - `/api/v1/capabilities` now exposes the persisted readiness-support anchor through `readiness_snapshot_id` when a readiness-support snapshot exists
 - `/api/v1/workflow-history` and `/api/v1/audit-history` now expose bounded persisted snapshot context and immediate previous-snapshot comparison evidence for inventory, topology, and policy where those sync-derived records exist, including explicit `sync_run_id`, nested `snapshot_id`, and comparison snapshot anchors where those records already exist
+- workflow-history and audit-history responses now include a `baseline_summary` field so operators can interpret whether the view reflects preserved sync-derived history from the current workspace baseline or is effectively starting from a new baseline after restart or redeploy; the summary is derived from persisted sync-run and readiness-snapshot presence plus current response posture
 - those comparison views are explanatory read models only; they are not drift decisions, validation outcomes, or action recommendations
 
 ## Planned evolution
@@ -89,4 +90,5 @@ The current ODL enrichment is intentionally narrow: the backend probes bounded R
 The current capability matrix is still intentionally bounded: it reflects the delivered Nokia-first read-only product slice and planned Juniper direction, not full multi-vendor parity or deep per-version capability discovery.
 Capability items also remain descriptive support records rather than durable per-item entities: the current product can operate honestly with vendor, platform, domain, feature, and version-scope context, so explicit capability item IDs remain a deferred follow-on only if a later bounded consumer truly needs standalone item citation.
 Workflow-history and audit-history are currently bounded views derived from persisted sync-run activity, not separate durable workflow or user-action audit domains.
+Each response includes a `baseline_summary` so operators can tell whether the view reflects preserved sync-derived history from the current workspace baseline or is effectively starting from a new baseline after restart or redeploy; these remain sync-derived and readiness-derived Phase 2 history views, not workflow-grade lifecycle or audit history.
 The current topology now mounts a host-backed Postgres data directory, so bounded read-side state survives normal container replacement within the same platform workspace when that directory is preserved.

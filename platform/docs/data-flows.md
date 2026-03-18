@@ -177,6 +177,7 @@ Current comparison semantics:
 - policies compare the current normalized policy response against the latest persisted normalized policy snapshot, and may also compare the latest persisted policy snapshot against the immediately previous persisted policy snapshot for bounded history support
 - policy history and comparison now expose persisted source-readiness posture and counts (detail-ready targets, no-policies-observed targets, etc.) so operators can see how coverage changed across persisted snapshots; these remain coverage cues only, not validation verdicts
 - workflow-history and audit-history may attach bounded inventory, topology, and policy snapshot context plus immediate previous-snapshot comparison evidence where those persisted sync-run records exist
+- workflow-history and audit-history responses now expose a response-level `baseline_summary` so operators can tell whether those views reflect preserved sync-derived history from the current workspace baseline or are effectively starting from a new baseline after restart or redeploy; the summary is derived from persisted sync-run and readiness-snapshot presence plus current response posture and remains bounded to preserved-baseline versus new-baseline and available-history-window interpretation
 - none of these comparisons currently claim policy correctness, topology validity, intended-versus-observed reconciliation, or automated remediation guidance
 
 ## Inventory Read-Model Limitations

@@ -324,6 +324,14 @@ fi
 if [ "$policy_snapshots_count" -gt 0 ]; then
   assert_not_contains "policies response" "$policies_response" '"history":{"status":"unavailable"'
   assert_contains "policies response" "$policies_response" '"snapshot_id":"'
+  assert_contains "policies response" "$policies_response" '"recent_snapshots":['
+  if printf '%s' "$policies_response" | grep -F '"comparison_to_previous":{' | grep -F '"current_snapshot_id"' >/dev/null 2>&1; then
+    assert_contains "policies response" "$policies_response" '"current_detail_source_readiness_posture"'
+    assert_contains "policies response" "$policies_response" '"previous_detail_source_readiness_posture"'
+  fi
+  if printf '%s' "$policies_response" | grep -F '"recent_snapshots":[' | grep -F '"snapshot_id"' >/dev/null 2>&1; then
+    assert_contains "policies response" "$policies_response" '"detail_source_readiness_posture"'
+  fi
 fi
 
 if [ "$readiness_snapshots_count" -gt 0 ]; then

@@ -251,6 +251,13 @@ These fields flow through:
 - `/api/v1/policies` history `recent_snapshots` and `comparison_to_previous`
 - workflow-history and audit-history policy snapshot summaries and comparisons
 
+The Policies page is the product-facing surface for persisted policy history and
+comparison: it exposes source-readiness posture and supporting counts per snapshot
+and in the latest-versus-previous comparison so operators can see how coverage
+changed across persisted snapshots. Grafana mirrors only bounded current metrics
+(e.g. `platform_app_api_policy_detail_source_readiness`); it does not become the
+primary policy-history UI.
+
 Scope remains strictly collector-first and limited to the proven Nokia `static_local`
 slice. These are coverage and trust cues, not validation verdicts or workflow semantics.
 

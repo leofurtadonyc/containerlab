@@ -3136,6 +3136,13 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert payload["items"][2]["inventory_comparison_to_previous"]["previous_snapshot_id"] == "inventory-snapshot-sync-0"
     assert payload["items"][2]["inventory_comparison_to_previous"]["changed_device_count"] == 2
     assert datetime.fromisoformat(payload["generated_at"]) is not None
+    assert "baseline_summary" in payload
+    assert payload["baseline_summary"]["baseline_posture"] in (
+        "preserved_same_workspace_baseline",
+        "new_baseline",
+    )
+    assert "summary" in payload["baseline_summary"]
+    assert len(payload["baseline_summary"]["notes"]) >= 1
 
 
 def test_workflow_history_endpoint_handles_empty_persisted_history(monkeypatch) -> None:
@@ -3148,6 +3155,76 @@ def test_workflow_history_endpoint_handles_empty_persisted_history(monkeypatch) 
     assert payload["data_status"] == "empty"
     assert payload["count"] == 0
     assert "No persisted platform-side sync activity" in payload["summary"]
+    assert "baseline_summary" in payload
+    assert payload["baseline_summary"]["baseline_posture"] in (
+        "preserved_same_workspace_baseline",
+        "new_baseline",
+    )
+
+
+def test_workflow_history_baseline_summary_preserved_baseline(monkeypatch) -> None:
+    """Workflow history exposes preserved_same_workspace_baseline when persisted artifacts exist."""
+    monkeypatch.setattr(
+        "app_api.services.workflow_history.load_sync_runs",
+        _build_persisted_sync_runs,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_inventory_snapshot",
+        lambda: SimpleNamespace(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_topology_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_policy_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.summarize_sync_run_history",
+        lambda limit=200: SyncRunHistorySummary(total_count=3, model_family_counts={}),
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_readiness_snapshot_reference",
+        lambda: None,
+    )
+
+    response = client.get("/api/v1/workflow-history")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["baseline_summary"]["baseline_posture"] == "preserved_same_workspace_baseline"
+    assert "preserved sync-derived history" in payload["baseline_summary"]["summary"]
+
+
+def test_workflow_history_baseline_summary_new_baseline(monkeypatch) -> None:
+    """Workflow history exposes new_baseline when no persisted artifacts exist."""
+    monkeypatch.setattr("app_api.services.workflow_history.load_sync_runs", lambda: [])
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_inventory_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_topology_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_policy_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.summarize_sync_run_history",
+        lambda limit=200: SyncRunHistorySummary(total_count=0, model_family_counts={}),
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_readiness_snapshot_reference",
+        lambda: None,
+    )
+
+    response = client.get("/api/v1/workflow-history")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["baseline_summary"]["baseline_posture"] == "new_baseline"
+    assert "new baseline" in payload["baseline_summary"]["summary"]
 
 
 def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> None:
@@ -3206,6 +3283,12 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert payload["items"][3]["inventory_comparison_to_previous"]["previous_snapshot_id"] == "inventory-snapshot-sync-0"
     assert payload["items"][3]["inventory_comparison_to_previous"]["added_device_count"] == 1
     assert datetime.fromisoformat(payload["generated_at"]) is not None
+    assert "baseline_summary" in payload
+    assert payload["baseline_summary"]["baseline_posture"] in (
+        "preserved_same_workspace_baseline",
+        "new_baseline",
+    )
+    assert "summary" in payload["baseline_summary"]
 
 
 def test_audit_history_endpoint_handles_empty_persisted_history(monkeypatch) -> None:
@@ -3222,6 +3305,80 @@ def test_audit_history_endpoint_handles_empty_persisted_history(monkeypatch) -> 
     assert payload["data_status"] == "empty"
     assert payload["count"] == 0
     assert "No persisted platform audit-style sync events or readiness-support snapshots" in payload["summary"]
+    assert "baseline_summary" in payload
+
+
+def test_audit_history_baseline_summary_preserved_baseline(monkeypatch) -> None:
+    """Audit history exposes preserved_same_workspace_baseline when persisted artifacts exist."""
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_sync_runs",
+        _build_persisted_sync_runs,
+    )
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_readiness_snapshot_history",
+        _build_persisted_readiness_snapshot_history,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_inventory_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_topology_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_policy_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.summarize_sync_run_history",
+        lambda limit=200: SyncRunHistorySummary(total_count=3, model_family_counts={}),
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_readiness_snapshot_reference",
+        lambda: SimpleNamespace(),
+    )
+
+    response = client.get("/api/v1/audit-history")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["baseline_summary"]["baseline_posture"] == "preserved_same_workspace_baseline"
+    assert "preserved sync-derived history" in payload["baseline_summary"]["summary"]
+
+
+def test_audit_history_baseline_summary_new_baseline(monkeypatch) -> None:
+    """Audit history exposes new_baseline when no persisted artifacts exist."""
+    monkeypatch.setattr("app_api.services.audit_history.load_sync_runs", lambda: [])
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_readiness_snapshot_history",
+        lambda: [],
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_inventory_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_topology_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_policy_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.summarize_sync_run_history",
+        lambda limit=200: SyncRunHistorySummary(total_count=0, model_family_counts={}),
+    )
+    monkeypatch.setattr(
+        "app_api.services.history_baseline.load_latest_readiness_snapshot_reference",
+        lambda: None,
+    )
+
+    response = client.get("/api/v1/audit-history")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["baseline_summary"]["baseline_posture"] == "new_baseline"
+    assert "new baseline" in payload["baseline_summary"]["summary"]
 
 
 def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:

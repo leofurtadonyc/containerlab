@@ -1,10 +1,199 @@
-import { describe, expect, it } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   buildPolicyDetailBlockerSummary,
   buildPolicyDetailSourceReadinessSummary,
   describePolicyDetailBlockerReason,
+  PoliciesView,
 } from "../src/features/policies/view";
+
+const { usePoliciesQuery, useTopologyQuery } = vi.hoisted(() => ({
+  usePoliciesQuery: vi.fn(),
+  useTopologyQuery: vi.fn(),
+}));
+
+vi.mock("../src/features/policies/api", () => ({
+  usePoliciesQuery,
+}));
+
+vi.mock("../src/features/topology/api", async () => {
+  const actual = await vi.importActual<typeof import("../src/features/topology/api")>(
+    "../src/features/topology/api",
+  );
+
+  return {
+    ...actual,
+    useTopologyQuery,
+  };
+});
+
+function createQueryState<T>(data: T | null) {
+  return {
+    data,
+    error: null,
+    isLoading: false,
+    reload: vi.fn(async () => undefined),
+  };
+}
+
+function createPolicyDataWithHistory() {
+  return {
+    service: "app-api",
+    version: "test",
+    phase: "phase_2_read_only_foundation",
+    generated_at: "2025-01-01T00:00:00Z",
+    data_status: "live",
+    serving_mode: "live_collector",
+    evidence_confidence: {
+      source_posture: "live_observed",
+      evidence_kind: "aggregate_plus_bounded_records",
+      confidence_posture: "bounded_partial",
+      freshness_posture: "current",
+      blocked_reason: "none",
+      summary: "Policy summary.",
+      notes: [],
+    },
+    summary: "Policy summary.",
+    served_persisted_at: null,
+    sync_source: "gnmi_collector",
+    sync_status: "ok",
+    completeness: "partial",
+    detail_mode: "static_policies_when_present",
+    detail_source_readiness: {
+      posture: "partially_ready",
+      no_policies_observed_target_count: 30,
+      detail_unavailable_target_count: 0,
+      partial_detail_target_count: 0,
+    },
+    empty_reason: "none",
+    observed_at: "2025-01-01T00:00:00Z",
+    observed_target_count: 34,
+    policy_capable_target_count: 34,
+    observed_target_role_counts: { pe: 4 },
+    policy_capable_target_role_counts: { pe: 4 },
+    observed_policy_count: 4,
+    active_policy_count: 4,
+    static_policy_count: 4,
+    static_local_policy_count: 4,
+    static_non_local_policy_count: 0,
+    bgp_policy_count: 0,
+    ttm_preference_count: 4,
+    binding_sid_count: 4,
+    srv6_binding_sid_count: 0,
+    count: 4,
+    notes: [],
+    comparison_to_latest_persisted: {
+      status: "current_vs_latest_persisted_ready",
+      summary: "Comparison ready.",
+      comparison_snapshot_id: "policy-snapshot-latest",
+      comparison_persisted_at: "2025-01-01T00:00:00Z",
+      current_observed_at: "2025-01-01T00:00:00Z",
+      current_observed_policy_count: 4,
+      persisted_observed_policy_count: 4,
+      current_detail_record_count: 4,
+      persisted_detail_record_count: 4,
+      observed_policy_delta: 0,
+      detail_record_delta: 0,
+      added_policy_count: 0,
+      removed_policy_count: 0,
+      changed_policy_count: 0,
+      change_preview: [],
+      notes: [],
+    },
+    history: {
+      status: "comparison_ready",
+      summary:
+        "Recent persisted normalized policy snapshots are available for bounded current-versus-previous comparison.",
+      recent_snapshots: [
+        {
+          snapshot_id: "policy-snapshot-current",
+          persisted_at: "2025-01-01T00:00:00Z",
+          observed_at: "2025-01-01T00:00:00Z",
+          data_status: "live",
+          sync_source: "persisted_policy_snapshot",
+          sync_status: "ok",
+          completeness: "partial",
+          detail_mode: "static_policies_when_present",
+          empty_reason: "none",
+          observed_policy_count: 4,
+          active_policy_count: 4,
+          detail_record_count: 4,
+          detail_source_readiness_posture: "partially_ready",
+          detail_ready_target_count: 4,
+          no_policies_observed_target_count: 30,
+          detail_unavailable_target_count: 0,
+          partial_detail_target_count: 0,
+        },
+        {
+          snapshot_id: "policy-snapshot-older",
+          persisted_at: "2024-12-31T23:30:00Z",
+          observed_at: "2024-12-31T23:29:00Z",
+          data_status: "live",
+          sync_source: "persisted_policy_snapshot",
+          sync_status: "ok",
+          completeness: "partial",
+          detail_mode: "static_policies_when_present",
+          empty_reason: "none",
+          observed_policy_count: 4,
+          active_policy_count: 4,
+          detail_record_count: 4,
+          detail_source_readiness_posture: "partially_ready",
+          detail_ready_target_count: 4,
+          no_policies_observed_target_count: 30,
+          detail_unavailable_target_count: 0,
+          partial_detail_target_count: 0,
+        },
+      ],
+      comparison_to_previous: {
+        current_snapshot_id: "policy-snapshot-current",
+        previous_snapshot_id: "policy-snapshot-older",
+        current_persisted_at: "2025-01-01T00:00:00Z",
+        previous_persisted_at: "2024-12-31T23:30:00Z",
+        current_observed_policy_count: 4,
+        previous_observed_policy_count: 4,
+        current_detail_record_count: 4,
+        previous_detail_record_count: 4,
+        observed_policy_delta: 0,
+        detail_record_delta: 0,
+        added_policy_count: 0,
+        removed_policy_count: 0,
+        changed_policy_count: 0,
+        change_preview: [],
+        notes: ["Bounded policy history note."],
+        current_detail_source_readiness_posture: "partially_ready",
+        previous_detail_source_readiness_posture: "partially_ready",
+        current_detail_ready_target_count: 4,
+        previous_detail_ready_target_count: 4,
+        current_no_policies_observed_target_count: 30,
+        previous_no_policies_observed_target_count: 30,
+      },
+    },
+    target_footprints: [
+      {
+        target_name: "PE1",
+        target_role: "pe",
+        current_posture: "current",
+        collection_status: "success",
+        last_recorded_collection_status: "success",
+        policy_capable: true,
+        observed_policy_count: 1,
+        active_policy_count: 1,
+        static_policy_count: 1,
+        static_local_policy_count: 1,
+        static_non_local_policy_count: 0,
+        bgp_policy_count: 0,
+        ttm_preference_count: 1,
+        binding_sid_count: 1,
+        srv6_binding_sid_count: 0,
+        detail_record_count: 1,
+        detail_blocker_reason: "none",
+        notes: [],
+      },
+    ],
+    items: [],
+  };
+}
 
 describe("policy detail blocker readouts", () => {
   it("maps per-policy detail blockers into explicit blocked posture", () => {
@@ -87,5 +276,40 @@ describe("policy detail blocker readouts", () => {
       breakdown: "Detail-ready: 0 • Live-empty: 0 • Detail unavailable: 2 • Partial detail: 0",
       sourceVisibleTargetCount: 2,
     });
+  });
+});
+
+describe("policies view", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders persisted policy history and recent snapshot anchors", () => {
+    usePoliciesQuery.mockReturnValue(createQueryState(createPolicyDataWithHistory()));
+    useTopologyQuery.mockReturnValue(createQueryState(null));
+
+    const html = renderToStaticMarkup(<PoliciesView />);
+
+    expect(html).toContain("Recent Persisted Snapshots");
+    expect(html).toContain("policy-snapshot-current");
+    expect(html).toContain("policy-snapshot-older");
+    expect(html).toContain("Bounded policy history note.");
+  });
+
+  it("renders persisted source-readiness posture in history and comparison", () => {
+    usePoliciesQuery.mockReturnValue(createQueryState(createPolicyDataWithHistory()));
+    useTopologyQuery.mockReturnValue(createQueryState(null));
+
+    const html = renderToStaticMarkup(<PoliciesView />);
+
+    expect(html).toContain("trust cues, not validation verdicts");
+    expect(html).toContain("persisted coverage cues");
+    expect(html).toContain("Current source-readiness posture");
+    expect(html).toContain("Previous source-readiness posture");
+    expect(html).toContain("Current / previous detail-ready targets");
+    expect(html).toContain("Current / previous live-empty targets");
+    expect(html).toContain("source-readiness");
+    expect(html).toContain("detail-ready");
+    expect(html).toContain("live-empty");
   });
 });

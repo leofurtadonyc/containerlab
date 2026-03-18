@@ -13,6 +13,7 @@ from app_api.models.workflow import (
     WorkflowTopologySnapshotSummary,
 )
 from app_api.persistence.history import load_sync_runs
+from app_api.services.history_baseline import build_history_baseline_summary
 from app_api.schemas.workflow_history import (
     WorkflowHistoryItem,
     WorkflowInventorySnapshotComparison as WorkflowInventorySnapshotComparisonResponse,
@@ -223,6 +224,7 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
             "No persisted platform-side sync activity is currently available for the "
             "workflow-history view."
         )
+    baseline_summary = build_history_baseline_summary(data_status, len(records))
     return WorkflowHistoryResponse(
         service="app-api",
         version=settings.app_version,
@@ -230,6 +232,7 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
         generated_at=datetime.now(UTC),
         data_status=data_status,
         summary=summary,
+        baseline_summary=baseline_summary,
         count=len(records),
         items=[
             WorkflowHistoryItem(

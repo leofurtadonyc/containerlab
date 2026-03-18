@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from app_api.schemas.common import ApiResponseMetadata
+from app_api.schemas.common import ApiResponseMetadata, HistoryBaselineSummary
 
 
 class WorkflowPolicySnapshotSummary(BaseModel):
@@ -177,5 +177,6 @@ class WorkflowHistoryResponse(ApiResponseMetadata):
 
     data_status: Literal["persisted_activity_history", "empty"]
     summary: str
+    baseline_summary: HistoryBaselineSummary
     count: int
     items: list[WorkflowHistoryItem]

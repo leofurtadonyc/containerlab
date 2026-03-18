@@ -442,6 +442,17 @@ export function PlatformHealthView() {
               emptyLabel: "Not exposed on this page",
               note: "Platform status does not currently expose a persisted snapshot identifier because this page is a bounded current-status surface rather than a persisted readiness or history view.",
             },
+            ...(policiesData?.history?.recent_snapshots &&
+            policiesData.history.recent_snapshots.length > 0
+              ? [
+                  {
+                    label: "Policy history",
+                    kind: "text" as const,
+                    value: "Persisted snapshots available",
+                    note: "See Policies page for source-readiness history and comparison.",
+                  },
+                ]
+              : []),
             {
               label: "Readiness identity cues",
               kind: "text",

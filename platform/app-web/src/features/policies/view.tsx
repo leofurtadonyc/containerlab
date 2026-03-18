@@ -1409,6 +1409,45 @@ export function PoliciesView() {
                   <span>Changed detailed policies</span>
                   <strong>{comparison.changed_policy_count}</strong>
                 </li>
+                {comparison.current_detail_source_readiness_posture != null ||
+                comparison.previous_detail_source_readiness_posture != null ? (
+                  <li>
+                    <span>Current source-readiness posture</span>
+                    <StatusPill
+                      value={
+                        comparison.current_detail_source_readiness_posture ?? "unknown"
+                      }
+                    />
+                  </li>
+                ) : null}
+                {comparison.previous_detail_source_readiness_posture != null ? (
+                  <li>
+                    <span>Previous source-readiness posture</span>
+                    <StatusPill
+                      value={comparison.previous_detail_source_readiness_posture}
+                    />
+                  </li>
+                ) : null}
+                {comparison.current_detail_ready_target_count != null ||
+                comparison.previous_detail_ready_target_count != null ? (
+                  <li>
+                    <span>Current / previous detail-ready targets</span>
+                    <strong>
+                      {comparison.current_detail_ready_target_count ?? "—"} /{" "}
+                      {comparison.previous_detail_ready_target_count ?? "—"}
+                    </strong>
+                  </li>
+                ) : null}
+                {comparison.current_no_policies_observed_target_count != null ||
+                comparison.previous_no_policies_observed_target_count != null ? (
+                  <li>
+                    <span>Current / previous live-empty targets</span>
+                    <strong>
+                      {comparison.current_no_policies_observed_target_count ?? "—"} /{" "}
+                      {comparison.previous_no_policies_observed_target_count ?? "—"}
+                    </strong>
+                  </li>
+                ) : null}
               </ul>
               {comparison.notes.length > 0 ? (
                 <ul className="notes-list">
@@ -1427,6 +1466,10 @@ export function PoliciesView() {
         </article>
         <article className="detail-card">
           <h3>Recent Persisted Snapshots</h3>
+          <p className="table-note">
+            Persisted source-readiness posture reflects derived detail-ready and live-empty
+            target counts per snapshot. These are trust cues, not validation verdicts.
+          </p>
           {data.history.recent_snapshots.length > 0 ? (
             <ul className="notes-list">
               {data.history.recent_snapshots.map((entry) => (
@@ -1442,6 +1485,20 @@ export function PoliciesView() {
                   {entry.detail_record_count}
                   {" • "}
                   {formatLabel(entry.detail_mode)}
+                  {entry.detail_source_readiness_posture != null ? (
+                    <>
+                      {" • source-readiness "}
+                      <StatusPill value={entry.detail_source_readiness_posture} />
+                    </>
+                  ) : null}
+                  {entry.detail_ready_target_count != null ||
+                  entry.no_policies_observed_target_count != null ? (
+                    <>
+                      {" • "}
+                      {entry.detail_ready_target_count ?? 0} detail-ready /{" "}
+                      {entry.no_policies_observed_target_count ?? 0} live-empty
+                    </>
+                  ) : null}
                   {entry.observed_at ? ` • observed at ${formatDateTime(entry.observed_at)}` : ""}
                 </li>
               ))}
@@ -1464,9 +1521,12 @@ export function PoliciesView() {
         </p>
         <p className="table-note">
           Where the backend now exposes explicit persisted anchors, this page surfaces those
-          snapshot identifiers as trust cues rather than as workflow state. Per-target detail
-          blocker rows explain why policy detail is blocked on each target, while the
-          source-readiness summary explains whether the current source-visible slice is
+          snapshot identifiers as trust cues rather than as workflow state. Persisted history and
+          comparison also expose source-readiness posture and supporting counts (detail-ready
+          targets, live-empty targets) per snapshot so operators can see how coverage changed across
+          persisted snapshots. These are persisted coverage cues only, not validation verdicts.
+          Per-target detail blocker rows explain why policy detail is blocked on each target, while
+          the source-readiness summary explains whether the current source-visible slice is
           live-empty, detail-limited, partially ready, or ready without pretending that the
           platform already has full per-policy truth.
         </p>

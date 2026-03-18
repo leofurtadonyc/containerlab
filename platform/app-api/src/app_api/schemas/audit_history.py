@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from app_api.schemas.common import ApiResponseMetadata
+from app_api.schemas.common import ApiResponseMetadata, HistoryBaselineSummary
 
 
 class AuditPolicySnapshotSummary(BaseModel):
@@ -189,5 +189,6 @@ class AuditHistoryResponse(ApiResponseMetadata):
 
     data_status: Literal["persisted_activity_history", "empty"]
     summary: str
+    baseline_summary: HistoryBaselineSummary
     count: int
     items: list[AuditHistoryItem]
