@@ -2705,7 +2705,14 @@ def test_topology_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypa
     assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "topology-snapshot-0"
     assert payload["history"]["comparison_to_previous"]["node_count_delta"] == -1
     assert payload["history"]["comparison_to_previous"]["changed_link_count"] == 1
+    assert "current_inference_posture" in payload["history"]["comparison_to_previous"]
+    assert "previous_inference_posture" in payload["history"]["comparison_to_previous"]
+    assert "current_endpoint_pairing_posture" in payload["history"]["comparison_to_previous"]
+    assert "current_paired_link_count" in payload["history"]["comparison_to_previous"]
+    assert "current_linked_node_count" in payload["history"]["comparison_to_previous"]
     assert len(payload["history"]["recent_snapshots"]) == 3
+    assert "inference_posture" in payload["history"]["recent_snapshots"][0]
+    assert "paired_link_count" in payload["history"]["recent_snapshots"][0]
 
 
 def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
@@ -3070,9 +3077,12 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert payload["items"][1]["persisted_artifacts"] == ["topology_snapshot"]
     assert payload["items"][1]["topology_snapshot_summary"]["snapshot_id"] == "topology-snapshot-sync-1"
     assert payload["items"][1]["topology_snapshot_summary"]["node_count"] == 2
+    assert "inference_posture" in payload["items"][1]["topology_snapshot_summary"]
+    assert "paired_link_count" in payload["items"][1]["topology_snapshot_summary"]
     assert payload["items"][1]["topology_comparison_to_previous"]["current_snapshot_id"] == "topology-snapshot-sync-1"
     assert payload["items"][1]["topology_comparison_to_previous"]["previous_snapshot_id"] == "topology-snapshot-sync-0"
     assert payload["items"][1]["topology_comparison_to_previous"]["added_link_count"] == 1
+    assert "current_endpoint_pairing_posture" in payload["items"][1]["topology_comparison_to_previous"]
     assert payload["items"][1]["policy_snapshot_summary"] is None
     assert payload["items"][2]["workflow_name"] == "inventory_snapshot_sync"
     assert payload["items"][2]["status"] == "completed"
@@ -3143,9 +3153,11 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert "persisted policy_snapshot" in payload["items"][1]["message"]
     assert payload["items"][2]["topology_snapshot_summary"]["snapshot_id"] == "topology-snapshot-sync-1"
     assert payload["items"][2]["topology_snapshot_summary"]["topology_name"] == "Platform Observed Topology"
+    assert "paired_link_count" in payload["items"][2]["topology_snapshot_summary"]
     assert payload["items"][2]["topology_comparison_to_previous"]["current_snapshot_id"] == "topology-snapshot-sync-1"
     assert payload["items"][2]["topology_comparison_to_previous"]["previous_snapshot_id"] == "topology-snapshot-sync-0"
     assert payload["items"][2]["topology_comparison_to_previous"]["node_count_delta"] == 1
+    assert "current_paired_link_count" in payload["items"][2]["topology_comparison_to_previous"]
     assert payload["items"][2]["policy_snapshot_summary"] is None
     assert payload["items"][3]["inventory_snapshot_summary"]["snapshot_id"] == "inventory-snapshot-sync-1"
     assert payload["items"][3]["inventory_snapshot_summary"]["role_counts"]["pe"] == 8

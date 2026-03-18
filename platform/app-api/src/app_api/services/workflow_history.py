@@ -107,6 +107,14 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                     link_count=sync_run.topology_snapshot_summary.link_count,
                     node_state_counts=sync_run.topology_snapshot_summary.node_state_counts,
                     link_state_counts=sync_run.topology_snapshot_summary.link_state_counts,
+                    inference_posture=sync_run.topology_snapshot_summary.inference_posture,
+                    endpoint_pairing_posture=sync_run.topology_snapshot_summary.endpoint_pairing_posture,
+                    collection_posture=sync_run.topology_snapshot_summary.collection_posture,
+                    node_participation_posture=sync_run.topology_snapshot_summary.node_participation_posture,
+                    paired_link_count=sync_run.topology_snapshot_summary.paired_link_count,
+                    single_sided_link_count=sync_run.topology_snapshot_summary.single_sided_link_count,
+                    linked_node_count=sync_run.topology_snapshot_summary.linked_node_count,
+                    isolated_node_count=sync_run.topology_snapshot_summary.isolated_node_count,
                 )
                 if sync_run.topology_snapshot_summary is not None
                 else None
@@ -130,6 +138,22 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                     removed_link_count=sync_run.topology_comparison_to_previous.removed_link_count,
                     changed_link_count=sync_run.topology_comparison_to_previous.changed_link_count,
                     notes=sync_run.topology_comparison_to_previous.notes,
+                    current_inference_posture=sync_run.topology_comparison_to_previous.current_inference_posture,
+                    previous_inference_posture=sync_run.topology_comparison_to_previous.previous_inference_posture,
+                    current_endpoint_pairing_posture=sync_run.topology_comparison_to_previous.current_endpoint_pairing_posture,
+                    previous_endpoint_pairing_posture=sync_run.topology_comparison_to_previous.previous_endpoint_pairing_posture,
+                    current_collection_posture=sync_run.topology_comparison_to_previous.current_collection_posture,
+                    previous_collection_posture=sync_run.topology_comparison_to_previous.previous_collection_posture,
+                    current_node_participation_posture=sync_run.topology_comparison_to_previous.current_node_participation_posture,
+                    previous_node_participation_posture=sync_run.topology_comparison_to_previous.previous_node_participation_posture,
+                    current_paired_link_count=sync_run.topology_comparison_to_previous.current_paired_link_count,
+                    previous_paired_link_count=sync_run.topology_comparison_to_previous.previous_paired_link_count,
+                    current_single_sided_link_count=sync_run.topology_comparison_to_previous.current_single_sided_link_count,
+                    previous_single_sided_link_count=sync_run.topology_comparison_to_previous.previous_single_sided_link_count,
+                    current_linked_node_count=sync_run.topology_comparison_to_previous.current_linked_node_count,
+                    previous_linked_node_count=sync_run.topology_comparison_to_previous.previous_linked_node_count,
+                    current_isolated_node_count=sync_run.topology_comparison_to_previous.current_isolated_node_count,
+                    previous_isolated_node_count=sync_run.topology_comparison_to_previous.previous_isolated_node_count,
                 )
                 if sync_run.topology_comparison_to_previous is not None
                 else None
@@ -257,6 +281,14 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                         link_count=record.topology_snapshot_summary.link_count,
                         node_state_counts=record.topology_snapshot_summary.node_state_counts,
                         link_state_counts=record.topology_snapshot_summary.link_state_counts,
+                        inference_posture=record.topology_snapshot_summary.inference_posture,
+                        endpoint_pairing_posture=record.topology_snapshot_summary.endpoint_pairing_posture,
+                        collection_posture=record.topology_snapshot_summary.collection_posture,
+                        node_participation_posture=record.topology_snapshot_summary.node_participation_posture,
+                        paired_link_count=record.topology_snapshot_summary.paired_link_count,
+                        single_sided_link_count=record.topology_snapshot_summary.single_sided_link_count,
+                        linked_node_count=record.topology_snapshot_summary.linked_node_count,
+                        isolated_node_count=record.topology_snapshot_summary.isolated_node_count,
                     )
                     if record.topology_snapshot_summary is not None
                     else None
@@ -280,6 +312,22 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                         removed_link_count=record.topology_comparison_to_previous.removed_link_count,
                         changed_link_count=record.topology_comparison_to_previous.changed_link_count,
                         notes=record.topology_comparison_to_previous.notes,
+                        current_inference_posture=record.topology_comparison_to_previous.current_inference_posture,
+                        previous_inference_posture=record.topology_comparison_to_previous.previous_inference_posture,
+                        current_endpoint_pairing_posture=record.topology_comparison_to_previous.current_endpoint_pairing_posture,
+                        previous_endpoint_pairing_posture=record.topology_comparison_to_previous.previous_endpoint_pairing_posture,
+                        current_collection_posture=record.topology_comparison_to_previous.current_collection_posture,
+                        previous_collection_posture=record.topology_comparison_to_previous.previous_collection_posture,
+                        current_node_participation_posture=record.topology_comparison_to_previous.current_node_participation_posture,
+                        previous_node_participation_posture=record.topology_comparison_to_previous.previous_node_participation_posture,
+                        current_paired_link_count=record.topology_comparison_to_previous.current_paired_link_count,
+                        previous_paired_link_count=record.topology_comparison_to_previous.previous_paired_link_count,
+                        current_single_sided_link_count=record.topology_comparison_to_previous.current_single_sided_link_count,
+                        previous_single_sided_link_count=record.topology_comparison_to_previous.previous_single_sided_link_count,
+                        current_linked_node_count=record.topology_comparison_to_previous.current_linked_node_count,
+                        previous_linked_node_count=record.topology_comparison_to_previous.previous_linked_node_count,
+                        current_isolated_node_count=record.topology_comparison_to_previous.current_isolated_node_count,
+                        previous_isolated_node_count=record.topology_comparison_to_previous.previous_isolated_node_count,
                     )
                     if record.topology_comparison_to_previous is not None
                     else None

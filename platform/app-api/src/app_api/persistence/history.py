@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
+from app_api.models.topology import build_topology_coverage_summary
 from app_api.persistence.session import create_session
 from app_api.persistence.tables import (
     InventoryRecordTable,
@@ -92,6 +93,14 @@ class PersistedTopologySnapshotSummary(BaseModel):
     link_count: int
     node_state_counts: dict[str, int] = Field(default_factory=dict)
     link_state_counts: dict[str, int] = Field(default_factory=dict)
+    inference_posture: str = "unknown"
+    endpoint_pairing_posture: str = "unknown"
+    collection_posture: str = "unknown"
+    node_participation_posture: str = "unknown"
+    paired_link_count: int = 0
+    single_sided_link_count: int = 0
+    linked_node_count: int = 0
+    isolated_node_count: int = 0
 
 
 class PersistedTopologySnapshotComparison(BaseModel):
@@ -114,6 +123,22 @@ class PersistedTopologySnapshotComparison(BaseModel):
     removed_link_count: int
     changed_link_count: int
     notes: list[str] = Field(default_factory=list)
+    current_inference_posture: str = "unknown"
+    previous_inference_posture: str = "unknown"
+    current_endpoint_pairing_posture: str = "unknown"
+    previous_endpoint_pairing_posture: str = "unknown"
+    current_collection_posture: str = "unknown"
+    previous_collection_posture: str = "unknown"
+    current_node_participation_posture: str = "unknown"
+    previous_node_participation_posture: str = "unknown"
+    current_paired_link_count: int = 0
+    previous_paired_link_count: int = 0
+    current_single_sided_link_count: int = 0
+    previous_single_sided_link_count: int = 0
+    current_linked_node_count: int = 0
+    previous_linked_node_count: int = 0
+    current_isolated_node_count: int = 0
+    previous_isolated_node_count: int = 0
 
 
 class PersistedPolicySnapshotSummary(BaseModel):
@@ -352,6 +377,7 @@ def _build_topology_snapshot_summary(
         node_state_counts[row.state] += 1
     for row in link_rows:
         link_state_counts[row.state] += 1
+    coverage = build_topology_coverage_summary(nodes=node_rows, links=link_rows)
     return PersistedTopologySnapshotSummary(
         snapshot_id=snapshot.id,
         persisted_at=snapshot.persisted_at,
@@ -364,6 +390,14 @@ def _build_topology_snapshot_summary(
         link_count=snapshot.link_count,
         node_state_counts=dict(node_state_counts),
         link_state_counts=dict(link_state_counts),
+        inference_posture=coverage.inference_posture,
+        endpoint_pairing_posture=coverage.endpoint_pairing_posture,
+        collection_posture=coverage.collection_posture,
+        node_participation_posture=coverage.node_participation_posture,
+        paired_link_count=coverage.paired_link_count,
+        single_sided_link_count=coverage.single_sided_link_count,
+        linked_node_count=coverage.linked_node_count,
+        isolated_node_count=coverage.isolated_node_count,
     )
 
 
@@ -407,6 +441,28 @@ def _build_topology_snapshot_comparison(
         for link_id in current_link_ids & previous_link_ids
         if current_link_signatures[link_id] != previous_link_signatures[link_id]
     }
+    current_node_rows = session.scalars(
+        select(TopologyNodeTable).where(TopologyNodeTable.snapshot_id == snapshot.id)
+    ).all()
+    current_link_rows = session.scalars(
+        select(TopologyLinkTable).where(TopologyLinkTable.snapshot_id == snapshot.id)
+    ).all()
+    previous_node_rows = session.scalars(
+        select(TopologyNodeTable).where(
+            TopologyNodeTable.snapshot_id == previous_snapshot.id
+        )
+    ).all()
+    previous_link_rows = session.scalars(
+        select(TopologyLinkTable).where(
+            TopologyLinkTable.snapshot_id == previous_snapshot.id
+        )
+    ).all()
+    current_coverage = build_topology_coverage_summary(
+        nodes=current_node_rows, links=current_link_rows
+    )
+    previous_coverage = build_topology_coverage_summary(
+        nodes=previous_node_rows, links=previous_link_rows
+    )
     return PersistedTopologySnapshotComparison(
         current_snapshot_id=snapshot.id,
         previous_snapshot_id=previous_snapshot.id,
@@ -428,6 +484,22 @@ def _build_topology_snapshot_comparison(
             "This comparison is derived from the current persisted normalized topology snapshot and the immediately previous persisted normalized topology snapshot.",
             "Changed node and link counts reflect normalized snapshot signatures rather than protocol-derived topology truth.",
         ],
+        current_inference_posture=current_coverage.inference_posture,
+        previous_inference_posture=previous_coverage.inference_posture,
+        current_endpoint_pairing_posture=current_coverage.endpoint_pairing_posture,
+        previous_endpoint_pairing_posture=previous_coverage.endpoint_pairing_posture,
+        current_collection_posture=current_coverage.collection_posture,
+        previous_collection_posture=previous_coverage.collection_posture,
+        current_node_participation_posture=current_coverage.node_participation_posture,
+        previous_node_participation_posture=previous_coverage.node_participation_posture,
+        current_paired_link_count=current_coverage.paired_link_count,
+        previous_paired_link_count=previous_coverage.paired_link_count,
+        current_single_sided_link_count=current_coverage.single_sided_link_count,
+        previous_single_sided_link_count=previous_coverage.single_sided_link_count,
+        current_linked_node_count=current_coverage.linked_node_count,
+        previous_linked_node_count=previous_coverage.linked_node_count,
+        current_isolated_node_count=current_coverage.isolated_node_count,
+        previous_isolated_node_count=previous_coverage.isolated_node_count,
     )
 
 

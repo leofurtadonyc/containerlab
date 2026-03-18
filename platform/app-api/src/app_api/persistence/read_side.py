@@ -24,6 +24,7 @@ from app_api.models.topology import (
     TopologyLink,
     TopologyNode,
     TopologySnapshot,
+    build_topology_coverage_summary,
 )
 from app_api.persistence.session import create_session
 from app_api.persistence.tables import (
@@ -348,7 +349,15 @@ def persist_topology_snapshot(
                     target_node_id=link.target_node_id,
                     state=link.state,
                     source=link.source,
-                    attributes=link.attributes,
+                    attributes={
+                        **(link.attributes or {}),
+                        "endpoint_pairing_state": link.endpoint_pairing_state,
+                        **(
+                            {"endpoint_evidence_count": str(link.endpoint_evidence_count)}
+                            if link.endpoint_evidence_count is not None
+                            else {}
+                        ),
+                    },
                 )
                 for link in snapshot.links
             ]
@@ -433,6 +442,39 @@ def load_previous_topology_snapshot() -> PersistedTopologySnapshot | None:
     return _load_topology_snapshot_at_offset(offset=1)
 
 
+def _topology_history_record_with_coverage(
+    *,
+    snapshot: TopologySnapshotTable,
+    node_state_counts: dict[str, int],
+    link_state_counts: dict[str, int],
+    nodes: list,
+    links: list,
+) -> TopologyHistorySnapshotRecord:
+    """Build a topology history record with derived coverage posture."""
+    coverage = build_topology_coverage_summary(nodes=nodes, links=links)
+    return TopologyHistorySnapshotRecord(
+        snapshot_id=snapshot.id,
+        persisted_at=snapshot.persisted_at,
+        observed_at=snapshot.observed_at,
+        topology_name=snapshot.topology_name,
+        sync_source=snapshot.sync_source,
+        sync_status=snapshot.sync_status,
+        completeness=snapshot.completeness,
+        node_count=snapshot.node_count,
+        link_count=snapshot.link_count,
+        node_state_counts=node_state_counts,
+        link_state_counts=link_state_counts,
+        inference_posture=coverage.inference_posture,
+        endpoint_pairing_posture=coverage.endpoint_pairing_posture,
+        collection_posture=coverage.collection_posture,
+        node_participation_posture=coverage.node_participation_posture,
+        paired_link_count=coverage.paired_link_count,
+        single_sided_link_count=coverage.single_sided_link_count,
+        linked_node_count=coverage.linked_node_count,
+        isolated_node_count=coverage.isolated_node_count,
+    )
+
+
 def load_recent_topology_snapshot_summaries(
     limit: int = 3,
 ) -> list[PersistedTopologySnapshotSummary]:
@@ -467,22 +509,22 @@ def load_recent_topology_snapshot_summaries(
                 node_state_counts_by_snapshot_id[row.snapshot_id][row.state] += 1
             for row in link_rows:
                 link_state_counts_by_snapshot_id[row.snapshot_id][row.state] += 1
+            nodes_by_snapshot_id: dict[str, list] = {sid: [] for sid in snapshot_ids}
+            links_by_snapshot_id: dict[str, list] = {sid: [] for sid in snapshot_ids}
+            for row in node_rows:
+                nodes_by_snapshot_id[row.snapshot_id].append(row)
+            for row in link_rows:
+                links_by_snapshot_id[row.snapshot_id].append(row)
             return [
                 PersistedTopologySnapshotSummary(
                     snapshot_id=snapshot.id,
                     persisted_at=snapshot.persisted_at,
-                    snapshot=TopologyHistorySnapshotRecord(
-                        snapshot_id=snapshot.id,
-                        persisted_at=snapshot.persisted_at,
-                        observed_at=snapshot.observed_at,
-                        topology_name=snapshot.topology_name,
-                        sync_source=snapshot.sync_source,
-                        sync_status=snapshot.sync_status,
-                        completeness=snapshot.completeness,
-                        node_count=snapshot.node_count,
-                        link_count=snapshot.link_count,
+                    snapshot=_topology_history_record_with_coverage(
+                        snapshot=snapshot,
                         node_state_counts=dict(node_state_counts_by_snapshot_id[snapshot.id]),
                         link_state_counts=dict(link_state_counts_by_snapshot_id[snapshot.id]),
+                        nodes=nodes_by_snapshot_id[snapshot.id],
+                        links=links_by_snapshot_id[snapshot.id],
                     ),
                 )
                 for snapshot in snapshots

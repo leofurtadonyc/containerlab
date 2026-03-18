@@ -67,6 +67,14 @@ class WorkflowTopologySnapshotSummary(BaseModel):
     link_count: int
     node_state_counts: dict[str, int] = Field(default_factory=dict)
     link_state_counts: dict[str, int] = Field(default_factory=dict)
+    inference_posture: str = "unknown"
+    endpoint_pairing_posture: str = "unknown"
+    collection_posture: str = "unknown"
+    node_participation_posture: str = "unknown"
+    paired_link_count: int = 0
+    single_sided_link_count: int = 0
+    linked_node_count: int = 0
+    isolated_node_count: int = 0
 
 
 class WorkflowTopologySnapshotComparison(BaseModel):
@@ -89,6 +97,22 @@ class WorkflowTopologySnapshotComparison(BaseModel):
     removed_link_count: int
     changed_link_count: int
     notes: list[str] = Field(default_factory=list)
+    current_inference_posture: str = "unknown"
+    previous_inference_posture: str = "unknown"
+    current_endpoint_pairing_posture: str = "unknown"
+    previous_endpoint_pairing_posture: str = "unknown"
+    current_collection_posture: str = "unknown"
+    previous_collection_posture: str = "unknown"
+    current_node_participation_posture: str = "unknown"
+    previous_node_participation_posture: str = "unknown"
+    current_paired_link_count: int = 0
+    previous_paired_link_count: int = 0
+    current_single_sided_link_count: int = 0
+    previous_single_sided_link_count: int = 0
+    current_linked_node_count: int = 0
+    previous_linked_node_count: int = 0
+    current_isolated_node_count: int = 0
+    previous_isolated_node_count: int = 0
 
 
 class WorkflowPolicySnapshotComparison(BaseModel):

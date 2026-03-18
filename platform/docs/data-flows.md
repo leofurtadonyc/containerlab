@@ -172,6 +172,7 @@ Current comparison semantics:
 - devices also expose a short recent persisted inventory snapshot window and a bounded latest-versus-previous persisted inventory comparison when those persisted records exist
 - topology compares the current normalized topology response against the latest persisted normalized topology snapshot when one exists and the current response is still live-backed
 - topology also exposes a short recent persisted topology snapshot window and a bounded latest-versus-previous persisted topology comparison when those persisted records exist
+- topology history and comparison now carry derived coverage posture (inference, endpoint-pairing, collection, node-participation postures plus paired/single-sided and linked/isolated counts) as trust cues, not validation conclusions
 - policies compare the current normalized policy response against the latest persisted normalized policy snapshot, and may also compare the latest persisted policy snapshot against the immediately previous persisted policy snapshot for bounded history support
 - workflow-history and audit-history may attach bounded inventory, topology, and policy snapshot context plus immediate previous-snapshot comparison evidence where those persisted sync-run records exist
 - none of these comparisons currently claim policy correctness, topology validity, intended-versus-observed reconciliation, or automated remediation guidance
@@ -207,6 +208,7 @@ What is real today:
 - the backend now persists bounded normalized topology snapshots and can fall back to the latest persisted snapshot when live collection is unavailable
 - the topology response can now distinguish live collection, persisted fallback, and comparison-unavailable versus comparison-ready states explicitly
 - the topology response now also exposes a short recent persisted snapshot window plus bounded latest-versus-previous persisted comparison support where those normalized persisted records exist
+- topology history snapshots and comparisons now include derived coverage posture (inference, endpoint-pairing, collection, node-participation postures and paired/single-sided/linked/isolated counts) as bounded trust cues; workflow-history and audit-history topology summaries carry the same coverage context where honest persisted records exist
 
 What remains partial:
 

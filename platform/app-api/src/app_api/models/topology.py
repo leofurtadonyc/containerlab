@@ -85,6 +85,14 @@ class TopologyHistorySnapshotRecord(BaseModel):
     link_count: int
     node_state_counts: dict[str, int] = Field(default_factory=dict)
     link_state_counts: dict[str, int] = Field(default_factory=dict)
+    inference_posture: TopologyInferencePosture = "unknown"
+    endpoint_pairing_posture: TopologyEndpointPairingPosture = "unknown"
+    collection_posture: TopologyCollectionPosture = "unknown"
+    node_participation_posture: TopologyNodeParticipationPosture = "unknown"
+    paired_link_count: int = 0
+    single_sided_link_count: int = 0
+    linked_node_count: int = 0
+    isolated_node_count: int = 0
 
 
 class TopologyHistoryComparison(BaseModel):
@@ -107,6 +115,22 @@ class TopologyHistoryComparison(BaseModel):
     removed_link_count: int
     changed_link_count: int
     notes: list[str] = Field(default_factory=list)
+    current_inference_posture: TopologyInferencePosture = "unknown"
+    previous_inference_posture: TopologyInferencePosture = "unknown"
+    current_endpoint_pairing_posture: TopologyEndpointPairingPosture = "unknown"
+    previous_endpoint_pairing_posture: TopologyEndpointPairingPosture = "unknown"
+    current_collection_posture: TopologyCollectionPosture = "unknown"
+    previous_collection_posture: TopologyCollectionPosture = "unknown"
+    current_node_participation_posture: TopologyNodeParticipationPosture = "unknown"
+    previous_node_participation_posture: TopologyNodeParticipationPosture = "unknown"
+    current_paired_link_count: int = 0
+    previous_paired_link_count: int = 0
+    current_single_sided_link_count: int = 0
+    previous_single_sided_link_count: int = 0
+    current_linked_node_count: int = 0
+    previous_linked_node_count: int = 0
+    current_isolated_node_count: int = 0
+    previous_isolated_node_count: int = 0
 
 
 class TopologyHistoryWindow(BaseModel):
