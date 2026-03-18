@@ -32,7 +32,8 @@ Use this runbook for day-0 and day-1 style platform bring-up, rebuild, and first
 
 - building the repo-owned platform images
 - deploying or replacing the current platform topology
-- verifying the current bounded runtime contract
+- verifying the current bounded runtime contract, including preserved-baseline checks when persisted artifacts exist
+- the same-workspace restart drill for bounded recovery validation
 - checking the expected healthy state of the core services
 - troubleshooting common startup and verification failures
 - stating what the platform is and is not safe to rely on right now

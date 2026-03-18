@@ -28,6 +28,7 @@ Most of the week's work has established:
 - accepted week 14 topology truth-depth work, with explicit endpoint-pairing posture and paired-versus-single-sided inferred-link counts now carried end to end through collector delivery, backend-owned topology and platform-status contracts, primary WebUI trust cues, Grafana observability, targeted tests, and the live verifier while preserving explicit partial-truth semantics
 - the strict policy truth-depth review is now also complete, and it confirms that the live collector path now yields a narrow but real detail-ready policy slice: the current stack exposes `detail_mode=static_policies_when_present`, `empty_reason=none`, `detail_ready_target_count=4`, and 4 normalized live `static_local` policy records, while 30 targets still remain explicitly `no_policies_observed`
 - stronger automated verification, with backend and collector tests plus `verify-core-runtime` now checking the accepted week 13 identity, read-path, and week 14 topology-coverage signals directly
+- week 16 operational checkpoint: topology coverage history persistence and product consumption, policy source-readiness history persistence and product consumption, workflow-history and audit-history baseline summaries (backend and frontend), same-workspace restart drill with preserved-baseline verifier checks
 
 ## Updated Phase 2 Checkpoint Assessment
 
@@ -39,7 +40,7 @@ Current maturity by area:
 - runtime and verification maturity: strong for the current Phase 2 scope, because repo-built images, startup-contract validation, targeted pytest, and the live `verify-core-runtime` plus `verify-odl-auth` flow now prove the bounded runtime, read-path, and roadmap-posture contracts end to end
 - identity maturity: sufficient for bounded operations, because persisted and response-level anchors are explicit where real records exist and the accepted week 13 review closed the default capability item-ID lane with a documented no-change outcome
 - read-path maturity: mixed, because inventory is strong enough for routine bounded use, topology pairing semantics are now materially stronger after the accepted week 14 work but topology still remains the weakest current live slice due to partial completeness and still-coarse degraded-scope interpretation, and policy is now stronger than the earlier aggregate-only checkpoint because the current lab exposes 4 detail-ready targets and 4 normalized live `static_local` records even though broader policy truth remains intentionally partial
-- history maturity: mixed for read-side evidence but still blocked for workflow implementation, because workflow-history and audit-history now include bounded persisted context and anchors but still do not provide durable workflow lifecycle or operator-action history
+- history maturity: stronger for read-side evidence but still blocked for workflow implementation, because workflow-history and audit-history now include bounded persisted context, anchors, coverage and source-readiness posture, response-level baseline summaries (preserved versus new baseline), and product consumption on the topology, policies, workflow-history, and audit-history pages, plus a same-workspace restart drill that proves preserved-baseline recovery; they still do not provide durable workflow lifecycle or operator-action history
 - capability maturity: strong for planning support and current product interpretation, because support state, implementation status, delivery tier, evidence basis, vendor posture, version scope, workflow-readiness interpretation, and blocker posture are now explicit enough for honest bounded use without implying workflow eligibility or Juniper parity
 - workflow-prerequisite clarity: still design-strong but implementation-deferred, because the repository has explicit ownership and sequencing guidance for future workflow-owned state while remaining fully in `Phase 2`
 
@@ -60,9 +61,7 @@ Bounded next steps:
 
 ## Recommendation For The Next Bounded Cycle
 
-Recommendation: keep any next topology cycle limited to one backend-owned node
-participation coverage follow-on inside the current inferred slice, and only
-implement it later if a concrete truth-depth gain still justifies code changes.
+Recommendation: preserve the week 16 checkpoint and continue bounded Phase 2 product deepening. Do not reopen the completed topology-history, policy-history, history-baseline, or restart-drill work without new evidence.
 
 Interpret that recommendation narrowly.
 
@@ -70,22 +69,22 @@ Interpret that recommendation narrowly.
 - do not reopen item-identity implementation by default
 - do not reopen the accepted week 14 endpoint-pairing slice by default
 - do not reopen the already-implemented partiality decomposition by default
+- do not reopen the week 16 topology-history, policy-history, history-baseline, or restart-drill slices by default
 - do not start workflow implementation, dry-run implementation, or any phase transition work
 - keep the backend as the brain, the WebUI as the product, Grafana as the observability layer, and ODL bounded
 
 Why this is the right next-cycle focus:
 
-- the accepted week 13 work closed the default identity lane with a documented no-change decision rather than exposing a new must-build contract gap
-- the accepted week 14 work closed the narrower endpoint-pairing and single-sided-link coverage gap across collector, backend, product, observability, tests, and verifier behavior rather than leaving that slice as a pending recommendation
-- the smaller topology partiality decomposition contract is no longer a pending recommendation; it is already implemented in the current backend, product, observability, test, and verifier surfaces, so the next cycle no longer needs another semantics pass in this area
-- runtime hardening and verification are now strong enough for the current bounded scope and are no longer the primary bottleneck
-- topology still exposes the clearest remaining live truth gap, but the honest next question is no longer whether to add pairing vocabulary or partiality decomposition; those are already complete, and the narrower remaining step is whether the backend should expose node participation coverage inside the inferred slice from the evidence already in hand, while policy is now eligible for one bounded collector-first follow-on only if it stays limited to the currently proven Nokia `static_local` source path
+- week 16 closed the topology coverage history, policy source-readiness history, workflow-history and audit-history baseline summaries, and same-workspace restart drill; those slices are now implemented and documented
+- the accepted week 13 work closed the default identity lane with a documented no-change decision
+- the accepted week 14 work closed the endpoint-pairing and single-sided-link coverage gap
+- runtime hardening, verification, and the restart drill are now strong enough for the current bounded scope
+- the next cycle should stay inside the read-only envelope: keep docs and phase boundaries honest, deepen read-only usefulness without faking completeness, and preserve the service and architecture boundaries already established
 
 The recommended next-cycle slice should stay limited to:
 
-- checkpointing the accepted week 14 result honestly and preserving the current safe-use boundary first
-- reopening topology only if a concrete follow-on remains after that checkpoint review
-- if reopened, tightening only node participation coverage inside the current inferred slice so the product can state how many observed nodes are linked versus isolated without widening topology truth claims
+- checkpointing the week 16 result honestly and preserving the current safe-use boundary first
+- continuing bounded Phase 2 product deepening only where a concrete gain justifies code changes
 
 ## Phased Roadmap
 
@@ -151,11 +150,12 @@ Expected focus:
 
 ## Immediate Next Steps
 
-Based on the current repo state, the next likely work should be:
+Based on the current repo state after the week 16 checkpoint, the next likely work should be:
 
 1. preserve the current `conditionally_ready_with_explicit_limits` operating boundary and keep all near-term work inside the Phase 2 read-only safe-use envelope
-2. keep the accepted week 13 identity outcome closed by default; only reopen deterministic or snapshot-scoped readiness/capability item IDs if a concrete later consumer proves the existing anchors insufficient
-3. treat backend-owned node participation coverage inside the inferred slice as the only justified topology reopening in this area, and only implement it later if the concrete next gain is still explicit linked-versus-isolated observed-node coverage rather than any repeat of the completed week 14 pairing or partiality-consumption work; otherwise preserve the current checkpoint and continue bounded Phase 2 product deepening elsewhere
+2. keep the week 16 topology-history, policy-history, history-baseline, and restart-drill outcomes closed by default; do not reopen those slices without new evidence
+3. keep the accepted week 13 identity outcome closed by default; only reopen deterministic or snapshot-scoped readiness/capability item IDs if a concrete later consumer proves the existing anchors insufficient
+4. continue bounded Phase 2 product deepening only where a concrete gain justifies code changes; otherwise preserve the current checkpoint
 
 ## Boundary Reminder
 

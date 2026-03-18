@@ -26,8 +26,9 @@ The current repository state includes:
 It does not yet include:
 
 - durable persistence for every intended product domain
-- workflow and audit-oriented frontend views beyond the current read-only product pages
 - substantive ODL integration logic
+
+The workflow-history and audit-history frontend views are now read-only product pages with persisted context, coverage and source-readiness posture, baseline summaries (preserved versus new baseline), and a same-workspace restart drill that proves preserved-baseline recovery.
 
 This document therefore explains the current flow direction honestly, including which paths are useful today and which remain scaffolded.
 
