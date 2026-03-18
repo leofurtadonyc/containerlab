@@ -59,6 +59,15 @@ Current repo-only rebuildable state includes:
 - Grafana datasource and dashboard provisioning files
 - app-web build output regenerated during image build
 
+Current recovery matrix:
+
+| Scenario | What survives | What must be recollected or starts from a new baseline |
+| --- | --- | --- |
+| first deploy, or deploy after the host-backed data directories were removed or replaced | repo-built images, topology wiring, migrations, Prometheus config, Grafana provisioning, app-web build output | Postgres read-side snapshots, sync-run history, readiness-support snapshots, Prometheus TSDB history, and Grafana local state all start from a new baseline |
+| normal container restart in the same workspace | host-backed Postgres data under `platform/postgres/data`, Prometheus TSDB under `platform/prometheus/data`, and Grafana local state under `platform/grafana/data` | live inventory, topology, and policy evidence must be recollected; transient in-memory metrics and warm-up state are regenerated |
+| `clab deploy -t topology.clab.yml -c` in the same workspace with the data directories preserved | the same host-backed Postgres, Prometheus, and Grafana state survives container replacement | current live collector-backed evidence and transient in-memory state are recollected or regenerated after the new containers start |
+| recreate on another host from repo files alone without copying the data directories | software, topology shape, migrations, Prometheus config, Grafana provisioning, and app-web assets are rebuilt from the repository | previous Postgres read-side history, Prometheus TSDB history, and Grafana local state do not recover automatically |
+
 If you recreate the platform on another host from repository files alone and do not carry over those host-backed data directories, the platform will still come up, but persisted snapshots, readiness-support history, Prometheus TSDB history, and Grafana local state start from a new baseline.
 
 ## Safeguards And Boundaries
@@ -187,12 +196,15 @@ These checks currently validate:
 - `app-web` packaged startup contract readiness
 - Prometheus readiness and the current real scrape targets
 - read-side API contract sanity for platform status, devices, topology, policies, and capabilities
+- workflow-history and audit-history contract presence for the persisted read-side slice
+- persisted Postgres snapshot, sync-run, and readiness-snapshot table presence, plus API exposure of the corresponding bounded history and anchor surfaces when those rows already exist
 - dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts
 - bounded degraded-state warnings for persisted-fallback, blocked, or otherwise degraded-but-honest read-side responses
 - Grafana datasource and dashboard provisioning
 - ODL credential rotation and bounded controller reachability through `app-api`
 
 After restart or redeploy, operators should also confirm whether the platform came back with live recollection or persisted fallback where relevant by checking `serving_mode`, `data_status`, `served_persisted_at`, and readiness timestamps through the product-owned API paths.
+`./scripts/verify-core-runtime.sh` now also distinguishes between a preserved persisted baseline and a new baseline: it fails if Postgres still contains persisted read-side rows but the API no longer exposes the matching bounded history or anchor surfaces, and it emits a notice instead when the persisted tables are simply empty because the runtime was recreated without prior data.
 
 ## Access The Running Services
 

@@ -55,6 +55,23 @@ assert_contains() {
   fi
 }
 
+assert_not_contains() {
+  name=$1
+  payload=$2
+  unexpected=$3
+
+  if printf '%s' "$payload" | grep -F "$unexpected" >/dev/null 2>&1; then
+    echo "$name unexpectedly contained: $unexpected" >&2
+    exit 1
+  fi
+}
+
+query_postgres_scalar() {
+  sql=$1
+
+  docker exec "$POSTGRES_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "$sql" | tr -d '[:space:]'
+}
+
 wait_for_postgres() {
   attempts=$VERIFY_ATTEMPTS
 
@@ -174,8 +191,17 @@ devices_response=$(fetch_compact_json "$APP_API_URL/api/v1/devices")
 topology_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology")
 policies_response=$(fetch_compact_json "$APP_API_URL/api/v1/policies")
 capabilities_response=$(fetch_compact_json "$APP_API_URL/api/v1/capabilities")
+workflow_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-history")
+audit_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/audit-history")
 app_api_metrics=$(curl -fsS "$APP_API_URL/metrics")
 collector_metrics=$(curl -fsS "$GNMI_COLLECTOR_URL/metrics")
+
+sync_runs_count=$(query_postgres_scalar "SELECT count(*) FROM platform_app.sync_runs;")
+inventory_snapshots_count=$(query_postgres_scalar "SELECT count(*) FROM platform_app.inventory_snapshots;")
+topology_snapshots_count=$(query_postgres_scalar "SELECT count(*) FROM platform_app.topology_snapshots;")
+policy_snapshots_count=$(query_postgres_scalar "SELECT count(*) FROM platform_app.policy_snapshots;")
+readiness_snapshots_count=$(query_postgres_scalar "SELECT count(*) FROM platform_app.readiness_snapshots;")
+persisted_artifact_count=$((sync_runs_count + inventory_snapshots_count + topology_snapshots_count + policy_snapshots_count + readiness_snapshots_count))
 
 assert_contains "platform status response" "$platform_status_response" '"status":"ok"'
 assert_contains "platform status response" "$platform_status_response" '"topology_name":"platform"'
@@ -254,6 +280,43 @@ assert_contains "capabilities response" "$capabilities_response" '"future_roadma
 assert_contains "capabilities response" "$capabilities_response" '"vendor_posture_counts":{'
 assert_contains "capabilities response" "$capabilities_response" '"future_juniper_target":'
 
+assert_contains "workflow history response" "$workflow_history_response" '"data_status":"'
+assert_contains "workflow history response" "$workflow_history_response" '"count":'
+assert_contains "workflow history response" "$workflow_history_response" '"items":['
+
+assert_contains "audit history response" "$audit_history_response" '"data_status":"'
+assert_contains "audit history response" "$audit_history_response" '"count":'
+assert_contains "audit history response" "$audit_history_response" '"items":['
+
+if [ "$sync_runs_count" -gt 0 ]; then
+  assert_not_contains "workflow history response" "$workflow_history_response" '"data_status":"empty"'
+  assert_not_contains "workflow history response" "$workflow_history_response" '"count":0'
+  assert_contains "workflow history response" "$workflow_history_response" '"sync_run_id":"'
+  assert_not_contains "audit history response" "$audit_history_response" '"data_status":"empty"'
+  assert_not_contains "audit history response" "$audit_history_response" '"count":0'
+  assert_contains "audit history response" "$audit_history_response" '"sync_run_id":"'
+fi
+
+if [ "$inventory_snapshots_count" -gt 0 ]; then
+  assert_not_contains "devices response" "$devices_response" '"history":{"status":"unavailable"'
+  assert_contains "devices response" "$devices_response" '"snapshot_id":"'
+fi
+
+if [ "$topology_snapshots_count" -gt 0 ]; then
+  assert_not_contains "topology response" "$topology_response" '"history":{"status":"unavailable"'
+  assert_contains "topology response" "$topology_response" '"snapshot_id":"'
+fi
+
+if [ "$policy_snapshots_count" -gt 0 ]; then
+  assert_not_contains "policies response" "$policies_response" '"history":{"status":"unavailable"'
+  assert_contains "policies response" "$policies_response" '"snapshot_id":"'
+fi
+
+if [ "$readiness_snapshots_count" -gt 0 ]; then
+  assert_not_contains "capabilities response" "$capabilities_response" '"readiness_snapshot_id":null'
+  assert_not_contains "capabilities response" "$capabilities_response" '"readiness_persisted_at":null'
+fi
+
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_snapshot_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_paired_links'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_single_sided_links'
@@ -287,6 +350,12 @@ if printf '%s' "$platform_status_response" | grep -F '"name":"odl"' | grep -F '"
   :
 elif printf '%s' "$platform_status_response" | grep -F '"name":"odl"' >/dev/null 2>&1; then
   warn "Platform status does not currently report ODL observation_state as ok; run ./scripts/verify-odl-auth.sh to validate the controller path explicitly."
+fi
+
+if [ "$persisted_artifact_count" -gt 0 ]; then
+  notice "Postgres persisted read-side baseline present: sync_runs=$sync_runs_count inventory_snapshots=$inventory_snapshots_count topology_snapshots=$topology_snapshots_count policy_snapshots=$policy_snapshots_count readiness_snapshots=$readiness_snapshots_count."
+else
+  notice "Postgres currently has no persisted read-side snapshots, sync runs, or readiness snapshots; this is consistent with a first deploy or missing-data-dir recovery, and historical recovery is starting from a new baseline."
 fi
 
 if printf '%s' "$devices_response" | grep -F '"serving_mode":"persisted_fallback"' >/dev/null 2>&1; then

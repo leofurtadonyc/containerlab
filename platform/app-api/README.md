@@ -77,9 +77,16 @@ Topology may still include inferred truth within the current normalized slice, e
 The current backend metrics path remains transient and in-memory for scrape safety. Those metrics are observability signals, not durable product records.
 After restart or redeploy, live collector-backed reads may need to be recollected before the current APIs return fresh live evidence again, but persisted fallback snapshots, sync-derived history, and readiness-support anchors remain available as long as the Postgres data directory survives.
 If the Postgres data directory is lost or replaced, the backend can rebuild schema and recollect current live read-side data, but prior persisted snapshot anchors, prior sync-derived history, prior readiness-support records, and bounded comparison baselines do not recover automatically from repo files alone.
+The current same-workspace recovery matrix is intentionally narrow:
+
+- normal container restart preserves the host-backed Postgres baseline, so bounded fallback, comparison, workflow-history, audit-history, and readiness anchors can still be served while fresh live collection catches up
+- `clab deploy -t topology.clab.yml -c` in the same workspace preserves that same baseline when `platform/postgres/data` is left in place, even though the runtime containers and process memory are replaced
+- first deploy, or replacement after `platform/postgres/data` was removed or replaced, rebuilds schema and the current live read-side slice but starts comparison windows, sync-derived history, and readiness-support anchors from a new baseline
+
+`platform/scripts/verify-core-runtime.sh` now checks that boundary directly: when Postgres already contains persisted snapshot, sync-run, or readiness rows, the backend must still expose the corresponding history windows and anchor fields after restart or replacement.
 The packaged runtime is now stricter about startup ordering against Postgres, but it is still bootstrap-grade in the broader operational sense: it relies on topology-level env wiring, does not yet own secret rotation, restart orchestration, TLS, or broader recovery automation, and still treats bounded warm-up as best-effort rather than as a full readiness gate.
 The current ODL enrichment is intentionally narrow: the backend probes bounded RESTCONF capability signals for platform health, but ODL still does not own topology truth, policy truth, or workflow logic.
 The current capability matrix is still intentionally bounded: it reflects the delivered Nokia-first read-only product slice and planned Juniper direction, not full multi-vendor parity or deep per-version capability discovery.
 Capability items also remain descriptive support records rather than durable per-item entities: the current product can operate honestly with vendor, platform, domain, feature, and version-scope context, so explicit capability item IDs remain a deferred follow-on only if a later bounded consumer truly needs standalone item citation.
 Workflow-history and audit-history are currently bounded views derived from persisted sync-run activity, not separate durable workflow or user-action audit domains.
-The current topology now mounts a host-backed Postgres data directory, so bounded read-side state survives normal container replacement within the same platform workspace.
+The current topology now mounts a host-backed Postgres data directory, so bounded read-side state survives normal container replacement within the same platform workspace when that directory is preserved.

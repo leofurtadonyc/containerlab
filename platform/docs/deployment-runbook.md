@@ -139,6 +139,7 @@ This is the current documented replacement for ad hoc host-side validation of no
 This now validates:
 
 - Postgres readiness and expected schema presence
+- bounded persisted read-side table presence for sync runs, inventory snapshots, topology snapshots, policy snapshots, and readiness snapshots
 - Postgres Docker health visibility for the packaged runtime
 - Prometheus Docker health visibility and readiness
 - Grafana Docker health visibility and API readiness
@@ -147,8 +148,10 @@ This now validates:
 - `app-web` startup-contract readiness, static HTTP availability, and `/api` proxy reachability to `app-api`
 - Prometheus live scrape target posture for the current real targets
 - read-side API contract sanity for platform status, devices, topology, policies, and capabilities, now including bounded `read_paths` coverage and freshness fields plus capability vendor-posture and roadmap rollups
+- workflow-history and audit-history contract sanity for the current persisted read-side slice
 - backend-owned topology coverage contract presence in both `/api/v1/platform/status` and `/api/v1/topology`, including endpoint-pairing posture, paired-link and single-sided-link counts, per-link pairing state, and per-link endpoint-evidence counts
 - dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts, now including backend and collector paired-link, single-sided-link, pairing-posture, collector observation-age, policy detail-ready signals, and the backend collector-boundary latest duration, timeout budget, and latest timeout or failure posture signals used by the current dashboards
+- bounded persisted-state exposure checks: when Postgres already holds snapshot, sync-run, or readiness rows, the API must still expose the matching history windows, comparison anchors, workflow-history, audit-history, and readiness anchor surfaces after restart or replacement
 - bounded warnings and notices when current read-side responses fall back to persisted data, become blocked, expose non-ok read-path posture, surface other degraded-but-honest states such as partial topology, partially-paired or single-sided topology coverage, and aggregate-only policy evidence, or show that fallback was triggered by a bounded collector-boundary timeout posture rather than ordinary degraded live collection
 - Grafana provisioned datasource presence and provisioned overview dashboards
 
@@ -538,6 +541,15 @@ Current reality:
 
 Treat recovery by data class rather than by container name.
 
+### Recovery Matrix
+
+| Scenario | What survives | What must be recollected or starts from a new baseline |
+| --- | --- | --- |
+| first deploy, or redeploy after `platform/postgres/data`, `platform/prometheus/data`, or `platform/grafana/data` was removed or replaced | repo-built images, topology wiring, Alembic migrations, Prometheus config, Grafana provisioning, and app-web build output | persisted Postgres snapshots, sync-derived history, readiness-support anchors, Prometheus TSDB history, and Grafana local state all start from a new baseline |
+| normal service restart in the same workspace | host-backed Postgres data, Prometheus TSDB, and Grafana local state survive because the bind mounts remain in place | live inventory, topology, and policy evidence must be recollected; in-memory metrics and warm-up state are regenerated |
+| `clab deploy -t topology.clab.yml -c` in the same workspace with preserved data directories | the same host-backed Postgres, Prometheus, and Grafana state survives container replacement | current live collector-backed evidence and transient in-memory state are recollected or regenerated after the new containers start |
+| recreate on another host from repo files alone without carrying over the data directories | software, topology shape, migrations, provisioning, and generated app-web assets are rebuilt from the repository | prior Postgres read-side history, Prometheus TSDB history, and Grafana local state do not recover automatically |
+
 ### What survives normal restart or replacement in the same workspace
 
 - Postgres keeps the bounded application-state records stored under `platform/postgres/data/pgdata`
@@ -607,6 +619,12 @@ Interpret the results honestly:
 - `persisted_fallback` means restart succeeded but live recollection is not currently available
 - `empty_scaffold` means neither live evidence nor a persisted fallback record is available
 - older `served_persisted_at` or readiness timestamps may be acceptable after restart, but they prove persisted fallback or persisted support rather than fresh live truth
+
+`./scripts/verify-core-runtime.sh` now automates the bounded persistence check behind those manual API inspections:
+
+- if Postgres still contains persisted inventory, topology, policy, sync-run, or readiness rows, the script requires the matching API history or anchor surfaces to remain visible after restart or replacement
+- if those persisted tables are empty, the script emits a notice that the runtime is on a new baseline instead of pretending prior history survived
+- this remains a recovery-contract check only; it is not a backup validator or a restore drill
 
 When the running stack drifts or you want to validate the repo-owned state again, prefer the documented replacement flow:
 
