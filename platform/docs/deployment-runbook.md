@@ -598,9 +598,10 @@ After a container restart, `clab deploy -t topology.clab.yml -c`, or other bound
 
 1. run `./scripts/verify-core-runtime.sh`
 2. run `./scripts/verify-odl-auth.sh`
-3. confirm `serving_mode`, `data_status`, and any `served_persisted_at` fields on `/api/v1/devices`, `/api/v1/topology`, and `/api/v1/policies`
-4. confirm `/api/v1/capabilities` still exposes the latest `readiness_snapshot_id` and `readiness_persisted_at` when Postgres state was expected to survive
-5. confirm workflow-history and audit-history still show the expected bounded persisted evidence if Postgres state was expected to survive
+3. confirm `/api/v1/platform/status` exposes the expected `recovery.baseline_posture`, `recovery.read_side_posture`, and per-slice `recovery.persisted_artifacts` values for the current restart or redeploy case
+4. confirm `serving_mode`, `data_status`, and any `served_persisted_at` fields on `/api/v1/devices`, `/api/v1/topology`, and `/api/v1/policies`
+5. confirm `/api/v1/capabilities` still exposes the latest `readiness_snapshot_id` and `readiness_persisted_at` when Postgres state was expected to survive
+6. confirm workflow-history and audit-history still show the expected bounded persisted evidence if Postgres state was expected to survive
 
 Useful checks:
 
@@ -615,6 +616,11 @@ curl -s http://localhost:8000/api/v1/audit-history | python -m json.tool
 
 Interpret the results honestly:
 
+- `recovery.baseline_posture=preserved_same_workspace_baseline` means at least one bounded persisted application artifact survived in Postgres; use `recovery.persisted_artifacts` to see which slices still have preserved anchors
+- `recovery.baseline_posture=new_baseline` means the current runtime is rebuilding persisted anchors from the current environment rather than exposing a preserved same-workspace baseline
+- `recovery.read_side_posture=live_recollection_ready` means the bounded live inventory, topology, and policy read paths are currently recollecting usable live evidence
+- `recovery.read_side_posture=degraded_with_persisted_baseline` means one or more live read paths are degraded while preserved persisted anchors still exist for the runtime
+- `recovery.read_side_posture=degraded_without_persisted_baseline` means one or more live read paths are degraded and the runtime does not currently have a preserved same-workspace baseline to lean on
 - `live_collector` means current recollection succeeded
 - `persisted_fallback` means restart succeeded but live recollection is not currently available
 - `empty_scaffold` means neither live evidence nor a persisted fallback record is available

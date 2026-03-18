@@ -59,6 +59,8 @@ Current truth labels today:
 
 - `live` means the response is primarily backed by the active collector-to-backend read path
 - `persisted_fallback` means the live collector path could not be used and the response is serving the latest persisted normalized snapshot
+- `preserved_same_workspace_baseline` means at least one bounded persisted application artifact still exists in Postgres after restart or redeploy in the same workspace; it does not mean every read-side slice has a persisted fallback anchor
+- `new_baseline` means the current runtime is rebuilding its persisted anchors from the current environment because no bounded persisted application artifacts are presently available in Postgres
 - `inferred` currently describes bounded topology knowledge that is derived from interface-state interpretation rather than protocol-derived adjacency truth
 - `partial` means the platform is intentionally exposing bounded read-side knowledge rather than claiming full operational truth
 - `unavailable` means the backend does not currently have the additional persisted evidence required to build a bounded comparison view
@@ -154,6 +156,7 @@ Current state:
 - policy may now also be served from the latest persisted normalized policy snapshot if the live collector boundary is temporarily unavailable
 - useful frontend read-only pages now consume those stable contracts for overview, platform health, devices, topology, policies, and capabilities
 - overview and platform health now also surface the backend-owned bounded read-path coverage, freshness-window, and degraded-scope posture that the platform-status contract exposes for inventory, topology, and policy
+- the platform-status contract now also exposes a backend-owned `recovery` summary so product, verifier, and observability consumers can reuse one bounded same-workspace preserved-baseline versus new-baseline contract instead of inferring recovery posture independently
 - workflow-history and audit-history pages now interpret persisted sync-derived evidence using bounded recency and comparison cues, but those remain product-facing explanations rather than workflow, audit-forensics, or validation conclusions
 
 Current topology coverage semantics:
