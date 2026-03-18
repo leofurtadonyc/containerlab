@@ -4,6 +4,7 @@ import { TrustCueCard } from "../../components/trust-cue-card";
 import type { PoliciesListResponse, PlatformReadPathStatus } from "../../api/contracts";
 import {
   countBy,
+  describeRecoveryPosture,
   describeTopologyReadPathNodeParticipation,
   describeTopologyReadPathCollection,
   describeTopologyReadPathInference,
@@ -227,6 +228,7 @@ export function PlatformHealthView() {
     policiesError !== null,
     policyReadPath?.detail_ready_target_count ?? 0,
   );
+  const recoveryReadout = describeRecoveryPosture(data.recovery);
 
   return (
     <section>
@@ -338,6 +340,15 @@ export function PlatformHealthView() {
           <strong>{policySourceReadiness.label}</strong>
           <p>{policySourceReadiness.detail}</p>
         </article>
+        {recoveryReadout ? (
+          <article className="summary-card">
+            <p className="summary-label">Same-Workspace Recovery</p>
+            <strong>{recoveryReadout.baselineLabel}</strong>
+            <p>
+              {recoveryReadout.readSideLabel}. Preserved baseline and fresh live recollection are not the same thing.
+            </p>
+          </article>
+        ) : null}
       </div>
 
       <div className="content-grid">
@@ -413,6 +424,16 @@ export function PlatformHealthView() {
                         `${formatLabel(readPath.model_family)}: ${formatReadPathFreshness(readPath)}`,
                     )
                   : undefined,
+            },
+            {
+              label: "Recovery posture",
+              kind: "text",
+              value: data.recovery
+                ? `${formatLabel(data.recovery.baseline_posture)} • ${formatLabel(data.recovery.read_side_posture)}`
+                : "Not exposed",
+              note: data.recovery
+                ? [data.recovery.summary, "Preserved baseline and fresh live recollection are not the same thing; see Overview for richer recovery cues."]
+                : undefined,
             },
             {
               label: "Anchor posture",

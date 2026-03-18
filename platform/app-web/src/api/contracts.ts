@@ -93,10 +93,36 @@ export interface PlatformReadPathStatus {
   notes: string[];
 }
 
+export interface PlatformRecoveryPersistedArtifacts {
+  inventory_snapshot: boolean;
+  topology_snapshot: boolean;
+  policy_snapshot: boolean;
+  sync_history: boolean;
+  readiness_snapshot: boolean;
+}
+
+export type PlatformRecoveryBaselinePosture =
+  | "preserved_same_workspace_baseline"
+  | "new_baseline";
+
+export type PlatformRecoveryReadSidePosture =
+  | "live_recollection_ready"
+  | "degraded_with_persisted_baseline"
+  | "degraded_without_persisted_baseline";
+
+export interface PlatformRecoveryStatus {
+  baseline_posture: PlatformRecoveryBaselinePosture;
+  read_side_posture: PlatformRecoveryReadSidePosture;
+  summary: string;
+  persisted_artifacts: PlatformRecoveryPersistedArtifacts;
+  notes: string[];
+}
+
 export interface PlatformStatusResponse extends ApiResponseMetadata {
   status: "ok";
   topology_name: "platform";
   summary: string;
+  recovery: PlatformRecoveryStatus;
   components: PlatformComponentStatus[];
   read_paths?: PlatformReadPathStatus[];
 }

@@ -1,6 +1,7 @@
 import type {
   CurrentRowPosture,
   PlatformReadPathStatus,
+  PlatformRecoveryStatus,
   TopologyCollectionPosture,
   TopologyCoverageSummaryRecord,
   TopologyEndpointPairingPosture,
@@ -43,6 +44,8 @@ export function getStatusTone(value: string): "good" | "warn" | "bad" | "neutral
     case "direct_observed":
     case "strong_for_current_slice":
     case "fully_linked":
+    case "preserved_same_workspace_baseline":
+    case "live_recollection_ready":
       return "good";
     case "degraded":
     case "partial":
@@ -59,6 +62,8 @@ export function getStatusTone(value: string): "good" | "warn" | "bad" | "neutral
     case "aggregate_plus_bounded_records":
     case "bounded_partial":
     case "partially_isolated":
+    case "new_baseline":
+    case "degraded_with_persisted_baseline":
       return "warn";
     case "down":
     case "failed":
@@ -69,6 +74,7 @@ export function getStatusTone(value: string): "good" | "warn" | "bad" | "neutral
     case "collector_unavailable":
     case "collector_unavailable_and_no_persisted_snapshot":
     case "isolated_only":
+    case "degraded_without_persisted_baseline":
       return "bad";
     default:
       return "neutral";
@@ -630,4 +636,49 @@ export function describeTopologyLinkPairing(link: TopologyLinkRecord): string {
   }
 
   return "Endpoint pairing remains unknown in the current normalized topology contract.";
+}
+
+export interface RecoveryPostureReadout {
+  baselineLabel: string;
+  readSideLabel: string;
+  summary: string;
+  artifactCount: number;
+  artifactTotal: number;
+}
+
+export function describeRecoveryPosture(
+  recovery: PlatformRecoveryStatus | null | undefined,
+): RecoveryPostureReadout | null {
+  if (!recovery) {
+    return null;
+  }
+
+  const baselineLabels: Record<PlatformRecoveryStatus["baseline_posture"], string> = {
+    preserved_same_workspace_baseline: "Preserved same-workspace baseline",
+    new_baseline: "New baseline",
+  };
+
+  const readSideLabels: Record<PlatformRecoveryStatus["read_side_posture"], string> = {
+    live_recollection_ready: "Live recollection ready",
+    degraded_with_persisted_baseline: "Degraded with persisted baseline",
+    degraded_without_persisted_baseline: "Degraded without persisted baseline",
+  };
+
+  const artifacts = recovery.persisted_artifacts;
+  const artifactCount = [
+    artifacts.inventory_snapshot,
+    artifacts.topology_snapshot,
+    artifacts.policy_snapshot,
+    artifacts.sync_history,
+    artifacts.readiness_snapshot,
+  ].filter(Boolean).length;
+  const artifactTotal = 5;
+
+  return {
+    baselineLabel: baselineLabels[recovery.baseline_posture],
+    readSideLabel: readSideLabels[recovery.read_side_posture],
+    summary: recovery.summary,
+    artifactCount,
+    artifactTotal,
+  };
 }
