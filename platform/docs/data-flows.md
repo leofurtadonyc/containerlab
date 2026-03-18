@@ -157,7 +157,7 @@ Current state:
 - useful frontend read-only pages now consume those stable contracts for overview, platform health, devices, topology, policies, and capabilities
 - overview and platform health now also surface the backend-owned bounded read-path coverage, freshness-window, and degraded-scope posture that the platform-status contract exposes for inventory, topology, and policy
 - the platform-status contract now also exposes a backend-owned `recovery` summary so product, verifier, and observability consumers can reuse one bounded same-workspace preserved-baseline versus new-baseline contract instead of inferring recovery posture independently
-- workflow-history and audit-history pages now interpret persisted sync-derived evidence using bounded recency and comparison cues, but those remain product-facing explanations rather than workflow, audit-forensics, or validation conclusions
+- workflow-history and audit-history pages now interpret persisted sync-derived evidence using bounded recency and comparison cues, and surface the response-level baseline summary so operators can see preserved-baseline versus new-baseline posture directly; those remain product-facing explanations rather than workflow, audit-forensics, or validation conclusions
 
 Current topology coverage semantics:
 

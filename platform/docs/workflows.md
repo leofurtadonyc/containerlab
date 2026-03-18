@@ -275,7 +275,7 @@ readiness, and preserves the current Phase 2 boundary.
 
 - workflow model direction is documented
 - placeholder dashboard family exists for change validation observability
-- bounded workflow-history and audit-history product views now exist, but they are derived from persisted sync activity rather than an execution workflow engine
+- bounded workflow-history and audit-history product views now exist; they are read-only history surfaces derived from persisted sync activity rather than an execution workflow engine, and they expose the response-level baseline summary so operators can see preserved-baseline versus new-baseline posture
 - the project now supports stricter future dry-run planning assessment, but only as descriptive readiness support rather than actual workflow functionality
 - no actual dry-run or action workflow implementation exists
 - no workflow-grade audit linkage implementation exists

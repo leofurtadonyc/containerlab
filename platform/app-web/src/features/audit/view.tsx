@@ -361,6 +361,11 @@ export function AuditView() {
 
       <div className="summary-grid">
         <article className="summary-card">
+          <p className="summary-label">Baseline Posture</p>
+          <StatusPill value={data.baseline_summary.baseline_posture} />
+          <p>{data.baseline_summary.summary}</p>
+        </article>
+        <article className="summary-card">
           <p className="summary-label">Succeeded Events</p>
           <strong>{resultCounts.succeeded ?? 0}</strong>
           <p>Platform-recorded sync events that completed successfully.</p>
@@ -430,6 +435,24 @@ export function AuditView() {
       </div>
 
       <div className="content-grid">
+        <article className="detail-card">
+          <h3>Baseline Summary</h3>
+          <p>{data.baseline_summary.summary}</p>
+          <ul className="compact-list">
+            <li>
+              <span>Baseline posture</span>
+              <StatusPill value={data.baseline_summary.baseline_posture} />
+            </li>
+            {data.baseline_summary.notes.length > 0 ? (
+              data.baseline_summary.notes.map((note, idx) => (
+                <li key={idx}>
+                  <span>Interpretation</span>
+                  <span className="table-note">{note}</span>
+                </li>
+              ))
+            ) : null}
+          </ul>
+        </article>
         <article className="detail-card">
           <h3>Audit Readout</h3>
           <p>{data.summary}</p>
