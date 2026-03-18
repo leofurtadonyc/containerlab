@@ -384,6 +384,10 @@ def _build_policy_history_window() -> PolicyHistoryWindow:
         comparison_notes.append(
             "Change preview is intentionally capped to a short bounded list of normalized policy records."
         )
+    current_readiness = current_snapshot.snapshot.detail_source_readiness
+    previous_readiness = previous_snapshot.snapshot.detail_source_readiness
+    current_detail_ready = len({r.source_target for r in current_snapshot.snapshot.records})
+    previous_detail_ready = len({r.source_target for r in previous_snapshot.snapshot.records})
     return PolicyHistoryWindow(
         status="comparison_ready",
         summary=(
@@ -412,6 +416,12 @@ def _build_policy_history_window() -> PolicyHistoryWindow:
             changed_policy_count=len(changed_policy_ids),
             change_preview=change_preview,
             notes=comparison_notes,
+            current_detail_source_readiness_posture=current_readiness.posture,
+            previous_detail_source_readiness_posture=previous_readiness.posture,
+            current_detail_ready_target_count=current_detail_ready,
+            previous_detail_ready_target_count=previous_detail_ready,
+            current_no_policies_observed_target_count=current_readiness.no_policies_observed_target_count,
+            previous_no_policies_observed_target_count=previous_readiness.no_policies_observed_target_count,
         ),
     )
 
@@ -935,6 +945,11 @@ def build_policies_list_response() -> PoliciesListResponse:
                     observed_policy_count=entry.observed_policy_count,
                     active_policy_count=entry.active_policy_count,
                     detail_record_count=entry.detail_record_count,
+                    detail_source_readiness_posture=entry.detail_source_readiness_posture,
+                    detail_ready_target_count=entry.detail_ready_target_count,
+                    no_policies_observed_target_count=entry.no_policies_observed_target_count,
+                    detail_unavailable_target_count=entry.detail_unavailable_target_count,
+                    partial_detail_target_count=entry.partial_detail_target_count,
                 )
                 for entry in history.recent_snapshots
             ],
@@ -965,6 +980,12 @@ def build_policies_list_response() -> PoliciesListResponse:
                         for entry in history.comparison_to_previous.change_preview
                     ],
                     notes=history.comparison_to_previous.notes,
+                    current_detail_source_readiness_posture=history.comparison_to_previous.current_detail_source_readiness_posture,
+                    previous_detail_source_readiness_posture=history.comparison_to_previous.previous_detail_source_readiness_posture,
+                    current_detail_ready_target_count=history.comparison_to_previous.current_detail_ready_target_count,
+                    previous_detail_ready_target_count=history.comparison_to_previous.previous_detail_ready_target_count,
+                    current_no_policies_observed_target_count=history.comparison_to_previous.current_no_policies_observed_target_count,
+                    previous_no_policies_observed_target_count=history.comparison_to_previous.previous_no_policies_observed_target_count,
                 )
                 if history.comparison_to_previous is not None
                 else None

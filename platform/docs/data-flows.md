@@ -175,6 +175,7 @@ Current comparison semantics:
 - topology history and comparison now carry derived coverage posture (inference, endpoint-pairing, collection, node-participation postures plus paired/single-sided and linked/isolated counts) as trust cues, not validation conclusions
 - the topology product page surfaces persisted coverage posture in recent-snapshot and comparison readouts so operators can see how coverage changed across persisted snapshots; these remain persisted coverage cues only, not drift or fault verdicts
 - policies compare the current normalized policy response against the latest persisted normalized policy snapshot, and may also compare the latest persisted policy snapshot against the immediately previous persisted policy snapshot for bounded history support
+- policy history and comparison now expose persisted source-readiness posture and counts (detail-ready targets, no-policies-observed targets, etc.) so operators can see how coverage changed across persisted snapshots; these remain coverage cues only, not validation verdicts
 - workflow-history and audit-history may attach bounded inventory, topology, and policy snapshot context plus immediate previous-snapshot comparison evidence where those persisted sync-run records exist
 - none of these comparisons currently claim policy correctness, topology validity, intended-versus-observed reconciliation, or automated remediation guidance
 
@@ -237,6 +238,7 @@ What is real today:
 - candidate paths are represented in a normalized form rather than as vendor-native payloads
 - the backend exposes current live policy observations and now persists bounded normalized policy snapshots plus candidate-path records to Postgres
 - the policy response can now distinguish live collection, persisted fallback, and comparison-unavailable versus comparison-ready states explicitly, both for current-versus-latest-persisted and bounded persisted-versus-previous history views
+- policy history snapshots and comparisons now include source-readiness posture and counts (detail-ready targets, no-policies-observed targets, etc.) as bounded trust cues; workflow-history and audit-history policy summaries carry the same source-readiness context where honest persisted records exist
 
 What remains partial:
 

@@ -25,7 +25,7 @@ from app_api.integrations.collector.topology import (
 from app_api.main import app
 from app_api.models.inventory import InventoryDevice
 from app_api.metrics.state import reset_metrics_registry
-from app_api.models.policy import PolicyInventorySnapshot
+from app_api.models.policy import PolicyDetailSourceReadiness, PolicyInventorySnapshot
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.persistence.history import (
     PersistedInventorySnapshotComparison,
@@ -1185,6 +1185,12 @@ def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
             sync_status="degraded",
             completeness="partial",
             detail_mode="static_policies_when_present",
+            detail_source_readiness=PolicyDetailSourceReadiness(
+                posture="partially_ready",
+                no_policies_observed_target_count=0,
+                detail_unavailable_target_count=0,
+                partial_detail_target_count=0,
+            ),
             empty_reason="none",
             observed_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
             observed_target_count=2,
@@ -1261,6 +1267,12 @@ def _build_previous_persisted_policy_snapshot() -> PersistedPolicySnapshot:
             sync_status="ok",
             completeness="partial",
             detail_mode="static_policies_when_present",
+            detail_source_readiness=PolicyDetailSourceReadiness(
+                posture="partially_ready",
+                no_policies_observed_target_count=0,
+                detail_unavailable_target_count=0,
+                partial_detail_target_count=0,
+            ),
             empty_reason="none",
             observed_at=datetime.fromisoformat("2026-03-09T23:29:00+00:00"),
             observed_target_count=2,
@@ -1342,6 +1354,11 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
                 "observed_policy_count": 1,
                 "active_policy_count": 1,
                 "detail_record_count": 1,
+                "detail_source_readiness_posture": "partially_ready",
+                "detail_ready_target_count": 1,
+                "no_policies_observed_target_count": 0,
+                "detail_unavailable_target_count": 0,
+                "partial_detail_target_count": 0,
             },
         ),
         PersistedPolicySnapshotSummary(
@@ -1360,6 +1377,11 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
                 "observed_policy_count": 2,
                 "active_policy_count": 1,
                 "detail_record_count": 2,
+                "detail_source_readiness_posture": "partially_ready",
+                "detail_ready_target_count": 2,
+                "no_policies_observed_target_count": 0,
+                "detail_unavailable_target_count": 0,
+                "partial_detail_target_count": 0,
             },
         ),
         PersistedPolicySnapshotSummary(
@@ -1378,6 +1400,11 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
                 "observed_policy_count": 2,
                 "active_policy_count": 0,
                 "detail_record_count": 0,
+                "detail_source_readiness_posture": "source_detail_unavailable",
+                "detail_ready_target_count": 0,
+                "no_policies_observed_target_count": 0,
+                "detail_unavailable_target_count": 2,
+                "partial_detail_target_count": 0,
             },
         ),
     ]
@@ -1408,6 +1435,11 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
                 observed_policy_count=1,
                 active_policy_count=1,
                 detail_record_count=1,
+                detail_source_readiness_posture="partially_ready",
+                detail_ready_target_count=1,
+                no_policies_observed_target_count=0,
+                detail_unavailable_target_count=0,
+                partial_detail_target_count=0,
             ),
             policy_comparison_to_previous=PersistedPolicySnapshotComparison(
                 current_snapshot_id="policy-snapshot-sync-1",
@@ -2787,8 +2819,17 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["history"]["status"] == "comparison_ready"
     assert len(payload["history"]["recent_snapshots"]) == 3
     assert payload["history"]["recent_snapshots"][0]["snapshot_id"] == "policy-snapshot-1"
+    assert payload["history"]["recent_snapshots"][0]["detail_source_readiness_posture"] == "partially_ready"
+    assert payload["history"]["recent_snapshots"][0]["detail_ready_target_count"] == 1
+    assert payload["history"]["recent_snapshots"][0]["no_policies_observed_target_count"] == 0
     assert payload["history"]["recent_snapshots"][1]["snapshot_id"] == "policy-snapshot-0"
+    assert payload["history"]["recent_snapshots"][1]["detail_source_readiness_posture"] == "partially_ready"
+    assert payload["history"]["recent_snapshots"][1]["detail_ready_target_count"] == 2
     assert payload["history"]["comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-1"
+    assert payload["history"]["comparison_to_previous"]["current_detail_source_readiness_posture"] == "partially_ready"
+    assert payload["history"]["comparison_to_previous"]["previous_detail_source_readiness_posture"] == "partially_ready"
+    assert payload["history"]["comparison_to_previous"]["current_detail_ready_target_count"] == 1
+    assert payload["history"]["comparison_to_previous"]["previous_detail_ready_target_count"] == 2
     assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-0"
     assert payload["history"]["comparison_to_previous"]["observed_policy_delta"] == -1
     assert payload["history"]["comparison_to_previous"]["detail_record_delta"] == -1

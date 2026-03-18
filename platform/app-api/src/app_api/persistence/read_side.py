@@ -15,6 +15,7 @@ from app_api.integrations.collector.topology import CollectorTopologySnapshot
 from app_api.models.inventory import InventoryDevice, InventoryHistorySnapshotRecord
 from app_api.models.policy import (
     CandidatePath,
+    PolicyDetailSourceReadiness,
     PolicyHistorySnapshotRecord,
     PolicyInventoryRecord,
     PolicyInventorySnapshot,
@@ -40,6 +41,17 @@ from app_api.persistence.tables import (
 )
 
 logger = getLogger(__name__)
+
+
+def _derive_detail_ready_target_count(
+    *,
+    collector_snapshot: CollectorPolicySnapshot,
+    snapshot: PolicyInventorySnapshot,
+) -> int:
+    """Derive detail-ready target count from collector when available, else from records."""
+    if collector_snapshot.status != "collector_unavailable":
+        return collector_snapshot.detail_ready_target_count
+    return len({r.source_target for r in snapshot.records}) if snapshot.records else 0
 
 
 class PersistedInventorySnapshot(BaseModel):
@@ -565,6 +577,7 @@ def persist_policy_snapshot(
                 finished_at=current_time,
                 notes=notes,
             )
+            detail_readiness = snapshot.detail_source_readiness
             persisted_snapshot = PolicySnapshotTable(
                 id=snapshot_id,
                 sync_run_id=sync_run_id,
@@ -577,6 +590,14 @@ def persist_policy_snapshot(
                 observed_at=snapshot.observed_at,
                 persisted_at=current_time,
                 observed_target_count=snapshot.observed_target_count,
+                detail_source_readiness_posture=detail_readiness.posture,
+                detail_ready_target_count=_derive_detail_ready_target_count(
+                    collector_snapshot=collector_snapshot,
+                    snapshot=snapshot,
+                ),
+                no_policies_observed_target_count=detail_readiness.no_policies_observed_target_count,
+                detail_unavailable_target_count=detail_readiness.detail_unavailable_target_count,
+                partial_detail_target_count=detail_readiness.partial_detail_target_count,
                 policy_capable_target_count=snapshot.policy_capable_target_count,
                 observed_target_role_counts=snapshot.observed_target_role_counts,
                 policy_capable_target_role_counts=snapshot.policy_capable_target_role_counts,
@@ -656,6 +677,12 @@ def _load_policy_snapshot_at_offset(offset: int) -> PersistedPolicySnapshot | No
             candidates_by_policy_id: dict[int, list[PolicyCandidatePathTable]] = {}
             for row in candidate_rows:
                 candidates_by_policy_id.setdefault(row.policy_record_id, []).append(row)
+            detail_readiness = PolicyDetailSourceReadiness(
+                posture=snapshot.detail_source_readiness_posture,
+                no_policies_observed_target_count=snapshot.no_policies_observed_target_count,
+                detail_unavailable_target_count=snapshot.detail_unavailable_target_count,
+                partial_detail_target_count=snapshot.partial_detail_target_count,
+            )
             return PersistedPolicySnapshot(
                 snapshot_id=snapshot.id,
                 sync_run_id=snapshot.sync_run_id,
@@ -665,6 +692,7 @@ def _load_policy_snapshot_at_offset(offset: int) -> PersistedPolicySnapshot | No
                     sync_status=snapshot.sync_status,
                     completeness=snapshot.completeness,
                     detail_mode=snapshot.detail_mode,
+                    detail_source_readiness=detail_readiness,
                     empty_reason=snapshot.empty_reason,
                     observed_at=snapshot.observed_at,
                     observed_target_count=snapshot.observed_target_count,
@@ -762,6 +790,11 @@ def load_recent_policy_snapshot_summaries(limit: int = 3) -> list[PersistedPolic
                         observed_policy_count=snapshot.observed_policy_count,
                         active_policy_count=snapshot.active_policy_count,
                         detail_record_count=counts_by_snapshot_id.get(snapshot.id, 0),
+                        detail_source_readiness_posture=snapshot.detail_source_readiness_posture,
+                        detail_ready_target_count=snapshot.detail_ready_target_count,
+                        no_policies_observed_target_count=snapshot.no_policies_observed_target_count,
+                        detail_unavailable_target_count=snapshot.detail_unavailable_target_count,
+                        partial_detail_target_count=snapshot.partial_detail_target_count,
                     ),
                 )
                 for snapshot in snapshots

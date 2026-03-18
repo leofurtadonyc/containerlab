@@ -244,6 +244,11 @@ def build_audit_history_response() -> AuditHistoryResponse:
                     observed_policy_count=sync_run.policy_snapshot_summary.observed_policy_count,
                     active_policy_count=sync_run.policy_snapshot_summary.active_policy_count,
                     detail_record_count=sync_run.policy_snapshot_summary.detail_record_count,
+                    detail_source_readiness_posture=sync_run.policy_snapshot_summary.detail_source_readiness_posture,
+                    detail_ready_target_count=sync_run.policy_snapshot_summary.detail_ready_target_count,
+                    no_policies_observed_target_count=sync_run.policy_snapshot_summary.no_policies_observed_target_count,
+                    detail_unavailable_target_count=sync_run.policy_snapshot_summary.detail_unavailable_target_count,
+                    partial_detail_target_count=sync_run.policy_snapshot_summary.partial_detail_target_count,
                 )
                 if sync_run.policy_snapshot_summary is not None
                 else None
@@ -264,6 +269,12 @@ def build_audit_history_response() -> AuditHistoryResponse:
                     removed_policy_count=sync_run.policy_comparison_to_previous.removed_policy_count,
                     changed_policy_count=sync_run.policy_comparison_to_previous.changed_policy_count,
                     notes=sync_run.policy_comparison_to_previous.notes,
+                    current_detail_source_readiness_posture=sync_run.policy_comparison_to_previous.current_detail_source_readiness_posture,
+                    previous_detail_source_readiness_posture=sync_run.policy_comparison_to_previous.previous_detail_source_readiness_posture,
+                    current_detail_ready_target_count=sync_run.policy_comparison_to_previous.current_detail_ready_target_count,
+                    previous_detail_ready_target_count=sync_run.policy_comparison_to_previous.previous_detail_ready_target_count,
+                    current_no_policies_observed_target_count=sync_run.policy_comparison_to_previous.current_no_policies_observed_target_count,
+                    previous_no_policies_observed_target_count=sync_run.policy_comparison_to_previous.previous_no_policies_observed_target_count,
                 )
                 if sync_run.policy_comparison_to_previous is not None
                 else None
@@ -465,6 +476,11 @@ def build_audit_history_response() -> AuditHistoryResponse:
                         observed_policy_count=record.policy_snapshot_summary.observed_policy_count,
                         active_policy_count=record.policy_snapshot_summary.active_policy_count,
                         detail_record_count=record.policy_snapshot_summary.detail_record_count,
+                        detail_source_readiness_posture=record.policy_snapshot_summary.detail_source_readiness_posture,
+                        detail_ready_target_count=record.policy_snapshot_summary.detail_ready_target_count,
+                        no_policies_observed_target_count=record.policy_snapshot_summary.no_policies_observed_target_count,
+                        detail_unavailable_target_count=record.policy_snapshot_summary.detail_unavailable_target_count,
+                        partial_detail_target_count=record.policy_snapshot_summary.partial_detail_target_count,
                     )
                     if record.policy_snapshot_summary is not None
                     else None
@@ -485,6 +501,12 @@ def build_audit_history_response() -> AuditHistoryResponse:
                         removed_policy_count=record.policy_comparison_to_previous.removed_policy_count,
                         changed_policy_count=record.policy_comparison_to_previous.changed_policy_count,
                         notes=record.policy_comparison_to_previous.notes,
+                        current_detail_source_readiness_posture=record.policy_comparison_to_previous.current_detail_source_readiness_posture,
+                        previous_detail_source_readiness_posture=record.policy_comparison_to_previous.previous_detail_source_readiness_posture,
+                        current_detail_ready_target_count=record.policy_comparison_to_previous.current_detail_ready_target_count,
+                        previous_detail_ready_target_count=record.policy_comparison_to_previous.previous_detail_ready_target_count,
+                        current_no_policies_observed_target_count=record.policy_comparison_to_previous.current_no_policies_observed_target_count,
+                        previous_no_policies_observed_target_count=record.policy_comparison_to_previous.previous_no_policies_observed_target_count,
                     )
                     if record.policy_comparison_to_previous is not None
                     else None

@@ -155,6 +155,11 @@ class PersistedPolicySnapshotSummary(BaseModel):
     observed_policy_count: int
     active_policy_count: int
     detail_record_count: int
+    detail_source_readiness_posture: str = "unknown"
+    detail_ready_target_count: int = 0
+    no_policies_observed_target_count: int = 0
+    detail_unavailable_target_count: int = 0
+    partial_detail_target_count: int = 0
 
 
 class PersistedPolicySnapshotComparison(BaseModel):
@@ -174,6 +179,12 @@ class PersistedPolicySnapshotComparison(BaseModel):
     removed_policy_count: int
     changed_policy_count: int
     notes: list[str] = Field(default_factory=list)
+    current_detail_source_readiness_posture: str = "unknown"
+    previous_detail_source_readiness_posture: str = "unknown"
+    current_detail_ready_target_count: int = 0
+    previous_detail_ready_target_count: int = 0
+    current_no_policies_observed_target_count: int = 0
+    previous_no_policies_observed_target_count: int = 0
 
 
 class PersistedReadinessSnapshotHistoryRecord(BaseModel):
@@ -577,6 +588,11 @@ def _build_policy_snapshot_summary(
         observed_policy_count=snapshot.observed_policy_count,
         active_policy_count=snapshot.active_policy_count,
         detail_record_count=int(detail_record_count or 0),
+        detail_source_readiness_posture=snapshot.detail_source_readiness_posture,
+        detail_ready_target_count=snapshot.detail_ready_target_count,
+        no_policies_observed_target_count=snapshot.no_policies_observed_target_count,
+        detail_unavailable_target_count=snapshot.detail_unavailable_target_count,
+        partial_detail_target_count=snapshot.partial_detail_target_count,
     )
 
 
@@ -635,6 +651,12 @@ def _build_policy_snapshot_comparison(
         removed_policy_count=len(removed_policy_ids),
         changed_policy_count=len(changed_policy_ids),
         notes=notes,
+        current_detail_source_readiness_posture=snapshot.detail_source_readiness_posture,
+        previous_detail_source_readiness_posture=previous_snapshot.detail_source_readiness_posture,
+        current_detail_ready_target_count=snapshot.detail_ready_target_count,
+        previous_detail_ready_target_count=previous_snapshot.detail_ready_target_count,
+        current_no_policies_observed_target_count=snapshot.no_policies_observed_target_count,
+        previous_no_policies_observed_target_count=previous_snapshot.no_policies_observed_target_count,
     )
 
 

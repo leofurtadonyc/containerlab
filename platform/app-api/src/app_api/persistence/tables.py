@@ -197,6 +197,13 @@ class PolicySnapshotTable(Base):
     binding_sid_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     srv6_binding_sid_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     notes: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    detail_source_readiness_posture: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="unknown"
+    )
+    detail_ready_target_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    no_policies_observed_target_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    detail_unavailable_target_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    partial_detail_target_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     sync_run: Mapped[SyncRunTable] = relationship(back_populates="policy_snapshot")
     records: Mapped[list["PolicyRecordTable"]] = relationship(

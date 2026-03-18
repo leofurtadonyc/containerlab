@@ -20,6 +20,11 @@ class WorkflowPolicySnapshotSummary(BaseModel):
     observed_policy_count: int
     active_policy_count: int
     detail_record_count: int
+    detail_source_readiness_posture: str = "unknown"
+    detail_ready_target_count: int = 0
+    no_policies_observed_target_count: int = 0
+    detail_unavailable_target_count: int = 0
+    partial_detail_target_count: int = 0
 
 
 class WorkflowInventorySnapshotSummary(BaseModel):
@@ -132,6 +137,12 @@ class WorkflowPolicySnapshotComparison(BaseModel):
     removed_policy_count: int
     changed_policy_count: int
     notes: list[str] = Field(default_factory=list)
+    current_detail_source_readiness_posture: str = "unknown"
+    previous_detail_source_readiness_posture: str = "unknown"
+    current_detail_ready_target_count: int = 0
+    previous_detail_ready_target_count: int = 0
+    current_no_policies_observed_target_count: int = 0
+    previous_no_policies_observed_target_count: int = 0
 
 
 class WorkflowHistoryRecord(BaseModel):
