@@ -173,6 +173,7 @@ Current comparison semantics:
 - topology compares the current normalized topology response against the latest persisted normalized topology snapshot when one exists and the current response is still live-backed
 - topology also exposes a short recent persisted topology snapshot window and a bounded latest-versus-previous persisted topology comparison when those persisted records exist
 - topology history and comparison now carry derived coverage posture (inference, endpoint-pairing, collection, node-participation postures plus paired/single-sided and linked/isolated counts) as trust cues, not validation conclusions
+- the topology product page surfaces persisted coverage posture in recent-snapshot and comparison readouts so operators can see how coverage changed across persisted snapshots; these remain persisted coverage cues only, not drift or fault verdicts
 - policies compare the current normalized policy response against the latest persisted normalized policy snapshot, and may also compare the latest persisted policy snapshot against the immediately previous persisted policy snapshot for bounded history support
 - workflow-history and audit-history may attach bounded inventory, topology, and policy snapshot context plus immediate previous-snapshot comparison evidence where those persisted sync-run records exist
 - none of these comparisons currently claim policy correctness, topology validity, intended-versus-observed reconciliation, or automated remediation guidance

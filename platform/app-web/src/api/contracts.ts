@@ -414,6 +414,14 @@ export interface TopologyHistorySnapshotRecord {
   link_count: number;
   node_state_counts: Record<string, number>;
   link_state_counts: Record<string, number>;
+  inference_posture?: TopologyInferencePosture;
+  endpoint_pairing_posture?: TopologyEndpointPairingPosture;
+  collection_posture?: TopologyCollectionPosture;
+  node_participation_posture?: TopologyNodeParticipationPosture;
+  paired_link_count?: number;
+  single_sided_link_count?: number;
+  linked_node_count?: number;
+  isolated_node_count?: number;
 }
 
 export interface TopologyHistoryComparison {
@@ -434,6 +442,22 @@ export interface TopologyHistoryComparison {
   removed_link_count: number;
   changed_link_count: number;
   notes: string[];
+  current_inference_posture?: TopologyInferencePosture;
+  previous_inference_posture?: TopologyInferencePosture;
+  current_endpoint_pairing_posture?: TopologyEndpointPairingPosture;
+  previous_endpoint_pairing_posture?: TopologyEndpointPairingPosture;
+  current_collection_posture?: TopologyCollectionPosture;
+  previous_collection_posture?: TopologyCollectionPosture;
+  current_node_participation_posture?: TopologyNodeParticipationPosture;
+  previous_node_participation_posture?: TopologyNodeParticipationPosture;
+  current_paired_link_count?: number;
+  previous_paired_link_count?: number;
+  current_single_sided_link_count?: number;
+  previous_single_sided_link_count?: number;
+  current_linked_node_count?: number;
+  previous_linked_node_count?: number;
+  current_isolated_node_count?: number;
+  previous_isolated_node_count?: number;
 }
 
 export interface TopologyHistoryWindow {

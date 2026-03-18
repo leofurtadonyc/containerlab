@@ -318,6 +318,13 @@ They appear in:
 - `/api/v1/topology` history `recent_snapshots` and `comparison_to_previous`
 - workflow-history and audit-history topology snapshot summaries and
   comparisons where honest persisted records exist
+- the topology product page, which surfaces persisted coverage posture in
+  recent-snapshot and comparison readouts so operators can see how coverage
+  changed across persisted snapshots
+
+The topology page remains the primary explanation surface for topology history.
+These persisted coverage cues must not be interpreted as drift verdicts, fault
+conclusions, or topology-validation outcomes.
 
 ### 8. The remaining wording problem is now narrower than the completed pairing work
 

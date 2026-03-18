@@ -314,6 +314,11 @@ fi
 if [ "$topology_snapshots_count" -gt 0 ]; then
   assert_not_contains "topology response" "$topology_response" '"history":{"status":"unavailable"'
   assert_contains "topology response" "$topology_response" '"snapshot_id":"'
+  assert_contains "topology response" "$topology_response" '"recent_snapshots":['
+  if printf '%s' "$topology_response" | grep -F '"comparison_to_previous":{' | grep -F '"current_snapshot_id"' >/dev/null 2>&1; then
+    assert_contains "topology response" "$topology_response" '"current_endpoint_pairing_posture"'
+    assert_contains "topology response" "$topology_response" '"current_paired_link_count"'
+  fi
 fi
 
 if [ "$policy_snapshots_count" -gt 0 ]; then
