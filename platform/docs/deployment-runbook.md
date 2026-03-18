@@ -152,6 +152,7 @@ This now validates:
 - backend-owned topology coverage contract presence in both `/api/v1/platform/status` and `/api/v1/topology`, including endpoint-pairing posture, paired-link and single-sided-link counts, per-link pairing state, and per-link endpoint-evidence counts
 - dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts, now including backend and collector paired-link, single-sided-link, pairing-posture, collector observation-age, policy detail-ready signals, and the backend collector-boundary latest duration, timeout budget, and latest timeout or failure posture signals used by the current dashboards
 - bounded persisted-state exposure checks: when Postgres already holds snapshot, sync-run, or readiness rows, the API must still expose the matching history windows, comparison anchors, workflow-history, audit-history, and readiness anchor surfaces after restart or replacement
+- preserved-baseline contract checks: when persisted artifacts exist, platform status `recovery.baseline_posture`, workflow-history `baseline_summary.baseline_posture`, and audit-history `baseline_summary.baseline_posture` must report `preserved_same_workspace_baseline`
 - bounded warnings and notices when current read-side responses fall back to persisted data, become blocked, expose non-ok read-path posture, surface other degraded-but-honest states such as partial topology, partially-paired or single-sided topology coverage, and aggregate-only policy evidence, or show that fallback was triggered by a bounded collector-boundary timeout posture rather than ordinary degraded live collection
 - Grafana provisioned datasource presence and provisioned overview dashboards
 
@@ -526,6 +527,43 @@ curl -s http://localhost:8000/api/v1/health | python -m json.tool
 curl -s http://localhost:8000/api/v1/platform/status | python -m json.tool
 curl -s http://localhost:9090/api/v1/targets | python -m json.tool
 ```
+
+## Same-Workspace Restart Drill
+
+A repo-owned restart drill script exercises the bounded same-workspace recovery boundary without mutating or deleting host-backed data directories.
+
+### When to use the drill
+
+Use the drill when you want to:
+
+- validate that the platform recovers correctly after container replacement
+- prove the preserved-baseline contract when Postgres data survives in the same workspace
+- rerun the drill on another Linux host with the repo and required tools (Docker, Containerlab)
+
+### What the drill does
+
+```bash
+cd platform
+./scripts/drill-same-workspace-restart.sh
+```
+
+The drill:
+
+1. destroys the current topology (containers only; host-backed data directories are preserved)
+2. deploys the topology again
+3. runs `./scripts/verify-core-runtime.sh`
+4. runs `./scripts/verify-odl-auth.sh`
+
+When Postgres already holds persisted snapshots, sync runs, or readiness rows, the verifier asserts that platform status, workflow-history, and audit-history report `preserved_same_workspace_baseline`.
+
+### What the drill does NOT prove
+
+- disaster recovery (data-directory loss, cross-host migration)
+- backup or restore automation
+- HA or clustering behavior
+- workflow or actuation behavior
+
+This is a same-workspace restart drill only. It proves that when the host-backed data directories remain in place, the platform recovers from them after container replacement.
 
 ## Reset And Recovery Posture
 

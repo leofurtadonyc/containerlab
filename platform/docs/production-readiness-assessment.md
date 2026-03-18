@@ -222,6 +222,10 @@ Why this is strong enough now:
 - the current verifier now cross-checks persisted Postgres row presence against
   the corresponding API history and anchor surfaces, so a preserved same-
   workspace baseline is tested more explicitly than before
+- a repo-owned same-workspace restart drill (`./scripts/drill-same-workspace-restart.sh`)
+  exercises container replacement without deleting host-backed data directories,
+  then reruns the verifiers and asserts preserved-baseline contract when
+  persisted artifacts exist
 
 Why this is still bounded:
 
@@ -229,6 +233,9 @@ Why this is still bounded:
   history, or Grafana local state by themselves
 - the current slice still lacks backup automation, restore automation, and
   disaster-recovery discipline
+- the restart drill proves same-workspace recovery only; it does not prove
+  disaster recovery, backup, restore, cross-host migration, or data-directory-loss
+  recovery
 
 Assessment:
 
