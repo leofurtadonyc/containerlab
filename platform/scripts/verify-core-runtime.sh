@@ -234,6 +234,11 @@ assert_contains "policies response" "$policies_response" '"data_status":"'
 assert_contains "policies response" "$policies_response" '"serving_mode":"'
 assert_contains "policies response" "$policies_response" '"sync_status":"'
 assert_contains "policies response" "$policies_response" '"detail_mode":"'
+assert_contains "policies response" "$policies_response" '"detail_source_readiness":{'
+assert_contains "policies response" "$policies_response" '"posture":"'
+assert_contains "policies response" "$policies_response" '"no_policies_observed_target_count":'
+assert_contains "policies response" "$policies_response" '"detail_unavailable_target_count":'
+assert_contains "policies response" "$policies_response" '"partial_detail_target_count":'
 assert_contains "policies response" "$policies_response" '"empty_reason":"'
 assert_contains "policies response" "$policies_response" '"target_footprints":['
 assert_contains "policies response" "$policies_response" '"detail_blocker_reason":"'
@@ -258,6 +263,8 @@ assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_
 assert_contains "app-api metrics" "$app_api_metrics" 'node_participation_posture="'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_coverage_posture'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshot_status'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_detail_source_readiness'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_detail_source_targets'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_latest_fetch_duration_seconds'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_timeout_budget_seconds'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_latest_fetch_posture'
@@ -386,6 +393,15 @@ if printf '%s' "$policies_response" | grep -F '"detail_mode":"counters_only"' >/
 fi
 if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"per_policy_details_unavailable"' >/dev/null 2>&1; then
   notice "Policies API target footprints report per_policy_details_unavailable blockers, so per-target detail remains blocked even when aggregate policy presence is real."
+fi
+if printf '%s' "$policies_response" | grep -F '"posture":"no_policies_observed"' >/dev/null 2>&1; then
+  notice "Policies API source-readiness reports no_policies_observed, so the current source-visible policy slice is healthy but live-empty."
+fi
+if printf '%s' "$policies_response" | grep -F '"posture":"source_detail_unavailable"' >/dev/null 2>&1; then
+  notice "Policies API source-readiness reports source_detail_unavailable, so observed policy presence exists but the bounded source slice still cannot derive stable per-policy detail."
+fi
+if printf '%s' "$policies_response" | grep -F '"posture":"partially_ready"' >/dev/null 2>&1; then
+  notice "Policies API source-readiness reports partially_ready, so the current source-visible slice mixes detail-ready targets with live-empty or detail-limited targets."
 fi
 if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"no_policies_observed"' >/dev/null 2>&1; then
   notice "Policies API target footprints report no_policies_observed blockers on at least one target, so some targets remain healthy live-empty rather than detail-ready."

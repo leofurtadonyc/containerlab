@@ -15,6 +15,7 @@ The platform currently has:
 - real topology and SR policy overview dashboards backed by current Prometheus metrics for those bounded live slices
 - the platform, topology, and SR policy dashboards now surface bounded persisted sync evidence plus clearer aggregate freshness, agreement, and evidence-gap cues where those backend and collector metrics honestly exist
 - the SR policy dashboard now also mirrors policy detail blocker posture more directly through detail-ready-target share and blocker-presence flags derived from real collector and backend metrics, while keeping per-target blocker reason codes in the product and verifier
+- the SR policy dashboard now also mirrors backend-owned policy source-readiness posture numerically through metric-backed posture labels and bounded source-readiness counts, while keeping the richer explanation and per-target blocker reasons on the Policies page and in verifier output
 - the platform overview dashboard now also surfaces collector-backed target coverage, observation-age, and policy detail-gap cues for inventory, topology, and policy, using real numeric signals rather than trying to serialize product-facing degraded-scope prose into Grafana
 - the platform overview dashboard now also surfaces backend-owned collector-boundary latest fetch duration, timeout budget, and latest timeout or failure posture signals so operators can distinguish slow fallback triggers from ordinary degraded live collection
 - the platform overview dashboard now also separates readiness evaluation sample age from readiness persisted-snapshot age so operators can distinguish Prometheus-observed recomputation cadence from the chronology of the last materially changed persisted readiness snapshot
@@ -180,7 +181,8 @@ Expected emphasis over time:
 - persisted policy sync freshness and result posture where that evidence exists
 - bounded target-coverage and observed-versus-detailed evidence-gap cues where those aggregate metrics exist
 - bounded detail-ready target gaps where collector metrics honestly expose that narrower policy detail posture
-- blocker-presence flags that mirror whether observed targets are still missing detail-ready policy evidence, without turning Grafana into the surface that authors blocker semantics
+- backend-owned source-readiness posture labels and bounded live-empty, detail-unavailable, and partial-detail counts where those metrics exist
+- blocker-presence and detail-ready-gap flags that mirror whether observed targets are still missing detail-ready policy evidence, without turning Grafana into the surface that authors blocker semantics
 
 ## Product Versus Observability Split
 
@@ -204,6 +206,7 @@ In Grafana:
 - freshness is represented through observation age from collector timestamps
 - degraded scope is approximated through numeric gaps such as missing targets, paired-versus-single-sided topology link counts or shares, linked-versus-isolated node counts, policy detail-ready gaps, and collector-boundary duration-versus-budget posture
 - policy detail blockers are mirrored through detail-ready-target share and blocker-presence flags, while per-target blocker reason codes stay on the Policies page and in verifier output
+- policy source-readiness is mirrored through backend-owned posture labels plus bounded live-empty, detail-unavailable, and partial-detail counts, while the richer explanation and per-target blocker reasons stay on the Policies page and in verifier output
 - topology endpoint-pairing and node-participation observability should stay numeric as paired-link counts, single-sided-link counts, linked-node counts, isolated-node counts, and derived shares rather than becoming a product-owned status vocabulary inside dashboards
 - backend-owned topology inference, pairing, node-participation, and collection posture labels may appear only as metric-backed label projections that support those numeric panels; Grafana still does not own that vocabulary
 - collector-boundary timeout posture is an observability cue only; it explains whether the backend hit the fail-fast latency budget, not whether the product has emitted a workflow verdict or dependency-dashboard truth statement

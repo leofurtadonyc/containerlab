@@ -1,7 +1,7 @@
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { TrustCueCard } from "../../components/trust-cue-card";
-import type { PlatformReadPathStatus } from "../../api/contracts";
+import type { PoliciesListResponse, PlatformReadPathStatus } from "../../api/contracts";
 import {
   countBy,
   describeTopologyReadPathNodeParticipation,
@@ -11,6 +11,7 @@ import {
   formatDateTime,
   formatLabel,
 } from "../../lib/presentation";
+import { usePoliciesQuery } from "../policies/api";
 import { getPlatformReadPath, usePlatformStatusQuery } from "./api";
 
 function formatReadPathCoverage(readPath: PlatformReadPathStatus): string {
@@ -77,8 +78,75 @@ function buildPolicyDetailReadinessReadout(readPath: PlatformReadPathStatus | nu
   };
 }
 
+function buildPolicySourceReadinessReadout(
+  policiesData: PoliciesListResponse | null | undefined,
+  isLoading: boolean,
+  hasError: boolean,
+  detailReadyTargetCount: number,
+): { label: string; detail: string } {
+  if (isLoading) {
+    return {
+      label: "Loading",
+      detail: "The supporting Policies query is still loading the backend-owned source-readiness cue.",
+    };
+  }
+
+  if (hasError || !policiesData) {
+    return {
+      label: "Unavailable",
+      detail:
+        "Platform Health could not load the supporting Policies response, so source-readiness posture is not summarized here.",
+    };
+  }
+
+  const readiness = policiesData.detail_source_readiness;
+  const sourceVisibleTargetCount =
+    detailReadyTargetCount +
+    readiness.no_policies_observed_target_count +
+    readiness.detail_unavailable_target_count +
+    readiness.partial_detail_target_count;
+
+  switch (readiness.posture) {
+    case "ready":
+      return {
+        label: "Ready",
+        detail:
+          "All current source-visible policy targets are detail-ready. See the Policies page for per-target evidence.",
+      };
+    case "no_policies_observed":
+      return {
+        label: "Live-empty",
+        detail:
+          `${readiness.no_policies_observed_target_count} of ${sourceVisibleTargetCount} source-visible targets are currently healthy but live-empty on the bounded policy slice.`,
+      };
+    case "source_detail_unavailable":
+      return {
+        label: "Detail unavailable",
+        detail:
+          `${readiness.detail_unavailable_target_count} of ${sourceVisibleTargetCount} source-visible targets currently observe policy presence without bounded per-policy detail.`,
+      };
+    case "partially_ready":
+      return {
+        label: "Partially ready",
+        detail:
+          `${detailReadyTargetCount} of ${sourceVisibleTargetCount} source-visible targets are detail-ready; the rest remain live-empty, detail-unavailable, or partially covered. See the Policies page for the richer breakdown.`,
+      };
+    default:
+      return {
+        label: "Not exposed",
+        detail:
+          "The supporting Policies response did not expose a bounded source-readiness posture on this page load.",
+      };
+  }
+}
+
 export function PlatformHealthView() {
   const { data, error, isLoading, reload } = usePlatformStatusQuery();
+  const {
+    data: policiesData,
+    error: policiesError,
+    isLoading: isPoliciesLoading,
+  } = usePoliciesQuery();
 
   if (isLoading) {
     return (
@@ -153,6 +221,12 @@ export function PlatformHealthView() {
   const topologyPairingReadout = describeTopologyReadPathPairing(topologyReadPath);
   const topologyNodeParticipationReadout = describeTopologyReadPathNodeParticipation(topologyReadPath);
   const policyDetailReadiness = buildPolicyDetailReadinessReadout(policyReadPath);
+  const policySourceReadiness = buildPolicySourceReadinessReadout(
+    policiesData,
+    isPoliciesLoading,
+    policiesError !== null,
+    policyReadPath?.detail_ready_target_count ?? 0,
+  );
 
   return (
     <section>
@@ -195,6 +269,7 @@ export function PlatformHealthView() {
         <div className="callout">
           <strong>Policy detail blockers remain explicit</strong>
           <p>{policyDetailReadiness.detail}</p>
+          <p className="table-note">{policySourceReadiness.detail}</p>
         </div>
       ) : null}
 
@@ -258,6 +333,11 @@ export function PlatformHealthView() {
           <strong>{policyDetailReadiness.label}</strong>
           <p>{policyDetailReadiness.detail}</p>
         </article>
+        <article className="summary-card">
+          <p className="summary-label">Policy Source Readiness</p>
+          <strong>{policySourceReadiness.label}</strong>
+          <p>{policySourceReadiness.detail}</p>
+        </article>
       </div>
 
       <div className="content-grid">
@@ -290,7 +370,7 @@ export function PlatformHealthView() {
                   ? readPaths.map(
                       (readPath) =>
                         readPath.model_family === "policy"
-                          ? `${formatLabel(readPath.model_family)}: ${formatReadPathCoverage(readPath)} • ${buildPolicyDetailReadinessReadout(readPath).detail}`
+                          ? `${formatLabel(readPath.model_family)}: ${formatReadPathCoverage(readPath)} • ${buildPolicyDetailReadinessReadout(readPath).detail} • ${policySourceReadiness.detail}`
                           : `${formatLabel(readPath.model_family)}: ${formatReadPathCoverage(readPath)}`,
                     )
                   : "No bounded read-path summaries are currently exposed.",
