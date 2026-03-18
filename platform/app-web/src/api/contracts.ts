@@ -300,6 +300,20 @@ export interface PolicyTargetFootprintRecord {
   notes: string[];
 }
 
+export type PolicyDetailSourceReadinessPosture =
+  | "unknown"
+  | "no_policies_observed"
+  | "source_detail_unavailable"
+  | "partially_ready"
+  | "ready";
+
+export interface PolicyDetailSourceReadinessRecord {
+  posture: PolicyDetailSourceReadinessPosture;
+  no_policies_observed_target_count: number;
+  detail_unavailable_target_count: number;
+  partial_detail_target_count: number;
+}
+
 export interface PolicyHistorySnapshotRecord {
   snapshot_id: string;
   persisted_at: string;
@@ -457,6 +471,7 @@ export interface PoliciesListResponse extends ApiResponseMetadata {
   sync_status: "ok" | "degraded" | "failed" | "unknown";
   completeness: "complete" | "partial" | "unknown";
   detail_mode: "counters_only" | "static_policies_when_present" | "mixed" | "unknown";
+  detail_source_readiness: PolicyDetailSourceReadinessRecord;
   empty_reason:
     | "none"
     | "no_policies_observed"
