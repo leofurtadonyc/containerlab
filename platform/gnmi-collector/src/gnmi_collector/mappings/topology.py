@@ -154,6 +154,23 @@ def map_topology_links(
     return links, paired_link_count, single_sided_link_count
 
 
+def derive_node_participation_counts(
+    normalized_nodes: list[NormalizedTopologyNodeRecord],
+    normalized_links: list[NormalizedTopologyLinkRecord],
+) -> tuple[int, int]:
+    """Count how many observed nodes are represented by at least one emitted link."""
+    linked_node_ids = {
+        node_id
+        for link in normalized_links
+        for node_id in (link.source_node_id, link.target_node_id)
+    }
+    linked_node_count = sum(
+        1 for node in normalized_nodes if node.node_id in linked_node_ids
+    )
+    isolated_node_count = max(0, len(normalized_nodes) - linked_node_count)
+    return linked_node_count, isolated_node_count
+
+
 def derive_topology_observed_at(raw_records: list[TopologyRawRecord]) -> datetime | None:
     """Return the newest observed timestamp present in the raw records."""
     observed_timestamps = [

@@ -39,3 +39,43 @@ class InventoryComparisonSummary(BaseModel):
     current_capability_summary_counts: dict[str, int] = Field(default_factory=dict)
     persisted_capability_summary_counts: dict[str, int] = Field(default_factory=dict)
     notes: list[str] = Field(default_factory=list)
+
+
+class InventoryHistorySnapshotRecord(BaseModel):
+    """Bounded summary of one persisted inventory snapshot."""
+
+    snapshot_id: str
+    persisted_at: datetime
+    observed_at: datetime | None = None
+    sync_source: str
+    sync_status: str
+    data_status: Literal["live", "degraded"]
+    device_count: int
+    role_counts: dict[str, int] = Field(default_factory=dict)
+    collector_status_counts: dict[str, int] = Field(default_factory=dict)
+    capability_summary_counts: dict[str, int] = Field(default_factory=dict)
+
+
+class InventoryHistoryComparison(BaseModel):
+    """Bounded comparison of the latest two persisted inventory snapshots."""
+
+    current_snapshot_id: str
+    previous_snapshot_id: str
+    current_persisted_at: datetime
+    previous_persisted_at: datetime
+    current_device_count: int
+    previous_device_count: int
+    device_count_delta: int
+    added_device_count: int
+    removed_device_count: int
+    changed_device_count: int
+    notes: list[str] = Field(default_factory=list)
+
+
+class InventoryHistoryWindow(BaseModel):
+    """Bounded persisted history window for inventory comparison support."""
+
+    status: Literal["unavailable", "current_only", "comparison_ready"]
+    summary: str
+    recent_snapshots: list[InventoryHistorySnapshotRecord] = Field(default_factory=list)
+    comparison_to_previous: InventoryHistoryComparison | None = None

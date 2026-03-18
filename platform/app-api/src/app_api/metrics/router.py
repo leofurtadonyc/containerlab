@@ -35,8 +35,11 @@ def get_metrics() -> Response:
             "inference_posture": topology.inference_posture,
             "endpoint_pairing_posture": topology.endpoint_pairing_posture,
             "collection_posture": topology.collection_posture,
+            "node_participation_posture": topology.node_participation_posture,
             "paired_link_count": topology.paired_link_count,
             "single_sided_link_count": topology.single_sided_link_count,
+            "linked_node_count": topology.linked_node_count,
+            "isolated_node_count": topology.isolated_node_count,
             "data_status": topology.data_status,
             "serving_mode": topology.serving_mode,
             "sync_status": topology.sync_status,
@@ -66,6 +69,14 @@ def get_metrics() -> Response:
             "sync_status": policies.sync_status,
             "completeness": policies.completeness,
             "detail_mode": policies.detail_mode,
+            "detail_source_posture": policies.detail_source_posture,
+            "detail_source_no_policies_observed_target_count": (
+                policies.detail_source_no_policies_observed_target_count
+            ),
+            "detail_source_unavailable_target_count": (
+                policies.detail_source_unavailable_target_count
+            ),
+            "detail_source_partial_target_count": policies.detail_source_partial_target_count,
             "empty_reason": policies.empty_reason,
             "source_posture": policies.source_posture,
             "evidence_kind": policies.evidence_kind,
@@ -77,6 +88,7 @@ def get_metrics() -> Response:
             "status": readiness.status,
             "planning_readiness": readiness.planning_readiness,
             "phase_recommendation": readiness.phase_recommendation,
+            "evaluation_at_seconds": readiness.evaluation_at_seconds,
             "persisted_at_seconds": readiness.persisted_at_seconds,
             "evidence_coverage_counts": readiness.evidence_coverage_counts,
             "support_posture_counts": readiness.support_posture_counts,

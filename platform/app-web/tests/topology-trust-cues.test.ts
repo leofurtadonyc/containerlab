@@ -9,8 +9,10 @@ import {
   describeTopologyCollectionPosture,
   describeTopologyCoveragePosture,
   describeTopologyInferencePosture,
+  describeTopologyNodeParticipationPosture,
   describeTopologyReadPathCollection,
   describeTopologyReadPathInference,
+  describeTopologyReadPathNodeParticipation,
   describeTopologyReadPathPairing,
   resolveTopologyCoverageSummary,
   resolveTopologyLinkEndpointPairingState,
@@ -75,8 +77,11 @@ function createResponse(overrides: Partial<TopologyResponse> = {}): TopologyResp
       inference_posture: "unknown",
       endpoint_pairing_posture: "unknown",
       collection_posture: "unknown",
+      node_participation_posture: "unknown",
       paired_link_count: 0,
       single_sided_link_count: 0,
+      linked_node_count: 0,
+      isolated_node_count: 0,
       summary: "unknown",
     },
     topology: {
@@ -101,8 +106,11 @@ describe("topology trust cues", () => {
         inference_posture: "inferred",
         endpoint_pairing_posture: "partially_paired",
         collection_posture: "degraded",
+        node_participation_posture: "partially_isolated",
         paired_link_count: 36,
         single_sided_link_count: 2,
+        linked_node_count: 28,
+        isolated_node_count: 6,
         summary: "Current normalized topology links include a mix of paired and single-sided endpoint evidence.",
       },
     });
@@ -126,8 +134,11 @@ describe("topology trust cues", () => {
       inference_posture: "inferred",
       endpoint_pairing_posture: "partially_paired",
       collection_posture: "ok",
+      node_participation_posture: "unknown",
       paired_link_count: 1,
       single_sided_link_count: 1,
+      linked_node_count: 0,
+      isolated_node_count: 0,
       summary:
         "Current normalized topology links include a mix of paired and single-sided endpoint evidence within the bounded inference slice.",
     });
@@ -149,8 +160,11 @@ describe("topology trust cues", () => {
         inference_posture: "inferred",
         endpoint_pairing_posture: "partially_paired",
         collection_posture: "degraded",
+        node_participation_posture: "unknown",
         paired_link_count: 36,
         single_sided_link_count: 2,
+        linked_node_count: 0,
+        isolated_node_count: 0,
         summary: "Current normalized topology links include a mix of paired and single-sided endpoint evidence within the bounded inference slice.",
       },
       38,
@@ -165,8 +179,11 @@ describe("topology trust cues", () => {
       inference_posture: "inferred" as const,
       endpoint_pairing_posture: "partially_paired" as const,
       collection_posture: "degraded" as const,
+      node_participation_posture: "unknown" as const,
       paired_link_count: 36,
       single_sided_link_count: 2,
+      linked_node_count: 0,
+      isolated_node_count: 0,
       summary: "Current normalized topology links include a mix of paired and single-sided endpoint evidence within the bounded inference slice.",
     };
 
@@ -200,8 +217,11 @@ describe("topology trust cues", () => {
       inference_posture: "inferred",
       endpoint_pairing_posture: "partially_paired",
       collection_posture: "blocked",
+      node_participation_posture: "partially_isolated",
       paired_link_count: 36,
       single_sided_link_count: 2,
+      linked_node_count: 28,
+      isolated_node_count: 6,
       degraded_scope_summary: "Two links remain single-sided.",
       summary: "Current normalized topology links include a mix of paired and single-sided endpoint evidence.",
       notes: [],
@@ -210,6 +230,7 @@ describe("topology trust cues", () => {
     const readout = describeTopologyReadPathPairing(readPath);
     const inferenceReadout = describeTopologyReadPathInference(readPath);
     const collectionReadout = describeTopologyReadPathCollection(readPath);
+    const nodeParticipationReadout = describeTopologyReadPathNodeParticipation(readPath);
 
     expect(readout.status).toBe("partially_paired");
     expect(readout.detail).toBe(readPath.summary);
@@ -225,6 +246,38 @@ describe("topology trust cues", () => {
       label: "Collection blocked",
       detail:
         "Platform status reports that the current topology slice is blocked from normal live collection.",
+    });
+    expect(nodeParticipationReadout).toEqual({
+      status: "partially_isolated",
+      label: "Partially isolated",
+      detail:
+        "Current topology nodes include a mix of linked and isolated observed nodes within the bounded inferred slice.",
+      countDetail: "28 linked • 6 isolated • 34 total nodes.",
+    });
+  });
+
+  it("builds operator-facing node-participation readouts", () => {
+    const readout = describeTopologyNodeParticipationPosture(
+      {
+        inference_posture: "inferred",
+        endpoint_pairing_posture: "paired",
+        collection_posture: "ok",
+        node_participation_posture: "partially_isolated",
+        paired_link_count: 36,
+        single_sided_link_count: 0,
+        linked_node_count: 28,
+        isolated_node_count: 6,
+        summary: "test",
+      },
+      34,
+    );
+
+    expect(readout).toEqual({
+      status: "partially_isolated",
+      label: "Partially isolated",
+      detail:
+        "Current topology nodes include a mix of linked and isolated observed nodes within the bounded inferred slice.",
+      countDetail: "28 linked • 6 isolated • 34 total nodes.",
     });
   });
 });

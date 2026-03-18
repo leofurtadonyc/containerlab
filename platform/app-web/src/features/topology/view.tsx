@@ -36,6 +36,7 @@ import {
   getTopologyCoverageSummary,
   getTopologyLinkEndpointEvidenceCount,
   getTopologyLinkEndpointPairingState,
+  getTopologyNodeParticipationReadout,
   useTopologyQuery,
 } from "./api";
 
@@ -216,6 +217,10 @@ export function TopologyView() {
   const nodeCounts = countBy(nodes, (node) => node.state);
   const linkCounts = countBy(links, (link) => link.state);
   const coverageSummary = useMemo(() => (data ? getTopologyCoverageSummary(data) : null), [data]);
+  const nodeParticipationReadout = useMemo(
+    () => (data ? getTopologyNodeParticipationReadout(data) : null),
+    [data],
+  );
   const roleCounts = useMemo(() => countBy(nodes, (node) => node.role), [nodes]);
   const knowledgeCounts = useMemo(() => countBy(links, (link) => getLinkKnowledgeState(link)), [links]);
   const pairingStateCounts = useMemo(
@@ -456,6 +461,7 @@ export function TopologyView() {
       )
     : null;
   const comparisonReadout = describeComparisonReadout(comparison.status, data.serving_mode);
+  const historyComparison = data.history.comparison_to_previous;
   const policyConsistencyReadout = buildCrossSliceConsistencyReadout(
     {
       sliceLabel: "Topology",
@@ -531,6 +537,11 @@ export function TopologyView() {
           <p>{comparisonReadout.detail}</p>
         </article>
         <article className="summary-card">
+          <p className="summary-label">Persisted History</p>
+          <strong>{formatLabel(data.history.status)}</strong>
+          <p>{data.history.summary}</p>
+        </article>
+        <article className="summary-card">
           <p className="summary-label">Policy Slice Posture</p>
           <strong>{policyConsistencyReadout.label}</strong>
           <p>{policyConsistencyReadout.detail}</p>
@@ -544,6 +555,14 @@ export function TopologyView() {
           <p className="summary-label">Single-Sided Evidence</p>
           <strong>{coverageSummary?.single_sided_link_count ?? 0}</strong>
           <p>Links inferred from only one observed endpoint stay explicitly partial.</p>
+        </article>
+        <article className="summary-card">
+          <p className="summary-label">Node Participation</p>
+          <strong>{nodeParticipationReadout?.label ?? "Not exposed"}</strong>
+          <p>
+            {nodeParticipationReadout?.countDetail ??
+              "Linked-versus-isolated node counts are not exposed."}
+          </p>
         </article>
         <article className="summary-card">
           <p className="summary-label">Observed Loopbacks</p>
@@ -626,8 +645,16 @@ export function TopologyView() {
               <StatusPill value={collectionReadout.status} />
             </li>
             <li>
+              <span>Node participation</span>
+              <StatusPill value={nodeParticipationReadout?.status ?? "unknown"} />
+            </li>
+            <li>
               <span>Pairing counts</span>
               <strong>{coverageReadout.countDetail}</strong>
+            </li>
+            <li>
+              <span>Participation counts</span>
+              <strong>{nodeParticipationReadout?.countDetail ?? "Not exposed"}</strong>
             </li>
             <li>
               <span>Blocked reason</span>
@@ -670,6 +697,10 @@ export function TopologyView() {
               <StatusPill value={collectionReadout.status} />
             </li>
             <li>
+              <span>Node participation</span>
+              <StatusPill value={nodeParticipationReadout?.status ?? "unknown"} />
+            </li>
+            <li>
               <span>Inference method</span>
               <strong>
                 {links[0]?.attributes.inference_method
@@ -684,6 +715,10 @@ export function TopologyView() {
             <li>
               <span>Pairing counts</span>
               <strong>{coverageReadout.countDetail}</strong>
+            </li>
+            <li>
+              <span>Participation counts</span>
+              <strong>{nodeParticipationReadout?.countDetail ?? "Not exposed"}</strong>
             </li>
             <li>
               <span>Comparison-ready snapshot</span>
@@ -742,6 +777,86 @@ export function TopologyView() {
               </strong>
             </li>
           </ul>
+        </article>
+        <article className="detail-card">
+          <h3>Persisted History And Comparison</h3>
+          <p>{data.history.summary}</p>
+          {historyComparison ? (
+            <ul className="compact-list">
+              <li>
+                <span>Current snapshot anchor</span>
+                <IdentifierChip value={historyComparison.current_snapshot_id} />
+              </li>
+              <li>
+                <span>Previous snapshot anchor</span>
+                <IdentifierChip value={historyComparison.previous_snapshot_id} />
+              </li>
+              <li>
+                <span>Current / previous persisted</span>
+                <strong>
+                  {formatDateTime(historyComparison.current_persisted_at)} /{" "}
+                  {formatDateTime(historyComparison.previous_persisted_at)}
+                </strong>
+              </li>
+              <li>
+                <span>Node delta</span>
+                <strong>{formatSignedDelta(historyComparison.node_count_delta)}</strong>
+              </li>
+              <li>
+                <span>Link delta</span>
+                <strong>{formatSignedDelta(historyComparison.link_count_delta)}</strong>
+              </li>
+              <li>
+                <span>Added / removed nodes</span>
+                <strong>
+                  {historyComparison.added_node_count} / {historyComparison.removed_node_count}
+                </strong>
+              </li>
+              <li>
+                <span>Added / removed links</span>
+                <strong>
+                  {historyComparison.added_link_count} / {historyComparison.removed_link_count}
+                </strong>
+              </li>
+              <li>
+                <span>Changed nodes / links</span>
+                <strong>
+                  {historyComparison.changed_node_count} / {historyComparison.changed_link_count}
+                </strong>
+              </li>
+            </ul>
+          ) : (
+            <p className="footnote">
+              Bounded comparison is only available once at least two persisted normalized topology
+              snapshots exist.
+            </p>
+          )}
+        </article>
+        <article className="detail-card">
+          <h3>Recent Persisted Snapshots</h3>
+          {data.history.recent_snapshots.length > 0 ? (
+            <ul className="notes-list">
+              {data.history.recent_snapshots.map((entry) => (
+                <li key={entry.snapshot_id}>
+                  <strong>{formatDateTime(entry.persisted_at)}</strong>
+                  {" • anchor "}
+                  <IdentifierChip value={entry.snapshot_id} />
+                  {" • nodes "}
+                  {entry.node_count}
+                  {" • links "}
+                  {entry.link_count}
+                  {" • "}
+                  {formatLabel(entry.completeness)}
+                  {entry.observed_at ? ` • observed at ${formatDateTime(entry.observed_at)}` : ""}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="footnote">
+              No persisted normalized topology snapshots are currently available for this bounded
+              view.
+            </p>
+          )}
         </article>
         <article className="detail-card">
           <h3>Policy Slice Consistency</h3>
@@ -835,6 +950,35 @@ export function TopologyView() {
           </ul>
         </article>
         <article className="detail-card">
+          <h3>Node Participation Distribution</h3>
+          <p>
+            {nodeParticipationReadout?.detail ??
+              "Node-participation posture is not exposed on the current topology response."}
+          </p>
+          <ul className="compact-list">
+            <li>
+              <span>Participation posture</span>
+              <StatusPill value={nodeParticipationReadout?.status ?? "unknown"} />
+            </li>
+            <li>
+              <span>Linked nodes</span>
+              <strong>{coverageSummary?.linked_node_count ?? 0}</strong>
+            </li>
+            <li>
+              <span>Isolated nodes</span>
+              <strong>{coverageSummary?.isolated_node_count ?? 0}</strong>
+            </li>
+            <li>
+              <span>Total nodes</span>
+              <strong>{topology.nodes.length}</strong>
+            </li>
+            <li>
+              <span>Observed loopbacks</span>
+              <strong>{observedLoopbackCount}</strong>
+            </li>
+          </ul>
+        </article>
+        <article className="detail-card">
           <h3>Link Evidence Distribution</h3>
           <ul className="compact-list">
             <li>
@@ -863,12 +1007,23 @@ export function TopologyView() {
         </article>
       </div>
 
+      {historyComparison && historyComparison.notes.length > 0 ? (
+        <div className="callout">
+          <strong>Persisted history limits</strong>
+          <ul className="notes-list">
+            {historyComparison.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="callout">
         <strong>How to read this page</strong>
         <p>
           Live collector data remains the primary current truth source. Persisted fallback
           snapshots keep the page usable when live collection is unavailable. Inference
-          posture, endpoint pairing, and collection posture are shown separately so operators
+          posture, endpoint pairing, node participation, and collection posture are shown separately so operators
           can see why topology remains partial. Comparison summaries show bounded normalized
           differences only and should not be read as path-validation, controller truth, or
           drift verdicts.
@@ -928,6 +1083,24 @@ export function TopologyView() {
           <p>
             The current topology slice is not backed by a normal live collection window. This is
             distinct from endpoint pairing limits and remains visible as its own trust cue.
+          </p>
+        </div>
+      ) : null}
+
+      {nodeParticipationReadout?.status === "partially_isolated" ? (
+        <div className="callout">
+          <strong>Isolated observed nodes remain explicit</strong>
+          <p>
+            The current topology slice includes observed nodes that do not currently participate in a normalized link. This stays separate from endpoint-pairing posture so operators can distinguish isolated nodes from single-sided link evidence.
+          </p>
+        </div>
+      ) : null}
+
+      {nodeParticipationReadout?.status === "isolated_only" ? (
+        <div className="callout">
+          <strong>Only isolated observed nodes are currently linked into the slice</strong>
+          <p>
+            The current topology response includes nodes, but none currently participate in a normalized link. The page keeps that limitation explicit instead of implying adjacency certainty.
           </p>
         </div>
       ) : null}

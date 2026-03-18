@@ -215,6 +215,33 @@ def get_metrics() -> Response:
                 f"{topology_summary.single_sided_link_count if topology_summary else 0}"
             ),
             (
+                "# HELP platform_gnmi_collector_topology_linked_nodes "
+                "Observed topology nodes represented by at least one emitted inferred link."
+            ),
+            "# TYPE platform_gnmi_collector_topology_linked_nodes gauge",
+            (
+                "platform_gnmi_collector_topology_linked_nodes "
+                f"{topology_summary.linked_node_count if topology_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_topology_isolated_nodes "
+                "Observed topology nodes not represented by any emitted inferred link."
+            ),
+            "# TYPE platform_gnmi_collector_topology_isolated_nodes gauge",
+            (
+                "platform_gnmi_collector_topology_isolated_nodes "
+                f"{topology_summary.isolated_node_count if topology_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_topology_node_participation_posture "
+                "Current topology node participation posture as a one-hot gauge."
+            ),
+            "# TYPE platform_gnmi_collector_topology_node_participation_posture gauge",
+            (
+                "platform_gnmi_collector_topology_node_participation_posture"
+                f'{{posture="{topology_summary.node_participation_posture if topology_summary else "unknown"}"}} 1'
+            ),
+            (
                 "# HELP platform_gnmi_collector_topology_oldest_observed_timestamp_seconds "
                 "Oldest current topology observation timestamp across targets that returned live evidence."
             ),
@@ -361,6 +388,32 @@ def get_metrics() -> Response:
             (
                 "platform_gnmi_collector_policy_detail_ready_targets "
                 f"{policy_summary.detail_ready_target_count if policy_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_policy_detail_source_readiness "
+                "Current bounded policy detail source-readiness posture."
+            ),
+            "# TYPE platform_gnmi_collector_policy_detail_source_readiness gauge",
+            (
+                "platform_gnmi_collector_policy_detail_source_readiness"
+                f'{{posture="{policy_summary.detail_source_readiness.posture if policy_summary else "unknown"}"}} 1'
+            ),
+            (
+                "# HELP platform_gnmi_collector_policy_detail_source_targets "
+                "Current bounded counts of source-visible policy targets by detail-source reason."
+            ),
+            "# TYPE platform_gnmi_collector_policy_detail_source_targets gauge",
+            (
+                "platform_gnmi_collector_policy_detail_source_targets"
+                f'{{reason="no_policies_observed"}} {policy_summary.detail_source_readiness.no_policies_observed_target_count if policy_summary else 0}'
+            ),
+            (
+                "platform_gnmi_collector_policy_detail_source_targets"
+                f'{{reason="detail_unavailable"}} {policy_summary.detail_source_readiness.detail_unavailable_target_count if policy_summary else 0}'
+            ),
+            (
+                "platform_gnmi_collector_policy_detail_source_targets"
+                f'{{reason="partial_detail"}} {policy_summary.detail_source_readiness.partial_detail_target_count if policy_summary else 0}'
             ),
             (
                 "# HELP platform_gnmi_collector_policy_observed_policies "

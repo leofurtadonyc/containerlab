@@ -62,8 +62,13 @@ class CollectorTopologySnapshot(BaseModel):
     endpoint_pairing_posture: Literal[
         "paired", "partially_paired", "single_sided", "unknown"
     ] | None = None
+    node_participation_posture: Literal[
+        "fully_linked", "partially_isolated", "isolated_only", "unknown"
+    ] | None = None
     paired_link_count: int | None = None
     single_sided_link_count: int | None = None
+    linked_node_count: int | None = None
+    isolated_node_count: int | None = None
     topology_id: str
     topology_name: str
     sync_source: str
@@ -167,8 +172,11 @@ class CollectorTopologyClient:
                 "Topology degraded scope was not provided by the collector.",
             ),
             endpoint_pairing_posture=payload.get("endpoint_pairing_posture"),
+            node_participation_posture=payload.get("node_participation_posture"),
             paired_link_count=payload.get("paired_link_count"),
             single_sided_link_count=payload.get("single_sided_link_count"),
+            linked_node_count=payload.get("linked_node_count"),
+            isolated_node_count=payload.get("isolated_node_count"),
             topology_id=payload.get("topology_id", "platform-observed-topology"),
             topology_name=payload.get("topology_name", "Platform Observed Topology"),
             sync_source=payload.get("sync_source", "gnmi_collector_topology"),

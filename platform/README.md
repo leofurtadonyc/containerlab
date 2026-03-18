@@ -4,6 +4,16 @@ This directory contains the reusable platform project for this repository.
 
 It is a peer project to the lab directories, not a child of any single lab. The initial practical target is the Nokia SR MPLS lab, but the platform is being designed from the start to remain Nokia-first without becoming Nokia-bound.
 
+## Quick Validation Rule
+
+For normal platform frontend or backend changes, validate through the repo-owned packaged runtime first:
+
+- run `./scripts/build-images.sh`
+- replace the topology with `clab deploy -t topology.clab.yml -c`
+- run `./scripts/verify-core-runtime.sh` and `./scripts/verify-odl-auth.sh`
+
+Do not default to host-side `npm` or `pytest` for routine platform validation. The frontend build already runs inside the `app-web` image build, and the preferred documented validation boundary is the rebuilt and redeployed runtime.
+
 ## What This Platform Is
 
 This platform is intended to become a serious network control, observability, and workflow foundation that can integrate with one or more lab topologies.

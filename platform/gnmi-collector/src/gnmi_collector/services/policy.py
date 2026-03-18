@@ -7,6 +7,7 @@ from gnmi_collector.config.runtime import build_runtime_config
 from gnmi_collector.mappings.policy import (
     derive_policy_observed_at,
     map_policy_records,
+    summarize_policy_detail_source_readiness,
     summarize_policy_counts,
     summarize_policy_target_footprints,
 )
@@ -30,6 +31,7 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
     normalized_records = map_policy_records(raw_records)
     aggregated_counts = summarize_policy_counts(raw_records)
     target_footprints = summarize_policy_target_footprints(raw_records, normalized_records)
+    detail_source_readiness = summarize_policy_detail_source_readiness(target_footprints)
     collection_success_count = sum(
         1 for record in raw_records if record.collection_status == "success"
     )
@@ -119,6 +121,18 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
         notes.append(
             f"{detail_blocked_target_count} targets currently expose an explicit per-target detail blocker reason in the bounded policy footprint contract."
         )
+    if detail_source_readiness.posture == "no_policies_observed":
+        notes.append(
+            "Policy detail source-readiness is currently live-empty: policy-capable targets are visible, but no observed SR policies are exposing bounded detail-ready coverage."
+        )
+    elif detail_source_readiness.posture == "source_detail_unavailable":
+        notes.append(
+            "Policy detail source-readiness is currently blocked by detail availability: observed SR policies exist, but the current bounded source slice cannot derive per-policy records yet."
+        )
+    elif detail_source_readiness.posture == "partially_ready":
+        notes.append(
+            "Policy detail source-readiness is partially ready: bounded per-policy detail exists on part of the current source-visible slice while the remaining source-visible targets stay live-empty or detail-limited."
+        )
 
     delivery = BackendPolicyDeliveryEnvelope(
         destination_service="app-api",
@@ -133,6 +147,7 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
         oldest_observed_at=oldest_observed_at,
         newest_observed_at=newest_observed_at,
         detail_ready_target_count=detail_ready_target_count,
+        detail_source_readiness=detail_source_readiness,
         degraded_scope_summary=degraded_scope_summary,
         sync_source="gnmi_collector_policy_sr_counters",
         sync_status=sync_status,
@@ -178,6 +193,7 @@ def build_policy_flow_snapshot() -> PolicyFlowSnapshot:
         binding_sid_count=aggregated_counts["binding_sid_count"],
         srv6_binding_sid_count=aggregated_counts["srv6_binding_sid_count"],
         detail_ready_target_count=detail_ready_target_count,
+        detail_source_readiness=detail_source_readiness,
         normalized_policy_record_count=normalized_policy_record_count,
         backend_ready_policy_count=delivery.policy_count,
         backend_delivery_error_count=0,

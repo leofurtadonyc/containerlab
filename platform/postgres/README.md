@@ -48,4 +48,11 @@ Current durability is bounded: persisted inventory/topology/policy snapshots, sy
 The current history views exposed by `app-api` are still derived mainly from persisted sync-run activity. They should not yet be read as proof that full workflow or user-action audit domains are durably modeled in Postgres.
 The local runtime image is intentionally narrow: it does not replace the upstream initialization logic, but it does fail fast when the required bind-mounted runtime contract is broken.
 If the Postgres data directory is preserved, bounded read-side fallback and history anchors can survive restart or `clab deploy -t topology.clab.yml -c`; if that directory is replaced or lost, the backend can recreate schema and recollect live data, but previous snapshot anchors, sync-derived history, and readiness-support records do not recover from repo files alone.
+The current recovery matrix is explicit:
+
+- normal service restart in the same workspace preserves `platform/postgres/data/pgdata`
+- `clab deploy -t topology.clab.yml -c` in the same workspace also preserves that data when the bind-mounted directory is left in place
+- first deploy, or any replace path after `platform/postgres/data` was removed or replaced, starts the bounded read-side history from a new baseline after migrations run
+
+`platform/scripts/verify-core-runtime.sh` now treats that boundary as part of the repo-owned runtime contract: if persisted snapshot, sync-run, or readiness rows already exist in Postgres, the matching API history and anchor surfaces must still be visible after restart or replacement.
 The Docker health check proves packaged database readiness only. Backup automation, restore drills, secret lifecycle hardening, and multi-node durability remain outside the current runtime contract.

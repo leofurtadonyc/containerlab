@@ -52,6 +52,13 @@ interface PolicyDetailBlockerSummary {
   notRecordedTargetCount: number;
 }
 
+interface PolicyDetailSourceReadinessSummary {
+  label: string;
+  detail: string;
+  breakdown: string;
+  sourceVisibleTargetCount: number;
+}
+
 function buildFreshnessSummary(observedAt: string | null, generatedAt: string) {
   if (!observedAt) {
     return {
@@ -343,6 +350,68 @@ export function buildPolicyDetailBlockerSummary(
   };
 }
 
+export function buildPolicyDetailSourceReadinessSummary(readiness: {
+  posture: "unknown" | "no_policies_observed" | "source_detail_unavailable" | "partially_ready" | "ready";
+  no_policies_observed_target_count: number;
+  detail_unavailable_target_count: number;
+  partial_detail_target_count: number;
+}, detailReadyTargetCount: number): PolicyDetailSourceReadinessSummary {
+  const sourceVisibleTargetCount =
+    detailReadyTargetCount +
+    readiness.no_policies_observed_target_count +
+    readiness.detail_unavailable_target_count +
+    readiness.partial_detail_target_count;
+  const breakdown = [
+    `Detail-ready: ${detailReadyTargetCount}`,
+    `Live-empty: ${readiness.no_policies_observed_target_count}`,
+    `Detail unavailable: ${readiness.detail_unavailable_target_count}`,
+    `Partial detail: ${readiness.partial_detail_target_count}`,
+  ].join(" • ");
+
+  switch (readiness.posture) {
+    case "ready":
+      return {
+        label: "Ready",
+        detail:
+          "All currently source-visible policy targets are detail-ready in the bounded policy slice.",
+        breakdown,
+        sourceVisibleTargetCount,
+      };
+    case "no_policies_observed":
+      return {
+        label: "Live-empty source",
+        detail:
+          `The current source-visible slice is healthy but live-empty: ${readiness.no_policies_observed_target_count} targets expose policy-capable source evidence without observed SR policies yet.`,
+        breakdown,
+        sourceVisibleTargetCount,
+      };
+    case "source_detail_unavailable":
+      return {
+        label: "Source detail unavailable",
+        detail:
+          `Observed SR policy presence exists, but the current bounded source slice still cannot derive stable per-policy detail on ${readiness.detail_unavailable_target_count} source-visible targets.`,
+        breakdown,
+        sourceVisibleTargetCount,
+      };
+    case "partially_ready":
+      return {
+        label: "Partially ready",
+        detail:
+          `The current source-visible slice is mixed: ${detailReadyTargetCount} targets are detail-ready while ${readiness.no_policies_observed_target_count} remain live-empty, ${readiness.detail_unavailable_target_count} remain detail-unavailable, and ${readiness.partial_detail_target_count} remain partially covered.`,
+        breakdown,
+        sourceVisibleTargetCount,
+      };
+    default:
+      return {
+        label: "Not exposed",
+        detail:
+          "The backend did not expose a bounded policy detail source-readiness summary on this response.",
+        breakdown: "",
+        sourceVisibleTargetCount,
+      };
+  }
+}
+
 function getCurrentPostureReadout(
   hasObservedPolicies: boolean,
   emptyReason: "none" | "no_policies_observed" | "per_policy_details_unavailable" | "collector_unavailable",
@@ -548,6 +617,15 @@ export function PoliciesView() {
   const detailBlockerSummary = buildPolicyDetailBlockerSummary(
     data?.target_footprints.map((footprint) => footprint.detail_blocker_reason) ?? [],
   );
+  const detailSourceReadinessSummary = buildPolicyDetailSourceReadinessSummary(
+    data?.detail_source_readiness ?? {
+      posture: "unknown",
+      no_policies_observed_target_count: 0,
+      detail_unavailable_target_count: 0,
+      partial_detail_target_count: 0,
+    },
+    detailBlockerSummary.detailReadyTargetCount,
+  );
 
   if (isLoading) {
     return (
@@ -744,6 +822,11 @@ export function PoliciesView() {
           </p>
         </article>
         <article className="summary-card">
+          <p className="summary-label">Source Readiness</p>
+          <strong>{detailSourceReadinessSummary.label}</strong>
+          <p>{detailSourceReadinessSummary.detail}</p>
+        </article>
+        <article className="summary-card">
           <p className="summary-label">Detail Blockers</p>
           <strong>{detailBlockerSummary.label}</strong>
           <p>{detailBlockerSummary.detail}</p>
@@ -867,6 +950,19 @@ export function PoliciesView() {
               code on this response.
             </p>
           ) : null}
+        </div>
+      ) : null}
+
+      {data.detail_source_readiness.posture !== "ready" &&
+      data.detail_source_readiness.posture !== "unknown" ? (
+        <div className="callout">
+          <strong>Source-readiness posture complements target blockers</strong>
+          <p>{detailSourceReadinessSummary.detail}</p>
+          <p className="table-note">
+            Current source-visible mix: {detailSourceReadinessSummary.breakdown}. This explains
+            why the bounded policy slice is still partial without replacing the per-target blocker
+            table below.
+          </p>
         </div>
       ) : null}
 
@@ -1369,9 +1465,49 @@ export function PoliciesView() {
         <p className="table-note">
           Where the backend now exposes explicit persisted anchors, this page surfaces those
           snapshot identifiers as trust cues rather than as workflow state. Per-target detail
-          blocker rows explain why policy detail is blocked on each target without pretending that
-          the platform already has full per-policy truth.
+          blocker rows explain why policy detail is blocked on each target, while the
+          source-readiness summary explains whether the current source-visible slice is
+          live-empty, detail-limited, partially ready, or ready without pretending that the
+          platform already has full per-policy truth.
         </p>
+      </div>
+
+      <div className="table-card">
+        <h3>Policy Detail Source Readiness</h3>
+        <p className="table-note">
+          This bounded summary explains the current source-visible policy slice before you drill into
+          the per-target blocker table. It complements blocker posture and does not claim full policy truth.
+        </p>
+        <div className="key-value-list">
+          <div className="key-value-row">
+            <span>Source-readiness posture</span>
+            <strong>{detailSourceReadinessSummary.label}</strong>
+          </div>
+          <div className="key-value-row">
+            <span>Source-visible targets</span>
+            <strong>{detailSourceReadinessSummary.sourceVisibleTargetCount}</strong>
+          </div>
+          <div className="key-value-row">
+            <span>Detail-ready targets</span>
+            <strong>{detailBlockerSummary.detailReadyTargetCount}</strong>
+          </div>
+          <div className="key-value-row">
+            <span>Live-empty targets</span>
+            <strong>{data.detail_source_readiness.no_policies_observed_target_count}</strong>
+          </div>
+          <div className="key-value-row">
+            <span>Detail-unavailable targets</span>
+            <strong>{data.detail_source_readiness.detail_unavailable_target_count}</strong>
+          </div>
+          <div className="key-value-row">
+            <span>Partial-detail targets</span>
+            <strong>{data.detail_source_readiness.partial_detail_target_count}</strong>
+          </div>
+        </div>
+        <p className="footnote">{detailSourceReadinessSummary.detail}</p>
+        {detailSourceReadinessSummary.breakdown ? (
+          <p className="table-note">{detailSourceReadinessSummary.breakdown}</p>
+        ) : null}
       </div>
 
       {evidenceConfidence.notes.length > 0 ? (

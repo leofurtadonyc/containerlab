@@ -62,6 +62,12 @@ export type TopologyEndpointPairingPosture =
   | "single_sided"
   | "unknown";
 
+export type TopologyNodeParticipationPosture =
+  | "fully_linked"
+  | "partially_isolated"
+  | "isolated_only"
+  | "unknown";
+
 export interface PlatformReadPathStatus {
   model_family: "inventory" | "topology" | "policy";
   observation_state: "ok" | "degraded" | "unreachable" | "unknown";
@@ -77,8 +83,11 @@ export interface PlatformReadPathStatus {
   inference_posture: TopologyInferencePosture | null;
   endpoint_pairing_posture: TopologyEndpointPairingPosture | null;
   collection_posture: TopologyCollectionPosture | null;
+  node_participation_posture: TopologyNodeParticipationPosture | null;
   paired_link_count: number | null;
   single_sided_link_count: number | null;
+  linked_node_count: number | null;
+  isolated_node_count: number | null;
   degraded_scope_summary: string;
   summary: string;
   notes: string[];
@@ -140,6 +149,7 @@ export interface DevicesListResponse extends ApiResponseMetadata {
   summary: string;
   served_persisted_at: string | null;
   comparison_to_latest_persisted: InventoryCurrentComparison;
+  history: InventoryHistoryWindow;
   count: number;
   items: DeviceRecord[];
 }
@@ -173,8 +183,11 @@ export interface TopologyCoverageSummaryRecord {
   inference_posture: TopologyInferencePosture;
   endpoint_pairing_posture: TopologyEndpointPairingPosture;
   collection_posture: TopologyCollectionPosture;
+  node_participation_posture: TopologyNodeParticipationPosture;
   paired_link_count: number;
   single_sided_link_count: number;
+  linked_node_count: number;
+  isolated_node_count: number;
   summary: string;
 }
 
@@ -218,6 +231,7 @@ export interface TopologyResponse extends ApiResponseMetadata {
   summary: string;
   served_persisted_at: string | null;
   comparison_to_latest_persisted: TopologyComparisonSummary;
+  history: TopologyHistoryWindow;
   coverage_summary: TopologyCoverageSummaryRecord;
   topology: TopologyRecord;
 }
@@ -286,6 +300,20 @@ export interface PolicyTargetFootprintRecord {
   notes: string[];
 }
 
+export type PolicyDetailSourceReadinessPosture =
+  | "unknown"
+  | "no_policies_observed"
+  | "source_detail_unavailable"
+  | "partially_ready"
+  | "ready";
+
+export interface PolicyDetailSourceReadinessRecord {
+  posture: PolicyDetailSourceReadinessPosture;
+  no_policies_observed_target_count: number;
+  detail_unavailable_target_count: number;
+  partial_detail_target_count: number;
+}
+
 export interface PolicyHistorySnapshotRecord {
   snapshot_id: string;
   persisted_at: string;
@@ -341,6 +369,13 @@ export interface InventoryHistoryComparison {
   notes: string[];
 }
 
+export interface InventoryHistoryWindow {
+  status: "unavailable" | "current_only" | "comparison_ready";
+  summary: string;
+  recent_snapshots: InventoryHistorySnapshotRecord[];
+  comparison_to_previous: InventoryHistoryComparison | null;
+}
+
 export interface TopologyHistorySnapshotRecord {
   snapshot_id: string;
   persisted_at: string;
@@ -373,6 +408,13 @@ export interface TopologyHistoryComparison {
   removed_link_count: number;
   changed_link_count: number;
   notes: string[];
+}
+
+export interface TopologyHistoryWindow {
+  status: "unavailable" | "current_only" | "comparison_ready";
+  summary: string;
+  recent_snapshots: TopologyHistorySnapshotRecord[];
+  comparison_to_previous: TopologyHistoryComparison | null;
 }
 
 export interface PolicyHistoryComparison {
@@ -429,6 +471,7 @@ export interface PoliciesListResponse extends ApiResponseMetadata {
   sync_status: "ok" | "degraded" | "failed" | "unknown";
   completeness: "complete" | "partial" | "unknown";
   detail_mode: "counters_only" | "static_policies_when_present" | "mixed" | "unknown";
+  detail_source_readiness: PolicyDetailSourceReadinessRecord;
   empty_reason:
     | "none"
     | "no_policies_observed"

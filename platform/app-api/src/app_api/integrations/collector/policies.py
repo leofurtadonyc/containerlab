@@ -17,6 +17,21 @@ from app_api.integrations.collector.failure import (
 )
 
 
+class CollectorPolicyDetailSourceReadiness(BaseModel):
+    """Bounded source-readiness summary accepted from the collector boundary."""
+
+    posture: Literal[
+        "unknown",
+        "no_policies_observed",
+        "source_detail_unavailable",
+        "partially_ready",
+        "ready",
+    ] = "unknown"
+    no_policies_observed_target_count: int = 0
+    detail_unavailable_target_count: int = 0
+    partial_detail_target_count: int = 0
+
+
 class CollectorPolicyCandidatePathRecord(BaseModel):
     """Normalized candidate path accepted from the collector boundary."""
 
@@ -95,6 +110,9 @@ class CollectorPolicySnapshot(BaseModel):
     oldest_observed_at: str | None = None
     newest_observed_at: str | None = None
     detail_ready_target_count: int
+    detail_source_readiness: CollectorPolicyDetailSourceReadiness = Field(
+        default_factory=CollectorPolicyDetailSourceReadiness
+    )
     degraded_scope_summary: str
     sync_source: str
     sync_status: Literal["ok", "degraded", "failed", "unknown"]
@@ -172,6 +190,7 @@ class CollectorPolicyClient:
                 oldest_observed_at=None,
                 newest_observed_at=None,
                 detail_ready_target_count=0,
+                detail_source_readiness=CollectorPolicyDetailSourceReadiness(),
                 degraded_scope_summary=(
                     "No configured policy targets returned usable live policy evidence."
                 ),
@@ -208,6 +227,9 @@ class CollectorPolicyClient:
             "failed": "collector_unavailable",
         }
         fetch_duration_seconds = perf_counter() - started_at
+        detail_source_readiness = CollectorPolicyDetailSourceReadiness.model_validate(
+            payload.get("detail_source_readiness", {})
+        )
         return CollectorPolicySnapshot(
             integration="gnmi_collector_policy",
             status=status_map.get(payload.get("delivery_status"), "collector_unavailable"),
@@ -220,6 +242,7 @@ class CollectorPolicyClient:
             oldest_observed_at=payload.get("oldest_observed_at"),
             newest_observed_at=payload.get("newest_observed_at"),
             detail_ready_target_count=payload.get("detail_ready_target_count", 0),
+            detail_source_readiness=detail_source_readiness,
             degraded_scope_summary=payload.get(
                 "degraded_scope_summary",
                 "Policy degraded scope was not provided by the collector.",

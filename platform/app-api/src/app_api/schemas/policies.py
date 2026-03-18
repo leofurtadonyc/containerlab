@@ -23,6 +23,22 @@ PolicyDetailBlockerReason = Literal[
     "collection_partial",
     "not_recorded",
 ]
+PolicyDetailSourceReadinessPosture = Literal[
+    "unknown",
+    "no_policies_observed",
+    "source_detail_unavailable",
+    "partially_ready",
+    "ready",
+]
+
+
+class PolicyDetailSourceReadinessRecord(BaseModel):
+    """Bounded summary of source-side policy detail readiness."""
+
+    posture: PolicyDetailSourceReadinessPosture
+    no_policies_observed_target_count: int
+    detail_unavailable_target_count: int
+    partial_detail_target_count: int
 
 
 class CandidatePathRecord(BaseModel):
@@ -193,6 +209,7 @@ class PoliciesListResponse(ApiResponseMetadata):
         "mixed",
         "unknown",
     ]
+    detail_source_readiness: PolicyDetailSourceReadinessRecord
     empty_reason: Literal[
         "none",
         "no_policies_observed",

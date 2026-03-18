@@ -29,8 +29,11 @@ class CachedTopologyMetrics:
     inference_posture: str = "unknown"
     endpoint_pairing_posture: str = "unknown"
     collection_posture: str = "unknown"
+    node_participation_posture: str = "unknown"
     paired_link_count: int = 0
     single_sided_link_count: int = 0
+    linked_node_count: int = 0
+    isolated_node_count: int = 0
     data_status: str = "unknown"
     serving_mode: str = "unknown"
     sync_status: str = "unknown"
@@ -64,6 +67,10 @@ class CachedPolicyMetrics:
     sync_status: str = "unknown"
     completeness: str = "unknown"
     detail_mode: str = "unknown"
+    detail_source_posture: str = "unknown"
+    detail_source_no_policies_observed_target_count: int = 0
+    detail_source_unavailable_target_count: int = 0
+    detail_source_partial_target_count: int = 0
     empty_reason: str = "unknown"
     source_posture: str = "unknown"
     evidence_kind: str = "unknown"
@@ -79,6 +86,7 @@ class CachedReadinessMetrics:
     status: str = "unknown"
     planning_readiness: str = "unknown"
     phase_recommendation: str = "unknown"
+    evaluation_at_seconds: float | None = None
     persisted_at_seconds: float | None = None
     evidence_coverage_counts: dict[str, int] = field(default_factory=dict)
     support_posture_counts: dict[str, int] = field(default_factory=dict)
@@ -154,8 +162,11 @@ def cache_topology_metrics(
     inference_posture: str,
     endpoint_pairing_posture: str,
     collection_posture: str,
+    node_participation_posture: str,
     paired_link_count: int,
     single_sided_link_count: int,
+    linked_node_count: int,
+    isolated_node_count: int,
     data_status: str,
     serving_mode: str,
     sync_status: str,
@@ -177,8 +188,11 @@ def cache_topology_metrics(
             inference_posture=inference_posture,
             endpoint_pairing_posture=endpoint_pairing_posture,
             collection_posture=collection_posture,
+            node_participation_posture=node_participation_posture,
             paired_link_count=paired_link_count,
             single_sided_link_count=single_sided_link_count,
+            linked_node_count=linked_node_count,
+            isolated_node_count=isolated_node_count,
             data_status=data_status,
             serving_mode=serving_mode,
             sync_status=sync_status,
@@ -217,6 +231,10 @@ def cache_policy_metrics(
     sync_status: str,
     completeness: str,
     detail_mode: str,
+    detail_source_posture: str,
+    detail_source_no_policies_observed_target_count: int,
+    detail_source_unavailable_target_count: int,
+    detail_source_partial_target_count: int,
     empty_reason: str,
     source_posture: str,
     evidence_kind: str,
@@ -244,6 +262,12 @@ def cache_policy_metrics(
             sync_status=sync_status,
             completeness=completeness,
             detail_mode=detail_mode,
+            detail_source_posture=detail_source_posture,
+            detail_source_no_policies_observed_target_count=(
+                detail_source_no_policies_observed_target_count
+            ),
+            detail_source_unavailable_target_count=detail_source_unavailable_target_count,
+            detail_source_partial_target_count=detail_source_partial_target_count,
             empty_reason=empty_reason,
             source_posture=source_posture,
             evidence_kind=evidence_kind,
@@ -264,6 +288,7 @@ def cache_readiness_metrics(
     status: str,
     planning_readiness: str,
     phase_recommendation: str,
+    evaluation_at_seconds: float | None,
     persisted_at_seconds: float | None,
     evidence_coverage_counts: dict[str, int],
     support_posture_counts: dict[str, int],
@@ -278,6 +303,7 @@ def cache_readiness_metrics(
             status=status,
             planning_readiness=planning_readiness,
             phase_recommendation=phase_recommendation,
+            evaluation_at_seconds=evaluation_at_seconds,
             persisted_at_seconds=persisted_at_seconds,
             evidence_coverage_counts=dict(evidence_coverage_counts),
             support_posture_counts=dict(support_posture_counts),
@@ -431,6 +457,24 @@ def render_prometheus_metrics(
                     f"{topology_metrics['single_sided_link_count']}"
                 ),
                 (
+                    "# HELP platform_app_api_topology_linked_nodes "
+                    "Current backend-owned count of observed topology nodes represented by at least one emitted inferred link."
+                ),
+                "# TYPE platform_app_api_topology_linked_nodes gauge",
+                (
+                    "platform_app_api_topology_linked_nodes "
+                    f"{topology_metrics['linked_node_count']}"
+                ),
+                (
+                    "# HELP platform_app_api_topology_isolated_nodes "
+                    "Current backend-owned count of observed topology nodes not represented by emitted inferred links."
+                ),
+                "# TYPE platform_app_api_topology_isolated_nodes gauge",
+                (
+                    "platform_app_api_topology_isolated_nodes "
+                    f"{topology_metrics['isolated_node_count']}"
+                ),
+                (
                     "# HELP platform_app_api_topology_coverage_posture "
                     "Current backend-owned topology endpoint-pairing posture."
                 ),
@@ -439,7 +483,8 @@ def render_prometheus_metrics(
                     "platform_app_api_topology_coverage_posture"
                     f'{{inference_posture="{topology_metrics["inference_posture"]}",'
                     f'endpoint_pairing_posture="{topology_metrics["endpoint_pairing_posture"]}",'
-                    f'collection_posture="{topology_metrics["collection_posture"]}"}} 1'
+                    f'collection_posture="{topology_metrics["collection_posture"]}",'
+                    f'node_participation_posture="{topology_metrics["node_participation_posture"]}"}} 1'
                 ),
                 (
                     "# HELP platform_app_api_topology_snapshot_status "
@@ -551,6 +596,32 @@ def render_prometheus_metrics(
                     f'empty_reason="{policy_metrics["empty_reason"]}"}} 1'
                 ),
                 (
+                    "# HELP platform_app_api_policy_detail_source_readiness "
+                    "Current bounded backend-owned policy detail source-readiness posture."
+                ),
+                "# TYPE platform_app_api_policy_detail_source_readiness gauge",
+                (
+                    "platform_app_api_policy_detail_source_readiness"
+                    f'{{posture="{policy_metrics["detail_source_posture"]}"}} 1'
+                ),
+                (
+                    "# HELP platform_app_api_policy_detail_source_targets "
+                    "Current backend-owned counts of source-visible policy targets by detail-source reason."
+                ),
+                "# TYPE platform_app_api_policy_detail_source_targets gauge",
+                (
+                    "platform_app_api_policy_detail_source_targets"
+                    f'{{reason="no_policies_observed"}} {policy_metrics["detail_source_no_policies_observed_target_count"]}'
+                ),
+                (
+                    "platform_app_api_policy_detail_source_targets"
+                    f'{{reason="detail_unavailable"}} {policy_metrics["detail_source_unavailable_target_count"]}'
+                ),
+                (
+                    "platform_app_api_policy_detail_source_targets"
+                    f'{{reason="partial_detail"}} {policy_metrics["detail_source_partial_target_count"]}'
+                ),
+                (
                     "# HELP platform_app_api_policy_evidence_posture "
                     "Current policy evidence posture exposed by the backend."
                 ),
@@ -659,6 +730,19 @@ def render_prometheus_metrics(
                     f'{{status="{readiness_metrics["status"]}",'
                     f'planning_readiness="{readiness_metrics["planning_readiness"]}",'
                     f'phase_recommendation="{readiness_metrics["phase_recommendation"]}"}} 1'
+                ),
+                (
+                    "# HELP platform_app_api_readiness_latest_evaluation_at_seconds "
+                    "Unix timestamp of the latest bounded readiness evaluation generated by the backend."
+                ),
+                "# TYPE platform_app_api_readiness_latest_evaluation_at_seconds gauge",
+                (
+                    "platform_app_api_readiness_latest_evaluation_at_seconds "
+                    + (
+                        f"{readiness_metrics['evaluation_at_seconds']:.3f}"
+                        if readiness_metrics["evaluation_at_seconds"] is not None
+                        else "0"
+                    )
                 ),
                 (
                     "# HELP platform_app_api_readiness_snapshot_persisted_at_seconds "

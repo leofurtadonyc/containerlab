@@ -40,8 +40,13 @@ class PlatformReadPathStatus(BaseModel):
         "paired", "partially_paired", "single_sided", "unknown"
     ] | None = None
     collection_posture: Literal["ok", "degraded", "blocked", "unknown"] | None = None
+    node_participation_posture: Literal[
+        "fully_linked", "partially_isolated", "isolated_only", "unknown"
+    ] | None = None
     paired_link_count: int | None = None
     single_sided_link_count: int | None = None
+    linked_node_count: int | None = None
+    isolated_node_count: int | None = None
     degraded_scope_summary: str
     summary: str
     notes: list[str] = Field(default_factory=list)

@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from gnmi_collector.adapters.nokia import NokiaSrosAdapter
 from gnmi_collector.config.runtime import build_runtime_config
 from gnmi_collector.mappings.topology import (
+    derive_node_participation_counts,
     derive_topology_observed_at,
     map_topology_links,
     map_topology_nodes,
@@ -57,6 +58,24 @@ def _derive_collection_posture(
     return "ok"
 
 
+def _derive_node_participation_posture(
+    *,
+    node_count: int,
+    linked_node_count: int,
+    isolated_node_count: int,
+) -> str:
+    """Summarize how much of the observed node set participates in emitted links."""
+    if node_count == 0:
+        return "unknown"
+    if linked_node_count == node_count and isolated_node_count == 0:
+        return "fully_linked"
+    if linked_node_count > 0 and isolated_node_count > 0:
+        return "partially_isolated"
+    if linked_node_count == 0 and isolated_node_count == node_count:
+        return "isolated_only"
+    return "unknown"
+
+
 def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
     """Build the current end-to-end live topology collection flow snapshot."""
     config = build_runtime_config()
@@ -68,6 +87,10 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         raw_records = list(executor.map(adapter.collect_topology, config.targets))
     normalized_nodes = map_topology_nodes(raw_records)
     normalized_links, paired_link_count, single_sided_link_count = map_topology_links(raw_records)
+    linked_node_count, isolated_node_count = derive_node_participation_counts(
+        normalized_nodes,
+        normalized_links,
+    )
     node_state_counts = dict(Counter(node.state for node in normalized_nodes))
     link_state_counts = dict(Counter(link.state for link in normalized_links))
     collection_success_count = sum(
@@ -96,6 +119,11 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         collection_partial_count=partial_collection_count,
         collection_failure_count=collection_failure_count,
     )
+    node_participation_posture = _derive_node_participation_posture(
+        node_count=len(normalized_nodes),
+        linked_node_count=linked_node_count,
+        isolated_node_count=isolated_node_count,
+    )
 
     if normalized_nodes and collection_failure_count == 0 and partial_collection_count == 0:
         delivery_status = "live_ready"
@@ -107,9 +135,14 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         delivery_status = "failed"
         sync_status = "failed"
 
-    if collection_failure_count == 0 and partial_collection_count == 0 and single_sided_link_count == 0:
+    if (
+        collection_failure_count == 0
+        and partial_collection_count == 0
+        and single_sided_link_count == 0
+        and isolated_node_count == 0
+    ):
         degraded_scope_summary = (
-            "All configured topology targets returned live evidence for the current bounded inference path, and all emitted inferred links are backed by paired endpoint evidence."
+            "All configured topology targets returned live evidence for the current bounded inference path, all emitted inferred links are backed by paired endpoint evidence, and all observed nodes participate in at least one emitted inferred link."
         )
     elif observed_target_count == 0:
         degraded_scope_summary = (
@@ -122,6 +155,14 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
     else:
         degraded_scope_summary = (
             "Topology delivery remains bounded because one or more inferred links still rely on single-sided endpoint evidence."
+        )
+        if isolated_node_count > 0:
+            degraded_scope_summary = (
+                "Topology delivery remains bounded because one or more inferred links still rely on single-sided endpoint evidence and one or more observed nodes are not represented by any emitted inferred link."
+            )
+    if single_sided_link_count == 0 and isolated_node_count > 0 and observed_target_count > 0 and collection_failure_count == 0 and partial_collection_count == 0:
+        degraded_scope_summary = (
+            "Topology delivery remains bounded because one or more observed nodes are not represented by any emitted inferred link."
         )
 
     notes = [
@@ -137,9 +178,18 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
             "Collector endpoint-pairing posture is "
             f"{endpoint_pairing_posture}, with {paired_link_count} paired inferred links and {single_sided_link_count} single-sided inferred links."
         )
+    if normalized_nodes:
+        notes.append(
+            "Collector node-participation posture is "
+            f"{node_participation_posture}, with {linked_node_count} observed nodes represented by at least one emitted inferred link and {isolated_node_count} observed nodes remaining isolated from the emitted inferred link slice."
+        )
     if single_sided_link_count > 0:
         notes.append(
             "One or more links were inferred from only one observed endpoint, so single-sided endpoint evidence remains explicit."
+        )
+    if isolated_node_count > 0:
+        notes.append(
+            "One or more observed nodes currently have no emitted inferred link, so node participation remains explicitly partial even when current collection is otherwise healthy."
         )
     if collection_failure_count > 0:
         notes.append(
@@ -163,8 +213,11 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         collection_posture=collection_posture,
         degraded_scope_summary=degraded_scope_summary,
         endpoint_pairing_posture=endpoint_pairing_posture,
+        node_participation_posture=node_participation_posture,
         paired_link_count=paired_link_count,
         single_sided_link_count=single_sided_link_count,
+        linked_node_count=linked_node_count,
+        isolated_node_count=isolated_node_count,
         topology_id="platform-observed-topology",
         topology_name="Platform Observed Topology",
         node_count=len(normalized_nodes),
@@ -192,8 +245,11 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         inference_posture=inference_posture,
         collection_posture=collection_posture,
         endpoint_pairing_posture=endpoint_pairing_posture,
+        node_participation_posture=node_participation_posture,
         paired_link_count=paired_link_count,
         single_sided_link_count=single_sided_link_count,
+        linked_node_count=linked_node_count,
+        isolated_node_count=isolated_node_count,
         node_state_counts=node_state_counts,
         link_state_counts=link_state_counts,
         backend_ready_node_count=delivery.node_count,

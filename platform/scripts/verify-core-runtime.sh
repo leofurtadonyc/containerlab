@@ -55,6 +55,23 @@ assert_contains() {
   fi
 }
 
+assert_not_contains() {
+  name=$1
+  payload=$2
+  unexpected=$3
+
+  if printf '%s' "$payload" | grep -F "$unexpected" >/dev/null 2>&1; then
+    echo "$name unexpectedly contained: $unexpected" >&2
+    exit 1
+  fi
+}
+
+query_postgres_scalar() {
+  sql=$1
+
+  docker exec "$POSTGRES_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "$sql" | tr -d '[:space:]'
+}
+
 wait_for_postgres() {
   attempts=$VERIFY_ATTEMPTS
 
@@ -174,8 +191,17 @@ devices_response=$(fetch_compact_json "$APP_API_URL/api/v1/devices")
 topology_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology")
 policies_response=$(fetch_compact_json "$APP_API_URL/api/v1/policies")
 capabilities_response=$(fetch_compact_json "$APP_API_URL/api/v1/capabilities")
+workflow_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-history")
+audit_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/audit-history")
 app_api_metrics=$(curl -fsS "$APP_API_URL/metrics")
 collector_metrics=$(curl -fsS "$GNMI_COLLECTOR_URL/metrics")
+
+sync_runs_count=$(query_postgres_scalar "SELECT count(*) FROM platform_app.sync_runs;")
+inventory_snapshots_count=$(query_postgres_scalar "SELECT count(*) FROM platform_app.inventory_snapshots;")
+topology_snapshots_count=$(query_postgres_scalar "SELECT count(*) FROM platform_app.topology_snapshots;")
+policy_snapshots_count=$(query_postgres_scalar "SELECT count(*) FROM platform_app.policy_snapshots;")
+readiness_snapshots_count=$(query_postgres_scalar "SELECT count(*) FROM platform_app.readiness_snapshots;")
+persisted_artifact_count=$((sync_runs_count + inventory_snapshots_count + topology_snapshots_count + policy_snapshots_count + readiness_snapshots_count))
 
 assert_contains "platform status response" "$platform_status_response" '"status":"ok"'
 assert_contains "platform status response" "$platform_status_response" '"topology_name":"platform"'
@@ -201,8 +227,11 @@ assert_contains "platform status response" "$platform_status_response" '"degrade
 assert_contains "platform status response" "$platform_status_response" '"inference_posture":"'
 assert_contains "platform status response" "$platform_status_response" '"endpoint_pairing_posture":"'
 assert_contains "platform status response" "$platform_status_response" '"collection_posture":"'
+assert_contains "platform status response" "$platform_status_response" '"node_participation_posture":"'
 assert_contains "platform status response" "$platform_status_response" '"paired_link_count":'
 assert_contains "platform status response" "$platform_status_response" '"single_sided_link_count":'
+assert_contains "platform status response" "$platform_status_response" '"linked_node_count":'
+assert_contains "platform status response" "$platform_status_response" '"isolated_node_count":'
 assert_contains "platform status response" "$platform_status_response" '"policy_capable_target_count":'
 assert_contains "platform status response" "$platform_status_response" '"detail_ready_target_count":'
 
@@ -221,6 +250,9 @@ assert_contains "topology response" "$topology_response" '"inference_posture":"'
 assert_contains "topology response" "$topology_response" '"endpoint_pairing_state":"'
 assert_contains "topology response" "$topology_response" '"endpoint_evidence_count":'
 assert_contains "topology response" "$topology_response" '"collection_posture":"'
+assert_contains "topology response" "$topology_response" '"node_participation_posture":"'
+assert_contains "topology response" "$topology_response" '"linked_node_count":'
+assert_contains "topology response" "$topology_response" '"isolated_node_count":'
 assert_contains "topology response" "$topology_response" '"topology":{'
 assert_contains "topology response" "$topology_response" '"comparison_to_latest_persisted":{'
 
@@ -228,6 +260,11 @@ assert_contains "policies response" "$policies_response" '"data_status":"'
 assert_contains "policies response" "$policies_response" '"serving_mode":"'
 assert_contains "policies response" "$policies_response" '"sync_status":"'
 assert_contains "policies response" "$policies_response" '"detail_mode":"'
+assert_contains "policies response" "$policies_response" '"detail_source_readiness":{'
+assert_contains "policies response" "$policies_response" '"posture":"'
+assert_contains "policies response" "$policies_response" '"no_policies_observed_target_count":'
+assert_contains "policies response" "$policies_response" '"detail_unavailable_target_count":'
+assert_contains "policies response" "$policies_response" '"partial_detail_target_count":'
 assert_contains "policies response" "$policies_response" '"empty_reason":"'
 assert_contains "policies response" "$policies_response" '"target_footprints":['
 assert_contains "policies response" "$policies_response" '"detail_blocker_reason":"'
@@ -243,20 +280,66 @@ assert_contains "capabilities response" "$capabilities_response" '"future_roadma
 assert_contains "capabilities response" "$capabilities_response" '"vendor_posture_counts":{'
 assert_contains "capabilities response" "$capabilities_response" '"future_juniper_target":'
 
+assert_contains "workflow history response" "$workflow_history_response" '"data_status":"'
+assert_contains "workflow history response" "$workflow_history_response" '"count":'
+assert_contains "workflow history response" "$workflow_history_response" '"items":['
+
+assert_contains "audit history response" "$audit_history_response" '"data_status":"'
+assert_contains "audit history response" "$audit_history_response" '"count":'
+assert_contains "audit history response" "$audit_history_response" '"items":['
+
+if [ "$sync_runs_count" -gt 0 ]; then
+  assert_not_contains "workflow history response" "$workflow_history_response" '"data_status":"empty"'
+  assert_not_contains "workflow history response" "$workflow_history_response" '"count":0'
+  assert_contains "workflow history response" "$workflow_history_response" '"sync_run_id":"'
+  assert_not_contains "audit history response" "$audit_history_response" '"data_status":"empty"'
+  assert_not_contains "audit history response" "$audit_history_response" '"count":0'
+  assert_contains "audit history response" "$audit_history_response" '"sync_run_id":"'
+fi
+
+if [ "$inventory_snapshots_count" -gt 0 ]; then
+  assert_not_contains "devices response" "$devices_response" '"history":{"status":"unavailable"'
+  assert_contains "devices response" "$devices_response" '"snapshot_id":"'
+fi
+
+if [ "$topology_snapshots_count" -gt 0 ]; then
+  assert_not_contains "topology response" "$topology_response" '"history":{"status":"unavailable"'
+  assert_contains "topology response" "$topology_response" '"snapshot_id":"'
+fi
+
+if [ "$policy_snapshots_count" -gt 0 ]; then
+  assert_not_contains "policies response" "$policies_response" '"history":{"status":"unavailable"'
+  assert_contains "policies response" "$policies_response" '"snapshot_id":"'
+fi
+
+if [ "$readiness_snapshots_count" -gt 0 ]; then
+  assert_not_contains "capabilities response" "$capabilities_response" '"readiness_snapshot_id":null'
+  assert_not_contains "capabilities response" "$capabilities_response" '"readiness_persisted_at":null'
+fi
+
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_snapshot_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_paired_links'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_single_sided_links'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_linked_nodes'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_isolated_nodes'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_coverage_posture{inference_posture="'
+assert_contains "app-api metrics" "$app_api_metrics" 'node_participation_posture="'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_coverage_posture'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshot_status'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_detail_source_readiness'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_detail_source_targets'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_latest_fetch_duration_seconds'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_timeout_budget_seconds'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_collector_boundary_latest_fetch_posture'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_readiness_status'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_readiness_latest_evaluation_at_seconds'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_sync_runs_total'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_inventory_newest_observed_timestamp_seconds'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_paired_links'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_single_sided_links'
+assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_linked_nodes'
+assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_isolated_nodes'
+assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_node_participation_posture'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_newest_observed_timestamp_seconds'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_policy_newest_observed_timestamp_seconds'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_normalized_nodes'
@@ -267,6 +350,12 @@ if printf '%s' "$platform_status_response" | grep -F '"name":"odl"' | grep -F '"
   :
 elif printf '%s' "$platform_status_response" | grep -F '"name":"odl"' >/dev/null 2>&1; then
   warn "Platform status does not currently report ODL observation_state as ok; run ./scripts/verify-odl-auth.sh to validate the controller path explicitly."
+fi
+
+if [ "$persisted_artifact_count" -gt 0 ]; then
+  notice "Postgres persisted read-side baseline present: sync_runs=$sync_runs_count inventory_snapshots=$inventory_snapshots_count topology_snapshots=$topology_snapshots_count policy_snapshots=$policy_snapshots_count readiness_snapshots=$readiness_snapshots_count."
+else
+  notice "Postgres currently has no persisted read-side snapshots, sync runs, or readiness snapshots; this is consistent with a first deploy or missing-data-dir recovery, and historical recovery is starting from a new baseline."
 fi
 
 if printf '%s' "$devices_response" | grep -F '"serving_mode":"persisted_fallback"' >/dev/null 2>&1; then
@@ -373,6 +462,15 @@ if printf '%s' "$policies_response" | grep -F '"detail_mode":"counters_only"' >/
 fi
 if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"per_policy_details_unavailable"' >/dev/null 2>&1; then
   notice "Policies API target footprints report per_policy_details_unavailable blockers, so per-target detail remains blocked even when aggregate policy presence is real."
+fi
+if printf '%s' "$policies_response" | grep -F '"posture":"no_policies_observed"' >/dev/null 2>&1; then
+  notice "Policies API source-readiness reports no_policies_observed, so the current source-visible policy slice is healthy but live-empty."
+fi
+if printf '%s' "$policies_response" | grep -F '"posture":"source_detail_unavailable"' >/dev/null 2>&1; then
+  notice "Policies API source-readiness reports source_detail_unavailable, so observed policy presence exists but the bounded source slice still cannot derive stable per-policy detail."
+fi
+if printf '%s' "$policies_response" | grep -F '"posture":"partially_ready"' >/dev/null 2>&1; then
+  notice "Policies API source-readiness reports partially_ready, so the current source-visible slice mixes detail-ready targets with live-empty or detail-limited targets."
 fi
 if printf '%s' "$policies_response" | grep -F '"detail_blocker_reason":"no_policies_observed"' >/dev/null 2>&1; then
   notice "Policies API target footprints report no_policies_observed blockers on at least one target, so some targets remain healthy live-empty rather than detail-ready."

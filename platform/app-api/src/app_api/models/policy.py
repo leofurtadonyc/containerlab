@@ -17,6 +17,23 @@ PolicyDetailBlockerReason = Literal[
     "not_recorded",
 ]
 
+PolicyDetailSourceReadinessPosture = Literal[
+    "unknown",
+    "no_policies_observed",
+    "source_detail_unavailable",
+    "partially_ready",
+    "ready",
+]
+
+
+class PolicyDetailSourceReadiness(BaseModel):
+    """Backend-owned bounded summary of source-side policy detail readiness."""
+
+    posture: PolicyDetailSourceReadinessPosture = "unknown"
+    no_policies_observed_target_count: int = 0
+    detail_unavailable_target_count: int = 0
+    partial_detail_target_count: int = 0
+
 
 class CandidatePath(BaseModel):
     """Backend-owned normalized candidate path summary."""
@@ -86,6 +103,9 @@ class PolicyInventorySnapshot(BaseModel):
         "mixed",
         "unknown",
     ]
+    detail_source_readiness: PolicyDetailSourceReadiness = Field(
+        default_factory=PolicyDetailSourceReadiness
+    )
     empty_reason: Literal[
         "none",
         "no_policies_observed",

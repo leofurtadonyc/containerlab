@@ -94,8 +94,11 @@ function createPlatformStatusData() {
         inference_posture: "inferred",
         endpoint_pairing_posture: "partially_paired",
         collection_posture: "degraded",
+        node_participation_posture: "partially_isolated",
         paired_link_count: 2,
         single_sided_link_count: 1,
+        linked_node_count: 2,
+        isolated_node_count: 1,
         degraded_scope_summary: "One topology target is degraded.",
         summary: "Topology read path is partially degraded.",
         notes: [],
@@ -143,12 +146,21 @@ function createTopologyData() {
       changed_link_count: 0,
       notes: [],
     },
+    history: {
+      status: "unavailable",
+      summary: "No persisted topology history yet.",
+      recent_snapshots: [],
+      comparison_to_previous: null,
+    },
     coverage_summary: {
       inference_posture: "inferred",
       endpoint_pairing_posture: "partially_paired",
       collection_posture: "degraded",
+      node_participation_posture: "partially_isolated",
       paired_link_count: 2,
       single_sided_link_count: 1,
+      linked_node_count: 2,
+      isolated_node_count: 1,
       summary: "Some links remain single-sided.",
     },
     topology: {
@@ -246,7 +258,7 @@ function createPoliciesData() {
     history: {
       status: "unavailable",
       summary: "No history yet.",
-      entries: [],
+      recent_snapshots: [],
       comparison_to_previous: null,
     },
   };
@@ -314,6 +326,8 @@ describe("overview view", () => {
     expect(html).toContain("Devices timed out");
     expect(html).toContain("Retry devices");
     expect(html).toContain("Topology coverage");
+    expect(html).toContain("Node participation");
+    expect(html).toContain("Partially isolated");
     expect(html).toContain("Policies Trust Cues");
     expect(html).toContain("Devices Trust Cues");
     expect(html).toContain("Inventory trust cues are temporarily unavailable");
@@ -339,22 +353,31 @@ describe("overview view", () => {
       },
       summary: "Inventory summary.",
       served_persisted_at: null,
-      sync_source: "collector",
-      sync_status: "ok",
       count: 4,
-      data: [],
+      history: {
+        status: "unavailable",
+        summary: "No persisted inventory history yet.",
+        recent_snapshots: [],
+        comparison_to_previous: null,
+      },
+      items: [],
       comparison_to_latest_persisted: {
         status: "unavailable",
         summary: "No comparison snapshot.",
         comparison_snapshot_id: null,
         comparison_persisted_at: null,
-        current_observed_at: null,
         current_device_count: 0,
         persisted_device_count: 0,
         device_count_delta: 0,
         added_device_count: 0,
         removed_device_count: 0,
         changed_device_count: 0,
+        current_role_counts: {},
+        persisted_role_counts: {},
+        current_collector_status_counts: {},
+        persisted_collector_status_counts: {},
+        current_capability_summary_counts: {},
+        persisted_capability_summary_counts: {},
         notes: [],
       },
     }));

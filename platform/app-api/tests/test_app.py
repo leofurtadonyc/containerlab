@@ -29,20 +29,22 @@ from app_api.models.policy import PolicyInventorySnapshot
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.persistence.history import (
     PersistedInventorySnapshotComparison,
-    PersistedInventorySnapshotSummary,
+    PersistedInventorySnapshotSummary as PersistedInventoryHistorySummary,
     PersistedPolicySnapshotComparison,
     PersistedPolicySnapshotSummary as PersistedPolicyHistorySummary,
     PersistedReadinessSnapshotHistoryRecord,
     PersistedSyncRun,
     SyncRunHistorySummary,
     PersistedTopologySnapshotComparison,
-    PersistedTopologySnapshotSummary,
+    PersistedTopologySnapshotSummary as PersistedTopologyHistorySummary,
 )
 from app_api.persistence.read_side import (
     PersistedInventorySnapshot,
+    PersistedInventorySnapshotSummary as PersistedInventoryReadSideSnapshotSummary,
     PersistedPolicySnapshot,
     PersistedPolicySnapshotSummary,
     PersistedTopologySnapshot,
+    PersistedTopologySnapshotSummary as PersistedTopologyReadSideSnapshotSummary,
 )
 from app_api.config.settings import get_settings
 from app_api.schemas.platform import PlatformReadPathStatus
@@ -68,12 +70,28 @@ def _disable_read_side_persistence(monkeypatch) -> None:
         lambda: None,
     )
     monkeypatch.setattr(
+        "app_api.services.devices.load_previous_inventory_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.devices.load_recent_inventory_snapshot_summaries",
+        lambda limit=3: [],
+    )
+    monkeypatch.setattr(
         "app_api.services.topology.persist_topology_snapshot",
         lambda **kwargs: None,
     )
     monkeypatch.setattr(
         "app_api.services.topology.load_latest_topology_snapshot",
         lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.topology.load_previous_topology_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.topology.load_recent_topology_snapshot_summaries",
+        lambda limit=3: [],
     )
     monkeypatch.setattr(
         "app_api.services.policies.persist_policy_snapshot",
@@ -216,8 +234,11 @@ def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
         collection_posture="ok",
         degraded_scope_summary="All configured topology targets returned usable live topology evidence within the current bounded inference slice.",
         endpoint_pairing_posture="paired",
+        node_participation_posture="fully_linked",
         paired_link_count=1,
         single_sided_link_count=0,
+        linked_node_count=2,
+        isolated_node_count=0,
         topology_id="platform-observed-topology",
         topology_name="Platform Observed Topology",
         sync_source="gnmi_collector_topology_interface_inference",
@@ -298,8 +319,11 @@ def _build_live_mixed_topology_snapshot() -> CollectorTopologySnapshot:
         collection_posture="degraded",
         degraded_scope_summary="Topology delivery remains bounded because one or more inferred links still rely on single-sided endpoint evidence.",
         endpoint_pairing_posture="partially_paired",
+        node_participation_posture="fully_linked",
         paired_link_count=1,
         single_sided_link_count=1,
+        linked_node_count=3,
+        isolated_node_count=0,
         topology_id="platform-observed-topology",
         topology_name="Platform Observed Topology",
         sync_source="gnmi_collector_topology_interface_inference",
@@ -373,6 +397,153 @@ def _build_live_mixed_topology_snapshot() -> CollectorTopologySnapshot:
     )
 
 
+def _build_live_isolated_topology_snapshot() -> CollectorTopologySnapshot:
+    return CollectorTopologySnapshot(
+        integration="gnmi_collector_topology",
+        status="live_normalized_feed",
+        destination_service="app-api",
+        source_endpoint="http://gnmi-collector:9804/topology/snapshot",
+        configured_target_count=3,
+        observed_target_count=3,
+        collection_success_count=3,
+        collection_partial_count=0,
+        collection_failure_count=0,
+        oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        newest_observed_at="2026-03-09T19:25:09.500000+00:00",
+        inference_posture="inferred",
+        collection_posture="ok",
+        degraded_scope_summary="Topology delivery remains bounded because one or more observed nodes are not represented by any emitted inferred link.",
+        endpoint_pairing_posture="paired",
+        node_participation_posture="partially_isolated",
+        paired_link_count=1,
+        single_sided_link_count=0,
+        linked_node_count=2,
+        isolated_node_count=1,
+        topology_id="platform-observed-topology",
+        topology_name="Platform Observed Topology",
+        sync_source="gnmi_collector_topology_interface_inference",
+        sync_status="ok",
+        completeness="partial",
+        observed_at="2026-03-09T19:25:09.500000+00:00",
+        notes=[
+            "Topology links are inferred from live router interface names and current interface operational state.",
+            "Collector node-participation posture is partially_isolated, with 2 observed nodes represented by at least one emitted inferred link and 1 observed nodes remaining isolated from the emitted inferred link slice.",
+        ],
+        nodes=[
+            CollectorTopologyNodeRecord(
+                node_id="PE1",
+                display_name="PE1",
+                role="pe",
+                state="up",
+                source="gnmi",
+                device_id="PE1",
+                attributes={"vendor": "nokia"},
+            ),
+            CollectorTopologyNodeRecord(
+                node_id="P1",
+                display_name="P1",
+                role="p",
+                state="up",
+                source="gnmi",
+                device_id="P1",
+                attributes={"vendor": "nokia"},
+            ),
+            CollectorTopologyNodeRecord(
+                node_id="PE2",
+                display_name="PE2",
+                role="pe",
+                state="up",
+                source="gnmi",
+                device_id="PE2",
+                attributes={"vendor": "nokia"},
+            ),
+        ],
+        links=[
+            CollectorTopologyLinkRecord(
+                link_id="P1--PE1",
+                source_node_id="P1",
+                target_node_id="PE1",
+                state="up",
+                source="gnmi",
+                endpoint_pairing_state="paired",
+                endpoint_evidence_count=2,
+                attributes={
+                    "knowledge_state": "partial",
+                    "endpoint_pairing_state": "paired",
+                    "endpoint_evidence_count": "2",
+                },
+            ),
+        ],
+        fetch_error=None,
+    )
+
+
+def _build_live_fully_isolated_topology_snapshot() -> CollectorTopologySnapshot:
+    return CollectorTopologySnapshot(
+        integration="gnmi_collector_topology",
+        status="live_normalized_feed",
+        destination_service="app-api",
+        source_endpoint="http://gnmi-collector:9804/topology/snapshot",
+        configured_target_count=3,
+        observed_target_count=3,
+        collection_success_count=3,
+        collection_partial_count=0,
+        collection_failure_count=0,
+        oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
+        newest_observed_at="2026-03-09T19:25:09.500000+00:00",
+        inference_posture="unknown",
+        collection_posture="ok",
+        degraded_scope_summary="Topology delivery remains bounded because one or more observed nodes are not represented by any emitted inferred link.",
+        endpoint_pairing_posture="unknown",
+        node_participation_posture="isolated_only",
+        paired_link_count=0,
+        single_sided_link_count=0,
+        linked_node_count=0,
+        isolated_node_count=3,
+        topology_id="platform-observed-topology",
+        topology_name="Platform Observed Topology",
+        sync_source="gnmi_collector_topology_interface_inference",
+        sync_status="ok",
+        completeness="partial",
+        observed_at="2026-03-09T19:25:09.500000+00:00",
+        notes=[
+            "Topology links are inferred from live router interface names and current interface operational state.",
+            "Collector node-participation posture is isolated_only, with 0 observed nodes represented by at least one emitted inferred link and 3 observed nodes remaining isolated from the emitted inferred link slice.",
+        ],
+        nodes=[
+            CollectorTopologyNodeRecord(
+                node_id="PE1",
+                display_name="PE1",
+                role="pe",
+                state="up",
+                source="gnmi",
+                device_id="PE1",
+                attributes={"vendor": "nokia"},
+            ),
+            CollectorTopologyNodeRecord(
+                node_id="P1",
+                display_name="P1",
+                role="p",
+                state="up",
+                source="gnmi",
+                device_id="P1",
+                attributes={"vendor": "nokia"},
+            ),
+            CollectorTopologyNodeRecord(
+                node_id="PE2",
+                display_name="PE2",
+                role="pe",
+                state="up",
+                source="gnmi",
+                device_id="PE2",
+                attributes={"vendor": "nokia"},
+            ),
+        ],
+        links=[],
+        fetch_error=None,
+    )
+
+
 def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
     return CollectorPolicySnapshot(
         integration="gnmi_collector_policy",
@@ -386,6 +557,12 @@ def _build_live_policy_snapshot() -> CollectorPolicySnapshot:
         oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
         newest_observed_at="2026-03-09T19:25:08.500000+00:00",
         detail_ready_target_count=2,
+        detail_source_readiness={
+            "posture": "partially_ready",
+            "no_policies_observed_target_count": 32,
+            "detail_unavailable_target_count": 0,
+            "partial_detail_target_count": 0,
+        },
         degraded_scope_summary="All configured policy targets returned current counter evidence, but per-policy detail remains bounded to static-policy visibility.",
         sync_source="gnmi_collector_policy_sr_counters",
         sync_status="ok",
@@ -528,6 +705,12 @@ def _build_partial_live_policy_snapshot() -> CollectorPolicySnapshot:
         oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
         newest_observed_at="2026-03-09T19:25:11.500000+00:00",
         detail_ready_target_count=2,
+        detail_source_readiness={
+            "posture": "partially_ready",
+            "no_policies_observed_target_count": 31,
+            "detail_unavailable_target_count": 0,
+            "partial_detail_target_count": 0,
+        },
         degraded_scope_summary="Policy delivery remains bounded because one configured target did not return usable live policy evidence.",
         sync_source="gnmi_collector_policy_sr_counters",
         sync_status="degraded",
@@ -583,6 +766,12 @@ def _build_live_empty_policy_snapshot() -> CollectorPolicySnapshot:
         oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
         newest_observed_at="2026-03-09T19:25:08.500000+00:00",
         detail_ready_target_count=0,
+        detail_source_readiness={
+            "posture": "no_policies_observed",
+            "no_policies_observed_target_count": 34,
+            "detail_unavailable_target_count": 0,
+            "partial_detail_target_count": 0,
+        },
         degraded_scope_summary="All configured policy targets returned current counter evidence, but no per-policy detail records are presently available because no SR policies are observed.",
         sync_source="gnmi_collector_policy_sr_counters",
         sync_status="ok",
@@ -666,6 +855,12 @@ def _build_live_policy_snapshot_without_detail_records() -> CollectorPolicySnaps
         oldest_observed_at="2026-03-09T19:25:08.500000+00:00",
         newest_observed_at="2026-03-09T19:25:08.500000+00:00",
         detail_ready_target_count=0,
+        detail_source_readiness={
+            "posture": "source_detail_unavailable",
+            "no_policies_observed_target_count": 0,
+            "detail_unavailable_target_count": 34,
+            "partial_detail_target_count": 0,
+        },
         degraded_scope_summary="All configured policy targets returned current counter evidence, but the currently observed policy types do not expose bounded per-policy detail records.",
         sync_source="gnmi_collector_policy_sr_counters",
         sync_status="ok",
@@ -756,6 +951,89 @@ def _build_persisted_inventory_snapshot() -> PersistedInventorySnapshot:
     )
 
 
+def _build_previous_persisted_inventory_snapshot() -> PersistedInventorySnapshot:
+    return PersistedInventorySnapshot(
+        snapshot_id="inventory-snapshot-0",
+        sync_run_id="sync-inventory-previous",
+        persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+        devices=[
+            InventoryDevice(
+                device_id="PE1",
+                vendor="nokia",
+                platform="7750 SR-1",
+                software_version="B-25.10.R0",
+                role="pe",
+                management_address="172.20.20.107",
+                collector_status="ok",
+                capability_summary="partially_supported",
+            ),
+            InventoryDevice(
+                device_id="P1",
+                vendor="nokia",
+                platform="7750 SR-1",
+                software_version="B-25.10.R0",
+                role="p",
+                management_address="172.20.20.109",
+                collector_status="ok",
+                capability_summary="partially_supported",
+            ),
+        ],
+    )
+
+
+def _build_recent_inventory_snapshot_summaries() -> list[PersistedInventoryReadSideSnapshotSummary]:
+    return [
+        PersistedInventoryReadSideSnapshotSummary(
+            snapshot_id="inventory-snapshot-1",
+            persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+            snapshot={
+                "snapshot_id": "inventory-snapshot-1",
+                "persisted_at": datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+                "observed_at": None,
+                "sync_source": "gnmi_collector_inventory",
+                "sync_status": "partial_live_feed",
+                "data_status": "degraded",
+                "device_count": 1,
+                "role_counts": {"pe": 1},
+                "collector_status_counts": {"degraded": 1},
+                "capability_summary_counts": {"unknown": 1},
+            },
+        ),
+        PersistedInventoryReadSideSnapshotSummary(
+            snapshot_id="inventory-snapshot-0",
+            persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+            snapshot={
+                "snapshot_id": "inventory-snapshot-0",
+                "persisted_at": datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+                "observed_at": None,
+                "sync_source": "gnmi_collector_inventory",
+                "sync_status": "live_normalized_feed",
+                "data_status": "live",
+                "device_count": 2,
+                "role_counts": {"p": 1, "pe": 1},
+                "collector_status_counts": {"ok": 2},
+                "capability_summary_counts": {"partially_supported": 2},
+            },
+        ),
+        PersistedInventoryReadSideSnapshotSummary(
+            snapshot_id="inventory-snapshot-minus-1",
+            persisted_at=datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
+            snapshot={
+                "snapshot_id": "inventory-snapshot-minus-1",
+                "persisted_at": datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
+                "observed_at": None,
+                "sync_source": "gnmi_collector_inventory",
+                "sync_status": "live_normalized_feed",
+                "data_status": "live",
+                "device_count": 2,
+                "role_counts": {"p": 1, "pe": 1},
+                "collector_status_counts": {"ok": 2},
+                "capability_summary_counts": {"partially_supported": 2},
+            },
+        ),
+    ]
+
+
 def _build_persisted_topology_snapshot() -> PersistedTopologySnapshot:
     return PersistedTopologySnapshot(
         snapshot_id="topology-snapshot-1",
@@ -792,6 +1070,109 @@ def _build_persisted_topology_snapshot() -> PersistedTopologySnapshot:
             notes=["Served from the latest persisted topology snapshot."],
         ),
     )
+
+
+def _build_previous_persisted_topology_snapshot() -> PersistedTopologySnapshot:
+    return PersistedTopologySnapshot(
+        snapshot_id="topology-snapshot-0",
+        sync_run_id="sync-topology-previous",
+        persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+        snapshot=TopologySnapshot(
+            topology_id="platform-observed-topology",
+            topology_name="Platform Observed Topology",
+            nodes=[
+                TopologyNode(
+                    node_id="PE1",
+                    display_name="PE1",
+                    role="pe",
+                    state="up",
+                    source="gnmi",
+                    device_id="PE1",
+                    attributes={"vendor": "nokia"},
+                ),
+                TopologyNode(
+                    node_id="P1",
+                    display_name="P1",
+                    role="p",
+                    state="up",
+                    source="gnmi",
+                    device_id="P1",
+                    attributes={"vendor": "nokia"},
+                ),
+            ],
+            links=[
+                TopologyLink(
+                    link_id="PE1--P1",
+                    source_node_id="PE1",
+                    target_node_id="P1",
+                    state="up",
+                    source="gnmi",
+                    attributes={"knowledge_state": "partial"},
+                )
+            ],
+            sync_source="persisted_topology_snapshot",
+            sync_status="ok",
+            completeness="partial",
+            observed_at=datetime.fromisoformat("2026-03-09T23:29:00+00:00"),
+            notes=["Served from the previous persisted topology snapshot."],
+        ),
+    )
+
+
+def _build_recent_topology_snapshot_summaries() -> list[PersistedTopologyReadSideSnapshotSummary]:
+    return [
+        PersistedTopologyReadSideSnapshotSummary(
+            snapshot_id="topology-snapshot-1",
+            persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+            snapshot={
+                "snapshot_id": "topology-snapshot-1",
+                "persisted_at": datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+                "observed_at": datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+                "topology_name": "Platform Observed Topology",
+                "sync_source": "persisted_topology_snapshot",
+                "sync_status": "degraded",
+                "completeness": "partial",
+                "node_count": 1,
+                "link_count": 1,
+                "node_state_counts": {"up": 1},
+                "link_state_counts": {"degraded": 1},
+            },
+        ),
+        PersistedTopologyReadSideSnapshotSummary(
+            snapshot_id="topology-snapshot-0",
+            persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+            snapshot={
+                "snapshot_id": "topology-snapshot-0",
+                "persisted_at": datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+                "observed_at": datetime.fromisoformat("2026-03-09T23:29:00+00:00"),
+                "topology_name": "Platform Observed Topology",
+                "sync_source": "persisted_topology_snapshot",
+                "sync_status": "ok",
+                "completeness": "partial",
+                "node_count": 2,
+                "link_count": 1,
+                "node_state_counts": {"up": 2},
+                "link_state_counts": {"up": 1},
+            },
+        ),
+        PersistedTopologyReadSideSnapshotSummary(
+            snapshot_id="topology-snapshot-minus-1",
+            persisted_at=datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
+            snapshot={
+                "snapshot_id": "topology-snapshot-minus-1",
+                "persisted_at": datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
+                "observed_at": datetime.fromisoformat("2026-03-09T22:59:00+00:00"),
+                "topology_name": "Platform Observed Topology",
+                "sync_source": "persisted_topology_snapshot",
+                "sync_status": "ok",
+                "completeness": "partial",
+                "node_count": 2,
+                "link_count": 1,
+                "node_state_counts": {"up": 2},
+                "link_state_counts": {"up": 1},
+            },
+        ),
+    ]
 
 
 def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
@@ -1059,7 +1440,7 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             started_at=datetime.fromisoformat("2026-03-10T01:00:00+00:00"),
             finished_at=datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
             persisted_artifacts=["topology_snapshot"],
-            topology_snapshot_summary=PersistedTopologySnapshotSummary(
+            topology_snapshot_summary=PersistedTopologyHistorySummary(
                 snapshot_id="topology-snapshot-sync-1",
                 persisted_at=datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
                 observed_at=datetime.fromisoformat("2026-03-10T01:00:00+00:00"),
@@ -1104,7 +1485,7 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             started_at=datetime.fromisoformat("2026-03-10T00:30:00+00:00"),
             finished_at=datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
             persisted_artifacts=["inventory_snapshot"],
-            inventory_snapshot_summary=PersistedInventorySnapshotSummary(
+            inventory_snapshot_summary=PersistedInventoryHistorySummary(
                 snapshot_id="inventory-snapshot-sync-1",
                 persisted_at=datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
                 observed_at=None,
@@ -1260,12 +1641,15 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert payload["read_paths"][1]["inference_posture"] == "inferred"
     assert payload["read_paths"][1]["endpoint_pairing_posture"] == "paired"
     assert payload["read_paths"][1]["collection_posture"] == "ok"
+    assert payload["read_paths"][1]["node_participation_posture"] == "fully_linked"
     assert any(
         "completed in 0.228s within the 3s latency budget" in note
         for note in payload["read_paths"][1]["notes"]
     )
     assert payload["read_paths"][1]["paired_link_count"] == 1
     assert payload["read_paths"][1]["single_sided_link_count"] == 0
+    assert payload["read_paths"][1]["linked_node_count"] == 2
+    assert payload["read_paths"][1]["isolated_node_count"] == 0
     assert payload["read_paths"][1]["degraded_scope_summary"] == (
         "All configured topology targets returned usable live topology evidence within the current bounded inference slice."
     )
@@ -1284,7 +1668,7 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert "inventory: 2/2 targets, success 2, partial 0, failed 0" in gnmi_component["notes"][0]
     assert "freshness 2026-03-09T19:25:08.500000+00:00 -> 2026-03-09T19:25:08.500000+00:00" in gnmi_component["notes"][0]
     assert gnmi_component["notes"][1] == "All configured inventory targets returned normalized live inventory evidence."
-    assert "inference posture inferred, collection posture ok, endpoint-pairing posture paired, paired links 1, single-sided links 0." in gnmi_component["notes"][2]
+    assert "inference posture inferred, collection posture ok, endpoint-pairing posture paired, node participation posture fully_linked, paired links 1, single-sided links 0, linked nodes 2, isolated nodes 0." in gnmi_component["notes"][2]
     assert "detail-ready targets 2." in gnmi_component["notes"][4]
     odl_component = payload["components"][-1]
     assert odl_component["name"] == "odl"
@@ -1344,15 +1728,18 @@ def test_platform_status_endpoint_exposes_mixed_topology_pairing_coverage(monkey
     assert topology_read_path["inference_posture"] == "inferred"
     assert topology_read_path["endpoint_pairing_posture"] == "partially_paired"
     assert topology_read_path["collection_posture"] == "degraded"
+    assert topology_read_path["node_participation_posture"] == "fully_linked"
     assert topology_read_path["paired_link_count"] == 1
     assert topology_read_path["single_sided_link_count"] == 1
+    assert topology_read_path["linked_node_count"] == 3
+    assert topology_read_path["isolated_node_count"] == 0
     assert topology_read_path["degraded_scope_summary"] == (
         "Topology delivery remains bounded because one or more inferred links still rely on single-sided endpoint evidence."
     )
     assert "mix of paired and single-sided endpoint evidence" in topology_read_path["summary"]
     gnmi_component = payload["components"][2]
     assert any(
-        "inference posture inferred, collection posture degraded, endpoint-pairing posture partially_paired, paired links 1, single-sided links 1."
+        "inference posture inferred, collection posture degraded, endpoint-pairing posture partially_paired, node participation posture fully_linked, paired links 1, single-sided links 1, linked nodes 3, isolated nodes 0."
         in note
         for note in gnmi_component["notes"]
     )
@@ -1823,11 +2210,15 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert payload["coverage_summary"]["inference_posture"] == "inferred"
     assert payload["coverage_summary"]["endpoint_pairing_posture"] == "paired"
     assert payload["coverage_summary"]["collection_posture"] == "ok"
+    assert payload["coverage_summary"]["node_participation_posture"] == "fully_linked"
     assert payload["coverage_summary"]["paired_link_count"] == 1
     assert payload["coverage_summary"]["single_sided_link_count"] == 0
+    assert payload["coverage_summary"]["linked_node_count"] == 2
+    assert payload["coverage_summary"]["isolated_node_count"] == 0
     assert "paired endpoint evidence" in payload["coverage_summary"]["summary"]
     assert "inference-bounded" in payload["coverage_summary"]["summary"]
     assert "collection posture is healthy" in payload["coverage_summary"]["summary"]
+    assert "All observed normalized nodes are currently represented" in payload["coverage_summary"]["summary"]
     assert payload["topology"]["topology_id"] == "platform-observed-topology"
     assert payload["topology"]["topology_name"] == "Platform Observed Topology"
     assert payload["topology"]["sync_source"] == "gnmi_collector_topology_interface_inference"
@@ -1876,14 +2267,44 @@ def test_topology_endpoint_exposes_mixed_pairing_coverage_semantics(monkeypatch)
     assert payload["coverage_summary"]["inference_posture"] == "inferred"
     assert payload["coverage_summary"]["endpoint_pairing_posture"] == "partially_paired"
     assert payload["coverage_summary"]["collection_posture"] == "degraded"
+    assert payload["coverage_summary"]["node_participation_posture"] == "fully_linked"
     assert payload["coverage_summary"]["paired_link_count"] == 1
     assert payload["coverage_summary"]["single_sided_link_count"] == 1
+    assert payload["coverage_summary"]["linked_node_count"] == 3
+    assert payload["coverage_summary"]["isolated_node_count"] == 0
     assert "mix of paired and single-sided endpoint evidence" in payload["coverage_summary"]["summary"]
     assert "collection posture is degraded" in payload["coverage_summary"]["summary"]
     assert payload["topology"]["links"][0]["endpoint_pairing_state"] == "paired"
     assert payload["topology"]["links"][1]["endpoint_pairing_state"] == "single_sided"
     assert payload["topology"]["links"][1]["endpoint_evidence_count"] == 1
     assert "mix of paired and single-sided endpoint evidence" in payload["summary"]
+
+
+def test_topology_endpoint_exposes_isolated_node_coverage_semantics(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorTopologyClient:
+        def read_topology_snapshot(self) -> CollectorTopologySnapshot:
+            return _build_live_isolated_topology_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.topology.get_collector_topology_client",
+        lambda: StubCollectorTopologyClient(),
+    )
+
+    response = client.get("/api/v1/topology")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_status"] == "live"
+    assert payload["coverage_summary"]["endpoint_pairing_posture"] == "paired"
+    assert payload["coverage_summary"]["node_participation_posture"] == "partially_isolated"
+    assert payload["coverage_summary"]["paired_link_count"] == 1
+    assert payload["coverage_summary"]["single_sided_link_count"] == 0
+    assert payload["coverage_summary"]["linked_node_count"] == 2
+    assert payload["coverage_summary"]["isolated_node_count"] == 1
+    assert "linked and isolated observed nodes" in payload["coverage_summary"]["summary"]
+    assert "linked and isolated observed nodes" in payload["summary"]
 
 
 def test_devices_endpoint_falls_back_to_persisted_inventory(monkeypatch) -> None:
@@ -1917,6 +2338,10 @@ def test_devices_endpoint_falls_back_to_persisted_inventory(monkeypatch) -> None
         "app_api.services.devices.load_latest_inventory_snapshot",
         _build_persisted_inventory_snapshot,
     )
+    monkeypatch.setattr(
+        "app_api.services.devices.load_recent_inventory_snapshot_summaries",
+        lambda limit=3: _build_recent_inventory_snapshot_summaries()[:1],
+    )
 
     response = client.get("/api/v1/devices")
 
@@ -1934,6 +2359,9 @@ def test_devices_endpoint_falls_back_to_persisted_inventory(monkeypatch) -> None
         payload["served_persisted_at"].replace("Z", "+00:00")
     ) == datetime.fromisoformat("2026-03-10T00:00:00+00:00")
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
+    assert payload["history"]["status"] == "current_only"
+    assert len(payload["history"]["recent_snapshots"]) == 1
+    assert payload["history"]["recent_snapshots"][0]["snapshot_id"] == "inventory-snapshot-1"
     assert payload["comparison_to_latest_persisted"]["current_device_count"] == 1
     assert "latest persisted normalized inventory snapshot" in payload["summary"]
     assert payload["items"][0]["device_id"] == "PE1"
@@ -1956,6 +2384,14 @@ def test_devices_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypat
     monkeypatch.setattr(
         "app_api.services.devices.load_latest_inventory_snapshot",
         _build_persisted_inventory_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.devices.load_previous_inventory_snapshot",
+        _build_previous_persisted_inventory_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.devices.load_recent_inventory_snapshot_summaries",
+        lambda limit=3: _build_recent_inventory_snapshot_summaries()[:limit],
     )
 
     response = client.get("/api/v1/devices")
@@ -1980,6 +2416,13 @@ def test_devices_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypat
     assert payload["comparison_to_latest_persisted"]["persisted_capability_summary_counts"] == {
         "unknown": 1
     }
+    assert payload["history"]["status"] == "comparison_ready"
+    assert payload["history"]["comparison_to_previous"]["current_snapshot_id"] == "inventory-snapshot-1"
+    assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "inventory-snapshot-0"
+    assert payload["history"]["comparison_to_previous"]["device_count_delta"] == -1
+    assert payload["history"]["comparison_to_previous"]["removed_device_count"] == 1
+    assert payload["history"]["comparison_to_previous"]["changed_device_count"] == 1
+    assert len(payload["history"]["recent_snapshots"]) == 3
 
 
 def test_devices_endpoint_keeps_partial_live_inventory_in_live_collector_mode(monkeypatch) -> None:
@@ -2048,6 +2491,10 @@ def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None
         "app_api.services.topology.load_latest_topology_snapshot",
         _build_persisted_topology_snapshot,
     )
+    monkeypatch.setattr(
+        "app_api.services.topology.load_recent_topology_snapshot_summaries",
+        lambda limit=3: _build_recent_topology_snapshot_summaries()[:1],
+    )
 
     response = client.get("/api/v1/topology")
 
@@ -2063,8 +2510,11 @@ def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None
     assert payload["coverage_summary"]["inference_posture"] == "inferred"
     assert payload["coverage_summary"]["endpoint_pairing_posture"] == "unknown"
     assert payload["coverage_summary"]["collection_posture"] == "blocked"
+    assert payload["coverage_summary"]["node_participation_posture"] == "fully_linked"
     assert payload["coverage_summary"]["paired_link_count"] == 0
     assert payload["coverage_summary"]["single_sided_link_count"] == 0
+    assert payload["coverage_summary"]["linked_node_count"] == 1
+    assert payload["coverage_summary"]["isolated_node_count"] == 0
     assert payload["topology"]["sync_source"] == "persisted_topology_snapshot"
     assert len(payload["topology"]["nodes"]) == 1
     assert len(payload["topology"]["links"]) == 1
@@ -2079,6 +2529,9 @@ def test_topology_endpoint_falls_back_to_persisted_snapshot(monkeypatch) -> None
     ) == datetime.fromisoformat("2026-03-10T00:00:00+00:00")
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
     assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] == "topology-snapshot-1"
+    assert payload["history"]["status"] == "current_only"
+    assert len(payload["history"]["recent_snapshots"]) == 1
+    assert payload["history"]["recent_snapshots"][0]["snapshot_id"] == "topology-snapshot-1"
     assert "latest persisted normalized topology snapshot" in payload["summary"]
 
 
@@ -2097,6 +2550,14 @@ def test_topology_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypa
         "app_api.services.topology.load_latest_topology_snapshot",
         _build_persisted_topology_snapshot,
     )
+    monkeypatch.setattr(
+        "app_api.services.topology.load_previous_topology_snapshot",
+        _build_previous_persisted_topology_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.topology.load_recent_topology_snapshot_summaries",
+        lambda limit=3: _build_recent_topology_snapshot_summaries()[:limit],
+    )
 
     response = client.get("/api/v1/topology")
 
@@ -2110,6 +2571,12 @@ def test_topology_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypa
     assert payload["comparison_to_latest_persisted"]["added_node_count"] == 1
     assert payload["comparison_to_latest_persisted"]["added_link_count"] == 1
     assert payload["comparison_to_latest_persisted"]["removed_link_count"] == 1
+    assert payload["history"]["status"] == "comparison_ready"
+    assert payload["history"]["comparison_to_previous"]["current_snapshot_id"] == "topology-snapshot-1"
+    assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "topology-snapshot-0"
+    assert payload["history"]["comparison_to_previous"]["node_count_delta"] == -1
+    assert payload["history"]["comparison_to_previous"]["changed_link_count"] == 1
+    assert len(payload["history"]["recent_snapshots"]) == 3
 
 
 def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
@@ -2154,6 +2621,12 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["sync_status"] == "ok"
     assert payload["completeness"] == "partial"
     assert payload["detail_mode"] == "static_policies_when_present"
+    assert payload["detail_source_readiness"] == {
+        "posture": "partially_ready",
+        "no_policies_observed_target_count": 32,
+        "detail_unavailable_target_count": 0,
+        "partial_detail_target_count": 0,
+    }
     assert payload["empty_reason"] == "none"
     assert payload["observed_target_count"] == 34
     assert payload["policy_capable_target_count"] == 34
@@ -2243,6 +2716,8 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     assert payload["evidence_confidence"]["blocked_reason"] == "none"
     assert payload["count"] == 0
     assert payload["observed_policy_count"] == 0
+    assert payload["detail_source_readiness"]["posture"] == "no_policies_observed"
+    assert payload["detail_source_readiness"]["no_policies_observed_target_count"] == 34
     assert payload["empty_reason"] == "no_policies_observed"
     assert payload["ttm_preference_count"] == 476
     assert payload["observed_target_role_counts"]["p"] == 16
@@ -2282,6 +2757,8 @@ def test_policies_endpoint_keeps_detail_unavailable_state_explicit(monkeypatch) 
     assert payload["evidence_confidence"]["blocked_reason"] == "per_record_detail_unavailable"
     assert payload["count"] == 0
     assert payload["observed_policy_count"] == 2
+    assert payload["detail_source_readiness"]["posture"] == "source_detail_unavailable"
+    assert payload["detail_source_readiness"]["detail_unavailable_target_count"] == 34
     assert payload["empty_reason"] == "per_policy_details_unavailable"
     assert payload["target_footprints"][0]["detail_blocker_reason"] == "per_policy_details_unavailable"
     assert payload["target_footprints"][1]["detail_blocker_reason"] == "per_policy_details_unavailable"
@@ -2814,9 +3291,11 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert "platform_app_api_topology_links 1" in response.text
     assert "platform_app_api_topology_paired_links 1" in response.text
     assert "platform_app_api_topology_single_sided_links 0" in response.text
+    assert "platform_app_api_topology_linked_nodes 2" in response.text
+    assert "platform_app_api_topology_isolated_nodes 0" in response.text
     assert (
         'platform_app_api_topology_coverage_posture{inference_posture="inferred",'
-        'endpoint_pairing_posture="paired",collection_posture="ok"} 1'
+        'endpoint_pairing_posture="paired",collection_posture="ok",node_participation_posture="fully_linked"} 1'
         in response.text
     )
     assert (
@@ -2840,6 +3319,21 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         'detail_mode="static_policies_when_present",empty_reason="none"} 1'
     ) in response.text
     assert (
+        'platform_app_api_policy_detail_source_readiness{posture="partially_ready"} 1'
+    ) in response.text
+    assert (
+        'platform_app_api_policy_detail_source_targets{reason="no_policies_observed"} 32'
+        in response.text
+    )
+    assert (
+        'platform_app_api_policy_detail_source_targets{reason="detail_unavailable"} 0'
+        in response.text
+    )
+    assert (
+        'platform_app_api_policy_detail_source_targets{reason="partial_detail"} 0'
+        in response.text
+    )
+    assert (
         'platform_app_api_policy_evidence_posture{source_posture="live_observed",'
         'evidence_kind="aggregate_plus_bounded_records",'
         'confidence_posture="bounded_partial",freshness_posture="current",'
@@ -2852,6 +3346,7 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         'planning_readiness="readiness_planning_supported",'
         'phase_recommendation="remain_phase_2_read_only_foundation"} 1'
     ) in response.text
+    assert "platform_app_api_readiness_latest_evaluation_at_seconds " in response.text
     assert (
         "platform_app_api_readiness_snapshot_persisted_at_seconds 1773656100.000"
         in response.text
@@ -2912,9 +3407,64 @@ def test_metrics_endpoint_exports_mixed_topology_pairing_posture(monkeypatch) ->
     assert response.status_code == 200
     assert "platform_app_api_topology_paired_links 1" in response.text
     assert "platform_app_api_topology_single_sided_links 1" in response.text
+    assert "platform_app_api_topology_linked_nodes 3" in response.text
+    assert "platform_app_api_topology_isolated_nodes 0" in response.text
     assert (
         'platform_app_api_topology_coverage_posture{inference_posture="inferred",'
-        'endpoint_pairing_posture="partially_paired",collection_posture="degraded"} 1'
+        'endpoint_pairing_posture="partially_paired",collection_posture="degraded",node_participation_posture="fully_linked"} 1'
+        in response.text
+    )
+
+
+def test_metrics_endpoint_exports_isolated_topology_node_participation(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorInventoryClient:
+        def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+            return _build_live_inventory_snapshot()
+
+    class StubCollectorTopologyClient:
+        def read_topology_snapshot(self) -> CollectorTopologySnapshot:
+            return _build_live_isolated_topology_snapshot()
+
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return _build_live_policy_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.devices.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.topology.get_collector_topology_client",
+        lambda: StubCollectorTopologyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.metrics.router.summarize_sync_run_history",
+        _build_sync_run_history_summary,
+    )
+    monkeypatch.setattr(
+        "app_api.services.capabilities.load_latest_readiness_snapshot_reference",
+        lambda: SimpleNamespace(
+            snapshot_id="readiness-snapshot-metrics",
+            persisted_at=datetime.fromisoformat("2026-03-16T10:15:00+00:00"),
+        ),
+    )
+    reset_metrics_registry()
+    client.get("/api/v1/topology")
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert "platform_app_api_topology_linked_nodes 2" in response.text
+    assert "platform_app_api_topology_isolated_nodes 1" in response.text
+    assert (
+        'platform_app_api_topology_coverage_posture{inference_posture="inferred",'
+        'endpoint_pairing_posture="paired",collection_posture="ok",node_participation_posture="partially_isolated"} 1'
         in response.text
     )
     assert 'platform_app_api_readiness_blocked_scopes{scope="phase_transition"} 6' in response.text
@@ -2930,6 +3480,59 @@ def test_metrics_endpoint_exports_mixed_topology_pairing_posture(monkeypatch) ->
     ) in response.text
     assert (
         'platform_app_api_sync_run_latest_finished_at_seconds{model_family="inventory"} '
+        in response.text
+    )
+
+
+def test_metrics_endpoint_exports_fully_isolated_topology_node_participation(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorInventoryClient:
+        def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+            return _build_live_inventory_snapshot()
+
+    class StubCollectorTopologyClient:
+        def read_topology_snapshot(self) -> CollectorTopologySnapshot:
+            return _build_live_fully_isolated_topology_snapshot()
+
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return _build_live_policy_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.devices.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.topology.get_collector_topology_client",
+        lambda: StubCollectorTopologyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.metrics.router.summarize_sync_run_history",
+        _build_sync_run_history_summary,
+    )
+    monkeypatch.setattr(
+        "app_api.services.capabilities.load_latest_readiness_snapshot_reference",
+        lambda: SimpleNamespace(
+            snapshot_id="readiness-snapshot-metrics",
+            persisted_at=datetime.fromisoformat("2026-03-16T10:15:00+00:00"),
+        ),
+    )
+    reset_metrics_registry()
+    client.get("/api/v1/topology")
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert "platform_app_api_topology_linked_nodes 0" in response.text
+    assert "platform_app_api_topology_isolated_nodes 3" in response.text
+    assert (
+        'platform_app_api_topology_coverage_posture{inference_posture="unknown",'
+        'endpoint_pairing_posture="unknown",collection_posture="ok",node_participation_posture="isolated_only"} 1'
         in response.text
     )
 

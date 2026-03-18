@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from gnmi_collector.models.policy import (
     NormalizedPolicyCandidatePathRecord,
     NormalizedPolicyRecord,
+    PolicyDetailSourceReadiness,
     NormalizedPolicyTargetFootprint,
     PolicyDetailBlockerReason,
     PolicyRawRecord,
@@ -203,6 +204,13 @@ def _runtime_path_state(payload: dict[str, object]) -> str:
     return "unknown"
 
 
+def _runtime_candidate_path_state(payload: dict[str, object]) -> str:
+    runtime_state = _runtime_path_state(payload)
+    if runtime_state == "degraded":
+        return "inactive"
+    return runtime_state
+
+
 def _runtime_path_candidate(payload: dict[str, object]) -> NormalizedPolicyCandidatePathRecord:
     notes: list[str] = []
     owner = _as_str(_find_first(payload, {"owner"}))
@@ -219,7 +227,7 @@ def _runtime_path_candidate(payload: dict[str, object]) -> NormalizedPolicyCandi
         notes.append(f"segment states: {', '.join(segment_states)}")
     return NormalizedPolicyCandidatePathRecord(
         name="runtime-sr-path",
-        path_state=_runtime_path_state(payload),
+        path_state=_runtime_candidate_path_state(payload),
         preference=_as_int(_find_first(payload, {"preference"})),
         notes=notes,
     )
@@ -538,3 +546,58 @@ def summarize_policy_target_footprints(
             )
         )
     return items
+
+
+def summarize_policy_detail_source_readiness(
+    target_footprints: list[NormalizedPolicyTargetFootprint],
+) -> PolicyDetailSourceReadiness:
+    """Summarize source-readiness without conflating it with collection failures."""
+    source_visible_targets = [
+        footprint
+        for footprint in target_footprints
+        if footprint.policy_capable and footprint.collection_status == "success"
+    ]
+    if not source_visible_targets:
+        return PolicyDetailSourceReadiness()
+
+    no_policies_observed_target_count = sum(
+        1
+        for footprint in source_visible_targets
+        if footprint.detail_blocker_reason == "no_policies_observed"
+    )
+    detail_unavailable_target_count = sum(
+        1
+        for footprint in source_visible_targets
+        if footprint.detail_blocker_reason == "per_policy_details_unavailable"
+    )
+    partial_detail_target_count = sum(
+        1
+        for footprint in source_visible_targets
+        if footprint.detail_blocker_reason == "partial_detail_coverage"
+    )
+    detail_ready_target_count = sum(
+        1 for footprint in source_visible_targets if footprint.detail_record_count > 0
+    )
+
+    if detail_ready_target_count == 0:
+        posture = (
+            "source_detail_unavailable"
+            if detail_unavailable_target_count > 0
+            else "no_policies_observed"
+        )
+    elif (
+        partial_detail_target_count > 0
+        or no_policies_observed_target_count > 0
+        or detail_unavailable_target_count > 0
+        or detail_ready_target_count < len(source_visible_targets)
+    ):
+        posture = "partially_ready"
+    else:
+        posture = "ready"
+
+    return PolicyDetailSourceReadiness(
+        posture=posture,
+        no_policies_observed_target_count=no_policies_observed_target_count,
+        detail_unavailable_target_count=detail_unavailable_target_count,
+        partial_detail_target_count=partial_detail_target_count,
+    )

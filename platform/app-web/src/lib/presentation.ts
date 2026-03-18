@@ -6,6 +6,7 @@ import type {
   TopologyEndpointPairingPosture,
   TopologyInferencePosture,
   TopologyLinkRecord,
+  TopologyNodeParticipationPosture,
   TopologyResponse,
 } from "../api/contracts";
 
@@ -41,6 +42,7 @@ export function getStatusTone(value: string): "good" | "warn" | "bad" | "neutral
     case "live_observed":
     case "direct_observed":
     case "strong_for_current_slice":
+    case "fully_linked":
       return "good";
     case "degraded":
     case "partial":
@@ -56,6 +58,7 @@ export function getStatusTone(value: string): "good" | "warn" | "bad" | "neutral
     case "aggregate_only":
     case "aggregate_plus_bounded_records":
     case "bounded_partial":
+    case "partially_isolated":
       return "warn";
     case "down":
     case "failed":
@@ -65,6 +68,7 @@ export function getStatusTone(value: string): "good" | "warn" | "bad" | "neutral
     case "blocked":
     case "collector_unavailable":
     case "collector_unavailable_and_no_persisted_snapshot":
+    case "isolated_only":
       return "bad";
     default:
       return "neutral";
@@ -272,6 +276,22 @@ export function resolveTopologyCoverageSummary(
     endpointPairingPosture = "single_sided";
   }
 
+  const linkedNodeIds = new Set(
+    response.topology.links.flatMap((link) => [link.source_node_id, link.target_node_id]),
+  );
+  const linkedNodeCount = response.topology.nodes.filter((node) => linkedNodeIds.has(node.node_id)).length;
+  const isolatedNodeCount = Math.max(0, response.topology.nodes.length - linkedNodeCount);
+  let nodeParticipationPosture: TopologyNodeParticipationPosture = "unknown";
+  if (response.topology.nodes.length === 0) {
+    nodeParticipationPosture = "unknown";
+  } else if (linkedNodeCount === response.topology.nodes.length && isolatedNodeCount === 0) {
+    nodeParticipationPosture = "fully_linked";
+  } else if (linkedNodeCount > 0 && isolatedNodeCount > 0) {
+    nodeParticipationPosture = "partially_isolated";
+  } else if (linkedNodeCount === 0 && isolatedNodeCount === response.topology.nodes.length) {
+    nodeParticipationPosture = "isolated_only";
+  }
+
   let summary =
     "Current topology response cannot summarize endpoint-pairing posture honestly from the available normalized link evidence.";
   if (linkCount === 0) {
@@ -292,8 +312,11 @@ export function resolveTopologyCoverageSummary(
     inference_posture: resolveTopologyInferencePosture(response),
     endpoint_pairing_posture: endpointPairingPosture,
     collection_posture: resolveTopologyCollectionPosture(response),
+    node_participation_posture: nodeParticipationPosture,
     paired_link_count: pairedLinkCount,
     single_sided_link_count: singleSidedLinkCount,
+    linked_node_count: linkedNodeCount,
+    isolated_node_count: isolatedNodeCount,
     summary,
   };
 }
@@ -306,6 +329,13 @@ export interface TopologyPostureReadout<TStatus extends string> {
 
 export interface TopologyCoverageReadout {
   status: TopologyEndpointPairingPosture;
+  label: string;
+  detail: string;
+  countDetail: string;
+}
+
+export interface TopologyNodeParticipationReadout {
+  status: TopologyNodeParticipationPosture;
   label: string;
   detail: string;
   countDetail: string;
@@ -429,11 +459,91 @@ export function describeTopologyReadPathPairing(
       inference_posture: readPath.inference_posture ?? "unknown",
       endpoint_pairing_posture: readPath.endpoint_pairing_posture,
       collection_posture: readPath.collection_posture ?? "unknown",
+      node_participation_posture: readPath.node_participation_posture ?? "unknown",
       paired_link_count: readPath.paired_link_count ?? 0,
       single_sided_link_count: readPath.single_sided_link_count ?? 0,
+      linked_node_count: readPath.linked_node_count ?? 0,
+      isolated_node_count: readPath.isolated_node_count ?? 0,
       summary: readPath.summary,
     },
     (readPath.paired_link_count ?? 0) + (readPath.single_sided_link_count ?? 0),
+  );
+}
+
+export function describeTopologyNodeParticipationPosture(
+  coverageSummary: TopologyCoverageSummaryRecord,
+  nodeCount: number,
+): TopologyNodeParticipationReadout {
+  const countDetail =
+    nodeCount === 0
+      ? "No normalized nodes are currently emitted."
+      : `${coverageSummary.linked_node_count} linked • ${coverageSummary.isolated_node_count} isolated • ${nodeCount} total nodes.`;
+
+  switch (coverageSummary.node_participation_posture) {
+    case "fully_linked":
+      return {
+        status: "fully_linked",
+        label: "Fully linked",
+        detail:
+          "All currently emitted topology nodes participate in at least one normalized link within the bounded inferred slice.",
+        countDetail,
+      };
+    case "partially_isolated":
+      return {
+        status: "partially_isolated",
+        label: "Partially isolated",
+        detail:
+          "Current topology nodes include a mix of linked and isolated observed nodes within the bounded inferred slice.",
+        countDetail,
+      };
+    case "isolated_only":
+      return {
+        status: "isolated_only",
+        label: "Isolated only",
+        detail:
+          "Current topology nodes are present, but none currently participate in a normalized link within the bounded inferred slice.",
+        countDetail,
+      };
+    default:
+      return {
+        status: "unknown",
+        label: nodeCount === 0 ? "No nodes emitted" : "Participation unclear",
+        detail:
+          nodeCount === 0
+            ? "No normalized nodes are currently emitted, so node-participation posture remains unknown."
+            : "The current topology response does not expose enough evidence to classify node participation more clearly.",
+        countDetail,
+      };
+  }
+}
+
+export function describeTopologyReadPathNodeParticipation(
+  readPath: PlatformReadPathStatus | null,
+): TopologyNodeParticipationReadout {
+  if (!readPath || readPath.node_participation_posture === null) {
+    return {
+      status: "unknown",
+      label: "Not exposed",
+      detail: "The current platform-status response does not expose topology node-participation posture.",
+      countDetail: "Linked-versus-isolated node counts are not exposed on this response.",
+    };
+  }
+
+  const linkedNodeCount = readPath.linked_node_count ?? 0;
+  const isolatedNodeCount = readPath.isolated_node_count ?? 0;
+  return describeTopologyNodeParticipationPosture(
+    {
+      inference_posture: readPath.inference_posture ?? "unknown",
+      endpoint_pairing_posture: readPath.endpoint_pairing_posture ?? "unknown",
+      collection_posture: readPath.collection_posture ?? "unknown",
+      node_participation_posture: readPath.node_participation_posture,
+      paired_link_count: readPath.paired_link_count ?? 0,
+      single_sided_link_count: readPath.single_sided_link_count ?? 0,
+      linked_node_count: linkedNodeCount,
+      isolated_node_count: isolatedNodeCount,
+      summary: readPath.summary,
+    },
+    linkedNodeCount + isolatedNodeCount,
   );
 }
 

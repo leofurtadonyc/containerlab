@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildPolicyDetailBlockerSummary,
+  buildPolicyDetailSourceReadinessSummary,
   describePolicyDetailBlockerReason,
 } from "../src/features/policies/view";
 
@@ -45,6 +46,46 @@ describe("policy detail blocker readouts", () => {
       blockedTargetCount: 0,
       detailReadyTargetCount: 0,
       notRecordedTargetCount: 2,
+    });
+  });
+
+  it("summarizes partially ready source-readiness without replacing blocker posture", () => {
+    const summary = buildPolicyDetailSourceReadinessSummary(
+      {
+        posture: "partially_ready",
+        no_policies_observed_target_count: 30,
+        detail_unavailable_target_count: 0,
+        partial_detail_target_count: 0,
+      },
+      4,
+    );
+
+    expect(summary).toEqual({
+      label: "Partially ready",
+      detail:
+        "The current source-visible slice is mixed: 4 targets are detail-ready while 30 remain live-empty, 0 remain detail-unavailable, and 0 remain partially covered.",
+      breakdown: "Detail-ready: 4 • Live-empty: 30 • Detail unavailable: 0 • Partial detail: 0",
+      sourceVisibleTargetCount: 34,
+    });
+  });
+
+  it("summarizes source-detail-unavailable posture explicitly", () => {
+    const summary = buildPolicyDetailSourceReadinessSummary(
+      {
+        posture: "source_detail_unavailable",
+        no_policies_observed_target_count: 0,
+        detail_unavailable_target_count: 2,
+        partial_detail_target_count: 0,
+      },
+      0,
+    );
+
+    expect(summary).toEqual({
+      label: "Source detail unavailable",
+      detail:
+        "Observed SR policy presence exists, but the current bounded source slice still cannot derive stable per-policy detail on 2 source-visible targets.",
+      breakdown: "Detail-ready: 0 • Live-empty: 0 • Detail unavailable: 2 • Partial detail: 0",
+      sourceVisibleTargetCount: 2,
     });
   });
 });

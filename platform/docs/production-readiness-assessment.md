@@ -219,6 +219,9 @@ Why this is strong enough now:
   survival
 - operators now have clear guidance on when persisted history, readiness, and
   observability state will remain available
+- the current verifier now cross-checks persisted Postgres row presence against
+  the corresponding API history and anchor surfaces, so a preserved same-
+  workspace baseline is tested more explicitly than before
 
 Why this is still bounded:
 
@@ -231,6 +234,21 @@ Assessment:
 
 - clear enough for honest bounded operations
 - not strong enough for disaster-recovery or full production resilience claims
+
+Current recovery matrix:
+
+- normal service restart in the same workspace preserves host-backed Postgres,
+  Prometheus, and Grafana state, but live collector-backed evidence and
+  transient in-memory metrics still need recollection or regeneration
+- `clab deploy -t topology.clab.yml -c` in the same workspace preserves those
+  same host-backed directories when they are left in place, while rebuilding
+  images, containers, migrations, and provisioning from the repository
+- first deploy, or any replace path after the host-backed data directories were
+  removed or replaced, starts Postgres read-side history, Prometheus TSDB, and
+  Grafana local state from a new baseline even though the software stack is
+  recreated successfully
+- repo-only recreation on another host remains portable at the software and
+  topology level, not at the prior-runtime-data level
 
 ### Truth maturity
 

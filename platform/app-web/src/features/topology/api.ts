@@ -4,6 +4,7 @@ import type { TopologyLinkRecord, TopologyResponse } from "../../api/contracts";
 import { apiClient } from "../../api/client";
 import { useApiQuery } from "../../api/use-api-query";
 import {
+  describeTopologyNodeParticipationPosture,
   resolveTopologyCoverageSummary,
   resolveTopologyLinkEndpointEvidenceCount,
   resolveTopologyLinkEndpointPairingState,
@@ -20,6 +21,14 @@ export function useTopologyQuery(enabled = true) {
 
 export function getTopologyCoverageSummary(topologyResponse: TopologyResponse) {
   return resolveTopologyCoverageSummary(topologyResponse);
+}
+
+export function getTopologyNodeParticipationReadout(topologyResponse: TopologyResponse) {
+  const coverageSummary = resolveTopologyCoverageSummary(topologyResponse);
+  return describeTopologyNodeParticipationPosture(
+    coverageSummary,
+    topologyResponse.topology.nodes.length,
+  );
 }
 
 export function getTopologyLinkEndpointPairingState(link: TopologyLinkRecord) {

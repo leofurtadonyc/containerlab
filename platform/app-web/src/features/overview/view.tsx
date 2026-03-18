@@ -15,6 +15,7 @@ import {
   describeTopologyCollectionPosture,
   describeTopologyCoveragePosture,
   describeTopologyInferencePosture,
+  describeTopologyReadPathNodeParticipation,
   describeTopologyReadPathCollection,
   describeTopologyReadPathInference,
   describeTopologyReadPathPairing,
@@ -323,6 +324,7 @@ export function OverviewView() {
   const topologyReadPathPairing = describeTopologyReadPathPairing(topologyReadPath);
   const topologyReadPathInference = describeTopologyReadPathInference(topologyReadPath);
   const topologyReadPathCollection = describeTopologyReadPathCollection(topologyReadPath);
+  const topologyReadPathNodeParticipation = describeTopologyReadPathNodeParticipation(topologyReadPath);
   const readiness = normalizeDryRunReadiness(capabilitiesData?.dry_run_readiness);
   const readinessIdentity = summarizeReadinessItemIdentitySupport(readiness);
   const degradedPolicyCount = policiesData
@@ -439,7 +441,7 @@ export function OverviewView() {
             <p className="summary-label">Topology coverage</p>
             <strong>{topologyCoverageReadout.label}</strong>
             <p>
-              {topologyInferenceReadout.label} • {topologyCollectionReadout.label} • {topologyCoverageReadout.countDetail}
+              {topologyInferenceReadout.label} • {topologyCollectionReadout.label} • {topologyReadPathNodeParticipation.label} • {topologyReadPathNodeParticipation.countDetail}
             </p>
             {buildSliceAvailabilityNote(topologySliceState) ? (
               <p className="table-note">{buildSliceAvailabilityNote(topologySliceState)}</p>
@@ -708,6 +710,15 @@ export function OverviewView() {
                 note: topologyCollectionReadout.detail,
               },
               {
+                label: "Node participation",
+                kind: "status",
+                value: topologyReadPathNodeParticipation.status,
+                note: [
+                  topologyReadPathNodeParticipation.detail,
+                  topologyReadPathNodeParticipation.countDetail,
+                ],
+              },
+              {
                 label: "Target coverage",
                 kind: "text",
                 value: formatReadPathCoverage(topologyReadPath),
@@ -741,6 +752,7 @@ export function OverviewView() {
                   topologyReadPathInference.detail,
                   topologyReadPathCollection.detail,
                   topologyReadPathPairing.countDetail,
+                  topologyReadPathNodeParticipation.countDetail,
                 ],
               },
               {

@@ -13,6 +13,7 @@ from app_api.models.policy import (
     CandidatePath,
     PolicyComparisonChangePreview,
     PolicyCurrentComparison,
+    PolicyDetailSourceReadiness,
     PolicyHistoryComparison,
     PolicyHistoryWindow,
     PolicyInventoryRecord,
@@ -29,6 +30,7 @@ from app_api.schemas.policies import (
     CandidatePathRecord,
     PolicyComparisonChangePreviewResponse,
     PolicyCurrentComparisonResponse,
+    PolicyDetailSourceReadinessRecord,
     PolicyHistoryComparisonResponse,
     PolicyHistorySnapshotResponseRecord,
     PolicyHistoryWindowResponse,
@@ -59,6 +61,7 @@ def _build_policy_inventory() -> tuple[
             sync_status="failed",
             completeness="unknown",
             detail_mode="unknown",
+            detail_source_readiness=PolicyDetailSourceReadiness(),
             empty_reason="collector_unavailable",
             observed_at=None,
             observed_target_count=0,
@@ -87,6 +90,18 @@ def _build_policy_inventory() -> tuple[
         sync_status=collector_snapshot.sync_status,
         completeness=collector_snapshot.completeness,
         detail_mode=collector_snapshot.detail_mode,
+        detail_source_readiness=PolicyDetailSourceReadiness(
+            posture=collector_snapshot.detail_source_readiness.posture,
+            no_policies_observed_target_count=(
+                collector_snapshot.detail_source_readiness.no_policies_observed_target_count
+            ),
+            detail_unavailable_target_count=(
+                collector_snapshot.detail_source_readiness.detail_unavailable_target_count
+            ),
+            partial_detail_target_count=(
+                collector_snapshot.detail_source_readiness.partial_detail_target_count
+            ),
+        ),
         empty_reason=(
             "no_policies_observed"
             if collector_snapshot.policy_count == 0
@@ -505,6 +520,7 @@ def _build_policy_evidence_confidence(
     *,
     collector_snapshot: CollectorPolicySnapshot,
     detail_mode: str,
+    detail_source_readiness: PolicyDetailSourceReadiness,
     empty_reason: str,
     persisted_at: datetime | None,
 ) -> EvidenceConfidenceSummary:
@@ -516,6 +532,13 @@ def _build_policy_evidence_confidence(
     )
     detail_note = (
         f"Bounded per-target detail coverage currently exists for {collector_snapshot.detail_ready_target_count} observed targets."
+    )
+    source_readiness_note = (
+        "Policy detail source-readiness posture is "
+        f"{detail_source_readiness.posture}, with "
+        f"{detail_source_readiness.no_policies_observed_target_count} live-empty targets, "
+        f"{detail_source_readiness.detail_unavailable_target_count} detail-unavailable targets, and "
+        f"{detail_source_readiness.partial_detail_target_count} partially covered targets inside the current source-visible slice."
     )
     freshness_note = None
     if collector_snapshot.oldest_observed_at and collector_snapshot.newest_observed_at:
@@ -541,6 +564,7 @@ def _build_policy_evidence_confidence(
                     "Per-policy comparison semantics stay blocked until backend-owned normalized detail records are available.",
                     coverage_note,
                     detail_note,
+                    source_readiness_note,
                     collector_snapshot.degraded_scope_summary,
                     *( [freshness_note] if freshness_note else [] ),
                 ],
@@ -564,6 +588,7 @@ def _build_policy_evidence_confidence(
                 "Per-policy records remain intentionally bounded to the policy types the current read path can normalize honestly.",
                 coverage_note,
                 detail_note,
+                source_readiness_note,
                 *( [freshness_note] if freshness_note else [] ),
             ],
         )
@@ -583,6 +608,7 @@ def _build_policy_evidence_confidence(
                 "Confidence is degraded because one or more targets returned partial live policy data.",
                 coverage_note,
                 detail_note,
+                source_readiness_note,
                 collector_snapshot.degraded_scope_summary,
                 *( [freshness_note] if freshness_note else [] ),
             ],
@@ -635,6 +661,7 @@ def build_policies_list_response() -> PoliciesListResponse:
     evidence_confidence = _build_policy_evidence_confidence(
         collector_snapshot=collector_snapshot,
         detail_mode=snapshot.detail_mode,
+        detail_source_readiness=snapshot.detail_source_readiness,
         empty_reason=snapshot.empty_reason,
         persisted_at=persisted_at,
     )
@@ -780,6 +807,16 @@ def build_policies_list_response() -> PoliciesListResponse:
         sync_status=snapshot.sync_status,
         completeness=snapshot.completeness,
         detail_mode=snapshot.detail_mode,
+        detail_source_posture=snapshot.detail_source_readiness.posture,
+        detail_source_no_policies_observed_target_count=(
+            snapshot.detail_source_readiness.no_policies_observed_target_count
+        ),
+        detail_source_unavailable_target_count=(
+            snapshot.detail_source_readiness.detail_unavailable_target_count
+        ),
+        detail_source_partial_target_count=(
+            snapshot.detail_source_readiness.partial_detail_target_count
+        ),
         empty_reason=snapshot.empty_reason,
         source_posture=evidence_confidence.source_posture,
         evidence_kind=evidence_confidence.evidence_kind,
@@ -801,6 +838,18 @@ def build_policies_list_response() -> PoliciesListResponse:
         sync_status=snapshot.sync_status,
         completeness=snapshot.completeness,
         detail_mode=snapshot.detail_mode,
+        detail_source_readiness=PolicyDetailSourceReadinessRecord(
+            posture=snapshot.detail_source_readiness.posture,
+            no_policies_observed_target_count=(
+                snapshot.detail_source_readiness.no_policies_observed_target_count
+            ),
+            detail_unavailable_target_count=(
+                snapshot.detail_source_readiness.detail_unavailable_target_count
+            ),
+            partial_detail_target_count=(
+                snapshot.detail_source_readiness.partial_detail_target_count
+            ),
+        ),
         empty_reason=snapshot.empty_reason,
         observed_at=snapshot.observed_at,
         observed_target_count=snapshot.observed_target_count,

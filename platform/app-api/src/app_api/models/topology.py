@@ -13,6 +13,9 @@ TopologyEndpointPairingPosture = Literal[
 ]
 TopologyInferencePosture = Literal["inferred", "unknown"]
 TopologyCollectionPosture = Literal["ok", "degraded", "blocked", "unknown"]
+TopologyNodeParticipationPosture = Literal[
+    "fully_linked", "partially_isolated", "isolated_only", "unknown"
+]
 
 
 class TopologyCoverageSummary(BaseModel):
@@ -21,8 +24,11 @@ class TopologyCoverageSummary(BaseModel):
     inference_posture: TopologyInferencePosture
     endpoint_pairing_posture: TopologyEndpointPairingPosture
     collection_posture: TopologyCollectionPosture
+    node_participation_posture: TopologyNodeParticipationPosture
     paired_link_count: int
     single_sided_link_count: int
+    linked_node_count: int
+    isolated_node_count: int
     summary: str
 
 
@@ -65,6 +71,53 @@ class TopologySnapshot(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class TopologyHistorySnapshotRecord(BaseModel):
+    """Bounded summary of one persisted topology snapshot."""
+
+    snapshot_id: str
+    persisted_at: datetime
+    observed_at: datetime | None = None
+    topology_name: str
+    sync_source: str
+    sync_status: Literal["ok", "degraded", "failed", "unknown"]
+    completeness: Literal["complete", "partial", "unknown"]
+    node_count: int
+    link_count: int
+    node_state_counts: dict[str, int] = Field(default_factory=dict)
+    link_state_counts: dict[str, int] = Field(default_factory=dict)
+
+
+class TopologyHistoryComparison(BaseModel):
+    """Bounded comparison of the latest two persisted topology snapshots."""
+
+    current_snapshot_id: str
+    previous_snapshot_id: str
+    current_persisted_at: datetime
+    previous_persisted_at: datetime
+    current_node_count: int
+    previous_node_count: int
+    current_link_count: int
+    previous_link_count: int
+    node_count_delta: int
+    link_count_delta: int
+    added_node_count: int
+    removed_node_count: int
+    changed_node_count: int
+    added_link_count: int
+    removed_link_count: int
+    changed_link_count: int
+    notes: list[str] = Field(default_factory=list)
+
+
+class TopologyHistoryWindow(BaseModel):
+    """Bounded persisted history window for topology comparison support."""
+
+    status: Literal["unavailable", "current_only", "comparison_ready"]
+    summary: str
+    recent_snapshots: list[TopologyHistorySnapshotRecord] = Field(default_factory=list)
+    comparison_to_previous: TopologyHistoryComparison | None = None
+
+
 def _normalize_endpoint_pairing_state(value: object) -> TopologyEndpointPairingState | None:
     if value in {"paired", "single_sided", "unknown"}:
         return value
@@ -85,6 +138,14 @@ def _normalize_inference_posture(value: object) -> TopologyInferencePosture | No
 
 def _normalize_collection_posture(value: object) -> TopologyCollectionPosture | None:
     if value in {"ok", "degraded", "blocked", "unknown"}:
+        return value
+    return None
+
+
+def _normalize_node_participation_posture(
+    value: object,
+) -> TopologyNodeParticipationPosture | None:
+    if value in {"fully_linked", "partially_isolated", "isolated_only", "unknown"}:
         return value
     return None
 
@@ -162,19 +223,61 @@ def _derive_inference_posture(*, link_count: int) -> TopologyInferencePosture:
     return "unknown"
 
 
+def _derive_node_participation_counts(
+    *,
+    nodes: Sequence[Any],
+    links: Sequence[Any],
+) -> tuple[int, int]:
+    linked_node_ids = {
+        node_id
+        for link in links
+        for node_id in (getattr(link, "source_node_id", None), getattr(link, "target_node_id", None))
+        if isinstance(node_id, str)
+    }
+    linked_node_count = sum(
+        1 for node in nodes if getattr(node, "node_id", None) in linked_node_ids
+    )
+    isolated_node_count = max(0, len(nodes) - linked_node_count)
+    return linked_node_count, isolated_node_count
+
+
+def _derive_node_participation_posture(
+    *,
+    node_count: int,
+    linked_node_count: int,
+    isolated_node_count: int,
+) -> TopologyNodeParticipationPosture:
+    if node_count == 0:
+        return "unknown"
+    if linked_node_count == node_count and isolated_node_count == 0:
+        return "fully_linked"
+    if linked_node_count > 0 and isolated_node_count > 0:
+        return "partially_isolated"
+    if linked_node_count == 0 and isolated_node_count == node_count:
+        return "isolated_only"
+    return "unknown"
+
+
 def build_topology_coverage_summary(
     *,
+    nodes: Sequence[Any],
     links: Sequence[Any],
     inference_posture: object | None = None,
     endpoint_pairing_posture: object | None = None,
     collection_posture: object | None = None,
+    node_participation_posture: object | None = None,
     paired_link_count: int | None = None,
     single_sided_link_count: int | None = None,
+    linked_node_count: int | None = None,
+    isolated_node_count: int | None = None,
 ) -> TopologyCoverageSummary:
     """Build a bounded backend-owned topology coverage summary."""
     normalized_inference_posture = _normalize_inference_posture(inference_posture)
     normalized_posture = _normalize_endpoint_pairing_posture(endpoint_pairing_posture)
     normalized_collection_posture = _normalize_collection_posture(collection_posture)
+    normalized_node_participation_posture = _normalize_node_participation_posture(
+        node_participation_posture
+    )
     resolved_inference_posture = (
         normalized_inference_posture
         if normalized_inference_posture is not None
@@ -210,6 +313,25 @@ def build_topology_coverage_summary(
             paired_link_count=resolved_paired_link_count,
             single_sided_link_count=resolved_single_sided_link_count,
             unknown_link_count=unknown_link_count,
+        )
+
+    if (
+        normalized_node_participation_posture is not None
+        and linked_node_count is not None
+        and isolated_node_count is not None
+    ):
+        resolved_linked_node_count = max(linked_node_count, 0)
+        resolved_isolated_node_count = max(isolated_node_count, 0)
+        resolved_node_participation_posture = normalized_node_participation_posture
+    else:
+        resolved_linked_node_count, resolved_isolated_node_count = _derive_node_participation_counts(
+            nodes=nodes,
+            links=links,
+        )
+        resolved_node_participation_posture = _derive_node_participation_posture(
+            node_count=len(nodes),
+            linked_node_count=resolved_linked_node_count,
+            isolated_node_count=resolved_isolated_node_count,
         )
 
     if resolved_inference_posture == "inferred":
@@ -255,13 +377,39 @@ def build_topology_coverage_summary(
             "Current topology response cannot summarize endpoint-pairing posture honestly from the available normalized link evidence."
         )
 
-    summary = f"{inference_summary} {collection_summary} {endpoint_summary}"
+    if len(nodes) == 0:
+        node_participation_summary = (
+            "Current topology response does not emit any normalized nodes, so node participation remains unknown."
+        )
+    elif resolved_node_participation_posture == "fully_linked":
+        node_participation_summary = (
+            "All observed normalized nodes are currently represented by at least one emitted inferred link within the bounded topology slice."
+        )
+    elif resolved_node_participation_posture == "partially_isolated":
+        node_participation_summary = (
+            "Current normalized topology includes both linked and isolated observed nodes within the bounded inferred slice."
+        )
+    elif resolved_node_participation_posture == "isolated_only":
+        node_participation_summary = (
+            "Observed normalized nodes are present, but none are currently represented by emitted inferred links within the bounded topology slice."
+        )
+    else:
+        node_participation_summary = (
+            "Current topology response cannot summarize node participation honestly from the available normalized node and link evidence."
+        )
+
+    summary = (
+        f"{inference_summary} {collection_summary} {endpoint_summary} {node_participation_summary}"
+    )
 
     return TopologyCoverageSummary(
         inference_posture=resolved_inference_posture,
         endpoint_pairing_posture=resolved_posture,
         collection_posture=resolved_collection_posture,
+        node_participation_posture=resolved_node_participation_posture,
         paired_link_count=resolved_paired_link_count,
         single_sided_link_count=resolved_single_sided_link_count,
+        linked_node_count=resolved_linked_node_count,
+        isolated_node_count=resolved_isolated_node_count,
         summary=summary,
     )

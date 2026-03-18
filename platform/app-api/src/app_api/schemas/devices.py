@@ -56,6 +56,46 @@ class InventoryComparisonSummary(BaseModel):
     notes: list[str]
 
 
+class InventoryHistorySnapshotRecord(BaseModel):
+    """Bounded summary of one persisted inventory snapshot."""
+
+    snapshot_id: str
+    persisted_at: datetime
+    observed_at: datetime | None = None
+    sync_source: str
+    sync_status: str
+    data_status: Literal["live", "degraded"]
+    device_count: int
+    role_counts: dict[str, int]
+    collector_status_counts: dict[str, int]
+    capability_summary_counts: dict[str, int]
+
+
+class InventoryHistoryComparison(BaseModel):
+    """Bounded comparison of the latest two persisted inventory snapshots."""
+
+    current_snapshot_id: str
+    previous_snapshot_id: str
+    current_persisted_at: datetime
+    previous_persisted_at: datetime
+    current_device_count: int
+    previous_device_count: int
+    device_count_delta: int
+    added_device_count: int
+    removed_device_count: int
+    changed_device_count: int
+    notes: list[str]
+
+
+class InventoryHistoryWindow(BaseModel):
+    """Bounded persisted history window for inventory comparison support."""
+
+    status: Literal["unavailable", "current_only", "comparison_ready"]
+    summary: str
+    recent_snapshots: list[InventoryHistorySnapshotRecord]
+    comparison_to_previous: InventoryHistoryComparison | None = None
+
+
 class DevicesListResponse(ApiResponseMetadata):
     """Read-only device inventory list scaffold."""
 
@@ -65,5 +105,6 @@ class DevicesListResponse(ApiResponseMetadata):
     summary: str
     served_persisted_at: datetime | None = None
     comparison_to_latest_persisted: InventoryComparisonSummary
+    history: InventoryHistoryWindow
     count: int
     items: list[DeviceRecord]

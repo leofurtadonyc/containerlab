@@ -340,6 +340,7 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
 def _cache_dry_run_readiness_metrics(
     *,
     dry_run_readiness: DryRunReadinessSummary,
+    readiness_evaluated_at: datetime,
     readiness_persisted_at: datetime | None,
 ) -> None:
     """Cache the bounded readiness-support metrics used by Prometheus."""
@@ -347,6 +348,7 @@ def _cache_dry_run_readiness_metrics(
         status=dry_run_readiness.status,
         planning_readiness=dry_run_readiness.planning_readiness,
         phase_recommendation=dry_run_readiness.phase_recommendation,
+        evaluation_at_seconds=readiness_evaluated_at.timestamp(),
         persisted_at_seconds=(
             readiness_persisted_at.timestamp() if readiness_persisted_at is not None else None
         ),
@@ -373,10 +375,12 @@ def _cache_dry_run_readiness_metrics(
 
 def refresh_readiness_metrics() -> None:
     """Refresh the cached readiness-support metrics without persisting a new snapshot."""
+    readiness_evaluated_at = datetime.now(UTC)
     dry_run_readiness = _build_dry_run_readiness_summary()
     readiness_reference = load_latest_readiness_snapshot_reference()
     _cache_dry_run_readiness_metrics(
         dry_run_readiness=dry_run_readiness,
+        readiness_evaluated_at=readiness_evaluated_at,
         readiness_persisted_at=(
             readiness_reference.persisted_at if readiness_reference is not None else None
         ),
@@ -386,6 +390,7 @@ def refresh_readiness_metrics() -> None:
 def build_capabilities_list_response() -> CapabilitiesListResponse:
     """Build the bounded capability matrix response for the current phase."""
     settings = get_settings()
+    generated_at = datetime.now(UTC)
     dry_run_readiness = _build_dry_run_readiness_summary()
     readiness_persisted_at = persist_readiness_snapshot(
         dry_run_readiness=dry_run_readiness
@@ -393,6 +398,7 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
     readiness_reference = load_latest_readiness_snapshot_reference()
     _cache_dry_run_readiness_metrics(
         dry_run_readiness=dry_run_readiness,
+        readiness_evaluated_at=generated_at,
         readiness_persisted_at=readiness_persisted_at,
     )
     items = [
@@ -855,7 +861,7 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
         service="app-api",
         version=settings.app_version,
         phase="phase_2_read_only_foundation",
-        generated_at=datetime.now(UTC),
+        generated_at=generated_at,
         data_status="bounded_matrix",
         summary=(
             "Phase 2 bounded capability matrix. Support state, implementation status, "

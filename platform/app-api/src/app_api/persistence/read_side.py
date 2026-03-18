@@ -1,5 +1,7 @@
 """Bounded persistence helpers for inventory, topology, and policy read-side snapshots."""
 
+from collections import Counter
+
 from datetime import UTC, datetime
 from logging import getLogger
 from uuid import uuid4
@@ -10,14 +12,19 @@ from sqlalchemy import func, select
 from app_api.integrations.collector.inventory import CollectorInventorySnapshot
 from app_api.integrations.collector.policies import CollectorPolicySnapshot
 from app_api.integrations.collector.topology import CollectorTopologySnapshot
-from app_api.models.inventory import InventoryDevice
+from app_api.models.inventory import InventoryDevice, InventoryHistorySnapshotRecord
 from app_api.models.policy import (
     CandidatePath,
     PolicyHistorySnapshotRecord,
     PolicyInventoryRecord,
     PolicyInventorySnapshot,
 )
-from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
+from app_api.models.topology import (
+    TopologyHistorySnapshotRecord,
+    TopologyLink,
+    TopologyNode,
+    TopologySnapshot,
+)
 from app_api.persistence.session import create_session
 from app_api.persistence.tables import (
     InventoryRecordTable,
@@ -43,6 +50,14 @@ class PersistedInventorySnapshot(BaseModel):
     devices: list[InventoryDevice]
 
 
+class PersistedInventorySnapshotSummary(BaseModel):
+    """Bounded summary of one persisted inventory snapshot."""
+
+    snapshot_id: str
+    persisted_at: datetime
+    snapshot: InventoryHistorySnapshotRecord
+
+
 class PersistedTopologySnapshot(BaseModel):
     """Latest persisted topology snapshot recovered from Postgres."""
 
@@ -50,6 +65,14 @@ class PersistedTopologySnapshot(BaseModel):
     sync_run_id: str
     persisted_at: datetime
     snapshot: TopologySnapshot
+
+
+class PersistedTopologySnapshotSummary(BaseModel):
+    """Bounded summary of one persisted topology snapshot."""
+
+    snapshot_id: str
+    persisted_at: datetime
+    snapshot: TopologyHistorySnapshotRecord
 
 
 class PersistedPolicySnapshot(BaseModel):
@@ -127,13 +150,14 @@ def persist_inventory_snapshot(
         logger.exception("Failed to persist bounded inventory snapshot.")
 
 
-def load_latest_inventory_snapshot() -> PersistedInventorySnapshot | None:
-    """Load the latest persisted bounded inventory snapshot, if any."""
+def _load_inventory_snapshot_at_offset(offset: int) -> PersistedInventorySnapshot | None:
+    """Load one persisted bounded inventory snapshot at the requested recency offset."""
     try:
         with create_session() as session:
             snapshot = session.scalar(
                 select(InventorySnapshotTable)
                 .order_by(InventorySnapshotTable.persisted_at.desc())
+                .offset(offset)
                 .limit(1)
             )
             if snapshot is None:
@@ -164,6 +188,99 @@ def load_latest_inventory_snapshot() -> PersistedInventorySnapshot | None:
     except Exception:
         logger.exception("Failed to load latest persisted inventory snapshot.")
         return None
+
+
+def load_latest_inventory_snapshot() -> PersistedInventorySnapshot | None:
+    """Load the latest persisted bounded inventory snapshot, if any."""
+    return _load_inventory_snapshot_at_offset(offset=0)
+
+
+def load_previous_inventory_snapshot() -> PersistedInventorySnapshot | None:
+    """Load the previous persisted bounded inventory snapshot, if any."""
+    return _load_inventory_snapshot_at_offset(offset=1)
+
+
+def load_recent_inventory_snapshot_summaries(
+    limit: int = 3,
+) -> list[PersistedInventorySnapshotSummary]:
+    """Load a short bounded window of recent persisted inventory snapshot summaries."""
+    try:
+        with create_session() as session:
+            snapshots = session.scalars(
+                select(InventorySnapshotTable)
+                .order_by(InventorySnapshotTable.persisted_at.desc())
+                .limit(limit)
+            ).all()
+            snapshot_ids = [snapshot.id for snapshot in snapshots]
+            if not snapshot_ids:
+                return []
+            sync_runs_by_id = {
+                row.id: row
+                for row in session.scalars(
+                    select(SyncRunTable).where(
+                        SyncRunTable.id.in_([snapshot.sync_run_id for snapshot in snapshots])
+                    )
+                ).all()
+            }
+            role_counts_by_snapshot_id = {
+                snapshot_id: Counter[str]() for snapshot_id in snapshot_ids
+            }
+            collector_status_counts_by_snapshot_id = {
+                snapshot_id: Counter[str]() for snapshot_id in snapshot_ids
+            }
+            capability_summary_counts_by_snapshot_id = {
+                snapshot_id: Counter[str]() for snapshot_id in snapshot_ids
+            }
+            rows = session.scalars(
+                select(InventoryRecordTable)
+                .where(InventoryRecordTable.snapshot_id.in_(snapshot_ids))
+                .order_by(
+                    InventoryRecordTable.snapshot_id.asc(),
+                    InventoryRecordTable.device_id.asc(),
+                )
+            ).all()
+            for row in rows:
+                role_counts_by_snapshot_id[row.snapshot_id][row.role or "unknown"] += 1
+                collector_status_counts_by_snapshot_id[row.snapshot_id][row.collector_status] += 1
+                capability_summary_counts_by_snapshot_id[row.snapshot_id][row.capability_summary] += 1
+            return [
+                PersistedInventorySnapshotSummary(
+                    snapshot_id=snapshot.id,
+                    persisted_at=snapshot.persisted_at,
+                    snapshot=InventoryHistorySnapshotRecord(
+                        snapshot_id=snapshot.id,
+                        persisted_at=snapshot.persisted_at,
+                        observed_at=(
+                            sync_runs_by_id[snapshot.sync_run_id].observed_at
+                            if snapshot.sync_run_id in sync_runs_by_id
+                            else None
+                        ),
+                        sync_source=(
+                            sync_runs_by_id[snapshot.sync_run_id].source_type
+                            if snapshot.sync_run_id in sync_runs_by_id
+                            else "unknown"
+                        ),
+                        sync_status=(
+                            sync_runs_by_id[snapshot.sync_run_id].fetch_status
+                            if snapshot.sync_run_id in sync_runs_by_id
+                            else "unknown"
+                        ),
+                        data_status=snapshot.data_status,
+                        device_count=snapshot.record_count,
+                        role_counts=dict(role_counts_by_snapshot_id[snapshot.id]),
+                        collector_status_counts=dict(
+                            collector_status_counts_by_snapshot_id[snapshot.id]
+                        ),
+                        capability_summary_counts=dict(
+                            capability_summary_counts_by_snapshot_id[snapshot.id]
+                        ),
+                    ),
+                )
+                for snapshot in snapshots
+            ]
+    except Exception:
+        logger.exception("Failed to load recent persisted inventory snapshot summaries.")
+        return []
 
 
 def persist_topology_snapshot(
@@ -242,13 +359,14 @@ def persist_topology_snapshot(
         logger.exception("Failed to persist bounded topology snapshot.")
 
 
-def load_latest_topology_snapshot() -> PersistedTopologySnapshot | None:
-    """Load the latest persisted bounded topology snapshot, if any."""
+def _load_topology_snapshot_at_offset(offset: int) -> PersistedTopologySnapshot | None:
+    """Load one persisted bounded topology snapshot at the requested recency offset."""
     try:
         with create_session() as session:
             snapshot = session.scalar(
                 select(TopologySnapshotTable)
                 .order_by(TopologySnapshotTable.persisted_at.desc())
+                .offset(offset)
                 .limit(1)
             )
             if snapshot is None:
@@ -303,6 +421,75 @@ def load_latest_topology_snapshot() -> PersistedTopologySnapshot | None:
     except Exception:
         logger.exception("Failed to load latest persisted topology snapshot.")
         return None
+
+
+def load_latest_topology_snapshot() -> PersistedTopologySnapshot | None:
+    """Load the latest persisted bounded topology snapshot, if any."""
+    return _load_topology_snapshot_at_offset(offset=0)
+
+
+def load_previous_topology_snapshot() -> PersistedTopologySnapshot | None:
+    """Load the previous persisted bounded topology snapshot, if any."""
+    return _load_topology_snapshot_at_offset(offset=1)
+
+
+def load_recent_topology_snapshot_summaries(
+    limit: int = 3,
+) -> list[PersistedTopologySnapshotSummary]:
+    """Load a short bounded window of recent persisted topology snapshot summaries."""
+    try:
+        with create_session() as session:
+            snapshots = session.scalars(
+                select(TopologySnapshotTable)
+                .order_by(TopologySnapshotTable.persisted_at.desc())
+                .limit(limit)
+            ).all()
+            snapshot_ids = [snapshot.id for snapshot in snapshots]
+            if not snapshot_ids:
+                return []
+            node_state_counts_by_snapshot_id = {
+                snapshot_id: Counter[str]() for snapshot_id in snapshot_ids
+            }
+            link_state_counts_by_snapshot_id = {
+                snapshot_id: Counter[str]() for snapshot_id in snapshot_ids
+            }
+            node_rows = session.scalars(
+                select(TopologyNodeTable)
+                .where(TopologyNodeTable.snapshot_id.in_(snapshot_ids))
+                .order_by(TopologyNodeTable.snapshot_id.asc(), TopologyNodeTable.node_id.asc())
+            ).all()
+            link_rows = session.scalars(
+                select(TopologyLinkTable)
+                .where(TopologyLinkTable.snapshot_id.in_(snapshot_ids))
+                .order_by(TopologyLinkTable.snapshot_id.asc(), TopologyLinkTable.link_id.asc())
+            ).all()
+            for row in node_rows:
+                node_state_counts_by_snapshot_id[row.snapshot_id][row.state] += 1
+            for row in link_rows:
+                link_state_counts_by_snapshot_id[row.snapshot_id][row.state] += 1
+            return [
+                PersistedTopologySnapshotSummary(
+                    snapshot_id=snapshot.id,
+                    persisted_at=snapshot.persisted_at,
+                    snapshot=TopologyHistorySnapshotRecord(
+                        snapshot_id=snapshot.id,
+                        persisted_at=snapshot.persisted_at,
+                        observed_at=snapshot.observed_at,
+                        topology_name=snapshot.topology_name,
+                        sync_source=snapshot.sync_source,
+                        sync_status=snapshot.sync_status,
+                        completeness=snapshot.completeness,
+                        node_count=snapshot.node_count,
+                        link_count=snapshot.link_count,
+                        node_state_counts=dict(node_state_counts_by_snapshot_id[snapshot.id]),
+                        link_state_counts=dict(link_state_counts_by_snapshot_id[snapshot.id]),
+                    ),
+                )
+                for snapshot in snapshots
+            ]
+    except Exception:
+        logger.exception("Failed to load recent persisted topology snapshot summaries.")
+        return []
 
 
 def persist_policy_snapshot(

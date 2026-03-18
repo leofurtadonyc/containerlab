@@ -8,15 +8,25 @@ from app_api.integrations.collector.inventory import (
     CollectorInventorySnapshot,
     get_collector_inventory_client,
 )
-from app_api.models.inventory import InventoryComparisonSummary, InventoryDevice
+from app_api.models.inventory import (
+    InventoryComparisonSummary,
+    InventoryDevice,
+    InventoryHistoryComparison,
+    InventoryHistoryWindow,
+)
 from app_api.persistence.read_side import (
     load_latest_inventory_snapshot,
+    load_previous_inventory_snapshot,
+    load_recent_inventory_snapshot_summaries,
     persist_inventory_snapshot,
 )
 from app_api.schemas.devices import (
     DeviceRecord,
     DevicesListResponse,
     InventoryComparisonSummary as InventoryComparisonSummaryResponse,
+    InventoryHistoryComparison as InventoryHistoryComparisonResponse,
+    InventoryHistorySnapshotRecord as InventoryHistorySnapshotResponseRecord,
+    InventoryHistoryWindow as InventoryHistoryWindowResponse,
 )
 from app_api.schemas.common import EvidenceConfidenceSummary
 
@@ -230,6 +240,79 @@ def _build_inventory_evidence_confidence(
     )
 
 
+def _build_inventory_history_window() -> InventoryHistoryWindow:
+    """Build a bounded persisted history/comparison view for inventory snapshots."""
+    recent_snapshots = load_recent_inventory_snapshot_summaries(limit=3)
+    if not recent_snapshots:
+        return InventoryHistoryWindow(
+            status="unavailable",
+            summary=(
+                "No persisted normalized inventory snapshots are currently available for "
+                "bounded inventory history or comparison."
+            ),
+        )
+
+    if len(recent_snapshots) == 1:
+        return InventoryHistoryWindow(
+            status="current_only",
+            summary=(
+                "One persisted normalized inventory snapshot is currently available, so "
+                "bounded current-versus-previous inventory comparison is not yet available."
+            ),
+            recent_snapshots=[entry.snapshot for entry in recent_snapshots],
+        )
+
+    current_snapshot = load_latest_inventory_snapshot()
+    previous_snapshot = load_previous_inventory_snapshot()
+    if current_snapshot is None or previous_snapshot is None:
+        return InventoryHistoryWindow(
+            status="current_only",
+            summary=(
+                "Recent persisted inventory snapshot summaries are available, but the "
+                "bounded comparison view could not load both full snapshots."
+            ),
+            recent_snapshots=[entry.snapshot for entry in recent_snapshots],
+        )
+
+    current_signatures = {
+        device.device_id: _device_signature(device) for device in current_snapshot.devices
+    }
+    previous_signatures = {
+        device.device_id: _device_signature(device) for device in previous_snapshot.devices
+    }
+    current_device_ids = set(current_signatures)
+    previous_device_ids = set(previous_signatures)
+    changed_device_ids = {
+        device_id
+        for device_id in current_device_ids & previous_device_ids
+        if current_signatures[device_id] != previous_signatures[device_id]
+    }
+    return InventoryHistoryWindow(
+        status="comparison_ready",
+        summary=(
+            "Recent persisted normalized inventory snapshots are available for bounded "
+            "current-versus-previous comparison."
+        ),
+        recent_snapshots=[entry.snapshot for entry in recent_snapshots],
+        comparison_to_previous=InventoryHistoryComparison(
+            current_snapshot_id=current_snapshot.snapshot_id,
+            previous_snapshot_id=previous_snapshot.snapshot_id,
+            current_persisted_at=current_snapshot.persisted_at,
+            previous_persisted_at=previous_snapshot.persisted_at,
+            current_device_count=len(current_snapshot.devices),
+            previous_device_count=len(previous_snapshot.devices),
+            device_count_delta=len(current_snapshot.devices) - len(previous_snapshot.devices),
+            added_device_count=len(current_device_ids - previous_device_ids),
+            removed_device_count=len(previous_device_ids - current_device_ids),
+            changed_device_count=len(changed_device_ids),
+            notes=[
+                "This comparison is derived from the latest two persisted normalized inventory snapshots.",
+                "Changed device counts reflect device IDs present in both snapshots with changed normalized inventory attributes.",
+            ],
+        ),
+    )
+
+
 def _build_inventory_devices() -> tuple[
     CollectorInventorySnapshot,
     list[InventoryDevice],
@@ -335,6 +418,7 @@ def build_devices_list_response() -> DevicesListResponse:
     """Build the device inventory response from the live collector boundary."""
     settings = get_settings()
     snapshot, inventory_devices, persisted_at, comparison = _build_inventory_devices()
+    history = _build_inventory_history_window()
     row_current_posture = (
         "stale"
         if snapshot.status == "collector_unavailable" and persisted_at is not None
@@ -418,6 +502,42 @@ def build_devices_list_response() -> DevicesListResponse:
             current_capability_summary_counts=comparison.current_capability_summary_counts,
             persisted_capability_summary_counts=comparison.persisted_capability_summary_counts,
             notes=comparison.notes,
+        ),
+        history=InventoryHistoryWindowResponse(
+            status=history.status,
+            summary=history.summary,
+            recent_snapshots=[
+                InventoryHistorySnapshotResponseRecord(
+                    snapshot_id=entry.snapshot_id,
+                    persisted_at=entry.persisted_at,
+                    observed_at=entry.observed_at,
+                    sync_source=entry.sync_source,
+                    sync_status=entry.sync_status,
+                    data_status=entry.data_status,
+                    device_count=entry.device_count,
+                    role_counts=entry.role_counts,
+                    collector_status_counts=entry.collector_status_counts,
+                    capability_summary_counts=entry.capability_summary_counts,
+                )
+                for entry in history.recent_snapshots
+            ],
+            comparison_to_previous=(
+                InventoryHistoryComparisonResponse(
+                    current_snapshot_id=history.comparison_to_previous.current_snapshot_id,
+                    previous_snapshot_id=history.comparison_to_previous.previous_snapshot_id,
+                    current_persisted_at=history.comparison_to_previous.current_persisted_at,
+                    previous_persisted_at=history.comparison_to_previous.previous_persisted_at,
+                    current_device_count=history.comparison_to_previous.current_device_count,
+                    previous_device_count=history.comparison_to_previous.previous_device_count,
+                    device_count_delta=history.comparison_to_previous.device_count_delta,
+                    added_device_count=history.comparison_to_previous.added_device_count,
+                    removed_device_count=history.comparison_to_previous.removed_device_count,
+                    changed_device_count=history.comparison_to_previous.changed_device_count,
+                    notes=history.comparison_to_previous.notes,
+                )
+                if history.comparison_to_previous is not None
+                else None
+            ),
         ),
         count=len(items),
         items=items,

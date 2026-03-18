@@ -14,7 +14,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## Topology Observability Overview\nThis dashboard summarizes the current live topology slice exposed by the platform. It focuses on bounded, real evidence: topology node and link counts, state distributions, inference-boundedness, endpoint-pairing depth, collection posture, backend-versus-collector agreement, persisted sync-history freshness, serving-mode posture, and delivery coverage posture for the topology read side.\n\nCurrent limits:\n- The topology model is live and useful, but intentionally partial.\n- Links are inferred from interface naming and operational state rather than LLDP, IGP, or ODL enrichment.\n- Comparison panels here show aggregate delivery and agreement posture, not protocol-derived drift truth.\n- Partiality is now read through three bounded cues: inference posture, endpoint-pairing posture, and collection posture.\n- Evidence-posture panels show source, freshness, and bounded-confidence labels only; they do not turn Grafana into topology validation logic.\n- Partial knowledge remains explicit through degraded links, single-sided links, blocked or degraded collection labels, backend-ready coverage ratios, and partial sync-history results.",
+        "content": "## Topology Observability Overview\nThis dashboard summarizes the current live topology slice exposed by the platform. It focuses on bounded, real evidence: topology node and link counts, state distributions, inference-boundedness, endpoint-pairing depth, node-participation depth, collection posture, backend-versus-collector agreement, persisted sync-history freshness, serving-mode posture, and delivery coverage posture for the topology read side.\n\nCurrent limits:\n- The topology model is live and useful, but intentionally partial.\n- Links are inferred from interface naming and operational state rather than LLDP, IGP, or ODL enrichment.\n- Comparison panels here show aggregate delivery and agreement posture, not protocol-derived drift truth.\n- Partiality is now read through four bounded cues: inference posture, endpoint-pairing posture, node-participation posture, and collection posture.\n- Evidence-posture panels show source, freshness, and bounded-confidence labels only; they do not turn Grafana into topology validation logic.\n- Partial knowledge remains explicit through degraded links, single-sided links, isolated nodes, blocked or degraded collection labels, backend-ready coverage ratios, and partial sync-history results.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -981,10 +981,20 @@
           "expr": "platform_app_api_topology_single_sided_links",
           "legendFormat": "single-sided links",
           "refId": "B"
+        },
+        {
+          "expr": "platform_app_api_topology_linked_nodes",
+          "legendFormat": "linked nodes",
+          "refId": "C"
+        },
+        {
+          "expr": "platform_app_api_topology_isolated_nodes",
+          "legendFormat": "isolated nodes",
+          "refId": "D"
         }
       ],
-      "description": "Backend-owned endpoint-pairing counts for the current normalized topology response. These counts are one bounded trust cue alongside inference and collection posture; they do not imply protocol validation or controller agreement.",
-      "title": "Endpoint Pairing Counts",
+      "description": "Backend-owned endpoint-pairing and node-participation counts for the current normalized topology response. These counts are bounded trust cues alongside inference and collection posture; they do not imply protocol validation or controller agreement.",
+      "title": "Endpoint Pairing And Node Participation Counts",
       "type": "bargauge"
     },
     {
@@ -1026,11 +1036,11 @@
         },
         {
           "expr": "platform_app_api_topology_coverage_posture",
-          "legendFormat": "{{inference_posture}} • {{endpoint_pairing_posture}} • {{collection_posture}}",
+          "legendFormat": "{{inference_posture}} • {{endpoint_pairing_posture}} • {{node_participation_posture}} • {{collection_posture}}",
           "refId": "B"
         }
       ],
-      "description": "Backend-owned snapshot and topology partiality labels exposed through metrics. Grafana projects inference, endpoint-pairing, and collection posture for observability only and does not define their semantics.",
+      "description": "Backend-owned snapshot and topology partiality labels exposed through metrics. Grafana projects inference, endpoint-pairing, node-participation, and collection posture for observability only and does not define their semantics.",
       "title": "Topology Snapshot And Partiality Labels",
       "type": "bargauge"
     },
@@ -1148,5 +1158,5 @@
   "timezone": "browser",
   "title": "Topology Overview",
   "uid": "topology-overview",
-  "version": 6
+  "version": 7
 }
