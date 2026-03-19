@@ -1,3 +1,4 @@
+import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -237,5 +238,41 @@ describe("PlatformHealthView", () => {
 
     expect(html).toContain("New baseline");
     expect(html).toContain("Degraded without persisted baseline");
+  });
+
+  it("surfaces bounded policy-history trust cue when policies expose persisted snapshots", () => {
+    const policies = createPoliciesData();
+    policies.history = {
+      status: "comparison_ready",
+      summary: "History available.",
+      recent_snapshots: [
+        {
+          snapshot_id: "policy-snap-a",
+          persisted_at: "2025-01-01T00:00:00Z",
+          observed_at: "2025-01-01T00:00:00Z",
+          data_status: "live",
+          sync_source: "persisted_policy_snapshot",
+          sync_status: "ok",
+          completeness: "partial",
+          detail_mode: "static_policies_when_present",
+          empty_reason: "none",
+          observed_policy_count: 2,
+          active_policy_count: 2,
+          detail_record_count: 2,
+        },
+      ],
+      comparison_to_previous: null,
+    };
+
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatus()));
+    usePoliciesQuery.mockReturnValue(createQueryState(policies));
+
+    const html = renderToStaticMarkup(<PlatformHealthView />);
+
+    expect(html).toContain("Policy history");
+    expect(html).toContain("Persisted snapshots");
+    expect(html).toContain("comparison ready");
+    expect(html).toContain("not drift analysis");
+    expect(html).toContain("validation verdicts");
   });
 });
