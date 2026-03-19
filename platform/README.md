@@ -216,7 +216,7 @@ Future contributors should be able to tell immediately that:
 - gNMI-first observed-state collection is a core principle
 - the design is Nokia-first but prepared for later vendor expansion
 
-For host recreation and deployment steps, see `INSTALLATION-INSTRUCTIONS.md`. For the bounded operator-facing build, deploy, verify, healthy-state, and first-response troubleshooting flow, see `docs/deployment-runbook.md`.
+For host recreation and deployment steps, see `INSTALLATION-INSTRUCTIONS.md`. For the bounded operator-facing build, deploy, verify, healthy-state, and first-response troubleshooting flow, see `docs/deployment-runbook.md`. For the **Phase 2** safe-use verdict, verification semantics, and drill limits, see `docs/production-readiness-assessment.md` and keep it aligned with the runbook and the repo’s current-status narrative (`../agent/sdn/03-CURRENT-STATUS.md`).
 
 ## Additional Docs
 

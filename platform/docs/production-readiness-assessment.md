@@ -38,7 +38,10 @@ It is not ready to be treated as:
 
 This assessment is grounded in the current repository state plus live runtime
 evidence gathered from the running platform, updated through the week 16
-operational checkpoint.
+operational checkpoint and **week 17** alignment on policy-history verifier gates,
+**`baseline_summary` object** checks when artifacts exist, and **product-owned
+policy history** versus **Grafana current-metrics-only** scope (see also
+`platform/docs/dashboards.md` and `agent/sdn/03-CURRENT-STATUS.md`).
 
 ### Live runtime verification
 
@@ -95,6 +98,11 @@ The current repository now explicitly documents:
 - safe-use versus unsafe-claim boundaries for the current slice
 - same-workspace restart drill (`./scripts/drill-same-workspace-restart.sh`) and
   preserved-baseline verifier checks
+- **Policy history interpretation** is **product-owned**: persisted snapshot lists,
+  source-readiness evolution, and snapshot-to-snapshot comparison belong to
+  `/api/v1/policies` and the WebUI Policies page. Grafana’s SR policy family
+  mirrors **bounded current** metrics and explicit scope text only—not persisted
+  history timelines, drift verdicts, or validation semantics.
 
 ## Assessment By Area
 
@@ -230,11 +238,14 @@ Why this is strong enough now:
   observability state will remain available
 - the current verifier now cross-checks persisted Postgres row presence against
   the corresponding API history and anchor surfaces, so a preserved same-
-  workspace baseline is tested more explicitly than before
+  workspace baseline is tested more explicitly than before (including
+  **`baseline_summary` objects** on workflow-history and audit-history when rows
+  exist, with honest skips when tables are empty)
 - a repo-owned same-workspace restart drill (`./scripts/drill-same-workspace-restart.sh`)
   exercises container replacement without deleting host-backed data directories,
   then reruns the verifiers and asserts preserved-baseline contract when
-  persisted artifacts exist
+  persisted artifacts exist (optional **`TOPOLOGY_FILE`**, **`set -e`** failure
+  semantics—see runbook)
 
 Why this is still bounded:
 
