@@ -315,10 +315,32 @@ if [ "$topology_snapshots_count" -gt 0 ]; then
   assert_not_contains "topology response" "$topology_response" '"history":{"status":"unavailable"'
   assert_contains "topology response" "$topology_response" '"snapshot_id":"'
   assert_contains "topology response" "$topology_response" '"recent_snapshots":['
-  if printf '%s' "$topology_response" | grep -F '"comparison_to_previous":{' | grep -F '"current_snapshot_id"' >/dev/null 2>&1; then
-    assert_contains "topology response" "$topology_response" '"current_endpoint_pairing_posture"'
-    assert_contains "topology response" "$topology_response" '"current_paired_link_count"'
+  if printf '%s' "$topology_response" | grep -qF '"recent_snapshots":[{"snapshot_id"'; then
+    assert_contains "topology response (history snapshots include aggregate counts)" "$topology_response" '"node_count":'
+    inference_hits=$(printf '%s' "$topology_response" | grep -o '"inference_posture":"' | wc -l | tr -d ' ')
+    if [ "${inference_hits:-0}" -lt 2 ]; then
+      echo "topology response: expected inference_posture in history.recent_snapshots entries plus coverage_summary (distinct occurrences), got ${inference_hits:-0}" >&2
+      exit 1
+    fi
+    participation_hits=$(printf '%s' "$topology_response" | grep -o '"node_participation_posture":"' | wc -l | tr -d ' ')
+    if [ "${participation_hits:-0}" -lt 2 ]; then
+      echo "topology response: expected node_participation_posture in history.recent_snapshots plus coverage_summary, got ${participation_hits:-0}" >&2
+      exit 1
+    fi
+  else
+    notice "Topology history recent_snapshots is empty in the API response even though Postgres reports topology snapshot rows; skipping history-snapshot coverage key assertions."
   fi
+  if printf '%s' "$topology_response" | grep -F '"comparison_to_previous":{' | grep -F '"current_snapshot_id"' >/dev/null 2>&1; then
+    assert_contains "topology response (history comparison coverage fields)" "$topology_response" '"current_endpoint_pairing_posture"'
+    assert_contains "topology response (history comparison coverage fields)" "$topology_response" '"current_paired_link_count"'
+    assert_contains "topology response (history comparison coverage fields)" "$topology_response" '"current_inference_posture"'
+    assert_contains "topology response (history comparison coverage fields)" "$topology_response" '"current_collection_posture"'
+    assert_contains "topology response (history comparison coverage fields)" "$topology_response" '"current_node_participation_posture"'
+    assert_contains "topology response (history comparison coverage fields)" "$topology_response" '"current_single_sided_link_count"'
+    assert_contains "topology response (history comparison coverage fields)" "$topology_response" '"current_isolated_node_count"'
+  fi
+else
+  notice "No persisted topology snapshot rows in Postgres; topology history contract checks for snapshot-level coverage keys are skipped (fresh baseline is honest)."
 fi
 
 if [ "$policy_snapshots_count" -gt 0 ]; then

@@ -1484,6 +1484,14 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
                 link_count=1,
                 node_state_counts={"up": 2},
                 link_state_counts={"up": 1},
+                inference_posture="inferred",
+                endpoint_pairing_posture="paired",
+                collection_posture="degraded",
+                node_participation_posture="fully_linked",
+                paired_link_count=1,
+                single_sided_link_count=0,
+                linked_node_count=2,
+                isolated_node_count=0,
             ),
             topology_comparison_to_previous=PersistedTopologySnapshotComparison(
                 current_snapshot_id="topology-snapshot-sync-1",
@@ -1503,6 +1511,22 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
                 removed_link_count=0,
                 changed_link_count=0,
                 notes=["Topology comparison evidence remains bounded to persisted normalized snapshots."],
+                current_inference_posture="inferred",
+                previous_inference_posture="unknown",
+                current_endpoint_pairing_posture="paired",
+                previous_endpoint_pairing_posture="unknown",
+                current_collection_posture="degraded",
+                previous_collection_posture="unknown",
+                current_node_participation_posture="fully_linked",
+                previous_node_participation_posture="partially_isolated",
+                current_paired_link_count=1,
+                previous_paired_link_count=0,
+                current_single_sided_link_count=0,
+                previous_single_sided_link_count=0,
+                current_linked_node_count=2,
+                previous_linked_node_count=1,
+                current_isolated_node_count=0,
+                previous_isolated_node_count=0,
             ),
             notes=["Topology sync remained intentionally partial."],
         ),
@@ -1543,6 +1567,39 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
                 notes=["Inventory comparison evidence remains bounded to persisted normalized snapshots."],
             ),
             notes=["Inventory sync completed from the bounded live path."],
+        ),
+    ]
+
+
+def _build_topology_sync_run_without_previous_comparison() -> list[PersistedSyncRun]:
+    """Single topology sync with summary but no persisted previous-snapshot comparison row."""
+    return [
+        PersistedSyncRun(
+            sync_run_id="sync-topology-isolated-1",
+            model_family="topology",
+            source_type="gnmi_collector_topology",
+            source_endpoint="http://gnmi-collector:9804/topology/snapshot",
+            fetch_status="partial_live_feed",
+            record_count=2,
+            observed_at=datetime.fromisoformat("2026-03-10T02:00:00+00:00"),
+            started_at=datetime.fromisoformat("2026-03-10T02:00:00+00:00"),
+            finished_at=datetime.fromisoformat("2026-03-10T02:00:02+00:00"),
+            persisted_artifacts=["topology_snapshot"],
+            topology_snapshot_summary=PersistedTopologyHistorySummary(
+                snapshot_id="topology-isolated-1",
+                persisted_at=datetime.fromisoformat("2026-03-10T02:00:02+00:00"),
+                observed_at=datetime.fromisoformat("2026-03-10T02:00:00+00:00"),
+                topology_name="Platform Observed Topology",
+                sync_source="gnmi_collector_topology_interface_inference",
+                sync_status="degraded",
+                completeness="partial",
+                node_count=1,
+                link_count=0,
+                node_state_counts={"up": 1},
+                link_state_counts={},
+            ),
+            topology_comparison_to_previous=None,
+            notes=["No prior persisted snapshot for bounded comparison."],
         ),
     ]
 
@@ -3118,12 +3175,25 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert payload["items"][1]["persisted_artifacts"] == ["topology_snapshot"]
     assert payload["items"][1]["topology_snapshot_summary"]["snapshot_id"] == "topology-snapshot-sync-1"
     assert payload["items"][1]["topology_snapshot_summary"]["node_count"] == 2
-    assert "inference_posture" in payload["items"][1]["topology_snapshot_summary"]
-    assert "paired_link_count" in payload["items"][1]["topology_snapshot_summary"]
-    assert payload["items"][1]["topology_comparison_to_previous"]["current_snapshot_id"] == "topology-snapshot-sync-1"
-    assert payload["items"][1]["topology_comparison_to_previous"]["previous_snapshot_id"] == "topology-snapshot-sync-0"
-    assert payload["items"][1]["topology_comparison_to_previous"]["added_link_count"] == 1
-    assert "current_endpoint_pairing_posture" in payload["items"][1]["topology_comparison_to_previous"]
+    topo_sum = payload["items"][1]["topology_snapshot_summary"]
+    assert topo_sum["inference_posture"] == "inferred"
+    assert topo_sum["endpoint_pairing_posture"] == "paired"
+    assert topo_sum["collection_posture"] == "degraded"
+    assert topo_sum["node_participation_posture"] == "fully_linked"
+    assert topo_sum["paired_link_count"] == 1
+    assert topo_sum["single_sided_link_count"] == 0
+    assert topo_sum["linked_node_count"] == 2
+    assert topo_sum["isolated_node_count"] == 0
+    topo_cmp = payload["items"][1]["topology_comparison_to_previous"]
+    assert topo_cmp["current_snapshot_id"] == "topology-snapshot-sync-1"
+    assert topo_cmp["previous_snapshot_id"] == "topology-snapshot-sync-0"
+    assert topo_cmp["added_link_count"] == 1
+    assert topo_cmp["current_inference_posture"] == "inferred"
+    assert topo_cmp["previous_inference_posture"] == "unknown"
+    assert topo_cmp["current_endpoint_pairing_posture"] == "paired"
+    assert topo_cmp["previous_endpoint_pairing_posture"] == "unknown"
+    assert topo_cmp["current_paired_link_count"] == 1
+    assert topo_cmp["previous_paired_link_count"] == 0
     assert payload["items"][1]["policy_snapshot_summary"] is None
     assert payload["items"][2]["workflow_name"] == "inventory_snapshot_sync"
     assert payload["items"][2]["status"] == "completed"
@@ -3143,6 +3213,26 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     )
     assert "summary" in payload["baseline_summary"]
     assert len(payload["baseline_summary"]["notes"]) >= 1
+
+
+def test_workflow_history_topology_honest_absence_when_no_previous_comparison(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app_api.services.workflow_history.load_sync_runs",
+        _build_topology_sync_run_without_previous_comparison,
+    )
+
+    response = client.get("/api/v1/workflow-history")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 1
+    item = payload["items"][0]
+    assert item["workflow_name"] == "topology_snapshot_sync"
+    assert item["topology_snapshot_summary"]["snapshot_id"] == "topology-isolated-1"
+    assert item["topology_snapshot_summary"]["inference_posture"] == "unknown"
+    assert item["topology_snapshot_summary"]["endpoint_pairing_posture"] == "unknown"
+    assert item["topology_snapshot_summary"]["paired_link_count"] == 0
+    assert item["topology_comparison_to_previous"] is None
 
 
 def test_workflow_history_endpoint_handles_empty_persisted_history(monkeypatch) -> None:
@@ -3269,13 +3359,18 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert payload["items"][1]["policy_comparison_to_previous"]["changed_policy_count"] == 1
     assert payload["items"][1]["correlation_id"] == "sync-policy-1"
     assert "persisted policy_snapshot" in payload["items"][1]["message"]
-    assert payload["items"][2]["topology_snapshot_summary"]["snapshot_id"] == "topology-snapshot-sync-1"
-    assert payload["items"][2]["topology_snapshot_summary"]["topology_name"] == "Platform Observed Topology"
-    assert "paired_link_count" in payload["items"][2]["topology_snapshot_summary"]
-    assert payload["items"][2]["topology_comparison_to_previous"]["current_snapshot_id"] == "topology-snapshot-sync-1"
-    assert payload["items"][2]["topology_comparison_to_previous"]["previous_snapshot_id"] == "topology-snapshot-sync-0"
-    assert payload["items"][2]["topology_comparison_to_previous"]["node_count_delta"] == 1
-    assert "current_paired_link_count" in payload["items"][2]["topology_comparison_to_previous"]
+    audit_topo = payload["items"][2]["topology_snapshot_summary"]
+    assert audit_topo["snapshot_id"] == "topology-snapshot-sync-1"
+    assert audit_topo["topology_name"] == "Platform Observed Topology"
+    assert audit_topo["inference_posture"] == "inferred"
+    assert audit_topo["endpoint_pairing_posture"] == "paired"
+    assert audit_topo["paired_link_count"] == 1
+    audit_topo_cmp = payload["items"][2]["topology_comparison_to_previous"]
+    assert audit_topo_cmp["current_snapshot_id"] == "topology-snapshot-sync-1"
+    assert audit_topo_cmp["previous_snapshot_id"] == "topology-snapshot-sync-0"
+    assert audit_topo_cmp["node_count_delta"] == 1
+    assert audit_topo_cmp["current_paired_link_count"] == 1
+    assert audit_topo_cmp["previous_paired_link_count"] == 0
     assert payload["items"][2]["policy_snapshot_summary"] is None
     assert payload["items"][3]["inventory_snapshot_summary"]["snapshot_id"] == "inventory-snapshot-sync-1"
     assert payload["items"][3]["inventory_snapshot_summary"]["role_counts"]["pe"] == 8
@@ -3289,6 +3384,29 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
         "new_baseline",
     )
     assert "summary" in payload["baseline_summary"]
+
+
+def test_audit_history_topology_honest_absence_when_no_previous_comparison(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_sync_runs",
+        _build_topology_sync_run_without_previous_comparison,
+    )
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_readiness_snapshot_history",
+        lambda: [],
+    )
+
+    response = client.get("/api/v1/audit-history")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 1
+    item = payload["items"][0]
+    assert item["event_type"] == "read_side_sync_recorded"
+    assert item["topology_snapshot_summary"]["snapshot_id"] == "topology-isolated-1"
+    assert item["topology_snapshot_summary"]["inference_posture"] == "unknown"
+    assert item["topology_snapshot_summary"]["paired_link_count"] == 0
+    assert item["topology_comparison_to_previous"] is None
 
 
 def test_audit_history_endpoint_handles_empty_persisted_history(monkeypatch) -> None:

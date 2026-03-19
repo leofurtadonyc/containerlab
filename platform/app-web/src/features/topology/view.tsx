@@ -781,6 +781,10 @@ export function TopologyView() {
         <article className="detail-card">
           <h3>Persisted History And Comparison</h3>
           <p>{data.history.summary}</p>
+          <p className="table-note">
+            Persisted coverage posture rows compare snapshot-derived trust cues only. They do not
+            assert adjacency validation, path validation, controller truth, or workflow eligibility.
+          </p>
           {historyComparison ? (
             <ul className="compact-list">
               <li>
@@ -824,6 +828,23 @@ export function TopologyView() {
                   {historyComparison.changed_node_count} / {historyComparison.changed_link_count}
                 </strong>
               </li>
+              {historyComparison.current_inference_posture != null ||
+              historyComparison.previous_inference_posture != null ? (
+                <>
+                  <li>
+                    <span>Current inference posture</span>
+                    <StatusPill
+                      value={historyComparison.current_inference_posture ?? "unknown"}
+                    />
+                  </li>
+                  <li>
+                    <span>Previous inference posture</span>
+                    <StatusPill
+                      value={historyComparison.previous_inference_posture ?? "unknown"}
+                    />
+                  </li>
+                </>
+              ) : null}
               {historyComparison.current_endpoint_pairing_posture != null ||
               historyComparison.previous_endpoint_pairing_posture != null ? (
                 <>
@@ -845,6 +866,44 @@ export function TopologyView() {
                   </li>
                 </>
               ) : null}
+              {historyComparison.current_collection_posture != null ||
+              historyComparison.previous_collection_posture != null ? (
+                <>
+                  <li>
+                    <span>Current collection posture</span>
+                    <StatusPill
+                      value={historyComparison.current_collection_posture ?? "unknown"}
+                    />
+                  </li>
+                  <li>
+                    <span>Previous collection posture</span>
+                    <StatusPill
+                      value={historyComparison.previous_collection_posture ?? "unknown"}
+                    />
+                  </li>
+                </>
+              ) : null}
+              {historyComparison.current_node_participation_posture != null ||
+              historyComparison.previous_node_participation_posture != null ? (
+                <>
+                  <li>
+                    <span>Current node participation</span>
+                    <StatusPill
+                      value={
+                        historyComparison.current_node_participation_posture ?? "unknown"
+                      }
+                    />
+                  </li>
+                  <li>
+                    <span>Previous node participation</span>
+                    <StatusPill
+                      value={
+                        historyComparison.previous_node_participation_posture ?? "unknown"
+                      }
+                    />
+                  </li>
+                </>
+              ) : null}
               {historyComparison.current_paired_link_count != null ||
               historyComparison.previous_paired_link_count != null ? (
                 <li>
@@ -855,6 +914,16 @@ export function TopologyView() {
                   </strong>
                 </li>
               ) : null}
+              {historyComparison.current_single_sided_link_count != null ||
+              historyComparison.previous_single_sided_link_count != null ? (
+                <li>
+                  <span>Current / previous single-sided links</span>
+                  <strong>
+                    {historyComparison.current_single_sided_link_count ?? "—"} /{" "}
+                    {historyComparison.previous_single_sided_link_count ?? "—"}
+                  </strong>
+                </li>
+              ) : null}
               {historyComparison.current_linked_node_count != null ||
               historyComparison.previous_linked_node_count != null ? (
                 <li>
@@ -862,6 +931,16 @@ export function TopologyView() {
                   <strong>
                     {historyComparison.current_linked_node_count ?? "—"} /{" "}
                     {historyComparison.previous_linked_node_count ?? "—"}
+                  </strong>
+                </li>
+              ) : null}
+              {historyComparison.current_isolated_node_count != null ||
+              historyComparison.previous_isolated_node_count != null ? (
+                <li>
+                  <span>Current / previous isolated nodes</span>
+                  <strong>
+                    {historyComparison.current_isolated_node_count ?? "—"} /{" "}
+                    {historyComparison.previous_isolated_node_count ?? "—"}
                   </strong>
                 </li>
               ) : null}
@@ -876,8 +955,9 @@ export function TopologyView() {
         <article className="detail-card">
           <h3>Recent Persisted Snapshots</h3>
           <p className="table-note">
-            Persisted coverage posture reflects derived endpoint-pairing and node-participation
-            cues per snapshot. These are trust cues, not validation verdicts.
+            Persisted coverage posture reflects derived inference, endpoint-pairing, collection,
+            and node-participation cues per snapshot. These are trust cues, not validation
+            verdicts.
           </p>
           {data.history.recent_snapshots.length > 0 ? (
             <ul className="notes-list">
@@ -892,10 +972,28 @@ export function TopologyView() {
                   {entry.link_count}
                   {" • "}
                   {formatLabel(entry.completeness)}
+                  {entry.inference_posture != null ? (
+                    <>
+                      {" • inference "}
+                      <StatusPill value={entry.inference_posture} />
+                    </>
+                  ) : null}
                   {entry.endpoint_pairing_posture != null ? (
                     <>
                       {" • pairing "}
                       <StatusPill value={entry.endpoint_pairing_posture} />
+                    </>
+                  ) : null}
+                  {entry.collection_posture != null ? (
+                    <>
+                      {" • collection "}
+                      <StatusPill value={entry.collection_posture} />
+                    </>
+                  ) : null}
+                  {entry.node_participation_posture != null ? (
+                    <>
+                      {" • participation "}
+                      <StatusPill value={entry.node_participation_posture} />
                     </>
                   ) : null}
                   {entry.paired_link_count != null || entry.single_sided_link_count != null ? (
