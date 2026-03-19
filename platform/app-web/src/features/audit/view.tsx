@@ -357,6 +357,18 @@ export function AuditView() {
         <span>Generated: {formatDateTime(data.generated_at)}</span>
       </div>
 
+      <div className="callout">
+        <strong>History baseline</strong>{" "}
+        <StatusPill value={data.baseline_summary.baseline_posture} />
+        <p>{data.baseline_summary.summary}</p>
+        <p className="table-note">
+          Read-only sync- and readiness-derived audit-style visibility for this workspace only—whether
+          bounded persisted artifacts are still present after restart or redeploy. Not approvals,
+          execution controls, disaster recovery, or forensic-grade audit; see Overview and Platform
+          Health for recovery posture.
+        </p>
+      </div>
+
       <p className="callout">{data.summary}</p>
 
       <div className="summary-grid">

@@ -84,10 +84,12 @@ describe("audit view", () => {
 
     const html = renderToStaticMarkup(<AuditView />);
 
+    expect(html).toContain("History baseline");
     expect(html).toContain("Baseline Posture");
     expect(html).toContain("Baseline Summary");
     expect(html).toContain("preserved same workspace baseline");
     expect(html).toContain("preserved sync-derived history");
+    expect(html).toContain("Read-only sync- and readiness-derived audit-style visibility");
   });
 
   it("renders new baseline posture when baseline_summary indicates new baseline", () => {
@@ -97,9 +99,11 @@ describe("audit view", () => {
 
     const html = renderToStaticMarkup(<AuditView />);
 
+    expect(html).toContain("History baseline");
     expect(html).toContain("Baseline Posture");
     expect(html).toContain("Baseline Summary");
     expect(html).toContain("new baseline");
     expect(html).toContain("This view is effectively starting from a new baseline");
+    expect(html).toContain("Not approvals");
   });
 });

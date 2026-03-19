@@ -397,6 +397,18 @@ export function WorkflowsView() {
         <span>Generated: {formatDateTime(data.generated_at)}</span>
       </div>
 
+      <div className="callout">
+        <strong>History baseline</strong>{" "}
+        <StatusPill value={data.baseline_summary.baseline_posture} />
+        <p>{data.baseline_summary.summary}</p>
+        <p className="table-note">
+          Sync- and readiness-derived read-only history for this workspace only—whether bounded
+          persisted artifacts are still present after restart or redeploy. Not workflow execution,
+          approvals, disaster recovery, or a full audit trail; see Overview and Platform Health for
+          recovery posture.
+        </p>
+      </div>
+
       <p className="callout">{data.summary}</p>
 
       <div className="summary-grid">

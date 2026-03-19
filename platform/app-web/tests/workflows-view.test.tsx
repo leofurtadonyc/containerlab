@@ -85,10 +85,12 @@ describe("workflows view", () => {
 
     const html = renderToStaticMarkup(<WorkflowsView />);
 
+    expect(html).toContain("History baseline");
     expect(html).toContain("Baseline Posture");
     expect(html).toContain("Baseline Summary");
     expect(html).toContain("preserved same workspace baseline");
     expect(html).toContain("preserved sync-derived history");
+    expect(html).toContain("Sync- and readiness-derived read-only history");
   });
 
   it("renders new baseline posture when baseline_summary indicates new baseline", () => {
@@ -98,9 +100,11 @@ describe("workflows view", () => {
 
     const html = renderToStaticMarkup(<WorkflowsView />);
 
+    expect(html).toContain("History baseline");
     expect(html).toContain("Baseline Posture");
     expect(html).toContain("Baseline Summary");
     expect(html).toContain("new baseline");
     expect(html).toContain("This view is effectively starting from a new baseline");
+    expect(html).toContain("Not workflow execution");
   });
 });
