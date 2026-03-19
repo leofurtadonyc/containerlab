@@ -1460,6 +1460,10 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
                 notes=[
                     "Comparison evidence remains bounded to persisted normalized policy snapshots."
                 ],
+                current_detail_unavailable_target_count=0,
+                previous_detail_unavailable_target_count=3,
+                current_partial_detail_target_count=1,
+                previous_partial_detail_target_count=0,
             ),
             notes=["Policy sync completed from the bounded live path."],
         ),
@@ -3211,6 +3215,13 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert payload["items"][0]["policy_comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-sync-1"
     assert payload["items"][0]["policy_comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-sync-0"
     assert payload["items"][0]["policy_comparison_to_previous"]["removed_policy_count"] == 1
+    assert payload["items"][0]["policy_snapshot_summary"]["detail_unavailable_target_count"] == 0
+    assert payload["items"][0]["policy_snapshot_summary"]["partial_detail_target_count"] == 0
+    pcmp = payload["items"][0]["policy_comparison_to_previous"]
+    assert pcmp["current_detail_unavailable_target_count"] == 0
+    assert pcmp["previous_detail_unavailable_target_count"] == 3
+    assert pcmp["current_partial_detail_target_count"] == 1
+    assert pcmp["previous_partial_detail_target_count"] == 0
     assert payload["items"][1]["workflow_name"] == "topology_snapshot_sync"
     assert payload["items"][1]["status"] == "partial"
     assert payload["items"][1]["persisted_artifacts"] == ["topology_snapshot"]
@@ -3398,6 +3409,11 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert payload["items"][1]["policy_comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-sync-1"
     assert payload["items"][1]["policy_comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-sync-0"
     assert payload["items"][1]["policy_comparison_to_previous"]["changed_policy_count"] == 1
+    audit_pcmp = payload["items"][1]["policy_comparison_to_previous"]
+    assert audit_pcmp["current_detail_unavailable_target_count"] == 0
+    assert audit_pcmp["previous_detail_unavailable_target_count"] == 3
+    assert audit_pcmp["current_partial_detail_target_count"] == 1
+    assert audit_pcmp["previous_partial_detail_target_count"] == 0
     assert payload["items"][1]["correlation_id"] == "sync-policy-1"
     assert "persisted policy_snapshot" in payload["items"][1]["message"]
     audit_topo = payload["items"][2]["topology_snapshot_summary"]

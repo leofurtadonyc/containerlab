@@ -253,6 +253,7 @@ What is real today:
 - the backend exposes current live policy observations and now persists bounded normalized policy snapshots plus candidate-path records to Postgres
 - the policy response can now distinguish live collection, persisted fallback, and comparison-unavailable versus comparison-ready states explicitly, both for current-versus-latest-persisted and bounded persisted-versus-previous history views
 - policy history snapshots and comparisons now include source-readiness posture and counts (detail-ready targets, no-policies-observed targets, etc.) as bounded trust cues; workflow-history and audit-history policy summaries carry the same source-readiness context where honest persisted records exist
+- for policy sync-derived **workflow-history** and **audit-history** items, when a persisted policy snapshot is attached, the envelope mirrors `/api/v1/policies` history semantics: snapshot summaries include posture plus detail-ready, no-policies-observed, detail-unavailable, and partial-detail target counts, and `policy_comparison_to_previous` (when present) carries **current** and **previous** values for those counts alongside readiness posture—still coverage cues from persisted rows only, not workflow execution or validation
 
 What remains partial:
 
