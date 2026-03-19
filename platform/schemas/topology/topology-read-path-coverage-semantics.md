@@ -659,3 +659,21 @@ The next bounded follow-on should do only this.
   bounded runtime-contract checks and notices
 
 It should not do more than that.
+
+## Persisted topology snapshots and history-derived coverage
+
+When `app-api` writes normalized topology snapshots to Postgres, per-link
+`endpoint_pairing_state` and `endpoint_evidence_count` are stored inside the
+link row JSON `attributes` (alongside any other normalized link attributes),
+not as separate columns. On read, `resolve_topology_link_endpoint_evidence`
+reads those keys from `attributes` the same way as from typed `TopologyLink`
+fields.
+
+Snapshots **without** those keys behave as honest **unknown** pairing evidence
+for coverage derivation unless integer evidence counts in attributes allow
+inference (see `resolve_topology_link_endpoint_evidence`).
+
+`recent_snapshots` and `comparison_to_previous` on `/api/v1/topology` derive
+inference, endpoint-pairing, collection, and node-participation postures from
+persisted nodes and links only. That derivation remains **trust cues**, not
+topology validation or workflow semantics.
