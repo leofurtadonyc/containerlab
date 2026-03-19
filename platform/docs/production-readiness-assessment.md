@@ -42,7 +42,7 @@ operational checkpoint.
 
 ### Live runtime verification
 
-- `./scripts/verify-core-runtime.sh` passed for the current deployment
+- `./scripts/verify-core-runtime.sh` passed for the current deployment (including conditional `/api/v1/policies` policy-history JSON keys when Postgres holds policy snapshots and the API lists recent snapshots, with honest skip notices on a fresh baseline)
 - `./scripts/verify-odl-auth.sh` passed for the bounded ODL helper path
 - `docker ps` showed healthy runtime state for `postgres`, `prometheus`,
   `grafana`, `gnmi-collector`, `app-api`, and `app-web`; `odl` was running and
