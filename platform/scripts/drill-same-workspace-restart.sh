@@ -3,12 +3,21 @@
 # Same-workspace restart drill for the bounded Phase 2 platform slice.
 #
 # This script restarts the platform topology without deleting or mutating
-# the host-backed data directories (postgres/data, prometheus/data, grafana/data).
+# host-backed data directories under the platform workspace:
+#   - platform/postgres/data   (Postgres pgdata)
+#   - platform/prometheus/data (Prometheus TSDB)
+#   - platform/grafana/data    (Grafana local state)
 # It then reruns the verification scripts to prove the same-workspace recovery
 # boundary.
 #
+# Environment:
+#   TOPOLOGY_FILE  Optional path to the Containerlab topology file
+#                  (default: topology.clab.yml in the platform directory).
+#
 # Use this drill to validate that the platform recovers correctly after
 # container replacement when persisted data survives in the same workspace.
+#
+# Exit status is non-zero if clab deploy or either verifier fails (set -e).
 #
 # This is NOT a disaster-recovery test. It does NOT prove backup, restore,
 # cross-host migration, or data-directory-loss recovery.
@@ -33,7 +42,11 @@ require_command clab
 cd "$PLATFORM_DIR"
 
 echo "Same-workspace restart drill: platform topology"
-echo "This drill will destroy and redeploy the topology without deleting host-backed data directories."
+echo "This drill will destroy and redeploy the topology without deleting host-backed data directories:"
+echo "  $PLATFORM_DIR/postgres/data"
+echo "  $PLATFORM_DIR/prometheus/data"
+echo "  $PLATFORM_DIR/grafana/data"
+echo "Topology file: $TOPOLOGY_FILE"
 echo ""
 
 if [ ! -f "$TOPOLOGY_FILE" ]; then

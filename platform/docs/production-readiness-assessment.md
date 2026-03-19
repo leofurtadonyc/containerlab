@@ -191,7 +191,10 @@ Why this is strong enough now:
   rollups, backend-owned topology coverage fields on both the topology and
   platform-status read paths, dashboard-critical metric families including
   paired-link, single-sided-link, and pairing-posture signals, and Prometheus
-  target posture
+  target posture; when Postgres still holds persisted read-side rows it also
+  requires `preserved_same_workspace_baseline` on platform `recovery` and on
+  workflow-history and audit-history `baseline_summary`, while empty persisted
+  tables skip that branch with an honest new-baseline notice
 - `verify-odl-auth` validates the configured ODL credential path and rejects
   the default fallback
 - degraded but honest states such as partial topology, non-ok read-path

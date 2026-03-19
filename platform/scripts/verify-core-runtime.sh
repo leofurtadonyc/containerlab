@@ -418,10 +418,14 @@ elif printf '%s' "$platform_status_response" | grep -F '"name":"odl"' >/dev/null
   warn "Platform status does not currently report ODL observation_state as ok; run ./scripts/verify-odl-auth.sh to validate the controller path explicitly."
 fi
 
+# When Postgres still holds persisted read-side rows, require the product APIs to
+# report preserved same-workspace baseline (aligned with drill-same-workspace-restart.sh).
 if [ "$persisted_artifact_count" -gt 0 ]; then
   notice "Postgres persisted read-side baseline present: sync_runs=$sync_runs_count inventory_snapshots=$inventory_snapshots_count topology_snapshots=$topology_snapshots_count policy_snapshots=$policy_snapshots_count readiness_snapshots=$readiness_snapshots_count."
   assert_contains "platform status recovery (preserved-baseline)" "$platform_status_response" '"baseline_posture":"preserved_same_workspace_baseline"'
+  assert_contains "workflow history baseline_summary object (preserved-baseline)" "$workflow_history_response" '"baseline_summary":{'
   assert_contains "workflow history baseline_summary (preserved-baseline)" "$workflow_history_response" '"baseline_posture":"preserved_same_workspace_baseline"'
+  assert_contains "audit history baseline_summary object (preserved-baseline)" "$audit_history_response" '"baseline_summary":{'
   assert_contains "audit history baseline_summary (preserved-baseline)" "$audit_history_response" '"baseline_posture":"preserved_same_workspace_baseline"'
 else
   notice "Postgres currently has no persisted read-side snapshots, sync runs, or readiness snapshots; this is consistent with a first deploy or missing-data-dir recovery, and historical recovery is starting from a new baseline."

@@ -160,7 +160,7 @@ This now validates:
 - when Postgres reports persisted policy snapshot rows and `/api/v1/policies` returns a non-empty `history.recent_snapshots` array (detected as `[{"snapshot_id"` in compact JSON), the verifier asserts per-snapshot source-readiness keys (`detail_source_readiness_posture`, `detail_ready_target_count`, `no_policies_observed_target_count`, `detail_unavailable_target_count`, `partial_detail_target_count`); when `history.comparison_to_previous` includes `current_snapshot_id`, it asserts current-versus-previous source-readiness posture plus all supporting target-count fields; when Postgres has policy rows but `recent_snapshots` is empty, it skips snapshot-level assertions and emits a notice; with no policy snapshot rows it skips policy history snapshot checks and emits a fresh-baseline notice—**persisted policy history interpretation remains product-owned** (`app-api` + WebUI), while the verifier only checks JSON contract presence
 - dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts, now including backend and collector paired-link, single-sided-link, pairing-posture, collector observation-age, policy detail-ready signals, and the backend collector-boundary latest duration, timeout budget, and latest timeout or failure posture signals used by the current dashboards
 - bounded persisted-state exposure checks: when Postgres already holds snapshot, sync-run, or readiness rows, the API must still expose the matching history windows, comparison anchors, workflow-history, audit-history, and readiness anchor surfaces after restart or replacement
-- preserved-baseline contract checks: when persisted artifacts exist, platform status `recovery.baseline_posture`, workflow-history `baseline_summary.baseline_posture`, and audit-history `baseline_summary.baseline_posture` must report `preserved_same_workspace_baseline`
+- preserved-baseline contract checks: when persisted artifacts exist, platform status `recovery.baseline_posture`, workflow-history and audit-history `baseline_summary` objects, and both histories' `baseline_summary.baseline_posture` must report `preserved_same_workspace_baseline`; when persisted tables are empty, those checks are skipped with an explicit notice (fresh baseline)
 - bounded warnings and notices when current read-side responses fall back to persisted data, become blocked, expose non-ok read-path posture, surface other degraded-but-honest states such as partial topology, partially-paired or single-sided topology coverage, and aggregate-only policy evidence, or show that fallback was triggered by a bounded collector-boundary timeout posture rather than ordinary degraded live collection
 - Grafana provisioned datasource presence and provisioned overview dashboards
 
@@ -555,6 +555,8 @@ cd platform
 ./scripts/drill-same-workspace-restart.sh
 ```
 
+Optional: set **`TOPOLOGY_FILE`** to a non-default Containerlab file (defaults to `topology.clab.yml` in the platform directory).
+
 The drill:
 
 1. destroys the current topology (containers only; host-backed data directories are preserved)
@@ -562,7 +564,7 @@ The drill:
 3. runs `./scripts/verify-core-runtime.sh`
 4. runs `./scripts/verify-odl-auth.sh`
 
-When Postgres already holds persisted snapshots, sync runs, or readiness rows, the verifier asserts that platform status, workflow-history, and audit-history report `preserved_same_workspace_baseline`.
+When Postgres already holds persisted snapshots, sync runs, or readiness rows, the verifier asserts that **`recovery.baseline_posture`** on `/api/v1/platform/status` and **`baseline_summary.baseline_posture`** on `/api/v1/workflow-history` and `/api/v1/audit-history` report **`preserved_same_workspace_baseline`**, and that workflow-history and audit-history include a **`baseline_summary`** object. On an empty persisted read-side schema, those preserved-baseline assertions are skipped (honest fresh baseline).
 
 ### What the drill does NOT prove
 
