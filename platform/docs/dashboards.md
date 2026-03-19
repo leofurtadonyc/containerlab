@@ -214,6 +214,7 @@ In Grafana:
 - recovery posture panels mirror baseline and read-side posture numerically; preserved baseline and fresh live recollection are not the same thing, and the product-facing explanation stays in app-web
 - readiness evaluation sample age is an observability cue about the latest Prometheus-observed bounded recomputation, while persisted readiness snapshot age remains the chronology of the last materially changed persisted snapshot; operators should not treat them as interchangeable freshness claims
 - same-workspace recovery posture is mirrored numerically through backend-owned `platform_app_api_recovery_posture` and `platform_app_api_recovery_persisted_artifacts` metrics; the product-facing explanation, including the distinction that preserved baseline and fresh live recollection are not the same thing, remains in app-web Overview and Platform Health
+- recovery panels are **observability mirrors only**: they reflect bounded same-workspace persisted-anchor posture as emitted by `app-api` metrics; they do **not** prove disaster recovery, backup/restore, cross-host migration, or data-directory-loss recovery, and they do not replace the product contract on `/api/v1/platform/status`
 
 Grafana does not attempt to reproduce the backend's human-readable degraded-scope summaries verbatim, because those are product semantics rather than durable metric labels.
 

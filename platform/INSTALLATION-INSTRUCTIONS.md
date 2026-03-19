@@ -160,6 +160,16 @@ Likewise, routine recreate-time validation does not depend on host-installed `py
 
 If a future context window needs only one rule to stay aligned here, it should remember this: validate platform changes through the repo-owned image-build, topology-redeploy, and verification-script flow first, not through ad hoc host-side `npm` or `pytest` commands.
 
+### Optional: run `app-web` Vitest without host Node.js
+
+The `app-web` Dockerfile runs `npm run build` but does not run `npm test`. Routine packaged validation remains **build images → deploy → verify scripts**. If you still need **Vitest** on a Linux host that has **Docker** but no local Node toolchain, run the test suite inside a throwaway Node container from `platform/`:
+
+```bash
+docker run --rm -v "$(pwd)/app-web:/app" -w /app node:22-alpine sh -c "npm ci --no-fund --no-audit && npm test"
+```
+
+This matches the same pinned major line as the `app-web` build stage (Node 22) without installing Node on the host.
+
 ## Deploy The Platform Topology
 
 From `platform/`, deploy the current topology:

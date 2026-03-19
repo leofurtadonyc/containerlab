@@ -1,0 +1,12 @@
+---
+description: Platform validation uses Docker/Containerlab + verify scripts; do not assume host Node/npm/pytest
+alwaysApply: true
+---
+
+# Platform validation (see `platform/INSTALLATION-INSTRUCTIONS.md`)
+
+- **Primary validation path** for normal platform work: from `platform/`, run `./scripts/build-images.sh`, then `clab deploy -t topology.clab.yml -c`, then `./scripts/verify-core-runtime.sh` and `./scripts/verify-odl-auth.sh`. This is the preferred boundary, not ad hoc host-side `npm` or `pytest`.
+- **Host without Node/npm is normal**: the `app-web` image build runs `npm ci` and `npm run build` **inside Docker**; reproducibility does not require a host-installed Node toolchain.
+- **Do not** treat “node/npm not found on the host” as blocking routine validation—use the documented image-build + redeploy + verify flow instead.
+- **Frontend unit tests (Vitest)**: the `app-web` Dockerfile does not run `npm test`; if a change requires Vitest and the host has no Node, run tests in a **throwaway Node container** with the repo mounted (e.g. `docker run --rm -v "$PWD/platform/app-web:/app" -w /app node:22-alpine sh -c "npm ci && npm test"`) or another equivalent containerized Node environment—still without requiring a permanent host install.
+- **Full reference**: `platform/INSTALLATION-INSTRUCTIONS.md` (Quick Validation Rule, Host Requirements, Build The Platform Images, Verify The Deployment).
