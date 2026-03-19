@@ -4,6 +4,11 @@
 
 This runbook documents how to build, deploy, verify, and troubleshoot the current bounded `Phase 2 — read-only product foundation` platform slice.
 
+It reflects the **week 16 operational checkpoint**: preserved-baseline checks in
+`verify-core-runtime` when Postgres holds artifacts, explicit recovery fields on
+`/api/v1/platform/status`, workflow-history and audit-history baseline summaries,
+and the optional **same-workspace restart drill** (`./scripts/drill-same-workspace-restart.sh`) that reproves same-workspace recovery—not backup, restore, or HA.
+
 It is written for repeatable operator use on a compatible Linux host.
 
 It is intentionally practical rather than aspirational:

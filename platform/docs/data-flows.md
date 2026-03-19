@@ -16,21 +16,33 @@ The goal is to make it clear:
 The current repository state includes:
 
 - a separate platform topology
-- a backend skeleton
-- a collector skeleton
-- Prometheus and Grafana scaffolding
-- Postgres bootstrap and migration direction
+- a live `app-api` read path for inventory, topology, policy, capabilities,
+  platform status (including recovery summary), workflow-history, and audit-history
+- a live `gnmi-collector` path with Nokia adapter boundaries and normalized
+  deliveries to `app-api`
+- Prometheus and Grafana with real scrape targets and bounded dashboard families
+  for the current metrics
+- Postgres with **bounded durable persistence** for normalized inventory,
+  topology, and policy snapshots, sync-run records, readiness snapshots, and
+  the history fields needed for week-16-style coverage and source-readiness
+  history (not a full durable domain model for every future product area)
 - repo-built local images for the initial platform service set
-- bounded post-deploy verification for the current core runtime contract and ODL credential path
+- bounded post-deploy verification for the current core runtime contract, ODL
+  credential path, preserved-baseline posture when artifacts exist, and optional
+  same-workspace restart drill
 
 It does not yet include:
 
-- durable persistence for every intended product domain
-- substantive ODL integration logic
+- substantive ODL integration beyond the bounded platform-health probe
+- workflow execution, dry-run APIs, or workflow-owned durable storage
 
-The workflow-history and audit-history frontend views are now read-only product pages with persisted context, coverage and source-readiness posture, baseline summaries (preserved versus new baseline), and a same-workspace restart drill that proves preserved-baseline recovery.
+The workflow-history and audit-history frontend views are read-only product pages
+with persisted context, topology coverage and policy source-readiness posture in
+history where records exist, baseline summaries (preserved versus new baseline),
+and operator documentation for the same-workspace restart drill that proves
+preserved-baseline recovery only when host-backed Postgres data survives.
 
-This document therefore explains the current flow direction honestly, including which paths are useful today and which remain scaffolded.
+This document explains the current flow direction honestly, including which paths are useful today and which remain scaffolded.
 
 ## Persisted Vs Transient
 
