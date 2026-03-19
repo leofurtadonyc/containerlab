@@ -185,6 +185,10 @@ class PersistedPolicySnapshotComparison(BaseModel):
     previous_detail_ready_target_count: int = 0
     current_no_policies_observed_target_count: int = 0
     previous_no_policies_observed_target_count: int = 0
+    current_detail_unavailable_target_count: int = 0
+    previous_detail_unavailable_target_count: int = 0
+    current_partial_detail_target_count: int = 0
+    previous_partial_detail_target_count: int = 0
 
 
 class PersistedReadinessSnapshotHistoryRecord(BaseModel):
@@ -657,6 +661,10 @@ def _build_policy_snapshot_comparison(
         previous_detail_ready_target_count=previous_snapshot.detail_ready_target_count,
         current_no_policies_observed_target_count=snapshot.no_policies_observed_target_count,
         previous_no_policies_observed_target_count=previous_snapshot.no_policies_observed_target_count,
+        current_detail_unavailable_target_count=snapshot.detail_unavailable_target_count,
+        previous_detail_unavailable_target_count=previous_snapshot.detail_unavailable_target_count,
+        current_partial_detail_target_count=snapshot.partial_detail_target_count,
+        previous_partial_detail_target_count=previous_snapshot.partial_detail_target_count,
     )
 
 

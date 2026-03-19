@@ -348,11 +348,18 @@ if [ "$policy_snapshots_count" -gt 0 ]; then
   assert_contains "policies response" "$policies_response" '"snapshot_id":"'
   assert_contains "policies response" "$policies_response" '"recent_snapshots":['
   if printf '%s' "$policies_response" | grep -F '"comparison_to_previous":{' | grep -F '"current_snapshot_id"' >/dev/null 2>&1; then
-    assert_contains "policies response" "$policies_response" '"current_detail_source_readiness_posture"'
-    assert_contains "policies response" "$policies_response" '"previous_detail_source_readiness_posture"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"current_detail_source_readiness_posture"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"previous_detail_source_readiness_posture"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"current_detail_unavailable_target_count"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"previous_detail_unavailable_target_count"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"current_partial_detail_target_count"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"previous_partial_detail_target_count"'
   fi
   if printf '%s' "$policies_response" | grep -F '"recent_snapshots":[' | grep -F '"snapshot_id"' >/dev/null 2>&1; then
-    assert_contains "policies response" "$policies_response" '"detail_source_readiness_posture"'
+    assert_contains "policies response (history snapshots)" "$policies_response" '"detail_source_readiness_posture"'
+    assert_contains "policies response (history snapshots)" "$policies_response" '"no_policies_observed_target_count"'
+    assert_contains "policies response (history snapshots)" "$policies_response" '"detail_unavailable_target_count"'
+    assert_contains "policies response (history snapshots)" "$policies_response" '"partial_detail_target_count"'
   fi
 fi
 

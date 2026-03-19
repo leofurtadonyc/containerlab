@@ -94,6 +94,7 @@ class PersistedPolicySnapshot(BaseModel):
     snapshot_id: str
     sync_run_id: str
     persisted_at: datetime
+    detail_ready_target_count: int = 0
     snapshot: PolicyInventorySnapshot
 
 
@@ -687,6 +688,7 @@ def _load_policy_snapshot_at_offset(offset: int) -> PersistedPolicySnapshot | No
                 snapshot_id=snapshot.id,
                 sync_run_id=snapshot.sync_run_id,
                 persisted_at=snapshot.persisted_at,
+                detail_ready_target_count=snapshot.detail_ready_target_count,
                 snapshot=PolicyInventorySnapshot(
                     sync_source=snapshot.sync_source,
                     sync_status=snapshot.sync_status,

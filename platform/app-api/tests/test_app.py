@@ -1180,6 +1180,7 @@ def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
         snapshot_id="policy-snapshot-1",
         sync_run_id="sync-policy-0",
         persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+        detail_ready_target_count=1,
         snapshot=PolicyInventorySnapshot(
             sync_source="persisted_policy_snapshot",
             sync_status="degraded",
@@ -1262,6 +1263,7 @@ def _build_previous_persisted_policy_snapshot() -> PersistedPolicySnapshot:
         snapshot_id="policy-snapshot-0",
         sync_run_id="sync-policy-previous",
         persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+        detail_ready_target_count=2,
         snapshot=PolicyInventorySnapshot(
             sync_source="persisted_policy_snapshot",
             sync_status="ok",
@@ -1270,8 +1272,8 @@ def _build_previous_persisted_policy_snapshot() -> PersistedPolicySnapshot:
             detail_source_readiness=PolicyDetailSourceReadiness(
                 posture="partially_ready",
                 no_policies_observed_target_count=0,
-                detail_unavailable_target_count=0,
-                partial_detail_target_count=0,
+                detail_unavailable_target_count=2,
+                partial_detail_target_count=1,
             ),
             empty_reason="none",
             observed_at=datetime.fromisoformat("2026-03-09T23:29:00+00:00"),
@@ -2887,7 +2889,15 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["history"]["comparison_to_previous"]["previous_detail_source_readiness_posture"] == "partially_ready"
     assert payload["history"]["comparison_to_previous"]["current_detail_ready_target_count"] == 1
     assert payload["history"]["comparison_to_previous"]["previous_detail_ready_target_count"] == 2
+    assert payload["history"]["comparison_to_previous"]["current_detail_unavailable_target_count"] == 0
+    assert payload["history"]["comparison_to_previous"]["previous_detail_unavailable_target_count"] == 2
+    assert payload["history"]["comparison_to_previous"]["current_partial_detail_target_count"] == 0
+    assert payload["history"]["comparison_to_previous"]["previous_partial_detail_target_count"] == 1
     assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-0"
+    assert (
+        payload["history"]["recent_snapshots"][2]["detail_unavailable_target_count"] == 2
+        and payload["history"]["recent_snapshots"][2]["partial_detail_target_count"] == 0
+    )
     assert payload["history"]["comparison_to_previous"]["observed_policy_delta"] == -1
     assert payload["history"]["comparison_to_previous"]["detail_record_delta"] == -1
     assert payload["history"]["comparison_to_previous"]["added_policy_count"] == 0
@@ -2924,6 +2934,37 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["items"][0]["candidate_paths"][0]["current_posture"] == "current"
     assert payload["items"][0]["candidate_paths"][0]["last_recorded_path_state"] == "active"
     assert datetime.fromisoformat(payload["generated_at"]) is not None
+
+
+def test_policies_history_current_only_exposes_readiness_without_comparison(monkeypatch) -> None:
+    """Single persisted snapshot: recent_snapshots carry source-readiness; comparison is absent."""
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return _build_live_policy_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr("app_api.services.policies.persist_policy_snapshot", lambda **kwargs: None)
+    monkeypatch.setattr(
+        "app_api.services.policies.load_recent_policy_snapshot_summaries",
+        lambda limit=3: _build_recent_policy_snapshot_summaries()[:1],
+    )
+
+    response = client.get("/api/v1/policies")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["history"]["status"] == "current_only"
+    assert len(payload["history"]["recent_snapshots"]) == 1
+    snap = payload["history"]["recent_snapshots"][0]
+    assert snap["detail_source_readiness_posture"] == "partially_ready"
+    assert snap["detail_ready_target_count"] == 1
+    assert snap["no_policies_observed_target_count"] == 0
+    assert snap["detail_unavailable_target_count"] == 0
+    assert snap["partial_detail_target_count"] == 0
+    assert payload["history"]["comparison_to_previous"] is None
 
 
 def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
