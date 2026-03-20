@@ -494,6 +494,10 @@ export interface PolicyHistoryComparison {
   previous_detail_ready_target_count?: number;
   current_no_policies_observed_target_count?: number;
   previous_no_policies_observed_target_count?: number;
+  current_detail_unavailable_target_count?: number;
+  previous_detail_unavailable_target_count?: number;
+  current_partial_detail_target_count?: number;
+  previous_partial_detail_target_count?: number;
 }
 
 export interface PolicyHistoryWindow {

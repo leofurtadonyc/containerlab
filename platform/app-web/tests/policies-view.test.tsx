@@ -167,6 +167,10 @@ function createPolicyDataWithHistory() {
         previous_detail_ready_target_count: 4,
         current_no_policies_observed_target_count: 30,
         previous_no_policies_observed_target_count: 30,
+        current_detail_unavailable_target_count: 1,
+        previous_detail_unavailable_target_count: 2,
+        current_partial_detail_target_count: 0,
+        previous_partial_detail_target_count: 1,
       },
     },
     target_footprints: [
@@ -308,8 +312,39 @@ describe("policies view", () => {
     expect(html).toContain("Previous source-readiness posture");
     expect(html).toContain("Current / previous detail-ready targets");
     expect(html).toContain("Current / previous live-empty targets");
+    expect(html).toContain("Current / previous detail-unavailable targets");
+    expect(html).toContain("Current / previous partial-detail targets");
+    expect(html).toContain("snapshot-derived trust cues only");
     expect(html).toContain("source-readiness");
     expect(html).toContain("detail-ready");
     expect(html).toContain("live-empty");
+    expect(html).toContain("detail-unavailable");
+    expect(html).toContain("partial");
+  });
+
+  it("omits comparison-only rows when newer backend omits extended comparison counts", () => {
+    const base = createPolicyDataWithHistory();
+    const comparison = base.history.comparison_to_previous;
+    if (!comparison) {
+      throw new Error("expected comparison fixture");
+    }
+    const slimComparison = { ...comparison };
+    delete slimComparison.current_detail_unavailable_target_count;
+    delete slimComparison.previous_detail_unavailable_target_count;
+    delete slimComparison.current_partial_detail_target_count;
+    delete slimComparison.previous_partial_detail_target_count;
+    usePoliciesQuery.mockReturnValue(
+      createQueryState({
+        ...base,
+        history: { ...base.history, comparison_to_previous: slimComparison },
+      }),
+    );
+    useTopologyQuery.mockReturnValue(createQueryState(null));
+
+    const html = renderToStaticMarkup(<PoliciesView />);
+
+    expect(html).toContain("Current / previous live-empty targets");
+    expect(html).not.toContain("Current / previous detail-unavailable targets");
+    expect(html).not.toContain("Current / previous partial-detail targets");
   });
 });

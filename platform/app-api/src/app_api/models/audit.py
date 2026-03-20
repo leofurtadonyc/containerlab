@@ -143,6 +143,10 @@ class AuditPolicySnapshotComparison(BaseModel):
     previous_detail_ready_target_count: int = 0
     current_no_policies_observed_target_count: int = 0
     previous_no_policies_observed_target_count: int = 0
+    current_detail_unavailable_target_count: int = 0
+    previous_detail_unavailable_target_count: int = 0
+    current_partial_detail_target_count: int = 0
+    previous_partial_detail_target_count: int = 0
 
 
 class AuditReadinessSnapshotSummary(BaseModel):

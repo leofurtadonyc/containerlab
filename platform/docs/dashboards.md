@@ -16,6 +16,7 @@ The platform currently has:
 - the platform, topology, and SR policy dashboards now surface bounded persisted sync evidence plus clearer aggregate freshness, agreement, and evidence-gap cues where those backend and collector metrics honestly exist
 - the SR policy dashboard now also mirrors policy detail blocker posture more directly through detail-ready-target share and blocker-presence flags derived from real collector and backend metrics, while keeping per-target blocker reason codes in the product and verifier
 - the SR policy dashboard now also mirrors backend-owned policy source-readiness posture numerically through metric-backed posture labels and bounded source-readiness counts, while keeping the richer explanation and per-target blocker reasons on the Policies page and in verifier output
+- `./scripts/verify-core-runtime.sh` conditionally asserts `/api/v1/policies` `history.recent_snapshots` source-readiness keys (including `detail_ready_target_count` and the four source-readiness count families) when Postgres holds `policy_snapshots` rows **and** the API returns a non-empty recent-snapshot list; it asserts `history.comparison_to_previous` source-readiness fields when a full comparison object is present; it emits an honest notice when Postgres has rows but `recent_snapshots` is empty, and skips snapshot-level checks entirely on a fresh baseline with no policy snapshot rows
 - the platform overview dashboard now also surfaces collector-backed target coverage, observation-age, and policy detail-gap cues for inventory, topology, and policy, using real numeric signals rather than trying to serialize product-facing degraded-scope prose into Grafana
 - the platform overview dashboard now also surfaces backend-owned collector-boundary latest fetch duration, timeout budget, and latest timeout or failure posture signals so operators can distinguish slow fallback triggers from ordinary degraded live collection
 - the platform overview dashboard now also separates readiness evaluation sample age from readiness persisted-snapshot age so operators can distinguish Prometheus-observed recomputation cadence from the chronology of the last materially changed persisted readiness snapshot
@@ -168,17 +169,17 @@ Expected emphasis over time:
 This family answers questions such as:
 
 - how many policies are active, degraded, or down?
-- where are validation or drift signals appearing?
+- where do **current** metric-backed gaps or posture flags suggest attention (without claiming validation or drift verdicts)?
 - which headends and endpoints are most affected?
-- what policy state looks unstable or inconsistent?
+- what **current** policy state looks unstable or inconsistent in the bounded slice?
 
 Expected emphasis over time:
 
 - policy counts by state
 - degraded, active, and down summaries
 - headend and endpoint breakdowns
-- validation-related metrics
-- drift or mismatch indicators
+- bounded **current** evidence-gap and agreement metrics only—not substitutes for product policy history
+- **current** collector-versus-backend deltas and detail-gap signals—not persisted snapshot-to-snapshot history
 - persisted policy sync freshness and result posture where that evidence exists
 - bounded target-coverage and observed-versus-detailed evidence-gap cues where those aggregate metrics exist
 - bounded detail-ready target gaps where collector metrics honestly expose that narrower policy detail posture
@@ -216,6 +217,7 @@ In Grafana:
 - readiness evaluation sample age is an observability cue about the latest Prometheus-observed bounded recomputation, while persisted readiness snapshot age remains the chronology of the last materially changed persisted snapshot; operators should not treat them as interchangeable freshness claims
 - platform overview readiness stat panels are explicitly titled to match app-web Readiness copy—**Evaluation sample (this response) age** and **Persisted snapshot (last material change) age**—with panel descriptions tying metrics to `generated_at` vs persisted snapshot chronology; the Readiness page remains the product-facing explanation; Grafana stays observability-only
 - same-workspace recovery posture is mirrored numerically through backend-owned `platform_app_api_recovery_posture` and `platform_app_api_recovery_persisted_artifacts` metrics; the product-facing explanation, including the distinction that preserved baseline and fresh live recollection are not the same thing, remains in app-web Overview and Platform Health
+- recovery panels are **observability mirrors only**: they reflect bounded same-workspace persisted-anchor posture as emitted by `app-api` metrics; they do **not** prove disaster recovery, backup/restore, cross-host migration, or data-directory-loss recovery, and they do not replace the product contract on `/api/v1/platform/status`
 
 Grafana does not attempt to reproduce the backend's human-readable degraded-scope summaries verbatim, because those are product semantics rather than durable metric labels.
 

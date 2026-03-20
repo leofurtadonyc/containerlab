@@ -45,19 +45,19 @@ Current maturity by area:
 - capability maturity: strong for planning support and current product interpretation, because support state, implementation status, delivery tier, evidence basis, vendor posture, version scope, workflow-readiness interpretation, and blocker posture are now explicit enough for honest bounded use without implying workflow eligibility or Juniper parity
 - workflow-prerequisite clarity: still design-strong but implementation-deferred, because the repository has explicit ownership and sequencing guidance for future workflow-owned state while remaining fully in `Phase 2`
 
-Strongest remaining evidence gap:
+Strongest remaining evidence gap (post week 16–17):
 
-- topology truth depth remains the clearest remaining bounded candidate because the live stack already exposes stable topology evidence and the accepted week 14 slice plus the later topology checkpoint closed the narrower pairing-vocabulary and partiality-decomposition lanes end to end; the next smaller follow-on is now node participation coverage inside the current inferred slice so operators can see how many observed nodes are represented by at least one emitted inferred link versus remaining isolated, derived only from the normalized nodes and links already in hand
-- policy detail is no longer source-blocked by absent detail-ready evidence, because the current lab now reports `detail_mode=static_policies_when_present`, `empty_reason=none`, `detail_ready_target_count=4`, and 4 normalized live `static_local` records; any policy-first cycle is therefore now justified if it stays collector-first and limited to that proven source shape rather than broadening into unsupported policy types
-- workflow implementation, dry-run behavior, and workflow-owned storage remain out of scope, but they are no longer the right immediate planning target for the next cycle either
+- **No single automatic “next implementation” is prescribed.** Week 16 closed recovery consumption, topology coverage history (persist + consume), policy source-readiness history (persist + consume), history baseline summaries on workflow/audit views, and the same-workspace restart drill with preserved-baseline checks. Week 17 tightened persistence attributes, history API tests, topology/policy history **product + verifier + Grafana honesty**, workflow/audit **baseline callouts**, and verifier/drill **baseline_summary** alignment. Pairing, partiality decomposition, node-participation cues, coverage history, policy history gates, and those drill/verifier behaviors should stay **closed unless new evidence reopens them**.
+- **Next reassessment (Priority 2):** choose the next *narrow* bounded truth-depth or persistence-backed deepening step based on live lab evidence—either a further topology truth cue only if a concrete gain remains beyond inference, endpoint-pairing, collection-posture, node-participation, and coverage-history work, or an equally bounded policy/history step if that has stronger justification. The live Nokia lab currently supports a narrow detail-ready `static_local` slice (`detail_mode=static_policies_when_present`, bounded detail-ready targets and normalized records in the policy-truth review); broader policy families remain off the table without new collector proof.
+- **Workflow implementation, dry-run behavior, and workflow-owned storage** remain out of scope for the default next cycle.
 
 Bounded next steps:
 
 - preserve `Phase 2 — read-only product foundation` and the `conditionally_ready_with_explicit_limits` operating boundary
 - keep the accepted week 13 identity no-change outcome closed unless a later concrete consumer proves the remaining item-level identity gap matters in practice
-- keep the accepted week 14 endpoint-pairing implementation outcome closed as well; do not reopen pairing-consumption work across product, observability, tests, or verifier surfaces by default
-- keep the completed topology partiality decomposition contract closed as well; only reopen topology code work if there is still a concrete next gain in backend-owned node participation coverage inside the current inferred slice, preferably as linked-versus-isolated observed-node counts derived from the normalized response already in hand
-- keep any later policy follow-on constrained to the currently proven live Nokia `static_local` source path unless new collector evidence independently proves another supported detail-ready policy family
+- keep week 14 endpoint-pairing, partiality decomposition, and node-participation implementation outcomes closed; do not reopen pairing- or coverage-history consumption work by default
+- keep week 16–17 topology-history, policy-history, history-baseline, restart-drill, and related verifier Grafana doc honesty outcomes closed without new evidence
+- keep any policy follow-on constrained to proven live Nokia evidence shapes unless new collector evidence independently proves another supported detail-ready policy family
 - preserve `Phase 2 — read-only product foundation` until workflow records, workflow-owned APIs, and validation outputs are all real
 
 ## Recommendation For The Next Bounded Cycle

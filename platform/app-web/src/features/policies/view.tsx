@@ -1373,6 +1373,10 @@ export function PoliciesView() {
         <article className="detail-card">
           <h3>Persisted History And Comparison</h3>
           <p>{data.history.summary}</p>
+          <p className="table-note">
+            Persisted source-readiness and count rows compare snapshot-derived trust cues only. They
+            do not assert controller truth, adjacency validation, or workflow eligibility.
+          </p>
           {comparison ? (
             <>
               <ul className="compact-list">
@@ -1448,6 +1452,26 @@ export function PoliciesView() {
                     </strong>
                   </li>
                 ) : null}
+                {comparison.current_detail_unavailable_target_count != null ||
+                comparison.previous_detail_unavailable_target_count != null ? (
+                  <li>
+                    <span>Current / previous detail-unavailable targets</span>
+                    <strong>
+                      {comparison.current_detail_unavailable_target_count ?? "—"} /{" "}
+                      {comparison.previous_detail_unavailable_target_count ?? "—"}
+                    </strong>
+                  </li>
+                ) : null}
+                {comparison.current_partial_detail_target_count != null ||
+                comparison.previous_partial_detail_target_count != null ? (
+                  <li>
+                    <span>Current / previous partial-detail targets</span>
+                    <strong>
+                      {comparison.current_partial_detail_target_count ?? "—"} /{" "}
+                      {comparison.previous_partial_detail_target_count ?? "—"}
+                    </strong>
+                  </li>
+                ) : null}
               </ul>
               {comparison.notes.length > 0 ? (
                 <ul className="notes-list">
@@ -1467,8 +1491,9 @@ export function PoliciesView() {
         <article className="detail-card">
           <h3>Recent Persisted Snapshots</h3>
           <p className="table-note">
-            Persisted source-readiness posture reflects derived detail-ready and live-empty
-            target counts per snapshot. These are trust cues, not validation verdicts.
+            Persisted source-readiness posture reflects derived detail-ready, live-empty,
+            detail-unavailable, and partial-detail target counts per snapshot. These are trust cues,
+            not validation verdicts.
           </p>
           {data.history.recent_snapshots.length > 0 ? (
             <ul className="notes-list">
@@ -1492,11 +1517,15 @@ export function PoliciesView() {
                     </>
                   ) : null}
                   {entry.detail_ready_target_count != null ||
-                  entry.no_policies_observed_target_count != null ? (
+                  entry.no_policies_observed_target_count != null ||
+                  entry.detail_unavailable_target_count != null ||
+                  entry.partial_detail_target_count != null ? (
                     <>
                       {" • "}
                       {entry.detail_ready_target_count ?? 0} detail-ready /{" "}
-                      {entry.no_policies_observed_target_count ?? 0} live-empty
+                      {entry.no_policies_observed_target_count ?? 0} live-empty /{" "}
+                      {entry.detail_unavailable_target_count ?? 0} detail-unavailable /{" "}
+                      {entry.partial_detail_target_count ?? 0} partial
                     </>
                   ) : null}
                   {entry.observed_at ? ` • observed at ${formatDateTime(entry.observed_at)}` : ""}

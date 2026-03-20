@@ -16,21 +16,33 @@ The goal is to make it clear:
 The current repository state includes:
 
 - a separate platform topology
-- a backend skeleton
-- a collector skeleton
-- Prometheus and Grafana scaffolding
-- Postgres bootstrap and migration direction
+- a live `app-api` read path for inventory, topology, policy, capabilities,
+  platform status (including recovery summary), workflow-history, and audit-history
+- a live `gnmi-collector` path with Nokia adapter boundaries and normalized
+  deliveries to `app-api`
+- Prometheus and Grafana with real scrape targets and bounded dashboard families
+  for the current metrics
+- Postgres with **bounded durable persistence** for normalized inventory,
+  topology, and policy snapshots, sync-run records, readiness snapshots, and
+  the history fields needed for week-16-style coverage and source-readiness
+  history (not a full durable domain model for every future product area)
 - repo-built local images for the initial platform service set
-- bounded post-deploy verification for the current core runtime contract and ODL credential path
+- bounded post-deploy verification for the current core runtime contract, ODL
+  credential path, preserved-baseline posture when artifacts exist, and optional
+  same-workspace restart drill
 
 It does not yet include:
 
-- durable persistence for every intended product domain
-- substantive ODL integration logic
+- substantive ODL integration beyond the bounded platform-health probe
+- workflow execution, dry-run APIs, or workflow-owned durable storage
 
-The workflow-history and audit-history frontend views are now read-only product pages with persisted context, coverage and source-readiness posture, baseline summaries (preserved versus new baseline), and a same-workspace restart drill that proves preserved-baseline recovery.
+The workflow-history and audit-history frontend views are read-only product pages
+with persisted context, topology coverage and policy source-readiness posture in
+history where records exist, baseline summaries (preserved versus new baseline),
+and operator documentation for the same-workspace restart drill that proves
+preserved-baseline recovery only when host-backed Postgres data survives.
 
-This document therefore explains the current flow direction honestly, including which paths are useful today and which remain scaffolded.
+This document explains the current flow direction honestly, including which paths are useful today and which remain scaffolded.
 
 ## Persisted Vs Transient
 
@@ -173,11 +185,13 @@ Current comparison semantics:
 - devices also expose a short recent persisted inventory snapshot window and a bounded latest-versus-previous persisted inventory comparison when those persisted records exist
 - topology compares the current normalized topology response against the latest persisted normalized topology snapshot when one exists and the current response is still live-backed
 - topology also exposes a short recent persisted topology snapshot window and a bounded latest-versus-previous persisted topology comparison when those persisted records exist
-- topology history and comparison now carry derived coverage posture (inference, endpoint-pairing, collection, node-participation postures plus paired/single-sided and linked/isolated counts) as trust cues, not validation conclusions
+- topology history and comparison now carry derived coverage posture (inference, endpoint-pairing, collection, node-participation postures plus paired/single-sided and linked/isolated counts) as trust cues, not validation conclusions; persisted topology link rows store `endpoint_pairing_state` and `endpoint_evidence_count` in JSON `attributes` so history loads can recompute the same vocabulary after restart
 - the topology product page surfaces persisted coverage posture in recent-snapshot and comparison readouts so operators can see how coverage changed across persisted snapshots; these remain persisted coverage cues only, not drift or fault verdicts
 - policies compare the current normalized policy response against the latest persisted normalized policy snapshot, and may also compare the latest persisted policy snapshot against the immediately previous persisted policy snapshot for bounded history support
 - policy history and comparison now expose persisted source-readiness posture and counts (detail-ready targets, no-policies-observed targets, etc.) so operators can see how coverage changed across persisted snapshots; these remain coverage cues only, not validation verdicts
+- **Product versus Grafana:** persisted **policy history** (recent snapshots, comparison, source-readiness **across** snapshots) is owned by **`app-api` `/api/v1/policies` and the WebUI**; Grafana’s SR policy dashboards intentionally mirror **current** numeric posture (gaps, labels, sync evidence) and explicit scope text, not snapshot-to-snapshot history or drift conclusions
 - workflow-history and audit-history may attach bounded inventory, topology, and policy snapshot context plus immediate previous-snapshot comparison evidence where those persisted sync-run records exist
+- for inventory on **workflow-history** and **audit-history** items, `inventory_snapshot_summary` and `inventory_comparison_to_previous` mirror the persisted sync-run envelope field-for-field in JSON: when no comparison row was attached to that run, **`inventory_comparison_to_previous` is `null`**—the API does not synthesize a zero-delta comparison object; `app-api` pytest pins the full comparison shape when present and this honest-null path (same pattern as topology snapshot-without-comparison)
 - workflow-history and audit-history responses now expose a response-level `baseline_summary` so operators can tell whether those views reflect preserved sync-derived history from the current workspace baseline or are effectively starting from a new baseline after restart or redeploy; the summary is derived from persisted sync-run and readiness-snapshot presence plus current response posture and remains bounded to preserved-baseline versus new-baseline and available-history-window interpretation
 - none of these comparisons currently claim policy correctness, topology validity, intended-versus-observed reconciliation, or automated remediation guidance
 
@@ -241,6 +255,7 @@ What is real today:
 - the backend exposes current live policy observations and now persists bounded normalized policy snapshots plus candidate-path records to Postgres
 - the policy response can now distinguish live collection, persisted fallback, and comparison-unavailable versus comparison-ready states explicitly, both for current-versus-latest-persisted and bounded persisted-versus-previous history views
 - policy history snapshots and comparisons now include source-readiness posture and counts (detail-ready targets, no-policies-observed targets, etc.) as bounded trust cues; workflow-history and audit-history policy summaries carry the same source-readiness context where honest persisted records exist
+- for policy sync-derived **workflow-history** and **audit-history** items, when a persisted policy snapshot is attached, the envelope mirrors `/api/v1/policies` history semantics: snapshot summaries include posture plus detail-ready, no-policies-observed, detail-unavailable, and partial-detail target counts, and `policy_comparison_to_previous` (when present) carries **current** and **previous** values for those counts alongside readiness posture—still coverage cues from persisted rows only, not workflow execution or validation
 
 What remains partial:
 

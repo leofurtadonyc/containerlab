@@ -276,6 +276,10 @@ def build_audit_history_response() -> AuditHistoryResponse:
                     previous_detail_ready_target_count=sync_run.policy_comparison_to_previous.previous_detail_ready_target_count,
                     current_no_policies_observed_target_count=sync_run.policy_comparison_to_previous.current_no_policies_observed_target_count,
                     previous_no_policies_observed_target_count=sync_run.policy_comparison_to_previous.previous_no_policies_observed_target_count,
+                    current_detail_unavailable_target_count=sync_run.policy_comparison_to_previous.current_detail_unavailable_target_count,
+                    previous_detail_unavailable_target_count=sync_run.policy_comparison_to_previous.previous_detail_unavailable_target_count,
+                    current_partial_detail_target_count=sync_run.policy_comparison_to_previous.current_partial_detail_target_count,
+                    previous_partial_detail_target_count=sync_run.policy_comparison_to_previous.previous_partial_detail_target_count,
                 )
                 if sync_run.policy_comparison_to_previous is not None
                 else None
@@ -510,6 +514,10 @@ def build_audit_history_response() -> AuditHistoryResponse:
                         previous_detail_ready_target_count=record.policy_comparison_to_previous.previous_detail_ready_target_count,
                         current_no_policies_observed_target_count=record.policy_comparison_to_previous.current_no_policies_observed_target_count,
                         previous_no_policies_observed_target_count=record.policy_comparison_to_previous.previous_no_policies_observed_target_count,
+                        current_detail_unavailable_target_count=record.policy_comparison_to_previous.current_detail_unavailable_target_count,
+                        previous_detail_unavailable_target_count=record.policy_comparison_to_previous.previous_detail_unavailable_target_count,
+                        current_partial_detail_target_count=record.policy_comparison_to_previous.current_partial_detail_target_count,
+                        previous_partial_detail_target_count=record.policy_comparison_to_previous.previous_partial_detail_target_count,
                     )
                     if record.policy_comparison_to_previous is not None
                     else None

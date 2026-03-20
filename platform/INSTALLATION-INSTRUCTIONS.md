@@ -160,6 +160,16 @@ Likewise, routine recreate-time validation does not depend on host-installed `py
 
 If a future context window needs only one rule to stay aligned here, it should remember this: validate platform changes through the repo-owned image-build, topology-redeploy, and verification-script flow first, not through ad hoc host-side `npm` or `pytest` commands.
 
+### Optional: run `app-web` Vitest without host Node.js
+
+The `app-web` Dockerfile runs `npm run build` but does not run `npm test`. Routine packaged validation remains **build images → deploy → verify scripts**. If you still need **Vitest** on a Linux host that has **Docker** but no local Node toolchain, run the test suite inside a throwaway Node container from `platform/`:
+
+```bash
+docker run --rm -v "$(pwd)/app-web:/app" -w /app node:22-alpine sh -c "npm ci --no-fund --no-audit && npm test"
+```
+
+This matches the same pinned major line as the `app-web` build stage (Node 22) without installing Node on the host.
+
 ## Deploy The Platform Topology
 
 From `platform/`, deploy the current topology:
@@ -198,15 +208,30 @@ These checks currently validate:
 - read-side API contract sanity for platform status, devices, topology, policies, and capabilities
 - workflow-history and audit-history contract presence for the persisted read-side slice
 - persisted Postgres snapshot, sync-run, and readiness-snapshot table presence, plus API exposure of the corresponding bounded history and anchor surfaces when those rows already exist
+- when those persisted tables are non-empty, platform `recovery.baseline_posture` and both histories' `baseline_summary.baseline_posture` must read `preserved_same_workspace_baseline` (skipped with a notice when tables are empty)
+- **Devices inventory history:** when Postgres has **`inventory_snapshots`** rows and `/api/v1/devices` returns a non-empty `history.recent_snapshots` list (the verifier detects **`[{"snapshot_id"`** in compact JSON), it asserts snapshot-level inventory history fields; if Postgres has rows but `recent_snapshots` is empty, it emits a **notice** and skips those assertions—same honest branching pattern as topology and policy history
 - dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts
 - bounded degraded-state warnings for persisted-fallback, blocked, or otherwise degraded-but-honest read-side responses
 - Grafana datasource and dashboard provisioning
 - ODL credential rotation and bounded controller reachability through `app-api`
 
 After restart or redeploy, operators should also confirm whether the platform came back with live recollection or persisted fallback where relevant by checking `serving_mode`, `data_status`, `served_persisted_at`, and readiness timestamps through the product-owned API paths.
-`./scripts/verify-core-runtime.sh` now also distinguishes between a preserved persisted baseline and a new baseline: it fails if Postgres still contains persisted read-side rows but the API no longer exposes the matching bounded history or anchor surfaces, and it emits a notice instead when the persisted tables are simply empty because the runtime was recreated without prior data.
 
-For a repeatable same-workspace restart drill that exercises container replacement without deleting host-backed data directories, run `./scripts/drill-same-workspace-restart.sh`. See `docs/deployment-runbook.md` for when to use the drill and what it does not prove (disaster recovery, backup, restore, cross-host migration).
+`./scripts/verify-core-runtime.sh` distinguishes preserved versus new baseline using Postgres row presence: when persisted snapshot/sync/readiness rows exist, it requires matching API history surfaces and **`recovery.baseline_posture` / workflow-history and audit-history `baseline_summary.baseline_posture` = `preserved_same_workspace_baseline`**; when those tables are empty (first deploy or data directories replaced), it skips those assertions and emits an honest notice—**losing `platform/postgres/data` (and the other host-backed dirs) starts a new baseline**, not a preserved one.
+
+## Same-workspace restart drill
+
+Use `./scripts/drill-same-workspace-restart.sh` from `platform/` for a **repeatable** proof that **container replacement** in the same workspace still leaves bounded persisted read-side state visible through the APIs after redeploy.
+
+**Prerequisites:** Docker, Containerlab (`clab`), prior successful `./scripts/build-images.sh` and `clab deploy` as in this guide, and the host-backed directories **`platform/postgres/data`**, **`platform/prometheus/data`**, and **`platform/grafana/data`** left intact (the script never deletes them).
+
+**What it runs:** `clab destroy` (containers only) → `clab deploy` → `./scripts/verify-core-runtime.sh` → `./scripts/verify-odl-auth.sh`. Override the topology file with **`TOPOLOGY_FILE=/path/to/topology.clab.yml`** if needed.
+
+**Success:** script exits `0` and both verifiers pass. **Failure:** fix the reported verifier or deploy error before treating the stack as healthy; the script uses `set -e` and does not ignore verification failures.
+
+**What it does not prove:** disaster recovery, backup/restore automation, cross-host migration, HA, or recovery after deleting the data directories above. Same-workspace only.
+
+Full operator context: `docs/deployment-runbook.md` (Same-Workspace Restart Drill).
 
 ## Access The Running Services
 

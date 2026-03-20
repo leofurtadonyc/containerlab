@@ -306,32 +306,92 @@ if [ "$sync_runs_count" -gt 0 ]; then
   assert_contains "audit history response" "$audit_history_response" '"sync_run_id":"'
 fi
 
+# When Postgres holds inventory snapshot rows, require an honest devices history window; gate
+# snapshot-level keys on a non-empty recent_snapshots list (prefix match avoids false positives
+# from comparison_to_previous snapshot id fields), matching topology/policy verifier intent.
 if [ "$inventory_snapshots_count" -gt 0 ]; then
   assert_not_contains "devices response" "$devices_response" '"history":{"status":"unavailable"'
-  assert_contains "devices response" "$devices_response" '"snapshot_id":"'
+  assert_contains "devices response" "$devices_response" '"recent_snapshots":['
+  if printf '%s' "$devices_response" | grep -qF '"recent_snapshots":[{"snapshot_id"'; then
+    assert_contains "devices response (history snapshots)" "$devices_response" '"snapshot_id":"'
+    assert_contains "devices response (history snapshots)" "$devices_response" '"device_count":'
+    assert_contains "devices response (history snapshots)" "$devices_response" '"collector_status_counts":'
+    assert_contains "devices response (history snapshots)" "$devices_response" '"capability_summary_counts":'
+  else
+    notice "Devices history recent_snapshots is empty in the API response even though Postgres reports inventory snapshot rows; skipping history-snapshot key assertions."
+  fi
+  if printf '%s' "$devices_response" | grep -F '"comparison_to_previous":{' | grep -F '"current_snapshot_id"' >/dev/null 2>&1; then
+    assert_contains "devices response (history comparison)" "$devices_response" '"current_device_count":'
+    assert_contains "devices response (history comparison)" "$devices_response" '"previous_device_count":'
+    assert_contains "devices response (history comparison)" "$devices_response" '"device_count_delta":'
+  fi
+else
+  notice "No persisted inventory snapshot rows in Postgres; devices history contract checks for snapshot-level keys are skipped (fresh baseline is honest)."
 fi
 
 if [ "$topology_snapshots_count" -gt 0 ]; then
   assert_not_contains "topology response" "$topology_response" '"history":{"status":"unavailable"'
   assert_contains "topology response" "$topology_response" '"snapshot_id":"'
   assert_contains "topology response" "$topology_response" '"recent_snapshots":['
-  if printf '%s' "$topology_response" | grep -F '"comparison_to_previous":{' | grep -F '"current_snapshot_id"' >/dev/null 2>&1; then
-    assert_contains "topology response" "$topology_response" '"current_endpoint_pairing_posture"'
-    assert_contains "topology response" "$topology_response" '"current_paired_link_count"'
+  if printf '%s' "$topology_response" | grep -qF '"recent_snapshots":[{"snapshot_id"'; then
+    assert_contains "topology response (history snapshots include aggregate counts)" "$topology_response" '"node_count":'
+    inference_hits=$(printf '%s' "$topology_response" | grep -o '"inference_posture":"' | wc -l | tr -d ' ')
+    if [ "${inference_hits:-0}" -lt 2 ]; then
+      echo "topology response: expected inference_posture in history.recent_snapshots entries plus coverage_summary (distinct occurrences), got ${inference_hits:-0}" >&2
+      exit 1
+    fi
+    participation_hits=$(printf '%s' "$topology_response" | grep -o '"node_participation_posture":"' | wc -l | tr -d ' ')
+    if [ "${participation_hits:-0}" -lt 2 ]; then
+      echo "topology response: expected node_participation_posture in history.recent_snapshots plus coverage_summary, got ${participation_hits:-0}" >&2
+      exit 1
+    fi
+  else
+    notice "Topology history recent_snapshots is empty in the API response even though Postgres reports topology snapshot rows; skipping history-snapshot coverage key assertions."
   fi
+  if printf '%s' "$topology_response" | grep -F '"comparison_to_previous":{' | grep -F '"current_snapshot_id"' >/dev/null 2>&1; then
+    assert_contains "topology response (history comparison coverage fields)" "$topology_response" '"current_endpoint_pairing_posture"'
+    assert_contains "topology response (history comparison coverage fields)" "$topology_response" '"current_paired_link_count"'
+    assert_contains "topology response (history comparison coverage fields)" "$topology_response" '"current_inference_posture"'
+    assert_contains "topology response (history comparison coverage fields)" "$topology_response" '"current_collection_posture"'
+    assert_contains "topology response (history comparison coverage fields)" "$topology_response" '"current_node_participation_posture"'
+    assert_contains "topology response (history comparison coverage fields)" "$topology_response" '"current_single_sided_link_count"'
+    assert_contains "topology response (history comparison coverage fields)" "$topology_response" '"current_isolated_node_count"'
+  fi
+else
+  notice "No persisted topology snapshot rows in Postgres; topology history contract checks for snapshot-level coverage keys are skipped (fresh baseline is honest)."
 fi
 
 if [ "$policy_snapshots_count" -gt 0 ]; then
   assert_not_contains "policies response" "$policies_response" '"history":{"status":"unavailable"'
-  assert_contains "policies response" "$policies_response" '"snapshot_id":"'
   assert_contains "policies response" "$policies_response" '"recent_snapshots":['
+  if printf '%s' "$policies_response" | grep -qF '"recent_snapshots":[{"snapshot_id"'; then
+    assert_contains "policies response (history snapshots)" "$policies_response" '"snapshot_id":"'
+    posture_hits=$(printf '%s' "$policies_response" | grep -o '"detail_source_readiness_posture":"' | wc -l | tr -d ' ')
+    if [ "${posture_hits:-0}" -lt 1 ]; then
+      echo "policies response: expected detail_source_readiness_posture on history.recent_snapshots entries, got ${posture_hits:-0}" >&2
+      exit 1
+    fi
+    assert_contains "policies response (history snapshots)" "$policies_response" '"detail_ready_target_count"'
+    assert_contains "policies response (history snapshots)" "$policies_response" '"no_policies_observed_target_count"'
+    assert_contains "policies response (history snapshots)" "$policies_response" '"detail_unavailable_target_count"'
+    assert_contains "policies response (history snapshots)" "$policies_response" '"partial_detail_target_count"'
+  else
+    notice "Policy history recent_snapshots is empty in the API response even though Postgres reports policy snapshot rows; skipping history-snapshot source-readiness key assertions."
+  fi
   if printf '%s' "$policies_response" | grep -F '"comparison_to_previous":{' | grep -F '"current_snapshot_id"' >/dev/null 2>&1; then
-    assert_contains "policies response" "$policies_response" '"current_detail_source_readiness_posture"'
-    assert_contains "policies response" "$policies_response" '"previous_detail_source_readiness_posture"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"current_detail_source_readiness_posture"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"previous_detail_source_readiness_posture"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"current_detail_ready_target_count"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"previous_detail_ready_target_count"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"current_no_policies_observed_target_count"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"previous_no_policies_observed_target_count"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"current_detail_unavailable_target_count"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"previous_detail_unavailable_target_count"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"current_partial_detail_target_count"'
+    assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"previous_partial_detail_target_count"'
   fi
-  if printf '%s' "$policies_response" | grep -F '"recent_snapshots":[' | grep -F '"snapshot_id"' >/dev/null 2>&1; then
-    assert_contains "policies response" "$policies_response" '"detail_source_readiness_posture"'
-  fi
+else
+  notice "No persisted policy snapshot rows in Postgres; policy history contract checks for snapshot-level source-readiness keys are skipped (fresh baseline is honest)."
 fi
 
 if [ "$readiness_snapshots_count" -gt 0 ]; then
@@ -376,10 +436,14 @@ elif printf '%s' "$platform_status_response" | grep -F '"name":"odl"' >/dev/null
   warn "Platform status does not currently report ODL observation_state as ok; run ./scripts/verify-odl-auth.sh to validate the controller path explicitly."
 fi
 
+# When Postgres still holds persisted read-side rows, require the product APIs to
+# report preserved same-workspace baseline (aligned with drill-same-workspace-restart.sh).
 if [ "$persisted_artifact_count" -gt 0 ]; then
   notice "Postgres persisted read-side baseline present: sync_runs=$sync_runs_count inventory_snapshots=$inventory_snapshots_count topology_snapshots=$topology_snapshots_count policy_snapshots=$policy_snapshots_count readiness_snapshots=$readiness_snapshots_count."
   assert_contains "platform status recovery (preserved-baseline)" "$platform_status_response" '"baseline_posture":"preserved_same_workspace_baseline"'
+  assert_contains "workflow history baseline_summary object (preserved-baseline)" "$workflow_history_response" '"baseline_summary":{'
   assert_contains "workflow history baseline_summary (preserved-baseline)" "$workflow_history_response" '"baseline_posture":"preserved_same_workspace_baseline"'
+  assert_contains "audit history baseline_summary object (preserved-baseline)" "$audit_history_response" '"baseline_summary":{'
   assert_contains "audit history baseline_summary (preserved-baseline)" "$audit_history_response" '"baseline_posture":"preserved_same_workspace_baseline"'
 else
   notice "Postgres currently has no persisted read-side snapshots, sync runs, or readiness snapshots; this is consistent with a first deploy or missing-data-dir recovery, and historical recovery is starting from a new baseline."

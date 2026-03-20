@@ -14,7 +14,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## SR Policy Observability Overview\nThis dashboard summarizes the current bounded SR policy slice exposed by the platform. It focuses on real Prometheus-backed evidence: collector policy ingestion health, backend policy snapshot readiness, live-empty policy context, bounded static-policy detail when present, persisted policy sync evidence, serving-mode and evidence-posture labels, detail-ready target posture, source-readiness counts, coverage-gap ratios, and API demand around the policy view.\n\nCurrent limits:\n- The live policy slice still starts with Nokia SR policy counters and only adds bounded static-policy observations where that state is actually exposed.\n- A zero-policy view can still be healthy; live-empty state is explicit and should not be confused with a placeholder response.\n- Observed policy counts and detailed policy record counts are intentionally separated because the bounded read path cannot yet derive per-policy detail for every observed type.\n- Per-target blocker reasons belong to the Policies page and verifier. Grafana mirrors the newer source-readiness posture numerically through backend-owned posture labels, source-readiness counts, and detail-ready-target gaps only.\n- Evidence-posture panels here show source, freshness, and bounded-confidence labels only; they are not policy drift validation or pre-change intelligence.\n- Persisted policy sync evidence now exists, but richer per-policy validation history and drift history still do not.\n- Grafana remains observability-only. Policy exploration and future action flows stay in the WebUI and backend.",
+        "content": "## SR Policy Observability Overview\nThis dashboard summarizes the **current** bounded SR policy slice exposed through Prometheus. It focuses on real metric-backed evidence: collector policy ingestion health, backend policy snapshot readiness, live-empty policy context, bounded static-policy detail when present, persisted policy sync evidence, serving-mode and evidence-posture labels, detail-ready target posture, source-readiness counts, coverage-gap ratios, and API demand around the policy view.\n\nProduct versus observability:\n- **Persisted policy history** (recent normalized snapshots, source-readiness posture and counts **across** snapshots, and snapshot-to-snapshot comparison) is owned by **`app-api` `/api/v1/policies` and the WebUI Policies page**, not by this dashboard.\n- Panels here may mirror **current** posture, gaps, and sync freshness only; they are **not** drift verdicts, validation outcomes, or substitutes for reading `history.recent_snapshots` / `history.comparison_to_previous` in the product API.\n\nCurrent limits:\n- The live policy slice still starts with Nokia SR policy counters and only adds bounded static-policy observations where that state is actually exposed.\n- A zero-policy view can still be healthy; live-empty state is explicit and should not be confused with a placeholder response.\n- Observed policy counts and detailed policy record counts are intentionally separated because the bounded read path cannot yet derive per-policy detail for every observed type.\n- Per-target blocker reasons belong to the Policies page and verifier. Grafana mirrors source-readiness posture numerically through backend-owned posture labels, source-readiness counts, and detail-ready-target gaps only.\n- Evidence-posture panels here show source, freshness, and bounded-confidence labels only; they are not workflow, pre-change safety, or network-validation language.\n- Grafana remains observability-only. Policy exploration and future action flows stay in the WebUI and backend.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -978,11 +978,11 @@
       },
       "id": 18,
       "options": {
-        "content": "### Policy History Status\nThe current policy path now has bounded persisted sync evidence, but it is still not a full policy history system.\n\nWhat this means right now:\n- policy counts and collection health are real and useful\n- bounded static-policy detail can appear when present, but detail coverage can still be lower than the observed policy count\n- detail-ready target share shows whether the current slice can move beyond aggregate-only posture on any observed targets\n- a healthy live-empty policy view is expected when no SR policies are currently observed\n- persisted policy sync age, counts, and result posture are now visible\n- richer policy drift evidence and per-policy validation history still do not yet exist, so they remain intentionally unfaked in Grafana",
+        "content": "### Policy history stays in the product\nPostgres persists **normalized policy snapshots** and sync-run evidence; **`/api/v1/policies` `history.recent_snapshots` and `history.comparison_to_previous`** (including source-readiness posture and per-snapshot counts) are the **product contract** for how that persisted slice evolved.\n\nThis Grafana dashboard does **not** replay persisted snapshot timelines or comparisons. It shows **current** metrics only (counts, shares, labels, sync age).\n\nWhat Grafana panels here **do** show:\n- policy counts and collection health\n- bounded static-policy detail gaps versus observed policy counts where metrics expose them\n- detail-ready target **share** as a **current** observability mirror—not a persisted-history or drift verdict\n- live-empty / detail-unavailable / partial-detail **flags** as **current** posture mirrors—per-target reasons stay on the Policies page\n- persisted policy sync age, counts, and result posture as **sync** observability, not policy workflow state\n\nOperators who need **history** (anchors, comparison, how source-readiness moved across snapshots) should use the **Policies page** and the API; `./scripts/verify-core-runtime.sh` conditionally asserts those JSON keys when Postgres holds policy snapshot rows.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
-      "title": "Policy History Not Yet Persisted",
+      "title": "Policy history is product-owned",
       "type": "text"
     },
     {
@@ -1058,6 +1058,7 @@
         "x": 8,
         "y": 48
       },
+      "description": "Current-slice observability only: target coverage, detailed-record share, and collector detail-ready share. Not persisted policy history, not drift validation, not a product contract—compare with `/api/v1/policies` and the WebUI for snapshot-to-snapshot context.",
       "id": 30,
       "options": {
         "displayMode": "gradient",
@@ -1089,7 +1090,7 @@
           "refId": "C"
         }
       ],
-      "title": "Coverage Share",
+      "title": "Coverage Share (current metrics)",
       "type": "bargauge"
     },
     {
@@ -1111,6 +1112,7 @@
         "x": 16,
         "y": 48
       },
+      "description": "Boolean flags for whether **current** backend metrics report any targets in each source-readiness bucket. Mirrors posture at scrape time only; does not replace `history.recent_snapshots` source-readiness evolution in the product API.",
       "id": 31,
       "options": {
         "displayMode": "gradient",
@@ -1142,7 +1144,7 @@
           "refId": "C"
         }
       ],
-      "title": "Current Source-Readiness Flags",
+      "title": "Current source-readiness flags",
       "type": "bargauge"
     },
     {

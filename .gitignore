@@ -8,6 +8,7 @@ inventory.yml
 ansible-inventory.yml
 
 # Local tooling / OS
+.cursor/
 .DS_Store
 Thumbs.db
 

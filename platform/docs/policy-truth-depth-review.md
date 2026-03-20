@@ -251,6 +251,14 @@ These fields flow through:
 - `/api/v1/policies` history `recent_snapshots` and `comparison_to_previous`
 - workflow-history and audit-history policy snapshot summaries and comparisons
 
+For `comparison_to_previous`, the API exposes **current** and **previous** values
+for posture, `detail_ready_target_count`, `no_policies_observed_target_count`,
+`detail_unavailable_target_count`, and `partial_detail_target_count` so shifts in
+bounded per-target detail coverage stay visible without implying validation or
+drift verdicts. `detail_ready_target_count` on the persisted snapshot row is the
+authoritative value at write time (not re-derived from normalized policy records
+alone).
+
 The Policies page is the product-facing surface for persisted policy history and
 comparison: it exposes source-readiness posture and supporting counts per snapshot
 and in the latest-versus-previous comparison so operators can see how coverage

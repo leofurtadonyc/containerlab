@@ -362,6 +362,24 @@ describe("overview view", () => {
     expect(html).toContain("Preserved baseline and fresh live recollection are not the same thing");
   });
 
+  it("surfaces recovery notes row when backend supplies recovery.notes", () => {
+    const status = createPlatformStatusData();
+    status.recovery = {
+      ...status.recovery,
+      notes: ["Per-slice live coverage may still be partial despite preserved anchors."],
+    };
+    usePlatformStatusQuery.mockReturnValue(createQueryState(status));
+    useDevicesQuery.mockReturnValue(createQueryState(null));
+    useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    const html = renderToStaticMarkup(<OverviewView />);
+
+    expect(html).toContain("Notes");
+    expect(html).toContain("Per-slice live coverage may still be partial despite preserved anchors.");
+  });
+
   it("surfaces observed policy count separately from detailed records in the overview summary", () => {
     usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
     useDevicesQuery.mockReturnValue(createQueryState({

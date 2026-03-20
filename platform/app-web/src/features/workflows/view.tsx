@@ -397,6 +397,18 @@ export function WorkflowsView() {
         <span>Generated: {formatDateTime(data.generated_at)}</span>
       </div>
 
+      <div className="callout">
+        <strong>History baseline</strong>{" "}
+        <StatusPill value={data.baseline_summary.baseline_posture} />
+        <p>{data.baseline_summary.summary}</p>
+        <p className="table-note">
+          Sync- and readiness-derived read-only history for this workspace only—whether bounded
+          persisted artifacts are still present after restart or redeploy. Not workflow execution,
+          approvals, disaster recovery, or a full audit trail; see Overview and Platform Health for
+          recovery posture.
+        </p>
+      </div>
+
       <p className="callout">{data.summary}</p>
 
       <div className="summary-grid">
@@ -861,126 +873,151 @@ export function WorkflowsView() {
                   </ul>
                 </>
               ) : null}
-              {selectedWorkflow.inventory_snapshot_summary ? (
+              {selectedWorkflow.inventory_snapshot_summary ||
+              selectedWorkflow.inventory_comparison_to_previous ? (
                 <>
-                  <p className="summary-label">Inventory Snapshot Context</p>
-                  <div className="key-value-list">
-                    <div className="key-value-row">
-                      <span>Snapshot anchor</span>
-                      <IdentifierChip value={selectedWorkflow.inventory_snapshot_summary.snapshot_id} />
-                    </div>
-                    <div className="key-value-row">
-                      <span>Persisted at</span>
-                      <strong>
-                        {formatDateTime(selectedWorkflow.inventory_snapshot_summary.persisted_at)}
-                      </strong>
-                    </div>
-                    <div className="key-value-row">
-                      <span>Device count</span>
-                      <strong>{selectedWorkflow.inventory_snapshot_summary.device_count}</strong>
-                    </div>
-                    <div className="key-value-row">
-                      <span>Snapshot lag after finish</span>
-                      <strong>
-                        {describeTimeGap(
-                          selectedWorkflow.finished_at,
-                          selectedWorkflow.inventory_snapshot_summary.persisted_at,
-                        )}
-                      </strong>
-                    </div>
-                    <div className="key-value-row">
-                      <span>Snapshot data status</span>
-                      <strong>
-                        {formatLabel(selectedWorkflow.inventory_snapshot_summary.data_status)}
-                      </strong>
-                    </div>
-                    <div className="key-value-row">
-                      <span>Role distribution</span>
-                      <strong>
-                        {Object.entries(selectedWorkflow.inventory_snapshot_summary.role_counts)
-                          .map(([role, count]) => `${formatLabel(role)} ${count}`)
-                          .join(", ") || "None"}
-                      </strong>
-                    </div>
-                    <div className="key-value-row">
-                      <span>Collector status distribution</span>
-                      <strong>
-                        {Object.entries(
-                          selectedWorkflow.inventory_snapshot_summary.collector_status_counts,
-                        )
-                          .map(([status, count]) => `${formatLabel(status)} ${count}`)
-                          .join(", ") || "None"}
-                      </strong>
-                    </div>
-                    <div className="key-value-row">
-                      <span>Observed to persisted lag</span>
-                      <strong>
-                        {describeTimeGap(
-                          selectedWorkflow.inventory_snapshot_summary.observed_at,
-                          selectedWorkflow.inventory_snapshot_summary.persisted_at,
-                        )}
-                      </strong>
-                    </div>
-                    <div className="key-value-row">
-                      <span>Capability summary distribution</span>
-                      <strong>
-                        {Object.entries(
-                          selectedWorkflow.inventory_snapshot_summary.capability_summary_counts,
-                        )
-                          .map(([status, count]) => `${formatLabel(status)} ${count}`)
-                          .join(", ") || "None"}
-                      </strong>
-                    </div>
-                  </div>
-                </>
-              ) : null}
-              {selectedWorkflow.inventory_comparison_to_previous ? (
-                <>
-                  <p className="summary-label">Inventory Comparison Evidence</p>
-                  <div className="key-value-list">
-                    <div className="key-value-row">
-                      <span>Current snapshot anchor</span>
-                      <IdentifierChip value={selectedWorkflow.inventory_comparison_to_previous.current_snapshot_id} />
-                    </div>
-                    <div className="key-value-row">
-                      <span>Previous snapshot anchor</span>
-                      <IdentifierChip value={selectedWorkflow.inventory_comparison_to_previous.previous_snapshot_id} />
-                    </div>
-                    <div className="key-value-row">
-                      <span>Compared snapshots</span>
-                      <strong>
-                        {formatDateTime(
-                          selectedWorkflow.inventory_comparison_to_previous.previous_persisted_at,
-                        )}{" "}
-                        {"->"}{" "}
-                        {formatDateTime(
-                          selectedWorkflow.inventory_comparison_to_previous.current_persisted_at,
-                        )}
-                      </strong>
-                    </div>
-                    <div className="key-value-row">
-                      <span>Device count delta</span>
-                      <strong>
-                        {formatSignedDelta(
-                          selectedWorkflow.inventory_comparison_to_previous.device_count_delta,
-                        )}
-                      </strong>
-                    </div>
-                    <div className="key-value-row">
-                      <span>Added / removed / changed</span>
-                      <strong>
-                        {selectedWorkflow.inventory_comparison_to_previous.added_device_count} /{" "}
-                        {selectedWorkflow.inventory_comparison_to_previous.removed_device_count} /{" "}
-                        {selectedWorkflow.inventory_comparison_to_previous.changed_device_count}
-                      </strong>
-                    </div>
-                  </div>
-                  {selectedWorkflow.inventory_comparison_to_previous.notes.length > 0 ? (
-                    <ul className="notes-list">
-                      {selectedWorkflow.inventory_comparison_to_previous.notes.map((note) => (
-                        <li key={note}>{note}</li>
-                      ))}
-                    </ul>
+                  <p className="summary-label">Inventory persisted evidence</p>
+                  <p className="table-note">
+                    Persisted normalized inventory snapshot anchors and optional
+                    latest-versus-previous comparison from this sync run. Sync-derived
+                    read-only context only—not workflow execution steps, approvals, or
+                    platform validation verdicts.
+                  </p>
+                  {selectedWorkflow.inventory_snapshot_summary ? (
+                    <>
+                      <p className="summary-label">Inventory Snapshot Context</p>
+                      <div className="key-value-list">
+                        <div className="key-value-row">
+                          <span>Snapshot anchor</span>
+                          <IdentifierChip value={selectedWorkflow.inventory_snapshot_summary.snapshot_id} />
+                        </div>
+                        <div className="key-value-row">
+                          <span>Persisted at</span>
+                          <strong>
+                            {formatDateTime(selectedWorkflow.inventory_snapshot_summary.persisted_at)}
+                          </strong>
+                        </div>
+                        <div className="key-value-row">
+                          <span>Device count</span>
+                          <strong>{selectedWorkflow.inventory_snapshot_summary.device_count}</strong>
+                        </div>
+                        <div className="key-value-row">
+                          <span>Snapshot lag after finish</span>
+                          <strong>
+                            {describeTimeGap(
+                              selectedWorkflow.finished_at,
+                              selectedWorkflow.inventory_snapshot_summary.persisted_at,
+                            )}
+                          </strong>
+                        </div>
+                        <div className="key-value-row">
+                          <span>Snapshot data status</span>
+                          <strong>
+                            {formatLabel(selectedWorkflow.inventory_snapshot_summary.data_status)}
+                          </strong>
+                        </div>
+                        <div className="key-value-row">
+                          <span>Role distribution</span>
+                          <strong>
+                            {Object.entries(selectedWorkflow.inventory_snapshot_summary.role_counts)
+                              .map(([role, count]) => `${formatLabel(role)} ${count}`)
+                              .join(", ") || "None"}
+                          </strong>
+                        </div>
+                        <div className="key-value-row">
+                          <span>Collector status distribution</span>
+                          <strong>
+                            {Object.entries(
+                              selectedWorkflow.inventory_snapshot_summary.collector_status_counts,
+                            )
+                              .map(([status, count]) => `${formatLabel(status)} ${count}`)
+                              .join(", ") || "None"}
+                          </strong>
+                        </div>
+                        <div className="key-value-row">
+                          <span>Observed to persisted lag</span>
+                          <strong>
+                            {describeTimeGap(
+                              selectedWorkflow.inventory_snapshot_summary.observed_at,
+                              selectedWorkflow.inventory_snapshot_summary.persisted_at,
+                            )}
+                          </strong>
+                        </div>
+                        <div className="key-value-row">
+                          <span>Capability summary distribution</span>
+                          <strong>
+                            {Object.entries(
+                              selectedWorkflow.inventory_snapshot_summary.capability_summary_counts,
+                            )
+                              .map(([status, count]) => `${formatLabel(status)} ${count}`)
+                              .join(", ") || "None"}
+                          </strong>
+                        </div>
+                      </div>
+                    </>
+                  ) : null}
+                  {selectedWorkflow.inventory_comparison_to_previous ? (
+                    <>
+                      <p className="summary-label">Inventory Comparison Evidence</p>
+                      <div className="key-value-list">
+                        <div className="key-value-row">
+                          <span>Current snapshot anchor</span>
+                          <IdentifierChip
+                            value={selectedWorkflow.inventory_comparison_to_previous.current_snapshot_id}
+                          />
+                        </div>
+                        <div className="key-value-row">
+                          <span>Previous snapshot anchor</span>
+                          <IdentifierChip
+                            value={selectedWorkflow.inventory_comparison_to_previous.previous_snapshot_id}
+                          />
+                        </div>
+                        <div className="key-value-row">
+                          <span>Compared snapshots</span>
+                          <strong>
+                            {formatDateTime(
+                              selectedWorkflow.inventory_comparison_to_previous.previous_persisted_at,
+                            )}{" "}
+                            {"->"}{" "}
+                            {formatDateTime(
+                              selectedWorkflow.inventory_comparison_to_previous.current_persisted_at,
+                            )}
+                          </strong>
+                        </div>
+                        <div className="key-value-row">
+                          <span>Device count delta</span>
+                          <strong>
+                            {formatSignedDelta(
+                              selectedWorkflow.inventory_comparison_to_previous.device_count_delta,
+                            )}
+                          </strong>
+                        </div>
+                        <div className="key-value-row">
+                          <span>Added / removed / changed</span>
+                          <strong>
+                            {selectedWorkflow.inventory_comparison_to_previous.added_device_count} /{" "}
+                            {selectedWorkflow.inventory_comparison_to_previous.removed_device_count} /{" "}
+                            {selectedWorkflow.inventory_comparison_to_previous.changed_device_count}
+                          </strong>
+                        </div>
+                      </div>
+                      {selectedWorkflow.inventory_comparison_to_previous.notes.length > 0 ? (
+                        <ul className="notes-list">
+                          {selectedWorkflow.inventory_comparison_to_previous.notes.map((note) => (
+                            <li key={note}>{note}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </>
+                  ) : null}
+                  {selectedWorkflow.inventory_snapshot_summary &&
+                  !selectedWorkflow.inventory_comparison_to_previous ? (
+                    <p className="table-note">
+                      No latest-versus-previous comparison envelope is present on this record. That
+                      is expected when fewer than two persisted snapshots exist for this scope or the
+                      backend did not attach comparison context; it does not indicate incomplete
+                      persisted history for this sync run.
+                    </p>
                   ) : null}
                 </>
               ) : null}
