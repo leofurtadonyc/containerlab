@@ -249,6 +249,7 @@ assert_contains "devices response" "$devices_response" '"serving_mode":"'
 assert_contains "devices response" "$devices_response" '"evidence_confidence":{'
 assert_contains "devices response" "$devices_response" '"comparison_to_latest_persisted":{'
 assert_contains "devices response" "$devices_response" '"count":'
+assert_contains "devices response" "$devices_response" '"history":{'
 
 assert_contains "topology response" "$topology_response" '"data_status":"'
 assert_contains "topology response" "$topology_response" '"serving_mode":"'
