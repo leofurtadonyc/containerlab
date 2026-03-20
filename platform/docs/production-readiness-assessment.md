@@ -370,8 +370,8 @@ Why this is the right checkpoint reading now:
   evidence”: the live lab can expose a narrow Nokia `static_local` detail-ready
   slice while broader policy truth stays partial (`policy-truth-depth-review`).
 - The default next move is **not** another identity or anchor pass; it is a
-  **bounded reassessment** of the next truth-depth or read-path slice (see
-  `platform/docs/roadmap.md` and `agent/sdn/03-CURRENT-STATUS.md` Priority 2),
+  **bounded** next slice per **`platform/docs/decisions/ADR-0001-next-bounded-truth-depth-slice.md`**
+  (see also `platform/docs/roadmap.md` and `agent/sdn/03-CURRENT-STATUS.md` Priority 2),
   staying inside Phase 2 read-only semantics.
 
 Assessment:

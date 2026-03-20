@@ -65,7 +65,7 @@ Bounded next steps:
 
 ## Recommendation For The Next Bounded Cycle
 
-Recommendation: preserve the week **16–18** checkpoint narrative and continue bounded Phase 2 product deepening. Do not reopen the completed topology-history, policy-history, history-baseline, restart-drill, week 18 inventory-history, readiness-language, or Grafana-scaffold work without new evidence. Prefer the written decision in **`platform/docs/decisions/DRAFT-next-truth-depth-week18.md`** before opening broad implementation in topology, policy, or persistence themes.
+Recommendation: preserve the week **16–18** checkpoint narrative and continue bounded Phase 2 product deepening. Do not reopen the completed topology-history, policy-history, history-baseline, restart-drill, week 18 inventory-history, readiness-language, or Grafana-scaffold work without new evidence. Prefer the written decision in **`platform/docs/decisions/ADR-0001-next-bounded-truth-depth-slice.md`** before opening broad implementation in topology, policy, or persistence themes.
 
 Interpret that recommendation narrowly.
 
@@ -89,7 +89,7 @@ Why this is the right next-cycle focus:
 The recommended next-cycle slice should stay limited to:
 
 - preserving the week **16–18** checkpoint honestly and the current safe-use boundary first
-- recording the next truth-depth slice decision (see **`platform/docs/decisions/DRAFT-next-truth-depth-week18.md`**) before broad implementation churn
+- recording the next truth-depth slice decision (see **`platform/docs/decisions/ADR-0001-next-bounded-truth-depth-slice.md`**) before broad implementation churn
 - continuing bounded Phase 2 product deepening only where a concrete gain justifies code changes
 
 ## Phased Roadmap
@@ -162,7 +162,7 @@ Based on the current repo state after the week **16–18** checkpoints, the next
 2. keep the week 16 topology-history, policy-history, history-baseline, and restart-drill outcomes closed by default; do not reopen those slices without new evidence
 3. keep week 18 inventory-history verifier alignment, readiness Grafana language, and change-validation/vendor dashboard honesty closed by default unless new metrics or APIs justify a deliberate update
 4. keep the accepted week 13 identity outcome closed by default; only reopen deterministic or snapshot-scoped readiness/capability item IDs if a concrete later consumer proves the existing anchors insufficient
-5. record a **narrow next-slice decision** (see **`platform/docs/decisions/DRAFT-next-truth-depth-week18.md`**) before large implementation churn; continue bounded Phase 2 product deepening only where a concrete gain justifies code changes
+5. record a **narrow next-slice decision** (see **`platform/docs/decisions/ADR-0001-next-bounded-truth-depth-slice.md`**) before large implementation churn; continue bounded Phase 2 product deepening only where a concrete gain justifies code changes
 
 ## Boundary Reminder
 
