@@ -1682,6 +1682,38 @@ def _build_empty_sync_run_history_summary() -> SyncRunHistorySummary:
     return SyncRunHistorySummary()
 
 
+# Pinned JSON keys for workflow-history / audit-history inventory evidence (matches OpenAPI contracts).
+_REQUIRED_INVENTORY_SNAPSHOT_HISTORY_JSON_KEYS = frozenset(
+    {
+        "snapshot_id",
+        "persisted_at",
+        "observed_at",
+        "sync_source",
+        "sync_status",
+        "data_status",
+        "device_count",
+        "role_counts",
+        "collector_status_counts",
+        "capability_summary_counts",
+    }
+)
+_REQUIRED_INVENTORY_COMPARISON_HISTORY_JSON_KEYS = frozenset(
+    {
+        "current_snapshot_id",
+        "previous_snapshot_id",
+        "current_persisted_at",
+        "previous_persisted_at",
+        "current_device_count",
+        "previous_device_count",
+        "device_count_delta",
+        "added_device_count",
+        "removed_device_count",
+        "changed_device_count",
+        "notes",
+    }
+)
+
+
 def test_health_endpoint_returns_typed_payload() -> None:
     response = client.get("/api/v1/health", headers={"X-Request-ID": "health-test"})
 
@@ -3312,6 +3344,8 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert datetime.fromisoformat(inv_cmp["previous_persisted_at"].replace("Z", "+00:00")) == datetime.fromisoformat(
         "2026-03-10T00:00:00+00:00"
     )
+    assert _REQUIRED_INVENTORY_SNAPSHOT_HISTORY_JSON_KEYS.issubset(inv_sum.keys())
+    assert _REQUIRED_INVENTORY_COMPARISON_HISTORY_JSON_KEYS.issubset(inv_cmp.keys())
     assert datetime.fromisoformat(payload["generated_at"]) is not None
     assert "baseline_summary" in payload
     assert payload["baseline_summary"]["baseline_posture"] in (
@@ -3355,9 +3389,27 @@ def test_workflow_history_inventory_honest_absence_when_no_previous_comparison(m
     assert payload["count"] == 1
     item = payload["items"][0]
     assert item["workflow_name"] == "inventory_snapshot_sync"
-    assert item["inventory_snapshot_summary"]["snapshot_id"] == "inventory-isolated-1"
-    assert item["inventory_snapshot_summary"]["device_count"] == 5
-    assert item["inventory_snapshot_summary"]["capability_summary_counts"] == {"partially_supported": 5}
+    assert item["topology_snapshot_summary"] is None
+    assert item["topology_comparison_to_previous"] is None
+    assert item["policy_snapshot_summary"] is None
+    assert item["policy_comparison_to_previous"] is None
+    inv = item["inventory_snapshot_summary"]
+    assert inv["snapshot_id"] == "inventory-isolated-1"
+    assert inv["device_count"] == 5
+    assert inv["data_status"] == "live"
+    assert inv["sync_source"] == "gnmi_collector_inventory"
+    assert inv["sync_status"] == "live_normalized_feed"
+    assert inv["role_counts"] == {"pe": 5}
+    assert inv["collector_status_counts"] == {"ok": 5}
+    assert inv["capability_summary_counts"] == {"partially_supported": 5}
+    assert datetime.fromisoformat(inv["persisted_at"].replace("Z", "+00:00")) == datetime.fromisoformat(
+        "2026-03-10T03:00:01+00:00"
+    )
+    assert datetime.fromisoformat(inv["observed_at"].replace("Z", "+00:00")) == datetime.fromisoformat(
+        "2026-03-10T03:00:00+00:00"
+    )
+    assert _REQUIRED_INVENTORY_SNAPSHOT_HISTORY_JSON_KEYS.issubset(inv.keys())
+    assert "inventory_comparison_to_previous" in item
     assert item["inventory_comparison_to_previous"] is None
 
 
@@ -3535,6 +3587,8 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert datetime.fromisoformat(audit_inv_cmp["previous_persisted_at"].replace("Z", "+00:00")) == datetime.fromisoformat(
         "2026-03-10T00:00:00+00:00"
     )
+    assert _REQUIRED_INVENTORY_SNAPSHOT_HISTORY_JSON_KEYS.issubset(audit_inv.keys())
+    assert _REQUIRED_INVENTORY_COMPARISON_HISTORY_JSON_KEYS.issubset(audit_inv_cmp.keys())
     assert datetime.fromisoformat(payload["generated_at"]) is not None
     assert "baseline_summary" in payload
     assert payload["baseline_summary"]["baseline_posture"] in (
@@ -3584,9 +3638,27 @@ def test_audit_history_inventory_honest_absence_when_no_previous_comparison(monk
     assert payload["count"] == 1
     item = payload["items"][0]
     assert item["event_type"] == "read_side_sync_recorded"
-    assert item["inventory_snapshot_summary"]["snapshot_id"] == "inventory-isolated-1"
-    assert item["inventory_snapshot_summary"]["device_count"] == 5
-    assert item["inventory_snapshot_summary"]["capability_summary_counts"] == {"partially_supported": 5}
+    assert item["topology_snapshot_summary"] is None
+    assert item["topology_comparison_to_previous"] is None
+    assert item["policy_snapshot_summary"] is None
+    assert item["policy_comparison_to_previous"] is None
+    inv = item["inventory_snapshot_summary"]
+    assert inv["snapshot_id"] == "inventory-isolated-1"
+    assert inv["device_count"] == 5
+    assert inv["data_status"] == "live"
+    assert inv["sync_source"] == "gnmi_collector_inventory"
+    assert inv["sync_status"] == "live_normalized_feed"
+    assert inv["role_counts"] == {"pe": 5}
+    assert inv["collector_status_counts"] == {"ok": 5}
+    assert inv["capability_summary_counts"] == {"partially_supported": 5}
+    assert datetime.fromisoformat(inv["persisted_at"].replace("Z", "+00:00")) == datetime.fromisoformat(
+        "2026-03-10T03:00:01+00:00"
+    )
+    assert datetime.fromisoformat(inv["observed_at"].replace("Z", "+00:00")) == datetime.fromisoformat(
+        "2026-03-10T03:00:00+00:00"
+    )
+    assert _REQUIRED_INVENTORY_SNAPSHOT_HISTORY_JSON_KEYS.issubset(inv.keys())
+    assert "inventory_comparison_to_previous" in item
     assert item["inventory_comparison_to_previous"] is None
 
 
