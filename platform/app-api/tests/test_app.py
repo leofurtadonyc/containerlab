@@ -1610,6 +1610,38 @@ def _build_topology_sync_run_without_previous_comparison() -> list[PersistedSync
     ]
 
 
+def _build_inventory_sync_run_without_previous_comparison() -> list[PersistedSyncRun]:
+    """Single inventory sync with snapshot summary but no persisted previous-snapshot comparison."""
+    return [
+        PersistedSyncRun(
+            sync_run_id="sync-inventory-isolated-1",
+            model_family="inventory",
+            source_type="gnmi_collector_inventory",
+            source_endpoint="http://gnmi-collector:9804/inventory/snapshot",
+            fetch_status="live_normalized_feed",
+            record_count=5,
+            observed_at=datetime.fromisoformat("2026-03-10T03:00:00+00:00"),
+            started_at=datetime.fromisoformat("2026-03-10T03:00:00+00:00"),
+            finished_at=datetime.fromisoformat("2026-03-10T03:00:01+00:00"),
+            persisted_artifacts=["inventory_snapshot"],
+            inventory_snapshot_summary=PersistedInventoryHistorySummary(
+                snapshot_id="inventory-isolated-1",
+                persisted_at=datetime.fromisoformat("2026-03-10T03:00:01+00:00"),
+                observed_at=datetime.fromisoformat("2026-03-10T03:00:00+00:00"),
+                sync_source="gnmi_collector_inventory",
+                sync_status="live_normalized_feed",
+                data_status="live",
+                device_count=5,
+                role_counts={"pe": 5},
+                collector_status_counts={"ok": 5},
+                capability_summary_counts={"partially_supported": 5},
+            ),
+            inventory_comparison_to_previous=None,
+            notes=["No prior persisted inventory snapshot for bounded comparison."],
+        ),
+    ]
+
+
 def _build_persisted_readiness_snapshot_history() -> list[PersistedReadinessSnapshotHistoryRecord]:
     return [
         PersistedReadinessSnapshotHistoryRecord(
@@ -3249,14 +3281,37 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert payload["items"][1]["policy_snapshot_summary"] is None
     assert payload["items"][2]["workflow_name"] == "inventory_snapshot_sync"
     assert payload["items"][2]["status"] == "completed"
-    assert payload["items"][2]["inventory_snapshot_summary"]["snapshot_id"] == "inventory-snapshot-sync-1"
-    assert payload["items"][2]["inventory_snapshot_summary"]["device_count"] == 34
-    assert payload["items"][2]["inventory_snapshot_summary"]["collector_status_counts"] == {
-        "ok": 34
-    }
-    assert payload["items"][2]["inventory_comparison_to_previous"]["current_snapshot_id"] == "inventory-snapshot-sync-1"
-    assert payload["items"][2]["inventory_comparison_to_previous"]["previous_snapshot_id"] == "inventory-snapshot-sync-0"
-    assert payload["items"][2]["inventory_comparison_to_previous"]["changed_device_count"] == 2
+    inv_sum = payload["items"][2]["inventory_snapshot_summary"]
+    assert inv_sum["snapshot_id"] == "inventory-snapshot-sync-1"
+    assert inv_sum["device_count"] == 34
+    assert inv_sum["data_status"] == "live"
+    assert inv_sum["sync_source"] == "gnmi_collector_inventory"
+    assert inv_sum["sync_status"] == "live_normalized_feed"
+    assert inv_sum["observed_at"] is None
+    assert inv_sum["role_counts"] == {"p": 16, "pe": 8, "cpe": 6, "noc": 2, "isp": 2}
+    assert inv_sum["collector_status_counts"] == {"ok": 34}
+    assert inv_sum["capability_summary_counts"] == {"partially_supported": 34}
+    assert datetime.fromisoformat(inv_sum["persisted_at"].replace("Z", "+00:00")) == datetime.fromisoformat(
+        "2026-03-10T00:30:02+00:00"
+    )
+    inv_cmp = payload["items"][2]["inventory_comparison_to_previous"]
+    assert inv_cmp["current_snapshot_id"] == "inventory-snapshot-sync-1"
+    assert inv_cmp["previous_snapshot_id"] == "inventory-snapshot-sync-0"
+    assert inv_cmp["device_count_delta"] == 1
+    assert inv_cmp["current_device_count"] == 34
+    assert inv_cmp["previous_device_count"] == 33
+    assert inv_cmp["added_device_count"] == 1
+    assert inv_cmp["removed_device_count"] == 0
+    assert inv_cmp["changed_device_count"] == 2
+    assert inv_cmp["notes"] == [
+        "Inventory comparison evidence remains bounded to persisted normalized snapshots."
+    ]
+    assert datetime.fromisoformat(inv_cmp["current_persisted_at"].replace("Z", "+00:00")) == datetime.fromisoformat(
+        "2026-03-10T00:30:02+00:00"
+    )
+    assert datetime.fromisoformat(inv_cmp["previous_persisted_at"].replace("Z", "+00:00")) == datetime.fromisoformat(
+        "2026-03-10T00:00:00+00:00"
+    )
     assert datetime.fromisoformat(payload["generated_at"]) is not None
     assert "baseline_summary" in payload
     assert payload["baseline_summary"]["baseline_posture"] in (
@@ -3285,6 +3340,25 @@ def test_workflow_history_topology_honest_absence_when_no_previous_comparison(mo
     assert item["topology_snapshot_summary"]["endpoint_pairing_posture"] == "unknown"
     assert item["topology_snapshot_summary"]["paired_link_count"] == 0
     assert item["topology_comparison_to_previous"] is None
+
+
+def test_workflow_history_inventory_honest_absence_when_no_previous_comparison(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app_api.services.workflow_history.load_sync_runs",
+        _build_inventory_sync_run_without_previous_comparison,
+    )
+
+    response = client.get("/api/v1/workflow-history")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 1
+    item = payload["items"][0]
+    assert item["workflow_name"] == "inventory_snapshot_sync"
+    assert item["inventory_snapshot_summary"]["snapshot_id"] == "inventory-isolated-1"
+    assert item["inventory_snapshot_summary"]["device_count"] == 5
+    assert item["inventory_snapshot_summary"]["capability_summary_counts"] == {"partially_supported": 5}
+    assert item["inventory_comparison_to_previous"] is None
 
 
 def test_workflow_history_endpoint_handles_empty_persisted_history(monkeypatch) -> None:
@@ -3429,11 +3503,38 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert audit_topo_cmp["current_paired_link_count"] == 1
     assert audit_topo_cmp["previous_paired_link_count"] == 0
     assert payload["items"][2]["policy_snapshot_summary"] is None
-    assert payload["items"][3]["inventory_snapshot_summary"]["snapshot_id"] == "inventory-snapshot-sync-1"
-    assert payload["items"][3]["inventory_snapshot_summary"]["role_counts"]["pe"] == 8
-    assert payload["items"][3]["inventory_comparison_to_previous"]["current_snapshot_id"] == "inventory-snapshot-sync-1"
-    assert payload["items"][3]["inventory_comparison_to_previous"]["previous_snapshot_id"] == "inventory-snapshot-sync-0"
-    assert payload["items"][3]["inventory_comparison_to_previous"]["added_device_count"] == 1
+    audit_inv = payload["items"][3]["inventory_snapshot_summary"]
+    assert audit_inv["snapshot_id"] == "inventory-snapshot-sync-1"
+    assert audit_inv["device_count"] == 34
+    assert audit_inv["data_status"] == "live"
+    assert audit_inv["sync_source"] == "gnmi_collector_inventory"
+    assert audit_inv["sync_status"] == "live_normalized_feed"
+    assert audit_inv["observed_at"] is None
+    assert audit_inv["role_counts"]["pe"] == 8
+    assert audit_inv["role_counts"] == {"p": 16, "pe": 8, "cpe": 6, "noc": 2, "isp": 2}
+    assert audit_inv["collector_status_counts"] == {"ok": 34}
+    assert audit_inv["capability_summary_counts"] == {"partially_supported": 34}
+    assert datetime.fromisoformat(audit_inv["persisted_at"].replace("Z", "+00:00")) == datetime.fromisoformat(
+        "2026-03-10T00:30:02+00:00"
+    )
+    audit_inv_cmp = payload["items"][3]["inventory_comparison_to_previous"]
+    assert audit_inv_cmp["current_snapshot_id"] == "inventory-snapshot-sync-1"
+    assert audit_inv_cmp["previous_snapshot_id"] == "inventory-snapshot-sync-0"
+    assert audit_inv_cmp["device_count_delta"] == 1
+    assert audit_inv_cmp["current_device_count"] == 34
+    assert audit_inv_cmp["previous_device_count"] == 33
+    assert audit_inv_cmp["added_device_count"] == 1
+    assert audit_inv_cmp["removed_device_count"] == 0
+    assert audit_inv_cmp["changed_device_count"] == 2
+    assert audit_inv_cmp["notes"] == [
+        "Inventory comparison evidence remains bounded to persisted normalized snapshots."
+    ]
+    assert datetime.fromisoformat(audit_inv_cmp["current_persisted_at"].replace("Z", "+00:00")) == datetime.fromisoformat(
+        "2026-03-10T00:30:02+00:00"
+    )
+    assert datetime.fromisoformat(audit_inv_cmp["previous_persisted_at"].replace("Z", "+00:00")) == datetime.fromisoformat(
+        "2026-03-10T00:00:00+00:00"
+    )
     assert datetime.fromisoformat(payload["generated_at"]) is not None
     assert "baseline_summary" in payload
     assert payload["baseline_summary"]["baseline_posture"] in (
@@ -3464,6 +3565,29 @@ def test_audit_history_topology_honest_absence_when_no_previous_comparison(monke
     assert item["topology_snapshot_summary"]["inference_posture"] == "unknown"
     assert item["topology_snapshot_summary"]["paired_link_count"] == 0
     assert item["topology_comparison_to_previous"] is None
+
+
+def test_audit_history_inventory_honest_absence_when_no_previous_comparison(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_sync_runs",
+        _build_inventory_sync_run_without_previous_comparison,
+    )
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_readiness_snapshot_history",
+        lambda: [],
+    )
+
+    response = client.get("/api/v1/audit-history")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 1
+    item = payload["items"][0]
+    assert item["event_type"] == "read_side_sync_recorded"
+    assert item["inventory_snapshot_summary"]["snapshot_id"] == "inventory-isolated-1"
+    assert item["inventory_snapshot_summary"]["device_count"] == 5
+    assert item["inventory_snapshot_summary"]["capability_summary_counts"] == {"partially_supported": 5}
+    assert item["inventory_comparison_to_previous"] is None
 
 
 def test_audit_history_endpoint_handles_empty_persisted_history(monkeypatch) -> None:
