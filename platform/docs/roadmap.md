@@ -29,6 +29,7 @@ Most of the week's work has established:
 - the strict policy truth-depth review is now also complete, and it confirms that the live collector path now yields a narrow but real detail-ready policy slice: the current stack exposes `detail_mode=static_policies_when_present`, `empty_reason=none`, `detail_ready_target_count=4`, and 4 normalized live `static_local` policy records, while 30 targets still remain explicitly `no_policies_observed`
 - stronger automated verification, with backend and collector tests plus `verify-core-runtime` now checking the accepted week 13 identity, read-path, and week 14 topology-coverage signals directly
 - week 16 operational checkpoint: topology coverage history persistence and product consumption, policy source-readiness history persistence and product consumption, workflow-history and audit-history baseline summaries (backend and frontend), same-workspace restart drill with preserved-baseline verifier checks
+- week 18 closure (operator truth, history honesty, observability scaffolding): cross-file doc alignment with **devices/inventory** history verifier behavior; **workflow/audit** inventory snapshot and comparison trust language in **app-web** plus **`test_app.py`** JSON contracts for presence and honest-null comparison; **Readiness** page and **Grafana** platform overview aligned on **evaluation sample** versus **persisted snapshot** age; **change-validation** Grafana family as an explicit **markdown-only** non-claims scaffold; **vendor** Grafana overview with **real** bounded **`platform_gnmi_collector_*`** and **`app-api`** collector-boundary metrics (**Nokia-first**, no multi-vendor parity claims); this roadmap and **`production-readiness-assessment.md`** rolled forward with **no phase change** and **no** change to **`conditionally_ready_with_explicit_limits`**
 
 ## Updated Phase 2 Checkpoint Assessment
 
@@ -61,7 +62,7 @@ Bounded next steps:
 
 ## Recommendation For The Next Bounded Cycle
 
-Recommendation: preserve the week 16 checkpoint and continue bounded Phase 2 product deepening. Do not reopen the completed topology-history, policy-history, history-baseline, or restart-drill work without new evidence.
+Recommendation: preserve the week **16–18** checkpoint narrative and continue bounded Phase 2 product deepening. Do not reopen the completed topology-history, policy-history, history-baseline, restart-drill, week 18 inventory-history, readiness-language, or Grafana-scaffold work without new evidence. Prefer a **narrow written decision** for the next truth-depth candidate (see **`platform/docs/decisions/`** when week 18 Friday task 02 lands) before opening broad implementation in topology, policy, or persistence themes.
 
 Interpret that recommendation narrowly.
 
@@ -76,6 +77,7 @@ Interpret that recommendation narrowly.
 Why this is the right next-cycle focus:
 
 - week 16 closed the topology coverage history, policy source-readiness history, workflow-history and audit-history baseline summaries, and same-workspace restart drill; those slices are now implemented and documented
+- week 18 closed the devices-history verifier alignment, inventory workflow/audit trust and contract tests, readiness evaluation versus persisted snapshot clarity, and honest Grafana families for change-validation and vendor/adapters observability; documentation now matches shipped behavior
 - the accepted week 13 work closed the default identity lane with a documented no-change decision
 - the accepted week 14 work closed the endpoint-pairing and single-sided-link coverage gap
 - runtime hardening, verification, and the restart drill are now strong enough for the current bounded scope
@@ -83,7 +85,8 @@ Why this is the right next-cycle focus:
 
 The recommended next-cycle slice should stay limited to:
 
-- checkpointing the week 16 result honestly and preserving the current safe-use boundary first
+- preserving the week **16–18** checkpoint honestly and the current safe-use boundary first
+- recording the next truth-depth slice decision (week 18 Friday task 02) before broad implementation churn
 - continuing bounded Phase 2 product deepening only where a concrete gain justifies code changes
 
 ## Phased Roadmap
@@ -150,12 +153,13 @@ Expected focus:
 
 ## Immediate Next Steps
 
-Based on the current repo state after the week 16 checkpoint, the next likely work should be:
+Based on the current repo state after the week **16–18** checkpoints, the next likely work should be:
 
 1. preserve the current `conditionally_ready_with_explicit_limits` operating boundary and keep all near-term work inside the Phase 2 read-only safe-use envelope
 2. keep the week 16 topology-history, policy-history, history-baseline, and restart-drill outcomes closed by default; do not reopen those slices without new evidence
-3. keep the accepted week 13 identity outcome closed by default; only reopen deterministic or snapshot-scoped readiness/capability item IDs if a concrete later consumer proves the existing anchors insufficient
-4. continue bounded Phase 2 product deepening only where a concrete gain justifies code changes; otherwise preserve the current checkpoint
+3. keep week 18 inventory-history verifier alignment, readiness Grafana language, and change-validation/vendor dashboard honesty closed by default unless new metrics or APIs justify a deliberate update
+4. keep the accepted week 13 identity outcome closed by default; only reopen deterministic or snapshot-scoped readiness/capability item IDs if a concrete later consumer proves the existing anchors insufficient
+5. record a **narrow next-slice decision** (topology vs policy vs persistence deepening) before large implementation churn; continue bounded Phase 2 product deepening only where a concrete gain justifies code changes
 
 ## Boundary Reminder
 
