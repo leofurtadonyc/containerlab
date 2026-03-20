@@ -38,11 +38,17 @@ It is not ready to be treated as:
 
 This assessment is grounded in the current repository state plus live runtime
 evidence gathered from the running platform, updated through the week 16
-operational checkpoint and the week 18 documentation and observability rollup
-(devices/inventory history verifier alignment, workflow/audit inventory trust
-language and JSON contracts, Readiness evaluation versus persisted snapshot
-clarity, and honest Grafana scaffolding for change-validation and
-vendor/adapters).
+operational checkpoint and the **week 18** documentation and observability
+rollup: **devices/inventory** history verifier parity with topology/policy gates;
+**workflow/audit** inventory snapshot and comparison JSON contracts and trust
+language; **Readiness** evaluation-sample versus persisted-snapshot clarity in
+**app-web** and on **`platform-overview`** (mirror panel titles and
+**`platform_app_api_readiness_*`** metrics); **change-validation** as
+markdown-only scaffold; **vendor** (**`vendor-overview`**) as **Nokia-first**
+real **`platform_gnmi_collector_*`** plus **`app-api`** collector-boundary
+duration, budget, and posture. **`roadmap.md`**, **`03-CURRENT-STATUS.md`**, the
+runbook, and **`data-flows.md`** describe the same bounded envelope as this
+document.
 
 ### Live runtime verification
 
@@ -112,7 +118,8 @@ The current repository now explicitly documents:
 ### Week 18 alignment note (documentation and observability)
 
 The following **does not expand** the Phase 2 safe-use verdict but **does**
-tighten operator-truth coherence:
+tighten operator-truth coherence across **`roadmap.md`**, this assessment,
+**`03-CURRENT-STATUS.md`**, **`deployment-runbook.md`**, and **`data-flows.md`**:
 
 - **Devices and inventory history:** `verify-core-runtime.sh` includes
   conditional **devices** inventory history checks consistent with topology and
@@ -120,13 +127,23 @@ tighten operator-truth coherence:
   `deployment-runbook.md`).
 - **Workflow and audit inventory:** backend tests pin inventory snapshot and
   comparison JSON; WebUI copy states sync-derived boundaries.
-- **Readiness:** product and Grafana share evaluation-sample versus
-  persisted-snapshot vocabulary.
-- **Grafana:** change-validation remains a **markdown-only** placeholder
-  family; vendor overview uses **real** bounded collector metrics under
-  Nokia-first scope (see `dashboards.md`).
+- **Readiness:** product and Grafana share **evaluation sample** versus
+  **persisted snapshot** vocabulary (`generated_at` vs `readiness_persisted_at`).
+  On **`platform-overview`**, stat panels **Evaluation sample (this response)
+  age** and **Persisted snapshot (last material change) age** mirror
+  **`platform_app_api_readiness_latest_evaluation_at_seconds`** and
+  **`platform_app_api_readiness_snapshot_persisted_at_seconds`**; bargauges use
+  **(mirror)** titles aligned with **Readiness Status**, **Planning Readiness**,
+  blockers, and prerequisites—observability-only, not dry-run verdicts.
+- **Grafana:** **`change-validation-overview`** remains **markdown-only** (no
+  fake PromQL; not a validation surface). **`vendor-overview`** uses **real**
+  bounded **`platform_gnmi_collector_*`** plus **`app-api`** collector-boundary
+  **duration**, **timeout budget**, and **posture**—**Nokia-first**, no
+  multi-vendor parity claims (see **`dashboards.md`**).
 
-Verdict **`conditionally_ready_with_explicit_limits`** remains unchanged.
+Verdict **`conditionally_ready_with_explicit_limits`** remains unchanged. **No**
+workflow authorization, **no** dry-run authorization, **no** validation-engine
+authorization, and **no** phase transition are implied by week 18 doc alignment.
 
 ## Assessment By Area
 
