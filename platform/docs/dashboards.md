@@ -251,10 +251,10 @@ It states explicitly: **no metrics yet** (no change-validation Prometheus famili
 
 ### Vendor
 
-**Current state:** **`platform/grafana/dashboards/vendor/vendor-overview-placeholder.json`** is provisioned as **Vendor / adapter overview (Nokia gNMI)**. It combines **markdown scope** with **real Prometheus panels** using only metrics emitted today:
+**Current state:** **`platform/grafana/dashboards/vendor/vendor-overview-placeholder.json`** (Grafana UID **`vendor-overview`**, title **Vendor / adapter overview (Nokia gNMI)**) is provisioned as a **Nokia-first** vendor/adapters view. It combines **markdown scope** with **real Prometheus panels** using only metrics emitted today:
 
 - **`platform_gnmi_collector_*`** — observation ages for inventory, topology, and policy; paired- versus single-sided topology link counts; policy observed-target versus detail-ready target gauges (families **`verify-core-runtime.sh`** checks on collector `/metrics`).
-- **`platform_app_api_collector_boundary_latest_fetch_posture`** — latest bounded collector-boundary outcome by model family (posture metric family expected on **`app-api`** `/metrics`).
+- **`platform_app_api_collector_boundary_latest_fetch_duration_seconds`**, **`platform_app_api_collector_boundary_timeout_budget_seconds`**, and **`platform_app_api_collector_boundary_latest_fetch_posture`** — bounded collector-boundary duration, configured timeout budget, and latest outcome posture by model family (families expected on **`app-api`** `/metrics`; same signals as the platform overview boundary row).
 
 **Honesty rules:**
 
