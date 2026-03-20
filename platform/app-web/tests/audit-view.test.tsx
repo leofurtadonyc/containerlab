@@ -222,8 +222,10 @@ describe("audit view", () => {
       const html = host.innerHTML;
       expect(html).toContain("Inventory persisted evidence");
       expect(html).toContain(INVENTORY_TRUST_SNIPPET);
-      expect(html).toContain("Inventory Snapshot Context");
-      expect(html).toContain("Inventory Comparison Evidence");
+      expect(html).toContain("Inventory snapshot summary");
+      expect(html).toContain("Inventory latest-versus-previous comparison");
+      expect(html).toContain("Sync source");
+      expect(html).toContain("gnmi collector");
       expect(html).toContain("Capability summary distribution");
       expect(html).toContain("Audit comparison note for test.");
       expect(html).not.toContain(INVENTORY_NO_COMPARISON_SNIPPET);
@@ -250,9 +252,10 @@ describe("audit view", () => {
       const html = host.innerHTML;
       expect(html).toContain("Inventory persisted evidence");
       expect(html).toContain(INVENTORY_TRUST_SNIPPET);
-      expect(html).toContain("Inventory Snapshot Context");
+      expect(html).toContain("Inventory snapshot summary");
       expect(html).toContain(INVENTORY_NO_COMPARISON_SNIPPET);
-      expect(html).toContain("incomplete persisted history for this sync run");
+      expect(html).toContain("incomplete persisted history for this event");
+      expect(html).toContain("honest and expected");
       expect(html).not.toContain("Inventory Comparison Evidence");
     } finally {
       cleanup();
