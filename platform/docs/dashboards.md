@@ -233,24 +233,17 @@ Week 14 topology coverage rule:
 
 ### Change Validation
 
-This family answers questions such as:
+**Current state (Phase 2 — placeholder only):** a **provisioned markdown-only** dashboard exists under `platform/grafana/dashboards/change-validation/` (`Change Validation Overview Placeholder`). It states explicitly that **no change-validation Prometheus metrics or dry-run/validation workflow APIs** exist in the current bounded slice, that **no PromQL panels** are included so the UI is not misleading, and that Grafana is **not** a validation engine or workflow surface. This is a **deliberate scaffold**, not an accidental blank dashboard.
 
-- how often are dry-runs being requested?
-- which validations are failing?
-- how long do validation paths take?
-- are rollback-related signals being observed?
+**Intended direction (when real signals exist):** this family could eventually help answer observability questions such as dry-run or validation **request** volume, failure or timeout posture, path duration, and rollback-related **signals**—only if **honest** backend- or collector-owned metrics are added first.
 
-This family must remain observability-oriented.
+**Boundary:** observability-oriented only; it must not become the workflow control plane. Product truth and actions remain in `app-web` and `app-api`.
 
-It may visualize workflow evidence and validation outcomes, but it must not become the workflow control surface. The actual action flow belongs in the backend and WebUI.
+**Expected emphasis over time (future, metrics-backed only):**
 
-Expected emphasis over time:
-
-- dry-run counts
-- workflow outcome summaries
-- validation failures
-- rollback-related visibility
-- timing and duration insights
+- bounded counters or durations when emitted honestly
+- outcome or failure posture labels when emitted honestly
+- no dashboard-authored validation verdicts or synthetic series
 
 ### Vendor
 
@@ -307,7 +300,7 @@ Dashboard design should therefore assume Prometheus-backed metrics first, with a
 - the platform overview dashboard now also uses the newer collector coverage and observation-age metrics to make read-path gaps faster to interpret without turning Grafana into a product-status surrogate
 - the topology and platform dashboards now also use the newer topology paired-link, single-sided-link, share, and backend-owned pairing-posture metrics to make endpoint-coverage gaps faster to interpret without inventing dashboard-only semantics
 - the topology and platform dashboards now also use the newer topology inference, collection, paired-link, single-sided-link, share, and backend-owned posture-label metrics to make topology partiality faster to interpret without inventing dashboard-only semantics
-- placeholder dashboards still exist for families whose underlying metrics are not yet real
+- placeholder dashboards still exist for families whose underlying metrics are not yet real; the **change-validation** placeholder is markdown-forward and explicitly disclaims metrics and workflow semantics (see **Change Validation** above)
 - the platform observability shape is documented
 
 ### Future

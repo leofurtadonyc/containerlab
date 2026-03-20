@@ -6,16 +6,15 @@
   "graphTooltip": 0,
   "panels": [
     {
-      "collapsed": false,
       "gridPos": {
-        "h": 8,
+        "h": 20,
         "w": 24,
         "x": 0,
         "y": 0
       },
       "id": 1,
       "options": {
-        "content": "## Change Validation Overview Placeholder\nThis dashboard family will answer: how many dry-runs are being requested, which validations are failing, how long validations take, and whether rollback-related events are occurring.\n\nCurrent state: placeholder only. This folder exists now so change-validation observability stays clearly separate from the WebUI and backend workflow logic.",
+        "content": "## Change validation — observability placeholder\n\n### Current Phase 2 reality\n\n- **No change-validation metric families** are exposed to Prometheus for this dashboard today.\n- **No dry-run execution, validation-result, or rollback workflow APIs** exist in the bounded read-only product slice this placeholder targets.\n- This file is a **deliberate provisioned scaffold**: an honest empty surface so operators do not mistake a missing folder for a broken dashboard.\n\n### What Grafana is not\n\n- **Not a validation engine** and not a workflow or approval control surface.\n- **Not** a substitute for product truth in `app-web` or `app-api`.\n- Observability-only; it does not emit verdicts about changes, rollbacks, or intent.\n\n### Why there are no charts here\n\n- **No fake PromQL**: panels will appear only when **real** backend- or collector-owned signals exist (for example, bounded counters, durations, or outcome labels tied to an actual implementation).\n- Until then, adding query panels would misrepresent Phase 2 capability.\n\n### Intended direction (when metrics exist)\n\nThis family is **reserved** to eventually help answer questions such as: dry-run or validation **request** volume, failure or timeout posture, duration, and rollback-related **observability** signals—**if and when** those signals are emitted honestly. That is **future** work, not current platform fact.\n\n### Related docs\n\nSee `platform/docs/dashboards.md` for the placeholder / scope-only stance for this family.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
