@@ -117,6 +117,8 @@ The platform currently organizes dashboards into five required families.
 
 ### Platform
 
+The provisioned **Platform overview** dashboard is **`platform/grafana/dashboards/platform/platform-overview.json`** (Grafana UID **`platform-overview`**).
+
 This family answers questions such as:
 
 - are the core platform services healthy?
@@ -139,7 +141,7 @@ Expected emphasis over time:
 - collector-backed read-path coverage percentages, observation age, and target/detail gaps where those collector metrics exist
 - collector-boundary latest fetch duration, timeout budget, and latest outcome posture where those backend metrics exist
 - readiness evaluation sample age versus persisted readiness snapshot age where those backend metrics exist
-- **Readiness row (platform overview):** stat panel titles **Evaluation sample (this response) age** and **Persisted snapshot (last material change) age** match the app-web **Readiness** page vocabulary (`generated_at` vs `readiness_persisted_at`); each panel description states observability-only semantics and that the ages are not interchangeable freshness claims; status / blocker / evidence-coverage bargauges are numeric mirrors with the same observability-only rule (not dry-run verdicts)
+- **Readiness row (platform overview):** stat panel titles **Evaluation sample (this response) age** and **Persisted snapshot (last material change) age** match the app-web **Readiness** page vocabulary (`generated_at` vs `readiness_persisted_at`), backed by `platform_app_api_readiness_latest_evaluation_at_seconds` and `platform_app_api_readiness_snapshot_persisted_at_seconds`; each panel description states observability-only semantics and that the ages are not interchangeable freshness claims; **Readiness status & planning labels (mirror)**, **Readiness blocker posture (mirror)**, and **Readiness evidence coverage (mirror)** bargauges echo **Readiness Status**, **Planning Readiness**, blockers, and prerequisites on the Readiness page with the same observability-only rule (not dry-run verdicts)
 
 ### Topology
 
@@ -215,7 +217,7 @@ In Grafana:
 - collector-boundary timeout posture is an observability cue only; it explains whether the backend hit the fail-fast latency budget, not whether the product has emitted a workflow verdict or dependency-dashboard truth statement
 - recovery posture panels mirror baseline and read-side posture numerically; preserved baseline and fresh live recollection are not the same thing, and the product-facing explanation stays in app-web
 - readiness evaluation sample age is an observability cue about the latest Prometheus-observed bounded recomputation, while persisted readiness snapshot age remains the chronology of the last materially changed persisted snapshot; operators should not treat them as interchangeable freshness claims
-- platform overview readiness stat panels are explicitly titled to match app-web Readiness copy—**Evaluation sample (this response) age** and **Persisted snapshot (last material change) age**—with panel descriptions tying metrics to `generated_at` vs persisted snapshot chronology; the Readiness page remains the product-facing explanation; Grafana stays observability-only
+- platform overview readiness stat panels are explicitly titled to match app-web Readiness copy—**Evaluation sample (this response) age** and **Persisted snapshot (last material change) age**—with panel descriptions tying metrics to `generated_at` vs persisted snapshot chronology; related bargauges use **(mirror)** titles aligned with **Readiness Status**, **Planning Readiness**, blockers, and prerequisites on the Readiness page; the Readiness page remains the product-facing explanation; Grafana stays observability-only
 - same-workspace recovery posture is mirrored numerically through backend-owned `platform_app_api_recovery_posture` and `platform_app_api_recovery_persisted_artifacts` metrics; the product-facing explanation, including the distinction that preserved baseline and fresh live recollection are not the same thing, remains in app-web Overview and Platform Health
 - recovery panels are **observability mirrors only**: they reflect bounded same-workspace persisted-anchor posture as emitted by `app-api` metrics; they do **not** prove disaster recovery, backup/restore, cross-host migration, or data-directory-loss recovery, and they do not replace the product contract on `/api/v1/platform/status`
 

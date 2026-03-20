@@ -1806,7 +1806,7 @@
         "textMode": "value_and_name"
       },
       "pluginVersion": "11.0.0",
-      "description": "Seconds since the latest Prometheus-observed bounded readiness evaluation sample (platform_app_api_readiness_latest_evaluation_at_seconds). Matches app-web Readiness Evaluation sample (this response) / API generated_at semantics: recomputation cadence, not a dry-run verdict. Observability-only.",
+      "description": "Seconds since the latest Prometheus-observed bounded readiness evaluation sample (`platform_app_api_readiness_latest_evaluation_at_seconds`). Same clock as app-web **Evaluation sample (this response) age** / API `generated_at`: recomputation cadence, not a dry-run verdict. Observability-only.",
       "targets": [
         {
           "expr": "clamp_min(time() - platform_app_api_readiness_latest_evaluation_at_seconds, 0) unless platform_app_api_readiness_latest_evaluation_at_seconds == 0",
@@ -1851,7 +1851,7 @@
         "textMode": "value_and_name"
       },
       "pluginVersion": "11.0.0",
-      "description": "Seconds since the last materially changed persisted readiness snapshot (platform_app_api_readiness_snapshot_persisted_at_seconds). Matches app-web Readiness Persisted snapshot (last material change) / readiness_persisted_at chronology. Not interchangeable with evaluation-sample age. Observability-only.",
+      "description": "Seconds since the last materially changed persisted readiness snapshot (`platform_app_api_readiness_snapshot_persisted_at_seconds`). Same clock as app-web **Persisted snapshot (last material change) age** / `readiness_persisted_at`. Not interchangeable with evaluation-sample age. Observability-only.",
       "targets": [
         {
           "expr": "clamp_min(time() - platform_app_api_readiness_snapshot_persisted_at_seconds, 0) unless platform_app_api_readiness_snapshot_persisted_at_seconds == 0",
@@ -1893,7 +1893,7 @@
         "showUnfilled": true
       },
       "pluginVersion": "11.0.0",
-      "description": "Backend-emitted readiness status and planning labels from metrics. Observability mirror only; bounded narrative stays on the app-web Readiness page. Not a dry-run verdict.",
+      "description": "Backend-emitted readiness status and planning_readiness label pairs (platform_app_api_readiness_status). Observability mirror of the app-web Readiness page **Readiness Status** and **Planning Readiness** rows; bounded narrative stays on Readiness. Not a dry-run verdict.",
       "targets": [
         {
           "expr": "platform_app_api_readiness_status",
@@ -1901,7 +1901,7 @@
           "refId": "A"
         }
       ],
-      "title": "Readiness status labels",
+      "title": "Readiness status & planning labels (mirror)",
       "type": "bargauge"
     },
     {
@@ -1935,7 +1935,7 @@
         "showUnfilled": true
       },
       "pluginVersion": "11.0.0",
-      "description": "Blocker category and severity counts from metrics. Numeric observability only; not a workflow, validation, or execution verdict.",
+      "description": "Blocker category and severity counts (`platform_app_api_readiness_blockers_by_category_and_severity`). Numeric mirror of Readiness blocker lists; not a workflow, validation, or execution verdict.",
       "targets": [
         {
           "expr": "platform_app_api_readiness_blockers_by_category_and_severity",
@@ -1943,7 +1943,7 @@
           "refId": "A"
         }
       ],
-      "title": "Readiness blocker posture",
+      "title": "Readiness blocker posture (mirror)",
       "type": "bargauge"
     },
     {
@@ -1977,7 +1977,7 @@
         "showUnfilled": true
       },
       "pluginVersion": "11.0.0",
-      "description": "Prerequisite evidence coverage distribution from metrics. Observability-only; explanatory copy stays on the app-web Readiness page.",
+      "description": "Prerequisite evidence coverage distribution (`platform_app_api_readiness_prerequisites_by_evidence_coverage`). Observability-only; explanatory copy stays on the app-web Readiness page.",
       "targets": [
         {
           "expr": "platform_app_api_readiness_prerequisites_by_evidence_coverage",
@@ -1985,7 +1985,7 @@
           "refId": "A"
         }
       ],
-      "title": "Readiness evidence coverage",
+      "title": "Readiness evidence coverage (mirror)",
       "type": "bargauge"
     },
     {
@@ -2143,5 +2143,5 @@
   "timezone": "browser",
   "title": "Platform Overview",
   "uid": "platform-overview",
-  "version": 10
+  "version": 11
 }
