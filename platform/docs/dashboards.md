@@ -235,7 +235,9 @@ Week 14 topology coverage rule:
 
 ### Change Validation
 
-**Current state (Phase 2 — placeholder only):** a **provisioned markdown-only** dashboard exists under `platform/grafana/dashboards/change-validation/` (`Change Validation Overview Placeholder`). It states explicitly that **no change-validation Prometheus metrics or dry-run/validation workflow APIs** exist in the current bounded slice, that **no PromQL panels** are included so the UI is not misleading, and that Grafana is **not** a validation engine or workflow surface. This is a **deliberate scaffold**, not an accidental blank dashboard.
+**Current state (Phase 2 — placeholder only):** **`platform/grafana/dashboards/change-validation/change-validation-overview-placeholder.json`** (Grafana UID **`change-validation-overview`**, title **Change Validation Overview Placeholder**) is a **markdown-only** provisioned dashboard. **`foldersFromFilesStructure`** in **`platform/grafana/provisioning/dashboards/dashboards.yml`** loads it under the **change-validation** folder—no extra provisioning file changes are required for this scaffold.
+
+It states explicitly: **no metrics yet** (no change-validation Prometheus families scraped for this dashboard), **no dry-run / validation / preview APIs** in the current bounded slice, **no PromQL panels** (no fake queries), and that Grafana is **not** a validation engine, **not** the change-validation **product surface** (Readiness / Capabilities and other truth stay in **`app-web`** / **`app-api`**), and **not** a workflow or approval surface. This is a **deliberate scaffold**, not an accidental blank dashboard.
 
 **Intended direction (when real signals exist):** this family could eventually help answer observability questions such as dry-run or validation **request** volume, failure or timeout posture, path duration, and rollback-related **signals**—only if **honest** backend- or collector-owned metrics are added first.
 

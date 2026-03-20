@@ -68,12 +68,14 @@ export function ReadinessView() {
       </div>
 
       <p className="table-note">
-        <strong>Evaluation sample</strong> vs <strong>persisted snapshot</strong>: the{" "}
-        <strong>evaluation sample</strong> time is when this bounded readiness response was
-        assembled for your request (the same semantics Grafana labels as evaluation-sample age
-        for Prometheus-observed bounded recomputation). The <strong>persisted snapshot</strong>{" "}
-        time is when the backend last wrote a materially changed persisted readiness snapshot
-        row. They are different clocks—do not treat them as interchangeable freshness claims.
+        <strong>Two different clocks.</strong> The <strong>evaluation sample (this response)</strong>{" "}
+        is <code>generated_at</code> on the capabilities response: when this bounded readiness
+        payload was assembled for your request. That matches Grafana&apos;s{" "}
+        <strong>Evaluation sample (this response) age</strong> on the platform overview dashboard
+        (observability-only, not a product verdict). The{" "}
+        <strong>persisted snapshot (last material change)</strong> is{" "}
+        <code>readiness_persisted_at</code>: when the backend last wrote a materially changed
+        persisted readiness snapshot row. These are not interchangeable freshness signals.
       </p>
 
       <div className="metadata-row">
@@ -89,6 +91,14 @@ export function ReadinessView() {
         <span>Snapshot anchor exposed: {data.readiness_snapshot_id ? "Yes" : "No"}</span>
         <span>Child item identity: {formatLabel(identitySupport.posture)}</span>
       </div>
+
+      {!data.readiness_persisted_at ? (
+        <p className="table-note">
+          <strong>Persisted snapshot time unavailable.</strong> This response does not include{" "}
+          <code>readiness_persisted_at</code>. Bounded planning posture may still apply; this is
+          not a validation verdict and does not imply incorrect readiness history.
+        </p>
+      ) : null}
 
       <p className="callout">{readiness.summary}</p>
 
@@ -202,9 +212,8 @@ export function ReadinessView() {
             </div>
           </div>
           <p className="table-note">
-            Observability dashboards may show evaluation-sample age alongside persisted
-            readiness snapshot age; this page mirrors that split in product copy—evaluation time
-            is not snapshot chronology.
+            Platform overview Grafana panels use the same two labels as this card; they mirror
+            numeric ages only. Evaluation-sample time is not persisted-snapshot chronology.
           </p>
         </article>
         <article className="detail-card">

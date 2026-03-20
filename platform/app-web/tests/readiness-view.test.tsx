@@ -20,6 +20,15 @@ function createQueryState<T>(data: T | null, error: ApiClientError | null = null
   };
 }
 
+function createReadinessCapabilitiesDataWithoutPersistedSnapshot(): CapabilitiesListResponse {
+  const base = createReadinessCapabilitiesData();
+  return {
+    ...base,
+    readiness_snapshot_id: null,
+    readiness_persisted_at: null,
+  };
+}
+
 function createReadinessCapabilitiesData(): CapabilitiesListResponse {
   return {
     service: "app-api",
@@ -72,15 +81,29 @@ describe("readiness view", () => {
 
     const html = renderToStaticMarkup(<ReadinessView />);
 
-    expect(html).toContain("Evaluation sample");
-    expect(html).toContain("persisted snapshot");
-    expect(html).toContain("Prometheus-observed");
-    expect(html).toContain("interchangeable freshness claims");
+    expect(html).toContain("Two different clocks");
+    expect(html).toContain("generated_at");
+    expect(html).toContain("readiness_persisted_at");
+    expect(html).toContain("Evaluation sample (this response) age");
+    expect(html).toContain("not interchangeable freshness signals");
     expect(html).toContain("Evaluation sample (this response):");
     expect(html).toContain("Persisted snapshot (last material change):");
     expect(html).toContain("Persisted snapshot (last material change)</span>");
     expect(html).toContain("Evaluation sample (this response)</span>");
-    expect(html).toContain("Observability dashboards may show evaluation-sample age");
+    expect(html).toContain("Platform overview Grafana panels use the same two labels");
+    expect(html).not.toContain("Persisted snapshot time unavailable.");
+  });
+
+  it("explains when persisted snapshot time is absent without implying a bug", () => {
+    useCapabilitiesQuery.mockReturnValue(
+      createQueryState(createReadinessCapabilitiesDataWithoutPersistedSnapshot()),
+    );
+
+    const html = renderToStaticMarkup(<ReadinessView />);
+
+    expect(html).toContain("Persisted snapshot time unavailable.");
+    expect(html).toContain("not a validation verdict");
+    expect(html).toContain("Not available");
   });
 
   it("preserves loading state", () => {
