@@ -33,11 +33,11 @@ Operators need a time-series and event dashboard view that is decoupled from the
 - does not query the backend or Postgres directly
 
 ## Current status
-Provisioning from files is in place, and real platform, topology, and SR policy dashboards now exist. They visualize Prometheus scrape health plus real `app-api` and `gnmi-collector` metrics, while the remaining dashboard families still stay as clearly marked placeholders. The topology and platform overview dashboards now also surface bounded topology coverage observability through paired-link counts, single-sided-link counts, derived shares, and backend-owned pairing-posture labels projected from metrics rather than invented in dashboard logic. `../scripts/verify-core-runtime.sh` now provides one bounded post-deploy regression check for Grafana API health, datasource provisioning, and provisioned overview dashboard discovery.
+Provisioning from files is in place, and real platform, topology, and SR policy dashboards now exist. They visualize Prometheus scrape health plus real `app-api` and `gnmi-collector` metrics. The **vendor** overview now also includes bounded real collector and collector-boundary panels; **change-validation** remains a markdown-only placeholder until honest metrics exist. The topology and platform overview dashboards now also surface bounded topology coverage observability through paired-link counts, single-sided-link counts, derived shares, and backend-owned pairing-posture labels projected from metrics rather than invented in dashboard logic. `../scripts/verify-core-runtime.sh` now provides one bounded post-deploy regression check for Grafana API health, datasource provisioning, and provisioned overview dashboard discovery.
 
 ## Planned evolution
 - refine provisioned Prometheus datasource settings as observability needs grow
-- add real change-validation and vendor dashboards as those underlying metrics become real
+- add honest change-validation PromQL panels only when dry-run/validation metrics exist; deepen the vendor/adapter overview only when additional adapter-health metrics are emitted
 - deepen the platform, topology, and SR policy dashboards with broader service metrics only when the services expose honest observability signals
 
 ## Notes and caveats

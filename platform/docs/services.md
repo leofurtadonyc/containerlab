@@ -108,6 +108,7 @@ Current state:
 - topology snapshot delivery and topology metrics now also expose explicit endpoint-pairing posture plus paired-versus-single-sided inferred-link counts for the current bounded inference path
 - Nokia-first adapter path exists
 - mapping and config scaffolding exist
+- the **Vendor / adapter** Grafana dashboard (`vendor-overview`) surfaces a bounded subset of **`platform_gnmi_collector_*`** and related **`app-api`** collector-boundary metrics for observability only; see **`platform/docs/dashboards.md`** (Vendor) for scope and non-claims
 
 ### `postgres`
 

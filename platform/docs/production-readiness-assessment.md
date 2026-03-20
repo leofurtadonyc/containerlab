@@ -38,10 +38,11 @@ It is not ready to be treated as:
 
 This assessment is grounded in the current repository state plus live runtime
 evidence gathered from the running platform, updated through the week 16
-operational checkpoint and **week 17** alignment on policy-history verifier gates,
-**`baseline_summary` object** checks when artifacts exist, and **product-owned
-policy history** versus **Grafana current-metrics-only** scope (see also
-`platform/docs/dashboards.md` and `agent/sdn/03-CURRENT-STATUS.md`).
+operational checkpoint and the week 18 documentation and observability rollup
+(devices/inventory history verifier alignment, workflow/audit inventory trust
+language and JSON contracts, Readiness evaluation versus persisted snapshot
+clarity, and honest Grafana scaffolding for change-validation and
+vendor/adapters).
 
 ### Live runtime verification
 
@@ -103,6 +104,25 @@ The current repository now explicitly documents:
   `/api/v1/policies` and the WebUI Policies page. Grafana’s SR policy family
   mirrors **bounded current** metrics and explicit scope text only—not persisted
   history timelines, drift verdicts, or validation semantics.
+
+### Week 18 alignment note (documentation and observability)
+
+The following **does not expand** the Phase 2 safe-use verdict but **does**
+tighten operator-truth coherence:
+
+- **Devices and inventory history:** `verify-core-runtime.sh` includes
+  conditional **devices** inventory history checks consistent with topology and
+  policy history honesty when Postgres holds inventory snapshot rows (see
+  `deployment-runbook.md`).
+- **Workflow and audit inventory:** backend tests pin inventory snapshot and
+  comparison JSON; WebUI copy states sync-derived boundaries.
+- **Readiness:** product and Grafana share evaluation-sample versus
+  persisted-snapshot vocabulary.
+- **Grafana:** change-validation remains a **markdown-only** placeholder
+  family; vendor overview uses **real** bounded collector metrics under
+  Nokia-first scope (see `dashboards.md`).
+
+Verdict **`conditionally_ready_with_explicit_limits`** remains unchanged.
 
 ## Assessment By Area
 
@@ -199,10 +219,9 @@ Why this is strong enough now:
   rollups, backend-owned topology coverage fields on both the topology and
   platform-status read paths, dashboard-critical metric families including
   paired-link, single-sided-link, and pairing-posture signals, and Prometheus
-  target posture; when Postgres still holds persisted read-side rows it also
-  requires `preserved_same_workspace_baseline` on platform `recovery` and on
-  workflow-history and audit-history `baseline_summary`, while empty persisted
-  tables skip that branch with an honest new-baseline notice
+  target posture; when Postgres holds inventory snapshot rows it also exercises
+  bounded **devices** inventory history contract checks aligned with topology
+  and policy history gates
 - `verify-odl-auth` validates the configured ODL credential path and rejects
   the default fallback
 - degraded but honest states such as partial topology, non-ok read-path

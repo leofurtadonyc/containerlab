@@ -24,7 +24,7 @@ The platform currently has:
 - the topology overview dashboard now also surfaces paired-link counts, single-sided-link counts, linked-node counts, isolated-node counts, and backend-owned inference, endpoint-pairing, node-participation, and collection posture labels as bounded observability projections for the current topology partiality slice
 - the platform overview dashboard now also mirrors the narrower topology read-path coverage posture through paired-versus-single-sided link counts, linked-versus-isolated node counts, and backend-owned inference, pairing, node-participation, and collection posture labels without turning Grafana into the product contract
 - a bounded post-deploy core-runtime regression check that now validates Grafana API health, the provisioned Prometheus datasource, and the provisioned overview dashboards alongside Postgres and Prometheus readiness
-- clearly marked placeholder dashboard files for the dashboard families that do not yet have real backing metrics
+- clearly marked placeholder or bounded-real-metrics dashboard files per family (for example **change-validation** remains markdown-only until metrics exist; **vendor** now combines scope text with real collector and collector-boundary panels)
 
 What does not exist yet:
 
@@ -107,7 +107,7 @@ More specifically, `./scripts/verify-core-runtime.sh` currently validates only t
 It does not yet validate:
 
 - every panel query result across the platform, topology, and SR policy dashboards
-- placeholder dashboard families such as change-validation and vendor views
+- placeholder dashboard families such as change-validation (markdown-only scaffold); the **vendor** family uses a provisioned overview with **real** bounded collector and collector-boundary metrics (see **Vendor** below)
 - visual correctness, folder presentation details, or operator interpretation quality
 - deeper Prometheus query semantics beyond the current readiness and target-discovery checks
 
@@ -139,6 +139,7 @@ Expected emphasis over time:
 - collector-backed read-path coverage percentages, observation age, and target/detail gaps where those collector metrics exist
 - collector-boundary latest fetch duration, timeout budget, and latest outcome posture where those backend metrics exist
 - readiness evaluation sample age versus persisted readiness snapshot age where those backend metrics exist
+- **Readiness row (platform overview):** stat panel titles **Evaluation sample (this response) age** and **Persisted snapshot (last material change) age** match the app-web **Readiness** page vocabulary (`generated_at` vs `readiness_persisted_at`); each panel description states observability-only semantics and that the ages are not interchangeable freshness claims; status / blocker / evidence-coverage bargauges are numeric mirrors with the same observability-only rule (not dry-run verdicts)
 
 ### Topology
 
@@ -214,6 +215,7 @@ In Grafana:
 - collector-boundary timeout posture is an observability cue only; it explains whether the backend hit the fail-fast latency budget, not whether the product has emitted a workflow verdict or dependency-dashboard truth statement
 - recovery posture panels mirror baseline and read-side posture numerically; preserved baseline and fresh live recollection are not the same thing, and the product-facing explanation stays in app-web
 - readiness evaluation sample age is an observability cue about the latest Prometheus-observed bounded recomputation, while persisted readiness snapshot age remains the chronology of the last materially changed persisted snapshot; operators should not treat them as interchangeable freshness claims
+- platform overview readiness stat panels are explicitly titled to match app-web Readiness copy—**Evaluation sample (this response) age** and **Persisted snapshot (last material change) age**—with panel descriptions tying metrics to `generated_at` vs persisted snapshot chronology; the Readiness page remains the product-facing explanation; Grafana stays observability-only
 - same-workspace recovery posture is mirrored numerically through backend-owned `platform_app_api_recovery_posture` and `platform_app_api_recovery_persisted_artifacts` metrics; the product-facing explanation, including the distinction that preserved baseline and fresh live recollection are not the same thing, remains in app-web Overview and Platform Health
 - recovery panels are **observability mirrors only**: they reflect bounded same-workspace persisted-anchor posture as emitted by `app-api` metrics; they do **not** prove disaster recovery, backup/restore, cross-host migration, or data-directory-loss recovery, and they do not replace the product contract on `/api/v1/platform/status`
 
@@ -233,42 +235,38 @@ Week 14 topology coverage rule:
 
 ### Change Validation
 
-This family answers questions such as:
+**Current state (Phase 2 — placeholder only):** a **provisioned markdown-only** dashboard exists under `platform/grafana/dashboards/change-validation/` (`Change Validation Overview Placeholder`). It states explicitly that **no change-validation Prometheus metrics or dry-run/validation workflow APIs** exist in the current bounded slice, that **no PromQL panels** are included so the UI is not misleading, and that Grafana is **not** a validation engine or workflow surface. This is a **deliberate scaffold**, not an accidental blank dashboard.
 
-- how often are dry-runs being requested?
-- which validations are failing?
-- how long do validation paths take?
-- are rollback-related signals being observed?
+**Intended direction (when real signals exist):** this family could eventually help answer observability questions such as dry-run or validation **request** volume, failure or timeout posture, path duration, and rollback-related **signals**—only if **honest** backend- or collector-owned metrics are added first.
 
-This family must remain observability-oriented.
+**Boundary:** observability-oriented only; it must not become the workflow control plane. Product truth and actions remain in `app-web` and `app-api`.
 
-It may visualize workflow evidence and validation outcomes, but it must not become the workflow control surface. The actual action flow belongs in the backend and WebUI.
+**Expected emphasis over time (future, metrics-backed only):**
 
-Expected emphasis over time:
-
-- dry-run counts
-- workflow outcome summaries
-- validation failures
-- rollback-related visibility
-- timing and duration insights
+- bounded counters or durations when emitted honestly
+- outcome or failure posture labels when emitted honestly
+- no dashboard-authored validation verdicts or synthetic series
 
 ### Vendor
 
-This family answers questions such as:
+**Current state:** **`platform/grafana/dashboards/vendor/vendor-overview-placeholder.json`** is provisioned as **Vendor / adapter overview (Nokia gNMI)**. It combines **markdown scope** with **real Prometheus panels** using only metrics emitted today:
 
-- which vendor adapter paths are healthy?
-- where are normalization errors occurring?
-- what requests are unsupported for a given capability set?
-- how honest is the current platform support picture by vendor?
+- **`platform_gnmi_collector_*`** — observation ages for inventory, topology, and policy; paired- versus single-sided topology link counts; policy observed-target versus detail-ready target gauges (families **`verify-core-runtime.sh`** checks on collector `/metrics`).
+- **`platform_app_api_collector_boundary_latest_fetch_posture`** — latest bounded collector-boundary outcome by model family (posture metric family expected on **`app-api`** `/metrics`).
 
-Expected emphasis over time:
+**Honesty rules:**
 
-- per-vendor adapter health
-- unsupported request counts
-- normalization errors
-- support and capability visibility
+- **Nokia-first** for metric-backed panels; **no** Grafana claim of Juniper or broad multi-vendor adapter parity.
+- Panels are **observability mirrors**; capability and roadmap semantics stay in **`app-web`** and **`/api/v1/capabilities`**.
+- **No invented queries**; if a metric family changes, update panels honestly.
 
-This family must stay explicit about partial implementation. It must never imply full multi-vendor parity before that exists.
+**Questions this family may help with (observability-only):**
+
+- how fresh are collector observations by read path?
+- what is the latest collector-boundary outcome posture by model family?
+- what are bounded topology link and policy target counts at the collector?
+
+**Future:** unsupported-request or normalization-error style panels appear only when **honest** low-cardinality metrics exist.
 
 ## Dashboard Quality Rules
 
@@ -307,7 +305,7 @@ Dashboard design should therefore assume Prometheus-backed metrics first, with a
 - the platform overview dashboard now also uses the newer collector coverage and observation-age metrics to make read-path gaps faster to interpret without turning Grafana into a product-status surrogate
 - the topology and platform dashboards now also use the newer topology paired-link, single-sided-link, share, and backend-owned pairing-posture metrics to make endpoint-coverage gaps faster to interpret without inventing dashboard-only semantics
 - the topology and platform dashboards now also use the newer topology inference, collection, paired-link, single-sided-link, share, and backend-owned posture-label metrics to make topology partiality faster to interpret without inventing dashboard-only semantics
-- placeholder dashboards still exist for families whose underlying metrics are not yet real
+- placeholder dashboards still exist where **no** honest PromQL can be written yet; the **change-validation** placeholder is markdown-forward and explicitly disclaims metrics and workflow semantics (see **Change Validation** above); the **vendor** overview now includes real bounded collector and boundary panels (see **Vendor** above)
 - the platform observability shape is documented
 
 ### Future
@@ -316,7 +314,7 @@ Dashboard design should therefore assume Prometheus-backed metrics first, with a
 - topology-aware visual panels backed by real normalized state and metrics
 - SR policy health and drift dashboards backed by real product signals
 - change-validation observability backed by actual dry-run and validation metrics
-- vendor capability and adapter health dashboards backed by real platform evidence
+- vendor capability and adapter health dashboards backed by real platform evidence (the **vendor** overview now includes bounded collector and collector-boundary panels where metrics exist today; see **Vendor** above)
 
 ## Boundary Reminder
 

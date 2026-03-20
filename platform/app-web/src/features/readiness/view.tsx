@@ -67,13 +67,27 @@ export function ReadinessView() {
         <StatusPill value={readiness.status} />
       </div>
 
+      <p className="table-note">
+        <strong>Evaluation sample</strong> vs <strong>persisted snapshot</strong>: the{" "}
+        <strong>evaluation sample</strong> time is when this bounded readiness response was
+        assembled for your request (the same semantics Grafana labels as evaluation-sample age
+        for Prometheus-observed bounded recomputation). The <strong>persisted snapshot</strong>{" "}
+        time is when the backend last wrote a materially changed persisted readiness snapshot
+        row. They are different clocks—do not treat them as interchangeable freshness claims.
+      </p>
+
       <div className="metadata-row">
         <span>Planning readiness: {formatLabel(readiness.planning_readiness)}</span>
         <span>Phase recommendation: {formatLabel(readiness.phase_recommendation)}</span>
-        <span>Readiness persisted at: {formatDateTime(data.readiness_persisted_at ?? null)}</span>
+        <span>
+          Evaluation sample (this response): {formatDateTime(data.generated_at)}
+        </span>
+        <span>
+          Persisted snapshot (last material change):{" "}
+          {formatDateTime(data.readiness_persisted_at ?? null)}
+        </span>
         <span>Snapshot anchor exposed: {data.readiness_snapshot_id ? "Yes" : "No"}</span>
         <span>Child item identity: {formatLabel(identitySupport.posture)}</span>
-        <span>Generated: {formatDateTime(data.generated_at)}</span>
       </div>
 
       <p className="callout">{readiness.summary}</p>
@@ -179,14 +193,19 @@ export function ReadinessView() {
               />
             </div>
             <div className="key-value-row">
-              <span>Persisted at</span>
+              <span>Persisted snapshot (last material change)</span>
               <strong>{formatDateTime(data.readiness_persisted_at ?? null)}</strong>
             </div>
             <div className="key-value-row">
-              <span>Generated at</span>
+              <span>Evaluation sample (this response)</span>
               <strong>{formatDateTime(data.generated_at)}</strong>
             </div>
           </div>
+          <p className="table-note">
+            Observability dashboards may show evaluation-sample age alongside persisted
+            readiness snapshot age; this page mirrors that split in product copy—evaluation time
+            is not snapshot chronology.
+          </p>
         </article>
         <article className="detail-card">
           <p className="summary-label">Child Item Identity Posture</p>
