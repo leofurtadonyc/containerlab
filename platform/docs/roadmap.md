@@ -30,6 +30,7 @@ Most of the week's work has established:
 - stronger automated verification, with backend and collector tests plus `verify-core-runtime` now checking the accepted week 13 identity, read-path, and week 14 topology-coverage signals directly
 - week 16 operational checkpoint: topology coverage history persistence and product consumption, policy source-readiness history persistence and product consumption, workflow-history and audit-history baseline summaries (backend and frontend), same-workspace restart drill with preserved-baseline verifier checks
 - week 18 closure (operator truth, history honesty, observability scaffolding): cross-file doc alignment with **devices/inventory** history verifier behavior; **workflow/audit** inventory snapshot and comparison trust language in **app-web** plus **`test_app.py`** JSON contracts for presence and honest-null comparison; **Readiness** page and **Grafana** platform overview aligned on **evaluation sample** versus **persisted snapshot** age; **change-validation** Grafana family as an explicit **markdown-only** non-claims scaffold; **vendor** Grafana overview with **real** bounded **`platform_gnmi_collector_*`** and **`app-api`** collector-boundary metrics (**Nokia-first**, no multi-vendor parity claims); this roadmap and **`production-readiness-assessment.md`** rolled forward with **no phase change** and **no** change to **`conditionally_ready_with_explicit_limits`**
+- **Operator narrative alignment:** **`deployment-runbook.md`**, **`data-flows.md`**, **`production-readiness-assessment.md`**, and this roadmap describe the **same** bounded envelope: **`conditionally_ready_with_explicit_limits`**, same-workspace recovery only (host-backed data preserved), **product-owned** persisted history versus Grafana **current-metrics** mirrors, conditional **`verify-core-runtime`** behavior when persisted rows exist or not, **no** workflow, **no** dry-run, **no** validation-engine claims
 
 ## Updated Phase 2 Checkpoint Assessment
 
@@ -45,9 +46,9 @@ Current maturity by area:
 - capability maturity: strong for planning support and current product interpretation, because support state, implementation status, delivery tier, evidence basis, vendor posture, version scope, workflow-readiness interpretation, and blocker posture are now explicit enough for honest bounded use without implying workflow eligibility or Juniper parity
 - workflow-prerequisite clarity: still design-strong but implementation-deferred, because the repository has explicit ownership and sequencing guidance for future workflow-owned state while remaining fully in `Phase 2`
 
-Strongest remaining evidence gap (post week 16–17):
+Strongest remaining evidence gap (post week 16–18):
 
-- **No single automatic “next implementation” is prescribed.** Week 16 closed recovery consumption, topology coverage history (persist + consume), policy source-readiness history (persist + consume), history baseline summaries on workflow/audit views, and the same-workspace restart drill with preserved-baseline checks. Week 17 tightened persistence attributes, history API tests, topology/policy history **product + verifier + Grafana honesty**, workflow/audit **baseline callouts**, and verifier/drill **baseline_summary** alignment. Pairing, partiality decomposition, node-participation cues, coverage history, policy history gates, and those drill/verifier behaviors should stay **closed unless new evidence reopens them**.
+- **No single automatic “next implementation” is prescribed.** Week 16 closed recovery consumption, topology coverage history (persist + consume), policy source-readiness history (persist + consume), history baseline summaries on workflow/audit views, and the same-workspace restart drill with preserved-baseline checks. Week 17 tightened persistence attributes, history API tests, topology/policy history **product + verifier + Grafana honesty**, workflow/audit **baseline callouts**, and verifier/drill **baseline_summary** alignment. Week 18 aligned **devices/inventory** history verifier behavior, workflow/audit inventory trust and contracts, **Readiness** evaluation versus persisted snapshot language (product + Grafana), and honest **change-validation** / **vendor** Grafana scaffolds. Pairing, partiality decomposition, node-participation cues, coverage history, policy history gates, inventory-history verifier parity, readiness language, and those drill/verifier behaviors should stay **closed unless new evidence reopens them**.
 - **Next reassessment (Priority 2):** choose the next *narrow* bounded truth-depth or persistence-backed deepening step based on live lab evidence—either a further topology truth cue only if a concrete gain remains beyond inference, endpoint-pairing, collection-posture, node-participation, and coverage-history work, or an equally bounded policy/history step if that has stronger justification. The live Nokia lab currently supports a narrow detail-ready `static_local` slice (`detail_mode=static_policies_when_present`, bounded detail-ready targets and normalized records in the policy-truth review); broader policy families remain off the table without new collector proof.
 - **Workflow implementation, dry-run behavior, and workflow-owned storage** remain out of scope for the default next cycle.
 
@@ -62,7 +63,7 @@ Bounded next steps:
 
 ## Recommendation For The Next Bounded Cycle
 
-Recommendation: preserve the week **16–18** checkpoint narrative and continue bounded Phase 2 product deepening. Do not reopen the completed topology-history, policy-history, history-baseline, restart-drill, week 18 inventory-history, readiness-language, or Grafana-scaffold work without new evidence. Prefer a **narrow written decision** for the next truth-depth candidate (see **`platform/docs/decisions/`** when week 18 Friday task 02 lands) before opening broad implementation in topology, policy, or persistence themes.
+Recommendation: preserve the week **16–18** checkpoint narrative and continue bounded Phase 2 product deepening. Do not reopen the completed topology-history, policy-history, history-baseline, restart-drill, week 18 inventory-history, readiness-language, or Grafana-scaffold work without new evidence. Prefer the written decision in **`platform/docs/decisions/DRAFT-next-truth-depth-week18.md`** before opening broad implementation in topology, policy, or persistence themes.
 
 Interpret that recommendation narrowly.
 
@@ -86,7 +87,7 @@ Why this is the right next-cycle focus:
 The recommended next-cycle slice should stay limited to:
 
 - preserving the week **16–18** checkpoint honestly and the current safe-use boundary first
-- recording the next truth-depth slice decision (week 18 Friday task 02) before broad implementation churn
+- recording the next truth-depth slice decision (see **`platform/docs/decisions/DRAFT-next-truth-depth-week18.md`**) before broad implementation churn
 - continuing bounded Phase 2 product deepening only where a concrete gain justifies code changes
 
 ## Phased Roadmap
@@ -159,7 +160,7 @@ Based on the current repo state after the week **16–18** checkpoints, the next
 2. keep the week 16 topology-history, policy-history, history-baseline, and restart-drill outcomes closed by default; do not reopen those slices without new evidence
 3. keep week 18 inventory-history verifier alignment, readiness Grafana language, and change-validation/vendor dashboard honesty closed by default unless new metrics or APIs justify a deliberate update
 4. keep the accepted week 13 identity outcome closed by default; only reopen deterministic or snapshot-scoped readiness/capability item IDs if a concrete later consumer proves the existing anchors insufficient
-5. record a **narrow next-slice decision** (topology vs policy vs persistence deepening) before large implementation churn; continue bounded Phase 2 product deepening only where a concrete gain justifies code changes
+5. record a **narrow next-slice decision** (see **`platform/docs/decisions/DRAFT-next-truth-depth-week18.md`**) before large implementation churn; continue bounded Phase 2 product deepening only where a concrete gain justifies code changes
 
 ## Boundary Reminder
 

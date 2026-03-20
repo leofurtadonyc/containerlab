@@ -99,6 +99,10 @@ The current repository now explicitly documents:
 - safe-use versus unsafe-claim boundaries for the current slice
 - same-workspace restart drill (`./scripts/drill-same-workspace-restart.sh`) and
   preserved-baseline verifier checks
+- **`deployment-runbook.md`** and **`data-flows.md`** carry the same narrative as
+  this assessment: conditional **`verify-core-runtime`** branches, same-workspace
+  recovery only, and product versus observability boundaries—no workflow, dry-run,
+  or validation-engine authorization
 - **Policy history interpretation** is **product-owned**: persisted snapshot lists,
   source-readiness evolution, and snapshot-to-snapshot comparison belong to
   `/api/v1/policies` and the WebUI Policies page. Grafana’s SR policy family

@@ -24,12 +24,20 @@ The current repository state includes:
   for the current metrics
 - Postgres with **bounded durable persistence** for normalized inventory,
   topology, and policy snapshots, sync-run records, readiness snapshots, and
-  the history fields needed for week-16-style coverage and source-readiness
+  the history fields needed for week **16–18** coverage and source-readiness
   history (not a full durable domain model for every future product area)
 - repo-built local images for the initial platform service set
 - bounded post-deploy verification for the current core runtime contract, ODL
-  credential path, preserved-baseline posture when artifacts exist, and optional
-  same-workspace restart drill
+  credential path, preserved-baseline posture when artifacts exist, **conditional**
+  devices/inventory history checks aligned with topology and policy history when
+  Postgres holds inventory snapshot rows, and optional same-workspace restart drill
+- **Readiness:** product and Grafana platform overview share **evaluation sample**
+  (this response) versus **persisted snapshot** (last material change) vocabulary;
+  observability mirrors numeric ages only—not validation or drift verdicts
+- **Grafana honesty:** change-validation family is **markdown-only** (no fake
+  metrics; not a validation engine); vendor/adapters overview uses **real**
+  bounded collector and collector-boundary metrics (**Nokia-first** scope)—see
+  `dashboards.md` and `production-readiness-assessment.md`
 
 It does not yet include:
 
@@ -171,6 +179,7 @@ Current state:
 - overview and platform health now also surface the backend-owned bounded read-path coverage, freshness-window, and degraded-scope posture that the platform-status contract exposes for inventory, topology, and policy
 - the platform-status contract now also exposes a backend-owned `recovery` summary so product, verifier, and observability consumers can reuse one bounded same-workspace preserved-baseline versus new-baseline contract instead of inferring recovery posture independently
 - workflow-history and audit-history pages now interpret persisted sync-derived evidence using bounded recency and comparison cues, and surface the response-level baseline summary so operators can see preserved-baseline versus new-baseline posture directly; those remain product-facing explanations rather than workflow, audit-forensics, or validation conclusions
+- **Readiness (capabilities / Readiness view):** distinguish **evaluation sample** time (bounded assembly for this response, e.g. `generated_at`) from **persisted snapshot** time (last material change to the persisted readiness row, e.g. `readiness_persisted_at`). Grafana’s platform overview uses the same phrases for observability-only stat panels; neither implies a validation engine, dry-run, or full readiness truth
 
 Current topology coverage semantics:
 
@@ -309,6 +318,8 @@ Current product-versus-observability split:
 - `app-api` and `app-web` carry the human-readable degraded-scope summaries and bounded read-path explanations
 - Prometheus and Grafana carry the numeric proxies for those same conditions, such as observed-versus-configured target gaps, freshness age, paired-versus-single-sided topology evidence counts or shares, and policy detail-ready gaps
 - observability panels therefore reinforce the product posture without becoming a second product contract
+- **Persisted history (policy, topology, devices inventory):** snapshot lists, comparisons, and source-readiness or coverage **across** time are **product-owned** via `app-api` and WebUI; Grafana mirrors **current** posture and bounded metrics with explicit scope text—not snapshot-to-snapshot history timelines, drift verdicts, or validation semantics (see `policy-truth-depth-review.md` and `deployment-runbook.md` verifier sections)
+- **Change-validation and vendor dashboard families:** text-only or real-metrics honesty as provisioned; Grafana is **not** a change-validation engine—see `dashboards.md`
 
 Week 14 topology split:
 
@@ -364,8 +375,8 @@ Current state:
 - devices, topology, and policy can fall back to the latest persisted normalized snapshot if the live collector boundary is temporarily unavailable
 - devices, topology, and policy can also expose bounded current-versus-latest-persisted comparison summaries when both current live-backed state and an earlier persisted normalized snapshot exist
 - workflow-history and audit-history currently read persisted sync-run activity rather than separate durable workflow or audit tables
-- the current persisted slice is deployment-local because the topology has not yet added a host-mounted Postgres data directory
-- workflow history, audit history, and broader intent models remain transient or unimplemented rather than durably stored
+- bounded persisted read-side state survives **normal container replacement in the same workspace** when host-backed directories (e.g. `platform/postgres/data`) remain in place; removing or replacing those directories starts a **new baseline**—same boundary as `deployment-runbook.md` and `production-readiness-assessment.md` (not backup, HA, or cross-host DR)
+- workflow history, audit history, and broader intent models remain read-only views over sync activity rather than workflow-owned durable records
 - broader domain persistence logic is still pending
 
 ## Flow Summary By Consumer
@@ -407,3 +418,10 @@ Current state:
 - richer frontend product pages for workflow history, audit history, and deeper read-oriented exploration
 - ODL-backed enrichment where justified
 - later dry-run and workflow-related data paths
+
+## Related Documents
+
+- `roadmap.md` — phased scope and **`conditionally_ready_with_explicit_limits`** operating boundary
+- `production-readiness-assessment.md` — strict readiness verdict and what remains outside safe use
+- `deployment-runbook.md` — build, deploy, **`verify-core-runtime`** / **`verify-odl-auth`**, conditional history checks, same-workspace drill
+- `dashboards.md` — Grafana scope honesty (including change-validation and vendor families)

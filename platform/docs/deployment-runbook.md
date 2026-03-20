@@ -4,9 +4,9 @@
 
 This runbook documents how to build, deploy, verify, and troubleshoot the current bounded `Phase 2 — read-only product foundation` platform slice.
 
-It reflects the **week 16–17 operational checkpoint**: **conditional** preserved-baseline checks in
+It reflects the **week 16–18 operator-truth envelope** (building on week 16–17): **conditional** preserved-baseline checks in
 `verify-core-runtime` when Postgres holds persisted read-side rows (platform **`recovery`**, workflow-history and audit-history **`baseline_summary`** JSON plus **`preserved_same_workspace_baseline`**), **conditional** **devices** (inventory), **topology**, and **policy** `history` contract checks when snapshot rows exist and the API returns non-empty **`recent_snapshots`** (devices and policy use a **`[{"snapshot_id"`** prefix match in compact JSON so `comparison_to_previous` snapshot id fields cannot satisfy snapshot-level assertions), explicit recovery fields on
-`/api/v1/platform/status`, and the optional **same-workspace restart drill** (`./scripts/drill-same-workspace-restart.sh`, optional **`TOPOLOGY_FILE`**) that reproves same-workspace recovery—not backup, restore, or HA.
+`/api/v1/platform/status`, **Readiness** language parity (evaluation sample versus persisted snapshot) as exercised in product and Grafana, **product-owned** persisted policy history versus Grafana **current-metrics** mirrors, and the optional **same-workspace restart drill** (`./scripts/drill-same-workspace-restart.sh`, optional **`TOPOLOGY_FILE`**) that reproves same-workspace recovery—not backup, restore, or HA. Honest Grafana scaffolds (**change-validation** markdown-only; **vendor/adapters** real bounded collector metrics) are scope-only and do not imply validation engines—see **`dashboards.md`**, **`roadmap.md`**, and **`production-readiness-assessment.md`** for the same boundaries.
 
 It is written for repeatable operator use on a compatible Linux host.
 
@@ -719,7 +719,9 @@ clab deploy -t topology.clab.yml -c
 ## Related Documents
 
 - `INSTALLATION-INSTRUCTIONS.md` for host recreation and initial bring-up
+- `docs/roadmap.md` for phased scope and the **`conditionally_ready_with_explicit_limits`** envelope
+- `docs/production-readiness-assessment.md` for the strict readiness verdict and operating conditions
 - `docs/services.md` for service ownership boundaries
-- `docs/data-flows.md` for current data movement and integration posture
+- `docs/data-flows.md` for current data movement, product-versus-observability split, and persistence boundaries
 - `docs/service-hardening-plan.md` for the bounded runtime-hardening stop line
 - service READMEs under each service directory for service-specific runtime details
