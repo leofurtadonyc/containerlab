@@ -448,8 +448,9 @@ export function PlatformHealthView() {
                   {
                     label: "Policy history",
                     kind: "text" as const,
-                    value: "Persisted snapshots available",
-                    note: "See Policies page for source-readiness history and comparison.",
+                    value: `Persisted snapshots • ${formatLabel(policiesData.history.status)}`,
+                    note:
+                      "Bounded persisted policy history from the Policies API: snapshot anchors and source-readiness posture evolve on that page. Coverage cues only—not drift analysis, validation verdicts, or workflow state.",
                   },
                 ]
               : []),

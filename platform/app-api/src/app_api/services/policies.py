@@ -386,8 +386,6 @@ def _build_policy_history_window() -> PolicyHistoryWindow:
         )
     current_readiness = current_snapshot.snapshot.detail_source_readiness
     previous_readiness = previous_snapshot.snapshot.detail_source_readiness
-    current_detail_ready = len({r.source_target for r in current_snapshot.snapshot.records})
-    previous_detail_ready = len({r.source_target for r in previous_snapshot.snapshot.records})
     return PolicyHistoryWindow(
         status="comparison_ready",
         summary=(
@@ -418,10 +416,14 @@ def _build_policy_history_window() -> PolicyHistoryWindow:
             notes=comparison_notes,
             current_detail_source_readiness_posture=current_readiness.posture,
             previous_detail_source_readiness_posture=previous_readiness.posture,
-            current_detail_ready_target_count=current_detail_ready,
-            previous_detail_ready_target_count=previous_detail_ready,
+            current_detail_ready_target_count=current_snapshot.detail_ready_target_count,
+            previous_detail_ready_target_count=previous_snapshot.detail_ready_target_count,
             current_no_policies_observed_target_count=current_readiness.no_policies_observed_target_count,
             previous_no_policies_observed_target_count=previous_readiness.no_policies_observed_target_count,
+            current_detail_unavailable_target_count=current_readiness.detail_unavailable_target_count,
+            previous_detail_unavailable_target_count=previous_readiness.detail_unavailable_target_count,
+            current_partial_detail_target_count=current_readiness.partial_detail_target_count,
+            previous_partial_detail_target_count=previous_readiness.partial_detail_target_count,
         ),
     )
 
@@ -986,6 +988,10 @@ def build_policies_list_response() -> PoliciesListResponse:
                     previous_detail_ready_target_count=history.comparison_to_previous.previous_detail_ready_target_count,
                     current_no_policies_observed_target_count=history.comparison_to_previous.current_no_policies_observed_target_count,
                     previous_no_policies_observed_target_count=history.comparison_to_previous.previous_no_policies_observed_target_count,
+                    current_detail_unavailable_target_count=history.comparison_to_previous.current_detail_unavailable_target_count,
+                    previous_detail_unavailable_target_count=history.comparison_to_previous.previous_detail_unavailable_target_count,
+                    current_partial_detail_target_count=history.comparison_to_previous.current_partial_detail_target_count,
+                    previous_partial_detail_target_count=history.comparison_to_previous.previous_partial_detail_target_count,
                 )
                 if history.comparison_to_previous is not None
                 else None

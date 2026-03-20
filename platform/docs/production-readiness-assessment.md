@@ -38,11 +38,14 @@ It is not ready to be treated as:
 
 This assessment is grounded in the current repository state plus live runtime
 evidence gathered from the running platform, updated through the week 16
-operational checkpoint.
+operational checkpoint and **week 17** alignment on policy-history verifier gates,
+**`baseline_summary` object** checks when artifacts exist, and **product-owned
+policy history** versus **Grafana current-metrics-only** scope (see also
+`platform/docs/dashboards.md` and `agent/sdn/03-CURRENT-STATUS.md`).
 
 ### Live runtime verification
 
-- `./scripts/verify-core-runtime.sh` passed for the current deployment
+- `./scripts/verify-core-runtime.sh` passed for the current deployment (including conditional `/api/v1/policies` policy-history JSON keys when Postgres holds policy snapshots and the API lists recent snapshots, with honest skip notices on a fresh baseline; the same **prefix-based** `history.recent_snapshots` gate and notices apply to **`/api/v1/devices`** inventory history when `inventory_snapshots` rows exist)
 - `./scripts/verify-odl-auth.sh` passed for the bounded ODL helper path
 - `docker ps` showed healthy runtime state for `postgres`, `prometheus`,
   `grafana`, `gnmi-collector`, `app-api`, and `app-web`; `odl` was running and
@@ -61,12 +64,13 @@ operational checkpoint.
   `serving_mode=live_collector`, `completeness=partial`, a bounded
   `coverage_summary` carrying endpoint-pairing posture plus paired-versus-
   single-sided counts, and an explicit `comparison_snapshot_id`
-- `/api/v1/policies` reported `data_status=live`,
-  `serving_mode=live_collector`, `completeness=partial`,
-  `detail_mode=counters_only`,
-  `empty_reason=per_policy_details_unavailable`, `observed_policy_count=2`,
-  `count=0`, an explicit `comparison_snapshot_id`, and explicit persisted
-  anchor IDs on the previous-snapshot comparison surface
+- `/api/v1/policies` reported honest live policy posture for the connected lab;
+  when the lab exposes the narrow detail-ready Nokia `static_local` slice, this
+  includes shapes such as `detail_mode=static_policies_when_present`,
+  `empty_reason=none`, bounded `detail_ready_target_count`, and normalized live
+  policy records, while many targets may still report `no_policies_observed` or
+  detail blockers—see `platform/docs/policy-truth-depth-review.md` for the
+  strict evidence-based checkpoint (values are lab-dependent)
 - `/api/v1/capabilities` reported `data_status=bounded_matrix`, `count=13`,
   `planning_readiness=readiness_planning_supported`,
   `phase_recommendation=remain_phase_2_read_only_foundation`, and an explicit
@@ -94,6 +98,11 @@ The current repository now explicitly documents:
 - safe-use versus unsafe-claim boundaries for the current slice
 - same-workspace restart drill (`./scripts/drill-same-workspace-restart.sh`) and
   preserved-baseline verifier checks
+- **Policy history interpretation** is **product-owned**: persisted snapshot lists,
+  source-readiness evolution, and snapshot-to-snapshot comparison belong to
+  `/api/v1/policies` and the WebUI Policies page. Grafana’s SR policy family
+  mirrors **bounded current** metrics and explicit scope text only—not persisted
+  history timelines, drift verdicts, or validation semantics.
 
 ## Assessment By Area
 
@@ -190,7 +199,10 @@ Why this is strong enough now:
   rollups, backend-owned topology coverage fields on both the topology and
   platform-status read paths, dashboard-critical metric families including
   paired-link, single-sided-link, and pairing-posture signals, and Prometheus
-  target posture
+  target posture; when Postgres still holds persisted read-side rows it also
+  requires `preserved_same_workspace_baseline` on platform `recovery` and on
+  workflow-history and audit-history `baseline_summary`, while empty persisted
+  tables skip that branch with an honest new-baseline notice
 - `verify-odl-auth` validates the configured ODL credential path and rejects
   the default fallback
 - degraded but honest states such as partial topology, non-ok read-path
@@ -226,11 +238,14 @@ Why this is strong enough now:
   observability state will remain available
 - the current verifier now cross-checks persisted Postgres row presence against
   the corresponding API history and anchor surfaces, so a preserved same-
-  workspace baseline is tested more explicitly than before
+  workspace baseline is tested more explicitly than before (including
+  **`baseline_summary` objects** on workflow-history and audit-history when rows
+  exist, with honest skips when tables are empty)
 - a repo-owned same-workspace restart drill (`./scripts/drill-same-workspace-restart.sh`)
   exercises container replacement without deleting host-backed data directories,
   then reruns the verifiers and asserts preserved-baseline contract when
-  persisted artifacts exist
+  persisted artifacts exist (optional **`TOPOLOGY_FILE`**, **`set -e`** failure
+  semantics—see runbook)
 
 Why this is still bounded:
 
@@ -271,8 +286,8 @@ Current strengths:
 - inventory is live and useful for the current Nokia-first slice
 - topology is live and operationally useful, explicitly partial, and now materially stronger after the accepted week 14 work because endpoint-pairing posture plus paired-versus-single-sided inferred-link counts are exposed across backend, product, observability, and verifier surfaces as bounded evidence-depth cues
 - policy surfaces preserve honest aggregate and per-target footprint evidence,
-  and the current live stack now shows observed policies while keeping
-  per-policy detail-unavailable posture explicit
+  and the live lab can expose a narrow detail-ready `static_local` slice while
+  keeping broader partiality and per-target blockers explicit
 - persisted comparison and bounded history surfaces now expose stronger anchor
   identity where underlying records exist
 
@@ -280,9 +295,9 @@ Current limits:
 
 - topology remains partial by design and must not be treated as complete
   topology truth
-- policy remains partial, aggregate-heavy, and currently blocked at
-  `per_policy_details_unavailable` for actual per-policy records in the
-  present lab even though live aggregate counters now show observed policies
+- policy remains partial overall: the live lab may expose a narrow detail-ready
+  `static_local` slice while many targets remain `no_policies_observed` or
+  detail-blocked; broader policy families are not claimed
 - workflow-history and audit-history remain sync-derived or readiness-derived
   platform history, not workflow lifecycle or operator-activity truth
 - readiness and capability surfaces remain planning-support truth, not
@@ -296,38 +311,37 @@ Assessment:
 
 ### Next-cycle implication
 
-Posture: `week14_pairing_slice_complete_but_broader_topology_truth_depth_still_bounded`
+Posture: `week16_checkpoint_consolidated_bounded_phase2_read_only`
 
 Why this is the right checkpoint reading now:
 
-- the accepted week 13 identity review ended in a no-change decision for
-  capability item IDs, so the default identity lane is no longer the strongest
-  immediate gap
-- post-deploy verification now proves the bounded read-path and capability
-  posture contracts end to end, so verification hardening is no longer the
-  primary bottleneck either
-- the accepted week 14 topology cycle closed the narrower endpoint-pairing and
-  single-sided-link coverage gap across collector, backend, product,
-  observability, tests, and verifier behavior
-- the live stack still reports partial topology completeness, and some broad
-  topology `degraded_scope_summary` wording still compresses multiple causes,
-  which leaves topology as the clearest remaining truth-depth candidate only if
-  a later cycle can sharpen those broader bounded semantics honestly
-- policy remains important, but the current
-  `per_policy_details_unavailable`, `counters_only`, zero detail-ready-target,
-  and zero normalized-record posture means a policy-first cycle would mostly
-  run into absent derivable source detail rather than a clean,
-  already-evidenced truth gap
+- **Week 16** closed recovery posture consumption (API + product + Grafana +
+  verifier), topology coverage history persistence and product consumption,
+  policy source-readiness history persistence and product consumption,
+  workflow-history and audit-history baseline summaries, and the same-workspace
+  restart drill with preserved-baseline checks when Postgres artifacts exist.
+- The accepted **week 13** identity review ended in a no-change decision for
+  capability item IDs unless a future concrete consumer requires otherwise.
+- **Week 14–15** topology cycles closed endpoint-pairing, partiality
+  decomposition, node-participation cues, and downstream consumption; **week
+  16** added persisted coverage in history surfaces—do not treat pairing or
+  coverage-history as the default open gap.
+- **Policy** is no longer uniformly “aggregate-only with zero detail-ready
+  evidence”: the live lab can expose a narrow Nokia `static_local` detail-ready
+  slice while broader policy truth stays partial (`policy-truth-depth-review`).
+- The default next move is **not** another identity or anchor pass; it is a
+  **bounded reassessment** of the next truth-depth or read-path slice (see
+  `platform/docs/roadmap.md` and `agent/sdn/03-CURRENT-STATUS.md` Priority 2),
+  staying inside Phase 2 read-only semantics.
 
 Assessment:
 
-- the current checkpoint should preserve the accepted week 14 result rather
-  than recommending another automatic topology implementation pass
-- if a later bounded cycle reopens topology, it should stay narrow: sharpen
-  broad `partial` and topology `degraded_scope_summary` semantics where the
-  current evidence supports a cleaner split between inference-boundedness,
-  endpoint-coverage limits, and collection degradation, while preserving
-  `Phase 2` and the current safe-use boundary
+- preserve the week 16 checkpoint and the `conditionally_ready_with_explicit_limits`
+  boundary
+- do not reopen completed topology-history, policy-history, history-baseline,
+  or restart-drill work without new evidence
+- any later topology or policy deepening must remain narrow, collector- or
+  evidence-first, and honest about partial truth
 
 ### Trust-cue maturity
 

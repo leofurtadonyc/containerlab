@@ -90,7 +90,7 @@ function createTopologyData() {
           link_state_counts: { degraded: 1 },
           inference_posture: "inferred",
           endpoint_pairing_posture: "paired",
-          collection_posture: "unknown",
+          collection_posture: "degraded",
           node_participation_posture: "fully_linked",
           paired_link_count: 1,
           single_sided_link_count: 0,
@@ -111,7 +111,7 @@ function createTopologyData() {
           link_state_counts: { up: 1 },
           inference_posture: "inferred",
           endpoint_pairing_posture: "partially_paired",
-          collection_posture: "unknown",
+          collection_posture: "ok",
           node_participation_posture: "partially_isolated",
           paired_link_count: 1,
           single_sided_link_count: 0,
@@ -141,8 +141,8 @@ function createTopologyData() {
         previous_inference_posture: "inferred",
         current_endpoint_pairing_posture: "paired",
         previous_endpoint_pairing_posture: "partially_paired",
-        current_collection_posture: "unknown",
-        previous_collection_posture: "unknown",
+        current_collection_posture: "degraded",
+        previous_collection_posture: "ok",
         current_node_participation_posture: "fully_linked",
         previous_node_participation_posture: "partially_isolated",
         current_paired_link_count: 1,
@@ -244,10 +244,41 @@ describe("topology view", () => {
     const html = renderToStaticMarkup(<TopologyView />);
 
     expect(html).toContain("trust cues, not validation verdicts");
-    expect(html).toContain("persisted coverage cues");
+    expect(html).toContain("snapshot-derived trust cues only");
+    expect(html).toContain("Current inference posture");
+    expect(html).toContain("Previous inference posture");
+    expect(html).toContain("Current collection posture");
+    expect(html).toContain("Previous collection posture");
+    expect(html).toContain("Current node participation");
+    expect(html).toContain("Previous node participation");
     expect(html).toContain("Current endpoint pairing");
     expect(html).toContain("Previous endpoint pairing");
     expect(html).toContain("Current / previous paired links");
+    expect(html).toContain("Current / previous single-sided links");
     expect(html).toContain("Current / previous linked nodes");
+    expect(html).toContain("Current / previous isolated nodes");
+    expect(html).toContain("• inference");
+    expect(html).toContain("• collection");
+    expect(html).toContain("• participation");
+  });
+
+  it("renders honest empty history footnotes without coverage rows", () => {
+    const base = createTopologyData();
+    const emptyHistory = {
+      ...base,
+      history: {
+        status: "unavailable" as const,
+        summary: "No persisted topology history yet.",
+        recent_snapshots: [],
+        comparison_to_previous: null,
+      },
+    };
+    useTopologyQuery.mockReturnValue(createQueryState(emptyHistory));
+    usePoliciesQuery.mockReturnValue(createQueryState(null));
+
+    const html = renderToStaticMarkup(<TopologyView />);
+
+    expect(html).toContain("No persisted normalized topology snapshots");
+    expect(html).toContain("Bounded comparison is only available once at least two");
   });
 });
