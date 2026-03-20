@@ -23,7 +23,7 @@ The platform currently has:
 - the topology overview dashboard now also surfaces paired-link counts, single-sided-link counts, linked-node counts, isolated-node counts, and backend-owned inference, endpoint-pairing, node-participation, and collection posture labels as bounded observability projections for the current topology partiality slice
 - the platform overview dashboard now also mirrors the narrower topology read-path coverage posture through paired-versus-single-sided link counts, linked-versus-isolated node counts, and backend-owned inference, pairing, node-participation, and collection posture labels without turning Grafana into the product contract
 - a bounded post-deploy core-runtime regression check that now validates Grafana API health, the provisioned Prometheus datasource, and the provisioned overview dashboards alongside Postgres and Prometheus readiness
-- clearly marked placeholder dashboard files for the dashboard families that do not yet have real backing metrics
+- clearly marked placeholder or bounded-real-metrics dashboard files per family (for example **change-validation** remains markdown-only until metrics exist; **vendor** now combines scope text with real collector and collector-boundary panels)
 
 What does not exist yet:
 
@@ -106,7 +106,7 @@ More specifically, `./scripts/verify-core-runtime.sh` currently validates only t
 It does not yet validate:
 
 - every panel query result across the platform, topology, and SR policy dashboards
-- placeholder dashboard families such as change-validation and vendor views
+- placeholder dashboard families such as change-validation (markdown-only scaffold); the **vendor** family uses a provisioned overview with **real** bounded collector and collector-boundary metrics (see **Vendor** below)
 - visual correctness, folder presentation details, or operator interpretation quality
 - deeper Prometheus query semantics beyond the current readiness and target-discovery checks
 
@@ -247,21 +247,24 @@ Week 14 topology coverage rule:
 
 ### Vendor
 
-This family answers questions such as:
+**Current state:** **`platform/grafana/dashboards/vendor/vendor-overview-placeholder.json`** is provisioned as **Vendor / adapter overview (Nokia gNMI)**. It combines **markdown scope** with **real Prometheus panels** using only metrics emitted today:
 
-- which vendor adapter paths are healthy?
-- where are normalization errors occurring?
-- what requests are unsupported for a given capability set?
-- how honest is the current platform support picture by vendor?
+- **`platform_gnmi_collector_*`** — observation ages for inventory, topology, and policy; paired- versus single-sided topology link counts; policy observed-target versus detail-ready target gauges (families **`verify-core-runtime.sh`** checks on collector `/metrics`).
+- **`platform_app_api_collector_boundary_latest_fetch_posture`** — latest bounded collector-boundary outcome by model family (posture metric family expected on **`app-api`** `/metrics`).
 
-Expected emphasis over time:
+**Honesty rules:**
 
-- per-vendor adapter health
-- unsupported request counts
-- normalization errors
-- support and capability visibility
+- **Nokia-first** for metric-backed panels; **no** Grafana claim of Juniper or broad multi-vendor adapter parity.
+- Panels are **observability mirrors**; capability and roadmap semantics stay in **`app-web`** and **`/api/v1/capabilities`**.
+- **No invented queries**; if a metric family changes, update panels honestly.
 
-This family must stay explicit about partial implementation. It must never imply full multi-vendor parity before that exists.
+**Questions this family may help with (observability-only):**
+
+- how fresh are collector observations by read path?
+- what is the latest collector-boundary outcome posture by model family?
+- what are bounded topology link and policy target counts at the collector?
+
+**Future:** unsupported-request or normalization-error style panels appear only when **honest** low-cardinality metrics exist.
 
 ## Dashboard Quality Rules
 
@@ -300,7 +303,7 @@ Dashboard design should therefore assume Prometheus-backed metrics first, with a
 - the platform overview dashboard now also uses the newer collector coverage and observation-age metrics to make read-path gaps faster to interpret without turning Grafana into a product-status surrogate
 - the topology and platform dashboards now also use the newer topology paired-link, single-sided-link, share, and backend-owned pairing-posture metrics to make endpoint-coverage gaps faster to interpret without inventing dashboard-only semantics
 - the topology and platform dashboards now also use the newer topology inference, collection, paired-link, single-sided-link, share, and backend-owned posture-label metrics to make topology partiality faster to interpret without inventing dashboard-only semantics
-- placeholder dashboards still exist for families whose underlying metrics are not yet real; the **change-validation** placeholder is markdown-forward and explicitly disclaims metrics and workflow semantics (see **Change Validation** above)
+- placeholder dashboards still exist where **no** honest PromQL can be written yet; the **change-validation** placeholder is markdown-forward and explicitly disclaims metrics and workflow semantics (see **Change Validation** above); the **vendor** overview now includes real bounded collector and boundary panels (see **Vendor** above)
 - the platform observability shape is documented
 
 ### Future
@@ -309,7 +312,7 @@ Dashboard design should therefore assume Prometheus-backed metrics first, with a
 - topology-aware visual panels backed by real normalized state and metrics
 - SR policy health and drift dashboards backed by real product signals
 - change-validation observability backed by actual dry-run and validation metrics
-- vendor capability and adapter health dashboards backed by real platform evidence
+- vendor capability and adapter health dashboards backed by real platform evidence (the **vendor** overview now includes bounded collector and collector-boundary panels where metrics exist today; see **Vendor** above)
 
 ## Boundary Reminder
 

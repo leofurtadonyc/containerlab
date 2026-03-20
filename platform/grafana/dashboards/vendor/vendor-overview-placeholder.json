@@ -6,21 +6,330 @@
   "graphTooltip": 0,
   "panels": [
     {
-      "collapsed": false,
       "gridPos": {
-        "h": 8,
+        "h": 13,
         "w": 24,
         "x": 0,
         "y": 0
       },
       "id": 1,
       "options": {
-        "content": "## Vendor Overview Placeholder\nThis dashboard family will answer: which adapter paths are healthy, where normalization errors are appearing, and which requests are unsupported for a given vendor capability set.\n\nCurrent state: placeholder only. This dashboard family must stay honest about partial implementation and must not imply multi-vendor parity that does not yet exist.",
+        "content": "## Vendor / adapter observability (Nokia-first)\n\n### What this dashboard is for\n\n- **Bounded observability** for the **current Nokia-first gNMI collector** path and the **`app-api` collector boundary**—the same metric families exercised by `verify-core-runtime.sh` for collector and backend contracts.\n- **Not** a multi-vendor adapter matrix, **not** a claim of Juniper or broad parity, and **not** a substitute for the capability matrix in `app-web`.\n\n### Current reality (Phase 2)\n\n- **Nokia-first** observed-state collection through **`gnmi-collector`**; roadmap-only Juniper targets remain **out of scope** for honest metric-backed panels here.\n- Charts below use **real PromQL only** against metrics that already exist; where no honest series exists, this dashboard does **not** invent queries.\n\n### What Grafana is not\n\n- **Not** workflow, validation, or change-control semantics.\n- **Not** the surface that defines vendor support posture—that remains **`app-api`** contracts and **`app-web`**.\n\n### Related documentation\n\n- **`platform/docs/dashboards.md`** — vendor family scope and product vs observability split.\n- **`platform/docs/services.md`** — `gnmi-collector` role and adapter boundaries.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
       "title": "Dashboard Scope",
       "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "id": 2,
+      "panels": [],
+      "title": "Nokia gNMI collector — observation freshness",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 14
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "description": "Age since newest inventory observation at the collector (platform_gnmi_collector_inventory_newest_observed_timestamp_seconds). Absent or zero timestamp shows empty; observability-only.",
+      "targets": [
+        {
+          "expr": "clamp_min(time() - platform_gnmi_collector_inventory_newest_observed_timestamp_seconds, 0) unless platform_gnmi_collector_inventory_newest_observed_timestamp_seconds == 0",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Inventory observation age (collector)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 14
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "description": "Age since newest topology observation at the collector (platform_gnmi_collector_topology_newest_observed_timestamp_seconds). Observability-only.",
+      "targets": [
+        {
+          "expr": "clamp_min(time() - platform_gnmi_collector_topology_newest_observed_timestamp_seconds, 0) unless platform_gnmi_collector_topology_newest_observed_timestamp_seconds == 0",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Topology observation age (collector)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 14
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "11.0.0",
+      "description": "Age since newest policy observation at the collector (platform_gnmi_collector_policy_newest_observed_timestamp_seconds). Observability-only.",
+      "targets": [
+        {
+          "expr": "clamp_min(time() - platform_gnmi_collector_policy_newest_observed_timestamp_seconds, 0) unless platform_gnmi_collector_policy_newest_observed_timestamp_seconds == 0",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Policy observation age (collector)",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 6,
+      "panels": [],
+      "title": "Topology evidence depth (collector)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "id": 7,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "description": "Paired versus single-sided inferred link counts from collector metrics (also asserted in verify-core-runtime). Endpoint-evidence depth, not protocol validation.",
+      "targets": [
+        {
+          "expr": "platform_gnmi_collector_topology_paired_links",
+          "legendFormat": "paired links",
+          "refId": "A"
+        },
+        {
+          "expr": "platform_gnmi_collector_topology_single_sided_links",
+          "legendFormat": "single-sided links",
+          "refId": "B"
+        }
+      ],
+      "title": "Topology paired vs single-sided links",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "id": 8,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "description": "Observed policy targets versus detail-ready targets (collector gauges). Numeric observability; richer source-readiness narrative stays on Policies and in verifier output.",
+      "targets": [
+        {
+          "expr": "platform_gnmi_collector_policy_observed_targets",
+          "legendFormat": "observed targets",
+          "refId": "A"
+        },
+        {
+          "expr": "platform_gnmi_collector_policy_detail_ready_targets",
+          "legendFormat": "detail-ready targets",
+          "refId": "B"
+        }
+      ],
+      "title": "Policy target coverage (collector)",
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 30
+      },
+      "id": 9,
+      "panels": [],
+      "title": "app-api collector boundary (adapter-facing fetch)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "id": 10,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "11.0.0",
+      "description": "Latest classified outcome of the bounded collector-boundary fetch per model family (platform_app_api_collector_boundary_latest_fetch_posture). Explains live versus partial versus timeout or error posture; not a workflow verdict.",
+      "targets": [
+        {
+          "expr": "platform_app_api_collector_boundary_latest_fetch_posture{model_family=~\"inventory|topology|policy\"}",
+          "legendFormat": "{{model_family}} • {{outcome}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Collector boundary latest fetch posture",
+      "type": "bargauge"
     }
   ],
   "refresh": "30s",
@@ -28,7 +337,9 @@
   "style": "dark",
   "tags": [
     "vendor",
-    "placeholder"
+    "placeholder",
+    "gnmi-collector",
+    "nokia-first"
   ],
   "templating": {
     "list": []
@@ -38,7 +349,7 @@
     "to": "now"
   },
   "timezone": "browser",
-  "title": "Vendor Overview Placeholder",
+  "title": "Vendor / adapter overview (Nokia gNMI)",
   "uid": "vendor-overview",
   "version": 1
 }
