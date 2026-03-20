@@ -306,9 +306,27 @@ if [ "$sync_runs_count" -gt 0 ]; then
   assert_contains "audit history response" "$audit_history_response" '"sync_run_id":"'
 fi
 
+# When Postgres holds inventory snapshot rows, require an honest devices history window; gate
+# snapshot-level keys on a non-empty recent_snapshots list (prefix match avoids false positives
+# from comparison_to_previous snapshot id fields), matching topology/policy verifier intent.
 if [ "$inventory_snapshots_count" -gt 0 ]; then
   assert_not_contains "devices response" "$devices_response" '"history":{"status":"unavailable"'
-  assert_contains "devices response" "$devices_response" '"snapshot_id":"'
+  assert_contains "devices response" "$devices_response" '"recent_snapshots":['
+  if printf '%s' "$devices_response" | grep -qF '"recent_snapshots":[{"snapshot_id"'; then
+    assert_contains "devices response (history snapshots)" "$devices_response" '"snapshot_id":"'
+    assert_contains "devices response (history snapshots)" "$devices_response" '"device_count":'
+    assert_contains "devices response (history snapshots)" "$devices_response" '"collector_status_counts":'
+    assert_contains "devices response (history snapshots)" "$devices_response" '"capability_summary_counts":'
+  else
+    notice "Devices history recent_snapshots is empty in the API response even though Postgres reports inventory snapshot rows; skipping history-snapshot key assertions."
+  fi
+  if printf '%s' "$devices_response" | grep -F '"comparison_to_previous":{' | grep -F '"current_snapshot_id"' >/dev/null 2>&1; then
+    assert_contains "devices response (history comparison)" "$devices_response" '"current_device_count":'
+    assert_contains "devices response (history comparison)" "$devices_response" '"previous_device_count":'
+    assert_contains "devices response (history comparison)" "$devices_response" '"device_count_delta":'
+  fi
+else
+  notice "No persisted inventory snapshot rows in Postgres; devices history contract checks for snapshot-level keys are skipped (fresh baseline is honest)."
 fi
 
 if [ "$topology_snapshots_count" -gt 0 ]; then

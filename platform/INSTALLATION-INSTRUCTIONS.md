@@ -209,6 +209,7 @@ These checks currently validate:
 - workflow-history and audit-history contract presence for the persisted read-side slice
 - persisted Postgres snapshot, sync-run, and readiness-snapshot table presence, plus API exposure of the corresponding bounded history and anchor surfaces when those rows already exist
 - when those persisted tables are non-empty, platform `recovery.baseline_posture` and both histories' `baseline_summary.baseline_posture` must read `preserved_same_workspace_baseline` (skipped with a notice when tables are empty)
+- **Devices inventory history:** when Postgres has **`inventory_snapshots`** rows and `/api/v1/devices` returns a non-empty `history.recent_snapshots` list (the verifier detects **`[{"snapshot_id"`** in compact JSON), it asserts snapshot-level inventory history fields; if Postgres has rows but `recent_snapshots` is empty, it emits a **notice** and skips those assertions—same honest branching pattern as topology and policy history
 - dashboard-critical metric family availability from the current `app-api` and `gnmi-collector` metrics contracts
 - bounded degraded-state warnings for persisted-fallback, blocked, or otherwise degraded-but-honest read-side responses
 - Grafana datasource and dashboard provisioning

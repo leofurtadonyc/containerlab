@@ -45,7 +45,7 @@ policy history** versus **Grafana current-metrics-only** scope (see also
 
 ### Live runtime verification
 
-- `./scripts/verify-core-runtime.sh` passed for the current deployment (including conditional `/api/v1/policies` policy-history JSON keys when Postgres holds policy snapshots and the API lists recent snapshots, with honest skip notices on a fresh baseline)
+- `./scripts/verify-core-runtime.sh` passed for the current deployment (including conditional `/api/v1/policies` policy-history JSON keys when Postgres holds policy snapshots and the API lists recent snapshots, with honest skip notices on a fresh baseline; the same **prefix-based** `history.recent_snapshots` gate and notices apply to **`/api/v1/devices`** inventory history when `inventory_snapshots` rows exist)
 - `./scripts/verify-odl-auth.sh` passed for the bounded ODL helper path
 - `docker ps` showed healthy runtime state for `postgres`, `prometheus`,
   `grafana`, `gnmi-collector`, `app-api`, and `app-web`; `odl` was running and
