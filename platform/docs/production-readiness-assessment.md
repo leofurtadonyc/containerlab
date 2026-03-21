@@ -70,6 +70,8 @@ stack.
 
 **Week 20 closure (policy history docs and observability alignment):** **`deployment-runbook.md`**, **`data-flows.md`**, this assessment, **`roadmap.md`**, and **`dashboards.md`** now reconcile **week 20** policy-history behavior with one operator story: conditional **`verify-core-runtime`** policy **`history`** checks; **`app-api`** **`/metrics`** **`policy_snapshots`** table gauges parallel to **`inventory_snapshots`**; **product-owned** rich **`/api/v1/policies`** **`history`** versus **Grafana** / **`/metrics`** numeric mirrors only; **static_local**-justified policy depth explicit; verdict **`conditionally_ready_with_explicit_limits`** unchanged; live stacks must **rebuild** repo-built **`app-api`** images to observe **`platform_app_api_policy_snapshots_persisted_total`** on **`/metrics`**.
 
+**Week 20 closure (Friday rollup):** **`03-CURRENT-STATUS.md`** records week **20** as delivered bounded policy-history value; repository **`pytest`** for **`test_app.py`** and **`test_policy_snapshot_persistence.py`** provides file-backed contract and persistence checks; a **green** live **`verify-core-runtime.sh`** including policy **`history`** and **`policy_snapshots`** metric assertions still requires the documented **build → deploy → verify** path on an operator stack.
+
 **Topology scheduling (post–Week 19):** **`topology-truth-depth-review.md`** now states explicitly that the **partiality contract** remains **closed** in shipped code and that **ADR-0001** **Priority 2** is the default **evidence-first** next step—not opportunistic topology code after the inventory slice.
 
 ### Live runtime verification
