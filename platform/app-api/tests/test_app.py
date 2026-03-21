@@ -23,7 +23,7 @@ from app_api.integrations.collector.topology import (
     clear_topology_snapshot_cache,
 )
 from app_api.main import app
-from app_api.models.inventory import InventoryDevice
+from app_api.models.inventory import InventoryDevice, InventoryHistoryChangePreview
 from app_api.metrics.state import reset_metrics_registry
 from app_api.models.policy import PolicyDetailSourceReadiness, PolicyInventorySnapshot
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
@@ -1563,11 +1563,13 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             persisted_artifacts=["inventory_snapshot"],
             inventory_snapshot_summary=PersistedInventoryHistorySummary(
                 snapshot_id="inventory-snapshot-sync-1",
+                sync_run_id="sync-inventory-1",
                 persisted_at=datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
                 observed_at=None,
                 sync_source="gnmi_collector_inventory",
                 sync_status="live_normalized_feed",
                 data_status="live",
+                source_endpoint="http://gnmi-collector:9804/inventory/snapshot",
                 device_count=34,
                 role_counts={"p": 16, "pe": 8, "cpe": 6, "noc": 2, "isp": 2},
                 collector_status_counts={"ok": 34},
@@ -1578,12 +1580,28 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
                 previous_snapshot_id="inventory-snapshot-sync-0",
                 current_persisted_at=datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
                 previous_persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+                current_observed_at=None,
+                previous_observed_at=None,
+                current_sync_status="live_normalized_feed",
+                previous_sync_status="live_normalized_feed",
+                current_data_status="live",
+                previous_data_status="live",
                 current_device_count=34,
                 previous_device_count=33,
                 device_count_delta=1,
                 added_device_count=1,
                 removed_device_count=0,
                 changed_device_count=2,
+                change_preview=[
+                    InventoryHistoryChangePreview(
+                        device_id="device-new-1",
+                        vendor="cisco",
+                        platform="iosxr",
+                        role="pe",
+                        change_kind="added",
+                        changed_fields=[],
+                    ),
+                ],
                 notes=["Inventory comparison evidence remains bounded to persisted normalized snapshots."],
             ),
             notes=["Inventory sync completed from the bounded live path."],
@@ -1640,11 +1658,13 @@ def _build_inventory_sync_run_without_previous_comparison() -> list[PersistedSyn
             persisted_artifacts=["inventory_snapshot"],
             inventory_snapshot_summary=PersistedInventoryHistorySummary(
                 snapshot_id="inventory-isolated-1",
+                sync_run_id="sync-inventory-isolated-1",
                 persisted_at=datetime.fromisoformat("2026-03-10T03:00:01+00:00"),
                 observed_at=datetime.fromisoformat("2026-03-10T03:00:00+00:00"),
                 sync_source="gnmi_collector_inventory",
                 sync_status="live_normalized_feed",
                 data_status="live",
+                source_endpoint="http://gnmi-collector:9804/inventory/snapshot",
                 device_count=5,
                 role_counts={"pe": 5},
                 collector_status_counts={"ok": 5},
@@ -1700,11 +1720,13 @@ def _build_empty_sync_run_history_summary() -> SyncRunHistorySummary:
 _REQUIRED_INVENTORY_SNAPSHOT_HISTORY_JSON_KEYS = frozenset(
     {
         "snapshot_id",
+        "sync_run_id",
         "persisted_at",
         "observed_at",
         "sync_source",
         "sync_status",
         "data_status",
+        "source_endpoint",
         "device_count",
         "role_counts",
         "collector_status_counts",
@@ -1717,12 +1739,19 @@ _REQUIRED_INVENTORY_COMPARISON_HISTORY_JSON_KEYS = frozenset(
         "previous_snapshot_id",
         "current_persisted_at",
         "previous_persisted_at",
+        "current_observed_at",
+        "previous_observed_at",
+        "current_sync_status",
+        "previous_sync_status",
+        "current_data_status",
+        "previous_data_status",
         "current_device_count",
         "previous_device_count",
         "device_count_delta",
         "added_device_count",
         "removed_device_count",
         "changed_device_count",
+        "change_preview",
         "notes",
     }
 )
@@ -3375,6 +3404,8 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert payload["items"][0]["workflow_name"] == "policy_snapshot_sync"
     assert payload["items"][0]["scope"] == "policy_inventory_read_side"
     assert payload["items"][0]["persisted_artifacts"] == ["policy_snapshot"]
+    assert payload["items"][0]["inventory_snapshot_summary"] is None
+    assert payload["items"][0]["inventory_comparison_to_previous"] is None
     assert payload["items"][0]["policy_snapshot_summary"]["snapshot_id"] == "policy-snapshot-sync-1"
     assert payload["items"][0]["policy_snapshot_summary"]["observed_policy_count"] == 1
     assert payload["items"][0]["policy_comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-sync-1"
@@ -3411,11 +3442,15 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert topo_cmp["previous_endpoint_pairing_posture"] == "unknown"
     assert topo_cmp["current_paired_link_count"] == 1
     assert topo_cmp["previous_paired_link_count"] == 0
+    assert payload["items"][1]["inventory_snapshot_summary"] is None
+    assert payload["items"][1]["inventory_comparison_to_previous"] is None
     assert payload["items"][1]["policy_snapshot_summary"] is None
     assert payload["items"][2]["workflow_name"] == "inventory_snapshot_sync"
     assert payload["items"][2]["status"] == "completed"
     inv_sum = payload["items"][2]["inventory_snapshot_summary"]
     assert inv_sum["snapshot_id"] == "inventory-snapshot-sync-1"
+    assert inv_sum["sync_run_id"] == "sync-inventory-1"
+    assert inv_sum["source_endpoint"] == "http://gnmi-collector:9804/inventory/snapshot"
     assert inv_sum["device_count"] == 34
     assert inv_sum["data_status"] == "live"
     assert inv_sum["sync_source"] == "gnmi_collector_inventory"
@@ -3430,6 +3465,15 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     inv_cmp = payload["items"][2]["inventory_comparison_to_previous"]
     assert inv_cmp["current_snapshot_id"] == "inventory-snapshot-sync-1"
     assert inv_cmp["previous_snapshot_id"] == "inventory-snapshot-sync-0"
+    assert inv_cmp["current_observed_at"] is None
+    assert inv_cmp["previous_observed_at"] is None
+    assert inv_cmp["current_sync_status"] == "live_normalized_feed"
+    assert inv_cmp["previous_sync_status"] == "live_normalized_feed"
+    assert inv_cmp["current_data_status"] == "live"
+    assert inv_cmp["previous_data_status"] == "live"
+    assert len(inv_cmp["change_preview"]) == 1
+    assert inv_cmp["change_preview"][0]["device_id"] == "device-new-1"
+    assert inv_cmp["change_preview"][0]["change_kind"] == "added"
     assert inv_cmp["device_count_delta"] == 1
     assert inv_cmp["current_device_count"] == 34
     assert inv_cmp["previous_device_count"] == 33
@@ -3622,6 +3666,8 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert payload["items"][0]["readiness_snapshot_summary"]["snapshot_id"] == "readiness-snapshot-1"
     assert payload["items"][0]["readiness_snapshot_summary"]["readiness_status"] == "bounded_readiness_support"
     assert payload["items"][0]["readiness_snapshot_summary"]["blocker_count"] == 6
+    assert payload["items"][0]["inventory_snapshot_summary"] is None
+    assert payload["items"][0]["inventory_comparison_to_previous"] is None
     assert payload["items"][0]["policy_snapshot_summary"] is None
     assert "changed materially" in payload["items"][0]["message"]
     assert payload["items"][1]["event_type"] == "read_side_sync_recorded"
@@ -3631,6 +3677,8 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert payload["items"][1]["result"] == "succeeded"
     assert payload["items"][1]["sync_run_id"] == "sync-policy-1"
     assert payload["items"][1]["readiness_snapshot_id"] is None
+    assert payload["items"][1]["inventory_snapshot_summary"] is None
+    assert payload["items"][1]["inventory_comparison_to_previous"] is None
     assert payload["items"][1]["policy_snapshot_summary"]["snapshot_id"] == "policy-snapshot-sync-1"
     assert payload["items"][1]["policy_snapshot_summary"]["detail_record_count"] == 1
     assert payload["items"][1]["policy_comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-sync-1"
@@ -3655,9 +3703,13 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert audit_topo_cmp["node_count_delta"] == 1
     assert audit_topo_cmp["current_paired_link_count"] == 1
     assert audit_topo_cmp["previous_paired_link_count"] == 0
+    assert payload["items"][2]["inventory_snapshot_summary"] is None
+    assert payload["items"][2]["inventory_comparison_to_previous"] is None
     assert payload["items"][2]["policy_snapshot_summary"] is None
     audit_inv = payload["items"][3]["inventory_snapshot_summary"]
     assert audit_inv["snapshot_id"] == "inventory-snapshot-sync-1"
+    assert audit_inv["sync_run_id"] == "sync-inventory-1"
+    assert audit_inv["source_endpoint"] == "http://gnmi-collector:9804/inventory/snapshot"
     assert audit_inv["device_count"] == 34
     assert audit_inv["data_status"] == "live"
     assert audit_inv["sync_source"] == "gnmi_collector_inventory"
@@ -3673,6 +3725,10 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     audit_inv_cmp = payload["items"][3]["inventory_comparison_to_previous"]
     assert audit_inv_cmp["current_snapshot_id"] == "inventory-snapshot-sync-1"
     assert audit_inv_cmp["previous_snapshot_id"] == "inventory-snapshot-sync-0"
+    assert audit_inv_cmp["current_data_status"] == "live"
+    assert audit_inv_cmp["previous_data_status"] == "live"
+    assert len(audit_inv_cmp["change_preview"]) == 1
+    assert audit_inv_cmp["change_preview"][0]["device_id"] == "device-new-1"
     assert audit_inv_cmp["device_count_delta"] == 1
     assert audit_inv_cmp["current_device_count"] == 34
     assert audit_inv_cmp["previous_device_count"] == 33
