@@ -39,11 +39,15 @@ It is not ready to be treated as:
 This assessment is grounded in the current repository state plus live runtime
 evidence gathered from the running platform, updated through the week 16
 operational checkpoint, the **week 18** documentation and observability
-rollup, and **week 19** inventory-history deepening (expanded **`/api/v1/devices`**
+rollup, **week 19** inventory-history deepening (expanded **`/api/v1/devices`**
 **`history`** contract and verifier coverage where gates match; **`app-api`**
 **`/metrics`** **`inventory_snapshots`** table gauges **alongside** existing
 sync-run history metrics; **`dashboards.md`** / platform overview alignment for
-the product-versus-Grafana split): **devices/inventory** history verifier parity
+the product-versus-Grafana split), and **week 20** policy-history doc alignment
+(expanded **`/api/v1/policies`** **`history`** verifier coverage when gates
+match; **`app-api`** **`/metrics`** **`policy_snapshots`** table gauges **alongside**
+inventory and sync-run history metrics; **`static_local`**-bounded policy envelope
+explicit in cross-file docs): **devices/inventory** history verifier parity
 with topology/policy gates; **workflow/audit** inventory snapshot and comparison
 JSON contracts and trust language; **Readiness** evaluation-sample versus
 persisted-snapshot clarity in **app-web** and on **`platform-overview`** (mirror
@@ -64,11 +68,13 @@ to **rebuild** repo-built images and **redeploy** before **`verify-core-runtime.
 can observe **`platform_app_api_inventory_snapshots_persisted_total`** on a running
 stack.
 
+**Week 20 closure (policy history docs and observability alignment):** **`deployment-runbook.md`**, **`data-flows.md`**, this assessment, **`roadmap.md`**, and **`dashboards.md`** now reconcile **week 20** policy-history behavior with one operator story: conditional **`verify-core-runtime`** policy **`history`** checks; **`app-api`** **`/metrics`** **`policy_snapshots`** table gauges parallel to **`inventory_snapshots`**; **product-owned** rich **`/api/v1/policies`** **`history`** versus **Grafana** / **`/metrics`** numeric mirrors only; **static_local**-justified policy depth explicit; verdict **`conditionally_ready_with_explicit_limits`** unchanged; live stacks must **rebuild** repo-built **`app-api`** images to observe **`platform_app_api_policy_snapshots_persisted_total`** on **`/metrics`**.
+
 **Topology scheduling (post–Week 19):** **`topology-truth-depth-review.md`** now states explicitly that the **partiality contract** remains **closed** in shipped code and that **ADR-0001** **Priority 2** is the default **evidence-first** next step—not opportunistic topology code after the inventory slice.
 
 ### Live runtime verification
 
-- `./scripts/verify-core-runtime.sh` passed for the current deployment (including conditional `/api/v1/policies` policy-history JSON keys when Postgres holds policy snapshots and the API lists recent snapshots, with honest skip notices on a fresh baseline; the same **prefix-based** `history.recent_snapshots` gate and notices apply to **`/api/v1/devices`** inventory history when `inventory_snapshots` rows exist, with **(a)–(d)** snapshot and **`comparison_to_previous`** key assertions when non-empty); **`app-api`** **`/metrics`** exposes **`platform_app_api_inventory_snapshots_persisted_total`** and **`platform_app_api_inventory_snapshot_latest_persisted_at_seconds`** as bounded Postgres table mirrors—not a substitute for devices **`history`** semantics)
+- `./scripts/verify-core-runtime.sh` passed for the current deployment (including conditional `/api/v1/policies` policy-history JSON keys when Postgres holds policy snapshots and the API lists recent snapshots, with honest skip notices on a fresh baseline; the same **prefix-based** `history.recent_snapshots` gate and notices apply to **`/api/v1/devices`** inventory history when `inventory_snapshots` rows exist, with **(a)–(d)** snapshot and **`comparison_to_previous`** key assertions when non-empty); **`app-api`** **`/metrics`** exposes **`platform_app_api_inventory_snapshots_persisted_total`** and **`platform_app_api_inventory_snapshot_latest_persisted_at_seconds`** and **`platform_app_api_policy_snapshots_persisted_total`** and **`platform_app_api_policy_snapshot_latest_persisted_at_seconds`** as bounded Postgres table mirrors—not substitutes for devices or policies **`history`** semantics)
 - `./scripts/verify-odl-auth.sh` passed for the bounded ODL helper path
 - `docker ps` showed healthy runtime state for `postgres`, `prometheus`,
   `grafana`, `gnmi-collector`, `app-api`, and `app-web`; `odl` was running and
@@ -130,6 +136,11 @@ The current repository now explicitly documents:
   `/api/v1/policies` and the WebUI Policies page. Grafana’s SR policy family
   mirrors **bounded current** metrics and explicit scope text only—not persisted
   history timelines, drift verdicts, or validation semantics.
+- **Policy table metrics (`/metrics`):** **`platform_app_api_policy_snapshots_persisted_total`**
+  and **`platform_app_api_policy_snapshot_latest_persisted_at_seconds`** mirror only
+  Postgres **`policy_snapshots`** depth and chronology (same discipline as
+  **`inventory_snapshots`** gauges). They are **not** a substitute for rich
+  **`history`** on **`/api/v1/policies`**.
 - **Devices and inventory history interpretation** is **product-owned** for rich
   **`history`** on **`/api/v1/devices`** (recent snapshots, comparisons, bounded
   **`change_preview`**, Overview/Platform Health cues). Grafana and **`/metrics`**
@@ -138,7 +149,7 @@ The current repository now explicitly documents:
   **`platform_app_api_inventory_snapshot_latest_persisted_at_seconds`** for the
   **`inventory_snapshots`** table), not replacement history semantics.
 
-### Week 18–19 alignment note (documentation and observability)
+### Week 18–20 alignment note (documentation and observability)
 
 The following **does not expand** the Phase 2 safe-use verdict but **does**
 tighten operator-truth coherence across **`roadmap.md`**, this assessment,
@@ -168,11 +179,19 @@ tighten operator-truth coherence across **`roadmap.md`**, this assessment,
   may show **inventory persisted snapshot** age and row-count mirrors tied to
   **`platform_app_api_inventory_snapshots_*`** metrics; those panels remain
   observability-only and do not reproduce **`/api/v1/devices`** **`history`**
-  (see **`dashboards.md`** and **`data-flows.md`**).
+  (see **`dashboards.md`** and **`data-flows.md`**). **SR policy** dashboards may
+  mirror **`policy_snapshots`** depth via **`platform_app_api_policy_snapshots_*`**
+  metrics; those panels remain observability-only and do not reproduce **`/api/v1/policies`**
+  **`history`**.
+- **Week 20 policy history (documentation only):** runbook, data-flows, this
+  assessment, roadmap, and **`dashboards.md`** now state the same **product-owned
+  rich `history` versus observability-only `policy_snapshots` table mirrors on
+  `app-api` `/metrics`** split as for devices/inventory; broader unproven policy
+  families remain **deferred** (see **`policy-truth-depth-review.md`**).
 
 Verdict **`conditionally_ready_with_explicit_limits`** remains unchanged. **No**
 workflow authorization, **no** dry-run authorization, **no** validation-engine
-authorization, and **no** phase transition are implied by week **18–19** doc alignment.
+authorization, and **no** phase transition are implied by week **18–20** doc alignment.
 
 ## Assessment By Area
 
