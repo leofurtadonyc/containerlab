@@ -108,6 +108,8 @@ function createPolicyDataWithHistory() {
       recent_snapshots: [
         {
           snapshot_id: "policy-snapshot-current",
+          sync_run_id: "sync-run-current",
+          source_endpoint: "http://collector:9804/policies/snapshot",
           persisted_at: "2025-01-01T00:00:00Z",
           observed_at: "2025-01-01T00:00:00Z",
           data_status: "live",
@@ -118,7 +120,16 @@ function createPolicyDataWithHistory() {
           empty_reason: "none",
           observed_policy_count: 4,
           active_policy_count: 4,
+          static_local_policy_count: 4,
+          observed_target_count: 34,
+          policy_capable_target_count: 34,
           detail_record_count: 4,
+          detail_source_readiness: {
+            posture: "partially_ready",
+            no_policies_observed_target_count: 30,
+            detail_unavailable_target_count: 0,
+            partial_detail_target_count: 0,
+          },
           detail_source_readiness_posture: "partially_ready",
           detail_ready_target_count: 4,
           no_policies_observed_target_count: 30,
@@ -127,6 +138,8 @@ function createPolicyDataWithHistory() {
         },
         {
           snapshot_id: "policy-snapshot-older",
+          sync_run_id: "sync-run-older",
+          source_endpoint: "http://collector:9804/policies/snapshot",
           persisted_at: "2024-12-31T23:30:00Z",
           observed_at: "2024-12-31T23:29:00Z",
           data_status: "live",
@@ -137,7 +150,16 @@ function createPolicyDataWithHistory() {
           empty_reason: "none",
           observed_policy_count: 4,
           active_policy_count: 4,
+          static_local_policy_count: 4,
+          observed_target_count: 34,
+          policy_capable_target_count: 34,
           detail_record_count: 4,
+          detail_source_readiness: {
+            posture: "partially_ready",
+            no_policies_observed_target_count: 30,
+            detail_unavailable_target_count: 0,
+            partial_detail_target_count: 0,
+          },
           detail_source_readiness_posture: "partially_ready",
           detail_ready_target_count: 4,
           no_policies_observed_target_count: 30,
@@ -171,6 +193,29 @@ function createPolicyDataWithHistory() {
         previous_detail_unavailable_target_count: 2,
         current_partial_detail_target_count: 0,
         previous_partial_detail_target_count: 1,
+        current_static_local_policy_count: 4,
+        previous_static_local_policy_count: 4,
+        static_local_policy_delta: 0,
+        current_observed_at: "2025-01-01T00:00:00Z",
+        previous_observed_at: "2024-12-31T23:29:00Z",
+        current_data_status: "live",
+        previous_data_status: "live",
+        current_sync_run_id: "sync-run-current",
+        previous_sync_run_id: "sync-run-older",
+        current_source_endpoint: "http://collector:9804/policies/snapshot",
+        previous_source_endpoint: "http://collector:9804/policies/snapshot",
+        current_detail_source_readiness: {
+          posture: "partially_ready",
+          no_policies_observed_target_count: 30,
+          detail_unavailable_target_count: 1,
+          partial_detail_target_count: 0,
+        },
+        previous_detail_source_readiness: {
+          posture: "partially_ready",
+          no_policies_observed_target_count: 30,
+          detail_unavailable_target_count: 2,
+          partial_detail_target_count: 1,
+        },
       },
     },
     target_footprints: [
@@ -298,6 +343,12 @@ describe("policies view", () => {
     expect(html).toContain("policy-snapshot-current");
     expect(html).toContain("policy-snapshot-older");
     expect(html).toContain("Bounded policy history note.");
+    expect(html).toContain("sync-run-current");
+    expect(html).toContain("http://collector:9804/policies/snapshot");
+    expect(html).toContain("Nested readiness:");
+    expect(html).toContain("Persisted rollup:");
+    expect(html).toContain("34 observed");
+    expect(html).toContain("Static local (bounded slice):");
   });
 
   it("renders persisted source-readiness posture in history and comparison", () => {
@@ -320,6 +371,12 @@ describe("policies view", () => {
     expect(html).toContain("live-empty");
     expect(html).toContain("detail-unavailable");
     expect(html).toContain("partial");
+    expect(html).toContain("Current / previous observed");
+    expect(html).toContain("Current / previous sync run");
+    expect(html).toContain("Current / previous source endpoint");
+    expect(html).toContain("Nested readiness (current / previous)");
+    expect(html).toContain("Current:");
+    expect(html).toContain("Previous:");
   });
 
   it("omits comparison-only rows when newer backend omits extended comparison counts", () => {
@@ -346,5 +403,46 @@ describe("policies view", () => {
     expect(html).toContain("Current / previous live-empty targets");
     expect(html).not.toContain("Current / previous detail-unavailable targets");
     expect(html).not.toContain("Current / previous partial-detail targets");
+  });
+
+  it("shows an honest current-only note when comparison is absent", () => {
+    const base = createPolicyDataWithHistory();
+    usePoliciesQuery.mockReturnValue(
+      createQueryState({
+        ...base,
+        history: {
+          status: "current_only",
+          summary: "Only one persisted snapshot on file.",
+          recent_snapshots: base.history.recent_snapshots.slice(0, 1),
+          comparison_to_previous: null,
+        },
+      }),
+    );
+    useTopologyQuery.mockReturnValue(createQueryState(null));
+
+    const html = renderToStaticMarkup(<PoliciesView />);
+
+    expect(html).toContain("current only");
+    expect(html).toContain("no paired previous snapshot");
+  });
+
+  it("shows unavailable history copy when there are no recent snapshots", () => {
+    const base = createPolicyDataWithHistory();
+    usePoliciesQuery.mockReturnValue(
+      createQueryState({
+        ...base,
+        history: {
+          status: "unavailable",
+          summary: "No history.",
+          recent_snapshots: [],
+          comparison_to_previous: null,
+        },
+      }),
+    );
+    useTopologyQuery.mockReturnValue(createQueryState(null));
+
+    const html = renderToStaticMarkup(<PoliciesView />);
+
+    expect(html).toContain("No persisted policy-history window is currently available");
   });
 });

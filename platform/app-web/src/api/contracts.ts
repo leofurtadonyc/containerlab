@@ -342,7 +342,11 @@ export interface PolicyDetailSourceReadinessRecord {
 
 export interface PolicyHistorySnapshotRecord {
   snapshot_id: string;
+  /** Persisted read-side sync run anchor when the backend exposes it. */
+  sync_run_id?: string;
   persisted_at: string;
+  /** Collector or API endpoint string persisted with the sync run, when exposed. */
+  source_endpoint?: string;
   observed_at: string | null;
   data_status: "live" | "degraded";
   sync_source: string;
@@ -356,7 +360,13 @@ export interface PolicyHistorySnapshotRecord {
     | "collector_unavailable";
   observed_policy_count: number;
   active_policy_count: number;
+  /** Bounded static-local slice count for this persisted snapshot when exposed. */
+  static_local_policy_count?: number;
+  observed_target_count?: number;
+  policy_capable_target_count?: number;
   detail_record_count: number;
+  /** Nested readiness (parity with top-level policy response) when the backend includes it. */
+  detail_source_readiness?: PolicyDetailSourceReadinessRecord;
   detail_source_readiness_posture?: PolicyDetailSourceReadinessPosture;
   detail_ready_target_count?: number;
   no_policies_observed_target_count?: number;
@@ -554,6 +564,21 @@ export interface PolicyHistoryComparison {
   previous_detail_unavailable_target_count?: number;
   current_partial_detail_target_count?: number;
   previous_partial_detail_target_count?: number;
+  current_static_local_policy_count?: number;
+  previous_static_local_policy_count?: number;
+  static_local_policy_delta?: number;
+  current_observed_at?: string | null;
+  previous_observed_at?: string | null;
+  current_data_status?: "live" | "degraded";
+  previous_data_status?: "live" | "degraded";
+  current_sync_run_id?: string;
+  previous_sync_run_id?: string;
+  current_source_endpoint?: string;
+  previous_source_endpoint?: string;
+  /** Nested readiness for the newer snapshot in the pair (parity with policies history API). */
+  current_detail_source_readiness?: PolicyDetailSourceReadinessRecord;
+  /** Nested readiness for the older snapshot in the pair. */
+  previous_detail_source_readiness?: PolicyDetailSourceReadinessRecord;
 }
 
 export interface PolicyHistoryWindow {
