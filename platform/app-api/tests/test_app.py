@@ -1479,7 +1479,9 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             persisted_artifacts=["policy_snapshot"],
             policy_snapshot_summary=PersistedPolicyHistorySummary(
                 snapshot_id="policy-snapshot-sync-1",
+                sync_run_id="sync-policy-1",
                 persisted_at=datetime.fromisoformat("2026-03-10T01:30:04+00:00"),
+                source_endpoint="http://gnmi-collector:9804/policies/snapshot",
                 observed_at=datetime.fromisoformat("2026-03-10T01:30:00+00:00"),
                 data_status="live",
                 sync_source="persisted_policy_snapshot",
@@ -1490,7 +1492,15 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
                 observed_policy_count=1,
                 active_policy_count=1,
                 static_local_policy_count=1,
+                observed_target_count=2,
+                policy_capable_target_count=2,
                 detail_record_count=1,
+                detail_source_readiness=PolicyDetailSourceReadiness(
+                    posture="partially_ready",
+                    no_policies_observed_target_count=0,
+                    detail_unavailable_target_count=0,
+                    partial_detail_target_count=0,
+                ),
                 detail_source_readiness_posture="partially_ready",
                 detail_ready_target_count=1,
                 no_policies_observed_target_count=0,
@@ -1529,6 +1539,24 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
                 static_local_policy_delta=0,
                 current_data_status="live",
                 previous_data_status="live",
+                current_observed_at=datetime.fromisoformat("2026-03-10T01:30:00+00:00"),
+                previous_observed_at=datetime.fromisoformat("2026-03-10T01:00:00+00:00"),
+                current_sync_run_id="sync-policy-1",
+                previous_sync_run_id="sync-policy-0",
+                current_source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+                previous_source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+                current_detail_source_readiness=PolicyDetailSourceReadiness(
+                    posture="partially_ready",
+                    no_policies_observed_target_count=0,
+                    detail_unavailable_target_count=0,
+                    partial_detail_target_count=1,
+                ),
+                previous_detail_source_readiness=PolicyDetailSourceReadiness(
+                    posture="partially_ready",
+                    no_policies_observed_target_count=0,
+                    detail_unavailable_target_count=3,
+                    partial_detail_target_count=0,
+                ),
             ),
             notes=["Policy sync completed from the bounded live path."],
         ),
@@ -3517,6 +3545,16 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert payload["items"][0]["inventory_snapshot_summary"] is None
     assert payload["items"][0]["inventory_comparison_to_previous"] is None
     assert payload["items"][0]["policy_snapshot_summary"]["snapshot_id"] == "policy-snapshot-sync-1"
+    assert payload["items"][0]["policy_snapshot_summary"]["sync_run_id"] == "sync-policy-1"
+    assert (
+        payload["items"][0]["policy_snapshot_summary"]["source_endpoint"]
+        == "http://gnmi-collector:9804/policies/snapshot"
+    )
+    assert payload["items"][0]["policy_snapshot_summary"]["observed_target_count"] == 2
+    assert payload["items"][0]["policy_snapshot_summary"]["policy_capable_target_count"] == 2
+    psr = payload["items"][0]["policy_snapshot_summary"]["detail_source_readiness"]
+    assert psr["posture"] == "partially_ready"
+    assert psr["detail_unavailable_target_count"] == 0
     assert payload["items"][0]["policy_snapshot_summary"]["observed_policy_count"] == 1
     assert payload["items"][0]["policy_comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-sync-1"
     assert payload["items"][0]["policy_comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-sync-0"
@@ -3528,6 +3566,12 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert pcmp["previous_detail_unavailable_target_count"] == 3
     assert pcmp["current_partial_detail_target_count"] == 1
     assert pcmp["previous_partial_detail_target_count"] == 0
+    assert pcmp["current_sync_run_id"] == "sync-policy-1"
+    assert pcmp["previous_sync_run_id"] == "sync-policy-0"
+    assert pcmp["current_source_endpoint"] == "http://gnmi-collector:9804/policies/snapshot"
+    assert pcmp["previous_source_endpoint"] == "http://gnmi-collector:9804/policies/snapshot"
+    assert pcmp["current_detail_source_readiness"]["partial_detail_target_count"] == 1
+    assert pcmp["previous_detail_source_readiness"]["detail_unavailable_target_count"] == 3
     assert payload["items"][1]["workflow_name"] == "topology_snapshot_sync"
     assert payload["items"][1]["status"] == "partial"
     assert payload["items"][1]["persisted_artifacts"] == ["topology_snapshot"]
