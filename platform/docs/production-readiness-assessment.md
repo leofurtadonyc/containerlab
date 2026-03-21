@@ -38,13 +38,17 @@ It is not ready to be treated as:
 
 This assessment is grounded in the current repository state plus live runtime
 evidence gathered from the running platform, updated through the week 16
-operational checkpoint and the **week 18** documentation and observability
-rollup: **devices/inventory** history verifier parity with topology/policy gates;
-**workflow/audit** inventory snapshot and comparison JSON contracts and trust
-language; **Readiness** evaluation-sample versus persisted-snapshot clarity in
-**app-web** and on **`platform-overview`** (mirror panel titles and
-**`platform_app_api_readiness_*`** metrics); **change-validation** as
-markdown-only scaffold; **vendor** (**`vendor-overview`**) as **Nokia-first**
+operational checkpoint, the **week 18** documentation and observability
+rollup, and **week 19** inventory-history deepening (expanded **`/api/v1/devices`**
+**`history`** contract and verifier coverage where gates match; **`app-api`**
+**`/metrics`** **`inventory_snapshots`** table gauges **alongside** existing
+sync-run history metrics; **`dashboards.md`** / platform overview alignment for
+the product-versus-Grafana split): **devices/inventory** history verifier parity
+with topology/policy gates; **workflow/audit** inventory snapshot and comparison
+JSON contracts and trust language; **Readiness** evaluation-sample versus
+persisted-snapshot clarity in **app-web** and on **`platform-overview`** (mirror
+panel titles and **`platform_app_api_readiness_*`** metrics); **change-validation**
+as markdown-only scaffold; **vendor** (**`vendor-overview`**) as **Nokia-first**
 real **`platform_gnmi_collector_*`** plus **`app-api`** collector-boundary
 duration, budget, and posture. **`roadmap.md`**, **`03-CURRENT-STATUS.md`**, the
 runbook, and **`data-flows.md`** describe the same bounded envelope as this
@@ -52,7 +56,7 @@ document.
 
 ### Live runtime verification
 
-- `./scripts/verify-core-runtime.sh` passed for the current deployment (including conditional `/api/v1/policies` policy-history JSON keys when Postgres holds policy snapshots and the API lists recent snapshots, with honest skip notices on a fresh baseline; the same **prefix-based** `history.recent_snapshots` gate and notices apply to **`/api/v1/devices`** inventory history when `inventory_snapshots` rows exist)
+- `./scripts/verify-core-runtime.sh` passed for the current deployment (including conditional `/api/v1/policies` policy-history JSON keys when Postgres holds policy snapshots and the API lists recent snapshots, with honest skip notices on a fresh baseline; the same **prefix-based** `history.recent_snapshots` gate and notices apply to **`/api/v1/devices`** inventory history when `inventory_snapshots` rows exist, with **(a)–(d)** snapshot and **`comparison_to_previous`** key assertions when non-empty); **`app-api`** **`/metrics`** exposes **`platform_app_api_inventory_snapshots_persisted_total`** and **`platform_app_api_inventory_snapshot_latest_persisted_at_seconds`** as bounded Postgres table mirrors—not a substitute for devices **`history`** semantics)
 - `./scripts/verify-odl-auth.sh` passed for the bounded ODL helper path
 - `docker ps` showed healthy runtime state for `postgres`, `prometheus`,
   `grafana`, `gnmi-collector`, `app-api`, and `app-web`; `odl` was running and
@@ -114,8 +118,15 @@ The current repository now explicitly documents:
   `/api/v1/policies` and the WebUI Policies page. Grafana’s SR policy family
   mirrors **bounded current** metrics and explicit scope text only—not persisted
   history timelines, drift verdicts, or validation semantics.
+- **Devices and inventory history interpretation** is **product-owned** for rich
+  **`history`** on **`/api/v1/devices`** (recent snapshots, comparisons, bounded
+  **`change_preview`**, Overview/Platform Health cues). Grafana and **`/metrics`**
+  expose only bounded numeric mirrors (sync-run history metrics plus
+  **`platform_app_api_inventory_snapshots_persisted_total`** and
+  **`platform_app_api_inventory_snapshot_latest_persisted_at_seconds`** for the
+  **`inventory_snapshots`** table), not replacement history semantics.
 
-### Week 18 alignment note (documentation and observability)
+### Week 18–19 alignment note (documentation and observability)
 
 The following **does not expand** the Phase 2 safe-use verdict but **does**
 tighten operator-truth coherence across **`roadmap.md`**, this assessment,
@@ -123,7 +134,9 @@ tighten operator-truth coherence across **`roadmap.md`**, this assessment,
 
 - **Devices and inventory history:** `verify-core-runtime.sh` includes
   conditional **devices** inventory history checks consistent with topology and
-  policy history honesty when Postgres holds inventory snapshot rows (see
+  policy history honesty when Postgres holds inventory snapshot rows, including
+  expanded snapshot and **`comparison_to_previous`** key coverage when
+  **`recent_snapshots`** is non-empty under the compact-JSON gate (see
   `deployment-runbook.md`).
 - **Workflow and audit inventory:** backend tests pin inventory snapshot and
   comparison JSON; WebUI copy states sync-derived boundaries.
@@ -139,11 +152,15 @@ tighten operator-truth coherence across **`roadmap.md`**, this assessment,
   fake PromQL; not a validation surface). **`vendor-overview`** uses **real**
   bounded **`platform_gnmi_collector_*`** plus **`app-api`** collector-boundary
   **duration**, **timeout budget**, and **posture**—**Nokia-first**, no
-  multi-vendor parity claims (see **`dashboards.md`**).
+  multi-vendor parity claims (see **`dashboards.md`**). **Platform overview**
+  may show **inventory persisted snapshot** age and row-count mirrors tied to
+  **`platform_app_api_inventory_snapshots_*`** metrics; those panels remain
+  observability-only and do not reproduce **`/api/v1/devices`** **`history`**
+  (see **`dashboards.md`** and **`data-flows.md`**).
 
 Verdict **`conditionally_ready_with_explicit_limits`** remains unchanged. **No**
 workflow authorization, **no** dry-run authorization, **no** validation-engine
-authorization, and **no** phase transition are implied by week 18 doc alignment.
+authorization, and **no** phase transition are implied by week **18–19** doc alignment.
 
 ## Assessment By Area
 
@@ -241,8 +258,11 @@ Why this is strong enough now:
   platform-status read paths, dashboard-critical metric families including
   paired-link, single-sided-link, and pairing-posture signals, and Prometheus
   target posture; when Postgres holds inventory snapshot rows it also exercises
-  bounded **devices** inventory history contract checks aligned with topology
-  and policy history gates
+  bounded **devices** inventory history contract checks (expanded snapshot and
+  **`comparison_to_previous`** keys when the verifier gates match) aligned with
+  topology and policy history gates; dashboard-critical **`app-api`** metric
+  families include **`platform_app_api_inventory_snapshots_persisted_total`**
+  and **`platform_app_api_inventory_snapshot_latest_persisted_at_seconds`**
 - `verify-odl-auth` validates the configured ODL credential path and rejects
   the default fallback
 - degraded but honest states such as partial topology, non-ok read-path
