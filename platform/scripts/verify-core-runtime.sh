@@ -66,6 +66,21 @@ assert_not_contains() {
   fi
 }
 
+# comparison_to_latest_persisted.status is shared across devices, topology, and policies (week 21 alignment).
+assert_comparison_to_latest_status_allowed() {
+  name=$1
+  payload=$2
+
+  if printf '%s' "$payload" | grep -F '"comparison_to_latest_persisted":{"status":"unavailable"' >/dev/null 2>&1; then
+    return 0
+  fi
+  if printf '%s' "$payload" | grep -F '"comparison_to_latest_persisted":{"status":"live_vs_latest_persisted_ready"' >/dev/null 2>&1; then
+    return 0
+  fi
+  echo "$name: comparison_to_latest_persisted.status must be unavailable or live_vs_latest_persisted_ready" >&2
+  exit 1
+}
+
 query_postgres_scalar() {
   sql=$1
 
@@ -243,6 +258,8 @@ assert_contains "platform status response" "$platform_status_response" '"linked_
 assert_contains "platform status response" "$platform_status_response" '"isolated_node_count":'
 assert_contains "platform status response" "$platform_status_response" '"policy_capable_target_count":'
 assert_contains "platform status response" "$platform_status_response" '"detail_ready_target_count":'
+assert_contains "platform status response (API metadata)" "$platform_status_response" '"service":"app-api"'
+assert_contains "platform status response (API metadata)" "$platform_status_response" '"phase":"phase_2_read_only_foundation"'
 
 assert_contains "devices response" "$devices_response" '"data_status":"'
 assert_contains "devices response" "$devices_response" '"serving_mode":"'
@@ -280,6 +297,43 @@ assert_contains "policies response" "$policies_response" '"target_footprints":['
 assert_contains "policies response" "$policies_response" '"detail_blocker_reason":"'
 assert_contains "policies response" "$policies_response" '"comparison_to_latest_persisted":{'
 assert_contains "policies response" "$policies_response" '"history":{'
+
+# Cross-slice list/history metadata and evidence shape (contract posture, not business truth).
+assert_contains "devices response (API metadata)" "$devices_response" '"service":"app-api"'
+assert_contains "devices response (API metadata)" "$devices_response" '"phase":"phase_2_read_only_foundation"'
+assert_contains "topology response (API metadata)" "$topology_response" '"service":"app-api"'
+assert_contains "topology response (API metadata)" "$topology_response" '"phase":"phase_2_read_only_foundation"'
+assert_contains "policies response (API metadata)" "$policies_response" '"service":"app-api"'
+assert_contains "policies response (API metadata)" "$policies_response" '"phase":"phase_2_read_only_foundation"'
+assert_contains "workflow history response (API metadata)" "$workflow_history_response" '"service":"app-api"'
+assert_contains "workflow history response (API metadata)" "$workflow_history_response" '"phase":"phase_2_read_only_foundation"'
+assert_contains "audit history response (API metadata)" "$audit_history_response" '"service":"app-api"'
+assert_contains "audit history response (API metadata)" "$audit_history_response" '"phase":"phase_2_read_only_foundation"'
+assert_contains "capabilities response (API metadata)" "$capabilities_response" '"service":"app-api"'
+assert_contains "capabilities response (API metadata)" "$capabilities_response" '"phase":"phase_2_read_only_foundation"'
+
+assert_contains "devices response (evidence_confidence fields)" "$devices_response" '"source_posture":"'
+assert_contains "devices response (evidence_confidence fields)" "$devices_response" '"evidence_kind":"'
+assert_contains "devices response (evidence_confidence fields)" "$devices_response" '"confidence_posture":"'
+assert_contains "devices response (evidence_confidence fields)" "$devices_response" '"freshness_posture":"'
+assert_contains "devices response (evidence_confidence fields)" "$devices_response" '"blocked_reason":"'
+assert_contains "topology response (evidence_confidence fields)" "$topology_response" '"source_posture":"'
+assert_contains "topology response (evidence_confidence fields)" "$topology_response" '"evidence_kind":"'
+assert_contains "topology response (evidence_confidence fields)" "$topology_response" '"confidence_posture":"'
+assert_contains "topology response (evidence_confidence fields)" "$topology_response" '"freshness_posture":"'
+assert_contains "topology response (evidence_confidence fields)" "$topology_response" '"blocked_reason":"'
+assert_contains "policies response (evidence_confidence fields)" "$policies_response" '"source_posture":"'
+assert_contains "policies response (evidence_confidence fields)" "$policies_response" '"evidence_kind":"'
+assert_contains "policies response (evidence_confidence fields)" "$policies_response" '"confidence_posture":"'
+assert_contains "policies response (evidence_confidence fields)" "$policies_response" '"freshness_posture":"'
+assert_contains "policies response (evidence_confidence fields)" "$policies_response" '"blocked_reason":"'
+
+assert_not_contains "devices response (legacy policy-only comparison status)" "$devices_response" '"current_vs_latest_persisted_ready"'
+assert_not_contains "topology response (legacy policy-only comparison status)" "$topology_response" '"current_vs_latest_persisted_ready"'
+assert_not_contains "policies response (legacy policy-only comparison status)" "$policies_response" '"current_vs_latest_persisted_ready"'
+assert_comparison_to_latest_status_allowed "devices response" "$devices_response"
+assert_comparison_to_latest_status_allowed "topology response" "$topology_response"
+assert_comparison_to_latest_status_allowed "policies response" "$policies_response"
 
 assert_contains "capabilities response" "$capabilities_response" '"data_status":"bounded_matrix"'
 assert_contains "capabilities response" "$capabilities_response" '"dry_run_readiness":{'
