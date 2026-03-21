@@ -54,6 +54,16 @@ duration, budget, and posture. **`roadmap.md`**, **`03-CURRENT-STATUS.md`**, the
 runbook, and **`data-flows.md`** describe the same bounded envelope as this
 document.
 
+**Week 19 closure (inventory / devices history deepening):** the **ADR-0001**
+default slice is **implemented and documented**—richer **`/api/v1/devices`**
+**`history`**, aligned workflow/audit inventory envelopes, WebUI and verifier
+hardening, **`inventory_snapshots`** table metrics on **`app-api`** **`/metrics`**,
+and cross-file operator-truth alignment. Verdict **`conditionally_ready_with_explicit_limits`**
+is **unchanged**. Live verification of the new metric families requires operators
+to **rebuild** repo-built images and **redeploy** before **`verify-core-runtime.sh`**
+can observe **`platform_app_api_inventory_snapshots_persisted_total`** on a running
+stack.
+
 ### Live runtime verification
 
 - `./scripts/verify-core-runtime.sh` passed for the current deployment (including conditional `/api/v1/policies` policy-history JSON keys when Postgres holds policy snapshots and the API lists recent snapshots, with honest skip notices on a fresh baseline; the same **prefix-based** `history.recent_snapshots` gate and notices apply to **`/api/v1/devices`** inventory history when `inventory_snapshots` rows exist, with **(a)–(d)** snapshot and **`comparison_to_previous`** key assertions when non-empty); **`app-api`** **`/metrics`** exposes **`platform_app_api_inventory_snapshots_persisted_total`** and **`platform_app_api_inventory_snapshot_latest_persisted_at_seconds`** as bounded Postgres table mirrors—not a substitute for devices **`history`** semantics)
