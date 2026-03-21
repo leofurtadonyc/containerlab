@@ -196,12 +196,12 @@ Current state:
 
 Role:
 
-- bounded controller-side and protocol-side support component
+- bounded controller-side and protocol-side **helper** component (`app-api` pulls; ODL does not push product APIs)
 
 What it owns:
 
-- future controller-side integration where ODL adds real value
-- future BGP-LS, BMP, and PCEP-related support areas
+- future controller-side integration where ODL adds real value (still **backend-mediated**)
+- future BGP-LS, BMP, and PCEP-related support areas (not implied by the current probe)
 
 What it must not own:
 
@@ -209,12 +209,13 @@ What it must not own:
 - workflow ownership
 - product APIs
 - normalized product truth by itself
+- **default** authority for SR topology or policy correctness (collector-backed read models remain primary for those slices today)
 
 Current state:
 
 - topology-level service presence exists
 - README and runtime boundary documentation exist
-- a bounded RESTCONF-backed controller capability probe now exists for the Platform Health path
+- **one** bounded RESTCONF-backed controller capability probe exists for the Platform Health path (reachability + capability hints; not controller-owned topology or policy truth)
 - broader topology, policy, and workflow-oriented controller integration remains intentionally out of scope
 
 ### `app-web`
@@ -254,7 +255,7 @@ At a high level:
 - `postgres` persists durable application data
 - `prometheus` stores metrics
 - `grafana` visualizes observability data
-- `odl` contributes bounded controller-side inputs where useful
+- `odl` contributes bounded controller-side **inputs** where useful; those inputs are optional enrichment—**not** the product brain
 - `app-web` becomes the operator-facing experience
 
 ## Boundary Rules To Preserve

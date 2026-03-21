@@ -458,9 +458,11 @@ def build_platform_status_response() -> PlatformStatusResponse:
         generated_at=datetime.now(UTC),
         topology_name="platform",
         summary=(
-            "Phase 2 declared platform service inventory with one bounded ODL "
-            "RESTCONF capability probe plus bounded inventory, topology, and policy "
-            "collector read-path coverage summaries; deeper dependency health checks remain intentionally narrow."
+            "Phase 2 declared platform service inventory with bounded inventory, topology, and policy "
+            "collector read-path coverage summaries, plus one optional bounded ODL RESTCONF capability probe. "
+            "That ODL probe is helper infrastructure only—it does not make the controller the owner of SR "
+            "topology or policy truth (those remain collector-backed read models in app-api). "
+            "Deeper dependency health checks remain intentionally narrow."
         ),
         recovery=recovery,
         components=[

@@ -173,6 +173,8 @@ This now validates:
 - the upstream default password is rejected when a different configured password is expected
 - `app-api` reports the bounded ODL platform-health probe as healthy
 
+**What this does *not* prove:** it does **not** validate full controller functionality, SR topology or policy correctness, or multi-protocol depth. It only checks the **bounded** RESTCONF credential path and that the **helper** probe used for platform status can succeed. Product truth for inventory, topology, and policies remains **collector-backed** in `app-api`, not controller-owned by default.
+
 ## Expected Healthy State
 
 After a successful rebuild, deploy, and verification pass, the platform should look like this.

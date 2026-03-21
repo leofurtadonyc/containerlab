@@ -279,6 +279,12 @@ export function PlatformHealthView() {
           failures; partial live within budget is not a timeout. Use each slice&apos;s serving mode
           and evidence fields for how the response was built.
         </p>
+        <p className="table-note">
+          <strong>OpenDaylight (ODL)</strong> is listed as a declared component with a single bounded
+          RESTCONF capability probe—reachability and YANG/operations hints only. It does not own SR
+          topology or policy product truth, does not replace gNMI/collector-backed read paths, and is
+          not a controller control plane for the platform.
+        </p>
       </div>
 
       {policyDetailReadiness.blockedTargetCount > 0 ? (

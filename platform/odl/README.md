@@ -1,10 +1,10 @@
 # OpenDaylight (ODL)
 
 ## Purpose
-Provides bounded controller-side and protocol-side support for the platform where OpenDaylight offers useful leverage.
+Provides **bounded** controller-side and protocol-side **helper** support for the platform where OpenDaylight offers useful leverage—**not** a second product brain and **not** the default source of SR topology or policy truth.
 
 ## Why it exists
-Some SR policy and topology interactions may benefit from a purpose-built SDN controller. ODL fills that bounded role where it provides real leverage instead of forcing the whole platform architecture through controller logic.
+Some SR policy and topology interactions may benefit from a purpose-built SDN controller. ODL fills that **optional** bounded role where it adds real leverage **without** centralizing the platform architecture on controller logic. **Product truth stays in `app-api` and gNMI-backed read paths; ODL inputs are observed and translated by the backend.**
 
 ## What it owns
 - bounded controller-layer protocol handling
@@ -35,8 +35,11 @@ Some SR policy and topology interactions may benefit from a purpose-built SDN co
 - `../scripts/verify-odl-auth.sh` provides a deploy-time regression check for the bounded RESTCONF credential path and the backend's ODL platform-health observation
 
 ## Current status
-Topology-level service presence exists and the backend now has a bounded live ODL read enrichment on the Platform Health path: `app-api` performs a small RESTCONF capability probe against the controller's YANG library and operations inventory, then exposes that result as backend-owned platform status data. ODL still does not own topology, policy, or workflow truth.
-The platform now builds ODL as a local image so the controller's bounded RESTCONF admin credential is rotated at startup to the topology-configured `ODL_ADMIN_PASSWORD` value. This keeps the backend ODL probe authenticated without falling back to the upstream image default credential.
+Topology-level service presence exists and the backend has a **single** bounded live ODL read enrichment on the Platform Health path: `app-api` performs a small RESTCONF capability probe against the controller's YANG library and operations inventory, then exposes that result as **backend-owned** platform status data. **Operator interpretation:** this probe is **reachability and capability hints only**—it does **not** validate SR paths, replace collector-backed topology or policy APIs, or imply that the controller adjudicates product correctness.
+
+ODL still does not own topology, policy, or workflow truth.
+
+The platform builds ODL as a local image so the controller's bounded RESTCONF admin credential is rotated at startup to the topology-configured `ODL_ADMIN_PASSWORD` value. This keeps the backend ODL probe authenticated without falling back to the upstream image default credential.
 
 ## Planned evolution
 - documented bounded role in the platform topology
