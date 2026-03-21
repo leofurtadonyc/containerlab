@@ -28,9 +28,10 @@ First, it records the completed week 14 pairing vocabulary and ownership split
 for endpoint pairing, single-sided inferred-link posture, product trust cues,
 Grafana numeric projections, and verifier behavior.
 
-Second, it defines the next narrower follow-on contract for decomposing topology
-partiality into inference-boundedness, endpoint-coverage limits, and collection
-degradation without reopening the completed pairing work.
+Second, it defines the bounded contract for decomposing topology partiality into
+inference-boundedness, endpoint-coverage limits, collection degradation, and
+node-participation posture (four response-level axes) without reopening the
+completed pairing implementation work.
 
 ## Review Scope
 

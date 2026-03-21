@@ -528,6 +528,8 @@ def build_topology_response() -> TopologyResponse:
     collection_posture = collector_snapshot.collection_posture
     if collection_posture is None and collector_snapshot.status == "collector_unavailable":
         collection_posture = "blocked"
+    # Four-axis partiality: inference vs endpoint evidence vs collection health vs node participation
+    # (see platform/schemas/topology/topology-read-path-coverage-semantics.md). Not interchangeable.
     coverage_summary = build_topology_coverage_summary(
         nodes=snapshot.nodes,
         links=snapshot.links,

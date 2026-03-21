@@ -54,19 +54,26 @@ The next bounded follow-on should not replace `completeness=partial`.
 `partial` remains the top-level stop line that says the current topology slice
 is still bounded and not full topology truth.
 
-The next bounded follow-on should only decompose why the topology is partial.
+The follow-on decomposes **why** the topology is partial using **four**
+backend-owned response-level terms. Each answers a **different** question; they
+must not be overloaded into `completeness`, `degraded_scope_summary`, or each other.
 
-That decomposition should stay backend-owned and use only these three response-
-level bounded terms:
+| Term | Answers | Does **not** answer |
+|------|---------|---------------------|
+| `inference_posture` | Are emitted links still **inference-bounded** vs unclassifiable? | Collection health; per-link endpoint strength; whether nodes are isolated |
+| `endpoint_pairing_posture` | **Aggregate** mix of paired vs single-sided endpoint evidence on emitted links | Global topology completeness %; inference basis; collection status |
+| `collection_posture` | Is the **live collection path** ok, degraded, blocked, or unclassifiable? | Whether inference is wrong; pairing quality; node isolation |
+| `node_participation_posture` | Among **observed nodes**, are any isolated from all emitted inferred links? | Per-link `endpoint_pairing_state`; protocol adjacency truth |
+
+The four terms are:
 
 - `inference_posture`
 - `endpoint_pairing_posture`
 - `collection_posture`
+- `node_participation_posture`
 
-No fourth response-level topology partiality term is justified in this task.
-
-These three terms separate three different things that are currently too easy
-to blur together.
+These separate four things that are easy to blur together when only prose or a
+single “partial/degraded” label is available.
 
 ### Response-level term: `inference_posture`
 
@@ -260,12 +267,15 @@ Definitions:
 - `collection_posture`: backend-owned statement of whether current collection
   degradation is affecting the live topology response.
 
-Implementation status now:
+Implementation status (current repository):
 
-- not implemented yet in `gnmi-collector`
-- not implemented yet in `app-api`
-- not implemented yet in `app-web`
-- not implemented yet in Grafana or verifier behavior
+- implemented in `gnmi-collector` and `app-api` for `inference_posture`,
+  `collection_posture`, and `node_participation_posture` on the live topology path
+  where the collector envelope supplies them; backend derives pairing and
+  participation counts when needed
+- implemented in `app-web`, Grafana, and `verify-core-runtime` for the bounded
+  pairing and coverage signals aligned with this document (see week 14–17
+  completion notes below)
 
 ### Numeric counts
 
@@ -325,16 +335,16 @@ collector slice:
   isolated-node, and current node-participation-posture gauges
 - implemented now in collector tests: healthy fully-linked and isolated-node
   evidence cases pinned end to end
-- not implemented yet in `app-api`
-- not implemented yet in `app-web`, Grafana, or verifier behavior
+- implemented now in `app-api`: `coverage_summary.node_participation_posture`
+  and counts, with backend derivation when the collector omits explicit values
+- implemented now in `app-web`, Grafana, and verifier behavior for bounded
+  runtime-contract and notice-oriented checks (not validation verdicts)
 
-### Collector-owned supporting posture
+### Response-level term: `node_participation_posture` (collector-fed, backend-owned)
 
-The bounded collector-side evidence-gap slice may emit one supporting posture
-as part of the topology delivery envelope so later layers do not need to guess
-from prose.
-
-- `node_participation_posture`
+The collector may emit `node_participation_posture` in the delivery envelope; the
+backend also derives it when absent. It is the **fourth** response-level partiality
+axis (with the same allowed values and meanings as in the coverage summary).
 
 Allowed values:
 
@@ -354,6 +364,15 @@ Definitions:
 - `unknown`: the current response cannot honestly classify node participation
   from the normalized nodes and emitted links in hand.
 
+Explicit non-meanings:
+
+- `fully_linked` does **not** mean every emitted link is `paired` (participation
+  is “on any link,” not “strong endpoint evidence on every link”).
+- `isolated_only` does **not** mean collection failed; collection may be `ok`
+  while the inferred graph leaves nodes unused.
+- This posture does **not** replace per-link `endpoint_pairing_state` or
+  `endpoint_pairing_posture`.
+
 ### Prose-only notes
 
 These should remain prose rather than turning into new enum fields.
@@ -363,8 +382,8 @@ These should remain prose rather than turning into new enum fields.
 - explanatory notes such as why the topology remains partial, why inference is
   bounded, and what the current endpoint-pairing limits mean
 
-These prose fields may mention one or more of the three partiality causes, but
-they must not replace the three-term backend-owned contract above.
+These prose fields may mention one or more of the four partiality dimensions, but
+they must not replace the four-term backend-owned contract above.
 
 The design should not create a large family of enum values for every reason or
 sub-reason when a short explicit note is enough.
@@ -434,8 +453,11 @@ Topology-response aggregate fields:
 - `coverage_summary.inference_posture`
 - `coverage_summary.endpoint_pairing_posture`
 - `coverage_summary.collection_posture`
+- `coverage_summary.node_participation_posture`
 - `coverage_summary.paired_link_count`
 - `coverage_summary.single_sided_link_count`
+- `coverage_summary.linked_node_count`
+- `coverage_summary.isolated_node_count`
 
 Current status:
 
@@ -677,3 +699,11 @@ inference (see `resolve_topology_link_endpoint_evidence`).
 inference, endpoint-pairing, collection, and node-participation postures from
 persisted nodes and links only. That derivation remains **trust cues**, not
 topology validation or workflow semantics.
+
+## Week 21 note — partiality contract refinement (documentation)
+
+Week 21 aligned **schema Field descriptions** (`app-api` `TopologyCoverageSummaryRecord`),
+**internal model** docstrings, and this document so the **four** partiality axes
+are explicitly **non-interchangeable**. No topology discovery, pairing algorithm,
+or inference logic was changed as part of that refinement; it is contract clarity
+only.

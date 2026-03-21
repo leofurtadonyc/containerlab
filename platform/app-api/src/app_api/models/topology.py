@@ -19,7 +19,15 @@ TopologyNodeParticipationPosture = Literal[
 
 
 class TopologyCoverageSummary(BaseModel):
-    """Backend-owned bounded summary of endpoint-pairing coverage posture."""
+    """Backend-owned bounded decomposition of topology partiality (four axes).
+
+    ``inference_posture`` — link records are still inferred, not adjacency truth.
+    ``endpoint_pairing_posture`` — aggregate strength of endpoint evidence on links.
+    ``collection_posture`` — live collection health for this read.
+    ``node_participation_posture`` — linked vs isolated observed nodes given emitted links.
+
+    These dimensions are intentionally orthogonal; see ``topology-read-path-coverage-semantics.md``.
+    """
 
     inference_posture: TopologyInferencePosture
     endpoint_pairing_posture: TopologyEndpointPairingPosture
@@ -295,7 +303,12 @@ def build_topology_coverage_summary(
     linked_node_count: int | None = None,
     isolated_node_count: int | None = None,
 ) -> TopologyCoverageSummary:
-    """Build a bounded backend-owned topology coverage summary."""
+    """Build a bounded backend-owned topology coverage summary.
+
+    Resolves the four partiality axes: collector may supply explicit postures and counts;
+    otherwise the backend derives pairing and node-participation from normalized nodes/links.
+    ``collection_posture`` defaults to ``unknown`` when not supplied by the collector envelope.
+    """
     normalized_inference_posture = _normalize_inference_posture(inference_posture)
     normalized_posture = _normalize_endpoint_pairing_posture(endpoint_pairing_posture)
     normalized_collection_posture = _normalize_collection_posture(collection_posture)
