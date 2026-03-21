@@ -97,3 +97,4 @@ The **default next bounded truth-depth slice** is **Option C — persistence-bac
 | Topology: pairing; what remains | [`topology-truth-depth-review.md`](../topology-truth-depth-review.md) |
 | Operating boundary | [`production-readiness-assessment.md`](../production-readiness-assessment.md) |
 | Roadmap / checkpoint | [`roadmap.md`](../roadmap.md) |
+| Post–week 21 scheduling posture | [`post-week-21-bounded-phase2-recommendation.md`](../post-week-21-bounded-phase2-recommendation.md) |
