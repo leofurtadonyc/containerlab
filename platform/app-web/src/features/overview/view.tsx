@@ -24,6 +24,7 @@ import {
   formatLabel,
 } from "../../lib/presentation";
 import { buildInventoryHistoryTrustCueRow } from "../../lib/inventory-history-trust";
+import { buildPolicyHistoryTrustCueRow } from "../../lib/policy-history-trust";
 import { normalizeDryRunReadiness, summarizeReadinessItemIdentitySupport } from "../../lib/readiness";
 import { useCapabilitiesQuery } from "../capabilities/api";
 import { useDevicesQuery } from "../devices/api";
@@ -840,7 +841,7 @@ export function OverviewView() {
           <TrustCueCard
             title="Policies Trust Cues"
             summary={buildSliceAvailabilitySummary(
-              "Policy routine use is grounded in serving mode, freshness posture, evidence kind, and the bounded coverage and detail-ready posture now exposed for the policy read path.",
+              "Policy routine use is grounded in serving mode, freshness posture, evidence kind, and the bounded coverage and detail-ready posture now exposed for the policy read path. The policy history row summarizes bounded persisted snapshot history from the Policies API (comparison-ready versus current-only versus unavailable) together with the latest available source-readiness posture—full detail stays on the Policies page.",
               policiesSliceState,
             )}
             rows={[
@@ -907,6 +908,7 @@ export function OverviewView() {
                 emptyLabel: "No comparison anchor exposed",
                 note: buildSliceAvailabilityNote(policiesSliceState) ?? undefined,
               },
+              buildPolicyHistoryTrustCueRow(policiesData, false, false),
             ]}
           />
         ) : (

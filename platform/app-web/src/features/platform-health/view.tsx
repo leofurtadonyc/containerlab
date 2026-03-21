@@ -13,6 +13,7 @@ import {
   formatLabel,
 } from "../../lib/presentation";
 import { buildInventoryHistoryTrustCueRow } from "../../lib/inventory-history-trust";
+import { buildPolicyHistoryTrustCueRow } from "../../lib/policy-history-trust";
 import { useDevicesQuery } from "../devices/api";
 import { usePoliciesQuery } from "../policies/api";
 import { getPlatformReadPath, usePlatformStatusQuery } from "./api";
@@ -450,18 +451,7 @@ export function PlatformHealthView() {
               note: "Platform status does not currently expose a persisted snapshot identifier because this page is a bounded current-status surface rather than a persisted readiness or history view.",
             },
             buildInventoryHistoryTrustCueRow(devicesData, isDevicesLoading, devicesError != null),
-            ...(policiesData?.history?.recent_snapshots &&
-            policiesData.history.recent_snapshots.length > 0
-              ? [
-                  {
-                    label: "Policy history",
-                    kind: "text" as const,
-                    value: `Persisted snapshots • ${formatLabel(policiesData.history.status)}`,
-                    note:
-                      "Bounded persisted policy history from the Policies API: snapshot anchors and source-readiness posture evolve on that page. Coverage cues only—not drift analysis, validation verdicts, or workflow state.",
-                  },
-                ]
-              : []),
+            buildPolicyHistoryTrustCueRow(policiesData, isPoliciesLoading, policiesError !== null),
             {
               label: "Readiness identity cues",
               kind: "text",

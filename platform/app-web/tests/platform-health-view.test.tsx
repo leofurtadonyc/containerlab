@@ -270,6 +270,8 @@ describe("PlatformHealthView", () => {
     expect(html).toContain("Recovery posture");
     expect(html).toContain("Same-workspace persisted baseline is present");
     expect(html).toContain("see Overview for richer recovery cues");
+    expect(html).toContain("Policy history");
+    expect(html).toContain("No snapshots • unavailable • ready");
   });
 
   it("surfaces new baseline and degraded read-side posture in recovery trust cue", () => {
@@ -330,10 +332,9 @@ describe("PlatformHealthView", () => {
     const html = renderToStaticMarkup(<PlatformHealthView />);
 
     expect(html).toContain("Policy history");
-    expect(html).toContain("Persisted snapshots");
-    expect(html).toContain("comparison ready");
-    expect(html).toContain("not drift analysis");
-    expect(html).toContain("validation verdicts");
+    expect(html).toContain("1 snapshot • comparison ready • ready");
+    expect(html).toContain("drift analysis");
+    expect(html).toContain("workflow state");
   });
 
   it("surfaces bounded inventory-history trust cue from the supporting Devices API", () => {
@@ -346,6 +347,38 @@ describe("PlatformHealthView", () => {
     expect(html).toContain("No snapshots");
     expect(html).toContain("unavailable");
     expect(html).toContain("Read-side evidence");
+  });
+
+  it("shows loading policy history when the Policies query is still loading", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatus()));
+    usePoliciesQuery.mockReturnValue({
+      data: null,
+      error: null,
+      isLoading: true,
+      reload: vi.fn(async () => undefined),
+    });
+
+    const html = renderToStaticMarkup(<PlatformHealthView />);
+
+    expect(html).toContain("Policy history");
+    expect(html).toContain("Loading");
+    expect(html).toContain("still loading");
+  });
+
+  it("shows unavailable policy history when the Policies query fails", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatus()));
+    usePoliciesQuery.mockReturnValue({
+      data: null,
+      error: new ApiClientError("policies failed", 0, "network_error"),
+      isLoading: false,
+      reload: vi.fn(async () => undefined),
+    });
+
+    const html = renderToStaticMarkup(<PlatformHealthView />);
+
+    expect(html).toContain("Policy history");
+    expect(html).toContain("Unavailable");
+    expect(html).toContain("could not load the supporting Policies response");
   });
 
   it("shows unavailable inventory history when the Devices query fails", () => {
