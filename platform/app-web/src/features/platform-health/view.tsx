@@ -273,6 +273,12 @@ export function PlatformHealthView() {
           Persisted readiness anchors and any readiness child-item identity cues belong on the
           Readiness page, not on this bounded current-status surface.
         </p>
+        <p className="table-note">
+          Read-path notes may summarize bounded app-api→collector fetch posture: latency budget
+          exhaustion (stop waiting) is not the same as connection, HTTP, or payload boundary
+          failures; partial live within budget is not a timeout. Use each slice&apos;s serving mode
+          and evidence fields for how the response was built.
+        </p>
       </div>
 
       {policyDetailReadiness.blockedTargetCount > 0 ? (

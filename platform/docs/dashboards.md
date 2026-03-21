@@ -234,7 +234,9 @@ Platform overview latency-posture rule:
 
 - duration and timeout-budget panels exist to show bounded collector-boundary timing posture by model family
 - latest outcome posture panels may distinguish `timeout_budget_exceeded` from `collector_connection_error`, `collector_http_error`, `invalid_response_payload`, `unknown_error`, and `partial_live_feed`
-- those panels help explain why persisted fallback happened, but the backend contracts and WebUI trust cues remain the product-facing source of truth
+- **`timeout_budget_exceeded`** reflects **latency budget exhaustion** (app-api stopped waiting); the other outcomes reflect **non-timeout** boundary failures—**do not** treat them as slow-collector timeout
+- **`partial_live_feed`** means the fetch completed within budget but coverage was still partial; **not** the same as timeout
+- those panels help explain collector-boundary posture; **serving_mode** and slice APIs remain the product-facing source for persisted fallback versus live-backed responses
 
 Week 14 topology coverage rule:
 

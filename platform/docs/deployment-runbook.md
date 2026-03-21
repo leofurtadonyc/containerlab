@@ -249,7 +249,7 @@ What healthy means here:
 - hard failures still stop the deployment from being treated as usable
 - warnings call out degraded-but-honest current postures such as persisted fallback, blocked read-side evidence, or bounded policy and topology limits that remain visible by design
 - notices now also call out bounded read-path attention states such as partially-paired or single-sided topology endpoint coverage and zero policy detail-ready targets when those conditions are real
-- collector-boundary timeout warnings mean the backend hit the bounded latency budget and chose fail-fast fallback; they do not mean workflow semantics or a generic dependency-dashboard verdict
+- collector-boundary timeout warnings mean **app-api** hit the bounded latency budget and **stopped waiting** for the collector (fail-fast); that is **distinct** from connection, HTTP, or payload boundary failures—see **`data-flows.md`** (collector-boundary posture); they do not mean workflow semantics or a generic dependency-dashboard verdict
 - topology pairing notices mean the inferred topology slice still mixes stronger and weaker endpoint evidence; they do not mean the platform has proven an adjacency fault or protocol failure
 - a warning does not imply workflow semantics, remediation intent, or automatic rollback; it is an operator cue to inspect current truth posture more carefully
 
@@ -265,9 +265,9 @@ These signals are intentionally bounded:
 
 Interpret them this way:
 
-- `timeout_budget_exceeded` means persisted fallback or unreachable posture was triggered by the bounded fail-fast timeout path
-- `collector_connection_error`, `collector_http_error`, `invalid_response_payload`, and `unknown_error` mean the boundary failed for a reason other than slowness alone
-- `partial_live_feed` means the fetch completed within the current timeout budget but still returned bounded degraded live coverage
+- `timeout_budget_exceeded` means the latest bounded fetch **hit the latency budget** (app-api stopped waiting); slice posture then depends on persisted snapshots—**not** the same metric outcome as connection or HTTP errors
+- `collector_connection_error`, `collector_http_error`, `invalid_response_payload`, and `unknown_error` mean the boundary failed for a **non-timeout** reason (classify separately from `timeout_budget_exceeded`)
+- `partial_live_feed` means the fetch **completed within** the current timeout budget but still returned bounded degraded live coverage (not a timeout)
 - these metrics remain observability signals only; the product-facing truth still lives in the backend contracts and the WebUI trust cues
 
 ## What Remains Bootstrap-Grade

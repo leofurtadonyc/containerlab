@@ -2015,7 +2015,7 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
         "All configured inventory targets returned normalized live inventory evidence."
     )
     assert any(
-        "completed in 0.184s within the 3s latency budget" in note
+        "completed within the 3s latency budget (duration 0.184s)" in note
         for note in payload["read_paths"][0]["notes"]
     )
     assert payload["read_paths"][1]["model_family"] == "topology"
@@ -2024,7 +2024,7 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert payload["read_paths"][1]["collection_posture"] == "ok"
     assert payload["read_paths"][1]["node_participation_posture"] == "fully_linked"
     assert any(
-        "completed in 0.228s within the 3s latency budget" in note
+        "completed within the 3s latency budget (duration 0.228s)" in note
         for note in payload["read_paths"][1]["notes"]
     )
     assert payload["read_paths"][1]["paired_link_count"] == 1
@@ -2039,7 +2039,7 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert payload["read_paths"][2]["policy_capable_target_count"] == 34
     assert payload["read_paths"][2]["detail_ready_target_count"] == 2
     assert any(
-        "completed in 0.312s within the 3s latency budget" in note
+        "completed within the 3s latency budget (duration 0.312s)" in note
         for note in payload["read_paths"][2]["notes"]
     )
     assert payload["read_paths"][2]["degraded_scope_summary"] == (
@@ -2349,12 +2349,12 @@ def test_platform_status_endpoint_classifies_collector_boundary_failures(monkeyp
     assert payload["read_paths"][1]["observation_state"] == "degraded"
     assert payload["read_paths"][2]["observation_state"] == "unreachable"
     assert any(
-        "exhausted the 3s latency budget after 3.004s" in note
+        "exceeded the 3s latency budget after 3.004s" in note
         for note in payload["read_paths"][0]["notes"]
     )
     assert any("3s latency budget" in note for note in payload["read_paths"][0]["notes"])
-    assert any("invalid normalized payload" in note for note in payload["read_paths"][1]["notes"])
-    assert any("connection failed" in note for note in payload["read_paths"][2]["notes"])
+    assert any("reported invalid_response_payload" in note for note in payload["read_paths"][1]["notes"])
+    assert any("reported collector_connection_error" in note for note in payload["read_paths"][2]["notes"])
 
 
 def test_platform_status_endpoint_reads_collector_paths_sequentially(monkeypatch) -> None:
