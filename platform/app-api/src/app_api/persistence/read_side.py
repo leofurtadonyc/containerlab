@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
+from sqlalchemy.orm import joinedload
 
 from app_api.integrations.collector.inventory import CollectorInventorySnapshot
 from app_api.integrations.collector.policies import CollectorPolicySnapshot
@@ -62,6 +63,9 @@ class PersistedInventorySnapshot(BaseModel):
     sync_run_id: str
     persisted_at: datetime
     data_status: str
+    observed_at: datetime | None = None
+    source_endpoint: str = ""
+    sync_fetch_status: str = ""
     devices: list[InventoryDevice]
 
 
@@ -172,12 +176,17 @@ def _load_inventory_snapshot_at_offset(offset: int) -> PersistedInventorySnapsho
         with create_session() as session:
             snapshot = session.scalar(
                 select(InventorySnapshotTable)
+                .options(joinedload(InventorySnapshotTable.sync_run))
                 .order_by(InventorySnapshotTable.persisted_at.desc())
                 .offset(offset)
                 .limit(1)
             )
             if snapshot is None:
                 return None
+            sync_run = snapshot.sync_run
+            observed_at = sync_run.observed_at if sync_run is not None else None
+            source_endpoint = sync_run.source_endpoint if sync_run is not None else ""
+            sync_fetch_status = sync_run.fetch_status if sync_run is not None else ""
             records = session.scalars(
                 select(InventoryRecordTable)
                 .where(InventoryRecordTable.snapshot_id == snapshot.id)
@@ -188,6 +197,9 @@ def _load_inventory_snapshot_at_offset(offset: int) -> PersistedInventorySnapsho
                 sync_run_id=snapshot.sync_run_id,
                 persisted_at=snapshot.persisted_at,
                 data_status=snapshot.data_status,
+                observed_at=observed_at,
+                source_endpoint=source_endpoint,
+                sync_fetch_status=sync_fetch_status,
                 devices=[
                     InventoryDevice(
                         device_id=record.device_id,
@@ -268,6 +280,7 @@ def load_recent_inventory_snapshot_summaries(
                     persisted_at=snapshot.persisted_at,
                     snapshot=InventoryHistorySnapshotRecord(
                         snapshot_id=snapshot.id,
+                        sync_run_id=snapshot.sync_run_id,
                         persisted_at=snapshot.persisted_at,
                         observed_at=(
                             sync_runs_by_id[snapshot.sync_run_id].observed_at
@@ -285,6 +298,11 @@ def load_recent_inventory_snapshot_summaries(
                             else "unknown"
                         ),
                         data_status=snapshot.data_status,
+                        source_endpoint=(
+                            sync_runs_by_id[snapshot.sync_run_id].source_endpoint
+                            if snapshot.sync_run_id in sync_runs_by_id
+                            else ""
+                        ),
                         device_count=record_count_by_snapshot_id[snapshot.id],
                         role_counts=dict(role_counts_by_snapshot_id[snapshot.id]),
                         collector_status_counts=dict(

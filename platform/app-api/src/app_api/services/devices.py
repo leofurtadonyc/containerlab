@@ -2,6 +2,7 @@
 
 from collections import Counter
 from datetime import UTC, datetime
+from typing import Literal
 
 from app_api.config.settings import get_settings
 from app_api.integrations.collector.inventory import (
@@ -11,6 +12,7 @@ from app_api.integrations.collector.inventory import (
 from app_api.models.inventory import (
     InventoryComparisonSummary,
     InventoryDevice,
+    InventoryHistoryChangePreview,
     InventoryHistoryComparison,
     InventoryHistoryWindow,
 )
@@ -24,6 +26,7 @@ from app_api.schemas.devices import (
     DeviceRecord,
     DevicesListResponse,
     InventoryComparisonSummary as InventoryComparisonSummaryResponse,
+    InventoryHistoryChangePreview as InventoryHistoryChangePreviewResponse,
     InventoryHistoryComparison as InventoryHistoryComparisonResponse,
     InventoryHistorySnapshotRecord as InventoryHistorySnapshotResponseRecord,
     InventoryHistoryWindow as InventoryHistoryWindowResponse,
@@ -55,6 +58,84 @@ def _device_signature(device: InventoryDevice) -> tuple[object, ...]:
         device.collector_status,
         device.capability_summary,
     )
+
+
+def _inventory_changed_fields(
+    current: InventoryDevice, previous: InventoryDevice
+) -> list[str]:
+    """List normalized inventory attribute names that differ between two devices."""
+    changed: list[str] = []
+    if current.vendor != previous.vendor:
+        changed.append("vendor")
+    if current.platform != previous.platform:
+        changed.append("platform")
+    if current.software_version != previous.software_version:
+        changed.append("software_version")
+    if current.role != previous.role:
+        changed.append("role")
+    if current.management_address != previous.management_address:
+        changed.append("management_address")
+    if current.collector_status != previous.collector_status:
+        changed.append("collector_status")
+    if current.capability_summary != previous.capability_summary:
+        changed.append("capability_summary")
+    return sorted(changed)
+
+
+def _as_inventory_data_status(raw: str) -> Literal["live", "degraded"]:
+    """Normalize persisted snapshot data_status for API literals."""
+    return raw if raw in ("live", "degraded") else "degraded"
+
+
+def _build_inventory_change_preview(
+    *,
+    current_by_id: dict[str, InventoryDevice],
+    previous_by_id: dict[str, InventoryDevice],
+    added_device_ids: set[str],
+    removed_device_ids: set[str],
+    changed_device_ids: set[str],
+    limit: int = 10,
+) -> list[InventoryHistoryChangePreview]:
+    """Build a bounded preview of record-level inventory changes."""
+    preview: list[InventoryHistoryChangePreview] = []
+    for device_id in sorted(added_device_ids, key=lambda d: (current_by_id[d].vendor, d)):
+        d = current_by_id[device_id]
+        preview.append(
+            InventoryHistoryChangePreview(
+                device_id=d.device_id,
+                vendor=d.vendor,
+                platform=d.platform,
+                role=d.role,
+                change_kind="added",
+                changed_fields=[],
+            )
+        )
+    for device_id in sorted(removed_device_ids, key=lambda d: (previous_by_id[d].vendor, d)):
+        d = previous_by_id[device_id]
+        preview.append(
+            InventoryHistoryChangePreview(
+                device_id=d.device_id,
+                vendor=d.vendor,
+                platform=d.platform,
+                role=d.role,
+                change_kind="removed",
+                changed_fields=[],
+            )
+        )
+    for device_id in sorted(changed_device_ids, key=lambda d: (current_by_id[d].vendor, d)):
+        cur = current_by_id[device_id]
+        prev = previous_by_id[device_id]
+        preview.append(
+            InventoryHistoryChangePreview(
+                device_id=cur.device_id,
+                vendor=cur.vendor,
+                platform=cur.platform,
+                role=cur.role,
+                change_kind="changed",
+                changed_fields=_inventory_changed_fields(cur, prev),
+            )
+        )
+    return preview[:limit]
 
 
 def _role_counts(devices: list[InventoryDevice]) -> dict[str, int]:
@@ -274,19 +355,40 @@ def _build_inventory_history_window() -> InventoryHistoryWindow:
             recent_snapshots=[entry.snapshot for entry in recent_snapshots],
         )
 
+    current_by_id = {device.device_id: device for device in current_snapshot.devices}
+    previous_by_id = {device.device_id: device for device in previous_snapshot.devices}
     current_signatures = {
-        device.device_id: _device_signature(device) for device in current_snapshot.devices
+        device_id: _device_signature(device) for device_id, device in current_by_id.items()
     }
     previous_signatures = {
-        device.device_id: _device_signature(device) for device in previous_snapshot.devices
+        device_id: _device_signature(device) for device_id, device in previous_by_id.items()
     }
     current_device_ids = set(current_signatures)
     previous_device_ids = set(previous_signatures)
+    added_device_ids = current_device_ids - previous_device_ids
+    removed_device_ids = previous_device_ids - current_device_ids
     changed_device_ids = {
         device_id
         for device_id in current_device_ids & previous_device_ids
         if current_signatures[device_id] != previous_signatures[device_id]
     }
+    change_preview = _build_inventory_change_preview(
+        current_by_id=current_by_id,
+        previous_by_id=previous_by_id,
+        added_device_ids=added_device_ids,
+        removed_device_ids=removed_device_ids,
+        changed_device_ids=changed_device_ids,
+    )
+    comparison_notes = [
+        "This comparison is derived from the latest two persisted normalized inventory snapshots.",
+        "Changed device counts reflect device IDs present in both snapshots with changed normalized inventory attributes.",
+        "This is read-side evidence only; it is not a drift verdict, validation result, or workflow outcome.",
+    ]
+    total_changes = len(added_device_ids) + len(removed_device_ids) + len(changed_device_ids)
+    if total_changes > len(change_preview):
+        comparison_notes.append(
+            "Change preview is intentionally capped to a short bounded list of normalized device records."
+        )
     return InventoryHistoryWindow(
         status="comparison_ready",
         summary=(
@@ -299,16 +401,20 @@ def _build_inventory_history_window() -> InventoryHistoryWindow:
             previous_snapshot_id=previous_snapshot.snapshot_id,
             current_persisted_at=current_snapshot.persisted_at,
             previous_persisted_at=previous_snapshot.persisted_at,
+            current_observed_at=current_snapshot.observed_at,
+            previous_observed_at=previous_snapshot.observed_at,
+            current_sync_status=current_snapshot.sync_fetch_status,
+            previous_sync_status=previous_snapshot.sync_fetch_status,
+            current_data_status=_as_inventory_data_status(current_snapshot.data_status),
+            previous_data_status=_as_inventory_data_status(previous_snapshot.data_status),
             current_device_count=len(current_snapshot.devices),
             previous_device_count=len(previous_snapshot.devices),
             device_count_delta=len(current_snapshot.devices) - len(previous_snapshot.devices),
-            added_device_count=len(current_device_ids - previous_device_ids),
-            removed_device_count=len(previous_device_ids - current_device_ids),
+            added_device_count=len(added_device_ids),
+            removed_device_count=len(removed_device_ids),
             changed_device_count=len(changed_device_ids),
-            notes=[
-                "This comparison is derived from the latest two persisted normalized inventory snapshots.",
-                "Changed device counts reflect device IDs present in both snapshots with changed normalized inventory attributes.",
-            ],
+            change_preview=change_preview,
+            notes=comparison_notes,
         ),
     )
 
@@ -509,11 +615,13 @@ def build_devices_list_response() -> DevicesListResponse:
             recent_snapshots=[
                 InventoryHistorySnapshotResponseRecord(
                     snapshot_id=entry.snapshot_id,
+                    sync_run_id=entry.sync_run_id,
                     persisted_at=entry.persisted_at,
                     observed_at=entry.observed_at,
                     sync_source=entry.sync_source,
                     sync_status=entry.sync_status,
                     data_status=entry.data_status,
+                    source_endpoint=entry.source_endpoint,
                     device_count=entry.device_count,
                     role_counts=entry.role_counts,
                     collector_status_counts=entry.collector_status_counts,
@@ -527,12 +635,29 @@ def build_devices_list_response() -> DevicesListResponse:
                     previous_snapshot_id=history.comparison_to_previous.previous_snapshot_id,
                     current_persisted_at=history.comparison_to_previous.current_persisted_at,
                     previous_persisted_at=history.comparison_to_previous.previous_persisted_at,
+                    current_observed_at=history.comparison_to_previous.current_observed_at,
+                    previous_observed_at=history.comparison_to_previous.previous_observed_at,
+                    current_sync_status=history.comparison_to_previous.current_sync_status,
+                    previous_sync_status=history.comparison_to_previous.previous_sync_status,
+                    current_data_status=history.comparison_to_previous.current_data_status,
+                    previous_data_status=history.comparison_to_previous.previous_data_status,
                     current_device_count=history.comparison_to_previous.current_device_count,
                     previous_device_count=history.comparison_to_previous.previous_device_count,
                     device_count_delta=history.comparison_to_previous.device_count_delta,
                     added_device_count=history.comparison_to_previous.added_device_count,
                     removed_device_count=history.comparison_to_previous.removed_device_count,
                     changed_device_count=history.comparison_to_previous.changed_device_count,
+                    change_preview=[
+                        InventoryHistoryChangePreviewResponse(
+                            device_id=entry.device_id,
+                            vendor=entry.vendor,
+                            platform=entry.platform,
+                            role=entry.role,
+                            change_kind=entry.change_kind,
+                            changed_fields=entry.changed_fields,
+                        )
+                        for entry in history.comparison_to_previous.change_preview
+                    ],
                     notes=history.comparison_to_previous.notes,
                 )
                 if history.comparison_to_previous is not None
