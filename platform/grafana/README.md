@@ -1,7 +1,7 @@
 # Grafana
 
 ## Purpose
-Provides the observability dashboard layer for the platform — visualising platform health, topology state, SR policy state, and vendor adapter health.
+Provides the observability dashboard layer for the platform — visualising platform health, topology state, SR policy state, and **Nokia-first bounded** gNMI/collector-boundary observability (not multi-vendor adapter parity; see **Vendor** in `docs/dashboards.md`).
 
 ## Why it exists
 Operators need a time-series and event dashboard view that is decoupled from the product WebUI. Grafana fills that role via provisioned dashboards backed by Prometheus.

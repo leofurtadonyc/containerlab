@@ -14,7 +14,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## Vendor / adapter observability (Nokia-first)\n\n### What this dashboard is for\n\n- **Bounded observability** for the **current Nokia-first gNMI collector** path and the **`app-api` collector boundary**—the same metric families exercised by `verify-core-runtime.sh` for collector and backend contracts.\n- **Not** a multi-vendor adapter matrix, **not** a claim of Juniper or broad parity, and **not** a substitute for the capability matrix in `app-web`.\n\n### Current reality (Phase 2)\n\n- **Nokia-first** observed-state collection through **`gnmi-collector`**; roadmap-only Juniper targets remain **out of scope** for honest metric-backed panels here.\n- Charts below use **real PromQL only** against metrics that already exist; where no honest series exists, this dashboard does **not** invent queries.\n- Collector-boundary **duration**, **timeout budget**, and **posture** panels mirror the same **`platform_app_api_collector_boundary_*`** gauges as the platform overview (observability-only; not workflow semantics).\n\n### What Grafana is not\n\n- **Not** workflow, validation, or change-control semantics.\n- **Not** the surface that defines vendor support posture—that remains **`app-api`** contracts and **`app-web`**.\n\n### Related documentation\n\n- **`platform/docs/dashboards.md`** — vendor family scope and product vs observability split.\n- **`platform/docs/services.md`** — `gnmi-collector` role and adapter boundaries.",
+        "content": "## Vendor / adapter observability (Nokia-first)\n\n### What this dashboard is for\n\n- **Bounded observability** for the **current Nokia-first gNMI collector** path and the **`app-api` collector boundary**—the same metric families exercised by `verify-core-runtime.sh` for collector and backend contracts.\n- **Not** a multi-vendor adapter matrix, **not** a claim of Juniper or broad parity, and **not** a substitute for the capability matrix in `app-web`.\n- The **vendor** folder name is organizational only; panels here are **Nokia gNMI collector + app-api boundary** metrics—no separate per-vendor adapter dashboards are implied.\n\n### Current reality (Phase 2)\n\n- **Nokia-first** observed-state collection through **`gnmi-collector`**; roadmap-only Juniper targets remain **out of scope** for honest metric-backed panels here.\n- **`platform_gnmi_collector_*`** metric prefixes name the current collector implementation, not multiple live vendor backends in Grafana.\n- Charts below use **real PromQL only** against metrics that already exist; where no honest series exists, this dashboard does **not** invent queries.\n- Collector-boundary **duration**, **timeout budget**, and **posture** panels mirror the same **`platform_app_api_collector_boundary_*`** gauges as the platform overview (observability-only; not workflow semantics).\n\n### What Grafana is not\n\n- **Not** workflow, validation, or change-control semantics.\n- **Not** the surface that defines vendor support posture—that remains **`app-api`** contracts and **`app-web`**.\n\n### Related documentation\n\n- **`platform/docs/dashboards.md`** — vendor family scope and product vs observability split.\n- **`platform/docs/services.md`** — `gnmi-collector` role and adapter boundaries.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -286,7 +286,7 @@
       },
       "id": 9,
       "panels": [],
-      "title": "app-api collector boundary (adapter-facing fetch)",
+      "title": "app-api collector boundary (backend ↔ collector)",
       "type": "row"
     },
     {
@@ -437,5 +437,5 @@
   "timezone": "browser",
   "title": "Vendor / adapter overview (Nokia gNMI)",
   "uid": "vendor-overview",
-  "version": 2
+  "version": 3
 }
