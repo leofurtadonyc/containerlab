@@ -936,6 +936,7 @@ def _build_persisted_inventory_snapshot() -> PersistedInventorySnapshot:
         snapshot_id="inventory-snapshot-1",
         sync_run_id="sync-inventory-0",
         persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+        data_status="degraded",
         devices=[
             InventoryDevice(
                 device_id="PE1",
@@ -956,6 +957,7 @@ def _build_previous_persisted_inventory_snapshot() -> PersistedInventorySnapshot
         snapshot_id="inventory-snapshot-0",
         sync_run_id="sync-inventory-previous",
         persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+        data_status="live",
         devices=[
             InventoryDevice(
                 device_id="PE1",

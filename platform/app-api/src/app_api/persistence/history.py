@@ -322,7 +322,7 @@ def _build_inventory_snapshot_summary(
         sync_source=snapshot.sync_run.source_type if snapshot.sync_run is not None else "unknown",
         sync_status=snapshot.sync_run.fetch_status if snapshot.sync_run is not None else "unknown",
         data_status=snapshot.data_status,
-        device_count=snapshot.record_count,
+        device_count=len(rows),
         role_counts=dict(role_counts),
         collector_status_counts=dict(collector_status_counts),
         capability_summary_counts=dict(capability_summary_counts),
@@ -356,14 +356,16 @@ def _build_inventory_snapshot_comparison(
         for device_id in current_device_ids & previous_device_ids
         if current_signatures[device_id] != previous_signatures[device_id]
     }
+    current_device_count = len(current_signatures)
+    previous_device_count = len(previous_signatures)
     return PersistedInventorySnapshotComparison(
         current_snapshot_id=snapshot.id,
         previous_snapshot_id=previous_snapshot.id,
         current_persisted_at=snapshot.persisted_at,
         previous_persisted_at=previous_snapshot.persisted_at,
-        current_device_count=snapshot.record_count,
-        previous_device_count=previous_snapshot.record_count,
-        device_count_delta=snapshot.record_count - previous_snapshot.record_count,
+        current_device_count=current_device_count,
+        previous_device_count=previous_device_count,
+        device_count_delta=current_device_count - previous_device_count,
         added_device_count=len(added_device_ids),
         removed_device_count=len(removed_device_ids),
         changed_device_count=len(changed_device_ids),
