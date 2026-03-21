@@ -14,6 +14,7 @@ from app_api.models.workflow import (
 )
 from app_api.persistence.history import load_sync_runs
 from app_api.services.history_baseline import build_history_baseline_summary
+from app_api.schemas.devices import InventoryHistoryChangePreview as InventoryHistoryChangePreviewSchema
 from app_api.schemas.workflow_history import (
     WorkflowHistoryItem,
     WorkflowInventorySnapshotComparison as WorkflowInventorySnapshotComparisonResponse,
@@ -65,11 +66,13 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
             inventory_snapshot_summary=(
                 WorkflowInventorySnapshotSummary(
                     snapshot_id=sync_run.inventory_snapshot_summary.snapshot_id,
+                    sync_run_id=sync_run.inventory_snapshot_summary.sync_run_id,
                     persisted_at=sync_run.inventory_snapshot_summary.persisted_at,
                     observed_at=sync_run.inventory_snapshot_summary.observed_at,
                     sync_source=sync_run.inventory_snapshot_summary.sync_source,
                     sync_status=sync_run.inventory_snapshot_summary.sync_status,
                     data_status=sync_run.inventory_snapshot_summary.data_status,
+                    source_endpoint=sync_run.inventory_snapshot_summary.source_endpoint,
                     device_count=sync_run.inventory_snapshot_summary.device_count,
                     role_counts=sync_run.inventory_snapshot_summary.role_counts,
                     collector_status_counts=sync_run.inventory_snapshot_summary.collector_status_counts,
@@ -84,12 +87,19 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                     previous_snapshot_id=sync_run.inventory_comparison_to_previous.previous_snapshot_id,
                     current_persisted_at=sync_run.inventory_comparison_to_previous.current_persisted_at,
                     previous_persisted_at=sync_run.inventory_comparison_to_previous.previous_persisted_at,
+                    current_observed_at=sync_run.inventory_comparison_to_previous.current_observed_at,
+                    previous_observed_at=sync_run.inventory_comparison_to_previous.previous_observed_at,
+                    current_sync_status=sync_run.inventory_comparison_to_previous.current_sync_status,
+                    previous_sync_status=sync_run.inventory_comparison_to_previous.previous_sync_status,
+                    current_data_status=sync_run.inventory_comparison_to_previous.current_data_status,
+                    previous_data_status=sync_run.inventory_comparison_to_previous.previous_data_status,
                     current_device_count=sync_run.inventory_comparison_to_previous.current_device_count,
                     previous_device_count=sync_run.inventory_comparison_to_previous.previous_device_count,
                     device_count_delta=sync_run.inventory_comparison_to_previous.device_count_delta,
                     added_device_count=sync_run.inventory_comparison_to_previous.added_device_count,
                     removed_device_count=sync_run.inventory_comparison_to_previous.removed_device_count,
                     changed_device_count=sync_run.inventory_comparison_to_previous.changed_device_count,
+                    change_preview=sync_run.inventory_comparison_to_previous.change_preview,
                     notes=sync_run.inventory_comparison_to_previous.notes,
                 )
                 if sync_run.inventory_comparison_to_previous is not None
@@ -256,11 +266,13 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                 inventory_snapshot_summary=(
                     WorkflowInventorySnapshotSummaryResponse(
                         snapshot_id=record.inventory_snapshot_summary.snapshot_id,
+                        sync_run_id=record.inventory_snapshot_summary.sync_run_id,
                         persisted_at=record.inventory_snapshot_summary.persisted_at,
                         observed_at=record.inventory_snapshot_summary.observed_at,
                         sync_source=record.inventory_snapshot_summary.sync_source,
                         sync_status=record.inventory_snapshot_summary.sync_status,
                         data_status=record.inventory_snapshot_summary.data_status,
+                        source_endpoint=record.inventory_snapshot_summary.source_endpoint,
                         device_count=record.inventory_snapshot_summary.device_count,
                         role_counts=record.inventory_snapshot_summary.role_counts,
                         collector_status_counts=record.inventory_snapshot_summary.collector_status_counts,
@@ -275,12 +287,24 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                         previous_snapshot_id=record.inventory_comparison_to_previous.previous_snapshot_id,
                         current_persisted_at=record.inventory_comparison_to_previous.current_persisted_at,
                         previous_persisted_at=record.inventory_comparison_to_previous.previous_persisted_at,
+                        current_observed_at=record.inventory_comparison_to_previous.current_observed_at,
+                        previous_observed_at=record.inventory_comparison_to_previous.previous_observed_at,
+                        current_sync_status=record.inventory_comparison_to_previous.current_sync_status,
+                        previous_sync_status=record.inventory_comparison_to_previous.previous_sync_status,
+                        current_data_status=record.inventory_comparison_to_previous.current_data_status,
+                        previous_data_status=record.inventory_comparison_to_previous.previous_data_status,
                         current_device_count=record.inventory_comparison_to_previous.current_device_count,
                         previous_device_count=record.inventory_comparison_to_previous.previous_device_count,
                         device_count_delta=record.inventory_comparison_to_previous.device_count_delta,
                         added_device_count=record.inventory_comparison_to_previous.added_device_count,
                         removed_device_count=record.inventory_comparison_to_previous.removed_device_count,
                         changed_device_count=record.inventory_comparison_to_previous.changed_device_count,
+                        change_preview=[
+                            InventoryHistoryChangePreviewSchema.model_validate(
+                                p.model_dump()
+                            )
+                            for p in record.inventory_comparison_to_previous.change_preview
+                        ],
                         notes=record.inventory_comparison_to_previous.notes,
                     )
                     if record.inventory_comparison_to_previous is not None

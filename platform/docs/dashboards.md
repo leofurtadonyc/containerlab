@@ -20,6 +20,8 @@ The platform currently has:
 - the platform overview dashboard now also surfaces collector-backed target coverage, observation-age, and policy detail-gap cues for inventory, topology, and policy, using real numeric signals rather than trying to serialize product-facing degraded-scope prose into Grafana
 - the platform overview dashboard now also surfaces backend-owned collector-boundary latest fetch duration, timeout budget, and latest timeout or failure posture signals so operators can distinguish slow fallback triggers from ordinary degraded live collection
 - the platform overview dashboard now also separates readiness evaluation sample age from readiness persisted-snapshot age so operators can distinguish Prometheus-observed recomputation cadence from the chronology of the last materially changed persisted readiness snapshot
+- `app-api` `/metrics` now also exports bounded **`inventory_snapshots`** table signals—**`platform_app_api_inventory_snapshots_persisted_total`** (row count) and **`platform_app_api_inventory_snapshot_latest_persisted_at_seconds`** (latest `persisted_at`, or zero when empty)—so Grafana can mirror persisted-inventory **depth and chronology** without serializing **`/api/v1/devices`** **`history`** (recent snapshots, comparisons, change previews); the **Devices** page and API remain the product surface for that richer contract
+- the platform overview dashboard **Read-Side Freshness Comparison** bargauge now includes **inventory persisted snapshot age** alongside sync-run ages; the **inventory sync runs** stat panel now also shows **persisted snapshot rows** next to recent inventory sync-run counts
 - the topology overview dashboard now also surfaces paired-link counts, single-sided-link counts, paired-link share, and backend-owned topology pairing-posture labels as bounded observability projections for the current topology coverage slice
 - the topology overview dashboard now also surfaces paired-link counts, single-sided-link counts, linked-node counts, isolated-node counts, and backend-owned inference, endpoint-pairing, node-participation, and collection posture labels as bounded observability projections for the current topology partiality slice
 - the platform overview dashboard now also mirrors the narrower topology read-path coverage posture through paired-versus-single-sided link counts, linked-versus-isolated node counts, and backend-owned inference, pairing, node-participation, and collection posture labels without turning Grafana into the product contract
@@ -103,6 +105,7 @@ More specifically, `./scripts/verify-core-runtime.sh` currently validates only t
 - provisioned overview dashboards can be discovered through the Grafana API
 - the current `app-api` and `gnmi-collector` metrics contracts still expose the metric families the platform overview dashboard depends on most directly
 - the current `app-api` metrics contract now also exposes the backend collector-boundary latest duration, timeout budget, and latest posture metric families required by the platform overview dashboard's latency-posture row
+- the current `app-api` metrics contract now also exposes **`platform_app_api_inventory_snapshots_persisted_total`** and **`platform_app_api_inventory_snapshot_latest_persisted_at_seconds`** (bounded Postgres **`inventory_snapshots`** table summary) used by the platform overview dashboard for persisted-inventory depth and age mirrors
 
 It does not yet validate:
 
@@ -116,6 +119,8 @@ It does not yet validate:
 The platform currently organizes dashboards into five required families.
 
 ### Platform
+
+The provisioned **Platform overview** dashboard is **`platform/grafana/dashboards/platform/platform-overview.json`** (Grafana UID **`platform-overview`**).
 
 This family answers questions such as:
 
@@ -139,7 +144,7 @@ Expected emphasis over time:
 - collector-backed read-path coverage percentages, observation age, and target/detail gaps where those collector metrics exist
 - collector-boundary latest fetch duration, timeout budget, and latest outcome posture where those backend metrics exist
 - readiness evaluation sample age versus persisted readiness snapshot age where those backend metrics exist
-- **Readiness row (platform overview):** stat panel titles **Evaluation sample (this response) age** and **Persisted snapshot (last material change) age** match the app-web **Readiness** page vocabulary (`generated_at` vs `readiness_persisted_at`); each panel description states observability-only semantics and that the ages are not interchangeable freshness claims; status / blocker / evidence-coverage bargauges are numeric mirrors with the same observability-only rule (not dry-run verdicts)
+- **Readiness row (platform overview):** stat panel titles **Evaluation sample (this response) age** and **Persisted snapshot (last material change) age** match the app-web **Readiness** page vocabulary (`generated_at` vs `readiness_persisted_at`), backed by `platform_app_api_readiness_latest_evaluation_at_seconds` and `platform_app_api_readiness_snapshot_persisted_at_seconds`; each panel description states observability-only semantics and that the ages are not interchangeable freshness claims; **Readiness status & planning labels (mirror)**, **Readiness blocker posture (mirror)**, and **Readiness evidence coverage (mirror)** bargauges echo **Readiness Status**, **Planning Readiness**, blockers, and prerequisites on the Readiness page with the same observability-only rule (not dry-run verdicts)
 
 ### Topology
 
@@ -210,12 +215,13 @@ In Grafana:
 - policy detail blockers are mirrored through detail-ready-target share and blocker-presence flags, while per-target blocker reason codes stay on the Policies page and in verifier output
 - policy source-readiness is mirrored through backend-owned posture labels plus bounded live-empty, detail-unavailable, and partial-detail counts, while the richer explanation and per-target blocker reasons stay on the Policies page and in verifier output
 - policy history and comparison remain product-owned: the Policies page surfaces persisted source-readiness posture and supporting counts per snapshot and in the latest-versus-previous comparison; Grafana does not mirror policy history and stays on bounded current metrics only
+- **inventory history (devices):** persisted snapshot **row count** and **latest `persisted_at` timestamp** may appear in Grafana as **`platform_app_api_inventory_snapshots_persisted_total`** and **`platform_app_api_inventory_snapshot_latest_persisted_at_seconds`**—observability-only table anchors backing the **`/api/v1/devices`** **`history`** window; **recent snapshots**, **`comparison_to_previous`**, **`change_preview`**, and other comparison truth remain **product-owned** on the **Devices** page and in the API, not in dashboards
 - topology endpoint-pairing and node-participation observability should stay numeric as paired-link counts, single-sided-link counts, linked-node counts, isolated-node counts, and derived shares rather than becoming a product-owned status vocabulary inside dashboards
 - backend-owned topology inference, pairing, node-participation, and collection posture labels may appear only as metric-backed label projections that support those numeric panels; Grafana still does not own that vocabulary
 - collector-boundary timeout posture is an observability cue only; it explains whether the backend hit the fail-fast latency budget, not whether the product has emitted a workflow verdict or dependency-dashboard truth statement
 - recovery posture panels mirror baseline and read-side posture numerically; preserved baseline and fresh live recollection are not the same thing, and the product-facing explanation stays in app-web
 - readiness evaluation sample age is an observability cue about the latest Prometheus-observed bounded recomputation, while persisted readiness snapshot age remains the chronology of the last materially changed persisted snapshot; operators should not treat them as interchangeable freshness claims
-- platform overview readiness stat panels are explicitly titled to match app-web Readiness copy—**Evaluation sample (this response) age** and **Persisted snapshot (last material change) age**—with panel descriptions tying metrics to `generated_at` vs persisted snapshot chronology; the Readiness page remains the product-facing explanation; Grafana stays observability-only
+- platform overview readiness stat panels are explicitly titled to match app-web Readiness copy—**Evaluation sample (this response) age** and **Persisted snapshot (last material change) age**—with panel descriptions tying metrics to `generated_at` vs persisted snapshot chronology; related bargauges use **(mirror)** titles aligned with **Readiness Status**, **Planning Readiness**, blockers, and prerequisites on the Readiness page; the Readiness page remains the product-facing explanation; Grafana stays observability-only
 - same-workspace recovery posture is mirrored numerically through backend-owned `platform_app_api_recovery_posture` and `platform_app_api_recovery_persisted_artifacts` metrics; the product-facing explanation, including the distinction that preserved baseline and fresh live recollection are not the same thing, remains in app-web Overview and Platform Health
 - recovery panels are **observability mirrors only**: they reflect bounded same-workspace persisted-anchor posture as emitted by `app-api` metrics; they do **not** prove disaster recovery, backup/restore, cross-host migration, or data-directory-loss recovery, and they do not replace the product contract on `/api/v1/platform/status`
 
@@ -235,7 +241,9 @@ Week 14 topology coverage rule:
 
 ### Change Validation
 
-**Current state (Phase 2 — placeholder only):** a **provisioned markdown-only** dashboard exists under `platform/grafana/dashboards/change-validation/` (`Change Validation Overview Placeholder`). It states explicitly that **no change-validation Prometheus metrics or dry-run/validation workflow APIs** exist in the current bounded slice, that **no PromQL panels** are included so the UI is not misleading, and that Grafana is **not** a validation engine or workflow surface. This is a **deliberate scaffold**, not an accidental blank dashboard.
+**Current state (Phase 2 — placeholder only):** **`platform/grafana/dashboards/change-validation/change-validation-overview-placeholder.json`** (Grafana UID **`change-validation-overview`**, title **Change Validation Overview Placeholder**) is a **markdown-only** provisioned dashboard. **`foldersFromFilesStructure`** in **`platform/grafana/provisioning/dashboards/dashboards.yml`** loads it under the **change-validation** folder—no extra provisioning file changes are required for this scaffold.
+
+It states explicitly: **no metrics yet** (no change-validation Prometheus families scraped for this dashboard), **no dry-run / validation / preview APIs** in the current bounded slice, **no PromQL panels** (no fake queries), and that Grafana is **not** a validation engine, **not** the change-validation **product surface** (Readiness / Capabilities and other truth stay in **`app-web`** / **`app-api`**), and **not** a workflow or approval surface. This is a **deliberate scaffold**, not an accidental blank dashboard.
 
 **Intended direction (when real signals exist):** this family could eventually help answer observability questions such as dry-run or validation **request** volume, failure or timeout posture, path duration, and rollback-related **signals**—only if **honest** backend- or collector-owned metrics are added first.
 
@@ -249,10 +257,10 @@ Week 14 topology coverage rule:
 
 ### Vendor
 
-**Current state:** **`platform/grafana/dashboards/vendor/vendor-overview-placeholder.json`** is provisioned as **Vendor / adapter overview (Nokia gNMI)**. It combines **markdown scope** with **real Prometheus panels** using only metrics emitted today:
+**Current state:** **`platform/grafana/dashboards/vendor/vendor-overview-placeholder.json`** (Grafana UID **`vendor-overview`**, title **Vendor / adapter overview (Nokia gNMI)**) is provisioned as a **Nokia-first** vendor/adapters view. It combines **markdown scope** with **real Prometheus panels** using only metrics emitted today:
 
 - **`platform_gnmi_collector_*`** — observation ages for inventory, topology, and policy; paired- versus single-sided topology link counts; policy observed-target versus detail-ready target gauges (families **`verify-core-runtime.sh`** checks on collector `/metrics`).
-- **`platform_app_api_collector_boundary_latest_fetch_posture`** — latest bounded collector-boundary outcome by model family (posture metric family expected on **`app-api`** `/metrics`).
+- **`platform_app_api_collector_boundary_latest_fetch_duration_seconds`**, **`platform_app_api_collector_boundary_timeout_budget_seconds`**, and **`platform_app_api_collector_boundary_latest_fetch_posture`** — bounded collector-boundary duration, configured timeout budget, and latest outcome posture by model family (families expected on **`app-api`** `/metrics`; same signals as the platform overview boundary row).
 
 **Honesty rules:**
 

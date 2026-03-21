@@ -3,11 +3,11 @@
 from collections import Counter, defaultdict
 from datetime import datetime
 from logging import getLogger
-
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 
+from app_api.models.inventory import InventoryDevice, InventoryHistoryChangePreview
 from app_api.models.topology import build_topology_coverage_summary
 from app_api.persistence.session import create_session
 from app_api.persistence.tables import (
@@ -52,11 +52,13 @@ class PersistedInventorySnapshotSummary(BaseModel):
     """Bounded persisted inventory snapshot context for history surfaces."""
 
     snapshot_id: str
+    sync_run_id: str
     persisted_at: datetime
     observed_at: datetime | None = None
     sync_source: str
     sync_status: str
     data_status: str
+    source_endpoint: str
     device_count: int
     role_counts: dict[str, int] = Field(default_factory=dict)
     collector_status_counts: dict[str, int] = Field(default_factory=dict)
@@ -70,12 +72,19 @@ class PersistedInventorySnapshotComparison(BaseModel):
     previous_snapshot_id: str
     current_persisted_at: datetime
     previous_persisted_at: datetime
+    current_observed_at: datetime | None = None
+    previous_observed_at: datetime | None = None
+    current_sync_status: str
+    previous_sync_status: str
+    current_data_status: str
+    previous_data_status: str
     current_device_count: int
     previous_device_count: int
     device_count_delta: int
     added_device_count: int
     removed_device_count: int
     changed_device_count: int
+    change_preview: list[InventoryHistoryChangePreview] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 
 
@@ -218,6 +227,13 @@ class SyncRunHistorySummary(BaseModel):
     )
 
 
+class InventorySnapshotMetricsSummary(BaseModel):
+    """Bounded inventory_snapshots table summary for metrics (not per-device history)."""
+
+    persisted_row_count: int = 0
+    latest_persisted_at: datetime | None = None
+
+
 def _map_history_result(fetch_status: str) -> str:
     """Map raw sync-run fetch status into a low-cardinality history result."""
     return {
@@ -250,6 +266,98 @@ def _load_inventory_record_signatures(
         )
         for row in rows
     }
+
+
+def _inventory_row_to_device(row: InventoryRecordTable) -> InventoryDevice:
+    """Map one persisted inventory row to a backend-owned device model."""
+    return InventoryDevice(
+        device_id=row.device_id,
+        vendor=row.vendor,
+        platform=row.platform,
+        software_version=row.software_version,
+        role=row.role,
+        management_address=row.management_address,
+        collector_status=row.collector_status,
+        capability_summary=row.capability_summary,
+    )
+
+
+def _inventory_changed_fields(
+    current: InventoryDevice, previous: InventoryDevice
+) -> list[str]:
+    """List normalized inventory attribute names that differ between two devices."""
+    changed: list[str] = []
+    if current.vendor != previous.vendor:
+        changed.append("vendor")
+    if current.platform != previous.platform:
+        changed.append("platform")
+    if current.software_version != previous.software_version:
+        changed.append("software_version")
+    if current.role != previous.role:
+        changed.append("role")
+    if current.management_address != previous.management_address:
+        changed.append("management_address")
+    if current.collector_status != previous.collector_status:
+        changed.append("collector_status")
+    if current.capability_summary != previous.capability_summary:
+        changed.append("capability_summary")
+    return sorted(changed)
+
+
+def _as_inventory_data_status_str(raw: str) -> str:
+    """Normalize persisted snapshot data_status for API literals."""
+    return raw if raw in ("live", "degraded") else "degraded"
+
+
+def _build_persisted_inventory_change_preview(
+    *,
+    current_by_id: dict[str, InventoryDevice],
+    previous_by_id: dict[str, InventoryDevice],
+    added_device_ids: set[str],
+    removed_device_ids: set[str],
+    changed_device_ids: set[str],
+    limit: int = 10,
+) -> list[InventoryHistoryChangePreview]:
+    """Build a bounded preview of record-level inventory changes (persisted history path)."""
+    preview: list[InventoryHistoryChangePreview] = []
+    for device_id in sorted(added_device_ids, key=lambda d: (current_by_id[d].vendor, d)):
+        d = current_by_id[device_id]
+        preview.append(
+            InventoryHistoryChangePreview(
+                device_id=d.device_id,
+                vendor=d.vendor,
+                platform=d.platform,
+                role=d.role,
+                change_kind="added",
+                changed_fields=[],
+            )
+        )
+    for device_id in sorted(removed_device_ids, key=lambda d: (previous_by_id[d].vendor, d)):
+        d = previous_by_id[device_id]
+        preview.append(
+            InventoryHistoryChangePreview(
+                device_id=d.device_id,
+                vendor=d.vendor,
+                platform=d.platform,
+                role=d.role,
+                change_kind="removed",
+                changed_fields=[],
+            )
+        )
+    for device_id in sorted(changed_device_ids, key=lambda d: (current_by_id[d].vendor, d)):
+        cur = current_by_id[device_id]
+        prev = previous_by_id[device_id]
+        preview.append(
+            InventoryHistoryChangePreview(
+                device_id=cur.device_id,
+                vendor=cur.vendor,
+                platform=cur.platform,
+                role=cur.role,
+                change_kind="changed",
+                changed_fields=_inventory_changed_fields(cur, prev),
+            )
+        )
+    return preview[:limit]
 
 
 def _load_topology_node_signatures(
@@ -317,12 +425,16 @@ def _build_inventory_snapshot_summary(
         capability_summary_counts[row.capability_summary] += 1
     return PersistedInventorySnapshotSummary(
         snapshot_id=snapshot.id,
+        sync_run_id=snapshot.sync_run_id,
         persisted_at=snapshot.persisted_at,
         observed_at=snapshot.sync_run.observed_at if snapshot.sync_run is not None else None,
         sync_source=snapshot.sync_run.source_type if snapshot.sync_run is not None else "unknown",
         sync_status=snapshot.sync_run.fetch_status if snapshot.sync_run is not None else "unknown",
         data_status=snapshot.data_status,
-        device_count=snapshot.record_count,
+        source_endpoint=(
+            snapshot.sync_run.source_endpoint if snapshot.sync_run is not None else ""
+        ),
+        device_count=len(rows),
         role_counts=dict(role_counts),
         collector_status_counts=dict(collector_status_counts),
         capability_summary_counts=dict(capability_summary_counts),
@@ -337,6 +449,7 @@ def _build_inventory_snapshot_comparison(
     """Build bounded comparison evidence against the immediately previous inventory snapshot."""
     previous_snapshot = session.scalar(
         select(InventorySnapshotTable)
+        .options(joinedload(InventorySnapshotTable.sync_run))
         .where(InventorySnapshotTable.persisted_at < snapshot.persisted_at)
         .order_by(InventorySnapshotTable.persisted_at.desc())
         .limit(1)
@@ -356,21 +469,64 @@ def _build_inventory_snapshot_comparison(
         for device_id in current_device_ids & previous_device_ids
         if current_signatures[device_id] != previous_signatures[device_id]
     }
+    current_device_count = len(current_signatures)
+    previous_device_count = len(previous_signatures)
+    current_rows = session.scalars(
+        select(InventoryRecordTable)
+        .where(InventoryRecordTable.snapshot_id == snapshot.id)
+        .order_by(InventoryRecordTable.device_id.asc())
+    ).all()
+    previous_rows = session.scalars(
+        select(InventoryRecordTable)
+        .where(InventoryRecordTable.snapshot_id == previous_snapshot.id)
+        .order_by(InventoryRecordTable.device_id.asc())
+    ).all()
+    current_by_id = {row.device_id: _inventory_row_to_device(row) for row in current_rows}
+    previous_by_id = {row.device_id: _inventory_row_to_device(row) for row in previous_rows}
+    change_preview = _build_persisted_inventory_change_preview(
+        current_by_id=current_by_id,
+        previous_by_id=previous_by_id,
+        added_device_ids=added_device_ids,
+        removed_device_ids=removed_device_ids,
+        changed_device_ids=changed_device_ids,
+    )
+    cur_sync = snapshot.sync_run
+    prev_sync = previous_snapshot.sync_run
+    current_observed_at = cur_sync.observed_at if cur_sync is not None else None
+    previous_observed_at = prev_sync.observed_at if prev_sync is not None else None
+    current_sync_status = cur_sync.fetch_status if cur_sync is not None else "unknown"
+    previous_sync_status = prev_sync.fetch_status if prev_sync is not None else "unknown"
+    current_data_status = _as_inventory_data_status_str(snapshot.data_status)
+    previous_data_status = _as_inventory_data_status_str(previous_snapshot.data_status)
+    comparison_notes = [
+        "This comparison is derived from the current persisted normalized inventory snapshot and the immediately previous persisted normalized inventory snapshot.",
+        "Changed device counts reflect device IDs present in both snapshots with changed normalized inventory attributes.",
+        "This is read-side evidence only; it is not a drift verdict, validation result, or workflow outcome.",
+    ]
+    total_changes = len(added_device_ids) + len(removed_device_ids) + len(changed_device_ids)
+    if total_changes > len(change_preview):
+        comparison_notes.append(
+            "Change preview is intentionally capped to a short bounded list of normalized device records."
+        )
     return PersistedInventorySnapshotComparison(
         current_snapshot_id=snapshot.id,
         previous_snapshot_id=previous_snapshot.id,
         current_persisted_at=snapshot.persisted_at,
         previous_persisted_at=previous_snapshot.persisted_at,
-        current_device_count=snapshot.record_count,
-        previous_device_count=previous_snapshot.record_count,
-        device_count_delta=snapshot.record_count - previous_snapshot.record_count,
+        current_observed_at=current_observed_at,
+        previous_observed_at=previous_observed_at,
+        current_sync_status=current_sync_status,
+        previous_sync_status=previous_sync_status,
+        current_data_status=current_data_status,
+        previous_data_status=previous_data_status,
+        current_device_count=current_device_count,
+        previous_device_count=previous_device_count,
+        device_count_delta=current_device_count - previous_device_count,
         added_device_count=len(added_device_ids),
         removed_device_count=len(removed_device_ids),
         changed_device_count=len(changed_device_ids),
-        notes=[
-            "This comparison is derived from the current persisted normalized inventory snapshot and the immediately previous persisted normalized inventory snapshot.",
-            "Changed device counts reflect device IDs present in both snapshots with changed normalized inventory attributes.",
-        ],
+        change_preview=change_preview,
+        notes=comparison_notes,
     )
 
 
@@ -675,7 +831,9 @@ def load_sync_runs(limit: int = 50) -> list[PersistedSyncRun]:
             rows = session.scalars(
                 select(SyncRunTable)
                 .options(
-                    selectinload(SyncRunTable.inventory_snapshot),
+                    selectinload(SyncRunTable.inventory_snapshot).joinedload(
+                        InventorySnapshotTable.sync_run
+                    ),
                     selectinload(SyncRunTable.topology_snapshot),
                     selectinload(SyncRunTable.policy_snapshot),
                 )
@@ -772,6 +930,27 @@ def load_readiness_snapshot_history(
     except Exception:
         logger.exception("Failed to load bounded readiness snapshot history.")
         return []
+
+
+def summarize_inventory_snapshot_metrics() -> InventorySnapshotMetricsSummary:
+    """Summarize inventory_snapshots table for low-cardinality observability metrics."""
+    try:
+        with create_session() as session:
+            row_count = session.scalar(
+                select(func.count()).select_from(InventorySnapshotTable)
+            )
+            if row_count is None:
+                row_count = 0
+            latest = session.scalar(
+                select(func.max(InventorySnapshotTable.persisted_at))
+            )
+            return InventorySnapshotMetricsSummary(
+                persisted_row_count=int(row_count),
+                latest_persisted_at=latest,
+            )
+    except Exception:
+        logger.exception("Failed to summarize inventory snapshot table metrics.")
+        return InventorySnapshotMetricsSummary()
 
 
 def summarize_sync_run_history(limit: int = 200) -> SyncRunHistorySummary:

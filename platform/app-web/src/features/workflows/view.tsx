@@ -875,21 +875,29 @@ export function WorkflowsView() {
               ) : null}
               {selectedWorkflow.inventory_snapshot_summary ||
               selectedWorkflow.inventory_comparison_to_previous ? (
-                <>
+                <div className="persisted-evidence-section">
                   <p className="summary-label">Inventory persisted evidence</p>
                   <p className="table-note">
-                    Persisted normalized inventory snapshot anchors and optional
-                    latest-versus-previous comparison from this sync run. Sync-derived
-                    read-only context only—not workflow execution steps, approvals, or
-                    platform validation verdicts.
+                    Snapshot summary fields (anchors, counts, distributions) when present,
+                    and optional latest-versus-previous comparison when the backend
+                    attached it to this sync run. Sync-derived read-only context only—not
+                    workflow execution steps, approvals, or platform validation verdicts.
                   </p>
                   {selectedWorkflow.inventory_snapshot_summary ? (
                     <>
-                      <p className="summary-label">Inventory Snapshot Context</p>
+                      <p className="summary-label">Inventory snapshot summary</p>
                       <div className="key-value-list">
                         <div className="key-value-row">
                           <span>Snapshot anchor</span>
                           <IdentifierChip value={selectedWorkflow.inventory_snapshot_summary.snapshot_id} />
+                        </div>
+                        <div className="key-value-row">
+                          <span>Sync source</span>
+                          <strong>{formatLabel(selectedWorkflow.inventory_snapshot_summary.sync_source)}</strong>
+                        </div>
+                        <div className="key-value-row">
+                          <span>Sync status</span>
+                          <strong>{formatLabel(selectedWorkflow.inventory_snapshot_summary.sync_status)}</strong>
                         </div>
                         <div className="key-value-row">
                           <span>Persisted at</span>
@@ -958,7 +966,7 @@ export function WorkflowsView() {
                   ) : null}
                   {selectedWorkflow.inventory_comparison_to_previous ? (
                     <>
-                      <p className="summary-label">Inventory Comparison Evidence</p>
+                      <p className="summary-label">Inventory latest-versus-previous comparison</p>
                       <div className="key-value-list">
                         <div className="key-value-row">
                           <span>Current snapshot anchor</span>
@@ -1014,12 +1022,12 @@ export function WorkflowsView() {
                   !selectedWorkflow.inventory_comparison_to_previous ? (
                     <p className="table-note">
                       No latest-versus-previous comparison envelope is present on this record. That
-                      is expected when fewer than two persisted snapshots exist for this scope or the
-                      backend did not attach comparison context; it does not indicate incomplete
-                      persisted history for this sync run.
+                      is honest and expected when fewer than two persisted snapshots exist for this
+                      scope or the backend did not attach comparison context; it does not indicate a
+                      bug or incomplete persisted history for this sync run.
                     </p>
                   ) : null}
-                </>
+                </div>
               ) : null}
               {selectedWorkflow.topology_snapshot_summary ? (
                 <>

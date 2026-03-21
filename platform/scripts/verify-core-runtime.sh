@@ -249,6 +249,7 @@ assert_contains "devices response" "$devices_response" '"serving_mode":"'
 assert_contains "devices response" "$devices_response" '"evidence_confidence":{'
 assert_contains "devices response" "$devices_response" '"comparison_to_latest_persisted":{'
 assert_contains "devices response" "$devices_response" '"count":'
+assert_contains "devices response" "$devices_response" '"history":{'
 
 assert_contains "topology response" "$topology_response" '"data_status":"'
 assert_contains "topology response" "$topology_response" '"serving_mode":"'
@@ -314,16 +315,39 @@ if [ "$inventory_snapshots_count" -gt 0 ]; then
   assert_contains "devices response" "$devices_response" '"recent_snapshots":['
   if printf '%s' "$devices_response" | grep -qF '"recent_snapshots":[{"snapshot_id"'; then
     assert_contains "devices response (history snapshots)" "$devices_response" '"snapshot_id":"'
+    assert_contains "devices response (history snapshots)" "$devices_response" '"sync_run_id":"'
+    assert_contains "devices response (history snapshots)" "$devices_response" '"source_endpoint":"'
+    assert_contains "devices response (history snapshots)" "$devices_response" '"persisted_at":"'
+    assert_contains "devices response (history snapshots)" "$devices_response" '"observed_at":'
+    assert_contains "devices response (history snapshots)" "$devices_response" '"sync_source":"'
+    assert_contains "devices response (history snapshots)" "$devices_response" '"sync_status":"'
+    assert_contains "devices response (history snapshots)" "$devices_response" '"data_status":"'
     assert_contains "devices response (history snapshots)" "$devices_response" '"device_count":'
+    assert_contains "devices response (history snapshots)" "$devices_response" '"role_counts":'
     assert_contains "devices response (history snapshots)" "$devices_response" '"collector_status_counts":'
     assert_contains "devices response (history snapshots)" "$devices_response" '"capability_summary_counts":'
   else
     notice "Devices history recent_snapshots is empty in the API response even though Postgres reports inventory snapshot rows; skipping history-snapshot key assertions."
   fi
   if printf '%s' "$devices_response" | grep -F '"comparison_to_previous":{' | grep -F '"current_snapshot_id"' >/dev/null 2>&1; then
+    assert_contains "devices response (history comparison)" "$devices_response" '"current_snapshot_id":"'
+    assert_contains "devices response (history comparison)" "$devices_response" '"previous_snapshot_id":"'
+    assert_contains "devices response (history comparison)" "$devices_response" '"current_persisted_at":"'
+    assert_contains "devices response (history comparison)" "$devices_response" '"previous_persisted_at":"'
+    assert_contains "devices response (history comparison)" "$devices_response" '"current_observed_at":'
+    assert_contains "devices response (history comparison)" "$devices_response" '"previous_observed_at":'
+    assert_contains "devices response (history comparison)" "$devices_response" '"current_sync_status":"'
+    assert_contains "devices response (history comparison)" "$devices_response" '"previous_sync_status":"'
+    assert_contains "devices response (history comparison)" "$devices_response" '"current_data_status":"'
+    assert_contains "devices response (history comparison)" "$devices_response" '"previous_data_status":"'
     assert_contains "devices response (history comparison)" "$devices_response" '"current_device_count":'
     assert_contains "devices response (history comparison)" "$devices_response" '"previous_device_count":'
     assert_contains "devices response (history comparison)" "$devices_response" '"device_count_delta":'
+    assert_contains "devices response (history comparison)" "$devices_response" '"added_device_count":'
+    assert_contains "devices response (history comparison)" "$devices_response" '"removed_device_count":'
+    assert_contains "devices response (history comparison)" "$devices_response" '"changed_device_count":'
+    assert_contains "devices response (history comparison)" "$devices_response" '"change_preview":'
+    assert_contains "devices response (history comparison)" "$devices_response" '"notes":'
   fi
 else
   notice "No persisted inventory snapshot rows in Postgres; devices history contract checks for snapshot-level keys are skipped (fresh baseline is honest)."
@@ -418,6 +442,8 @@ assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_recovery_
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_readiness_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_readiness_latest_evaluation_at_seconds'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_sync_runs_total'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_inventory_snapshots_persisted_total'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_inventory_snapshot_latest_persisted_at_seconds'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_inventory_newest_observed_timestamp_seconds'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_paired_links'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_single_sided_links'

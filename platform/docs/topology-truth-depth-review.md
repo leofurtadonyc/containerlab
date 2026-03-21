@@ -673,3 +673,14 @@ The exact field, metric, and UI-separation rules for keeping the current
 partiality contract closed and reopening topology only for node participation
 coverage are now aligned with
 `platform/schemas/topology/topology-read-path-coverage-semantics.md`.
+
+## Post–Week 19 scheduling note (topology partiality contract)
+
+**Week 19** in the platform program closed the **ADR-0001** default slice—**persistence-backed inventory / devices history deepening**—not further topology implementation. This review’s **partiality contract** remains:
+
+- **`inference_posture`**, **`endpoint_pairing_posture`**, **`collection_posture`**, and **`node_participation_posture`** are the **current** bounded decomposition for how the inferred topology slice can be incomplete or degraded.
+- **Pairing**, **partiality decomposition**, **node-participation counts** (**`linked_node_count`**, **`isolated_node_count`**, and related cues), and **coverage-history** persistence and consumption are **already implemented** end to end (see **`../../agent/sdn/03-CURRENT-STATUS.md`** week **16–17** topology coverage history entries and current code). Earlier sections of this file that still read like a **pending** “next bounded follow-on” for node participation describe **checkpoint history**; the **repository today** already includes that narrower slice unless a later doc pass rewrites those sections for tense.
+
+**Scheduling default after Week 19:** do **not** assume topology is the next implementation lane. Follow **`platform/docs/decisions/ADR-0001-next-bounded-truth-depth-slice.md`** **Priority 2** (evidence-first reassessment): reopen **topology code** only if **new live evidence** shows a concrete, narrow truth-depth gain **beyond** the already-shipped pairing, partiality, node-participation, and coverage-history cues. Otherwise prefer **policy** steps tied to **proven** collector evidence, **documentation-only** alignment, or **inventory** read-side ergonomics—**not** opportunistic topology redesign, unsupported policy families, or validation semantics.
+
+**Explicitly still deferred:** protocol-derived adjacency truth, controller-first topology, LLDP/IGP redesign, workflow or validation language, and broader policy families without collector proof—unchanged from the anti-goals above.

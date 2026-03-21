@@ -373,13 +373,62 @@ export interface PolicyComparisonChangePreview {
   changed_fields: string[];
 }
 
-export interface InventoryHistorySnapshotRecord {
+/** `/api/v1/devices` history: bounded device-level change preview between two persisted snapshots. */
+export interface InventoryHistoryDeviceChangePreview {
+  device_id: string;
+  vendor: string;
+  platform: string;
+  role: string | null;
+  change_kind: "added" | "removed" | "changed";
+  changed_fields: string[];
+}
+
+/** Embedded inventory snapshot on workflow-history / audit-history items (aligned with devices history snapshot fields). */
+export interface WorkflowInventorySnapshotSummary {
   snapshot_id: string;
+  sync_run_id: string;
   persisted_at: string;
   observed_at: string | null;
   sync_source: string;
   sync_status: string;
   data_status: "live" | "degraded";
+  source_endpoint: string;
+  device_count: number;
+  role_counts: Record<string, number>;
+  collector_status_counts: Record<string, number>;
+  capability_summary_counts: Record<string, number>;
+}
+
+export interface WorkflowInventorySnapshotComparison {
+  current_snapshot_id: string;
+  previous_snapshot_id: string;
+  current_persisted_at: string;
+  previous_persisted_at: string;
+  current_observed_at: string | null;
+  previous_observed_at: string | null;
+  current_sync_status: string;
+  previous_sync_status: string;
+  current_data_status: "live" | "degraded";
+  previous_data_status: "live" | "degraded";
+  current_device_count: number;
+  previous_device_count: number;
+  device_count_delta: number;
+  added_device_count: number;
+  removed_device_count: number;
+  changed_device_count: number;
+  change_preview: InventoryHistoryDeviceChangePreview[];
+  notes: string[];
+}
+
+export interface InventoryHistorySnapshotRecord {
+  snapshot_id: string;
+  sync_run_id: string;
+  persisted_at: string;
+  observed_at: string | null;
+  sync_source: string;
+  sync_status: string;
+  data_status: "live" | "degraded";
+  source_endpoint: string;
   device_count: number;
   role_counts: Record<string, number>;
   collector_status_counts: Record<string, number>;
@@ -391,12 +440,19 @@ export interface InventoryHistoryComparison {
   previous_snapshot_id: string;
   current_persisted_at: string;
   previous_persisted_at: string;
+  current_observed_at: string | null;
+  previous_observed_at: string | null;
+  current_sync_status: string;
+  previous_sync_status: string;
+  current_data_status: "live" | "degraded";
+  previous_data_status: "live" | "degraded";
   current_device_count: number;
   previous_device_count: number;
   device_count_delta: number;
   added_device_count: number;
   removed_device_count: number;
   changed_device_count: number;
+  change_preview: InventoryHistoryDeviceChangePreview[];
   notes: string[];
 }
 
@@ -578,8 +634,8 @@ export interface WorkflowHistoryItem {
   started_at: string;
   finished_at: string;
   persisted_artifacts: string[];
-  inventory_snapshot_summary: InventoryHistorySnapshotRecord | null;
-  inventory_comparison_to_previous: InventoryHistoryComparison | null;
+  inventory_snapshot_summary: WorkflowInventorySnapshotSummary | null;
+  inventory_comparison_to_previous: WorkflowInventorySnapshotComparison | null;
   topology_snapshot_summary: TopologyHistorySnapshotRecord | null;
   topology_comparison_to_previous: TopologyHistoryComparison | null;
   policy_snapshot_summary: PolicyHistorySnapshotRecord | null;
@@ -613,8 +669,8 @@ export interface AuditHistoryItem {
   readiness_snapshot_id: string | null;
   occurred_at: string;
   message: string;
-  inventory_snapshot_summary: InventoryHistorySnapshotRecord | null;
-  inventory_comparison_to_previous: InventoryHistoryComparison | null;
+  inventory_snapshot_summary: WorkflowInventorySnapshotSummary | null;
+  inventory_comparison_to_previous: WorkflowInventorySnapshotComparison | null;
   topology_snapshot_summary: TopologyHistorySnapshotRecord | null;
   topology_comparison_to_previous: TopologyHistoryComparison | null;
   policy_snapshot_summary: PolicyHistorySnapshotRecord | null;

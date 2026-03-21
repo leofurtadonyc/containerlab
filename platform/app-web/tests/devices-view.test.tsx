@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiClientError } from "../src/api/client";
 import { DevicesView } from "../src/features/devices/view";
 
 const { useDevicesQuery } = vi.hoisted(() => ({
@@ -11,65 +12,103 @@ vi.mock("../src/features/devices/api", () => ({
   useDevicesQuery,
 }));
 
-function createQueryState<T>(data: T | null) {
+function createQueryState<T>(
+  data: T | null,
+  options?: { error?: ApiClientError | null; isLoading?: boolean },
+) {
   return {
     data,
-    error: null,
-    isLoading: false,
+    error: options?.error ?? null,
+    isLoading: options?.isLoading ?? false,
     reload: vi.fn(async () => undefined),
   };
 }
 
-function createDevicesData() {
-  return {
-    service: "app-api",
-    version: "test",
-    phase: "phase_2_read_only_foundation",
-    generated_at: "2025-01-01T00:00:00Z",
-    data_status: "live",
-    serving_mode: "live_collector",
-    evidence_confidence: {
-      source_posture: "live_observed",
-      evidence_kind: "direct_observed",
-      confidence_posture: "strong_for_current_slice",
-      freshness_posture: "current",
-      blocked_reason: "none",
-      summary: "Inventory summary.",
-      notes: [],
-    },
+const baseDevicesPayload = {
+  service: "app-api" as const,
+  version: "test",
+  phase: "phase_2_read_only_foundation" as const,
+  generated_at: "2025-01-01T00:00:00Z",
+  data_status: "live" as const,
+  serving_mode: "live_collector" as const,
+  evidence_confidence: {
+    source_posture: "live_observed" as const,
+    evidence_kind: "direct_observed" as const,
+    confidence_posture: "strong_for_current_slice" as const,
+    freshness_posture: "current" as const,
+    blocked_reason: "none" as const,
     summary: "Inventory summary.",
-    served_persisted_at: null,
-    comparison_to_latest_persisted: {
-      status: "live_vs_latest_persisted_ready",
-      summary: "Comparison ready.",
-      comparison_snapshot_id: "inventory-snapshot-latest",
-      comparison_persisted_at: "2025-01-01T00:00:00Z",
-      current_device_count: 2,
-      persisted_device_count: 1,
-      device_count_delta: 1,
-      added_device_count: 1,
-      removed_device_count: 0,
-      changed_device_count: 1,
-      current_role_counts: { p: 1, pe: 1 },
-      persisted_role_counts: { pe: 1 },
-      current_collector_status_counts: { ok: 2 },
-      persisted_collector_status_counts: { degraded: 1 },
-      current_capability_summary_counts: { partially_supported: 2 },
-      persisted_capability_summary_counts: { unknown: 1 },
-      notes: [],
+    notes: [],
+  },
+  summary: "Inventory summary.",
+  served_persisted_at: null as string | null,
+  comparison_to_latest_persisted: {
+    status: "live_vs_latest_persisted_ready" as const,
+    summary: "Comparison ready.",
+    comparison_snapshot_id: "inventory-snapshot-latest",
+    comparison_persisted_at: "2025-01-01T00:00:00Z",
+    current_device_count: 2,
+    persisted_device_count: 1,
+    device_count_delta: 1,
+    added_device_count: 1,
+    removed_device_count: 0,
+    changed_device_count: 1,
+    current_role_counts: { p: 1, pe: 1 },
+    persisted_role_counts: { pe: 1 },
+    current_collector_status_counts: { ok: 2 },
+    persisted_collector_status_counts: { degraded: 1 },
+    current_capability_summary_counts: { partially_supported: 2 },
+    persisted_capability_summary_counts: { unknown: 1 },
+    notes: [],
+  },
+  count: 2,
+  items: [
+    {
+      device_id: "PE1",
+      vendor: "nokia",
+      platform: "7750 SR-1",
+      software_version: "B-25.10.R2",
+      role: "pe",
+      management_address: "172.20.20.107",
+      current_posture: "current" as const,
+      collector_status: "ok" as const,
+      last_recorded_collector_status: "ok" as const,
+      capability_summary: "partially_supported" as const,
+      capability_detail: "Support remains bounded.",
     },
+    {
+      device_id: "P1",
+      vendor: "nokia",
+      platform: "7750 SR-1",
+      software_version: "B-25.10.R2",
+      role: "p",
+      management_address: "172.20.20.109",
+      current_posture: "current" as const,
+      collector_status: "ok" as const,
+      last_recorded_collector_status: "ok" as const,
+      capability_summary: "partially_supported" as const,
+      capability_detail: "Support remains bounded.",
+    },
+  ],
+};
+
+function createDevicesDataFullHistory() {
+  return {
+    ...baseDevicesPayload,
     history: {
-      status: "comparison_ready",
+      status: "comparison_ready" as const,
       summary:
         "Recent persisted normalized inventory snapshots are available for bounded current-versus-previous comparison.",
       recent_snapshots: [
         {
           snapshot_id: "inventory-snapshot-current",
+          sync_run_id: "sync-run-current",
           persisted_at: "2025-01-01T00:00:00Z",
           observed_at: null,
           sync_source: "gnmi_collector_inventory",
           sync_status: "partial_live_feed",
-          data_status: "degraded",
+          data_status: "degraded" as const,
+          source_endpoint: "http://gnmi-collector:9804/inventory/snapshot",
           device_count: 1,
           role_counts: { pe: 1 },
           collector_status_counts: { degraded: 1 },
@@ -77,11 +116,13 @@ function createDevicesData() {
         },
         {
           snapshot_id: "inventory-snapshot-older",
+          sync_run_id: "sync-run-older",
           persisted_at: "2024-12-31T23:30:00Z",
           observed_at: null,
           sync_source: "gnmi_collector_inventory",
           sync_status: "live_normalized_feed",
-          data_status: "live",
+          data_status: "live" as const,
+          source_endpoint: "http://gnmi-collector:9804/inventory/snapshot",
           device_count: 2,
           role_counts: { p: 1, pe: 1 },
           collector_status_counts: { ok: 2 },
@@ -93,44 +134,86 @@ function createDevicesData() {
         previous_snapshot_id: "inventory-snapshot-older",
         current_persisted_at: "2025-01-01T00:00:00Z",
         previous_persisted_at: "2024-12-31T23:30:00Z",
+        current_observed_at: null,
+        previous_observed_at: null,
+        current_sync_status: "partial_live_feed",
+        previous_sync_status: "live_normalized_feed",
+        current_data_status: "degraded" as const,
+        previous_data_status: "live" as const,
         current_device_count: 1,
         previous_device_count: 2,
         device_count_delta: -1,
         added_device_count: 0,
         removed_device_count: 1,
         changed_device_count: 1,
+        change_preview: [
+          {
+            device_id: "P1",
+            vendor: "nokia",
+            platform: "7750 SR-1",
+            role: "p",
+            change_kind: "removed" as const,
+            changed_fields: [] as string[],
+          },
+        ],
         notes: ["Bounded inventory history note."],
       },
     },
-    count: 2,
-    items: [
-      {
-        device_id: "PE1",
-        vendor: "nokia",
-        platform: "7750 SR-1",
-        software_version: "B-25.10.R2",
-        role: "pe",
-        management_address: "172.20.20.107",
-        current_posture: "current",
-        collector_status: "ok",
-        last_recorded_collector_status: "ok",
-        capability_summary: "partially_supported",
-        capability_detail: "Support remains bounded.",
-      },
-      {
-        device_id: "P1",
-        vendor: "nokia",
-        platform: "7750 SR-1",
-        software_version: "B-25.10.R2",
-        role: "p",
-        management_address: "172.20.20.109",
-        current_posture: "current",
-        collector_status: "ok",
-        last_recorded_collector_status: "ok",
-        capability_summary: "partially_supported",
-        capability_detail: "Support remains bounded.",
-      },
-    ],
+  };
+}
+
+function createDevicesDataComparisonWithoutPreview() {
+  const full = createDevicesDataFullHistory();
+  return {
+    ...full,
+    history: {
+      ...full.history,
+      comparison_to_previous: full.history.comparison_to_previous
+        ? {
+            ...full.history.comparison_to_previous,
+            change_preview: [],
+          }
+        : null,
+    },
+  };
+}
+
+function createDevicesDataCurrentOnlyNoComparison() {
+  return {
+    ...baseDevicesPayload,
+    history: {
+      status: "current_only" as const,
+      summary: "One persisted inventory snapshot exists; comparison to previous is not available.",
+      recent_snapshots: [
+        {
+          snapshot_id: "inventory-snapshot-only",
+          sync_run_id: "sync-run-only",
+          persisted_at: "2025-01-01T00:00:00Z",
+          observed_at: "2025-01-01T00:00:00Z",
+          sync_source: "gnmi_collector_inventory",
+          sync_status: "live_normalized_feed",
+          data_status: "live" as const,
+          source_endpoint: "http://gnmi-collector:9804/inventory/snapshot",
+          device_count: 2,
+          role_counts: { pe: 2 },
+          collector_status_counts: { ok: 2 },
+          capability_summary_counts: { partially_supported: 2 },
+        },
+      ],
+      comparison_to_previous: null,
+    },
+  };
+}
+
+function createDevicesDataUnavailableEmpty() {
+  return {
+    ...baseDevicesPayload,
+    history: {
+      status: "unavailable" as const,
+      summary: "No persisted inventory history in this posture.",
+      recent_snapshots: [] as [],
+      comparison_to_previous: null,
+    },
   };
 }
 
@@ -139,15 +222,70 @@ beforeEach(() => {
 });
 
 describe("devices view", () => {
-  it("renders persisted inventory history and recent snapshot anchors", () => {
-    useDevicesQuery.mockReturnValue(createQueryState(createDevicesData()));
+  it("renders persisted inventory history, snapshot anchors, sync run, source endpoint, and change preview table", () => {
+    useDevicesQuery.mockReturnValue(createQueryState(createDevicesDataFullHistory()));
 
     const html = renderToStaticMarkup(<DevicesView />);
 
     expect(html).toContain("Persisted History And Comparison");
     expect(html).toContain("Recent Persisted Snapshots");
+    expect(html).toContain("Comparison ready");
     expect(html).toContain("inventory-snapshot-current");
     expect(html).toContain("inventory-snapshot-older");
+    expect(html).toContain("sync-run-current");
+    expect(html).toContain("sync-run-older");
+    expect(html).toContain("Source endpoint:");
+    expect(html).toContain("http://gnmi-collector:9804/inventory/snapshot");
+    expect(html).toContain("Bounded change preview");
+    expect(html).toContain("P1");
+    expect(html).toContain("removed");
     expect(html).toContain("Bounded inventory history note.");
+    expect(html).toContain("read-side, persisted-inventory evidence");
+  });
+
+  it("omits change preview table when the backend returns an empty preview list", () => {
+    useDevicesQuery.mockReturnValue(createQueryState(createDevicesDataComparisonWithoutPreview()));
+
+    const html = renderToStaticMarkup(<DevicesView />);
+
+    expect(html).not.toContain("Bounded change preview");
+    expect(html).toContain("Persisted History And Comparison");
+  });
+
+  it("shows an honest footnote when only one snapshot exists and comparison is absent", () => {
+    useDevicesQuery.mockReturnValue(createQueryState(createDevicesDataCurrentOnlyNoComparison()));
+
+    const html = renderToStaticMarkup(<DevicesView />);
+
+    expect(html).toContain("Current snapshot only");
+    expect(html).toContain("Only one persisted normalized inventory snapshot exists");
+    expect(html).toContain("sync-run-only");
+  });
+
+  it("shows unavailable history and empty recent snapshots without implying a bug", () => {
+    useDevicesQuery.mockReturnValue(createQueryState(createDevicesDataUnavailableEmpty()));
+
+    const html = renderToStaticMarkup(<DevicesView />);
+
+    expect(html).toContain("History unavailable");
+    expect(html).toContain("No persisted normalized inventory snapshots are currently available");
+  });
+
+  it("renders API error state with retry", () => {
+    useDevicesQuery.mockReturnValue(
+      createQueryState(null, { error: new ApiClientError("devices fetch failed", 0, "network_error") }),
+    );
+
+    const html = renderToStaticMarkup(<DevicesView />);
+
+    expect(html).toContain("devices fetch failed");
+  });
+
+  it("renders loading state", () => {
+    useDevicesQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+
+    const html = renderToStaticMarkup(<DevicesView />);
+
+    expect(html).toContain("Loading normalized device inventory");
   });
 });

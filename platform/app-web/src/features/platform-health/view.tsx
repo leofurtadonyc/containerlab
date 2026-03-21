@@ -12,6 +12,8 @@ import {
   formatDateTime,
   formatLabel,
 } from "../../lib/presentation";
+import { buildInventoryHistoryTrustCueRow } from "../../lib/inventory-history-trust";
+import { useDevicesQuery } from "../devices/api";
 import { usePoliciesQuery } from "../policies/api";
 import { getPlatformReadPath, usePlatformStatusQuery } from "./api";
 
@@ -143,6 +145,11 @@ function buildPolicySourceReadinessReadout(
 
 export function PlatformHealthView() {
   const { data, error, isLoading, reload } = usePlatformStatusQuery();
+  const {
+    data: devicesData,
+    error: devicesError,
+    isLoading: isDevicesLoading,
+  } = useDevicesQuery();
   const {
     data: policiesData,
     error: policiesError,
@@ -354,7 +361,7 @@ export function PlatformHealthView() {
       <div className="content-grid">
         <TrustCueCard
           title="Routine-Use Trust Cues"
-          summary="Platform Health is a current API response rather than an anchored history surface, so the key cues are freshness, observation coverage, read-path scope, topology endpoint pairing posture, topology node participation posture, and how much of the page is probe-backed versus declared-only."
+          summary="Platform Health is a current API response rather than an anchored history surface, so the key cues are freshness, observation coverage, read-path scope, topology endpoint pairing posture, topology node participation posture, and how much of the page is probe-backed versus declared-only. Inventory history and policy history rows below are coarse cues from the supporting Devices and Policies APIs—detailed persisted history stays on those product pages."
           rows={[
             {
               label: "API freshness",
@@ -442,6 +449,7 @@ export function PlatformHealthView() {
               emptyLabel: "Not exposed on this page",
               note: "Platform status does not currently expose a persisted snapshot identifier because this page is a bounded current-status surface rather than a persisted readiness or history view.",
             },
+            buildInventoryHistoryTrustCueRow(devicesData, isDevicesLoading, devicesError != null),
             ...(policiesData?.history?.recent_snapshots &&
             policiesData.history.recent_snapshots.length > 0
               ? [

@@ -2,13 +2,19 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { PlatformReadPathStatus, PlatformStatusResponse } from "../src/api/contracts";
-import type { PoliciesListResponse } from "../src/api/contracts";
+import { ApiClientError } from "../src/api/client";
+import type {
+  DevicesListResponse,
+  PlatformReadPathStatus,
+  PlatformStatusResponse,
+  PoliciesListResponse,
+} from "../src/api/contracts";
 import { PlatformHealthView } from "../src/features/platform-health/view";
 
-const { usePlatformStatusQuery, usePoliciesQuery } = vi.hoisted(() => ({
+const { usePlatformStatusQuery, usePoliciesQuery, useDevicesQuery } = vi.hoisted(() => ({
   usePlatformStatusQuery: vi.fn(),
   usePoliciesQuery: vi.fn(),
+  useDevicesQuery: vi.fn(),
 }));
 
 vi.mock("../src/features/platform-health/api", async () => {
@@ -24,6 +30,10 @@ vi.mock("../src/features/platform-health/api", async () => {
 
 vi.mock("../src/features/policies/api", () => ({
   usePoliciesQuery,
+}));
+
+vi.mock("../src/features/devices/api", () => ({
+  useDevicesQuery,
 }));
 
 function createQueryState<T>(data: T | null) {
@@ -117,6 +127,55 @@ function createPlatformStatus(overrides: Partial<PlatformStatusResponse> = {}): 
   };
 }
 
+function createDevicesData(): DevicesListResponse {
+  return {
+    service: "app-api",
+    version: "test",
+    phase: "phase_2_read_only_foundation",
+    generated_at: "2025-01-01T00:00:00Z",
+    data_status: "live",
+    serving_mode: "live_collector",
+    evidence_confidence: {
+      source_posture: "live_observed",
+      evidence_kind: "direct_observed",
+      confidence_posture: "strong_for_current_slice",
+      freshness_posture: "current",
+      blocked_reason: "none",
+      summary: "Devices summary.",
+      notes: [],
+    },
+    summary: "Devices summary.",
+    served_persisted_at: null,
+    count: 0,
+    items: [],
+    comparison_to_latest_persisted: {
+      status: "unavailable",
+      summary: "No comparison.",
+      comparison_snapshot_id: null,
+      comparison_persisted_at: null,
+      current_device_count: 0,
+      persisted_device_count: 0,
+      device_count_delta: 0,
+      added_device_count: 0,
+      removed_device_count: 0,
+      changed_device_count: 0,
+      current_role_counts: {},
+      persisted_role_counts: {},
+      current_collector_status_counts: {},
+      persisted_collector_status_counts: {},
+      current_capability_summary_counts: {},
+      persisted_capability_summary_counts: {},
+      notes: [],
+    },
+    history: {
+      status: "unavailable",
+      summary: "No inventory history yet.",
+      recent_snapshots: [],
+      comparison_to_previous: null,
+    },
+  };
+}
+
 function createPoliciesData(): PoliciesListResponse {
   return {
     service: "app-api",
@@ -195,6 +254,7 @@ function createPoliciesData(): PoliciesListResponse {
 describe("PlatformHealthView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useDevicesQuery.mockReturnValue(createQueryState(createDevicesData()));
   });
 
   it("surfaces same-workspace recovery summary card and trust cue when recovery contract is present", () => {
@@ -274,5 +334,34 @@ describe("PlatformHealthView", () => {
     expect(html).toContain("comparison ready");
     expect(html).toContain("not drift analysis");
     expect(html).toContain("validation verdicts");
+  });
+
+  it("surfaces bounded inventory-history trust cue from the supporting Devices API", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatus()));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+
+    const html = renderToStaticMarkup(<PlatformHealthView />);
+
+    expect(html).toContain("Inventory history");
+    expect(html).toContain("No snapshots");
+    expect(html).toContain("unavailable");
+    expect(html).toContain("Read-side evidence");
+  });
+
+  it("shows unavailable inventory history when the Devices query fails", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatus()));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+    useDevicesQuery.mockReturnValue({
+      data: null,
+      error: new ApiClientError("devices failed", 0, "network_error"),
+      isLoading: false,
+      reload: vi.fn(async () => undefined),
+    });
+
+    const html = renderToStaticMarkup(<PlatformHealthView />);
+
+    expect(html).toContain("Inventory history");
+    expect(html).toContain("Unavailable");
+    expect(html).toContain("could not load the supporting Devices response");
   });
 });

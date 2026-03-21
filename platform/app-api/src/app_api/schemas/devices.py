@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app_api.schemas.common import ApiResponseMetadata, EvidenceConfidenceSummary
 
@@ -60,15 +60,28 @@ class InventoryHistorySnapshotRecord(BaseModel):
     """Bounded summary of one persisted inventory snapshot."""
 
     snapshot_id: str
+    sync_run_id: str
     persisted_at: datetime
     observed_at: datetime | None = None
     sync_source: str
     sync_status: str
     data_status: Literal["live", "degraded"]
+    source_endpoint: str
     device_count: int
     role_counts: dict[str, int]
     collector_status_counts: dict[str, int]
     capability_summary_counts: dict[str, int]
+
+
+class InventoryHistoryChangePreview(BaseModel):
+    """Bounded preview of one normalized inventory device change between two snapshots."""
+
+    device_id: str
+    vendor: str
+    platform: str
+    role: str | None = None
+    change_kind: Literal["added", "removed", "changed"]
+    changed_fields: list[str] = Field(default_factory=list)
 
 
 class InventoryHistoryComparison(BaseModel):
@@ -78,12 +91,19 @@ class InventoryHistoryComparison(BaseModel):
     previous_snapshot_id: str
     current_persisted_at: datetime
     previous_persisted_at: datetime
+    current_observed_at: datetime | None = None
+    previous_observed_at: datetime | None = None
+    current_sync_status: str
+    previous_sync_status: str
+    current_data_status: Literal["live", "degraded"]
+    previous_data_status: Literal["live", "degraded"]
     current_device_count: int
     previous_device_count: int
     device_count_delta: int
     added_device_count: int
     removed_device_count: int
     changed_device_count: int
+    change_preview: list[InventoryHistoryChangePreview]
     notes: list[str]
 
 

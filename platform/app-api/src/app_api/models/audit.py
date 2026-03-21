@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app_api.models.inventory import InventoryHistoryChangePreview
+
 
 class AuditPolicySnapshotSummary(BaseModel):
     """Bounded persisted policy snapshot context attached to an audit event."""
@@ -31,11 +33,13 @@ class AuditInventorySnapshotSummary(BaseModel):
     """Bounded persisted inventory snapshot context attached to an audit event."""
 
     snapshot_id: str
+    sync_run_id: str
     persisted_at: datetime
     observed_at: datetime | None = None
     sync_source: str
     sync_status: str
     data_status: str
+    source_endpoint: str
     device_count: int
     role_counts: dict[str, int] = Field(default_factory=dict)
     collector_status_counts: dict[str, int] = Field(default_factory=dict)
@@ -49,12 +53,19 @@ class AuditInventorySnapshotComparison(BaseModel):
     previous_snapshot_id: str
     current_persisted_at: datetime
     previous_persisted_at: datetime
+    current_observed_at: datetime | None = None
+    previous_observed_at: datetime | None = None
+    current_sync_status: str
+    previous_sync_status: str
+    current_data_status: str
+    previous_data_status: str
     current_device_count: int
     previous_device_count: int
     device_count_delta: int
     added_device_count: int
     removed_device_count: int
     changed_device_count: int
+    change_preview: list[InventoryHistoryChangePreview] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 
 

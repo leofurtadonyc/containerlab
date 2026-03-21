@@ -10,7 +10,10 @@ from app_api.metrics.state import (
     get_cached_topology_metrics,
     render_prometheus_metrics,
 )
-from app_api.persistence.history import summarize_sync_run_history
+from app_api.persistence.history import (
+    summarize_inventory_snapshot_metrics,
+    summarize_sync_run_history,
+)
 from app_api.services.capabilities import refresh_readiness_metrics
 
 
@@ -29,6 +32,7 @@ def get_metrics() -> Response:
     topology = get_cached_topology_metrics()
     policies = get_cached_policy_metrics()
     sync_history = summarize_sync_run_history()
+    inventory_snapshot_table = summarize_inventory_snapshot_metrics()
     payload = render_prometheus_metrics(
         settings.app_version,
         topology_metrics={
@@ -114,6 +118,14 @@ def get_metrics() -> Response:
             ),
             "latest_finished_at_by_model_family": (
                 sync_history.latest_finished_at_by_model_family
+            ),
+        },
+        inventory_snapshot_metrics={
+            "persisted_row_count": inventory_snapshot_table.persisted_row_count,
+            "latest_persisted_at_seconds": (
+                inventory_snapshot_table.latest_persisted_at.timestamp()
+                if inventory_snapshot_table.latest_persisted_at is not None
+                else 0.0
             ),
         },
     )
