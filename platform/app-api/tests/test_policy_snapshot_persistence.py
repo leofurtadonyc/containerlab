@@ -18,6 +18,7 @@ from app_api.models.policy import (
 from app_api.persistence.history import load_sync_runs
 from app_api.persistence.read_side import (
     load_latest_policy_snapshot,
+    load_recent_policy_snapshot_summaries,
     persist_policy_snapshot,
 )
 
@@ -241,3 +242,33 @@ def test_load_sync_runs_two_snapshots_has_comparison(sqlite_persistence) -> None
     assert cmp.previous_static_local_policy_count == 1
     assert cmp.current_data_status == "live"
     assert cmp.previous_data_status == "live"
+
+
+def test_load_recent_policy_snapshot_summaries_includes_sync_anchors_and_nested_readiness(
+    sqlite_persistence,
+) -> None:
+    collector = _minimal_collector_snapshot(detail_ready=3)
+    snapshot = _minimal_inventory_snapshot(
+        readiness=PolicyDetailSourceReadiness(
+            posture="partially_ready",
+            no_policies_observed_target_count=5,
+            detail_unavailable_target_count=1,
+            partial_detail_target_count=0,
+        ),
+        observed_at=datetime(2026, 3, 10, 12, 0, tzinfo=UTC),
+    )
+    persist_policy_snapshot(
+        collector_snapshot=collector,
+        snapshot=snapshot,
+        data_status="live",
+    )
+    summaries = load_recent_policy_snapshot_summaries(limit=3)
+    assert len(summaries) == 1
+    rec = summaries[0].snapshot
+    assert rec.sync_run_id
+    assert rec.source_endpoint == "http://gnmi-collector:9804/policies/snapshot"
+    assert rec.observed_target_count == 2
+    assert rec.policy_capable_target_count == 2
+    assert rec.detail_source_readiness.posture == "partially_ready"
+    assert rec.detail_source_readiness.no_policies_observed_target_count == 5
+    assert rec.detail_source_readiness_posture == "partially_ready"

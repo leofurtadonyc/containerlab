@@ -90,6 +90,7 @@ class PersistedPolicySnapshot(BaseModel):
     sync_run_id: str
     persisted_at: datetime
     data_status: str
+    source_endpoint: str = ""
     detail_ready_target_count: int = 0
     snapshot: PolicyInventorySnapshot
 
@@ -694,11 +695,16 @@ def _load_policy_snapshot_at_offset(offset: int) -> PersistedPolicySnapshot | No
                 detail_unavailable_target_count=snapshot.detail_unavailable_target_count,
                 partial_detail_target_count=snapshot.partial_detail_target_count,
             )
+            sync_run = session.scalar(
+                select(SyncRunTable).where(SyncRunTable.id == snapshot.sync_run_id)
+            )
+            source_endpoint = sync_run.source_endpoint if sync_run is not None else ""
             return PersistedPolicySnapshot(
                 snapshot_id=snapshot.id,
                 sync_run_id=snapshot.sync_run_id,
                 persisted_at=snapshot.persisted_at,
                 data_status=snapshot.data_status,
+                source_endpoint=source_endpoint,
                 detail_ready_target_count=snapshot.detail_ready_target_count,
                 snapshot=PolicyInventorySnapshot(
                     sync_source=snapshot.sync_source,
@@ -779,6 +785,14 @@ def load_recent_policy_snapshot_summaries(limit: int = 3) -> list[PersistedPolic
             snapshot_ids = [snapshot.id for snapshot in snapshots]
             if not snapshot_ids:
                 return []
+            sync_runs_by_id = {
+                row.id: row
+                for row in session.scalars(
+                    select(SyncRunTable).where(
+                        SyncRunTable.id.in_([s.sync_run_id for s in snapshots])
+                    )
+                ).all()
+            }
             counts_by_snapshot_id = {snapshot_id: 0 for snapshot_id in snapshot_ids}
             for snapshot_id, count in session.execute(
                 select(PolicyRecordTable.snapshot_id, func.count(PolicyRecordTable.id))
@@ -792,7 +806,13 @@ def load_recent_policy_snapshot_summaries(limit: int = 3) -> list[PersistedPolic
                     persisted_at=snapshot.persisted_at,
                     snapshot=PolicyHistorySnapshotRecord(
                         snapshot_id=snapshot.id,
+                        sync_run_id=snapshot.sync_run_id,
                         persisted_at=snapshot.persisted_at,
+                        source_endpoint=(
+                            sync_runs_by_id[snapshot.sync_run_id].source_endpoint
+                            if snapshot.sync_run_id in sync_runs_by_id
+                            else ""
+                        ),
                         observed_at=snapshot.observed_at,
                         data_status=snapshot.data_status,
                         sync_source=snapshot.sync_source,
@@ -803,7 +823,15 @@ def load_recent_policy_snapshot_summaries(limit: int = 3) -> list[PersistedPolic
                         observed_policy_count=snapshot.observed_policy_count,
                         active_policy_count=snapshot.active_policy_count,
                         static_local_policy_count=snapshot.static_local_policy_count,
+                        observed_target_count=snapshot.observed_target_count,
+                        policy_capable_target_count=snapshot.policy_capable_target_count,
                         detail_record_count=counts_by_snapshot_id.get(snapshot.id, 0),
+                        detail_source_readiness=PolicyDetailSourceReadiness(
+                            posture=snapshot.detail_source_readiness_posture,
+                            no_policies_observed_target_count=snapshot.no_policies_observed_target_count,
+                            detail_unavailable_target_count=snapshot.detail_unavailable_target_count,
+                            partial_detail_target_count=snapshot.partial_detail_target_count,
+                        ),
                         detail_source_readiness_posture=snapshot.detail_source_readiness_posture,
                         detail_ready_target_count=snapshot.detail_ready_target_count,
                         no_policies_observed_target_count=snapshot.no_policies_observed_target_count,

@@ -2,6 +2,7 @@
 
 from collections import Counter
 from datetime import UTC, datetime
+from typing import Literal
 
 from app_api.config.settings import get_settings
 from app_api.integrations.collector.policies import (
@@ -39,6 +40,23 @@ from app_api.schemas.policies import (
     PolicyTargetFootprintRecord,
 )
 from app_api.schemas.common import EvidenceConfidenceSummary
+
+
+def _policy_data_status_literal(data_status: str) -> Literal["live", "degraded"]:
+    """Map persisted data_status string to API literal."""
+    return "live" if data_status == "live" else "degraded"
+
+
+def _readiness_to_record(
+    readiness: PolicyDetailSourceReadiness,
+) -> PolicyDetailSourceReadinessRecord:
+    """Map backend readiness model to API record."""
+    return PolicyDetailSourceReadinessRecord(
+        posture=readiness.posture,
+        no_policies_observed_target_count=readiness.no_policies_observed_target_count,
+        detail_unavailable_target_count=readiness.detail_unavailable_target_count,
+        partial_detail_target_count=readiness.partial_detail_target_count,
+    )
 
 
 def _build_policy_inventory() -> tuple[
@@ -322,6 +340,7 @@ def _build_policy_history_window() -> PolicyHistoryWindow:
                 "No persisted normalized policy snapshots are currently available for "
                 "bounded policy history or comparison."
             ),
+            recent_snapshots=[],
         )
 
     if len(recent_snapshots) == 1:
@@ -430,6 +449,16 @@ def _build_policy_history_window() -> PolicyHistoryWindow:
                 current_snapshot.snapshot.static_local_policy_count
                 - previous_snapshot.snapshot.static_local_policy_count
             ),
+            current_observed_at=current_snapshot.snapshot.observed_at,
+            previous_observed_at=previous_snapshot.snapshot.observed_at,
+            current_data_status=_policy_data_status_literal(current_snapshot.data_status),
+            previous_data_status=_policy_data_status_literal(previous_snapshot.data_status),
+            current_sync_run_id=current_snapshot.sync_run_id,
+            previous_sync_run_id=previous_snapshot.sync_run_id,
+            current_source_endpoint=current_snapshot.source_endpoint,
+            previous_source_endpoint=previous_snapshot.source_endpoint,
+            current_detail_source_readiness=current_snapshot.snapshot.detail_source_readiness.model_copy(),
+            previous_detail_source_readiness=previous_snapshot.snapshot.detail_source_readiness.model_copy(),
         ),
     )
 
@@ -942,7 +971,9 @@ def build_policies_list_response() -> PoliciesListResponse:
             recent_snapshots=[
                 PolicyHistorySnapshotResponseRecord(
                     snapshot_id=entry.snapshot_id,
+                    sync_run_id=entry.sync_run_id,
                     persisted_at=entry.persisted_at,
+                    source_endpoint=entry.source_endpoint,
                     observed_at=entry.observed_at,
                     data_status=entry.data_status,
                     sync_source=entry.sync_source,
@@ -953,7 +984,10 @@ def build_policies_list_response() -> PoliciesListResponse:
                     observed_policy_count=entry.observed_policy_count,
                     active_policy_count=entry.active_policy_count,
                     static_local_policy_count=entry.static_local_policy_count,
+                    observed_target_count=entry.observed_target_count,
+                    policy_capable_target_count=entry.policy_capable_target_count,
                     detail_record_count=entry.detail_record_count,
+                    detail_source_readiness=_readiness_to_record(entry.detail_source_readiness),
                     detail_source_readiness_posture=entry.detail_source_readiness_posture,
                     detail_ready_target_count=entry.detail_ready_target_count,
                     no_policies_observed_target_count=entry.no_policies_observed_target_count,
@@ -1002,6 +1036,20 @@ def build_policies_list_response() -> PoliciesListResponse:
                     current_static_local_policy_count=history.comparison_to_previous.current_static_local_policy_count,
                     previous_static_local_policy_count=history.comparison_to_previous.previous_static_local_policy_count,
                     static_local_policy_delta=history.comparison_to_previous.static_local_policy_delta,
+                    current_observed_at=history.comparison_to_previous.current_observed_at,
+                    previous_observed_at=history.comparison_to_previous.previous_observed_at,
+                    current_data_status=history.comparison_to_previous.current_data_status,
+                    previous_data_status=history.comparison_to_previous.previous_data_status,
+                    current_sync_run_id=history.comparison_to_previous.current_sync_run_id,
+                    previous_sync_run_id=history.comparison_to_previous.previous_sync_run_id,
+                    current_source_endpoint=history.comparison_to_previous.current_source_endpoint,
+                    previous_source_endpoint=history.comparison_to_previous.previous_source_endpoint,
+                    current_detail_source_readiness=_readiness_to_record(
+                        history.comparison_to_previous.current_detail_source_readiness
+                    ),
+                    previous_detail_source_readiness=_readiness_to_record(
+                        history.comparison_to_previous.previous_detail_source_readiness
+                    ),
                 )
                 if history.comparison_to_previous is not None
                 else None

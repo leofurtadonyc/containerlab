@@ -135,7 +135,9 @@ class PolicyHistorySnapshotRecord(BaseModel):
     """Bounded summary of one persisted policy snapshot."""
 
     snapshot_id: str
+    sync_run_id: str
     persisted_at: datetime
+    source_endpoint: str = ""
     observed_at: datetime | None = None
     data_status: Literal["live", "degraded"]
     sync_source: str
@@ -156,7 +158,12 @@ class PolicyHistorySnapshotRecord(BaseModel):
     observed_policy_count: int
     active_policy_count: int
     static_local_policy_count: int = 0
+    observed_target_count: int = 0
+    policy_capable_target_count: int = 0
     detail_record_count: int
+    detail_source_readiness: PolicyDetailSourceReadiness = Field(
+        default_factory=PolicyDetailSourceReadiness
+    )
     detail_source_readiness_posture: PolicyDetailSourceReadinessPosture = "unknown"
     detail_ready_target_count: int = 0
     no_policies_observed_target_count: int = 0
@@ -206,6 +213,20 @@ class PolicyHistoryComparison(BaseModel):
     current_static_local_policy_count: int = 0
     previous_static_local_policy_count: int = 0
     static_local_policy_delta: int = 0
+    current_observed_at: datetime | None = None
+    previous_observed_at: datetime | None = None
+    current_data_status: Literal["live", "degraded"] = "degraded"
+    previous_data_status: Literal["live", "degraded"] = "degraded"
+    current_sync_run_id: str = ""
+    previous_sync_run_id: str = ""
+    current_source_endpoint: str = ""
+    previous_source_endpoint: str = ""
+    current_detail_source_readiness: PolicyDetailSourceReadiness = Field(
+        default_factory=PolicyDetailSourceReadiness
+    )
+    previous_detail_source_readiness: PolicyDetailSourceReadiness = Field(
+        default_factory=PolicyDetailSourceReadiness
+    )
 
 
 class PolicyHistoryWindow(BaseModel):

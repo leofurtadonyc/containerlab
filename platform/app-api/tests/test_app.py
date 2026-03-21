@@ -1196,6 +1196,7 @@ def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
         sync_run_id="sync-policy-0",
         persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
         data_status="degraded",
+        source_endpoint="http://gnmi-collector:9804/policies/snapshot",
         detail_ready_target_count=1,
         snapshot=PolicyInventorySnapshot(
             sync_source="persisted_policy_snapshot",
@@ -1280,6 +1281,7 @@ def _build_previous_persisted_policy_snapshot() -> PersistedPolicySnapshot:
         sync_run_id="sync-policy-previous",
         persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
         data_status="live",
+        source_endpoint="http://gnmi-collector:9804/policies/snapshot",
         detail_ready_target_count=2,
         snapshot=PolicyInventorySnapshot(
             sync_source="persisted_policy_snapshot",
@@ -1362,7 +1364,9 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
             persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
             snapshot={
                 "snapshot_id": "policy-snapshot-1",
+                "sync_run_id": "sync-policy-run-1",
                 "persisted_at": datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+                "source_endpoint": "http://gnmi-collector:9804/policies/snapshot",
                 "observed_at": datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
                 "data_status": "degraded",
                 "sync_source": "persisted_policy_snapshot",
@@ -1373,7 +1377,15 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
                 "observed_policy_count": 1,
                 "active_policy_count": 1,
                 "static_local_policy_count": 1,
+                "observed_target_count": 2,
+                "policy_capable_target_count": 2,
                 "detail_record_count": 1,
+                "detail_source_readiness": {
+                    "posture": "partially_ready",
+                    "no_policies_observed_target_count": 0,
+                    "detail_unavailable_target_count": 0,
+                    "partial_detail_target_count": 0,
+                },
                 "detail_source_readiness_posture": "partially_ready",
                 "detail_ready_target_count": 1,
                 "no_policies_observed_target_count": 0,
@@ -1386,7 +1398,9 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
             persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
             snapshot={
                 "snapshot_id": "policy-snapshot-0",
+                "sync_run_id": "sync-policy-run-0",
                 "persisted_at": datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+                "source_endpoint": "http://gnmi-collector:9804/policies/snapshot",
                 "observed_at": datetime.fromisoformat("2026-03-09T23:29:00+00:00"),
                 "data_status": "live",
                 "sync_source": "persisted_policy_snapshot",
@@ -1397,7 +1411,15 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
                 "observed_policy_count": 2,
                 "active_policy_count": 1,
                 "static_local_policy_count": 1,
+                "observed_target_count": 2,
+                "policy_capable_target_count": 2,
                 "detail_record_count": 2,
+                "detail_source_readiness": {
+                    "posture": "partially_ready",
+                    "no_policies_observed_target_count": 0,
+                    "detail_unavailable_target_count": 0,
+                    "partial_detail_target_count": 0,
+                },
                 "detail_source_readiness_posture": "partially_ready",
                 "detail_ready_target_count": 2,
                 "no_policies_observed_target_count": 0,
@@ -1410,7 +1432,9 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
             persisted_at=datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
             snapshot={
                 "snapshot_id": "policy-snapshot-minus-1",
+                "sync_run_id": "sync-policy-run-old",
                 "persisted_at": datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
+                "source_endpoint": "http://gnmi-collector:9804/policies/snapshot",
                 "observed_at": datetime.fromisoformat("2026-03-09T22:59:00+00:00"),
                 "data_status": "live",
                 "sync_source": "persisted_policy_snapshot",
@@ -1421,7 +1445,15 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
                 "observed_policy_count": 2,
                 "active_policy_count": 0,
                 "static_local_policy_count": 0,
+                "observed_target_count": 2,
+                "policy_capable_target_count": 2,
                 "detail_record_count": 0,
+                "detail_source_readiness": {
+                    "posture": "source_detail_unavailable",
+                    "no_policies_observed_target_count": 0,
+                    "detail_unavailable_target_count": 2,
+                    "partial_detail_target_count": 0,
+                },
                 "detail_source_readiness_posture": "source_detail_unavailable",
                 "detail_ready_target_count": 0,
                 "no_policies_observed_target_count": 0,
@@ -3106,6 +3138,19 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["history"]["status"] == "comparison_ready"
     assert len(payload["history"]["recent_snapshots"]) == 3
     assert payload["history"]["recent_snapshots"][0]["snapshot_id"] == "policy-snapshot-1"
+    assert payload["history"]["recent_snapshots"][0]["sync_run_id"] == "sync-policy-run-1"
+    assert (
+        payload["history"]["recent_snapshots"][0]["source_endpoint"]
+        == "http://gnmi-collector:9804/policies/snapshot"
+    )
+    assert payload["history"]["recent_snapshots"][0]["observed_target_count"] == 2
+    assert payload["history"]["recent_snapshots"][0]["policy_capable_target_count"] == 2
+    assert payload["history"]["recent_snapshots"][0]["detail_source_readiness"] == {
+        "posture": "partially_ready",
+        "no_policies_observed_target_count": 0,
+        "detail_unavailable_target_count": 0,
+        "partial_detail_target_count": 0,
+    }
     assert payload["history"]["recent_snapshots"][0]["detail_source_readiness_posture"] == "partially_ready"
     assert payload["history"]["recent_snapshots"][0]["detail_ready_target_count"] == 1
     assert payload["history"]["recent_snapshots"][0]["no_policies_observed_target_count"] == 0
@@ -3122,6 +3167,30 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["history"]["comparison_to_previous"]["current_partial_detail_target_count"] == 0
     assert payload["history"]["comparison_to_previous"]["previous_partial_detail_target_count"] == 1
     assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-0"
+    assert payload["history"]["comparison_to_previous"]["current_sync_run_id"] == "sync-policy-0"
+    assert payload["history"]["comparison_to_previous"]["previous_sync_run_id"] == "sync-policy-previous"
+    assert (
+        payload["history"]["comparison_to_previous"]["current_source_endpoint"]
+        == "http://gnmi-collector:9804/policies/snapshot"
+    )
+    assert (
+        payload["history"]["comparison_to_previous"]["previous_source_endpoint"]
+        == "http://gnmi-collector:9804/policies/snapshot"
+    )
+    assert payload["history"]["comparison_to_previous"]["current_data_status"] == "degraded"
+    assert payload["history"]["comparison_to_previous"]["previous_data_status"] == "live"
+    assert payload["history"]["comparison_to_previous"]["current_detail_source_readiness"] == {
+        "posture": "partially_ready",
+        "no_policies_observed_target_count": 0,
+        "detail_unavailable_target_count": 0,
+        "partial_detail_target_count": 0,
+    }
+    assert payload["history"]["comparison_to_previous"]["previous_detail_source_readiness"] == {
+        "posture": "partially_ready",
+        "no_policies_observed_target_count": 0,
+        "detail_unavailable_target_count": 2,
+        "partial_detail_target_count": 1,
+    }
     assert (
         payload["history"]["recent_snapshots"][2]["detail_unavailable_target_count"] == 2
         and payload["history"]["recent_snapshots"][2]["partial_detail_target_count"] == 0
@@ -3188,6 +3257,13 @@ def test_policies_history_current_only_exposes_readiness_without_comparison(monk
     assert len(payload["history"]["recent_snapshots"]) == 1
     snap = payload["history"]["recent_snapshots"][0]
     assert snap["detail_source_readiness_posture"] == "partially_ready"
+    assert snap["sync_run_id"] == "sync-policy-run-1"
+    assert snap["detail_source_readiness"] == {
+        "posture": "partially_ready",
+        "no_policies_observed_target_count": 0,
+        "detail_unavailable_target_count": 0,
+        "partial_detail_target_count": 0,
+    }
     assert snap["detail_ready_target_count"] == 1
     assert snap["no_policies_observed_target_count"] == 0
     assert snap["detail_unavailable_target_count"] == 0
@@ -3233,6 +3309,8 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] is None
     assert payload["comparison_to_latest_persisted"]["change_preview"] == []
     assert payload["history"]["status"] == "unavailable"
+    assert payload["history"]["recent_snapshots"] == []
+    assert payload["history"]["comparison_to_previous"] is None
     assert "stable per-target policy counter footprint and target-role coverage" in payload["summary"]
 
 
@@ -3267,6 +3345,8 @@ def test_policies_endpoint_keeps_detail_unavailable_state_explicit(monkeypatch) 
     assert payload["target_footprints"][1]["detail_blocker_reason"] == "per_policy_details_unavailable"
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
     assert payload["history"]["status"] == "unavailable"
+    assert payload["history"]["recent_snapshots"] == []
+    assert payload["history"]["comparison_to_previous"] is None
     assert (
         "could not derive per-policy detail records" in payload["summary"]
     )
