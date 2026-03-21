@@ -6,7 +6,7 @@ This document describes the major platform services, what each one owns, what ea
 
 ## Current Status
 
-The platform now has service directories, service READMEs, a platform topology skeleton, observability scaffolding, a backend skeleton, a collector skeleton, bounded Postgres-backed read-side persistence for inventory, topology, and policy snapshots, and repo-built local runtime images for the initial service set.
+The platform now has service directories, service READMEs, a platform topology skeleton, a Prometheus and Grafana observability stack with provisioned dashboards, a backend and collector delivering bounded live read paths, bounded Postgres-backed read-side persistence for inventory, topology, and policy snapshots, and repo-built local runtime images for the initial service set.
 
 The current runtime posture is no longer skeleton-only:
 
@@ -67,7 +67,7 @@ What it must not own:
 
 Current state:
 
-- FastAPI skeleton exists
+- FastAPI application with bounded read-only APIs
 - typed health endpoint exists
 - bounded HTTP request and latency metrics now exist at `/metrics`
 - live bounded inventory, topology, and policy integrations now exist from the collector boundary into backend read paths

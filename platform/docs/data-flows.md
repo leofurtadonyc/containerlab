@@ -24,7 +24,7 @@ The current repository state includes:
   for the current metrics
 - Postgres with **bounded durable persistence** for normalized inventory,
   topology, and policy snapshots, sync-run records, readiness snapshots, and
-  the history fields needed for week **16–18** coverage and source-readiness
+  the history fields needed for week **16–20** coverage and source-readiness
   history (not a full durable domain model for every future product area)
 - repo-built local images for the initial platform service set
 - bounded post-deploy verification for the current core runtime contract, ODL

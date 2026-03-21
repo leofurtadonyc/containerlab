@@ -11,9 +11,9 @@ The platform now has:
 - a separate platform repository structure
 - a separate Containerlab topology for platform services
 - service READMEs and topology scaffolding
-- Prometheus and Grafana provisioning skeletons
-- backend, collector, frontend, and database-direction scaffolding
-- a first bounded persistence-backed read-side slice for inventory, topology, and policy snapshots
+- Prometheus and Grafana with repo-managed provisioning, real overview dashboards, and bounded startup validation
+- backend, collector, and frontend implementing bounded live read paths and WebUI surfaces; Postgres-backed persistence for the current read-side slice
+- a bounded persistence-backed read-side slice for inventory, topology, and policy snapshots plus sync-run and readiness-support history
 - repo-built local images for all initial platform services, with the current runtime-hardening slice now adding bounded startup validation for Postgres, Prometheus, and Grafana plus ODL credential provisioning
 - bounded post-deploy verification scripts for the core runtime contract and the ODL credential path
 
@@ -21,7 +21,7 @@ What remains incomplete:
 
 - broad or deeper ODL-backed enrichment beyond the current bounded platform-health capability probe
 - durable persistence for every intended product domain
-- richer live-backed read-only domain APIs beyond the current health, platform status, devices, topology, policies, and capabilities slice
+- richer live-backed read-only domain APIs beyond the current health, platform status, devices, topology, policies, capabilities, workflow-history, and audit-history slice
 - deeper read-only product pages backed by more live operational evidence
 
 This document therefore focuses on architectural shape and service boundaries rather than final implementation depth.

@@ -8,7 +8,7 @@ This document describes the observability dashboard families for the platform, t
 
 The platform currently has:
 
-- Grafana provisioning-from-files scaffolding
+- Grafana provisioning from files (repo-managed dashboards and datasources)
 - a provisioned Prometheus datasource
 - dashboard folder structure for the required dashboard families
 - a real platform overview dashboard backed by Prometheus scrape health plus current `app-api` and `gnmi-collector` metrics
