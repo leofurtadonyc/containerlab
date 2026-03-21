@@ -357,8 +357,8 @@ export function describeTopologyInferencePosture(
       label: "Inferred slice",
       detail:
         linkCount === 0
-          ? "Topology currently exposes no normalized links, but any future link slice remains bounded to inferred evidence rather than protocol-derived adjacency truth."
-          : "Current normalized topology links remain a bounded inferred slice rather than direct adjacency or controller truth.",
+          ? "Topology currently exposes no normalized links, but any future link slice remains bounded to inferred evidence rather than protocol-derived adjacency truth. Separate from collection health and endpoint pairing strength. Trust cue only—not a validation verdict."
+          : "Current normalized topology links remain a bounded inferred slice rather than direct adjacency or controller truth. Separate from collection health and endpoint pairing strength. Trust cue only—not a validation verdict.",
     };
   }
 
@@ -367,8 +367,8 @@ export function describeTopologyInferencePosture(
     label: linkCount === 0 ? "No inferred links" : "Inference unclear",
     detail:
       linkCount === 0
-        ? "No normalized links are currently emitted, so inference posture stays unknown."
-        : "The current topology response does not expose enough evidence to classify inference posture more clearly.",
+        ? "No normalized links are currently emitted, so inference posture stays unknown. Trust cue only—not a validation verdict."
+        : "The current topology response does not expose enough evidence to classify inference posture more clearly. Trust cue only—not a validation verdict.",
   };
 }
 
@@ -381,28 +381,28 @@ export function describeTopologyCollectionPosture(
         status: "ok",
         label: "Collection ok",
         detail:
-          "The current topology slice comes from a usable live collection window rather than a blocked or degraded one.",
+          "The current topology slice comes from a usable live collection window rather than a blocked or degraded one. Separate from inference-boundedness and per-link endpoint pairing. Trust cue only—not a validation verdict.",
       };
     case "degraded":
       return {
         status: "degraded",
         label: "Collection degraded",
         detail:
-          "The current topology slice was collected with partial degradation, so operators should expect bounded gaps rather than full live coverage.",
+          "The current topology slice was collected with partial degradation, so operators should expect bounded gaps rather than full live coverage. Separate from inference-boundedness and endpoint pairing. Trust cue only—not a validation verdict.",
       };
     case "blocked":
       return {
         status: "blocked",
         label: "Collection blocked",
         detail:
-          "The current topology slice is not backed by a normal live collection window and should be treated as fallback or blocked posture.",
+          "The current topology slice is not backed by a normal live collection window and should be treated as fallback or blocked posture. Trust cue only—not a validation verdict.",
       };
     default:
       return {
         status: "unknown",
         label: "Collection unclear",
         detail:
-          "The current topology response does not expose a clearer collection posture for this slice.",
+          "The current topology response does not expose a clearer collection posture for this slice. Trust cue only—not a validation verdict.",
       };
   }
 }
@@ -416,33 +416,36 @@ export function describeTopologyCoveragePosture(
       ? "No normalized links are currently emitted."
       : `${coverageSummary.paired_link_count} paired • ${coverageSummary.single_sided_link_count} single-sided • ${linkCount} total links.`;
 
+  const pairingScopeNote =
+    " Aggregate endpoint evidence on links only; separate from node participation and collection posture. Trust cue only—not adjacency validation.";
+
   switch (coverageSummary.endpoint_pairing_posture) {
     case "paired":
       return {
         status: "paired",
         label: "Paired evidence",
-        detail: coverageSummary.summary,
+        detail: `${coverageSummary.summary}${pairingScopeNote}`,
         countDetail,
       };
     case "partially_paired":
       return {
         status: "partially_paired",
         label: "Partially paired",
-        detail: coverageSummary.summary,
+        detail: `${coverageSummary.summary}${pairingScopeNote}`,
         countDetail,
       };
     case "single_sided":
       return {
         status: "single_sided",
         label: "Single-sided evidence",
-        detail: coverageSummary.summary,
+        detail: `${coverageSummary.summary}${pairingScopeNote}`,
         countDetail,
       };
     default:
       return {
         status: "unknown",
         label: linkCount === 0 ? "No link evidence" : "Coverage unclear",
-        detail: coverageSummary.summary,
+        detail: `${coverageSummary.summary}${pairingScopeNote}`,
         countDetail,
       };
   }
@@ -491,7 +494,7 @@ export function describeTopologyNodeParticipationPosture(
         status: "fully_linked",
         label: "Fully linked",
         detail:
-          "All currently emitted topology nodes participate in at least one normalized link within the bounded inferred slice.",
+          "All currently emitted topology nodes participate in at least one normalized link within the bounded inferred slice. Separate from per-link endpoint pairing; fully linked does not mean every link is paired. Trust cue only—not a validation verdict.",
         countDetail,
       };
     case "partially_isolated":
@@ -499,7 +502,7 @@ export function describeTopologyNodeParticipationPosture(
         status: "partially_isolated",
         label: "Partially isolated",
         detail:
-          "Current topology nodes include a mix of linked and isolated observed nodes within the bounded inferred slice.",
+          "Current topology nodes include a mix of linked and isolated observed nodes within the bounded inferred slice. Trust cue only—not a validation verdict.",
         countDetail,
       };
     case "isolated_only":
@@ -507,7 +510,7 @@ export function describeTopologyNodeParticipationPosture(
         status: "isolated_only",
         label: "Isolated only",
         detail:
-          "Current topology nodes are present, but none currently participate in a normalized link within the bounded inferred slice.",
+          "Current topology nodes are present, but none currently participate in a normalized link within the bounded inferred slice. Trust cue only—not a validation verdict.",
         countDetail,
       };
     default:
@@ -516,8 +519,8 @@ export function describeTopologyNodeParticipationPosture(
         label: nodeCount === 0 ? "No nodes emitted" : "Participation unclear",
         detail:
           nodeCount === 0
-            ? "No normalized nodes are currently emitted, so node-participation posture remains unknown."
-            : "The current topology response does not expose enough evidence to classify node participation more clearly.",
+            ? "No normalized nodes are currently emitted, so node-participation posture remains unknown. Trust cue only—not a validation verdict."
+            : "The current topology response does not expose enough evidence to classify node participation more clearly. Trust cue only—not a validation verdict.",
         countDetail,
       };
   }
@@ -569,7 +572,7 @@ export function describeTopologyReadPathInference(
       status: "inferred",
       label: "Inferred slice",
       detail:
-        "Platform status reports that topology links remain bounded to inferred evidence rather than direct adjacency truth.",
+        "Platform status reports that topology links remain bounded to inferred evidence rather than direct adjacency truth. Prefer the topology API for the same axis when both are loaded. Trust cue only.",
     };
   }
 
@@ -577,7 +580,7 @@ export function describeTopologyReadPathInference(
     status: "unknown",
     label: "Inference unclear",
     detail:
-      "Platform status does not provide enough evidence to classify topology inference posture more strongly.",
+      "Platform status does not provide enough evidence to classify topology inference posture more strongly. Trust cue only.",
   };
 }
 
@@ -598,28 +601,28 @@ export function describeTopologyReadPathCollection(
         status: "ok",
         label: "Collection ok",
         detail:
-          "Platform status reports a usable live topology collection window for the current bounded slice.",
+          "Platform status reports a usable live topology collection window for the current bounded slice. Prefer the topology API for the same axis when both are loaded. Trust cue only.",
       };
     case "degraded":
       return {
         status: "degraded",
         label: "Collection degraded",
         detail:
-          "Platform status reports partial degradation in the current topology collection window.",
+          "Platform status reports partial degradation in the current topology collection window. Trust cue only.",
       };
     case "blocked":
       return {
         status: "blocked",
         label: "Collection blocked",
         detail:
-          "Platform status reports that the current topology slice is blocked from normal live collection.",
+          "Platform status reports that the current topology slice is blocked from normal live collection. Trust cue only.",
       };
     default:
       return {
         status: "unknown",
         label: "Collection unclear",
         detail:
-          "Platform status does not provide enough evidence to classify topology collection posture more strongly.",
+          "Platform status does not provide enough evidence to classify topology collection posture more strongly. Trust cue only.",
       };
   }
 }

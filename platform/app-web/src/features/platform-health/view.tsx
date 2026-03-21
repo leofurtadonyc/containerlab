@@ -362,7 +362,7 @@ export function PlatformHealthView() {
       <div className="content-grid">
         <TrustCueCard
           title="Routine-Use Trust Cues"
-          summary="Platform Health is a current API response rather than an anchored history surface, so the key cues are freshness, observation coverage, read-path scope, topology endpoint pairing posture, topology node participation posture, and how much of the page is probe-backed versus declared-only. Inventory history and policy history rows below are coarse cues from the supporting Devices and Policies APIs—detailed persisted history stays on those product pages."
+          summary="Platform Health is a current API response rather than an anchored history surface, so the key cues are freshness, observation coverage, read-path scope, four orthogonal topology partiality axes from platform status (inference, endpoint pairing, collection, node participation)—trust cues only, not adjacency validation—and how much of the page is probe-backed versus declared-only. Richer topology API trust cues stay on the Topology page. Inventory history and policy history rows below are coarse cues from the supporting Devices and Policies APIs—detailed persisted history stays on those product pages."
           rows={[
             {
               label: "API freshness",
@@ -395,31 +395,31 @@ export function PlatformHealthView() {
                   : "No bounded read-path summaries are currently exposed.",
             },
             {
-              label: "Topology inference",
+              label: "Topology inference (read path)",
               kind: "status",
               value: topologyInferenceReadout.status,
               note: topologyInferenceReadout.detail,
             },
             {
-              label: "Topology endpoint pairing",
+              label: "Topology endpoint pairing (read path)",
               kind: "status",
               value: topologyPairingReadout.status,
               note: [topologyPairingReadout.detail, topologyPairingReadout.countDetail],
             },
             {
-              label: "Topology node participation",
+              label: "Topology collection posture (read path)",
+              kind: "status",
+              value: topologyCollectionReadout.status,
+              note: topologyCollectionReadout.detail,
+            },
+            {
+              label: "Topology node participation (read path)",
               kind: "status",
               value: topologyNodeParticipationReadout.status,
               note: [
                 topologyNodeParticipationReadout.detail,
                 topologyNodeParticipationReadout.countDetail,
               ],
-            },
-            {
-              label: "Topology collection posture",
-              kind: "status",
-              value: topologyCollectionReadout.status,
-              note: topologyCollectionReadout.detail,
             },
             {
               label: "Freshness windows",
@@ -503,7 +503,7 @@ export function PlatformHealthView() {
                   ? readPaths.map(
                       (readPath) =>
                         readPath.model_family === "topology"
-                          ? `${formatLabel(readPath.model_family)}: ${topologyInferenceReadout.label} • ${topologyCollectionReadout.label} • ${topologyNodeParticipationReadout.label} • ${formatReadPathCollection(readPath)} • ${topologyPairingReadout.countDetail} • ${topologyNodeParticipationReadout.countDetail}`
+                          ? `${formatLabel(readPath.model_family)}: ${topologyInferenceReadout.label} • ${topologyPairingReadout.label} • ${topologyCollectionReadout.label} • ${topologyNodeParticipationReadout.label} • ${formatReadPathCollection(readPath)} • ${topologyPairingReadout.countDetail} • ${topologyNodeParticipationReadout.countDetail}`
                           : readPath.model_family === "policy"
                             ? `${formatLabel(readPath.model_family)}: ${formatReadPathCollection(readPath)} • ${buildPolicyDetailReadinessReadout(readPath).detail}`
                           : `${formatLabel(readPath.model_family)}: ${formatReadPathCollection(readPath)}`,
@@ -550,7 +550,10 @@ export function PlatformHealthView() {
                     <p className="table-note">{readPath.degraded_scope_summary}</p>
                     {readPath.model_family === "topology" ? (
                       <p className="table-note">
-                        {topologyInferenceReadout.detail} {topologyCollectionReadout.detail} {topologyPairingReadout.detail} {topologyPairingReadout.countDetail} {topologyNodeParticipationReadout.detail} {topologyNodeParticipationReadout.countDetail}
+                        Read-path partiality (platform-status targets and windows): {topologyInferenceReadout.detail}{" "}
+                        {topologyPairingReadout.detail} {topologyPairingReadout.countDetail}{" "}
+                        {topologyCollectionReadout.detail} {topologyNodeParticipationReadout.detail}{" "}
+                        {topologyNodeParticipationReadout.countDetail}
                       </p>
                     ) : null}
                     {readPath.model_family === "policy" ? (

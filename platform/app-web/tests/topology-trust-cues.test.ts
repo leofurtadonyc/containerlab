@@ -191,13 +191,13 @@ describe("topology trust cues", () => {
       status: "inferred",
       label: "Inferred slice",
       detail:
-        "Current normalized topology links remain a bounded inferred slice rather than direct adjacency or controller truth.",
+        "Current normalized topology links remain a bounded inferred slice rather than direct adjacency or controller truth. Separate from collection health and endpoint pairing strength. Trust cue only—not a validation verdict.",
     });
     expect(describeTopologyCollectionPosture(coverageSummary)).toEqual({
       status: "degraded",
       label: "Collection degraded",
       detail:
-        "The current topology slice was collected with partial degradation, so operators should expect bounded gaps rather than full live coverage.",
+        "The current topology slice was collected with partial degradation, so operators should expect bounded gaps rather than full live coverage. Separate from inference-boundedness and endpoint pairing. Trust cue only—not a validation verdict.",
     });
   });
 
@@ -233,25 +233,27 @@ describe("topology trust cues", () => {
     const nodeParticipationReadout = describeTopologyReadPathNodeParticipation(readPath);
 
     expect(readout.status).toBe("partially_paired");
-    expect(readout.detail).toBe(readPath.summary);
+    expect(readout.detail).toBe(
+      `${readPath.summary} Aggregate endpoint evidence on links only; separate from node participation and collection posture. Trust cue only—not adjacency validation.`,
+    );
     expect(readout.countDetail).toBe("36 paired • 2 single-sided • 38 total links.");
     expect(inferenceReadout).toEqual({
       status: "inferred",
       label: "Inferred slice",
       detail:
-        "Platform status reports that topology links remain bounded to inferred evidence rather than direct adjacency truth.",
+        "Platform status reports that topology links remain bounded to inferred evidence rather than direct adjacency truth. Prefer the topology API for the same axis when both are loaded. Trust cue only.",
     });
     expect(collectionReadout).toEqual({
       status: "blocked",
       label: "Collection blocked",
       detail:
-        "Platform status reports that the current topology slice is blocked from normal live collection.",
+        "Platform status reports that the current topology slice is blocked from normal live collection. Trust cue only.",
     });
     expect(nodeParticipationReadout).toEqual({
       status: "partially_isolated",
       label: "Partially isolated",
       detail:
-        "Current topology nodes include a mix of linked and isolated observed nodes within the bounded inferred slice.",
+        "Current topology nodes include a mix of linked and isolated observed nodes within the bounded inferred slice. Trust cue only—not a validation verdict.",
       countDetail: "28 linked • 6 isolated • 34 total nodes.",
     });
   });
@@ -276,7 +278,7 @@ describe("topology trust cues", () => {
       status: "partially_isolated",
       label: "Partially isolated",
       detail:
-        "Current topology nodes include a mix of linked and isolated observed nodes within the bounded inferred slice.",
+        "Current topology nodes include a mix of linked and isolated observed nodes within the bounded inferred slice. Trust cue only—not a validation verdict.",
       countDetail: "28 linked • 6 isolated • 34 total nodes.",
     });
   });
