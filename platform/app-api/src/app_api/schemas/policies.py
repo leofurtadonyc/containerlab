@@ -128,6 +128,7 @@ class PolicyHistorySnapshotResponseRecord(BaseModel):
     ]
     observed_policy_count: int
     active_policy_count: int
+    static_local_policy_count: int = 0
     detail_record_count: int
     detail_source_readiness_posture: PolicyDetailSourceReadinessPosture = "unknown"
     detail_ready_target_count: int = 0
@@ -175,6 +176,9 @@ class PolicyHistoryComparisonResponse(BaseModel):
     previous_detail_unavailable_target_count: int = 0
     current_partial_detail_target_count: int = 0
     previous_partial_detail_target_count: int = 0
+    current_static_local_policy_count: int = 0
+    previous_static_local_policy_count: int = 0
+    static_local_policy_delta: int = 0
 
 
 class PolicyHistoryWindowResponse(BaseModel):

@@ -424,6 +424,12 @@ def _build_policy_history_window() -> PolicyHistoryWindow:
             previous_detail_unavailable_target_count=previous_readiness.detail_unavailable_target_count,
             current_partial_detail_target_count=current_readiness.partial_detail_target_count,
             previous_partial_detail_target_count=previous_readiness.partial_detail_target_count,
+            current_static_local_policy_count=current_snapshot.snapshot.static_local_policy_count,
+            previous_static_local_policy_count=previous_snapshot.snapshot.static_local_policy_count,
+            static_local_policy_delta=(
+                current_snapshot.snapshot.static_local_policy_count
+                - previous_snapshot.snapshot.static_local_policy_count
+            ),
         ),
     )
 
@@ -946,6 +952,7 @@ def build_policies_list_response() -> PoliciesListResponse:
                     empty_reason=entry.empty_reason,
                     observed_policy_count=entry.observed_policy_count,
                     active_policy_count=entry.active_policy_count,
+                    static_local_policy_count=entry.static_local_policy_count,
                     detail_record_count=entry.detail_record_count,
                     detail_source_readiness_posture=entry.detail_source_readiness_posture,
                     detail_ready_target_count=entry.detail_ready_target_count,
@@ -992,6 +999,9 @@ def build_policies_list_response() -> PoliciesListResponse:
                     previous_detail_unavailable_target_count=history.comparison_to_previous.previous_detail_unavailable_target_count,
                     current_partial_detail_target_count=history.comparison_to_previous.current_partial_detail_target_count,
                     previous_partial_detail_target_count=history.comparison_to_previous.previous_partial_detail_target_count,
+                    current_static_local_policy_count=history.comparison_to_previous.current_static_local_policy_count,
+                    previous_static_local_policy_count=history.comparison_to_previous.previous_static_local_policy_count,
+                    static_local_policy_delta=history.comparison_to_previous.static_local_policy_delta,
                 )
                 if history.comparison_to_previous is not None
                 else None

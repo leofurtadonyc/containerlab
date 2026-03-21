@@ -15,6 +15,7 @@ class WorkflowPolicySnapshotSummary(BaseModel):
     snapshot_id: str
     persisted_at: datetime
     observed_at: datetime | None = None
+    data_status: str
     sync_source: str
     sync_status: str
     completeness: str
@@ -22,6 +23,7 @@ class WorkflowPolicySnapshotSummary(BaseModel):
     empty_reason: str
     observed_policy_count: int
     active_policy_count: int
+    static_local_policy_count: int = 0
     detail_record_count: int
     detail_source_readiness_posture: str = "unknown"
     detail_ready_target_count: int = 0
@@ -159,6 +161,11 @@ class WorkflowPolicySnapshotComparison(BaseModel):
     previous_detail_unavailable_target_count: int = 0
     current_partial_detail_target_count: int = 0
     previous_partial_detail_target_count: int = 0
+    current_static_local_policy_count: int = 0
+    previous_static_local_policy_count: int = 0
+    static_local_policy_delta: int = 0
+    current_data_status: str
+    previous_data_status: str
 
 
 class WorkflowHistoryItem(BaseModel):

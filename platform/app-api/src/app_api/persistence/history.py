@@ -156,6 +156,7 @@ class PersistedPolicySnapshotSummary(BaseModel):
     snapshot_id: str
     persisted_at: datetime
     observed_at: datetime | None = None
+    data_status: str
     sync_source: str
     sync_status: str
     completeness: str
@@ -163,6 +164,7 @@ class PersistedPolicySnapshotSummary(BaseModel):
     empty_reason: str
     observed_policy_count: int
     active_policy_count: int
+    static_local_policy_count: int = 0
     detail_record_count: int
     detail_source_readiness_posture: str = "unknown"
     detail_ready_target_count: int = 0
@@ -198,6 +200,11 @@ class PersistedPolicySnapshotComparison(BaseModel):
     previous_detail_unavailable_target_count: int = 0
     current_partial_detail_target_count: int = 0
     previous_partial_detail_target_count: int = 0
+    current_static_local_policy_count: int = 0
+    previous_static_local_policy_count: int = 0
+    static_local_policy_delta: int = 0
+    current_data_status: str
+    previous_data_status: str
 
 
 class PersistedReadinessSnapshotHistoryRecord(BaseModel):
@@ -740,6 +747,7 @@ def _build_policy_snapshot_summary(
         snapshot_id=snapshot.id,
         persisted_at=snapshot.persisted_at,
         observed_at=snapshot.observed_at,
+        data_status=snapshot.data_status,
         sync_source=snapshot.sync_source,
         sync_status=snapshot.sync_status,
         completeness=snapshot.completeness,
@@ -747,6 +755,7 @@ def _build_policy_snapshot_summary(
         empty_reason=snapshot.empty_reason,
         observed_policy_count=snapshot.observed_policy_count,
         active_policy_count=snapshot.active_policy_count,
+        static_local_policy_count=snapshot.static_local_policy_count,
         detail_record_count=int(detail_record_count or 0),
         detail_source_readiness_posture=snapshot.detail_source_readiness_posture,
         detail_ready_target_count=snapshot.detail_ready_target_count,
@@ -821,6 +830,13 @@ def _build_policy_snapshot_comparison(
         previous_detail_unavailable_target_count=previous_snapshot.detail_unavailable_target_count,
         current_partial_detail_target_count=snapshot.partial_detail_target_count,
         previous_partial_detail_target_count=previous_snapshot.partial_detail_target_count,
+        current_static_local_policy_count=snapshot.static_local_policy_count,
+        previous_static_local_policy_count=previous_snapshot.static_local_policy_count,
+        static_local_policy_delta=(
+            snapshot.static_local_policy_count - previous_snapshot.static_local_policy_count
+        ),
+        current_data_status=snapshot.data_status,
+        previous_data_status=previous_snapshot.data_status,
     )
 
 
