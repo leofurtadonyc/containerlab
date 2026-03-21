@@ -589,7 +589,7 @@ export interface PolicyHistoryWindow {
 }
 
 export interface PolicyCurrentComparison {
-  status: "unavailable" | "current_vs_latest_persisted_ready";
+  status: "unavailable" | "live_vs_latest_persisted_ready";
   summary: string;
   comparison_snapshot_id: string | null;
   comparison_persisted_at: string | null;

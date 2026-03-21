@@ -84,7 +84,7 @@ function createPolicyDataWithHistory() {
     count: 4,
     notes: [],
     comparison_to_latest_persisted: {
-      status: "current_vs_latest_persisted_ready",
+      status: "live_vs_latest_persisted_ready",
       summary: "Comparison ready.",
       comparison_snapshot_id: "policy-snapshot-latest",
       comparison_persisted_at: "2025-01-01T00:00:00Z",

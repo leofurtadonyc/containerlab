@@ -154,8 +154,9 @@ class OdlClient:
             observation_state="ok",
             observed_source=observed_source,
             observation_summary=(
-                "ODL RESTCONF is reachable and now contributes a bounded "
-                "controller capability probe to platform health without owning product truth."
+                "ODL RESTCONF is reachable and contributes a bounded controller capability "
+                "probe to platform health only: reachability plus YANG/RESTCONF hints—not SR topology "
+                "or policy truth, and not a substitute for collector-backed read paths."
             ),
             observed_capabilities=observed_capabilities,
             notes=notes,

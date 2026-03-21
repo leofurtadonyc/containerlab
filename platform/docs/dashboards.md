@@ -8,7 +8,7 @@ This document describes the observability dashboard families for the platform, t
 
 The platform currently has:
 
-- Grafana provisioning-from-files scaffolding
+- Grafana provisioning from files (repo-managed dashboards and datasources)
 - a provisioned Prometheus datasource
 - dashboard folder structure for the required dashboard families
 - a real platform overview dashboard backed by Prometheus scrape health plus current `app-api` and `gnmi-collector` metrics
@@ -234,7 +234,9 @@ Platform overview latency-posture rule:
 
 - duration and timeout-budget panels exist to show bounded collector-boundary timing posture by model family
 - latest outcome posture panels may distinguish `timeout_budget_exceeded` from `collector_connection_error`, `collector_http_error`, `invalid_response_payload`, `unknown_error`, and `partial_live_feed`
-- those panels help explain why persisted fallback happened, but the backend contracts and WebUI trust cues remain the product-facing source of truth
+- **`timeout_budget_exceeded`** reflects **latency budget exhaustion** (app-api stopped waiting); the other outcomes reflect **non-timeout** boundary failures—**do not** treat them as slow-collector timeout
+- **`partial_live_feed`** means the fetch completed within budget but coverage was still partial; **not** the same as timeout
+- those panels help explain collector-boundary posture; **serving_mode** and slice APIs remain the product-facing source for persisted fallback versus live-backed responses
 
 Week 14 topology coverage rule:
 
@@ -260,7 +262,7 @@ It states explicitly: **no metrics yet** (no change-validation Prometheus famili
 
 ### Vendor
 
-**Current state:** **`platform/grafana/dashboards/vendor/vendor-overview-placeholder.json`** (Grafana UID **`vendor-overview`**, title **Vendor / adapter overview (Nokia gNMI)**) is provisioned as a **Nokia-first** vendor/adapters view. It combines **markdown scope** with **real Prometheus panels** using only metrics emitted today:
+**Current state:** **`platform/grafana/dashboards/vendor/vendor-overview-placeholder.json`** (Grafana UID **`vendor-overview`**, title **Vendor / adapter overview (Nokia gNMI)**) is provisioned as a **Nokia-first** observability view. The **vendor** folder name is **organizational** (dashboard family); shipped panels are **only** the current **Nokia gNMI collector** metrics plus **`app-api` collector-boundary** mirrors—**not** a matrix of distinct vendor adapter dashboards and **not** evidence of multi-vendor runtime parity. It combines **markdown scope** with **real Prometheus panels** using only metrics emitted today:
 
 - **`platform_gnmi_collector_*`** — observation ages for inventory, topology, and policy; paired- versus single-sided topology link counts; policy observed-target versus detail-ready target gauges (families **`verify-core-runtime.sh`** checks on collector `/metrics`).
 - **`platform_app_api_collector_boundary_latest_fetch_duration_seconds`**, **`platform_app_api_collector_boundary_timeout_budget_seconds`**, and **`platform_app_api_collector_boundary_latest_fetch_posture`** — bounded collector-boundary duration, configured timeout budget, and latest outcome posture by model family (families expected on **`app-api`** `/metrics`; same signals as the platform overview boundary row).
@@ -325,7 +327,7 @@ Dashboard design should therefore assume Prometheus-backed metrics first, with a
 - topology-aware visual panels backed by real normalized state and metrics
 - SR policy health and drift dashboards backed by real product signals
 - change-validation observability backed by actual dry-run and validation metrics
-- vendor capability and adapter health dashboards backed by real platform evidence (the **vendor** overview now includes bounded collector and collector-boundary panels where metrics exist today; see **Vendor** above)
+- deeper **Nokia-first** gNMI and collector-boundary observability when additional honest metrics exist (the **vendor** overview already includes bounded collector and collector-boundary panels; see **Vendor** above)—not multi-vendor adapter dashboards until the codebase emits honest multi-vendor signals
 
 ## Boundary Reminder
 

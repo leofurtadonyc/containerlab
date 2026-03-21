@@ -1919,8 +1919,9 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
                 observation_state="ok",
                 observed_source="odl_restconf_capability_probe",
                 observation_summary=(
-                    "ODL RESTCONF is reachable and contributes one bounded "
-                    "controller capability probe."
+                    "ODL RESTCONF is reachable and contributes a bounded controller capability "
+                    "probe to platform health only: reachability plus YANG/RESTCONF hints—not SR topology "
+                    "or policy truth, and not a substitute for collector-backed read paths."
                 ),
                 observed_capabilities=["restconf", "yang_library", "netconf_operations"],
                 notes=[
@@ -1991,7 +1992,8 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     }
     assert "Same-workspace persisted baseline is present" in payload["recovery"]["summary"]
     assert any("per-slice coverage" in note for note in payload["recovery"]["notes"])
-    assert "bounded ODL RESTCONF capability probe" in payload["summary"]
+    assert "optional bounded ODL RESTCONF capability probe" in payload["summary"]
+    assert "helper infrastructure only" in payload["summary"]
     assert "collector read-path coverage summaries" in payload["summary"]
     assert len(payload["components"]) == 7
     assert payload["components"][0]["name"] == "app-api"
@@ -2015,7 +2017,7 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
         "All configured inventory targets returned normalized live inventory evidence."
     )
     assert any(
-        "completed in 0.184s within the 3s latency budget" in note
+        "completed within the 3s latency budget (duration 0.184s)" in note
         for note in payload["read_paths"][0]["notes"]
     )
     assert payload["read_paths"][1]["model_family"] == "topology"
@@ -2024,7 +2026,7 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert payload["read_paths"][1]["collection_posture"] == "ok"
     assert payload["read_paths"][1]["node_participation_posture"] == "fully_linked"
     assert any(
-        "completed in 0.228s within the 3s latency budget" in note
+        "completed within the 3s latency budget (duration 0.228s)" in note
         for note in payload["read_paths"][1]["notes"]
     )
     assert payload["read_paths"][1]["paired_link_count"] == 1
@@ -2039,7 +2041,7 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert payload["read_paths"][2]["policy_capable_target_count"] == 34
     assert payload["read_paths"][2]["detail_ready_target_count"] == 2
     assert any(
-        "completed in 0.312s within the 3s latency budget" in note
+        "completed within the 3s latency budget (duration 0.312s)" in note
         for note in payload["read_paths"][2]["notes"]
     )
     assert payload["read_paths"][2]["degraded_scope_summary"] == (
@@ -2056,6 +2058,7 @@ def test_platform_status_endpoint_returns_bounded_odl_observation(monkeypatch) -
     assert odl_component["observation_state"] == "ok"
     assert odl_component["observation_source"] == "odl_restconf_capability_probe"
     assert "bounded controller capability probe" in odl_component["observation_summary"]
+    assert "not a substitute for collector-backed read paths" in odl_component["observation_summary"]
     assert odl_component["observed_capabilities"] == [
         "restconf",
         "yang_library",
@@ -2072,8 +2075,9 @@ def test_platform_status_endpoint_exposes_mixed_topology_pairing_coverage(monkey
                 observation_state="ok",
                 observed_source="odl_restconf_capability_probe",
                 observation_summary=(
-                    "ODL RESTCONF is reachable and contributes one bounded "
-                    "controller capability probe."
+                    "ODL RESTCONF is reachable and contributes a bounded controller capability "
+                    "probe to platform health only: reachability plus YANG/RESTCONF hints—not SR topology "
+                    "or policy truth, and not a substitute for collector-backed read paths."
                 ),
                 observed_capabilities=["restconf", "yang_library", "netconf_operations"],
                 notes=[
@@ -2349,12 +2353,12 @@ def test_platform_status_endpoint_classifies_collector_boundary_failures(monkeyp
     assert payload["read_paths"][1]["observation_state"] == "degraded"
     assert payload["read_paths"][2]["observation_state"] == "unreachable"
     assert any(
-        "exhausted the 3s latency budget after 3.004s" in note
+        "exceeded the 3s latency budget after 3.004s" in note
         for note in payload["read_paths"][0]["notes"]
     )
     assert any("3s latency budget" in note for note in payload["read_paths"][0]["notes"])
-    assert any("invalid normalized payload" in note for note in payload["read_paths"][1]["notes"])
-    assert any("connection failed" in note for note in payload["read_paths"][2]["notes"])
+    assert any("reported invalid_response_payload" in note for note in payload["read_paths"][1]["notes"])
+    assert any("reported collector_connection_error" in note for note in payload["read_paths"][2]["notes"])
 
 
 def test_platform_status_endpoint_reads_collector_paths_sequentially(monkeypatch) -> None:
@@ -3247,7 +3251,7 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert "observed_state" in payload["history"]["comparison_to_previous"]["change_preview"][1]["changed_fields"]
     assert "health_state" in payload["history"]["comparison_to_previous"]["change_preview"][1]["changed_fields"]
     assert "candidate_paths" in payload["history"]["comparison_to_previous"]["change_preview"][1]["changed_fields"]
-    assert payload["comparison_to_latest_persisted"]["status"] == "current_vs_latest_persisted_ready"
+    assert payload["comparison_to_latest_persisted"]["status"] == "live_vs_latest_persisted_ready"
     assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] == "policy-snapshot-1"
     assert payload["comparison_to_latest_persisted"]["persisted_observed_policy_count"] == 1
     assert payload["comparison_to_latest_persisted"]["change_preview"][0]["change_kind"] == "added"

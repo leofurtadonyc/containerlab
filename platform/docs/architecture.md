@@ -11,9 +11,9 @@ The platform now has:
 - a separate platform repository structure
 - a separate Containerlab topology for platform services
 - service READMEs and topology scaffolding
-- Prometheus and Grafana provisioning skeletons
-- backend, collector, frontend, and database-direction scaffolding
-- a first bounded persistence-backed read-side slice for inventory, topology, and policy snapshots
+- Prometheus and Grafana with repo-managed provisioning, real overview dashboards, and bounded startup validation
+- backend, collector, and frontend implementing bounded live read paths and WebUI surfaces; Postgres-backed persistence for the current read-side slice
+- a bounded persistence-backed read-side slice for inventory, topology, and policy snapshots plus sync-run and readiness-support history
 - repo-built local images for all initial platform services, with the current runtime-hardening slice now adding bounded startup validation for Postgres, Prometheus, and Grafana plus ODL credential provisioning
 - bounded post-deploy verification scripts for the core runtime contract and the ODL credential path
 
@@ -21,7 +21,7 @@ What remains incomplete:
 
 - broad or deeper ODL-backed enrichment beyond the current bounded platform-health capability probe
 - durable persistence for every intended product domain
-- richer live-backed read-only domain APIs beyond the current health, platform status, devices, topology, policies, and capabilities slice
+- richer live-backed read-only domain APIs beyond the current health, platform status, devices, topology, policies, capabilities, workflow-history, and audit-history slice
 - deeper read-only product pages backed by more live operational evidence
 
 This document therefore focuses on architectural shape and service boundaries rather than final implementation depth.
@@ -194,14 +194,14 @@ Current runtime posture:
 
 ### `odl`
 
-ODL is a bounded helper, not the center of the system.
+ODL is a **bounded helper**, not the center of the system and **not** the owner of operator-facing product truth.
 
 It may contribute:
 
-- controller-side state
-- future BGP-LS, BMP, or PCEP-related leverage
+- controller-side state (as **input** to the backend, not as the product contract)
+- future BGP-LS, BMP, or PCEP-related leverage (only when honestly integrated—still backend-mediated)
 - useful protocol-adjacent inputs for the backend
-- bounded controller capability discovery for the platform status path
+- **one** bounded RESTCONF capability discovery path on platform status (reachability + YANG/operations hints)
 
 It must not become:
 
@@ -209,6 +209,7 @@ It must not become:
 - the workflow engine
 - the normalized API layer
 - the only source of truth
+- the authority for SR topology or policy correctness (those remain **gNMI/collector-backed read models** in `app-api` unless a future phase explicitly changes that with honest evidence)
 
 The backend remains responsible for deciding how ODL-derived records are translated and used.
 
@@ -228,6 +229,7 @@ Current bounded reality:
 - `app-api` now performs one small RESTCONF read against ODL's YANG library and operations inventory
 - that controller result is normalized into platform-owned platform-status fields
 - the enrichment is limited to controller reachability and capability hints; it does not replace collector-backed topology or policy views
+- **operators should read the ODL row on Platform Health as “helper probe OK/degraded,” not as proof of controller-validated forwarding or policy intent**
 
 This architecture preserves:
 

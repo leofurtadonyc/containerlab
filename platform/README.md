@@ -125,7 +125,7 @@ It owns scraping, metric storage, recording rules, and alert rule evaluation. It
 
 Grafana is the observability and dashboard layer.
 
-It owns provisioned dashboards for platform health, topology visibility, SR policy visibility, change-validation visibility, and vendor-adapter visibility. It is not the primary workflow surface and it is not the product UI.
+It owns provisioned dashboards for platform health, topology visibility, SR policy visibility, change-validation visibility (markdown-only until metrics exist), and vendor-adapter visibility (Nokia-first, bounded). It is not the primary workflow surface and it is not the product UI.
 
 ### `postgres`
 
@@ -187,7 +187,7 @@ At this stage, contributors should assume:
 - separate `platform/` project structure
 - service directories and README skeletons
 - documentation scaffolding
-- dashboard folder structure and provisioning layout scaffolding, with an initial real platform dashboard
+- Grafana dashboard provisioning for platform, topology, SR policy, and vendor (Nokia-first) bounded observability; change-validation remains markdown-only until metrics exist (see `docs/dashboards.md`)
 - repo-built local images for the initial service set, with bounded startup validators now in place for Postgres, Prometheus, and Grafana plus a bounded deploy-time verification flow for the core runtime and ODL auth path
 - schema and shared-directory scaffolding
 - read-only inventory, topology, policy, capability, and platform status APIs
@@ -197,7 +197,7 @@ At this stage, contributors should assume:
 ### Planned Later
 
 - broader durable read-side persistence beyond the current inventory/topology/policy snapshot slice
-- bounded ODL integration paths
+- deeper bounded ODL-backed enrichment beyond the current platform-health RESTCONF probe (where justified)
 - dry-run workflow support
 - one narrowly scoped safe action workflow only after the read/validate foundation is solid
 

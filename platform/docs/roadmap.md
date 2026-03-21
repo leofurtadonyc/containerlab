@@ -8,13 +8,13 @@ This document summarizes the platform's phased implementation roadmap.
 
 The project is currently in `Phase 2 — read-only product foundation`.
 
-Most of the week's work has established:
+Phase 2 to date has established:
 
 - repository structure
 - service boundaries
 - topology skeleton
-- observability scaffolding
-- backend, collector, frontend, and database-direction scaffolding
+- Prometheus and Grafana observability (provisioned dashboards; bounded real metrics where implemented)
+- bounded live read paths for backend, collector, and frontend; Postgres for the current read-side slice
 - normalized model and schema scaffolding
 - core architecture documents
 - a useful read-only API, WebUI, and observability slice
@@ -35,6 +35,9 @@ Most of the week's work has established:
 - **Week 19 closure (Friday rollup):** **`03-CURRENT-STATUS.md`** records week **19** as delivered bounded value; **`conditionally_ready_with_explicit_limits`** unchanged; full live **`verify-core-runtime`** pass including new **`/metrics`** families requires **rebuilt** **`app-api`** images and redeploy (documented path: **`build-images.sh`** → **`clab deploy`** → **`verify-core-runtime.sh`** → **`verify-odl-auth.sh`**)
 - **Week 20 closure (Friday rollup):** **`03-CURRENT-STATUS.md`** records week **20** policy-history deepening as delivered bounded value; **`conditionally_ready_with_explicit_limits`** unchanged; repository **`pytest`** covers expanded contracts and persistence; full live **`verify-core-runtime`** pass including policy **`history`** branches and **`policy_snapshots`** **`/metrics`** families requires **rebuilt** **`app-api`** images and redeploy on a lab stack (same documented path as week **19**)
 - **Week 20 closure (Friday task 02):** **`policy-truth-depth-review.md`** adds **Post–Week 20 scheduling note (policy truth-depth checkpoint)**—week **20** closed **history and observability alignment** for the bounded policy envelope, not new live proof beyond **`static_local`**; default next step remains **`ADR-0001`** **Priority 2** evidence-first reassessment
+- **Week 21 (Phase 2 doc drift cleanup):** cross-file wording alignment (`platform/README.md`, `platform/docs/*`, service READMEs where needed) so bounded capability, limitation, and observability boundaries stay consistent—**no phase change**, **no** new capability claims beyond evidence, **`conditionally_ready_with_explicit_limits`** unchanged
+- **Week 21 closure (Friday rollup):** **`03-CURRENT-STATUS.md`** records week **21** as bounded operator-truth, read-side contract alignment, verifier structural checks, vendor/collector-boundary/ODL wording, and cross-file documentation honesty—**no phase change**, **`conditionally_ready_with_explicit_limits`** unchanged; stacks predating verifier or image changes still need **rebuild → redeploy → verify** to observe the latest checks at runtime (same documented path as prior weeks)
+- **Week 21 closure (Friday task 02):** **`post-week-21-bounded-phase2-recommendation.md`** states the post–week **21** **evidence-first** scheduling default, narrow follow-on categories when proof exists, and **anti-recommendations** against topology/policy/vendor expansion by momentum—**no** new default implementation lane, **no** phase transition
 - **Week 19 closure (Friday task 02):** **`topology-truth-depth-review.md`** adds a **Post–Week 19** note: topology **partiality contract** stays **closed** in shipped code; **default next scheduling** remains **`ADR-0001`** **Priority 2** evidence-first reassessment—**not** topology code by default after inventory work
 - **Week 18 delivered value (documentation and trust, not scope expansion):** a single honest operator story for history gates, readiness two-clocks, and Grafana placeholder versus real metrics—without authorizing workflow, dry-run, validation, or broader production-operations claims.
 - **Unchanged limits (explicit):** remain in **`Phase 2 — read-only product foundation`**; **Grafana** is not the product surface for readiness, capabilities, or change validation; **change-validation** still has **no** change-validation metric families; workflow implementation and phase transition stay **out of scope** until real contracts exist.

@@ -6,7 +6,7 @@ This document describes the major platform services, what each one owns, what ea
 
 ## Current Status
 
-The platform now has service directories, service READMEs, a platform topology skeleton, observability scaffolding, a backend skeleton, a collector skeleton, bounded Postgres-backed read-side persistence for inventory, topology, and policy snapshots, and repo-built local runtime images for the initial service set.
+The platform now has service directories, service READMEs, a platform topology skeleton, a Prometheus and Grafana observability stack with provisioned dashboards, a backend and collector delivering bounded live read paths, bounded Postgres-backed read-side persistence for inventory, topology, and policy snapshots, and repo-built local runtime images for the initial service set.
 
 The current runtime posture is no longer skeleton-only:
 
@@ -67,7 +67,7 @@ What it must not own:
 
 Current state:
 
-- FastAPI skeleton exists
+- FastAPI application with bounded read-only APIs
 - typed health endpoint exists
 - bounded HTTP request and latency metrics now exist at `/metrics`
 - live bounded inventory, topology, and policy integrations now exist from the collector boundary into backend read paths
@@ -108,7 +108,7 @@ Current state:
 - topology snapshot delivery and topology metrics now also expose explicit endpoint-pairing posture plus paired-versus-single-sided inferred-link counts for the current bounded inference path
 - Nokia-first adapter path exists
 - mapping and config scaffolding exist
-- the **Vendor / adapter** Grafana dashboard (`vendor-overview`) surfaces a bounded subset of **`platform_gnmi_collector_*`** and related **`app-api`** collector-boundary metrics (duration, timeout budget, posture, alongside collector ages and topology/policy gauges) for observability only; see **`platform/docs/dashboards.md`** (Vendor) for scope and non-claims
+- the **Vendor / adapter** Grafana dashboard (`vendor-overview`; **Nokia-first**, folder name organizational only) surfaces a bounded subset of **`platform_gnmi_collector_*`** and related **`app-api`** collector-boundary metrics (duration, timeout budget, posture, alongside collector ages and topology/policy gauges) for observability only; see **`platform/docs/dashboards.md`** (Vendor) for scope and non-claims
 
 ### `postgres`
 
@@ -196,12 +196,12 @@ Current state:
 
 Role:
 
-- bounded controller-side and protocol-side support component
+- bounded controller-side and protocol-side **helper** component (`app-api` pulls; ODL does not push product APIs)
 
 What it owns:
 
-- future controller-side integration where ODL adds real value
-- future BGP-LS, BMP, and PCEP-related support areas
+- future controller-side integration where ODL adds real value (still **backend-mediated**)
+- future BGP-LS, BMP, and PCEP-related support areas (not implied by the current probe)
 
 What it must not own:
 
@@ -209,12 +209,13 @@ What it must not own:
 - workflow ownership
 - product APIs
 - normalized product truth by itself
+- **default** authority for SR topology or policy correctness (collector-backed read models remain primary for those slices today)
 
 Current state:
 
 - topology-level service presence exists
 - README and runtime boundary documentation exist
-- a bounded RESTCONF-backed controller capability probe now exists for the Platform Health path
+- **one** bounded RESTCONF-backed controller capability probe exists for the Platform Health path (reachability + capability hints; not controller-owned topology or policy truth)
 - broader topology, policy, and workflow-oriented controller integration remains intentionally out of scope
 
 ### `app-web`
@@ -254,7 +255,7 @@ At a high level:
 - `postgres` persists durable application data
 - `prometheus` stores metrics
 - `grafana` visualizes observability data
-- `odl` contributes bounded controller-side inputs where useful
+- `odl` contributes bounded controller-side **inputs** where useful; those inputs are optional enrichment—**not** the product brain
 - `app-web` becomes the operator-facing experience
 
 ## Boundary Rules To Preserve

@@ -1,11 +1,26 @@
-"""Typed schemas for topology responses."""
+"""Typed schemas for topology responses.
+
+Topology **partiality** is decomposed into four independent response-level axes
+(see ``platform/schemas/topology/topology-read-path-coverage-semantics.md``):
+
+- ``inference_posture`` — whether emitted links are still inference-bounded vs unclassifiable.
+- ``endpoint_pairing_posture`` — strength of per-link endpoint evidence (paired vs single-sided mix).
+- ``collection_posture`` — health of the live collection path (ok / degraded / blocked).
+- ``node_participation_posture`` — whether observed nodes appear on any emitted inferred link.
+
+These answer different questions; they must not be collapsed into one overloaded label.
+"""
 
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from app_api.schemas.common import ApiResponseMetadata, EvidenceConfidenceSummary
+from app_api.schemas.common import (
+    ApiResponseMetadata,
+    ComparisonToLatestPersistedStatus,
+    EvidenceConfidenceSummary,
+)
 
 
 CurrentRowPosture = Literal["current", "stale"]
@@ -42,19 +57,52 @@ class TopologyLinkRecord(BaseModel):
 
 
 class TopologyCoverageSummaryRecord(BaseModel):
-    """Bounded response-level topology coverage summary."""
+    """Bounded response-level topology coverage summary.
 
-    inference_posture: Literal["inferred", "unknown"]
-    endpoint_pairing_posture: Literal["paired", "partially_paired", "single_sided", "unknown"]
-    collection_posture: Literal["ok", "degraded", "blocked", "unknown"]
+    Each field addresses one partiality dimension; see module docstring.
+    """
+
+    inference_posture: Literal["inferred", "unknown"] = Field(
+        description=(
+            "Inference-boundedness: emitted links are inferred (not direct adjacency truth), "
+            "or posture cannot be classified. Independent of collection health and endpoint pairing strength."
+        ),
+    )
+    endpoint_pairing_posture: Literal["paired", "partially_paired", "single_sided", "unknown"] = Field(
+        description=(
+            "Aggregate endpoint evidence for emitted links: all paired, mixed paired/single-sided, "
+            "all single-sided, or unknown. Does not measure collection degradation or global topology completeness."
+        ),
+    )
+    collection_posture: Literal["ok", "degraded", "blocked", "unknown"] = Field(
+        description=(
+            "Live collection path posture for the topology read (success vs partial failure vs blocked). "
+            "Does not replace serving_mode; not a verdict on inference correctness."
+        ),
+    )
     node_participation_posture: Literal[
         "fully_linked", "partially_isolated", "isolated_only", "unknown"
-    ]
-    paired_link_count: int
-    single_sided_link_count: int
-    linked_node_count: int
-    isolated_node_count: int
-    summary: str
+    ] = Field(
+        description=(
+            "Whether observed nodes participate in at least one emitted inferred link (linked vs isolated mix). "
+            "Orthogonal to per-link endpoint_pairing_state on individual links."
+        ),
+    )
+    paired_link_count: int = Field(
+        description="Count of emitted links with endpoint_pairing_state=paired.",
+    )
+    single_sided_link_count: int = Field(
+        description="Count of emitted links with endpoint_pairing_state=single_sided.",
+    )
+    linked_node_count: int = Field(
+        description="Observed nodes that appear on at least one emitted inferred link.",
+    )
+    isolated_node_count: int = Field(
+        description="Observed nodes not represented by any emitted inferred link.",
+    )
+    summary: str = Field(
+        description="Concatenated explanation of the four axes; does not replace typed posture fields.",
+    )
 
 
 class TopologyRecord(BaseModel):
@@ -74,7 +122,7 @@ class TopologyRecord(BaseModel):
 class TopologyComparisonSummary(BaseModel):
     """Bounded current-versus-persisted topology comparison summary."""
 
-    status: Literal["unavailable", "live_vs_latest_persisted_ready"]
+    status: ComparisonToLatestPersistedStatus
     summary: str
     comparison_snapshot_id: str | None = None
     comparison_persisted_at: datetime | None = None

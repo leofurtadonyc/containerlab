@@ -153,6 +153,7 @@ This now validates:
 - `app-web` startup-contract readiness, static HTTP availability, and `/api` proxy reachability to `app-api`
 - Prometheus live scrape target posture for the current real targets
 - read-side API contract sanity for platform status, devices, topology, policies, and capabilities, now including bounded `read_paths` coverage and freshness fields plus capability vendor-posture and roadmap rollups
+- **cross-slice metadata and comparison-status alignment (week 21)**: compact JSON responses for platform status, devices, topology, policies, capabilities, workflow-history, and audit-history must include shared Phase 2 API metadata (`"service":"app-api"`, `"phase":"phase_2_read_only_foundation"`); devices, topology, and policies must each expose the same **`evidence_confidence`** field names (`source_posture`, `evidence_kind`, `confidence_posture`, `freshness_posture`, `blocked_reason`); **`comparison_to_latest_persisted.status`** on devices, topology, and policies must be **`unavailable`** or **`live_vs_latest_persisted_ready`**, and the legacy policies-only string **`current_vs_latest_persisted_ready`** must not appear—contract posture checks only, not business-logic validation
 - workflow-history and audit-history contract sanity for the current persisted read-side slice
 - backend-owned topology coverage contract presence in both `/api/v1/platform/status` and `/api/v1/topology`, including endpoint-pairing posture, paired-link and single-sided-link counts, per-link pairing state, and per-link endpoint-evidence counts
 - **Devices inventory history** (same honesty model as topology and policy): the base `/api/v1/devices` response must include a **`history`** object. **(a)** If Postgres has **no** `inventory_snapshots` rows, snapshot-level history checks are **skipped** and the verifier emits a **fresh-baseline** notice—this is **not** a failure. **(b)** If Postgres **has** inventory snapshot rows but the API returns an **empty** `history.recent_snapshots` list, snapshot-level assertions are **skipped** and a **notice** is emitted (persisted rows without a matching API list)—**not** a failure. **(c)** If `recent_snapshots` is **non-empty** (detected as `[{"snapshot_id"` in compact JSON), the verifier asserts per-snapshot inventory history keys aligned with the expanded devices history contract (`snapshot_id`, `sync_run_id`, `source_endpoint`, `persisted_at`, `observed_at`, `sync_source`, `sync_status`, `data_status`, `device_count`, `role_counts`, `collector_status_counts`, `capability_summary_counts`). **(d)** If `history.comparison_to_previous` includes `current_snapshot_id`, it asserts snapshot id anchors, current/previous `persisted_at` and `observed_at`, current/previous `sync_status` and `data_status`, device-count fields and deltas, added/removed/changed device counts, `change_preview`, and `notes`
@@ -171,6 +172,8 @@ This now validates:
 - the configured ODL admin password works
 - the upstream default password is rejected when a different configured password is expected
 - `app-api` reports the bounded ODL platform-health probe as healthy
+
+**What this does *not* prove:** it does **not** validate full controller functionality, SR topology or policy correctness, or multi-protocol depth. It only checks the **bounded** RESTCONF credential path and that the **helper** probe used for platform status can succeed. Product truth for inventory, topology, and policies remains **collector-backed** in `app-api`, not controller-owned by default.
 
 ## Expected Healthy State
 
@@ -248,7 +251,7 @@ What healthy means here:
 - hard failures still stop the deployment from being treated as usable
 - warnings call out degraded-but-honest current postures such as persisted fallback, blocked read-side evidence, or bounded policy and topology limits that remain visible by design
 - notices now also call out bounded read-path attention states such as partially-paired or single-sided topology endpoint coverage and zero policy detail-ready targets when those conditions are real
-- collector-boundary timeout warnings mean the backend hit the bounded latency budget and chose fail-fast fallback; they do not mean workflow semantics or a generic dependency-dashboard verdict
+- collector-boundary timeout warnings mean **app-api** hit the bounded latency budget and **stopped waiting** for the collector (fail-fast); that is **distinct** from connection, HTTP, or payload boundary failures—see **`data-flows.md`** (collector-boundary posture); they do not mean workflow semantics or a generic dependency-dashboard verdict
 - topology pairing notices mean the inferred topology slice still mixes stronger and weaker endpoint evidence; they do not mean the platform has proven an adjacency fault or protocol failure
 - a warning does not imply workflow semantics, remediation intent, or automatic rollback; it is an operator cue to inspect current truth posture more carefully
 
@@ -264,9 +267,9 @@ These signals are intentionally bounded:
 
 Interpret them this way:
 
-- `timeout_budget_exceeded` means persisted fallback or unreachable posture was triggered by the bounded fail-fast timeout path
-- `collector_connection_error`, `collector_http_error`, `invalid_response_payload`, and `unknown_error` mean the boundary failed for a reason other than slowness alone
-- `partial_live_feed` means the fetch completed within the current timeout budget but still returned bounded degraded live coverage
+- `timeout_budget_exceeded` means the latest bounded fetch **hit the latency budget** (app-api stopped waiting); slice posture then depends on persisted snapshots—**not** the same metric outcome as connection or HTTP errors
+- `collector_connection_error`, `collector_http_error`, `invalid_response_payload`, and `unknown_error` mean the boundary failed for a **non-timeout** reason (classify separately from `timeout_budget_exceeded`)
+- `partial_live_feed` means the fetch **completed within** the current timeout budget but still returned bounded degraded live coverage (not a timeout)
 - these metrics remain observability signals only; the product-facing truth still lives in the backend contracts and the WebUI trust cues
 
 ## What Remains Bootstrap-Grade

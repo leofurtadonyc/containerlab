@@ -24,7 +24,7 @@ The current repository state includes:
   for the current metrics
 - Postgres with **bounded durable persistence** for normalized inventory,
   topology, and policy snapshots, sync-run records, readiness snapshots, and
-  the history fields needed for week **16–18** coverage and source-readiness
+  the history fields needed for week **16–20** coverage and source-readiness
   history (not a full durable domain model for every future product area)
 - repo-built local images for the initial platform service set
 - bounded post-deploy verification for the current core runtime contract, ODL
@@ -86,6 +86,14 @@ Current truth labels today:
 - `partial` means the platform is intentionally exposing bounded read-side knowledge rather than claiming full operational truth
 - `unavailable` means the backend does not currently have the additional persisted evidence required to build a bounded comparison view
 - `stale` is currently a frontend interpretation used mainly by workflow-history and audit-history pages to describe the age of persisted sync-derived evidence relative to page generation time
+
+Collector-boundary latency and failure posture (bounded):
+
+- `app-api` calls the collector on a **bounded per-path latency budget** (configured timeout); this is a **fail-fast** boundary so product APIs do not block indefinitely on a slow collector.
+- **`timeout_budget_exceeded`** means the fetch **ran out of budget**—`app-api` **stopped waiting** for the collector response. That is **not** the same as a connection refused, HTTP error, or invalid payload; those are **separate** classified boundary failures.
+- After **any** boundary failure or timeout, slice responses may use **persisted fallback** when a snapshot exists, or **blocked / empty** posture when it does not; **`serving_mode`** and **`evidence_confidence`** on each slice API explain the result—not Grafana.
+- **`partial_live_feed`** means the fetch **finished within budget** but the collector still returned only **bounded partial** live coverage; platform status may mark the read path **degraded** even though the budget was not exceeded.
+- **`/api/v1/platform/status`** `read_paths[].notes` may include a short **latency posture line** for operators; it supplements but does not replace slice-level serving and evidence fields.
 
 Important current limitation:
 

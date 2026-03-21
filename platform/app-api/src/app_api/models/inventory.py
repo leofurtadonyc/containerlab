@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app_api.schemas.common import ComparisonToLatestPersistedStatus
+
 
 class InventoryDevice(BaseModel):
     """Backend-owned normalized inventory model used before API serialization."""

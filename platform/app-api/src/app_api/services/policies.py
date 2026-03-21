@@ -530,7 +530,7 @@ def _build_current_policy_comparison(
             "Change preview is intentionally capped to a short bounded list of normalized policy records."
         )
     return PolicyCurrentComparison(
-        status="current_vs_latest_persisted_ready",
+        status="live_vs_latest_persisted_ready",
         summary=(
             "Bounded comparison is available between the current policy response and "
             "the latest persisted normalized policy snapshot."

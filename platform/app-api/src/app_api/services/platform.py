@@ -66,31 +66,37 @@ def _build_latency_budget_note(
     timeout_budget_seconds: int,
     fetch_duration_seconds: float | None,
 ) -> str | None:
-    """Summarize the latest collector-boundary latency posture for operators."""
+    """Summarize the latest app-api→collector boundary latency posture for operators.
+
+    Distinct cases: latency budget exceeded (fail-fast stop waiting) vs other boundary
+    failures (connection, HTTP, payload) vs partial live within budget vs full live within budget.
+    """
     if timeout_budget_seconds <= 0 or fetch_duration_seconds is None:
         return None
 
     if fetch_error_kind == "timeout_budget_exceeded":
         return (
-            "Latest backend collector fetch exhausted the "
-            f"{timeout_budget_seconds}s latency budget after {fetch_duration_seconds:.3f}s, "
-            "so this read path fell back instead of waiting longer."
+            "Latest app-api fetch to the collector boundary exceeded the "
+            f"{timeout_budget_seconds}s latency budget after {fetch_duration_seconds:.3f}s "
+            "(app-api did not wait longer for the collector response; slice APIs may use "
+            "persisted fallback or blocked posture—see serving_mode on each read slice)."
         )
     if fetch_error_kind is not None:
         return (
-            "Latest backend collector fetch completed in "
-            f"{fetch_duration_seconds:.3f}s under the {timeout_budget_seconds}s latency budget "
-            f"with {fetch_error_kind}."
+            f"Latest app-api fetch to the collector boundary reported {fetch_error_kind} "
+            f"after {fetch_duration_seconds:.3f}s under the {timeout_budget_seconds}s latency budget "
+            "(not a latency-budget timeout; classify separately from timeout_budget_exceeded)."
         )
     if status == "partial_live_feed":
         return (
-            "Latest backend collector fetch completed in "
-            f"{fetch_duration_seconds:.3f}s within the {timeout_budget_seconds}s latency budget, "
-            "but still returned only bounded partial live coverage."
+            "Latest app-api fetch to the collector boundary completed within the "
+            f"{timeout_budget_seconds}s latency budget (duration {fetch_duration_seconds:.3f}s), "
+            "but the collector returned only bounded partial live coverage (read-path "
+            "observation_state may still be degraded)."
         )
     return (
-        "Latest backend collector fetch completed in "
-        f"{fetch_duration_seconds:.3f}s within the {timeout_budget_seconds}s latency budget."
+        "Latest app-api fetch to the collector boundary completed within the "
+        f"{timeout_budget_seconds}s latency budget (duration {fetch_duration_seconds:.3f}s)."
     )
 
 
@@ -452,9 +458,11 @@ def build_platform_status_response() -> PlatformStatusResponse:
         generated_at=datetime.now(UTC),
         topology_name="platform",
         summary=(
-            "Phase 2 declared platform service inventory with one bounded ODL "
-            "RESTCONF capability probe plus bounded inventory, topology, and policy "
-            "collector read-path coverage summaries; deeper dependency health checks remain intentionally narrow."
+            "Phase 2 declared platform service inventory with bounded inventory, topology, and policy "
+            "collector read-path coverage summaries, plus one optional bounded ODL RESTCONF capability probe. "
+            "That ODL probe is helper infrastructure only—it does not make the controller the owner of SR "
+            "topology or policy truth (those remain collector-backed read models in app-api). "
+            "Deeper dependency health checks remain intentionally narrow."
         ),
         recovery=recovery,
         components=[

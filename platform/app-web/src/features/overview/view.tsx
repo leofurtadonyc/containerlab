@@ -16,6 +16,7 @@ import {
   describeTopologyCollectionPosture,
   describeTopologyCoveragePosture,
   describeTopologyInferencePosture,
+  describeTopologyNodeParticipationPosture,
   describeTopologyReadPathNodeParticipation,
   describeTopologyReadPathCollection,
   describeTopologyReadPathInference,
@@ -324,6 +325,12 @@ export function OverviewView() {
   const topologyCollectionReadout = topologyCoverageSummary
     ? describeTopologyCollectionPosture(topologyCoverageSummary)
     : null;
+  const topologyNodeParticipationReadout = topologyCoverageSummary
+    ? describeTopologyNodeParticipationPosture(
+        topologyCoverageSummary,
+        topologyData?.topology.nodes.length ?? 0,
+      )
+    : null;
   const topologyReadPathPairing = describeTopologyReadPathPairing(topologyReadPath);
   const topologyReadPathInference = describeTopologyReadPathInference(topologyReadPath);
   const topologyReadPathCollection = describeTopologyReadPathCollection(topologyReadPath);
@@ -440,12 +447,21 @@ export function OverviewView() {
             retryLabel="Retry devices"
           />
         )}
-        {topologyData && topologyCoverageReadout && topologyInferenceReadout && topologyCollectionReadout ? (
+        {topologyData &&
+        topologyCoverageReadout &&
+        topologyInferenceReadout &&
+        topologyCollectionReadout &&
+        topologyNodeParticipationReadout ? (
           <article className="summary-card">
             <p className="summary-label">Topology coverage</p>
             <strong>{topologyCoverageReadout.label}</strong>
             <p>
-              {topologyInferenceReadout.label} • {topologyCollectionReadout.label} • {topologyReadPathNodeParticipation.label} • {topologyReadPathNodeParticipation.countDetail}
+              {topologyInferenceReadout.label} • {topologyCollectionReadout.label} • {topologyCoverageReadout.label} •{" "}
+              {topologyNodeParticipationReadout.label}
+            </p>
+            <p className="table-note">
+              Four separate partiality axes from the topology API (inference, collection, endpoint pairing, node
+              participation)—trust cues only, not adjacency or validation truth.
             </p>
             {buildSliceAvailabilityNote(topologySliceState) ? (
               <p className="table-note">{buildSliceAvailabilityNote(topologySliceState)}</p>
@@ -735,11 +751,15 @@ export function OverviewView() {
           )
         )}
 
-        {topologyData && topologyCoverageReadout && topologyInferenceReadout && topologyCollectionReadout ? (
+        {topologyData &&
+        topologyCoverageReadout &&
+        topologyInferenceReadout &&
+        topologyCollectionReadout &&
+        topologyNodeParticipationReadout ? (
           <TrustCueCard
             title="Topology Trust Cues"
             summary={buildSliceAvailabilitySummary(
-              "Topology routine use depends on live-versus-fallback serving, partial completeness, backend-owned inference posture, endpoint-pairing posture, collection posture, and the bounded target coverage and freshness posture now exposed for the topology read path.",
+              "Topology routine use depends on live-versus-fallback serving, partial completeness, and four backend-owned partiality axes on the topology API (inference, collection, endpoint pairing, node participation), plus bounded target coverage and freshness from platform status. Values below prefer the topology API when this slice is loaded; read-path rows stay for coverage windows.",
               topologySliceState,
             )}
             rows={[
@@ -755,25 +775,49 @@ export function OverviewView() {
                 value: topologyData.evidence_confidence.freshness_posture,
               },
               {
-                label: "Inference posture",
+                label: "Inference posture (topology API)",
                 kind: "status",
-                value: topologyReadPathInference.status,
+                value: topologyInferenceReadout.status,
                 note: topologyInferenceReadout.detail,
               },
               {
-                label: "Endpoint pairing",
+                label: "Endpoint pairing (topology API)",
                 kind: "status",
-                value: topologyReadPathPairing.status,
+                value: topologyCoverageReadout.status,
                 note: [topologyCoverageReadout.detail, topologyCoverageReadout.countDetail],
               },
               {
-                label: "Collection posture",
+                label: "Collection posture (topology API)",
                 kind: "status",
-                value: topologyReadPathCollection.status,
+                value: topologyCollectionReadout.status,
                 note: topologyCollectionReadout.detail,
               },
               {
-                label: "Node participation",
+                label: "Node participation (topology API)",
+                kind: "status",
+                value: topologyNodeParticipationReadout.status,
+                note: [topologyNodeParticipationReadout.detail, topologyNodeParticipationReadout.countDetail],
+              },
+              {
+                label: "Inference (platform-status read path)",
+                kind: "status",
+                value: topologyReadPathInference.status,
+                note: topologyReadPathInference.detail,
+              },
+              {
+                label: "Endpoint pairing (read path)",
+                kind: "status",
+                value: topologyReadPathPairing.status,
+                note: [topologyReadPathPairing.detail, topologyReadPathPairing.countDetail],
+              },
+              {
+                label: "Collection (read path)",
+                kind: "status",
+                value: topologyReadPathCollection.status,
+                note: topologyReadPathCollection.detail,
+              },
+              {
+                label: "Node participation (read path)",
                 kind: "status",
                 value: topologyReadPathNodeParticipation.status,
                 note: [

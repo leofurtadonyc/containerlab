@@ -749,6 +749,7 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
             ),
             caveats=[
                 "This does not imply broader controller-backed topology, policy, or workflow support.",
+                "ODL is optional helper input only; app-api remains the translator and product contract owner.",
             ],
             source_of_determination="odl_restconf_capability_probe",
             workflow_readiness_status="context_only",

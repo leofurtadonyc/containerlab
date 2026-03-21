@@ -1186,7 +1186,8 @@ export function TopologyView() {
         <p>
           Live collector data remains the primary current truth source. Persisted fallback
           snapshots keep the page usable when live collection is unavailable. Inference
-          posture, endpoint pairing, node participation, and collection posture are shown separately so operators
+          posture, endpoint pairing, node participation, and collection posture are four orthogonal
+          partiality axes—trust cues only, not adjacency validation—and are shown separately so operators
           can see why topology remains partial. Comparison summaries show bounded normalized
           differences only and should not be read as path-validation, controller truth, or
           drift verdicts.
