@@ -443,6 +443,118 @@ describe("overview view", () => {
 
     expect(html).toContain("Policy inventory");
     expect(html).toContain("Observed policies • Detailed records: 0 • live");
+    expect(html).toContain("Inventory history");
+    expect(html).toContain("No snapshots • unavailable");
+  });
+
+  it("surfaces inventory history trust cue when devices exposes comparison-ready persisted history", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
+    useDevicesQuery.mockReturnValue(
+      createQueryState({
+        service: "app-api",
+        version: "test",
+        phase: "phase_2_read_only_foundation",
+        generated_at: "2025-01-01T00:00:00Z",
+        data_status: "live",
+        serving_mode: "live_collector",
+        evidence_confidence: {
+          source_posture: "live_observed",
+          evidence_kind: "direct_observed",
+          confidence_posture: "strong_for_current_slice",
+          freshness_posture: "current",
+          blocked_reason: "none",
+          summary: "Inventory summary.",
+          notes: [],
+        },
+        summary: "Inventory summary.",
+        served_persisted_at: null,
+        count: 2,
+        items: [],
+        comparison_to_latest_persisted: {
+          status: "live_vs_latest_persisted_ready",
+          summary: "Ready.",
+          comparison_snapshot_id: "inv-latest",
+          comparison_persisted_at: "2025-01-01T00:00:00Z",
+          current_device_count: 2,
+          persisted_device_count: 2,
+          device_count_delta: 0,
+          added_device_count: 0,
+          removed_device_count: 0,
+          changed_device_count: 0,
+          current_role_counts: {},
+          persisted_role_counts: {},
+          current_collector_status_counts: {},
+          persisted_collector_status_counts: {},
+          current_capability_summary_counts: {},
+          persisted_capability_summary_counts: {},
+          notes: [],
+        },
+        history: {
+          status: "comparison_ready",
+          summary: "History window ready.",
+          recent_snapshots: [
+            {
+              snapshot_id: "inv-a",
+              sync_run_id: "sync-a",
+              persisted_at: "2025-01-01T00:00:00Z",
+              observed_at: null,
+              sync_source: "gnmi_collector_inventory",
+              sync_status: "live_normalized_feed",
+              data_status: "live",
+              source_endpoint: "http://collector/inventory",
+              device_count: 2,
+              role_counts: { pe: 2 },
+              collector_status_counts: { ok: 2 },
+              capability_summary_counts: { partially_supported: 2 },
+            },
+            {
+              snapshot_id: "inv-b",
+              sync_run_id: "sync-b",
+              persisted_at: "2024-12-31T00:00:00Z",
+              observed_at: null,
+              sync_source: "gnmi_collector_inventory",
+              sync_status: "live_normalized_feed",
+              data_status: "live",
+              source_endpoint: "http://collector/inventory",
+              device_count: 2,
+              role_counts: { pe: 2 },
+              collector_status_counts: { ok: 2 },
+              capability_summary_counts: { partially_supported: 2 },
+            },
+          ],
+          comparison_to_previous: {
+            current_snapshot_id: "inv-a",
+            previous_snapshot_id: "inv-b",
+            current_persisted_at: "2025-01-01T00:00:00Z",
+            previous_persisted_at: "2024-12-31T00:00:00Z",
+            current_observed_at: null,
+            previous_observed_at: null,
+            current_sync_status: "live_normalized_feed",
+            previous_sync_status: "live_normalized_feed",
+            current_data_status: "live",
+            previous_data_status: "live",
+            current_device_count: 2,
+            previous_device_count: 2,
+            device_count_delta: 0,
+            added_device_count: 0,
+            removed_device_count: 0,
+            changed_device_count: 0,
+            change_preview: [],
+            notes: [],
+          },
+        },
+      }),
+    );
+    useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    const html = renderToStaticMarkup(<OverviewView />);
+
+    expect(html).toContain("Inventory history");
+    expect(html).toContain("2 snapshots");
+    expect(html).toContain("comparison ready");
+    expect(html).toContain("Latest-versus-previous comparison is available");
   });
 
   it("does not show a partial-failure banner while remaining slices are still loading", () => {

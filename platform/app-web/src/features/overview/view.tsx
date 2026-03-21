@@ -23,6 +23,7 @@ import {
   formatDateTime,
   formatLabel,
 } from "../../lib/presentation";
+import { buildInventoryHistoryTrustCueRow } from "../../lib/inventory-history-trust";
 import { normalizeDryRunReadiness, summarizeReadinessItemIdentitySupport } from "../../lib/readiness";
 import { useCapabilitiesQuery } from "../capabilities/api";
 import { useDevicesQuery } from "../devices/api";
@@ -667,7 +668,7 @@ export function OverviewView() {
           <TrustCueCard
             title="Devices Trust Cues"
             summary={buildSliceAvailabilitySummary(
-              "Routine device use depends on whether inventory is live-backed, stale, or fallback-served, plus the bounded collector coverage and freshness window the platform-status contract now carries for inventory.",
+              "Routine device use depends on whether inventory is live-backed, stale, or fallback-served, plus the bounded collector coverage and freshness window the platform-status contract now carries for inventory. The inventory history row summarizes bounded persisted snapshot history from the Devices API (comparison-ready vs single snapshot vs unavailable)—full detail stays on the Devices page.",
               devicesSliceState,
             )}
             rows={[
@@ -720,6 +721,7 @@ export function OverviewView() {
                 value: formatDateTime(devicesData.served_persisted_at),
                 note: buildSliceAvailabilityNote(devicesSliceState) ?? undefined,
               },
+              buildInventoryHistoryTrustCueRow(devicesData, false, false),
             ]}
           />
         ) : (
