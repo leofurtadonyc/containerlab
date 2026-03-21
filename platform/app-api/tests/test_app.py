@@ -29,6 +29,7 @@ from app_api.models.policy import PolicyDetailSourceReadiness, PolicyInventorySn
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.persistence.history import (
     InventorySnapshotMetricsSummary,
+    PolicySnapshotMetricsSummary,
     PersistedInventorySnapshotComparison,
     PersistedInventorySnapshotSummary as PersistedInventoryHistorySummary,
     PersistedPolicySnapshotComparison,
@@ -1804,6 +1805,17 @@ def _build_inventory_snapshot_metrics_summary() -> InventorySnapshotMetricsSumma
 
 def _build_empty_inventory_snapshot_metrics_summary() -> InventorySnapshotMetricsSummary:
     return InventorySnapshotMetricsSummary()
+
+
+def _build_policy_snapshot_metrics_summary() -> PolicySnapshotMetricsSummary:
+    return PolicySnapshotMetricsSummary(
+        persisted_row_count=2,
+        latest_persisted_at=datetime.fromisoformat("2026-03-10T12:00:00+00:00"),
+    )
+
+
+def _build_empty_policy_snapshot_metrics_summary() -> PolicySnapshotMetricsSummary:
+    return PolicySnapshotMetricsSummary()
 
 
 # Pinned JSON keys for workflow-history / audit-history inventory evidence (matches OpenAPI contracts).
@@ -4297,6 +4309,10 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         _build_inventory_snapshot_metrics_summary,
     )
     monkeypatch.setattr(
+        "app_api.metrics.router.summarize_policy_snapshot_metrics",
+        _build_policy_snapshot_metrics_summary,
+    )
+    monkeypatch.setattr(
         "app_api.services.capabilities.load_latest_readiness_snapshot_reference",
         lambda: SimpleNamespace(
             snapshot_id="readiness-snapshot-metrics",
@@ -4424,6 +4440,11 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         "platform_app_api_inventory_snapshot_latest_persisted_at_seconds 1773144000.000"
         in response.text
     )
+    assert "platform_app_api_policy_snapshots_persisted_total 2" in response.text
+    assert (
+        "platform_app_api_policy_snapshot_latest_persisted_at_seconds 1773144000.000"
+        in response.text
+    )
 
 
 def test_metrics_endpoint_exports_new_baseline_recovery_posture(monkeypatch) -> None:
@@ -4494,6 +4515,10 @@ def test_metrics_endpoint_exports_new_baseline_recovery_posture(monkeypatch) -> 
         _build_empty_inventory_snapshot_metrics_summary,
     )
     monkeypatch.setattr(
+        "app_api.metrics.router.summarize_policy_snapshot_metrics",
+        _build_empty_policy_snapshot_metrics_summary,
+    )
+    monkeypatch.setattr(
         "app_api.services.capabilities.load_latest_readiness_snapshot_reference",
         lambda: None,
     )
@@ -4519,6 +4544,11 @@ def test_metrics_endpoint_exports_new_baseline_recovery_posture(monkeypatch) -> 
     assert "platform_app_api_inventory_snapshots_persisted_total 0" in response.text
     assert (
         "platform_app_api_inventory_snapshot_latest_persisted_at_seconds 0.000"
+        in response.text
+    )
+    assert "platform_app_api_policy_snapshots_persisted_total 0" in response.text
+    assert (
+        "platform_app_api_policy_snapshot_latest_persisted_at_seconds 0.000"
         in response.text
     )
 
@@ -4559,6 +4589,10 @@ def test_metrics_endpoint_exports_mixed_topology_pairing_posture(monkeypatch) ->
         _build_inventory_snapshot_metrics_summary,
     )
     monkeypatch.setattr(
+        "app_api.metrics.router.summarize_policy_snapshot_metrics",
+        _build_policy_snapshot_metrics_summary,
+    )
+    monkeypatch.setattr(
         "app_api.services.capabilities.load_latest_readiness_snapshot_reference",
         lambda: SimpleNamespace(
             snapshot_id="readiness-snapshot-metrics",
@@ -4572,6 +4606,7 @@ def test_metrics_endpoint_exports_mixed_topology_pairing_posture(monkeypatch) ->
 
     assert response.status_code == 200
     assert "platform_app_api_inventory_snapshots_persisted_total 2" in response.text
+    assert "platform_app_api_policy_snapshots_persisted_total 2" in response.text
     assert "platform_app_api_topology_paired_links 1" in response.text
     assert "platform_app_api_topology_single_sided_links 1" in response.text
     assert "platform_app_api_topology_linked_nodes 3" in response.text
@@ -4619,6 +4654,10 @@ def test_metrics_endpoint_exports_isolated_topology_node_participation(monkeypat
         _build_inventory_snapshot_metrics_summary,
     )
     monkeypatch.setattr(
+        "app_api.metrics.router.summarize_policy_snapshot_metrics",
+        _build_policy_snapshot_metrics_summary,
+    )
+    monkeypatch.setattr(
         "app_api.services.capabilities.load_latest_readiness_snapshot_reference",
         lambda: SimpleNamespace(
             snapshot_id="readiness-snapshot-metrics",
@@ -4632,6 +4671,7 @@ def test_metrics_endpoint_exports_isolated_topology_node_participation(monkeypat
 
     assert response.status_code == 200
     assert "platform_app_api_inventory_snapshots_persisted_total 2" in response.text
+    assert "platform_app_api_policy_snapshots_persisted_total 2" in response.text
     assert "platform_app_api_topology_linked_nodes 2" in response.text
     assert "platform_app_api_topology_isolated_nodes 1" in response.text
     assert (
@@ -4692,6 +4732,10 @@ def test_metrics_endpoint_exports_fully_isolated_topology_node_participation(mon
         _build_inventory_snapshot_metrics_summary,
     )
     monkeypatch.setattr(
+        "app_api.metrics.router.summarize_policy_snapshot_metrics",
+        _build_policy_snapshot_metrics_summary,
+    )
+    monkeypatch.setattr(
         "app_api.services.capabilities.load_latest_readiness_snapshot_reference",
         lambda: SimpleNamespace(
             snapshot_id="readiness-snapshot-metrics",
@@ -4705,6 +4749,7 @@ def test_metrics_endpoint_exports_fully_isolated_topology_node_participation(mon
 
     assert response.status_code == 200
     assert "platform_app_api_inventory_snapshots_persisted_total 2" in response.text
+    assert "platform_app_api_policy_snapshots_persisted_total 2" in response.text
     assert "platform_app_api_topology_linked_nodes 0" in response.text
     assert "platform_app_api_topology_isolated_nodes 3" in response.text
     assert (
@@ -4766,6 +4811,10 @@ def test_metrics_endpoint_exports_timeout_boundary_posture(monkeypatch) -> None:
         "app_api.metrics.router.summarize_inventory_snapshot_metrics",
         _build_empty_inventory_snapshot_metrics_summary,
     )
+    monkeypatch.setattr(
+        "app_api.metrics.router.summarize_policy_snapshot_metrics",
+        _build_empty_policy_snapshot_metrics_summary,
+    )
 
     reset_metrics_registry()
     client.get("/api/v1/platform/status")
@@ -4774,6 +4823,7 @@ def test_metrics_endpoint_exports_timeout_boundary_posture(monkeypatch) -> None:
 
     assert response.status_code == 200
     assert "platform_app_api_inventory_snapshots_persisted_total 0" in response.text
+    assert "platform_app_api_policy_snapshots_persisted_total 0" in response.text
     assert (
         'platform_app_api_collector_boundary_latest_fetch_duration_seconds{model_family="inventory",outcome="timeout_budget_exceeded"} 3.021000000'
         in response.text

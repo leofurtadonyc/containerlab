@@ -14,7 +14,7 @@
       },
       "id": 1,
       "options": {
-        "content": "## SR Policy Observability Overview\nThis dashboard summarizes the **current** bounded SR policy slice exposed through Prometheus. It focuses on real metric-backed evidence: collector policy ingestion health, backend policy snapshot readiness, live-empty policy context, bounded static-policy detail when present, persisted policy sync evidence, serving-mode and evidence-posture labels, detail-ready target posture, source-readiness counts, coverage-gap ratios, and API demand around the policy view.\n\nProduct versus observability:\n- **Persisted policy history** (recent normalized snapshots, source-readiness posture and counts **across** snapshots, and snapshot-to-snapshot comparison) is owned by **`app-api` `/api/v1/policies` and the WebUI Policies page**, not by this dashboard.\n- Panels here may mirror **current** posture, gaps, and sync freshness only; they are **not** drift verdicts, validation outcomes, or substitutes for reading `history.recent_snapshots` / `history.comparison_to_previous` in the product API.\n\nCurrent limits:\n- The live policy slice still starts with Nokia SR policy counters and only adds bounded static-policy observations where that state is actually exposed.\n- A zero-policy view can still be healthy; live-empty state is explicit and should not be confused with a placeholder response.\n- Observed policy counts and detailed policy record counts are intentionally separated because the bounded read path cannot yet derive per-policy detail for every observed type.\n- Per-target blocker reasons belong to the Policies page and verifier. Grafana mirrors source-readiness posture numerically through backend-owned posture labels, source-readiness counts, and detail-ready-target gaps only.\n- Evidence-posture panels here show source, freshness, and bounded-confidence labels only; they are not workflow, pre-change safety, or network-validation language.\n- Grafana remains observability-only. Policy exploration and future action flows stay in the WebUI and backend.",
+        "content": "## SR Policy Observability Overview\nThis dashboard summarizes the **current** bounded SR policy slice exposed through Prometheus. It focuses on real metric-backed evidence: collector policy ingestion health, backend policy snapshot readiness, live-empty policy context, bounded static-policy detail when present, persisted policy sync evidence, serving-mode and evidence-posture labels, detail-ready target posture, source-readiness counts, coverage-gap ratios, and API demand around the policy view.\n\nProduct versus observability:\n- **Persisted policy history** (recent normalized snapshots, source-readiness posture and counts **across** snapshots, and snapshot-to-snapshot comparison) is owned by **`app-api` `/api/v1/policies` and the WebUI Policies page**, not by this dashboard.\n- Panels here may mirror **current** posture, gaps, and sync freshness only; they are **not** drift verdicts, validation outcomes, or substitutes for reading `history.recent_snapshots` / `history.comparison_to_previous` in the product API.\n\nCurrent limits:\n- **`platform_app_api_policy_snapshots_persisted_total`** and **`platform_app_api_policy_snapshot_latest_persisted_at_seconds`** mirror only the **Postgres `policy_snapshots` table** (row count and latest `persisted_at`). They do **not** replace richer **`/api/v1/policies`** **`history`** (recent snapshots, comparisons)—those remain product-owned.\n- The live policy slice still starts with Nokia SR policy counters and only adds bounded static-policy observations where that state is actually exposed.\n- A zero-policy view can still be healthy; live-empty state is explicit and should not be confused with a placeholder response.\n- Observed policy counts and detailed policy record counts are intentionally separated because the bounded read path cannot yet derive per-policy detail for every observed type.\n- Per-target blocker reasons belong to the Policies page and verifier. Grafana mirrors source-readiness posture numerically through backend-owned posture labels, source-readiness counts, and detail-ready-target gaps only.\n- Evidence-posture panels here show source, freshness, and bounded-confidence labels only; they are not workflow, pre-change safety, or network-validation language.\n- Grafana remains observability-only. Policy exploration and future action flows stay in the WebUI and backend.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -867,10 +867,16 @@
       "targets": [
         {
           "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"policy\"}, 0)",
+          "legendFormat": "policy sync age",
           "refId": "A"
+        },
+        {
+          "expr": "clamp_min(time() - platform_app_api_policy_snapshot_latest_persisted_at_seconds, 0) unless platform_app_api_policy_snapshot_latest_persisted_at_seconds == 0",
+          "legendFormat": "persisted snapshot age",
+          "refId": "B"
         }
       ],
-      "title": "Policy Sync Age",
+      "title": "Policy Sync Age vs Persisted Snapshot Age",
       "type": "stat"
     },
     {
@@ -909,10 +915,16 @@
       "targets": [
         {
           "expr": "platform_app_api_sync_runs_by_family{model_family=\"policy\"}",
+          "legendFormat": "recent sync runs",
           "refId": "A"
+        },
+        {
+          "expr": "platform_app_api_policy_snapshots_persisted_total",
+          "legendFormat": "persisted snapshot rows",
+          "refId": "B"
         }
       ],
-      "title": "Policy Sync Runs",
+      "title": "Policy sync runs vs persisted snapshot rows",
       "type": "stat"
     },
     {
