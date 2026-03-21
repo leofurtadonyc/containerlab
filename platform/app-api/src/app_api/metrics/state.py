@@ -362,6 +362,7 @@ def render_prometheus_metrics(
     recovery_metrics: dict[str, object] | None = None,
     history_metrics: dict[str, object] | None = None,
     inventory_snapshot_metrics: dict[str, object] | None = None,
+    policy_snapshot_metrics: dict[str, object] | None = None,
 ) -> str:
     """Render backend metrics in Prometheus text format."""
     with _lock:
@@ -1014,6 +1015,27 @@ def render_prometheus_metrics(
                 ),
                 "# TYPE platform_app_api_inventory_snapshot_latest_persisted_at_seconds gauge",
                 f"platform_app_api_inventory_snapshot_latest_persisted_at_seconds {latest_seconds:.3f}",
+            ]
+        )
+
+    if policy_snapshot_metrics is not None:
+        persisted_rows = int(policy_snapshot_metrics.get("persisted_row_count", 0))
+        latest_seconds = float(policy_snapshot_metrics.get("latest_persisted_at_seconds", 0.0))
+        lines.extend(
+            [
+                (
+                    "# HELP platform_app_api_policy_snapshots_persisted_total "
+                    "Count of rows in the policy_snapshots table (bounded history depth)."
+                ),
+                "# TYPE platform_app_api_policy_snapshots_persisted_total gauge",
+                f"platform_app_api_policy_snapshots_persisted_total {persisted_rows}",
+                (
+                    "# HELP platform_app_api_policy_snapshot_latest_persisted_at_seconds "
+                    "Unix timestamp of the latest policy_snapshots.persisted_at value, "
+                    "or zero when the table is empty."
+                ),
+                "# TYPE platform_app_api_policy_snapshot_latest_persisted_at_seconds gauge",
+                f"platform_app_api_policy_snapshot_latest_persisted_at_seconds {latest_seconds:.3f}",
             ]
         )
 

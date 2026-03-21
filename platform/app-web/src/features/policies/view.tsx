@@ -27,6 +27,8 @@ import {
 import { useTopologyQuery } from "../topology/api";
 import { usePoliciesQuery } from "./api";
 
+import type { PolicyDetailSourceReadinessRecord } from "../../api/contracts";
+
 type PolicyDetailBlockerReason =
   | "none"
   | "policy_capability_unavailable"
@@ -127,6 +129,11 @@ function formatSignedDelta(value: number): string {
     return `+${value}`;
   }
   return `${value}`;
+}
+
+/** One-line nested readiness for persisted history rows (matches top-level policy contract). */
+function formatHistoryNestedReadinessLine(readiness: PolicyDetailSourceReadinessRecord): string {
+  return `${formatLabel(readiness.posture)} · ${readiness.no_policies_observed_target_count} live-empty · ${readiness.detail_unavailable_target_count} detail-unavailable · ${readiness.partial_detail_target_count} partial`;
 }
 
 function getServingModeReadout(
@@ -1395,6 +1402,88 @@ export function PoliciesView() {
                     {formatDateTime(comparison.previous_persisted_at)}
                   </strong>
                 </li>
+                {comparison.current_observed_at != null ||
+                comparison.previous_observed_at != null ? (
+                  <li>
+                    <span>Current / previous observed</span>
+                    <strong>
+                      {formatDateTime(comparison.current_observed_at ?? null)} /{" "}
+                      {formatDateTime(comparison.previous_observed_at ?? null)}
+                    </strong>
+                  </li>
+                ) : null}
+                {comparison.current_data_status != null ||
+                comparison.previous_data_status != null ? (
+                  <li>
+                    <span>Current / previous data status</span>
+                    <strong>
+                      {formatLabel(comparison.current_data_status ?? "unknown")} /{" "}
+                      {formatLabel(comparison.previous_data_status ?? "unknown")}
+                    </strong>
+                  </li>
+                ) : null}
+                {comparison.current_sync_run_id != null ||
+                comparison.previous_sync_run_id != null ? (
+                  <li>
+                    <span>Current / previous sync run</span>
+                    <strong>
+                      <IdentifierChip
+                        value={comparison.current_sync_run_id ?? ""}
+                        emptyLabel="Not exposed"
+                      />{" "}
+                      /{" "}
+                      <IdentifierChip
+                        value={comparison.previous_sync_run_id ?? ""}
+                        emptyLabel="Not exposed"
+                      />
+                    </strong>
+                  </li>
+                ) : null}
+                {comparison.current_source_endpoint != null ||
+                comparison.previous_source_endpoint != null ? (
+                  <li>
+                    <span>Current / previous source endpoint</span>
+                    <strong className="meta-copy">
+                      {comparison.current_source_endpoint || "—"} /{" "}
+                      {comparison.previous_source_endpoint || "—"}
+                    </strong>
+                  </li>
+                ) : null}
+                {comparison.current_static_local_policy_count != null ||
+                comparison.previous_static_local_policy_count != null ? (
+                  <li>
+                    <span>Current / previous static local (bounded)</span>
+                    <strong>
+                      {comparison.current_static_local_policy_count ?? "—"} /{" "}
+                      {comparison.previous_static_local_policy_count ?? "—"}{" "}
+                      {comparison.static_local_policy_delta != null ? (
+                        <span className="table-note">
+                          (Δ {formatSignedDelta(comparison.static_local_policy_delta)})
+                        </span>
+                      ) : null}
+                    </strong>
+                  </li>
+                ) : null}
+                {comparison.current_detail_source_readiness != null ||
+                comparison.previous_detail_source_readiness != null ? (
+                  <li>
+                    <span>Nested readiness (current / previous)</span>
+                    <div>
+                      {comparison.current_detail_source_readiness ? (
+                        <p className="table-note">
+                          Current:{" "}
+                          {formatHistoryNestedReadinessLine(comparison.current_detail_source_readiness)}
+                        </p>
+                      ) : null}
+                      {comparison.previous_detail_source_readiness ? (
+                        <p className="table-note">
+                          Previous:{" "}
+                          {formatHistoryNestedReadinessLine(comparison.previous_detail_source_readiness)}
+                        </p>
+                      ) : null}
+                    </div>
+                  </li>
+                ) : null}
                 <li>
                   <span>Observed policy delta</span>
                   <strong>{formatSignedDelta(comparison.observed_policy_delta)}</strong>
@@ -1482,10 +1571,19 @@ export function PoliciesView() {
               ) : null}
             </>
           ) : (
-            <p className="footnote">
-              Bounded comparison is only available once at least two persisted normalized policy
-              snapshots exist.
-            </p>
+            <>
+              <p className="footnote">
+                Bounded comparison is only available once at least two persisted normalized policy
+                snapshots exist.
+              </p>
+              {data.history.status === "current_only" ? (
+                <p className="table-note">
+                  History status is <strong>current only</strong>: recent snapshot anchors may still
+                  be listed above, but there is no paired previous snapshot for latest-versus-previous
+                  comparison yet.
+                </p>
+              ) : null}
+            </>
           )}
         </article>
         <article className="detail-card">
@@ -1499,42 +1597,85 @@ export function PoliciesView() {
             <ul className="notes-list">
               {data.history.recent_snapshots.map((entry) => (
                 <li key={entry.snapshot_id}>
-                  <strong>{formatDateTime(entry.persisted_at)}</strong>
-                  {" • anchor "}
-                  <IdentifierChip value={entry.snapshot_id} />
-                  {" • "}
-                  {formatLabel(entry.data_status)}
-                  {" • observed "}
-                  {entry.observed_policy_count}
-                  {" • detail "}
-                  {entry.detail_record_count}
-                  {" • "}
-                  {formatLabel(entry.detail_mode)}
-                  {entry.detail_source_readiness_posture != null ? (
-                    <>
-                      {" • source-readiness "}
-                      <StatusPill value={entry.detail_source_readiness_posture} />
-                    </>
+                  <div>
+                    <strong>{formatDateTime(entry.persisted_at)}</strong>
+                    {" • snapshot "}
+                    <IdentifierChip value={entry.snapshot_id} />
+                    {" • "}
+                    {formatLabel(entry.data_status)}
+                    {" • observed policies "}
+                    {entry.observed_policy_count}
+                    {" • detail records "}
+                    {entry.detail_record_count}
+                    {" • "}
+                    {formatLabel(entry.detail_mode)}
+                    {entry.detail_source_readiness_posture != null ? (
+                      <>
+                        {" • source-readiness "}
+                        <StatusPill value={entry.detail_source_readiness_posture} />
+                      </>
+                    ) : null}
+                    {entry.observed_at ? (
+                      <>
+                        {" • collector observed "}
+                        {formatDateTime(entry.observed_at)}
+                      </>
+                    ) : null}
+                  </div>
+                  {entry.sync_run_id || entry.source_endpoint ? (
+                    <div className="table-note">
+                      {entry.sync_run_id ? (
+                        <>
+                          Sync run{" "}
+                          <IdentifierChip value={entry.sync_run_id} emptyLabel="Not exposed" />
+                        </>
+                      ) : null}
+                      {entry.source_endpoint ? (
+                        <>
+                          {entry.sync_run_id ? " · " : null}
+                          Endpoint{" "}
+                          <span className="meta-copy">{entry.source_endpoint}</span>
+                        </>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {entry.observed_target_count != null || entry.policy_capable_target_count != null ? (
+                    <div className="table-note">
+                      Targets: {entry.observed_target_count ?? "—"} observed /{" "}
+                      {entry.policy_capable_target_count ?? "—"} policy-capable
+                    </div>
+                  ) : null}
+                  {entry.static_local_policy_count != null ? (
+                    <div className="table-note">
+                      Static local (bounded slice): {entry.static_local_policy_count}
+                    </div>
+                  ) : null}
+                  {entry.detail_source_readiness ? (
+                    <div className="table-note">
+                      Nested readiness: {formatHistoryNestedReadinessLine(entry.detail_source_readiness)}
+                    </div>
                   ) : null}
                   {entry.detail_ready_target_count != null ||
                   entry.no_policies_observed_target_count != null ||
                   entry.detail_unavailable_target_count != null ||
                   entry.partial_detail_target_count != null ? (
-                    <>
-                      {" • "}
-                      {entry.detail_ready_target_count ?? 0} detail-ready /{" "}
+                    <div className="table-note">
+                      Persisted rollup: {entry.detail_ready_target_count ?? 0} detail-ready /{" "}
                       {entry.no_policies_observed_target_count ?? 0} live-empty /{" "}
                       {entry.detail_unavailable_target_count ?? 0} detail-unavailable /{" "}
                       {entry.partial_detail_target_count ?? 0} partial
-                    </>
+                    </div>
                   ) : null}
-                  {entry.observed_at ? ` • observed at ${formatDateTime(entry.observed_at)}` : ""}
                 </li>
               ))}
             </ul>
           ) : (
             <p className="footnote">
-              No persisted normalized policy snapshots are currently available for this bounded view.
+              {data.history.status === "unavailable"
+                ? "No persisted policy-history window is currently available from the backend."
+                : data.history.status === "current_only"
+                  ? "Only one persisted snapshot exists on file; a second persisted sync is required before comparison and richer history readouts can appear."
+                  : "No persisted normalized policy snapshots are currently available for this bounded view."}
             </p>
           )}
         </article>

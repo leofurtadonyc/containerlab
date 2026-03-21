@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload, selectinload
 
 from app_api.models.inventory import InventoryDevice, InventoryHistoryChangePreview
+from app_api.models.policy import PolicyDetailSourceReadiness
 from app_api.models.topology import build_topology_coverage_summary
 from app_api.persistence.session import create_session
 from app_api.persistence.tables import (
@@ -154,8 +155,11 @@ class PersistedPolicySnapshotSummary(BaseModel):
     """Bounded persisted policy snapshot context for history surfaces."""
 
     snapshot_id: str
+    sync_run_id: str
     persisted_at: datetime
+    source_endpoint: str = ""
     observed_at: datetime | None = None
+    data_status: str
     sync_source: str
     sync_status: str
     completeness: str
@@ -163,7 +167,13 @@ class PersistedPolicySnapshotSummary(BaseModel):
     empty_reason: str
     observed_policy_count: int
     active_policy_count: int
+    static_local_policy_count: int = 0
+    observed_target_count: int = 0
+    policy_capable_target_count: int = 0
     detail_record_count: int
+    detail_source_readiness: PolicyDetailSourceReadiness = Field(
+        default_factory=PolicyDetailSourceReadiness
+    )
     detail_source_readiness_posture: str = "unknown"
     detail_ready_target_count: int = 0
     no_policies_observed_target_count: int = 0
@@ -198,6 +208,23 @@ class PersistedPolicySnapshotComparison(BaseModel):
     previous_detail_unavailable_target_count: int = 0
     current_partial_detail_target_count: int = 0
     previous_partial_detail_target_count: int = 0
+    current_static_local_policy_count: int = 0
+    previous_static_local_policy_count: int = 0
+    static_local_policy_delta: int = 0
+    current_data_status: str
+    previous_data_status: str
+    current_observed_at: datetime | None = None
+    previous_observed_at: datetime | None = None
+    current_sync_run_id: str = ""
+    previous_sync_run_id: str = ""
+    current_source_endpoint: str = ""
+    previous_source_endpoint: str = ""
+    current_detail_source_readiness: PolicyDetailSourceReadiness = Field(
+        default_factory=PolicyDetailSourceReadiness
+    )
+    previous_detail_source_readiness: PolicyDetailSourceReadiness = Field(
+        default_factory=PolicyDetailSourceReadiness
+    )
 
 
 class PersistedReadinessSnapshotHistoryRecord(BaseModel):
@@ -229,6 +256,13 @@ class SyncRunHistorySummary(BaseModel):
 
 class InventorySnapshotMetricsSummary(BaseModel):
     """Bounded inventory_snapshots table summary for metrics (not per-device history)."""
+
+    persisted_row_count: int = 0
+    latest_persisted_at: datetime | None = None
+
+
+class PolicySnapshotMetricsSummary(BaseModel):
+    """Bounded policy_snapshots table summary for metrics (not per-policy history)."""
 
     persisted_row_count: int = 0
     latest_persisted_at: datetime | None = None
@@ -727,6 +761,16 @@ def _load_policy_snapshot_record_signatures(
     return signatures
 
 
+def _policy_detail_readiness_from_table(snapshot: PolicySnapshotTable) -> PolicyDetailSourceReadiness:
+    """Map persisted policy snapshot columns to backend-owned readiness."""
+    return PolicyDetailSourceReadiness(
+        posture=snapshot.detail_source_readiness_posture,
+        no_policies_observed_target_count=snapshot.no_policies_observed_target_count,
+        detail_unavailable_target_count=snapshot.detail_unavailable_target_count,
+        partial_detail_target_count=snapshot.partial_detail_target_count,
+    )
+
+
 def _build_policy_snapshot_summary(
     session,
     *,
@@ -736,10 +780,16 @@ def _build_policy_snapshot_summary(
     detail_record_count = session.scalar(
         select(func.count(PolicyRecordTable.id)).where(PolicyRecordTable.snapshot_id == snapshot.id)
     )
+    sync_run = session.scalar(select(SyncRunTable).where(SyncRunTable.id == snapshot.sync_run_id))
+    source_endpoint = sync_run.source_endpoint if sync_run is not None else ""
+    readiness = _policy_detail_readiness_from_table(snapshot)
     return PersistedPolicySnapshotSummary(
         snapshot_id=snapshot.id,
+        sync_run_id=snapshot.sync_run_id,
         persisted_at=snapshot.persisted_at,
+        source_endpoint=source_endpoint,
         observed_at=snapshot.observed_at,
+        data_status=snapshot.data_status,
         sync_source=snapshot.sync_source,
         sync_status=snapshot.sync_status,
         completeness=snapshot.completeness,
@@ -747,7 +797,11 @@ def _build_policy_snapshot_summary(
         empty_reason=snapshot.empty_reason,
         observed_policy_count=snapshot.observed_policy_count,
         active_policy_count=snapshot.active_policy_count,
+        static_local_policy_count=snapshot.static_local_policy_count,
+        observed_target_count=snapshot.observed_target_count,
+        policy_capable_target_count=snapshot.policy_capable_target_count,
         detail_record_count=int(detail_record_count or 0),
+        detail_source_readiness=readiness,
         detail_source_readiness_posture=snapshot.detail_source_readiness_posture,
         detail_ready_target_count=snapshot.detail_ready_target_count,
         no_policies_observed_target_count=snapshot.no_policies_observed_target_count,
@@ -796,6 +850,12 @@ def _build_policy_snapshot_comparison(
         notes.append(
             "Observed policy totals may be higher than detailed record totals when the bounded read path cannot derive per-policy detail for every observed policy type."
         )
+    sync_run_current = session.scalar(select(SyncRunTable).where(SyncRunTable.id == snapshot.sync_run_id))
+    sync_run_previous = session.scalar(
+        select(SyncRunTable).where(SyncRunTable.id == previous_snapshot.sync_run_id)
+    )
+    current_source_endpoint = sync_run_current.source_endpoint if sync_run_current is not None else ""
+    previous_source_endpoint = sync_run_previous.source_endpoint if sync_run_previous is not None else ""
     return PersistedPolicySnapshotComparison(
         current_snapshot_id=snapshot.id,
         previous_snapshot_id=previous_snapshot.id,
@@ -821,6 +881,21 @@ def _build_policy_snapshot_comparison(
         previous_detail_unavailable_target_count=previous_snapshot.detail_unavailable_target_count,
         current_partial_detail_target_count=snapshot.partial_detail_target_count,
         previous_partial_detail_target_count=previous_snapshot.partial_detail_target_count,
+        current_static_local_policy_count=snapshot.static_local_policy_count,
+        previous_static_local_policy_count=previous_snapshot.static_local_policy_count,
+        static_local_policy_delta=(
+            snapshot.static_local_policy_count - previous_snapshot.static_local_policy_count
+        ),
+        current_data_status=snapshot.data_status,
+        previous_data_status=previous_snapshot.data_status,
+        current_observed_at=snapshot.observed_at,
+        previous_observed_at=previous_snapshot.observed_at,
+        current_sync_run_id=snapshot.sync_run_id,
+        previous_sync_run_id=previous_snapshot.sync_run_id,
+        current_source_endpoint=current_source_endpoint,
+        previous_source_endpoint=previous_source_endpoint,
+        current_detail_source_readiness=_policy_detail_readiness_from_table(snapshot),
+        previous_detail_source_readiness=_policy_detail_readiness_from_table(previous_snapshot),
     )
 
 
@@ -951,6 +1026,27 @@ def summarize_inventory_snapshot_metrics() -> InventorySnapshotMetricsSummary:
     except Exception:
         logger.exception("Failed to summarize inventory snapshot table metrics.")
         return InventorySnapshotMetricsSummary()
+
+
+def summarize_policy_snapshot_metrics() -> PolicySnapshotMetricsSummary:
+    """Summarize policy_snapshots table for low-cardinality observability metrics."""
+    try:
+        with create_session() as session:
+            row_count = session.scalar(
+                select(func.count()).select_from(PolicySnapshotTable)
+            )
+            if row_count is None:
+                row_count = 0
+            latest = session.scalar(
+                select(func.max(PolicySnapshotTable.persisted_at))
+            )
+            return PolicySnapshotMetricsSummary(
+                persisted_row_count=int(row_count),
+                latest_persisted_at=latest,
+            )
+    except Exception:
+        logger.exception("Failed to summarize policy snapshot table metrics.")
+        return PolicySnapshotMetricsSummary()
 
 
 def summarize_sync_run_history(limit: int = 200) -> SyncRunHistorySummary:

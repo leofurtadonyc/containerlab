@@ -220,6 +220,12 @@ function createPoliciesData() {
     completeness: "partial",
     detail_mode: "counters_only",
     empty_reason: "none",
+    detail_source_readiness: {
+      posture: "partially_ready",
+      no_policies_observed_target_count: 0,
+      detail_unavailable_target_count: 0,
+      partial_detail_target_count: 0,
+    },
     observed_at: "2025-01-01T00:00:00Z",
     observed_target_count: 4,
     policy_capable_target_count: 4,
@@ -445,6 +451,95 @@ describe("overview view", () => {
     expect(html).toContain("Observed policies • Detailed records: 0 • live");
     expect(html).toContain("Inventory history");
     expect(html).toContain("No snapshots • unavailable");
+    expect(html).toContain("Policy history");
+    expect(html).toContain("No snapshots • unavailable • partially ready");
+  });
+
+  it("surfaces policy history trust cue when policies exposes comparison-ready persisted history", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
+    useDevicesQuery.mockReturnValue(createQueryState(null));
+    useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
+    usePoliciesQuery.mockReturnValue(
+      createQueryState({
+        ...createPoliciesData(),
+        history: {
+          status: "comparison_ready",
+          summary: "Policy history window ready.",
+          recent_snapshots: [
+            {
+              snapshot_id: "policy-snap-a",
+              sync_run_id: "sync-policy-a",
+              source_endpoint: "http://collector/policies",
+              persisted_at: "2025-01-01T00:00:00Z",
+              observed_at: "2025-01-01T00:00:00Z",
+              data_status: "live",
+              sync_source: "persisted_policy_snapshot",
+              sync_status: "ok",
+              completeness: "partial",
+              detail_mode: "static_policies_when_present",
+              empty_reason: "none",
+              observed_policy_count: 2,
+              active_policy_count: 2,
+              static_local_policy_count: 2,
+              observed_target_count: 4,
+              policy_capable_target_count: 4,
+              detail_record_count: 2,
+              detail_source_readiness: {
+                posture: "partially_ready",
+                no_policies_observed_target_count: 1,
+                detail_unavailable_target_count: 0,
+                partial_detail_target_count: 0,
+              },
+              detail_source_readiness_posture: "partially_ready",
+              detail_ready_target_count: 2,
+              no_policies_observed_target_count: 1,
+              detail_unavailable_target_count: 0,
+              partial_detail_target_count: 0,
+            },
+            {
+              snapshot_id: "policy-snap-b",
+              persisted_at: "2024-12-31T00:00:00Z",
+              observed_at: "2024-12-31T00:00:00Z",
+              data_status: "live",
+              sync_source: "persisted_policy_snapshot",
+              sync_status: "ok",
+              completeness: "partial",
+              detail_mode: "static_policies_when_present",
+              empty_reason: "none",
+              observed_policy_count: 2,
+              active_policy_count: 2,
+              detail_record_count: 2,
+            },
+          ],
+          comparison_to_previous: {
+            current_snapshot_id: "policy-snap-a",
+            previous_snapshot_id: "policy-snap-b",
+            current_persisted_at: "2025-01-01T00:00:00Z",
+            previous_persisted_at: "2024-12-31T00:00:00Z",
+            current_observed_policy_count: 2,
+            previous_observed_policy_count: 2,
+            current_detail_record_count: 2,
+            previous_detail_record_count: 2,
+            observed_policy_delta: 0,
+            detail_record_delta: 0,
+            added_policy_count: 0,
+            removed_policy_count: 0,
+            changed_policy_count: 0,
+            change_preview: [],
+            notes: [],
+          },
+        },
+      }),
+    );
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    const html = renderToStaticMarkup(<OverviewView />);
+
+    expect(html).toContain("Policy history");
+    expect(html).toContain("2 snapshots");
+    expect(html).toContain("comparison ready");
+    expect(html).toContain("partially ready");
+    expect(html).toContain("Latest-versus-previous comparison is available");
   });
 
   it("surfaces inventory history trust cue when devices exposes comparison-ready persisted history", () => {

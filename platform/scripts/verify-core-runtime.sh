@@ -385,11 +385,26 @@ else
   notice "No persisted topology snapshot rows in Postgres; topology history contract checks for snapshot-level coverage keys are skipped (fresh baseline is honest)."
 fi
 
+# Policy persisted history: gate snapshot-level keys on a non-empty recent_snapshots list (prefix
+# match), and comparison keys when comparison_to_previous is present—mirrors devices + week 20
+# anchors (sync_run_id, source_endpoint, target counts, nested detail_source_readiness).
 if [ "$policy_snapshots_count" -gt 0 ]; then
   assert_not_contains "policies response" "$policies_response" '"history":{"status":"unavailable"'
   assert_contains "policies response" "$policies_response" '"recent_snapshots":['
   if printf '%s' "$policies_response" | grep -qF '"recent_snapshots":[{"snapshot_id"'; then
     assert_contains "policies response (history snapshots)" "$policies_response" '"snapshot_id":"'
+    assert_contains "policies response (history snapshots)" "$policies_response" '"sync_run_id":"'
+    assert_contains "policies response (history snapshots)" "$policies_response" '"source_endpoint":"'
+    assert_contains "policies response (history snapshots)" "$policies_response" '"persisted_at":"'
+    assert_contains "policies response (history snapshots)" "$policies_response" '"observed_at":'
+    assert_contains "policies response (history snapshots)" "$policies_response" '"observed_target_count":'
+    assert_contains "policies response (history snapshots)" "$policies_response" '"policy_capable_target_count":'
+    assert_contains "policies response (history snapshots)" "$policies_response" '"static_local_policy_count":'
+    nested_readiness_hits=$(printf '%s' "$policies_response" | grep -o '"detail_source_readiness":{' | wc -l | tr -d ' ')
+    if [ "${nested_readiness_hits:-0}" -lt 2 ]; then
+      echo "policies response: expected nested detail_source_readiness on history.recent_snapshots in addition to top-level (at least 2 occurrences), got ${nested_readiness_hits:-0}" >&2
+      exit 1
+    fi
     posture_hits=$(printf '%s' "$policies_response" | grep -o '"detail_source_readiness_posture":"' | wc -l | tr -d ' ')
     if [ "${posture_hits:-0}" -lt 1 ]; then
       echo "policies response: expected detail_source_readiness_posture on history.recent_snapshots entries, got ${posture_hits:-0}" >&2
@@ -413,6 +428,19 @@ if [ "$policy_snapshots_count" -gt 0 ]; then
     assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"previous_detail_unavailable_target_count"'
     assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"current_partial_detail_target_count"'
     assert_contains "policies response (history comparison source-readiness)" "$policies_response" '"previous_partial_detail_target_count"'
+    assert_contains "policies response (history comparison anchors)" "$policies_response" '"current_observed_at":'
+    assert_contains "policies response (history comparison anchors)" "$policies_response" '"previous_observed_at":'
+    assert_contains "policies response (history comparison anchors)" "$policies_response" '"current_sync_run_id":"'
+    assert_contains "policies response (history comparison anchors)" "$policies_response" '"previous_sync_run_id":"'
+    assert_contains "policies response (history comparison anchors)" "$policies_response" '"current_source_endpoint":"'
+    assert_contains "policies response (history comparison anchors)" "$policies_response" '"previous_source_endpoint":"'
+    assert_contains "policies response (history comparison anchors)" "$policies_response" '"current_data_status":"'
+    assert_contains "policies response (history comparison anchors)" "$policies_response" '"previous_data_status":"'
+    assert_contains "policies response (history comparison anchors)" "$policies_response" '"current_static_local_policy_count"'
+    assert_contains "policies response (history comparison anchors)" "$policies_response" '"previous_static_local_policy_count"'
+    assert_contains "policies response (history comparison anchors)" "$policies_response" '"static_local_policy_delta"'
+    assert_contains "policies response (history comparison nested readiness)" "$policies_response" '"current_detail_source_readiness":{'
+    assert_contains "policies response (history comparison nested readiness)" "$policies_response" '"previous_detail_source_readiness":{'
   fi
 else
   notice "No persisted policy snapshot rows in Postgres; policy history contract checks for snapshot-level source-readiness keys are skipped (fresh baseline is honest)."
@@ -444,6 +472,8 @@ assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_readiness
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_sync_runs_total'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_inventory_snapshots_persisted_total'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_inventory_snapshot_latest_persisted_at_seconds'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshots_persisted_total'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshot_latest_persisted_at_seconds'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_inventory_newest_observed_timestamp_seconds'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_paired_links'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_single_sided_links'

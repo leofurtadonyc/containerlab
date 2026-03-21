@@ -29,6 +29,7 @@ from app_api.models.policy import PolicyDetailSourceReadiness, PolicyInventorySn
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.persistence.history import (
     InventorySnapshotMetricsSummary,
+    PolicySnapshotMetricsSummary,
     PersistedInventorySnapshotComparison,
     PersistedInventorySnapshotSummary as PersistedInventoryHistorySummary,
     PersistedPolicySnapshotComparison,
@@ -1195,6 +1196,8 @@ def _build_persisted_policy_snapshot() -> PersistedPolicySnapshot:
         snapshot_id="policy-snapshot-1",
         sync_run_id="sync-policy-0",
         persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+        data_status="degraded",
+        source_endpoint="http://gnmi-collector:9804/policies/snapshot",
         detail_ready_target_count=1,
         snapshot=PolicyInventorySnapshot(
             sync_source="persisted_policy_snapshot",
@@ -1278,6 +1281,8 @@ def _build_previous_persisted_policy_snapshot() -> PersistedPolicySnapshot:
         snapshot_id="policy-snapshot-0",
         sync_run_id="sync-policy-previous",
         persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+        data_status="live",
+        source_endpoint="http://gnmi-collector:9804/policies/snapshot",
         detail_ready_target_count=2,
         snapshot=PolicyInventorySnapshot(
             sync_source="persisted_policy_snapshot",
@@ -1360,7 +1365,9 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
             persisted_at=datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
             snapshot={
                 "snapshot_id": "policy-snapshot-1",
+                "sync_run_id": "sync-policy-run-1",
                 "persisted_at": datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
+                "source_endpoint": "http://gnmi-collector:9804/policies/snapshot",
                 "observed_at": datetime.fromisoformat("2026-03-10T00:00:00+00:00"),
                 "data_status": "degraded",
                 "sync_source": "persisted_policy_snapshot",
@@ -1370,7 +1377,16 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
                 "empty_reason": "none",
                 "observed_policy_count": 1,
                 "active_policy_count": 1,
+                "static_local_policy_count": 1,
+                "observed_target_count": 2,
+                "policy_capable_target_count": 2,
                 "detail_record_count": 1,
+                "detail_source_readiness": {
+                    "posture": "partially_ready",
+                    "no_policies_observed_target_count": 0,
+                    "detail_unavailable_target_count": 0,
+                    "partial_detail_target_count": 0,
+                },
                 "detail_source_readiness_posture": "partially_ready",
                 "detail_ready_target_count": 1,
                 "no_policies_observed_target_count": 0,
@@ -1383,7 +1399,9 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
             persisted_at=datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
             snapshot={
                 "snapshot_id": "policy-snapshot-0",
+                "sync_run_id": "sync-policy-run-0",
                 "persisted_at": datetime.fromisoformat("2026-03-09T23:30:00+00:00"),
+                "source_endpoint": "http://gnmi-collector:9804/policies/snapshot",
                 "observed_at": datetime.fromisoformat("2026-03-09T23:29:00+00:00"),
                 "data_status": "live",
                 "sync_source": "persisted_policy_snapshot",
@@ -1393,7 +1411,16 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
                 "empty_reason": "none",
                 "observed_policy_count": 2,
                 "active_policy_count": 1,
+                "static_local_policy_count": 1,
+                "observed_target_count": 2,
+                "policy_capable_target_count": 2,
                 "detail_record_count": 2,
+                "detail_source_readiness": {
+                    "posture": "partially_ready",
+                    "no_policies_observed_target_count": 0,
+                    "detail_unavailable_target_count": 0,
+                    "partial_detail_target_count": 0,
+                },
                 "detail_source_readiness_posture": "partially_ready",
                 "detail_ready_target_count": 2,
                 "no_policies_observed_target_count": 0,
@@ -1406,7 +1433,9 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
             persisted_at=datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
             snapshot={
                 "snapshot_id": "policy-snapshot-minus-1",
+                "sync_run_id": "sync-policy-run-old",
                 "persisted_at": datetime.fromisoformat("2026-03-09T23:00:00+00:00"),
+                "source_endpoint": "http://gnmi-collector:9804/policies/snapshot",
                 "observed_at": datetime.fromisoformat("2026-03-09T22:59:00+00:00"),
                 "data_status": "live",
                 "sync_source": "persisted_policy_snapshot",
@@ -1416,7 +1445,16 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
                 "empty_reason": "per_policy_details_unavailable",
                 "observed_policy_count": 2,
                 "active_policy_count": 0,
+                "static_local_policy_count": 0,
+                "observed_target_count": 2,
+                "policy_capable_target_count": 2,
                 "detail_record_count": 0,
+                "detail_source_readiness": {
+                    "posture": "source_detail_unavailable",
+                    "no_policies_observed_target_count": 0,
+                    "detail_unavailable_target_count": 2,
+                    "partial_detail_target_count": 0,
+                },
                 "detail_source_readiness_posture": "source_detail_unavailable",
                 "detail_ready_target_count": 0,
                 "no_policies_observed_target_count": 0,
@@ -1442,8 +1480,11 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             persisted_artifacts=["policy_snapshot"],
             policy_snapshot_summary=PersistedPolicyHistorySummary(
                 snapshot_id="policy-snapshot-sync-1",
+                sync_run_id="sync-policy-1",
                 persisted_at=datetime.fromisoformat("2026-03-10T01:30:04+00:00"),
+                source_endpoint="http://gnmi-collector:9804/policies/snapshot",
                 observed_at=datetime.fromisoformat("2026-03-10T01:30:00+00:00"),
+                data_status="live",
                 sync_source="persisted_policy_snapshot",
                 sync_status="ok",
                 completeness="partial",
@@ -1451,7 +1492,16 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
                 empty_reason="none",
                 observed_policy_count=1,
                 active_policy_count=1,
+                static_local_policy_count=1,
+                observed_target_count=2,
+                policy_capable_target_count=2,
                 detail_record_count=1,
+                detail_source_readiness=PolicyDetailSourceReadiness(
+                    posture="partially_ready",
+                    no_policies_observed_target_count=0,
+                    detail_unavailable_target_count=0,
+                    partial_detail_target_count=0,
+                ),
                 detail_source_readiness_posture="partially_ready",
                 detail_ready_target_count=1,
                 no_policies_observed_target_count=0,
@@ -1475,10 +1525,39 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
                 notes=[
                     "Comparison evidence remains bounded to persisted normalized policy snapshots."
                 ],
+                current_detail_source_readiness_posture="partially_ready",
+                previous_detail_source_readiness_posture="partially_ready",
+                current_detail_ready_target_count=1,
+                previous_detail_ready_target_count=2,
+                current_no_policies_observed_target_count=0,
+                previous_no_policies_observed_target_count=0,
                 current_detail_unavailable_target_count=0,
                 previous_detail_unavailable_target_count=3,
                 current_partial_detail_target_count=1,
                 previous_partial_detail_target_count=0,
+                current_static_local_policy_count=1,
+                previous_static_local_policy_count=1,
+                static_local_policy_delta=0,
+                current_data_status="live",
+                previous_data_status="live",
+                current_observed_at=datetime.fromisoformat("2026-03-10T01:30:00+00:00"),
+                previous_observed_at=datetime.fromisoformat("2026-03-10T01:00:00+00:00"),
+                current_sync_run_id="sync-policy-1",
+                previous_sync_run_id="sync-policy-0",
+                current_source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+                previous_source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+                current_detail_source_readiness=PolicyDetailSourceReadiness(
+                    posture="partially_ready",
+                    no_policies_observed_target_count=0,
+                    detail_unavailable_target_count=0,
+                    partial_detail_target_count=1,
+                ),
+                previous_detail_source_readiness=PolicyDetailSourceReadiness(
+                    posture="partially_ready",
+                    no_policies_observed_target_count=0,
+                    detail_unavailable_target_count=3,
+                    partial_detail_target_count=0,
+                ),
             ),
             notes=["Policy sync completed from the bounded live path."],
         ),
@@ -1726,6 +1805,17 @@ def _build_inventory_snapshot_metrics_summary() -> InventorySnapshotMetricsSumma
 
 def _build_empty_inventory_snapshot_metrics_summary() -> InventorySnapshotMetricsSummary:
     return InventorySnapshotMetricsSummary()
+
+
+def _build_policy_snapshot_metrics_summary() -> PolicySnapshotMetricsSummary:
+    return PolicySnapshotMetricsSummary(
+        persisted_row_count=2,
+        latest_persisted_at=datetime.fromisoformat("2026-03-10T12:00:00+00:00"),
+    )
+
+
+def _build_empty_policy_snapshot_metrics_summary() -> PolicySnapshotMetricsSummary:
+    return PolicySnapshotMetricsSummary()
 
 
 # Pinned JSON keys for workflow-history / audit-history inventory evidence (matches OpenAPI contracts).
@@ -3088,6 +3178,19 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["history"]["status"] == "comparison_ready"
     assert len(payload["history"]["recent_snapshots"]) == 3
     assert payload["history"]["recent_snapshots"][0]["snapshot_id"] == "policy-snapshot-1"
+    assert payload["history"]["recent_snapshots"][0]["sync_run_id"] == "sync-policy-run-1"
+    assert (
+        payload["history"]["recent_snapshots"][0]["source_endpoint"]
+        == "http://gnmi-collector:9804/policies/snapshot"
+    )
+    assert payload["history"]["recent_snapshots"][0]["observed_target_count"] == 2
+    assert payload["history"]["recent_snapshots"][0]["policy_capable_target_count"] == 2
+    assert payload["history"]["recent_snapshots"][0]["detail_source_readiness"] == {
+        "posture": "partially_ready",
+        "no_policies_observed_target_count": 0,
+        "detail_unavailable_target_count": 0,
+        "partial_detail_target_count": 0,
+    }
     assert payload["history"]["recent_snapshots"][0]["detail_source_readiness_posture"] == "partially_ready"
     assert payload["history"]["recent_snapshots"][0]["detail_ready_target_count"] == 1
     assert payload["history"]["recent_snapshots"][0]["no_policies_observed_target_count"] == 0
@@ -3104,6 +3207,30 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["history"]["comparison_to_previous"]["current_partial_detail_target_count"] == 0
     assert payload["history"]["comparison_to_previous"]["previous_partial_detail_target_count"] == 1
     assert payload["history"]["comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-0"
+    assert payload["history"]["comparison_to_previous"]["current_sync_run_id"] == "sync-policy-0"
+    assert payload["history"]["comparison_to_previous"]["previous_sync_run_id"] == "sync-policy-previous"
+    assert (
+        payload["history"]["comparison_to_previous"]["current_source_endpoint"]
+        == "http://gnmi-collector:9804/policies/snapshot"
+    )
+    assert (
+        payload["history"]["comparison_to_previous"]["previous_source_endpoint"]
+        == "http://gnmi-collector:9804/policies/snapshot"
+    )
+    assert payload["history"]["comparison_to_previous"]["current_data_status"] == "degraded"
+    assert payload["history"]["comparison_to_previous"]["previous_data_status"] == "live"
+    assert payload["history"]["comparison_to_previous"]["current_detail_source_readiness"] == {
+        "posture": "partially_ready",
+        "no_policies_observed_target_count": 0,
+        "detail_unavailable_target_count": 0,
+        "partial_detail_target_count": 0,
+    }
+    assert payload["history"]["comparison_to_previous"]["previous_detail_source_readiness"] == {
+        "posture": "partially_ready",
+        "no_policies_observed_target_count": 0,
+        "detail_unavailable_target_count": 2,
+        "partial_detail_target_count": 1,
+    }
     assert (
         payload["history"]["recent_snapshots"][2]["detail_unavailable_target_count"] == 2
         and payload["history"]["recent_snapshots"][2]["partial_detail_target_count"] == 0
@@ -3170,6 +3297,13 @@ def test_policies_history_current_only_exposes_readiness_without_comparison(monk
     assert len(payload["history"]["recent_snapshots"]) == 1
     snap = payload["history"]["recent_snapshots"][0]
     assert snap["detail_source_readiness_posture"] == "partially_ready"
+    assert snap["sync_run_id"] == "sync-policy-run-1"
+    assert snap["detail_source_readiness"] == {
+        "posture": "partially_ready",
+        "no_policies_observed_target_count": 0,
+        "detail_unavailable_target_count": 0,
+        "partial_detail_target_count": 0,
+    }
     assert snap["detail_ready_target_count"] == 1
     assert snap["no_policies_observed_target_count"] == 0
     assert snap["detail_unavailable_target_count"] == 0
@@ -3215,6 +3349,8 @@ def test_policies_endpoint_keeps_live_empty_state_explicit(monkeypatch) -> None:
     assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] is None
     assert payload["comparison_to_latest_persisted"]["change_preview"] == []
     assert payload["history"]["status"] == "unavailable"
+    assert payload["history"]["recent_snapshots"] == []
+    assert payload["history"]["comparison_to_previous"] is None
     assert "stable per-target policy counter footprint and target-role coverage" in payload["summary"]
 
 
@@ -3249,6 +3385,8 @@ def test_policies_endpoint_keeps_detail_unavailable_state_explicit(monkeypatch) 
     assert payload["target_footprints"][1]["detail_blocker_reason"] == "per_policy_details_unavailable"
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
     assert payload["history"]["status"] == "unavailable"
+    assert payload["history"]["recent_snapshots"] == []
+    assert payload["history"]["comparison_to_previous"] is None
     assert (
         "could not derive per-policy detail records" in payload["summary"]
     )
@@ -3419,6 +3557,16 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert payload["items"][0]["inventory_snapshot_summary"] is None
     assert payload["items"][0]["inventory_comparison_to_previous"] is None
     assert payload["items"][0]["policy_snapshot_summary"]["snapshot_id"] == "policy-snapshot-sync-1"
+    assert payload["items"][0]["policy_snapshot_summary"]["sync_run_id"] == "sync-policy-1"
+    assert (
+        payload["items"][0]["policy_snapshot_summary"]["source_endpoint"]
+        == "http://gnmi-collector:9804/policies/snapshot"
+    )
+    assert payload["items"][0]["policy_snapshot_summary"]["observed_target_count"] == 2
+    assert payload["items"][0]["policy_snapshot_summary"]["policy_capable_target_count"] == 2
+    psr = payload["items"][0]["policy_snapshot_summary"]["detail_source_readiness"]
+    assert psr["posture"] == "partially_ready"
+    assert psr["detail_unavailable_target_count"] == 0
     assert payload["items"][0]["policy_snapshot_summary"]["observed_policy_count"] == 1
     assert payload["items"][0]["policy_comparison_to_previous"]["current_snapshot_id"] == "policy-snapshot-sync-1"
     assert payload["items"][0]["policy_comparison_to_previous"]["previous_snapshot_id"] == "policy-snapshot-sync-0"
@@ -3430,6 +3578,12 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert pcmp["previous_detail_unavailable_target_count"] == 3
     assert pcmp["current_partial_detail_target_count"] == 1
     assert pcmp["previous_partial_detail_target_count"] == 0
+    assert pcmp["current_sync_run_id"] == "sync-policy-1"
+    assert pcmp["previous_sync_run_id"] == "sync-policy-0"
+    assert pcmp["current_source_endpoint"] == "http://gnmi-collector:9804/policies/snapshot"
+    assert pcmp["previous_source_endpoint"] == "http://gnmi-collector:9804/policies/snapshot"
+    assert pcmp["current_detail_source_readiness"]["partial_detail_target_count"] == 1
+    assert pcmp["previous_detail_source_readiness"]["detail_unavailable_target_count"] == 3
     assert payload["items"][1]["workflow_name"] == "topology_snapshot_sync"
     assert payload["items"][1]["status"] == "partial"
     assert payload["items"][1]["persisted_artifacts"] == ["topology_snapshot"]
@@ -4155,6 +4309,10 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         _build_inventory_snapshot_metrics_summary,
     )
     monkeypatch.setattr(
+        "app_api.metrics.router.summarize_policy_snapshot_metrics",
+        _build_policy_snapshot_metrics_summary,
+    )
+    monkeypatch.setattr(
         "app_api.services.capabilities.load_latest_readiness_snapshot_reference",
         lambda: SimpleNamespace(
             snapshot_id="readiness-snapshot-metrics",
@@ -4282,6 +4440,11 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
         "platform_app_api_inventory_snapshot_latest_persisted_at_seconds 1773144000.000"
         in response.text
     )
+    assert "platform_app_api_policy_snapshots_persisted_total 2" in response.text
+    assert (
+        "platform_app_api_policy_snapshot_latest_persisted_at_seconds 1773144000.000"
+        in response.text
+    )
 
 
 def test_metrics_endpoint_exports_new_baseline_recovery_posture(monkeypatch) -> None:
@@ -4352,6 +4515,10 @@ def test_metrics_endpoint_exports_new_baseline_recovery_posture(monkeypatch) -> 
         _build_empty_inventory_snapshot_metrics_summary,
     )
     monkeypatch.setattr(
+        "app_api.metrics.router.summarize_policy_snapshot_metrics",
+        _build_empty_policy_snapshot_metrics_summary,
+    )
+    monkeypatch.setattr(
         "app_api.services.capabilities.load_latest_readiness_snapshot_reference",
         lambda: None,
     )
@@ -4377,6 +4544,11 @@ def test_metrics_endpoint_exports_new_baseline_recovery_posture(monkeypatch) -> 
     assert "platform_app_api_inventory_snapshots_persisted_total 0" in response.text
     assert (
         "platform_app_api_inventory_snapshot_latest_persisted_at_seconds 0.000"
+        in response.text
+    )
+    assert "platform_app_api_policy_snapshots_persisted_total 0" in response.text
+    assert (
+        "platform_app_api_policy_snapshot_latest_persisted_at_seconds 0.000"
         in response.text
     )
 
@@ -4417,6 +4589,10 @@ def test_metrics_endpoint_exports_mixed_topology_pairing_posture(monkeypatch) ->
         _build_inventory_snapshot_metrics_summary,
     )
     monkeypatch.setattr(
+        "app_api.metrics.router.summarize_policy_snapshot_metrics",
+        _build_policy_snapshot_metrics_summary,
+    )
+    monkeypatch.setattr(
         "app_api.services.capabilities.load_latest_readiness_snapshot_reference",
         lambda: SimpleNamespace(
             snapshot_id="readiness-snapshot-metrics",
@@ -4430,6 +4606,7 @@ def test_metrics_endpoint_exports_mixed_topology_pairing_posture(monkeypatch) ->
 
     assert response.status_code == 200
     assert "platform_app_api_inventory_snapshots_persisted_total 2" in response.text
+    assert "platform_app_api_policy_snapshots_persisted_total 2" in response.text
     assert "platform_app_api_topology_paired_links 1" in response.text
     assert "platform_app_api_topology_single_sided_links 1" in response.text
     assert "platform_app_api_topology_linked_nodes 3" in response.text
@@ -4477,6 +4654,10 @@ def test_metrics_endpoint_exports_isolated_topology_node_participation(monkeypat
         _build_inventory_snapshot_metrics_summary,
     )
     monkeypatch.setattr(
+        "app_api.metrics.router.summarize_policy_snapshot_metrics",
+        _build_policy_snapshot_metrics_summary,
+    )
+    monkeypatch.setattr(
         "app_api.services.capabilities.load_latest_readiness_snapshot_reference",
         lambda: SimpleNamespace(
             snapshot_id="readiness-snapshot-metrics",
@@ -4490,6 +4671,7 @@ def test_metrics_endpoint_exports_isolated_topology_node_participation(monkeypat
 
     assert response.status_code == 200
     assert "platform_app_api_inventory_snapshots_persisted_total 2" in response.text
+    assert "platform_app_api_policy_snapshots_persisted_total 2" in response.text
     assert "platform_app_api_topology_linked_nodes 2" in response.text
     assert "platform_app_api_topology_isolated_nodes 1" in response.text
     assert (
@@ -4550,6 +4732,10 @@ def test_metrics_endpoint_exports_fully_isolated_topology_node_participation(mon
         _build_inventory_snapshot_metrics_summary,
     )
     monkeypatch.setattr(
+        "app_api.metrics.router.summarize_policy_snapshot_metrics",
+        _build_policy_snapshot_metrics_summary,
+    )
+    monkeypatch.setattr(
         "app_api.services.capabilities.load_latest_readiness_snapshot_reference",
         lambda: SimpleNamespace(
             snapshot_id="readiness-snapshot-metrics",
@@ -4563,6 +4749,7 @@ def test_metrics_endpoint_exports_fully_isolated_topology_node_participation(mon
 
     assert response.status_code == 200
     assert "platform_app_api_inventory_snapshots_persisted_total 2" in response.text
+    assert "platform_app_api_policy_snapshots_persisted_total 2" in response.text
     assert "platform_app_api_topology_linked_nodes 0" in response.text
     assert "platform_app_api_topology_isolated_nodes 3" in response.text
     assert (
@@ -4624,6 +4811,10 @@ def test_metrics_endpoint_exports_timeout_boundary_posture(monkeypatch) -> None:
         "app_api.metrics.router.summarize_inventory_snapshot_metrics",
         _build_empty_inventory_snapshot_metrics_summary,
     )
+    monkeypatch.setattr(
+        "app_api.metrics.router.summarize_policy_snapshot_metrics",
+        _build_empty_policy_snapshot_metrics_summary,
+    )
 
     reset_metrics_registry()
     client.get("/api/v1/platform/status")
@@ -4632,6 +4823,7 @@ def test_metrics_endpoint_exports_timeout_boundary_posture(monkeypatch) -> None:
 
     assert response.status_code == 200
     assert "platform_app_api_inventory_snapshots_persisted_total 0" in response.text
+    assert "platform_app_api_policy_snapshots_persisted_total 0" in response.text
     assert (
         'platform_app_api_collector_boundary_latest_fetch_duration_seconds{model_family="inventory",outcome="timeout_budget_exceeded"} 3.021000000'
         in response.text

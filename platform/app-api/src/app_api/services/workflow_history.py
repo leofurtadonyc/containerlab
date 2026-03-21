@@ -3,6 +3,7 @@
 from datetime import UTC, datetime
 
 from app_api.config.settings import get_settings
+from app_api.models.policy import PolicyDetailSourceReadiness
 from app_api.models.workflow import (
     WorkflowHistoryRecord,
     WorkflowInventorySnapshotComparison,
@@ -15,6 +16,7 @@ from app_api.models.workflow import (
 from app_api.persistence.history import load_sync_runs
 from app_api.services.history_baseline import build_history_baseline_summary
 from app_api.schemas.devices import InventoryHistoryChangePreview as InventoryHistoryChangePreviewSchema
+from app_api.schemas.policies import PolicyDetailSourceReadinessRecord
 from app_api.schemas.workflow_history import (
     WorkflowHistoryItem,
     WorkflowInventorySnapshotComparison as WorkflowInventorySnapshotComparisonResponse,
@@ -25,6 +27,17 @@ from app_api.schemas.workflow_history import (
     WorkflowTopologySnapshotSummary as WorkflowTopologySnapshotSummaryResponse,
     WorkflowHistoryResponse,
 )
+
+
+def _policy_readiness_to_record(
+    readiness: PolicyDetailSourceReadiness,
+) -> PolicyDetailSourceReadinessRecord:
+    return PolicyDetailSourceReadinessRecord(
+        posture=readiness.posture,
+        no_policies_observed_target_count=readiness.no_policies_observed_target_count,
+        detail_unavailable_target_count=readiness.detail_unavailable_target_count,
+        partial_detail_target_count=readiness.partial_detail_target_count,
+    )
 
 
 def _map_sync_status(fetch_status: str) -> str:
@@ -172,8 +185,11 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
             policy_snapshot_summary=(
                 WorkflowPolicySnapshotSummary(
                     snapshot_id=sync_run.policy_snapshot_summary.snapshot_id,
+                    sync_run_id=sync_run.policy_snapshot_summary.sync_run_id,
                     persisted_at=sync_run.policy_snapshot_summary.persisted_at,
+                    source_endpoint=sync_run.policy_snapshot_summary.source_endpoint,
                     observed_at=sync_run.policy_snapshot_summary.observed_at,
+                    data_status=sync_run.policy_snapshot_summary.data_status,
                     sync_source=sync_run.policy_snapshot_summary.sync_source,
                     sync_status=sync_run.policy_snapshot_summary.sync_status,
                     completeness=sync_run.policy_snapshot_summary.completeness,
@@ -181,7 +197,11 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                     empty_reason=sync_run.policy_snapshot_summary.empty_reason,
                     observed_policy_count=sync_run.policy_snapshot_summary.observed_policy_count,
                     active_policy_count=sync_run.policy_snapshot_summary.active_policy_count,
+                    static_local_policy_count=sync_run.policy_snapshot_summary.static_local_policy_count,
+                    observed_target_count=sync_run.policy_snapshot_summary.observed_target_count,
+                    policy_capable_target_count=sync_run.policy_snapshot_summary.policy_capable_target_count,
                     detail_record_count=sync_run.policy_snapshot_summary.detail_record_count,
+                    detail_source_readiness=sync_run.policy_snapshot_summary.detail_source_readiness,
                     detail_source_readiness_posture=sync_run.policy_snapshot_summary.detail_source_readiness_posture,
                     detail_ready_target_count=sync_run.policy_snapshot_summary.detail_ready_target_count,
                     no_policies_observed_target_count=sync_run.policy_snapshot_summary.no_policies_observed_target_count,
@@ -217,6 +237,19 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                     previous_detail_unavailable_target_count=sync_run.policy_comparison_to_previous.previous_detail_unavailable_target_count,
                     current_partial_detail_target_count=sync_run.policy_comparison_to_previous.current_partial_detail_target_count,
                     previous_partial_detail_target_count=sync_run.policy_comparison_to_previous.previous_partial_detail_target_count,
+                    current_static_local_policy_count=sync_run.policy_comparison_to_previous.current_static_local_policy_count,
+                    previous_static_local_policy_count=sync_run.policy_comparison_to_previous.previous_static_local_policy_count,
+                    static_local_policy_delta=sync_run.policy_comparison_to_previous.static_local_policy_delta,
+                    current_data_status=sync_run.policy_comparison_to_previous.current_data_status,
+                    previous_data_status=sync_run.policy_comparison_to_previous.previous_data_status,
+                    current_observed_at=sync_run.policy_comparison_to_previous.current_observed_at,
+                    previous_observed_at=sync_run.policy_comparison_to_previous.previous_observed_at,
+                    current_sync_run_id=sync_run.policy_comparison_to_previous.current_sync_run_id,
+                    previous_sync_run_id=sync_run.policy_comparison_to_previous.previous_sync_run_id,
+                    current_source_endpoint=sync_run.policy_comparison_to_previous.current_source_endpoint,
+                    previous_source_endpoint=sync_run.policy_comparison_to_previous.previous_source_endpoint,
+                    current_detail_source_readiness=sync_run.policy_comparison_to_previous.current_detail_source_readiness,
+                    previous_detail_source_readiness=sync_run.policy_comparison_to_previous.previous_detail_source_readiness,
                 )
                 if sync_run.policy_comparison_to_previous is not None
                 else None
@@ -377,8 +410,11 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                 policy_snapshot_summary=(
                     WorkflowPolicySnapshotSummaryResponse(
                         snapshot_id=record.policy_snapshot_summary.snapshot_id,
+                        sync_run_id=record.policy_snapshot_summary.sync_run_id,
                         persisted_at=record.policy_snapshot_summary.persisted_at,
+                        source_endpoint=record.policy_snapshot_summary.source_endpoint,
                         observed_at=record.policy_snapshot_summary.observed_at,
+                        data_status=record.policy_snapshot_summary.data_status,
                         sync_source=record.policy_snapshot_summary.sync_source,
                         sync_status=record.policy_snapshot_summary.sync_status,
                         completeness=record.policy_snapshot_summary.completeness,
@@ -386,7 +422,13 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                         empty_reason=record.policy_snapshot_summary.empty_reason,
                         observed_policy_count=record.policy_snapshot_summary.observed_policy_count,
                         active_policy_count=record.policy_snapshot_summary.active_policy_count,
+                        static_local_policy_count=record.policy_snapshot_summary.static_local_policy_count,
+                        observed_target_count=record.policy_snapshot_summary.observed_target_count,
+                        policy_capable_target_count=record.policy_snapshot_summary.policy_capable_target_count,
                         detail_record_count=record.policy_snapshot_summary.detail_record_count,
+                        detail_source_readiness=_policy_readiness_to_record(
+                            record.policy_snapshot_summary.detail_source_readiness
+                        ),
                         detail_source_readiness_posture=record.policy_snapshot_summary.detail_source_readiness_posture,
                         detail_ready_target_count=record.policy_snapshot_summary.detail_ready_target_count,
                         no_policies_observed_target_count=record.policy_snapshot_summary.no_policies_observed_target_count,
@@ -422,6 +464,23 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                         previous_detail_unavailable_target_count=record.policy_comparison_to_previous.previous_detail_unavailable_target_count,
                         current_partial_detail_target_count=record.policy_comparison_to_previous.current_partial_detail_target_count,
                         previous_partial_detail_target_count=record.policy_comparison_to_previous.previous_partial_detail_target_count,
+                        current_static_local_policy_count=record.policy_comparison_to_previous.current_static_local_policy_count,
+                        previous_static_local_policy_count=record.policy_comparison_to_previous.previous_static_local_policy_count,
+                        static_local_policy_delta=record.policy_comparison_to_previous.static_local_policy_delta,
+                        current_data_status=record.policy_comparison_to_previous.current_data_status,
+                        previous_data_status=record.policy_comparison_to_previous.previous_data_status,
+                        current_observed_at=record.policy_comparison_to_previous.current_observed_at,
+                        previous_observed_at=record.policy_comparison_to_previous.previous_observed_at,
+                        current_sync_run_id=record.policy_comparison_to_previous.current_sync_run_id,
+                        previous_sync_run_id=record.policy_comparison_to_previous.previous_sync_run_id,
+                        current_source_endpoint=record.policy_comparison_to_previous.current_source_endpoint,
+                        previous_source_endpoint=record.policy_comparison_to_previous.previous_source_endpoint,
+                        current_detail_source_readiness=_policy_readiness_to_record(
+                            record.policy_comparison_to_previous.current_detail_source_readiness
+                        ),
+                        previous_detail_source_readiness=_policy_readiness_to_record(
+                            record.policy_comparison_to_previous.previous_detail_source_readiness
+                        ),
                     )
                     if record.policy_comparison_to_previous is not None
                     else None

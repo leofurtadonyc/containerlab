@@ -6,14 +6,18 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from app_api.models.inventory import InventoryHistoryChangePreview
+from app_api.models.policy import PolicyDetailSourceReadiness
 
 
 class AuditPolicySnapshotSummary(BaseModel):
     """Bounded persisted policy snapshot context attached to an audit event."""
 
     snapshot_id: str
+    sync_run_id: str
     persisted_at: datetime
+    source_endpoint: str = ""
     observed_at: datetime | None = None
+    data_status: str
     sync_source: str
     sync_status: str
     completeness: str
@@ -21,7 +25,13 @@ class AuditPolicySnapshotSummary(BaseModel):
     empty_reason: str
     observed_policy_count: int
     active_policy_count: int
+    static_local_policy_count: int = 0
+    observed_target_count: int = 0
+    policy_capable_target_count: int = 0
     detail_record_count: int
+    detail_source_readiness: PolicyDetailSourceReadiness = Field(
+        default_factory=PolicyDetailSourceReadiness
+    )
     detail_source_readiness_posture: str = "unknown"
     detail_ready_target_count: int = 0
     no_policies_observed_target_count: int = 0
@@ -158,6 +168,23 @@ class AuditPolicySnapshotComparison(BaseModel):
     previous_detail_unavailable_target_count: int = 0
     current_partial_detail_target_count: int = 0
     previous_partial_detail_target_count: int = 0
+    current_static_local_policy_count: int = 0
+    previous_static_local_policy_count: int = 0
+    static_local_policy_delta: int = 0
+    current_data_status: str
+    previous_data_status: str
+    current_observed_at: datetime | None = None
+    previous_observed_at: datetime | None = None
+    current_sync_run_id: str = ""
+    previous_sync_run_id: str = ""
+    current_source_endpoint: str = ""
+    previous_source_endpoint: str = ""
+    current_detail_source_readiness: PolicyDetailSourceReadiness = Field(
+        default_factory=PolicyDetailSourceReadiness
+    )
+    previous_detail_source_readiness: PolicyDetailSourceReadiness = Field(
+        default_factory=PolicyDetailSourceReadiness
+    )
 
 
 class AuditReadinessSnapshotSummary(BaseModel):

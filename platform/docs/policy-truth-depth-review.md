@@ -284,3 +284,15 @@ That means the repository now has one unambiguous policy checkpoint:
 
 - go for one bounded collector-first future policy cycle if it stays inside the proven `static_local` source boundary
 - no-go for any broader policy truth claims until new live evidence proves them
+
+## Post–Week 20 scheduling note (policy truth-depth checkpoint)
+
+**Week 20** in the platform program closed **persistence-backed policy history deepening**—recent persisted snapshots, comparison, nested source-readiness, workflow/audit alignment, **`verify-core-runtime`** policy **`history`** checks when gates match, **`policy_snapshots`** table metrics on **`app-api`** **`/metrics`**, and cross-file product-versus-observability doc alignment (see **`../../agent/sdn/03-CURRENT-STATUS.md`** week **20** entries). That work **does not** widen the **live collector proof** beyond what earlier sections of this file already established.
+
+**What week 20 genuinely added (read-side and observability):** durable **`policy_snapshots`** rows carry source-readiness posture and counts; **`/api/v1/policies`** **`history`** exposes anchors and comparison semantics honestly; the **Policies** page and trust cues consume that contract; Grafana mirrors **table depth** and **current** posture only—not rich product **`history`**.
+
+**What remains the same proven live slice:** the **only** live normalized record family proven on the current path is still Nokia **`static_local`** with bounded detail-ready targets and normalized records as described in **Current Live Evidence Snapshot** and **What Source Detail Is Actually Available Now** above. **`static_non_local`**, **BGP-signaled** SR policy, and broader per-target detail parity are still **not proven** here.
+
+**Scheduling default after week 20:** follow **`platform/docs/decisions/ADR-0001-next-bounded-truth-depth-slice.md`** **Priority 2** (evidence-first reassessment). Do **not** open a new implementation lane by assuming week **20** “finished policy”—week **20** finished **history and observability alignment** for the **existing** bounded envelope. Reopen **collector-first** policy truth work only when **new live evidence** justifies a narrow next step **inside** the proven **`static_local`** source boundary, or defer to **documentation-only** alignment and **inventory** read-side ergonomics. Do **not** use week **20** momentum to claim **`static_non_local`**, BGP-signaled, or multi-vendor policy parity without separate collector proof.
+
+**Explicitly still deferred:** workflow-grade policy lifecycle, dry-run or validation semantics, and any policy-family expansion beyond live-proven shapes—unchanged from **Anti-Goals** and **Concrete Prerequisites** above.
