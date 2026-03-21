@@ -101,6 +101,50 @@ function formatSignedDelta(value: number): string {
   return `${value}`;
 }
 
+function describeInventoryHistoryWindowStatus(
+  status: "unavailable" | "current_only" | "comparison_ready",
+): { label: string; detail: string } {
+  if (status === "comparison_ready") {
+    return {
+      label: "Comparison ready",
+      detail:
+        "At least two persisted normalized inventory snapshots exist in this bounded window; the latest pair can be compared read-side.",
+    };
+  }
+  if (status === "current_only") {
+    return {
+      label: "Current snapshot only",
+      detail:
+        "Only one persisted snapshot is listed in this bounded window; comparison to the immediately previous snapshot is not available yet.",
+    };
+  }
+  return {
+    label: "History unavailable",
+    detail:
+      "No persisted inventory history window is available in this posture (fresh baseline, empty history, or backend limitation).",
+  };
+}
+
+function inventoryComparisonAbsentFootnote(
+  status: "unavailable" | "current_only" | "comparison_ready",
+): string {
+  if (status === "current_only") {
+    return (
+      "Only one persisted normalized inventory snapshot exists in this bounded window; comparison to the immediately previous snapshot " +
+      "is not available yet. That can be an honest fresh baseline or first-persist state—not a product fault."
+    );
+  }
+  if (status === "unavailable") {
+    return (
+      "Persisted inventory history is not available for this bounded view, or no snapshots exist yet. Absence here is explicit—not hidden " +
+      "behind inferred comparison."
+    );
+  }
+  return (
+    "Bounded comparison is only available once at least two persisted normalized inventory snapshots exist for this read-side window."
+  );
+}
+
 export function DevicesView() {
   const { data, error, isLoading, reload } = useDevicesQuery();
   const [searchValue, setSearchValue] = useState("");
@@ -173,6 +217,7 @@ export function DevicesView() {
     data.serving_mode,
   );
   const historyComparison = data.history.comparison_to_previous;
+  const historyWindowReadout = describeInventoryHistoryWindowStatus(data.history.status);
   const collectorFilterLabel =
     data.serving_mode === "persisted_fallback"
       ? "Last recorded collector state"
@@ -244,8 +289,9 @@ export function DevicesView() {
         </article>
         <article className="summary-card">
           <p className="summary-label">Persisted History</p>
-          <strong>{formatLabel(data.history.status)}</strong>
+          <strong>{historyWindowReadout.label}</strong>
           <p>{data.history.summary}</p>
+          <p className="table-note">{historyWindowReadout.detail}</p>
         </article>
         <article className="summary-card">
           <p className="summary-label">{collectorOkLabel}</p>
@@ -298,7 +344,7 @@ export function DevicesView() {
             The current device response can be compared with the latest persisted normalized
             inventory snapshot from{" "}
             {formatDateTime(data.comparison_to_latest_persisted.comparison_persisted_at)}. This
-            remains bounded normalized evidence, not drift analysis or validation guidance.
+            remains bounded normalized evidence, not an automated network-diff or operator sign-off.
           </p>
           <p className="table-note">
             Persisted snapshot anchor:{" "}
@@ -424,67 +470,151 @@ export function DevicesView() {
         <article className="detail-card">
           <h3>Persisted History And Comparison</h3>
           <p>{data.history.summary}</p>
+          <p className="table-note">
+            These rows are read-side, persisted-inventory evidence from the backend. They help you
+            see what changed between stored snapshots—they do not assert controller ground truth,
+            deployment readiness, or operator approval to modify the network.
+          </p>
           {historyComparison ? (
-            <ul className="compact-list">
-              <li>
-                <span>Current snapshot anchor</span>
-                <IdentifierChip value={historyComparison.current_snapshot_id} />
-              </li>
-              <li>
-                <span>Previous snapshot anchor</span>
-                <IdentifierChip value={historyComparison.previous_snapshot_id} />
-              </li>
-              <li>
-                <span>Current / previous persisted</span>
-                <strong>
-                  {formatDateTime(historyComparison.current_persisted_at)} /{" "}
-                  {formatDateTime(historyComparison.previous_persisted_at)}
-                </strong>
-              </li>
-              <li>
-                <span>Device delta</span>
-                <strong>{formatSignedDelta(historyComparison.device_count_delta)}</strong>
-              </li>
-              <li>
-                <span>Current / previous devices</span>
-                <strong>
-                  {historyComparison.current_device_count} / {historyComparison.previous_device_count}
-                </strong>
-              </li>
-              <li>
-                <span>Added / removed devices</span>
-                <strong>
-                  {historyComparison.added_device_count} / {historyComparison.removed_device_count}
-                </strong>
-              </li>
-              <li>
-                <span>Changed devices</span>
-                <strong>{historyComparison.changed_device_count}</strong>
-              </li>
-            </ul>
+            <>
+              <ul className="compact-list">
+                <li>
+                  <span>Current snapshot anchor</span>
+                  <IdentifierChip value={historyComparison.current_snapshot_id} />
+                </li>
+                <li>
+                  <span>Previous snapshot anchor</span>
+                  <IdentifierChip value={historyComparison.previous_snapshot_id} />
+                </li>
+                <li>
+                  <span>Current / previous persisted</span>
+                  <strong>
+                    {formatDateTime(historyComparison.current_persisted_at)} /{" "}
+                    {formatDateTime(historyComparison.previous_persisted_at)}
+                  </strong>
+                </li>
+                <li>
+                  <span>Current / previous observed</span>
+                  <strong>
+                    {historyComparison.current_observed_at
+                      ? formatDateTime(historyComparison.current_observed_at)
+                      : "Not set"}
+                    {" / "}
+                    {historyComparison.previous_observed_at
+                      ? formatDateTime(historyComparison.previous_observed_at)
+                      : "Not set"}
+                  </strong>
+                </li>
+                <li>
+                  <span>Current / previous sync status</span>
+                  <strong>
+                    {formatLabel(historyComparison.current_sync_status)} /{" "}
+                    {formatLabel(historyComparison.previous_sync_status)}
+                  </strong>
+                </li>
+                <li>
+                  <span>Current / previous data status</span>
+                  <strong>
+                    {formatLabel(historyComparison.current_data_status)} /{" "}
+                    {formatLabel(historyComparison.previous_data_status)}
+                  </strong>
+                </li>
+                <li>
+                  <span>Device delta</span>
+                  <strong>{formatSignedDelta(historyComparison.device_count_delta)}</strong>
+                </li>
+                <li>
+                  <span>Current / previous devices</span>
+                  <strong>
+                    {historyComparison.current_device_count} / {historyComparison.previous_device_count}
+                  </strong>
+                </li>
+                <li>
+                  <span>Added / removed devices</span>
+                  <strong>
+                    {historyComparison.added_device_count} / {historyComparison.removed_device_count}
+                  </strong>
+                </li>
+                <li>
+                  <span>Changed devices</span>
+                  <strong>{historyComparison.changed_device_count}</strong>
+                </li>
+              </ul>
+              {historyComparison.change_preview.length > 0 ? (
+                <div className="history-change-preview">
+                  <p className="summary-label">Bounded change preview</p>
+                  <p className="table-note">
+                    Short list of normalized device records illustrating this comparison. The backend
+                    may cap the list; absence of a device here does not mean no other changes
+                    occurred.
+                  </p>
+                  <div className="table-card table-card--nested">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Device</th>
+                          <th>Vendor</th>
+                          <th>Platform</th>
+                          <th>Role</th>
+                          <th>Change</th>
+                          <th>Fields</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {historyComparison.change_preview.map((row, index) => (
+                          <tr key={`${row.device_id}-${row.change_kind}-${index}`}>
+                            <td>
+                              <strong>{row.device_id}</strong>
+                            </td>
+                            <td>{row.vendor}</td>
+                            <td>{row.platform}</td>
+                            <td>{row.role ?? "—"}</td>
+                            <td>{formatLabel(row.change_kind)}</td>
+                            <td>
+                              {row.changed_fields.length > 0
+                                ? row.changed_fields.join(", ")
+                                : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : null}
+            </>
           ) : (
-            <p className="footnote">
-              Bounded comparison is only available once at least two persisted normalized inventory
-              snapshots exist.
-            </p>
+            <p className="footnote">{inventoryComparisonAbsentFootnote(data.history.status)}</p>
           )}
         </article>
         <article className="detail-card">
           <h3>Recent Persisted Snapshots</h3>
+          <p className="table-note">
+            Each row is one persisted normalized inventory snapshot the backend exposes in this
+            bounded window—anchors, sync metadata, and counts are trust cues from stored reads, not
+            live-controller ground truth.
+          </p>
           {data.history.recent_snapshots.length > 0 ? (
             <ul className="notes-list">
               {data.history.recent_snapshots.map((entry) => (
                 <li key={entry.snapshot_id}>
-                  <strong>{formatDateTime(entry.persisted_at)}</strong>
-                  {" • anchor "}
-                  <IdentifierChip value={entry.snapshot_id} />
-                  {" • "}
-                  {formatLabel(entry.data_status)}
-                  {" • devices "}
-                  {entry.device_count}
-                  {" • sync "}
-                  {formatLabel(entry.sync_status)}
-                  {entry.observed_at ? ` • observed at ${formatDateTime(entry.observed_at)}` : ""}
+                  <div>
+                    <strong>{formatDateTime(entry.persisted_at)}</strong>
+                    {" · "}
+                    {formatLabel(entry.data_status)}
+                    {" · "}
+                    {entry.device_count} devices
+                  </div>
+                  <div className="table-note">
+                    Snapshot <IdentifierChip value={entry.snapshot_id} />
+                    {" · sync run "}
+                    <IdentifierChip value={entry.sync_run_id} />
+                  </div>
+                  <div className="table-note">
+                    {formatLabel(entry.sync_source)} · sync {formatLabel(entry.sync_status)}
+                    {entry.observed_at ? ` · observed ${formatDateTime(entry.observed_at)}` : ""}
+                  </div>
+                  <div className="table-note">Source endpoint: {entry.source_endpoint}</div>
                 </li>
               ))}
             </ul>
