@@ -64,6 +64,8 @@ to **rebuild** repo-built images and **redeploy** before **`verify-core-runtime.
 can observe **`platform_app_api_inventory_snapshots_persisted_total`** on a running
 stack.
 
+**Topology scheduling (post–Week 19):** **`topology-truth-depth-review.md`** now states explicitly that the **partiality contract** remains **closed** in shipped code and that **ADR-0001** **Priority 2** is the default **evidence-first** next step—not opportunistic topology code after the inventory slice.
+
 ### Live runtime verification
 
 - `./scripts/verify-core-runtime.sh` passed for the current deployment (including conditional `/api/v1/policies` policy-history JSON keys when Postgres holds policy snapshots and the API lists recent snapshots, with honest skip notices on a fresh baseline; the same **prefix-based** `history.recent_snapshots` gate and notices apply to **`/api/v1/devices`** inventory history when `inventory_snapshots` rows exist, with **(a)–(d)** snapshot and **`comparison_to_previous`** key assertions when non-empty); **`app-api`** **`/metrics`** exposes **`platform_app_api_inventory_snapshots_persisted_total`** and **`platform_app_api_inventory_snapshot_latest_persisted_at_seconds`** as bounded Postgres table mirrors—not a substitute for devices **`history`** semantics)
