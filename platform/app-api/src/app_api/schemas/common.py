@@ -15,6 +15,15 @@ class ApiResponseMetadata(BaseModel):
     generated_at: datetime
 
 
+ComparisonToLatestPersistedStatus = Literal["unavailable", "live_vs_latest_persisted_ready"]
+"""Shared status for ``comparison_to_latest_persisted`` on list-style read responses.
+
+Used by inventory (``/api/v1/devices``), topology (``/api/v1/topology``), and policies
+(``/api/v1/policies``) so operators and clients see one convention for “live response
+versus latest persisted snapshot” comparison readiness.
+"""
+
+
 class EvidenceConfidenceSummary(BaseModel):
     """Shared summary of evidence basis and truth-confidence posture."""
 

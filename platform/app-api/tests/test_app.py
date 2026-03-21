@@ -3247,7 +3247,7 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert "observed_state" in payload["history"]["comparison_to_previous"]["change_preview"][1]["changed_fields"]
     assert "health_state" in payload["history"]["comparison_to_previous"]["change_preview"][1]["changed_fields"]
     assert "candidate_paths" in payload["history"]["comparison_to_previous"]["change_preview"][1]["changed_fields"]
-    assert payload["comparison_to_latest_persisted"]["status"] == "current_vs_latest_persisted_ready"
+    assert payload["comparison_to_latest_persisted"]["status"] == "live_vs_latest_persisted_ready"
     assert payload["comparison_to_latest_persisted"]["comparison_snapshot_id"] == "policy-snapshot-1"
     assert payload["comparison_to_latest_persisted"]["persisted_observed_policy_count"] == 1
     assert payload["comparison_to_latest_persisted"]["change_preview"][0]["change_kind"] == "added"

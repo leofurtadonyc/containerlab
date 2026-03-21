@@ -16,7 +16,11 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from app_api.schemas.common import ApiResponseMetadata, EvidenceConfidenceSummary
+from app_api.schemas.common import (
+    ApiResponseMetadata,
+    ComparisonToLatestPersistedStatus,
+    EvidenceConfidenceSummary,
+)
 
 
 CurrentRowPosture = Literal["current", "stale"]
@@ -118,7 +122,7 @@ class TopologyRecord(BaseModel):
 class TopologyComparisonSummary(BaseModel):
     """Bounded current-versus-persisted topology comparison summary."""
 
-    status: Literal["unavailable", "live_vs_latest_persisted_ready"]
+    status: ComparisonToLatestPersistedStatus
     summary: str
     comparison_snapshot_id: str | None = None
     comparison_persisted_at: datetime | None = None

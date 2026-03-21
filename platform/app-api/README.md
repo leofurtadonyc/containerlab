@@ -51,6 +51,7 @@ Current comparison-friendly API reality:
 - `/api/v1/devices` now distinguishes live collector reads, persisted fallback inventory reads, and bounded current-versus-latest-persisted inventory comparison when the backend has both sources available
 - `/api/v1/topology` now distinguishes live collector reads, persisted fallback topology reads, inferred topology evidence, and bounded current-versus-latest-persisted topology comparison where persisted support exists
 - `/api/v1/policies` now distinguishes live collector reads, persisted fallback policy reads, bounded current-versus-latest-persisted policy comparison, and bounded persisted-versus-previous policy snapshot comparison support
+- `comparison_to_latest_persisted.status` uses the same two-valued string contract on devices, topology, and policies: `unavailable` or `live_vs_latest_persisted_ready` (shared alias `ComparisonToLatestPersistedStatus` in the API schemas)
 - `/api/v1/policies` now also exposes a normalized per-target policy footprint so stable Nokia counter evidence remains visible even when the per-policy item list is empty
 - the current comparison surfaces now expose explicit persisted snapshot anchors alongside timestamps: `comparison_snapshot_id` for current-versus-latest-persisted views and `current_snapshot_id` / `previous_snapshot_id` for persisted-versus-previous history views
 - `/api/v1/capabilities` now exposes the persisted readiness-support anchor through `readiness_snapshot_id` when a readiness-support snapshot exists

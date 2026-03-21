@@ -448,10 +448,10 @@ function getCurrentPostureReadout(
 }
 
 function getCurrentComparisonReadout(
-  status: "unavailable" | "current_vs_latest_persisted_ready",
+  status: "unavailable" | "live_vs_latest_persisted_ready",
   servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold",
 ): { label: string; detail: string } {
-  if (status === "current_vs_latest_persisted_ready") {
+  if (status === "live_vs_latest_persisted_ready") {
     return {
       label: "Comparison ready",
       detail:
@@ -984,7 +984,7 @@ export function PoliciesView() {
         </div>
       ) : null}
 
-      {currentComparison.status === "current_vs_latest_persisted_ready" ? (
+      {currentComparison.status === "live_vs_latest_persisted_ready" ? (
         <div className="callout">
           <strong>Bounded current-versus-persisted comparison is available</strong>
           <p>

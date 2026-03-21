@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app_api.schemas.common import ComparisonToLatestPersistedStatus
+
 
 PolicyDetailBlockerReason = Literal[
     "none",
@@ -241,7 +243,7 @@ class PolicyHistoryWindow(BaseModel):
 class PolicyCurrentComparison(BaseModel):
     """Bounded comparison between the current response and latest persisted snapshot."""
 
-    status: Literal["unavailable", "current_vs_latest_persisted_ready"]
+    status: Literal["unavailable", "live_vs_latest_persisted_ready"]
     summary: str
     comparison_snapshot_id: str | None = None
     comparison_persisted_at: datetime | None = None
