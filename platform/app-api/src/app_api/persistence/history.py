@@ -227,6 +227,13 @@ class SyncRunHistorySummary(BaseModel):
     )
 
 
+class InventorySnapshotMetricsSummary(BaseModel):
+    """Bounded inventory_snapshots table summary for metrics (not per-device history)."""
+
+    persisted_row_count: int = 0
+    latest_persisted_at: datetime | None = None
+
+
 def _map_history_result(fetch_status: str) -> str:
     """Map raw sync-run fetch status into a low-cardinality history result."""
     return {
@@ -923,6 +930,27 @@ def load_readiness_snapshot_history(
     except Exception:
         logger.exception("Failed to load bounded readiness snapshot history.")
         return []
+
+
+def summarize_inventory_snapshot_metrics() -> InventorySnapshotMetricsSummary:
+    """Summarize inventory_snapshots table for low-cardinality observability metrics."""
+    try:
+        with create_session() as session:
+            row_count = session.scalar(
+                select(func.count()).select_from(InventorySnapshotTable)
+            )
+            if row_count is None:
+                row_count = 0
+            latest = session.scalar(
+                select(func.max(InventorySnapshotTable.persisted_at))
+            )
+            return InventorySnapshotMetricsSummary(
+                persisted_row_count=int(row_count),
+                latest_persisted_at=latest,
+            )
+    except Exception:
+        logger.exception("Failed to summarize inventory snapshot table metrics.")
+        return InventorySnapshotMetricsSummary()
 
 
 def summarize_sync_run_history(limit: int = 200) -> SyncRunHistorySummary:
