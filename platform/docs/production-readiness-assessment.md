@@ -72,6 +72,8 @@ stack.
 
 **Week 20 closure (Friday rollup):** **`03-CURRENT-STATUS.md`** records week **20** as delivered bounded policy-history value; repository **`pytest`** for **`test_app.py`** and **`test_policy_snapshot_persistence.py`** provides file-backed contract and persistence checks; a **green** live **`verify-core-runtime.sh`** including policy **`history`** and **`policy_snapshots`** metric assertions still requires the documented **build → deploy → verify** path on an operator stack.
 
+**Week 20 closure (policy checkpoint note):** **`policy-truth-depth-review.md`** **Post–Week 20 scheduling note** states that week **20** deepened **history and metrics honesty** within Phase 2; it does **not** widen the live **collector-first** proof beyond the existing Nokia **`static_local`** slice unless new evidence appears.
+
 **Topology scheduling (post–Week 19):** **`topology-truth-depth-review.md`** now states explicitly that the **partiality contract** remains **closed** in shipped code and that **ADR-0001** **Priority 2** is the default **evidence-first** next step—not opportunistic topology code after the inventory slice.
 
 ### Live runtime verification
