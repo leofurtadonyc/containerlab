@@ -5,11 +5,14 @@ export interface ApiResponseMetadata {
   generated_at: string;
 }
 
-/** Phase 2 optional `limit` query echo on primary list endpoints (devices/policies `items`). */
+/** Phase 2 optional `limit` and `history_recent_limit` query echo on devices/policies. */
 export interface ReadSideQueryEcho {
   limit_requested: number | null;
   items_total: number;
   items_returned: number;
+  history_recent_limit_requested: number | null;
+  history_recent_limit_effective: number;
+  history_recent_snapshots_returned: number;
 }
 
 export interface ErrorDetail {

@@ -270,6 +270,8 @@ assert_contains "devices response" "$devices_response" '"history":{'
 assert_contains "devices response (read_side query ergonomics)" "$devices_response" '"read_side_query":{'
 assert_contains "devices response (read_side query ergonomics)" "$devices_response" '"items_total":'
 assert_contains "devices response (read_side query ergonomics)" "$devices_response" '"items_returned":'
+assert_contains "devices response (read_side query ergonomics)" "$devices_response" '"history_recent_limit_effective":'
+assert_contains "devices response (read_side query ergonomics)" "$devices_response" '"history_recent_snapshots_returned":'
 
 assert_contains "topology response" "$topology_response" '"data_status":"'
 assert_contains "topology response" "$topology_response" '"serving_mode":"'
@@ -303,6 +305,8 @@ assert_contains "policies response" "$policies_response" '"history":{'
 assert_contains "policies response (read_side query ergonomics)" "$policies_response" '"read_side_query":{'
 assert_contains "policies response (read_side query ergonomics)" "$policies_response" '"items_total":'
 assert_contains "policies response (read_side query ergonomics)" "$policies_response" '"items_returned":'
+assert_contains "policies response (read_side query ergonomics)" "$policies_response" '"history_recent_limit_effective":'
+assert_contains "policies response (read_side query ergonomics)" "$policies_response" '"history_recent_snapshots_returned":'
 
 # Cross-slice list/history metadata and evidence shape (contract posture, not business truth).
 assert_contains "devices response (API metadata)" "$devices_response" '"service":"app-api"'

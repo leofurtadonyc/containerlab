@@ -40,7 +40,10 @@ from app_api.schemas.policies import (
     PolicyRecord,
     PolicyTargetFootprintRecord,
 )
-from app_api.schemas.read_side_query import build_read_side_query_echo
+from app_api.schemas.read_side_query import (
+    READ_SIDE_HISTORY_RECENT_LIMIT_DEFAULT,
+    build_read_side_query_echo,
+)
 
 
 def _policy_data_status_literal(data_status: str) -> Literal["live", "degraded"]:
@@ -331,9 +334,12 @@ def _build_policy_change_preview(
     return preview[:limit]
 
 
-def _build_policy_history_window() -> PolicyHistoryWindow:
+def _build_policy_history_window(
+    *,
+    history_recent_limit: int = READ_SIDE_HISTORY_RECENT_LIMIT_DEFAULT,
+) -> PolicyHistoryWindow:
     """Build a bounded persisted history/comparison view for policy snapshots."""
-    recent_snapshots = load_recent_policy_snapshot_summaries(limit=3)
+    recent_snapshots = load_recent_policy_snapshot_summaries(limit=history_recent_limit)
     if not recent_snapshots:
         return PolicyHistoryWindow(
             status="unavailable",
@@ -695,11 +701,17 @@ def _build_policy_evidence_confidence(
     )
 
 
-def build_policies_list_response(*, limit: int | None = None) -> PoliciesListResponse:
+def build_policies_list_response(
+    *,
+    limit: int | None = None,
+    history_recent_limit: int | None = None,
+) -> PoliciesListResponse:
     """Build the policy inventory response from the live collector boundary.
 
     ``limit`` optionally truncates the primary ``items`` list. ``count`` and
     ``read_side_query.items_total`` remain the full logical list size.
+
+    ``history_recent_limit`` optionally widens or narrows ``history.recent_snapshots``.
     """
     settings = get_settings()
     collector_snapshot, snapshot, persisted_at = _build_policy_inventory()
@@ -709,7 +721,12 @@ def build_policies_list_response(*, limit: int | None = None) -> PoliciesListRes
         else "current"
     )
     latest_persisted_snapshot = load_latest_policy_snapshot()
-    history = _build_policy_history_window()
+    effective_history = (
+        history_recent_limit
+        if history_recent_limit is not None
+        else READ_SIDE_HISTORY_RECENT_LIMIT_DEFAULT
+    )
+    history = _build_policy_history_window(history_recent_limit=effective_history)
     evidence_confidence = _build_policy_evidence_confidence(
         collector_snapshot=collector_snapshot,
         detail_mode=snapshot.detail_mode,
@@ -1068,5 +1085,8 @@ def build_policies_list_response(*, limit: int | None = None) -> PoliciesListRes
             limit_requested=limit,
             items_total=items_total,
             items_returned=len(items),
+            history_recent_limit_requested=history_recent_limit,
+            history_recent_limit_effective=effective_history,
+            history_recent_snapshots_returned=len(history.recent_snapshots),
         ),
     )

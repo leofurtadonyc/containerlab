@@ -2658,6 +2658,9 @@ def test_devices_endpoint_returns_live_inventory(monkeypatch) -> None:
     assert payload["read_side_query"]["limit_requested"] is None
     assert payload["read_side_query"]["items_total"] == 2
     assert payload["read_side_query"]["items_returned"] == 2
+    assert payload["read_side_query"]["history_recent_limit_requested"] is None
+    assert payload["read_side_query"]["history_recent_limit_effective"] == 3
+    assert payload["read_side_query"]["history_recent_snapshots_returned"] == 0
 
 
 def test_devices_endpoint_limit_truncates_items_without_shrinking_count(monkeypatch) -> None:
@@ -2680,6 +2683,9 @@ def test_devices_endpoint_limit_truncates_items_without_shrinking_count(monkeypa
     assert payload["read_side_query"]["limit_requested"] == 1
     assert payload["read_side_query"]["items_total"] == 2
     assert payload["read_side_query"]["items_returned"] == 1
+    assert payload["read_side_query"]["history_recent_limit_requested"] is None
+    assert payload["read_side_query"]["history_recent_limit_effective"] == 3
+    assert payload["read_side_query"]["history_recent_snapshots_returned"] == 0
 
 
 def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None:
@@ -2950,6 +2956,70 @@ def test_devices_endpoint_exposes_bounded_live_vs_persisted_comparison(monkeypat
     assert _REQUIRED_DEVICES_API_INVENTORY_COMPARISON_JSON_KEYS.issubset(
         payload["history"]["comparison_to_previous"].keys()
     )
+
+
+def test_devices_history_recent_limit_wider_returns_available_summaries_only(monkeypatch) -> None:
+    """history_recent_limit can exceed stored rows; echo shows effective vs returned counts."""
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorInventoryClient:
+        def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+            return _build_live_inventory_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.devices.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.devices.load_latest_inventory_snapshot",
+        _build_persisted_inventory_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.devices.load_previous_inventory_snapshot",
+        _build_previous_persisted_inventory_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.devices.load_recent_inventory_snapshot_summaries",
+        lambda limit=3: _build_recent_inventory_snapshot_summaries()[:limit],
+    )
+
+    response = client.get("/api/v1/devices?history_recent_limit=10")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload["history"]["recent_snapshots"]) == 3
+    assert payload["read_side_query"]["history_recent_limit_requested"] == 10
+    assert payload["read_side_query"]["history_recent_limit_effective"] == 10
+    assert payload["read_side_query"]["history_recent_snapshots_returned"] == 3
+
+
+def test_devices_history_recent_limit_one_yields_current_only(monkeypatch) -> None:
+    """Single-summary window stays honest current_only without fabricated comparison."""
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorInventoryClient:
+        def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+            return _build_live_inventory_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.devices.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.devices.load_recent_inventory_snapshot_summaries",
+        lambda limit=3: _build_recent_inventory_snapshot_summaries()[:limit],
+    )
+
+    response = client.get("/api/v1/devices?history_recent_limit=1")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["history"]["status"] == "current_only"
+    assert len(payload["history"]["recent_snapshots"]) == 1
+    assert payload["history"]["comparison_to_previous"] is None
+    assert payload["read_side_query"]["history_recent_limit_requested"] == 1
+    assert payload["read_side_query"]["history_recent_limit_effective"] == 1
+    assert payload["read_side_query"]["history_recent_snapshots_returned"] == 1
 
 
 def test_devices_endpoint_history_unavailable_when_no_persisted_window(monkeypatch) -> None:
@@ -3303,6 +3373,9 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["read_side_query"]["limit_requested"] is None
     assert payload["read_side_query"]["items_total"] == 2
     assert payload["read_side_query"]["items_returned"] == 2
+    assert payload["read_side_query"]["history_recent_limit_requested"] is None
+    assert payload["read_side_query"]["history_recent_limit_effective"] == 3
+    assert payload["read_side_query"]["history_recent_snapshots_returned"] == 3
 
 
 def test_policies_endpoint_limit_truncates_items_without_shrinking_count(monkeypatch) -> None:
@@ -3336,6 +3409,69 @@ def test_policies_endpoint_limit_truncates_items_without_shrinking_count(monkeyp
     assert payload["read_side_query"]["limit_requested"] == 1
     assert payload["read_side_query"]["items_total"] == 2
     assert payload["read_side_query"]["items_returned"] == 1
+    assert payload["read_side_query"]["history_recent_limit_requested"] is None
+    assert payload["read_side_query"]["history_recent_limit_effective"] == 3
+    assert payload["read_side_query"]["history_recent_snapshots_returned"] == 3
+
+
+def test_policies_history_recent_limit_wider_returns_available_summaries_only(monkeypatch) -> None:
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return _build_live_policy_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr("app_api.services.policies.persist_policy_snapshot", lambda **kwargs: None)
+    monkeypatch.setattr(
+        "app_api.services.policies.load_recent_policy_snapshot_summaries",
+        lambda limit=3: _build_recent_policy_snapshot_summaries()[:limit],
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_latest_policy_snapshot",
+        _build_persisted_policy_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_previous_policy_snapshot",
+        _build_previous_persisted_policy_snapshot,
+    )
+
+    response = client.get("/api/v1/policies?history_recent_limit=10")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload["history"]["recent_snapshots"]) == 3
+    assert payload["read_side_query"]["history_recent_limit_requested"] == 10
+    assert payload["read_side_query"]["history_recent_limit_effective"] == 10
+    assert payload["read_side_query"]["history_recent_snapshots_returned"] == 3
+
+
+def test_policies_history_recent_limit_one_yields_current_only(monkeypatch) -> None:
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return _build_live_policy_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr("app_api.services.policies.persist_policy_snapshot", lambda **kwargs: None)
+    monkeypatch.setattr(
+        "app_api.services.policies.load_recent_policy_snapshot_summaries",
+        lambda limit=3: _build_recent_policy_snapshot_summaries()[:limit],
+    )
+
+    response = client.get("/api/v1/policies?history_recent_limit=1")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["history"]["status"] == "current_only"
+    assert len(payload["history"]["recent_snapshots"]) == 1
+    assert payload["history"]["comparison_to_previous"] is None
+    assert payload["read_side_query"]["history_recent_limit_requested"] == 1
+    assert payload["read_side_query"]["history_recent_limit_effective"] == 1
+    assert payload["read_side_query"]["history_recent_snapshots_returned"] == 1
 
 
 def test_policies_history_current_only_exposes_readiness_without_comparison(monkeypatch) -> None:

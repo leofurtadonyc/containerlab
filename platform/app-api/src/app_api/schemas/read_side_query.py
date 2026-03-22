@@ -10,6 +10,11 @@ Contract rules (see also ``platform/docs/data-flows.md``):
   (``items`` on ``/api/v1/devices`` and ``/api/v1/policies``) to reduce payload
   size; totals in the response remain **honest** (``count`` and
   ``read_side_query.items_total`` reflect the full logical list before truncation).
+- **Allowed:** optional bounded ``history_recent_limit`` on ``/api/v1/devices`` and
+  ``/api/v1/policies`` controlling how many persisted snapshot **summary** rows are
+  loaded into ``history.recent_snapshots`` (default **3**, max **50**). This does
+  **not** change latest-vs-previous comparison semantics (still the two newest full
+  snapshots); it only widens or narrows the **recent snapshot list** for operator context.
 - **Allowed later:** anchor-oriented lookups (for example snapshot id) only where
   persistence and APIs already support them—add per-endpoint with the same echo
   pattern.
@@ -28,6 +33,10 @@ from pydantic import BaseModel, Field
 
 # Maximum number of primary list rows returned when ``limit`` is used.
 READ_SIDE_PRIMARY_LIST_LIMIT_MAX = 500
+
+# Bounded window for persisted snapshot summaries in ``history.recent_snapshots``.
+READ_SIDE_HISTORY_RECENT_LIMIT_DEFAULT = 3
+READ_SIDE_HISTORY_RECENT_LIMIT_MAX = 50
 
 
 class ReadSideQueryEcho(BaseModel):
@@ -48,6 +57,24 @@ class ReadSideQueryEcho(BaseModel):
         ge=0,
         description="Primary list rows included in this response after applying ``limit``.",
     )
+    history_recent_limit_requested: int | None = Field(
+        default=None,
+        description=(
+            "Client-requested ``history_recent_limit`` for persisted snapshot summaries, if any. "
+            "``null`` means the default window applies."
+        ),
+    )
+    history_recent_limit_effective: int = Field(
+        default=READ_SIDE_HISTORY_RECENT_LIMIT_DEFAULT,
+        ge=1,
+        le=READ_SIDE_HISTORY_RECENT_LIMIT_MAX,
+        description="Effective limit passed to persistence load (default or clamped request).",
+    )
+    history_recent_snapshots_returned: int = Field(
+        default=0,
+        ge=0,
+        description="Number of snapshot summary rows in ``history.recent_snapshots`` (may be less than effective if DB has fewer rows).",
+    )
 
 
 def build_read_side_query_echo(
@@ -55,10 +82,16 @@ def build_read_side_query_echo(
     limit_requested: int | None,
     items_total: int,
     items_returned: int,
+    history_recent_limit_requested: int | None = None,
+    history_recent_limit_effective: int = READ_SIDE_HISTORY_RECENT_LIMIT_DEFAULT,
+    history_recent_snapshots_returned: int = 0,
 ) -> ReadSideQueryEcho:
     """Construct echo metadata; keeps truncation visible without implying truth shrinkage."""
     return ReadSideQueryEcho(
         limit_requested=limit_requested,
         items_total=items_total,
         items_returned=items_returned,
+        history_recent_limit_requested=history_recent_limit_requested,
+        history_recent_limit_effective=history_recent_limit_effective,
+        history_recent_snapshots_returned=history_recent_snapshots_returned,
     )
