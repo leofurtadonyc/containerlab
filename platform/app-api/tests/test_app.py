@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from threading import Lock
 from time import sleep
 from types import SimpleNamespace
@@ -5925,6 +5925,31 @@ def test_policy_path_analysis_returns_contract_and_aligned_truth(monkeypatch) ->
     assert any(h["hint_id"] == "intent_endpoints" for h in payload["intended_path_hints"])
     assert len(payload["candidate_path_summaries"]) == 1
     assert payload["candidate_path_summaries"][0]["name"] == "primary"
+
+
+def test_policy_path_analysis_with_inventory_snapshot_observed_at(monkeypatch) -> None:
+    """Regression: inventory freshness must use PersistedInventorySnapshot.observed_at (no .snapshot)."""
+    _path_analysis_policy_stubs(monkeypatch)
+    inv_at = datetime.now(tz=UTC)
+    inv_stub = PersistedInventorySnapshot(
+        snapshot_id="inv-snap-1",
+        sync_run_id="run-1",
+        persisted_at=inv_at,
+        data_status="live",
+        observed_at=inv_at,
+        devices=[],
+    )
+    monkeypatch.setattr(
+        "app_api.services.path_analysis.load_latest_inventory_snapshot",
+        lambda: inv_stub,
+    )
+    pid = "PE1:static_local:192.0.2.11:100"
+    response = client.get(f"/api/v1/policies/{pid}/path-analysis")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["freshness"]["inventory_snapshot_observed_at"] is not None
+    assert any(h["hint_id"] == "inventory_context" for h in payload["observed_path_hints"])
 
 
 def test_policy_path_analysis_partial_support_is_uncertain(monkeypatch) -> None:

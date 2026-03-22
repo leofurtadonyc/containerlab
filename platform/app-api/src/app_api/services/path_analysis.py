@@ -94,7 +94,7 @@ def build_policy_path_analysis_response(policy_id: str) -> PathAnalysisViewRespo
     topo_observed_at = (
         topo_persisted.snapshot.observed_at if topo_persisted is not None else None
     )
-    inv_observed_at = inv_persisted.snapshot.observed_at if inv_persisted is not None else None
+    inv_observed_at = inv_persisted.observed_at if inv_persisted is not None else None
 
     intended: list[IntendedPathHint] = [
         IntendedPathHint(
