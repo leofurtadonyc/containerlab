@@ -9,6 +9,7 @@ Implementation references:
 - `platform/app-api/src/app_api/schemas/change_intelligence.py` — Pydantic types, stable vocabulary, safety framing model, and `RecentChangeSummaryResponse`
 - `platform/app-api/src/app_api/services/change_intelligence.py` — `build_recent_change_summary_response()` aggregates **only** existing snapshot metrics and `load_sync_runs` / readiness snapshot history
 - `GET /api/v1/change-intelligence/recent-summary` — bounded cross-domain summary (optional `sync_runs_limit`, default **20**, max **100**)
+- `platform/app-web/src/features/overview/` — Overview **`RecentChangeIntelligencePanel`** consumes the summary endpoint only (not Grafana; not dashboard parity)
 
 ## Classification: new lane vs weeks 19–23
 

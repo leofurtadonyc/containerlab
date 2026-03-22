@@ -924,3 +924,44 @@ export interface CapabilitiesListResponse extends ApiResponseMetadata {
   dry_run_readiness?: DryRunReadinessSummary;
   items: CapabilityRecord[];
 }
+
+export type ChangeEvidenceDomain =
+  | "devices"
+  | "topology"
+  | "policies"
+  | "readiness"
+  | "workflow_history"
+  | "audit_history";
+
+export type DomainEvidenceStatus = "present" | "absent" | "partial";
+
+export interface RecentChangeDomainSlice {
+  domain: ChangeEvidenceDomain;
+  signal_families: string[];
+  evidence_status: DomainEvidenceStatus;
+  headline: string;
+  detail_notes: string[];
+  persisted_snapshot_count?: number | null;
+  latest_persisted_at?: string | null;
+  sync_runs_in_window?: number | null;
+  latest_sync_finished_at?: string | null;
+}
+
+export interface ChangeIntelligenceSafetyFraming {
+  contract_id: string;
+  authority_posture: "summarization_only" | "evidence_aggregated_non_authoritative";
+  explicit_non_claims: string[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface RecentChangeSummaryResponse {
+  metadata: ApiResponseMetadata;
+  safety: ChangeIntelligenceSafetyFraming;
+  window_semantics: string;
+  completeness_posture: string;
+  sync_runs_limit_applied: number;
+  readiness_snapshots_considered: number;
+  domains: RecentChangeDomainSlice[];
+  aggregation_notes: string[];
+}

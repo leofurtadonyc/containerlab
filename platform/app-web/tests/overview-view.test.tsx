@@ -11,12 +11,14 @@ const {
   useTopologyQuery,
   usePoliciesQuery,
   useCapabilitiesQuery,
+  useRecentChangeSummaryQuery,
 } = vi.hoisted(() => ({
   usePlatformStatusQuery: vi.fn(),
   useDevicesQuery: vi.fn(),
   useTopologyQuery: vi.fn(),
   usePoliciesQuery: vi.fn(),
   useCapabilitiesQuery: vi.fn(),
+  useRecentChangeSummaryQuery: vi.fn(),
 }));
 
 vi.mock("../src/features/platform-health/api", async () => {
@@ -51,6 +53,10 @@ vi.mock("../src/features/policies/api", () => ({
 
 vi.mock("../src/features/capabilities/api", () => ({
   useCapabilitiesQuery,
+}));
+
+vi.mock("../src/features/overview/api", () => ({
+  useRecentChangeSummaryQuery,
 }));
 
 function createQueryState<T>(data: T | null, overrides: Partial<{ error: ApiClientError | null; isLoading: boolean; isRefreshing: boolean }> = {}) {
@@ -284,6 +290,74 @@ function createPoliciesData() {
   };
 }
 
+function createRecentChangeSummaryData() {
+  const absentDomain = {
+    signal_families: [] as string[],
+    evidence_status: "absent" as const,
+    headline: "No persisted inventory snapshots in this workspace baseline.",
+    detail_notes: [] as string[],
+  };
+  return {
+    metadata: {
+      service: "app-api" as const,
+      version: "test",
+      phase: "phase_2_read_only_foundation" as const,
+      generated_at: "2025-01-01T00:00:00Z",
+    },
+    safety: {
+      contract_id: "change_intelligence_phase2_v1",
+      authority_posture: "evidence_aggregated_non_authoritative" as const,
+      explicit_non_claims: ["not_validation_verdict"],
+      phase: "phase_2_read_only_foundation" as const,
+      summary_disclaimer:
+        "Recent change intelligence summarizes existing read-side evidence for operator visibility. It is not a validation verdict, drift detection result, safe-to-change recommendation, or workflow authorization.",
+    },
+    window_semantics: "backend_defined_bounded_lookback",
+    completeness_posture: "bounded_partial",
+    sync_runs_limit_applied: 20,
+    readiness_snapshots_considered: 0,
+    domains: [
+      { domain: "devices" as const, ...absentDomain },
+      {
+        domain: "topology" as const,
+        signal_families: [],
+        evidence_status: "absent",
+        headline: "No persisted topology snapshots.",
+        detail_notes: [],
+      },
+      {
+        domain: "policies" as const,
+        signal_families: [],
+        evidence_status: "absent",
+        headline: "No persisted policy snapshots.",
+        detail_notes: [],
+      },
+      {
+        domain: "readiness" as const,
+        signal_families: [],
+        evidence_status: "absent",
+        headline: "No persisted readiness-support snapshots.",
+        detail_notes: [],
+      },
+      {
+        domain: "workflow_history" as const,
+        signal_families: [],
+        evidence_status: "absent",
+        headline: "No persisted read-side sync runs in the requested window.",
+        detail_notes: [],
+      },
+      {
+        domain: "audit_history" as const,
+        signal_families: [],
+        evidence_status: "absent",
+        headline: "Audit-style history is built from the same persisted sync runs (0 in window).",
+        detail_notes: [],
+      },
+    ],
+    aggregation_notes: ["Contract change_intelligence_phase2_v1; sync_runs_limit=20."],
+  };
+}
+
 function createCapabilitiesData(): CapabilitiesListResponse {
   return {
     service: "app-api",
@@ -339,6 +413,7 @@ function createCapabilitiesData(): CapabilitiesListResponse {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  useRecentChangeSummaryQuery.mockReturnValue(createQueryState(createRecentChangeSummaryData()));
 });
 
 describe("overview view", () => {
@@ -709,5 +784,35 @@ describe("overview view", () => {
     expect(html).toContain("Platform status");
     expect(html).toContain("Device inventory");
     expect(html).toContain("Loading");
+  });
+
+  it("surfaces bounded recent change intelligence with explicit non-claims", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
+    useDevicesQuery.mockReturnValue(createQueryState(null));
+    useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    const html = renderToStaticMarkup(<OverviewView />);
+
+    expect(html).toContain("Recent change (bounded)");
+    expect(html).toContain("not a validation verdict");
+    expect(html).toContain("validation, drift detection, safe-to-change");
+    expect(html).toContain("Workflow history");
+    expect(html).toContain("Audit history");
+    expect(html).toContain("domains with present evidence");
+  });
+
+  it("shows a loading placeholder for recent change intelligence until data arrives", () => {
+    useRecentChangeSummaryQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
+    useDevicesQuery.mockReturnValue(createQueryState(null));
+    useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    const html = renderToStaticMarkup(<OverviewView />);
+
+    expect(html).toContain("Loading cross-domain persisted evidence summary");
   });
 });
