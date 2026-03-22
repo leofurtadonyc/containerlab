@@ -108,7 +108,7 @@ Read-only list endpoints may expose **bounded optional query parameters** so cli
 
 Implementation reference: `platform/app-api/src/app_api/schemas/read_side_query.py` and `platform/app-api/src/app_api/dependencies/read_side_query.py`.
 
-- **WebUI:** the Phase 2 WebUI keeps **`view`** in the page URL (`?view=devices`, etc.) and mirrors the same bounded query parameter names for devices, policies, workflow-history, and audit-history so operator filtered views are shareable from the address bar. Typed parsing and merge helpers live under `platform/app-web/src/api/read-side-query-params.ts` with URL helpers under `platform/app-web/src/lib/url-app-state.ts`.
+- **WebUI:** the Phase 2 WebUI keeps **`view`** in the page URL (`?view=devices`, etc.) and mirrors the same bounded query parameter names for devices, policies, workflow-history, and audit-history so operator filtered views are shareable from the address bar. Typed parsing and merge helpers live under `platform/app-web/src/api/read-side-query-params.ts` with URL helpers under `platform/app-web/src/lib/url-app-state.ts`. Selected workflow-history and audit-history rows can open **read-only** “related product surface” navigation (Devices, Topology, Policies, Readiness) by switching **`view=`**—bounded drill-down for operator context, not workflow execution or new backend filters.
 
 Important current limitation:
 
