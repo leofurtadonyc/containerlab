@@ -30,6 +30,7 @@ from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.persistence.history import (
     InventorySnapshotMetricsSummary,
     PolicySnapshotMetricsSummary,
+    TopologySnapshotMetricsSummary,
     PersistedInventorySnapshotComparison,
     PersistedInventorySnapshotSummary as PersistedInventoryHistorySummary,
     PersistedPolicySnapshotComparison,
@@ -4072,6 +4073,124 @@ def test_workflow_history_rejects_invalid_sync_runs_limit() -> None:
     assert client.get("/api/v1/workflow-history?sync_runs_limit=0").status_code == 422
     assert (
         client.get("/api/v1/workflow-history?sync_runs_limit=101").status_code == 422
+    )
+
+
+def test_change_intelligence_recent_summary_honest_empty_evidence(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.summarize_inventory_snapshot_metrics",
+        lambda: InventorySnapshotMetricsSummary(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.summarize_topology_snapshot_metrics",
+        lambda: TopologySnapshotMetricsSummary(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.summarize_policy_snapshot_metrics",
+        lambda: PolicySnapshotMetricsSummary(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.count_readiness_snapshots_matching",
+        lambda: 0,
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.load_readiness_snapshot_history",
+        lambda **kwargs: [],
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.load_sync_runs",
+        lambda **kwargs: [],
+    )
+
+    response = client.get("/api/v1/change-intelligence/recent-summary")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["metadata"]["phase"] == "phase_2_read_only_foundation"
+    assert payload["safety"]["contract_id"] == "change_intelligence_phase2_v1"
+    assert payload["safety"]["authority_posture"] == "evidence_aggregated_non_authoritative"
+    assert "not_validation_verdict" in payload["safety"]["explicit_non_claims"]
+    assert payload["completeness_posture"] == "bounded_partial"
+    assert payload["sync_runs_limit_applied"] == 20
+    assert payload["readiness_snapshots_considered"] == 0
+    domains = {d["domain"]: d for d in payload["domains"]}
+    assert domains["devices"]["evidence_status"] == "absent"
+    assert domains["topology"]["evidence_status"] == "absent"
+    assert domains["policies"]["evidence_status"] == "absent"
+    assert domains["readiness"]["evidence_status"] == "absent"
+    assert domains["workflow_history"]["evidence_status"] == "absent"
+    assert domains["audit_history"]["evidence_status"] == "absent"
+    assert "No persisted inventory snapshots" in domains["devices"]["headline"]
+
+
+def test_change_intelligence_recent_summary_with_metrics_and_sync(monkeypatch) -> None:
+    from datetime import UTC, datetime
+
+    ts = datetime(2026, 1, 15, 12, 0, 0, tzinfo=UTC)
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.summarize_inventory_snapshot_metrics",
+        lambda: InventorySnapshotMetricsSummary(
+            persisted_row_count=2,
+            latest_persisted_at=ts,
+        ),
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.summarize_topology_snapshot_metrics",
+        lambda: TopologySnapshotMetricsSummary(
+            persisted_row_count=1,
+            latest_persisted_at=ts,
+        ),
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.summarize_policy_snapshot_metrics",
+        lambda: PolicySnapshotMetricsSummary(
+            persisted_row_count=3,
+            latest_persisted_at=ts,
+        ),
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.count_readiness_snapshots_matching",
+        lambda: 1,
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.load_readiness_snapshot_history",
+        lambda **kwargs: [
+            PersistedReadinessSnapshotHistoryRecord(
+                snapshot_id="rs-1",
+                persisted_at=ts,
+                readiness_status="bounded_readiness_support",
+                planning_readiness="partial",
+                phase_recommendation="phase_2",
+                summary="s",
+                blocker_count=0,
+                strongest_blockers=[],
+            )
+        ],
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.load_sync_runs",
+        _build_persisted_sync_runs,
+    )
+
+    response = client.get("/api/v1/change-intelligence/recent-summary?sync_runs_limit=3")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["sync_runs_limit_applied"] == 3
+    domains = {d["domain"]: d for d in payload["domains"]}
+    assert domains["devices"]["evidence_status"] == "present"
+    assert domains["devices"]["persisted_snapshot_count"] == 2
+    assert domains["topology"]["evidence_status"] == "present"
+    assert domains["policies"]["evidence_status"] == "present"
+    assert domains["readiness"]["evidence_status"] == "present"
+    assert domains["workflow_history"]["evidence_status"] == "present"
+    assert domains["workflow_history"]["sync_runs_in_window"] == 3
+    assert domains["audit_history"]["evidence_status"] == "present"
+
+
+def test_change_intelligence_recent_summary_rejects_invalid_sync_runs_limit() -> None:
+    assert client.get("/api/v1/change-intelligence/recent-summary?sync_runs_limit=0").status_code == 422
+    assert (
+        client.get("/api/v1/change-intelligence/recent-summary?sync_runs_limit=101").status_code
+        == 422
     )
 
 

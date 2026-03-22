@@ -1,8 +1,8 @@
 """Bounded change-intelligence contract types (Phase 2, read-only).
 
-This module defines **backend-owned vocabulary** for a future cross-domain
-"recent change" summarization layer. It does **not** implement aggregation
-logic, new persistence, or product endpoints by itself.
+This module defines **backend-owned vocabulary** and response shapes for the
+cross-domain recent-change summary. Aggregation logic lives in
+``app_api.services.change_intelligence``; this module does not perform I/O.
 
 Relationship to weeks 19–23: inventory, topology, and policy list endpoints
 expose per-resource ``comparison_to_latest_persisted`` and **history** slices;
@@ -14,9 +14,12 @@ a duplicate of per-domain comparison semantics.
 See: ``platform/docs/change-intelligence-contract.md``.
 """
 
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
+
+from app_api.schemas.common import ApiResponseMetadata
 
 CHANGE_INTELLIGENCE_CONTRACT_ID = "change_intelligence_phase2_v1"
 """Stable identifier for this contract revision (bump when vocabulary changes)."""
@@ -142,3 +145,34 @@ class ChangeEvidenceDomainContribution(BaseModel):
             "(e.g. topology partiality, static_local policy slice)."
         )
     )
+
+
+DomainEvidenceStatus = Literal["present", "absent", "partial"]
+"""Whether this domain contributed usable evidence to the summary."""
+
+
+class RecentChangeDomainSlice(BaseModel):
+    """One domain's bounded contribution to the cross-domain recent-change summary."""
+
+    domain: ChangeEvidenceDomain
+    signal_families: list[BoundedChangeSignalFamily] = Field(default_factory=list)
+    evidence_status: DomainEvidenceStatus
+    headline: str
+    detail_notes: list[str] = Field(default_factory=list)
+    persisted_snapshot_count: int | None = None
+    latest_persisted_at: datetime | None = None
+    sync_runs_in_window: int | None = None
+    latest_sync_finished_at: datetime | None = None
+
+
+class RecentChangeSummaryResponse(BaseModel):
+    """Backend-owned recent change intelligence summary (Phase 2 read-only)."""
+
+    metadata: ApiResponseMetadata
+    safety: ChangeIntelligenceSafetyFraming
+    window_semantics: RecentChangeWindowSemantics
+    completeness_posture: RecentChangeCompletenessPosture
+    sync_runs_limit_applied: int
+    readiness_snapshots_considered: int
+    domains: list[RecentChangeDomainSlice]
+    aggregation_notes: list[str] = Field(default_factory=list)

@@ -275,6 +275,13 @@ class PolicySnapshotMetricsSummary(BaseModel):
     latest_persisted_at: datetime | None = None
 
 
+class TopologySnapshotMetricsSummary(BaseModel):
+    """Bounded topology_snapshots table summary for metrics (not per-link history)."""
+
+    persisted_row_count: int = 0
+    latest_persisted_at: datetime | None = None
+
+
 def _map_history_result(fetch_status: str) -> str:
     """Map raw sync-run fetch status into a low-cardinality history result."""
     return {
@@ -1093,6 +1100,27 @@ def summarize_policy_snapshot_metrics() -> PolicySnapshotMetricsSummary:
     except Exception:
         logger.exception("Failed to summarize policy snapshot table metrics.")
         return PolicySnapshotMetricsSummary()
+
+
+def summarize_topology_snapshot_metrics() -> TopologySnapshotMetricsSummary:
+    """Summarize topology_snapshots table for low-cardinality observability metrics."""
+    try:
+        with create_session() as session:
+            row_count = session.scalar(
+                select(func.count()).select_from(TopologySnapshotTable)
+            )
+            if row_count is None:
+                row_count = 0
+            latest = session.scalar(
+                select(func.max(TopologySnapshotTable.persisted_at))
+            )
+            return TopologySnapshotMetricsSummary(
+                persisted_row_count=int(row_count),
+                latest_persisted_at=latest,
+            )
+    except Exception:
+        logger.exception("Failed to summarize topology snapshot table metrics.")
+        return TopologySnapshotMetricsSummary()
 
 
 def summarize_sync_run_history(limit: int = 200) -> SyncRunHistorySummary:

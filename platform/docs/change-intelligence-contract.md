@@ -6,8 +6,9 @@ This document is the **backend-owned bounded contract** for **recent change inte
 
 Implementation references:
 
-- `platform/app-api/src/app_api/schemas/change_intelligence.py` — Pydantic types, stable vocabulary, and safety framing model
-- Future week **24** product/API work will consume this vocabulary; this task establishes **contract only** (no new persistence domains or collector models).
+- `platform/app-api/src/app_api/schemas/change_intelligence.py` — Pydantic types, stable vocabulary, safety framing model, and `RecentChangeSummaryResponse`
+- `platform/app-api/src/app_api/services/change_intelligence.py` — `build_recent_change_summary_response()` aggregates **only** existing snapshot metrics and `load_sync_runs` / readiness snapshot history
+- `GET /api/v1/change-intelligence/recent-summary` — bounded cross-domain summary (optional `sync_runs_limit`, default **20**, max **100**)
 
 ## Classification: new lane vs weeks 19–23
 

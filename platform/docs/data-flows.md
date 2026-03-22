@@ -38,11 +38,11 @@ The current repository state includes:
   metrics; not a validation engine); vendor/adapters overview uses **real**
   bounded collector and collector-boundary metrics (**Nokia-first** scope)—see
   `dashboards.md` and `production-readiness-assessment.md`
-- **Change intelligence (week 24 contract):** backend-owned bounded vocabulary
-  for future **recent change** summaries over existing read-side/persisted
-  evidence—see `change-intelligence-contract.md`; **not** validation, drift
-  detection, safe-to-change scoring, or workflow authority; summaries remain
-  **app-api**–owned (Grafana does not implement this semantics layer)
+- **Change intelligence (week 24):** backend-owned bounded vocabulary and
+  **`GET /api/v1/change-intelligence/recent-summary`** cross-domain summary over
+  existing snapshot metrics and sync-run history—see `change-intelligence-contract.md`;
+  **not** validation, drift detection, safe-to-change scoring, or workflow authority;
+  summaries remain **app-api**–owned (Grafana does not implement this semantics layer)
 
 It does not yet include:
 
