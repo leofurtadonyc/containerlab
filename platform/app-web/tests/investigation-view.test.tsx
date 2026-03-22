@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiClientError } from "../src/api/client";
 import type { InvestigationContextAssemblyResponse } from "../src/api/contracts";
 import { InvestigationView } from "../src/features/investigation/view";
 
@@ -254,5 +255,33 @@ describe("InvestigationView", () => {
 
     const html = renderToStaticMarkup(<InvestigationView />);
     expect(html).toContain("Loading bounded investigation context");
+  });
+
+  it("shows error state when the investigation assembly request fails", () => {
+    useInvestigationWorkspaceContextQuery.mockReturnValue({
+      data: null,
+      error: new ApiClientError("network", 0, "network_error"),
+      isLoading: false,
+      isRefreshing: false,
+      reload: vi.fn(),
+    });
+
+    const html = renderToStaticMarkup(<InvestigationView />);
+    expect(html).toContain("investigation-workspace-route--error");
+    expect(html).toContain("Back to Overview");
+  });
+
+  it("shows empty state when no assembly payload is returned", () => {
+    useInvestigationWorkspaceContextQuery.mockReturnValue({
+      data: null,
+      error: null,
+      isLoading: false,
+      isRefreshing: false,
+      reload: vi.fn(),
+    });
+
+    const html = renderToStaticMarkup(<InvestigationView />);
+    expect(html).toContain("investigation-workspace-route--empty");
+    expect(html).toContain("No investigation context");
   });
 });

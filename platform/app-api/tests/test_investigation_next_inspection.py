@@ -194,6 +194,25 @@ def test_build_next_inspection_suggestions_read_path_not_ok() -> None:
     assert any(s.context_domain == "platform_status" for s in suggestions)
 
 
+def test_build_next_inspection_suggestions_capabilities_placeholder() -> None:
+    rc = _empty_recent(
+        [
+            RecentChangeDomainSlice(
+                domain="devices",
+                signal_families=[],
+                evidence_status="present",
+                headline="ok",
+                detail_notes=[],
+            )
+        ]
+    )
+    ps = _minimal_platform([_ok_read_path()])
+    cap = _minimal_capabilities(data_status="placeholder")
+    suggestions = build_next_inspection_suggestions(rc, ps, cap)
+    assert any(s.suggestion_id == "capabilities-matrix-placeholder" for s in suggestions)
+    assert any(s.context_domain == "capabilities" for s in suggestions)
+
+
 def test_build_next_inspection_suggestions_fallback_when_no_triggers() -> None:
     rc = _empty_recent(
         [

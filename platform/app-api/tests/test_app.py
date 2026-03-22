@@ -4371,6 +4371,23 @@ def test_investigation_workspace_context_assembly_returns_nested_contracts(monke
     suggestion_ids = {s["suggestion_id"] for s in payload["next_inspection_suggestions"]}
     assert "change-intelligence-absent-devices" in suggestion_ids
     assert all("headline" in s and "rationale" in s and "context_domain" in s for s in payload["next_inspection_suggestions"])
+    assert all("framing_rule" in s for s in payload["next_inspection_suggestions"])
+    for s in payload["next_inspection_suggestions"]:
+        assert isinstance(s["suggestion_id"], str)
+        assert isinstance(s["headline"], str)
+        assert isinstance(s["rationale"], str)
+
+    response_bounded = client.get(
+        "/api/v1/investigation-workspace/context?sync_runs_limit=10",
+        headers={"X-Request-ID": "inv-ctx-bounded"},
+    )
+    assert response_bounded.status_code == 200
+    bounded = response_bounded.json()
+    assert response_bounded.headers["X-Request-ID"] == "inv-ctx-bounded"
+    assert bounded["recent_change"]["sync_runs_limit_applied"] == 10
+    assert bounded["next_inspection_framing"]
+    assert isinstance(bounded["next_inspection_suggestions"], list)
+    assert len(bounded["next_inspection_suggestions"]) >= 1
 
 
 def test_investigation_workspace_context_rejects_invalid_sync_runs_limit() -> None:

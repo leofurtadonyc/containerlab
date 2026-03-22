@@ -439,8 +439,12 @@ assert_contains "investigation workspace response" "$investigation_workspace_res
 assert_contains "investigation workspace response" "$investigation_workspace_response" '"capabilities":{'
 assert_contains "investigation workspace response" "$investigation_workspace_response" '"next_inspection_framing":"'
 assert_contains "investigation workspace response" "$investigation_workspace_response" '"next_inspection_suggestions":[{'
+assert_contains "investigation workspace response (next_inspection suggestion shape)" "$investigation_workspace_response" '"suggestion_id":"'
+assert_contains "investigation workspace response (next_inspection suggestion shape)" "$investigation_workspace_response" '"context_domain":"'
+assert_contains "investigation workspace response (next_inspection suggestion shape)" "$investigation_workspace_response" '"framing_rule":"'
 investigation_workspace_bounded_query=$(fetch_compact_json "$APP_API_URL/api/v1/investigation-workspace/context?sync_runs_limit=10")
 assert_contains "investigation workspace bounded query (sync_runs echo)" "$investigation_workspace_bounded_query" '"sync_runs_limit_applied":10'
+assert_contains "investigation workspace bounded query (next_inspection present)" "$investigation_workspace_bounded_query" '"next_inspection_suggestions":[{'
 
 if [ "$sync_runs_count" -gt 0 ]; then
   assert_not_contains "workflow history response" "$workflow_history_response" '"data_status":"empty"'
