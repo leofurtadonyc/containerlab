@@ -86,3 +86,4 @@ An investigation workspace response or document using this contract must **never
 - `readiness-capability-decision-support-contract.md` — readiness/capability **interpretation** links
 - `topology-truth-depth-review.md`, `policy-truth-depth-review.md`
 - `post-week-24-bounded-phase2-recommendation.md` — scheduling guardrails after change intelligence
+- `post-week-25-bounded-phase2-recommendation.md` — scheduling guardrails after investigation workspace

@@ -16,7 +16,7 @@ It does **not** authorize:
 
 ## Relationship to prior guidance
 
-Week **21** posture remains in [`post-week-21-bounded-phase2-recommendation.md`](./post-week-21-bounded-phase2-recommendation.md). Week **22** posture remains in [`post-week-22-bounded-phase2-recommendation.md`](./post-week-22-bounded-phase2-recommendation.md). Week **23** posture remains in [`post-week-23-bounded-phase2-recommendation.md`](./post-week-23-bounded-phase2-recommendation.md). Week **24** **adds** explicit closure of the bounded **change-intelligence** workstream (aggregation-and-interpretation over **existing** read-side evidence only); it does **not** replace ADR-0001 or the topology/policy reviews.
+Week **21** posture remains in [`post-week-21-bounded-phase2-recommendation.md`](./post-week-21-bounded-phase2-recommendation.md). Week **22** posture remains in [`post-week-22-bounded-phase2-recommendation.md`](./post-week-22-bounded-phase2-recommendation.md). Week **23** posture remains in [`post-week-23-bounded-phase2-recommendation.md`](./post-week-23-bounded-phase2-recommendation.md). Week **24** **adds** explicit closure of the bounded **change-intelligence** workstream (aggregation-and-interpretation over **existing** read-side evidence only); it does **not** replace ADR-0001 or the topology/policy reviews. Week **25** bounded **investigation workspace** closure is documented in [`post-week-25-bounded-phase2-recommendation.md`](./post-week-25-bounded-phase2-recommendation.md).
 
 ## What week 24 actually closed
 
@@ -80,6 +80,7 @@ When a gap is proven—not assumed—these categories stay **architecture-aligne
 | Post–week 21 posture | [`post-week-21-bounded-phase2-recommendation.md`](./post-week-21-bounded-phase2-recommendation.md) |
 | Post–week 22 posture | [`post-week-22-bounded-phase2-recommendation.md`](./post-week-22-bounded-phase2-recommendation.md) |
 | Post–week 23 posture | [`post-week-23-bounded-phase2-recommendation.md`](./post-week-23-bounded-phase2-recommendation.md) |
+| Post–week 25 posture (investigation workspace closure) | [`post-week-25-bounded-phase2-recommendation.md`](./post-week-25-bounded-phase2-recommendation.md) |
 | Change-intelligence contract (shipped) | [`change-intelligence-contract.md`](./change-intelligence-contract.md) |
 | Topology: what is closed vs deferred | [`topology-truth-depth-review.md`](./topology-truth-depth-review.md) |
 | Policy: proven vs deferred | [`policy-truth-depth-review.md`](./policy-truth-depth-review.md) |
