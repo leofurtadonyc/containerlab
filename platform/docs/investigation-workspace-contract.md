@@ -87,3 +87,4 @@ An investigation workspace response or document using this contract must **never
 - `topology-truth-depth-review.md`, `policy-truth-depth-review.md`
 - `post-week-24-bounded-phase2-recommendation.md` — scheduling guardrails after change intelligence
 - `post-week-25-bounded-phase2-recommendation.md` — scheduling guardrails after investigation workspace
+- `evidence-pack-contract.md` — week **26** bounded **operator evidence pack** / situation-room vocabulary ( **`investigation_context`** references this assembly; not duplicate implementation)
