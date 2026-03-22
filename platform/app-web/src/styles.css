@@ -233,14 +233,27 @@ section h2 {
 
 .compact-list li {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: flex-start;
   gap: 12px;
   margin-bottom: 8px;
 }
 
-.compact-list li strong {
+/* Two-column rows: fixed label width + flexible value column so long URLs and
+   wrapped text do not push the value column off-card or misalign across rows. */
+.compact-list li > span:first-child {
+  flex: 0 1 42%;
+  min-width: 0;
+}
+
+.compact-list li > :nth-child(2) {
+  flex: 1 1 0;
+  min-width: 0;
   text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.compact-list li > div:nth-child(2) {
+  text-align: left;
 }
 
 .notes-list li {
