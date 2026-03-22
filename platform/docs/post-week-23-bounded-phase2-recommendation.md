@@ -15,7 +15,7 @@ It does **not** authorize:
 
 ## Relationship to prior guidance
 
-Week **21** posture remains in [`post-week-21-bounded-phase2-recommendation.md`](./post-week-21-bounded-phase2-recommendation.md). Week **22** posture remains in [`post-week-22-bounded-phase2-recommendation.md`](./post-week-22-bounded-phase2-recommendation.md). Week **23** **adds** explicit closure of the bounded **readiness/capability decision-support** workstream (interpretation and navigation only); it does **not** replace ADR-0001 or the topology/policy reviews.
+Week **21** posture remains in [`post-week-21-bounded-phase2-recommendation.md`](./post-week-21-bounded-phase2-recommendation.md). Week **22** posture remains in [`post-week-22-bounded-phase2-recommendation.md`](./post-week-22-bounded-phase2-recommendation.md). Week **23** **adds** explicit closure of the bounded **readiness/capability decision-support** workstream (interpretation and navigation only); it does **not** replace ADR-0001 or the topology/policy reviews. Week **24** bounded **change-intelligence** closure is documented in [`post-week-24-bounded-phase2-recommendation.md`](./post-week-24-bounded-phase2-recommendation.md).
 
 ## What week 23 actually closed
 
@@ -80,3 +80,4 @@ When a gap is proven—not assumed—these categories stay **architecture-aligne
 | Topology: what is closed vs deferred | [`topology-truth-depth-review.md`](./topology-truth-depth-review.md) |
 | Policy: proven vs deferred | [`policy-truth-depth-review.md`](./policy-truth-depth-review.md) |
 | Roadmap checkpoint narrative | [`roadmap.md`](./roadmap.md) |
+| Post–week 24 posture (change intelligence closure) | [`post-week-24-bounded-phase2-recommendation.md`](./post-week-24-bounded-phase2-recommendation.md) |
