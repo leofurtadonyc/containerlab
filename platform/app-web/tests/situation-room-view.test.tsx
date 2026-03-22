@@ -280,8 +280,14 @@ describe("SituationRoomView", () => {
     expect(html).toContain("evidence_pack_phase2_v1");
     expect(html).toContain("Operator evidence packs assemble");
     expect(html).toContain("not validation verdict");
-    expect(html).toContain("Pack surfaces (read-side excerpts)");
-    expect(html).toContain("Investigation context (nested assembly)");
+    expect(html).toContain("Current inventory");
+    expect(html).toContain("Platform");
+    expect(html).toContain("Recent change signals");
+    expect(html).toContain("Persistence");
+    expect(html).toContain("Readiness");
+    expect(html).toContain("capability planning posture");
+    expect(html).toContain("Honest evidence gaps");
+    expect(html).toContain("Interpretation support");
     expect(html).toContain("Cross-domain context at a glance");
     expect(html).toContain("Pack assembly notes");
     expect(html).toContain("Note one.");

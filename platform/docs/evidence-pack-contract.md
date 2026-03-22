@@ -10,7 +10,7 @@ Implementation references:
 - `platform/app-api/src/app_api/services/situation_pack.py` — **`build_situation_pack_assembly_response`** (existing read-side builders only)
 - **`GET /api/v1/evidence-pack/situation`** — bounded situation pack (week **26** task **02**); optional **`sync_runs_limit`** (aligned with nested change intelligence and workflow/audit sync-run windows)
 - WebUI **Overview** **Open situation room** + shell **`view=situation-room`** (week **26** task **01**) — consumes the same endpoint; read-only framing only
-- WebUI **`SituationRoomProduct`** (week **26** task **02**) — surfaces pack domains and nested investigation context in one layout; no scoring or validation semantics
+- WebUI **`SituationRoomProduct`** (week **26** Tuesday task **02** + Wednesday task **01**) — cross-domain numbered sections, gap callouts from existing fields, nested investigation context; no scoring or validation semantics
 
 Services and routes that adopt this contract must remain **read-only** and **backend-owned**; Grafana does not implement evidence-pack semantics.
 
