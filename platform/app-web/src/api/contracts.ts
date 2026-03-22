@@ -965,3 +965,22 @@ export interface RecentChangeSummaryResponse {
   domains: RecentChangeDomainSlice[];
   aggregation_notes: string[];
 }
+
+/** Backend-owned investigation workspace assembly (`GET /api/v1/investigation-workspace/context`). */
+export interface InvestigationWorkspaceSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: string[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+/** Nested read-only assembly of existing app-api responses; not a new truth domain. */
+export interface InvestigationContextAssemblyResponse {
+  metadata: ApiResponseMetadata;
+  safety: InvestigationWorkspaceSafetyFraming;
+  assembly_notes: string[];
+  recent_change: RecentChangeSummaryResponse;
+  platform_status: PlatformStatusResponse;
+  capabilities: CapabilitiesListResponse;
+}

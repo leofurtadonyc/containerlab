@@ -5,6 +5,7 @@ import type {
   ErrorResponse,
   PlatformStatusResponse,
   PoliciesListResponse,
+  InvestigationContextAssemblyResponse,
   RecentChangeSummaryResponse,
   TopologyResponse,
   WorkflowHistoryResponse,
@@ -78,6 +79,15 @@ export class ApiClient {
     const limit = Math.min(100, Math.max(1, syncRunsLimit));
     return this.request<RecentChangeSummaryResponse>(
       `/api/v1/change-intelligence/recent-summary?sync_runs_limit=${limit}`,
+    );
+  }
+
+  async getInvestigationWorkspaceContext(
+    syncRunsLimit = 20,
+  ): Promise<InvestigationContextAssemblyResponse> {
+    const limit = Math.min(100, Math.max(1, syncRunsLimit));
+    return this.request<InvestigationContextAssemblyResponse>(
+      `/api/v1/investigation-workspace/context?sync_runs_limit=${limit}`,
     );
   }
 

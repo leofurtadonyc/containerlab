@@ -633,3 +633,45 @@ section h2 {
 .change-intelligence-product-surface-links {
   margin: 0;
 }
+
+.investigation-entry-card {
+  border: 1px solid #2e507a;
+  background: linear-gradient(145deg, #121c2e 0%, #0f1724 55%, #101b2d 100%);
+  margin-bottom: 18px;
+}
+
+.investigation-entry-card__intro h3 {
+  margin-top: 0;
+}
+
+.investigation-entry-card__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.investigation-entry-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 6px;
+  border: 1px solid #4c8fd9;
+  background: #1a3a63;
+  color: #e8f1ff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.investigation-entry-primary:hover {
+  background: #214a7a;
+  border-color: #6aa8f0;
+}
+
+.investigation-entry-card__hint {
+  max-width: 52rem;
+  margin: 0;
+}
