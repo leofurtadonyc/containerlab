@@ -209,6 +209,7 @@ capabilities_response=$(fetch_compact_json "$APP_API_URL/api/v1/capabilities")
 workflow_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-history")
 audit_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/audit-history")
 change_intelligence_response=$(fetch_compact_json "$APP_API_URL/api/v1/change-intelligence/recent-summary")
+investigation_workspace_response=$(fetch_compact_json "$APP_API_URL/api/v1/investigation-workspace/context")
 app_api_metrics=$(curl -fsS "$APP_API_URL/metrics")
 collector_metrics=$(curl -fsS "$GNMI_COLLECTOR_URL/metrics")
 
@@ -427,6 +428,17 @@ assert_contains "change intelligence response" "$change_intelligence_response" '
 assert_contains "change intelligence response" "$change_intelligence_response" '"completeness_posture":"bounded_partial"'
 change_intelligence_bounded_query=$(fetch_compact_json "$APP_API_URL/api/v1/change-intelligence/recent-summary?sync_runs_limit=10")
 assert_contains "change intelligence bounded query (sync_runs_limit echo)" "$change_intelligence_bounded_query" '"sync_runs_limit_applied":10'
+
+# Week 25 investigation workspace: structural assembly (nested contracts; not scoring).
+assert_contains "investigation workspace response" "$investigation_workspace_response" '"contract_id":"investigation_workspace_phase2_v1"'
+assert_contains "investigation workspace response" "$investigation_workspace_response" '"authority_posture":"interpretation_support_only"'
+assert_contains "investigation workspace response" "$investigation_workspace_response" '"assembly_notes":['
+assert_contains "investigation workspace response" "$investigation_workspace_response" '"recent_change":{'
+assert_contains "investigation workspace response" "$investigation_workspace_response" '"contract_id":"change_intelligence_phase2_v1"'
+assert_contains "investigation workspace response" "$investigation_workspace_response" '"platform_status":{'
+assert_contains "investigation workspace response" "$investigation_workspace_response" '"capabilities":{'
+investigation_workspace_bounded_query=$(fetch_compact_json "$APP_API_URL/api/v1/investigation-workspace/context?sync_runs_limit=10")
+assert_contains "investigation workspace bounded query (sync_runs echo)" "$investigation_workspace_bounded_query" '"sync_runs_limit_applied":10'
 
 if [ "$sync_runs_count" -gt 0 ]; then
   assert_not_contains "workflow history response" "$workflow_history_response" '"data_status":"empty"'

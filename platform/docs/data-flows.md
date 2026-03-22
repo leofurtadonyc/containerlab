@@ -38,8 +38,7 @@ The current repository state includes:
   metrics; not a validation engine); vendor/adapters overview uses **real**
   bounded collector and collector-boundary metrics (**Nokia-first** scope)—see
   `dashboards.md` and `production-readiness-assessment.md`
-- **Investigation workspace (week 25, contract):** backend-owned bounded vocabulary in
-  **`investigation-workspace-contract.md`** / **`schemas/investigation_workspace.py`** for a future **read-only** assembly of **existing** evidence (including **change intelligence** and **platform status** as context sources)—interpretation support only; **not** validation, execution, or safe-to-change authority; see **week 25** follow-on tasks for any API surface
+- **Investigation workspace (week 25):** **`GET /api/v1/investigation-workspace/context`** assembles nested **existing** responses (change-intelligence **`recent-summary`**, **`/api/v1/platform/status`**, **`/api/v1/capabilities`**) per **`investigation-workspace-contract.md`** / **`schemas/investigation_workspace.py`** / **`services/investigation_workspace.py`**—interpretation support only; **not** validation, execution, or safe-to-change authority; **`verify-core-runtime.sh`** includes structural checks on the live JSON
 - **Change intelligence (week 24):** backend-owned bounded vocabulary and
   **`GET /api/v1/change-intelligence/recent-summary`** cross-domain summary over
   existing snapshot metrics, readiness snapshot recency context, and sync-run history—see

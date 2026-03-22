@@ -17,6 +17,11 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app_api.schemas.capabilities import CapabilitiesListResponse
+from app_api.schemas.change_intelligence import RecentChangeSummaryResponse
+from app_api.schemas.common import ApiResponseMetadata
+from app_api.schemas.platform import PlatformStatusResponse
+
 INVESTIGATION_WORKSPACE_CONTRACT_ID = "investigation_workspace_phase2_v1"
 """Stable identifier for this contract revision (bump when vocabulary changes)."""
 
@@ -97,3 +102,24 @@ class InvestigationWorkspaceSafetyFraming(BaseModel):
             "execution."
         )
     )
+
+
+class InvestigationContextAssemblyResponse(BaseModel):
+    """Backend-owned read-only assembly of existing evidence for operator investigation.
+
+    Composes **nested** responses already defined by their own contracts—no new
+    persistence, scoring, or cross-domain authority. Missing or partial evidence
+    remains explicit inside each nested payload.
+    """
+
+    metadata: ApiResponseMetadata
+    safety: InvestigationWorkspaceSafetyFraming
+    assembly_notes: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Bounded explanation of what was assembled; not a verdict or recommendation."
+        ),
+    )
+    recent_change: RecentChangeSummaryResponse
+    platform_status: PlatformStatusResponse
+    capabilities: CapabilitiesListResponse

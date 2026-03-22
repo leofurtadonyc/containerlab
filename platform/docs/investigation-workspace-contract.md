@@ -4,10 +4,13 @@
 
 This document is the **backend-owned bounded contract** for an **operator investigation workspace**: a **read-only assembly** of **existing** evidence—recent change signals, current platform posture, and supporting per-domain context—so operators can reason in **one coherent place** without inventing validation engines, execution authority, or safe-to-change recommendations.
 
-Implementation references (when APIs ship in later week **25** tasks):
+Implementation references:
 
-- `platform/app-api/src/app_api/schemas/investigation_workspace.py` — stable literals, safety framing, and explicit non-claims
-- Future services and routes will assemble **only** allowed sources; this document does **not** prescribe UI layout.
+- `platform/app-api/src/app_api/schemas/investigation_workspace.py` — stable literals, safety framing, explicit non-claims, and **`InvestigationContextAssemblyResponse`**
+- **`GET /api/v1/investigation-workspace/context`** — backend-owned assembly of nested **existing** responses (change-intelligence recent summary, platform status, capabilities matrix); optional **`sync_runs_limit`** query (forwarded to the nested change-intelligence assembly only)
+- `platform/app-api/src/app_api/services/investigation_workspace.py` — composition only; **no** new collection or scoring
+
+Services and routes assemble **only** allowed sources; this document does **not** prescribe UI layout.
 
 ## Classification: new lane vs week 24 change intelligence vs weeks 19–23
 
