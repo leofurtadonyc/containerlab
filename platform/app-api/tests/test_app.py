@@ -4673,6 +4673,19 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
             payload["dry_run_readiness"]["blockers"][0]["blocked_readiness_scopes"][0]
             == "planning_depth"
         )
+        assert payload["dry_run_readiness"]["blockers"][0]["related_prerequisites"] == [
+            "workflow_audit_visibility"
+        ]
+        assert payload["dry_run_readiness"]["blockers"][1]["related_prerequisites"] == [
+            "topology_comparison_evidence",
+            "policy_comparison_evidence",
+            "capability_matrix_precision",
+        ]
+        assert payload["items"][0]["related_readiness_blockers"] == []
+        assert payload["items"][1]["related_readiness_blockers"] == [
+            "topology_truth_still_bounded",
+            "validation_result_contract_missing",
+        ]
         assert payload["items"][1]["feature"] == "topology_observation"
         assert payload["items"][1]["workflow_readiness_status"] == "partial_foundation"
         assert "validation_contracts" in payload["items"][1]["workflow_readiness_scopes"]

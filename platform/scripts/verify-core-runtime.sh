@@ -390,6 +390,9 @@ assert_contains "capabilities response" "$capabilities_response" '"delivery_tier
 assert_contains "capabilities response" "$capabilities_response" '"future_roadmap":'
 assert_contains "capabilities response" "$capabilities_response" '"vendor_posture_counts":{'
 assert_contains "capabilities response" "$capabilities_response" '"future_juniper_target":'
+# Week 23 decision-support: capability rows link to readiness blockers; dry_run blockers link to prerequisites.
+assert_contains "capabilities response (related_readiness_blockers)" "$capabilities_response" '"related_readiness_blockers":'
+assert_contains "capabilities response (blocker related_prerequisites)" "$capabilities_response" '"related_prerequisites":['
 
 assert_contains "workflow history response" "$workflow_history_response" '"data_status":"'
 assert_contains "workflow history response" "$workflow_history_response" '"count":'
