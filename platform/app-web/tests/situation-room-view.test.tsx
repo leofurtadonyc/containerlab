@@ -305,6 +305,9 @@ describe("SituationRoomView", () => {
     expect(html).toContain("capability planning posture");
     expect(html).toContain("Bounded review navigation");
     expect(html).toContain("Optional review prompts below are read-only navigation hints");
+    expect(html).toContain("Review readiness snapshot history");
+    expect(html).toContain("Open readiness");
+    expect(html).toContain("Readiness snapshot history: no persisted rows in this workspace");
     expect(html).toContain("Honest evidence gaps");
     expect(html).toContain("Interpretation support");
     expect(html).toContain("Cross-domain context at a glance");

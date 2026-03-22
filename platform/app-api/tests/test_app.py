@@ -4560,6 +4560,10 @@ def test_evidence_pack_situation_assembly_returns_nested_contracts(monkeypatch) 
         "audit",
         "platform-health",
     )
+    assert first_prompt["rationale"]
+    prompt_ids = [p["prompt_id"] for p in srg["review_navigation_prompts"]]
+    assert prompt_ids == sorted(prompt_ids)
+    assert any("Devices (absent):" in note for note in srg["explicit_missing_evidence_notes"])
     assert payload["devices"]["data_status"] == "live"
     assert payload["topology"]["data_status"] == "live"
     assert payload["policies"]["data_status"] == "live"
@@ -4581,6 +4585,8 @@ def test_evidence_pack_situation_assembly_returns_nested_contracts(monkeypatch) 
     assert bounded["investigation_context"]["recent_change"]["sync_runs_limit_applied"] == 10
     assert bounded["audit_history"]["read_side_query"]["sync_runs_limit_effective"] == 10
     assert bounded["workflow_history"]["read_side_query"]["sync_runs_limit_effective"] == 10
+    assert bounded["situation_review_guidance"]["review_framing"]
+    assert isinstance(bounded["situation_review_guidance"]["review_navigation_prompts"], list)
 
 
 def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> None:
