@@ -1,6 +1,10 @@
 import type { ChangeEvidenceDomain, RecentChangeSummaryResponse } from "../../api/contracts";
 import { QueryStateSummaryCard } from "../../components/query-states";
-import { isChangeIntelligenceProductSurfaceDomain } from "../../lib/change-intelligence-navigation";
+import {
+  isChangeIntelligenceHistorySurfaceDomain,
+  isChangeIntelligenceProductSurfaceDomain,
+  viewIdForChangeIntelligenceHistoryDomain,
+} from "../../lib/change-intelligence-navigation";
 import { formatDateTime } from "../../lib/presentation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 
@@ -104,7 +108,12 @@ export function RecentChangeIntelligencePanel({
 
       <p className="table-note recent-change-product-drilldown-note">
         For Devices, Topology, and Policies, use <strong>Open …</strong> below each row to jump to that
-        read-only product surface — evidence may still be absent; lists are not filtered by this summary window.
+        read-only product surface — evidence may still be absent; lists are not filtered by this summary
+        window.
+      </p>
+      <p className="table-note recent-change-history-drilldown-note">
+        For Workflow history and Audit history, use <strong>Open …</strong> below to open the same sync-derived
+        row-level lists — not filtered by this aggregation; honest absence on those pages stays explicit.
       </p>
 
       <ul className="recent-change-domain-list">
@@ -121,6 +130,18 @@ export function RecentChangeIntelligencePanel({
                   type="button"
                   className="nav-drilldown-button"
                   onClick={() => navigateToEvidenceView(slice.domain)}
+                >
+                  Open {DOMAIN_LABELS[slice.domain]}
+                </button>
+              </div>
+            ) : isChangeIntelligenceHistorySurfaceDomain(slice.domain) ? (
+              <div className="recent-change-domain-actions">
+                <button
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() =>
+                    navigateToEvidenceView(viewIdForChangeIntelligenceHistoryDomain(slice.domain))
+                  }
                 >
                   Open {DOMAIN_LABELS[slice.domain]}
                 </button>

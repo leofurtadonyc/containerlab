@@ -804,7 +804,10 @@ describe("overview view", () => {
     expect(html).toContain("Open Devices");
     expect(html).toContain("Open Topology");
     expect(html).toContain("Open Policies");
+    expect(html).toContain("Open Workflow history");
+    expect(html).toContain("Open Audit history");
     expect(html).toContain("evidence may still be absent");
+    expect(html).toContain("honest absence on those pages stays explicit");
   });
 
   it("shows a loading placeholder for recent change intelligence until data arrives", () => {

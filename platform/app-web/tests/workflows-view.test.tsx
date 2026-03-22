@@ -176,6 +176,20 @@ beforeEach(() => {
 });
 
 describe("workflows view", () => {
+  it("surfaces bounded change-intelligence link to Overview while history is loading", () => {
+    useWorkflowHistoryQuery.mockReturnValue({
+      data: null,
+      error: null,
+      isLoading: true,
+      reload: vi.fn(async () => undefined),
+    });
+
+    const html = renderToStaticMarkup(<WorkflowsView />);
+
+    expect(html).toContain("Open Overview (recent change summary)");
+    expect(html).toContain("row-level sync-derived workflow history");
+  });
+
   it("renders preserved baseline posture when baseline_summary indicates preserved", () => {
     useWorkflowHistoryQuery.mockReturnValue(
       createQueryState(createWorkflowDataWithBaseline("preserved_same_workspace_baseline")),
@@ -189,6 +203,9 @@ describe("workflows view", () => {
     expect(html).toContain("preserved same workspace baseline");
     expect(html).toContain("preserved sync-derived history");
     expect(html).toContain("Sync- and readiness-derived read-only history");
+    expect(html).toContain("Recent change (bounded)");
+    expect(html).toContain("Open Overview (recent change summary)");
+    expect(html).toContain("row-level sync-derived workflow history");
   });
 
   it("renders new baseline posture when baseline_summary indicates new baseline", () => {

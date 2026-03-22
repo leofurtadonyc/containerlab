@@ -8,3 +8,16 @@ export function isChangeIntelligenceProductSurfaceDomain(
 ): domain is "devices" | "topology" | "policies" {
   return PRODUCT_SURFACE_DOMAINS.has(domain);
 }
+
+/** Domains whose aggregation maps to Workflow history / Audit history shell views (sync-derived lists, not filtered by the summary). */
+export function isChangeIntelligenceHistorySurfaceDomain(
+  domain: ChangeEvidenceDomain,
+): domain is "workflow_history" | "audit_history" {
+  return domain === "workflow_history" || domain === "audit_history";
+}
+
+export function viewIdForChangeIntelligenceHistoryDomain(
+  domain: "workflow_history" | "audit_history",
+): "workflows" | "audit" {
+  return domain === "workflow_history" ? "workflows" : "audit";
+}

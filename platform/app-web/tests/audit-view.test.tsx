@@ -174,6 +174,20 @@ beforeEach(() => {
 });
 
 describe("audit view", () => {
+  it("surfaces bounded change-intelligence link to Overview while history is loading", () => {
+    useAuditHistoryQuery.mockReturnValue({
+      data: null,
+      error: null,
+      isLoading: true,
+      reload: vi.fn(async () => undefined),
+    });
+
+    const html = renderToStaticMarkup(<AuditView />);
+
+    expect(html).toContain("Open Overview (recent change summary)");
+    expect(html).toContain("row-level sync-derived audit-style history");
+  });
+
   it("renders preserved baseline posture when baseline_summary indicates preserved", () => {
     useAuditHistoryQuery.mockReturnValue(
       createQueryState(createAuditDataWithBaseline("preserved_same_workspace_baseline")),
@@ -187,6 +201,9 @@ describe("audit view", () => {
     expect(html).toContain("preserved same workspace baseline");
     expect(html).toContain("preserved sync-derived history");
     expect(html).toContain("Read-only sync- and readiness-derived audit-style visibility");
+    expect(html).toContain("Recent change (bounded)");
+    expect(html).toContain("Open Overview (recent change summary)");
+    expect(html).toContain("row-level sync-derived audit-style history");
   });
 
   it("renders new baseline posture when baseline_summary indicates new baseline", () => {

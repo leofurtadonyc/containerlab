@@ -589,6 +589,10 @@ section h2 {
   margin: 10px 0 0;
 }
 
+.recent-change-history-drilldown-note {
+  margin: 8px 0 0;
+}
+
 .recent-change-domain-list li {
   display: grid;
   grid-template-columns: minmax(140px, 1fr) auto;
