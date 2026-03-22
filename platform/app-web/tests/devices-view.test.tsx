@@ -90,6 +90,18 @@ const baseDevicesPayload = {
       capability_detail: "Support remains bounded.",
     },
   ],
+  read_side_query: {
+    limit_requested: null,
+    items_total: 2,
+    items_returned: 2,
+    history_recent_limit_requested: null,
+    history_recent_limit_effective: 3,
+    history_recent_snapshots_returned: 2,
+    sync_runs_limit_requested: null,
+    sync_runs_limit_effective: null,
+    readiness_snapshot_history_limit_requested: null,
+    readiness_snapshot_history_limit_effective: null,
+  },
 };
 
 function createDevicesDataFullHistory() {
@@ -181,6 +193,10 @@ function createDevicesDataComparisonWithoutPreview() {
 function createDevicesDataCurrentOnlyNoComparison() {
   return {
     ...baseDevicesPayload,
+    read_side_query: {
+      ...baseDevicesPayload.read_side_query,
+      history_recent_snapshots_returned: 1,
+    },
     history: {
       status: "current_only" as const,
       summary: "One persisted inventory snapshot exists; comparison to previous is not available.",
@@ -208,6 +224,10 @@ function createDevicesDataCurrentOnlyNoComparison() {
 function createDevicesDataUnavailableEmpty() {
   return {
     ...baseDevicesPayload,
+    read_side_query: {
+      ...baseDevicesPayload.read_side_query,
+      history_recent_snapshots_returned: 0,
+    },
     history: {
       status: "unavailable" as const,
       summary: "No persisted inventory history in this posture.",
@@ -241,6 +261,8 @@ describe("devices view", () => {
     expect(html).toContain("removed");
     expect(html).toContain("Bounded inventory history note.");
     expect(html).toContain("read-side, persisted-inventory evidence");
+    expect(html).toContain("Bounded query readout (from API)");
+    expect(html).toContain("Persisted snapshot summaries:");
   });
 
   it("omits change preview table when the backend returns an empty preview list", () => {
@@ -268,7 +290,25 @@ describe("devices view", () => {
     const html = renderToStaticMarkup(<DevicesView />);
 
     expect(html).toContain("History unavailable");
-    expect(html).toContain("No persisted normalized inventory snapshots are currently available");
+    expect(html).toContain("No persisted inventory history window is available from the backend");
+  });
+
+  it("surfaces primary list truncation honestly when the API echo shows fewer rows than the logical total", () => {
+    useDevicesQuery.mockReturnValue(
+      createQueryState({
+        ...createDevicesDataFullHistory(),
+        read_side_query: {
+          ...baseDevicesPayload.read_side_query,
+          limit_requested: 1,
+          items_total: 2,
+          items_returned: 1,
+        },
+      }),
+    );
+
+    const html = renderToStaticMarkup(<DevicesView />);
+
+    expect(html).toContain("Primary device inventory list shows 1 of 2 rows");
   });
 
   it("renders API error state with retry", () => {

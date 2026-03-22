@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { ReadSideQueryEchoCallout } from "../../components/read-side-query-echo";
 import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { IdentifierChip } from "../../components/identifier-chip";
@@ -25,6 +26,7 @@ import {
   describeEvidenceSource,
   normalizeEvidenceConfidence,
 } from "../../lib/evidence-confidence";
+import { recentSnapshotsEmptyFootnote } from "../../lib/read-side-query-product-copy";
 import { useTopologyQuery } from "../topology/api";
 import { usePoliciesQuery } from "./api";
 
@@ -890,6 +892,8 @@ export function PoliciesView() {
         </article>
       </div>
 
+      <ReadSideQueryEchoCallout echo={data.read_side_query} slice="policies" />
+
       {data.data_status === "degraded" ? (
         <div className="callout">
           <strong>Degraded live policy visibility remains explicit</strong>
@@ -1676,11 +1680,11 @@ export function PoliciesView() {
             </ul>
           ) : (
             <p className="footnote">
-              {data.history.status === "unavailable"
-                ? "No persisted policy-history window is currently available from the backend."
-                : data.history.status === "current_only"
-                  ? "Only one persisted snapshot exists on file; a second persisted sync is required before comparison and richer history readouts can appear."
-                  : "No persisted normalized policy snapshots are currently available for this bounded view."}
+              {recentSnapshotsEmptyFootnote(
+                data.history.status,
+                data.read_side_query,
+                "policies",
+              )}
             </p>
           )}
         </article>

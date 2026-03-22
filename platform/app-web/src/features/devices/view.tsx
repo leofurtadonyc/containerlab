@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import type { EvidenceConfidenceSummary } from "../../api/contracts";
+import { ReadSideQueryEchoCallout } from "../../components/read-side-query-echo";
 import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
@@ -19,6 +20,7 @@ import {
   describeFreshnessPosture,
   normalizeEvidenceConfidence,
 } from "../../lib/evidence-confidence";
+import { recentSnapshotsEmptyFootnote } from "../../lib/read-side-query-product-copy";
 import { useDevicesQuery } from "./api";
 
 function getInventoryEvidenceFallback(
@@ -263,6 +265,8 @@ export function DevicesView() {
         <span>Generated: {formatDateTime(data.generated_at)}</span>
         <span>Served persisted at: {formatDateTime(data.served_persisted_at)}</span>
       </div>
+
+      <ReadSideQueryEchoCallout echo={data.read_side_query} slice="devices" />
 
       <p className="callout">{data.summary}</p>
 
@@ -625,8 +629,11 @@ export function DevicesView() {
             </ul>
           ) : (
             <p className="footnote">
-              No persisted normalized inventory snapshots are currently available for this bounded
-              view.
+              {recentSnapshotsEmptyFootnote(
+                data.history.status,
+                data.read_side_query,
+                "devices",
+              )}
             </p>
           )}
         </article>

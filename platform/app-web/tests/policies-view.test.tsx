@@ -240,6 +240,18 @@ function createPolicyDataWithHistory() {
         notes: [],
       },
     ],
+    read_side_query: {
+      limit_requested: null,
+      items_total: 4,
+      items_returned: 4,
+      history_recent_limit_requested: null,
+      history_recent_limit_effective: 3,
+      history_recent_snapshots_returned: 2,
+      sync_runs_limit_requested: null,
+      sync_runs_limit_effective: null,
+      readiness_snapshot_history_limit_requested: null,
+      readiness_snapshot_history_limit_effective: null,
+    },
     items: [],
   };
 }
@@ -349,6 +361,8 @@ describe("policies view", () => {
     expect(html).toContain("Persisted rollup:");
     expect(html).toContain("34 observed");
     expect(html).toContain("Static local (bounded slice):");
+    expect(html).toContain("Bounded query readout (from API)");
+    expect(html).toContain("Persisted snapshot summaries:");
   });
 
   it("renders persisted source-readiness posture in history and comparison", () => {
@@ -437,6 +451,10 @@ describe("policies view", () => {
           recent_snapshots: [],
           comparison_to_previous: null,
         },
+        read_side_query: {
+          ...base.read_side_query,
+          history_recent_snapshots_returned: 0,
+        },
       }),
     );
     useTopologyQuery.mockReturnValue(createQueryState(null));
@@ -444,5 +462,25 @@ describe("policies view", () => {
     const html = renderToStaticMarkup(<PoliciesView />);
 
     expect(html).toContain("No persisted policy-history window is currently available");
+  });
+
+  it("describes honest primary list truncation when echo shows partial items", () => {
+    const base = createPolicyDataWithHistory();
+    usePoliciesQuery.mockReturnValue(
+      createQueryState({
+        ...base,
+        read_side_query: {
+          ...base.read_side_query,
+          limit_requested: 2,
+          items_total: 4,
+          items_returned: 2,
+        },
+      }),
+    );
+    useTopologyQuery.mockReturnValue(createQueryState(null));
+
+    const html = renderToStaticMarkup(<PoliciesView />);
+
+    expect(html).toContain("Primary policy inventory list shows 2 of 4 rows");
   });
 });
