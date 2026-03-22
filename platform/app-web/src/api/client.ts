@@ -5,6 +5,7 @@ import type {
   ErrorResponse,
   PlatformStatusResponse,
   PoliciesListResponse,
+  RecentChangeSummaryResponse,
   TopologyResponse,
   WorkflowHistoryResponse,
 } from "./contracts";
@@ -71,6 +72,13 @@ export class ApiClient {
 
   async getCapabilities(): Promise<CapabilitiesListResponse> {
     return this.request<CapabilitiesListResponse>("/api/v1/capabilities");
+  }
+
+  async getRecentChangeSummary(syncRunsLimit = 20): Promise<RecentChangeSummaryResponse> {
+    const limit = Math.min(100, Math.max(1, syncRunsLimit));
+    return this.request<RecentChangeSummaryResponse>(
+      `/api/v1/change-intelligence/recent-summary?sync_runs_limit=${limit}`,
+    );
   }
 
   private async request<T>(path: string): Promise<T> {

@@ -554,3 +554,82 @@ section h2 {
 .nav-drilldown-button:hover {
   background: #2b3d5c;
 }
+
+.recent-change-card {
+  margin-top: 20px;
+  margin-bottom: 12px;
+  border: 1px solid #2d3e5c;
+}
+
+.recent-change-card__header {
+  align-items: flex-start;
+}
+
+.recent-change-card__callout {
+  margin-top: 12px;
+}
+
+.recent-change-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.88rem;
+}
+
+.recent-change-domain-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.recent-change-product-drilldown-note {
+  margin: 10px 0 0;
+}
+
+.recent-change-history-drilldown-note {
+  margin: 8px 0 0;
+}
+
+.recent-change-domain-list li {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) auto;
+  grid-template-rows: auto auto auto;
+  gap: 6px 12px;
+  align-items: start;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #24324a;
+}
+
+.recent-change-domain-list li:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.recent-change-headline {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: #c9d4e8;
+}
+
+.recent-change-domain-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.recent-change-domain-label {
+  font-weight: 600;
+}
+
+.change-intelligence-product-surface-links {
+  margin: 0;
+}

@@ -39,6 +39,8 @@ import {
   reloadOverviewSlicesSequentially,
   type OverviewSliceState,
 } from "./model";
+import { useRecentChangeSummaryQuery } from "./api";
+import { RecentChangeIntelligencePanel } from "./recent-change";
 import { getPlatformReadPath, usePlatformStatusQuery } from "../platform-health/api";
 import { usePoliciesQuery } from "../policies/api";
 import { getTopologyCoverageSummary, useTopologyQuery } from "../topology/api";
@@ -119,6 +121,7 @@ export function OverviewView() {
   const policiesSettled = policiesQuery.data !== null || policiesQuery.error !== null;
   const platformQuery = usePlatformStatusQuery(policiesSettled);
   const capabilitiesQuery = useCapabilitiesQuery();
+  const recentChangeQuery = useRecentChangeSummaryQuery();
 
   const reloadAllSlices = useCallback(async () => {
     if (refreshInFlightRef.current) {
@@ -134,6 +137,7 @@ export function OverviewView() {
         policiesQuery,
         platformQuery,
         capabilitiesQuery,
+        recentChangeQuery,
       ]);
     } finally {
       refreshInFlightRef.current = false;
@@ -143,6 +147,7 @@ export function OverviewView() {
     devicesQuery.reload,
     platformQuery.reload,
     policiesQuery.reload,
+    recentChangeQuery.reload,
     topologyQuery.reload,
   ]);
 
@@ -386,7 +391,7 @@ export function OverviewView() {
         </div>
       ) : null}
 
-      {platformData || devicesData || topologyData || policiesData || capabilitiesData ? (
+        {platformData || devicesData || topologyData || policiesData || capabilitiesData ? (
         <div className="metadata-row">
           {platformData ? <span>Platform generated: {formatDateTime(platformData.generated_at)}</span> : null}
           {devicesData ? <span>Devices generated: {formatDateTime(devicesData.generated_at)}</span> : null}
@@ -413,6 +418,13 @@ export function OverviewView() {
           ? ` ${3 - availableCoreSlices.length} core slice${3 - availableCoreSlices.length === 1 ? " is" : "s are"} currently unavailable and called out separately below.`
           : ""}
       </p>
+
+      <RecentChangeIntelligencePanel
+        data={recentChangeQuery.data}
+        error={recentChangeQuery.error}
+        isLoading={recentChangeQuery.isLoading}
+        onRetry={recentChangeQuery.reload}
+      />
 
       <div className="summary-grid">
         {platformData ? (

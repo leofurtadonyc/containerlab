@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import type { WorkflowHistoryItem } from "../../api/contracts";
+import { ChangeIntelligenceOverviewLink } from "../../components/change-intelligence-overview-link";
 import { HistoryEvidenceDrilldown } from "../../components/history-evidence-drilldown";
 import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { IdentifierChip } from "../../components/identifier-chip";
@@ -355,6 +356,7 @@ export function WorkflowsView() {
       <section>
         <h2>Workflow History</h2>
         <ReadSideQueryPanel variant="workflow-history" />
+        <ChangeIntelligenceOverviewLink historySurface="workflow" />
         <LoadingState label="Loading read-only workflow history." />
       </section>
     );
@@ -365,6 +367,7 @@ export function WorkflowsView() {
       <section>
         <h2>Workflow History</h2>
         <ReadSideQueryPanel variant="workflow-history" />
+        <ChangeIntelligenceOverviewLink historySurface="workflow" />
         <ErrorState error={error} onRetry={reload} />
       </section>
     );
@@ -375,6 +378,7 @@ export function WorkflowsView() {
       <section>
         <h2>Workflow History</h2>
         <ReadSideQueryPanel variant="workflow-history" />
+        <ChangeIntelligenceOverviewLink historySurface="workflow" />
         <EmptyState
           title="No workflow history"
           description="The backend returned no workflow-history response."
@@ -403,6 +407,8 @@ export function WorkflowsView() {
         <span>Count: {data.count}</span>
         <span>Generated: {formatDateTime(data.generated_at)}</span>
       </div>
+
+      <ChangeIntelligenceOverviewLink historySurface="workflow" />
 
       <div className="callout">
         <strong>History baseline</strong>{" "}

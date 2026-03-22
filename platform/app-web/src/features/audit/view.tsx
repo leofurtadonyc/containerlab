@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import type { AuditHistoryItem } from "../../api/contracts";
+import { ChangeIntelligenceOverviewLink } from "../../components/change-intelligence-overview-link";
 import { HistoryEvidenceDrilldown } from "../../components/history-evidence-drilldown";
 import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { IdentifierChip } from "../../components/identifier-chip";
@@ -315,6 +316,7 @@ export function AuditView() {
       <section>
         <h2>Audit History</h2>
         <ReadSideQueryPanel variant="audit-history" />
+        <ChangeIntelligenceOverviewLink historySurface="audit" />
         <LoadingState label="Loading read-only audit history." />
       </section>
     );
@@ -325,6 +327,7 @@ export function AuditView() {
       <section>
         <h2>Audit History</h2>
         <ReadSideQueryPanel variant="audit-history" />
+        <ChangeIntelligenceOverviewLink historySurface="audit" />
         <ErrorState error={error} onRetry={reload} />
       </section>
     );
@@ -335,6 +338,7 @@ export function AuditView() {
       <section>
         <h2>Audit History</h2>
         <ReadSideQueryPanel variant="audit-history" />
+        <ChangeIntelligenceOverviewLink historySurface="audit" />
         <EmptyState
           title="No audit history"
           description="The backend returned no audit-history response."
@@ -363,6 +367,8 @@ export function AuditView() {
         <span>Count: {data.count}</span>
         <span>Generated: {formatDateTime(data.generated_at)}</span>
       </div>
+
+      <ChangeIntelligenceOverviewLink historySurface="audit" />
 
       <div className="callout">
         <strong>History baseline</strong>{" "}

@@ -12,14 +12,19 @@ import type {
 } from "../src/api/contracts";
 import { PlatformHealthView } from "../src/features/platform-health/view";
 
-const { usePlatformStatusQuery, usePoliciesQuery, useDevicesQuery, useCapabilitiesQuery } = vi.hoisted(
-  () => ({
-    usePlatformStatusQuery: vi.fn(),
-    usePoliciesQuery: vi.fn(),
-    useDevicesQuery: vi.fn(),
-    useCapabilitiesQuery: vi.fn(),
-  }),
-);
+const {
+  usePlatformStatusQuery,
+  usePoliciesQuery,
+  useDevicesQuery,
+  useCapabilitiesQuery,
+  useRecentChangeSummaryQuery,
+} = vi.hoisted(() => ({
+  usePlatformStatusQuery: vi.fn(),
+  usePoliciesQuery: vi.fn(),
+  useDevicesQuery: vi.fn(),
+  useCapabilitiesQuery: vi.fn(),
+  useRecentChangeSummaryQuery: vi.fn(),
+}));
 
 vi.mock("../src/features/platform-health/api", async () => {
   const actual = await vi.importActual<typeof import("../src/features/platform-health/api")>(
@@ -44,11 +49,18 @@ vi.mock("../src/features/capabilities/api", () => ({
   useCapabilitiesQuery,
 }));
 
-function createQueryState<T>(data: T | null) {
+vi.mock("../src/features/overview/api", () => ({
+  useRecentChangeSummaryQuery,
+}));
+
+function createQueryState<T>(
+  data: T | null,
+  overrides: Partial<{ error: ApiClientError | null; isLoading: boolean }> = {},
+) {
   return {
     data,
-    error: null,
-    isLoading: false,
+    error: overrides.error ?? null,
+    isLoading: overrides.isLoading ?? false,
     isRefreshing: false,
     reload: vi.fn(async () => undefined),
   };
@@ -313,6 +325,74 @@ function createPoliciesData(): PoliciesListResponse {
   };
 }
 
+function createRecentChangeSummaryData() {
+  return {
+    metadata: {
+      service: "app-api" as const,
+      version: "test",
+      phase: "phase_2_read_only_foundation" as const,
+      generated_at: "2025-01-01T00:00:00Z",
+    },
+    safety: {
+      contract_id: "change_intelligence_phase2_v1",
+      authority_posture: "evidence_aggregated_non_authoritative" as const,
+      explicit_non_claims: ["not_validation_verdict"],
+      phase: "phase_2_read_only_foundation" as const,
+      summary_disclaimer:
+        "Recent change intelligence summarizes existing read-side evidence for operator visibility. It is not a validation verdict.",
+    },
+    window_semantics: "backend_defined_bounded_lookback",
+    completeness_posture: "bounded_partial",
+    sync_runs_limit_applied: 20,
+    readiness_snapshots_considered: 2,
+    domains: [
+      {
+        domain: "devices" as const,
+        signal_families: ["persisted_history_anchor"],
+        evidence_status: "present",
+        headline: "Inventory snapshots persisted.",
+        detail_notes: [],
+      },
+      {
+        domain: "topology" as const,
+        signal_families: [],
+        evidence_status: "partial",
+        headline: "Topology snapshots.",
+        detail_notes: [],
+      },
+      {
+        domain: "policies" as const,
+        signal_families: [],
+        evidence_status: "absent",
+        headline: "No policy snapshots.",
+        detail_notes: [],
+      },
+      {
+        domain: "readiness" as const,
+        signal_families: [],
+        evidence_status: "absent",
+        headline: "No readiness.",
+        detail_notes: [],
+      },
+      {
+        domain: "workflow_history" as const,
+        signal_families: [],
+        evidence_status: "present",
+        headline: "Sync runs.",
+        detail_notes: [],
+      },
+      {
+        domain: "audit_history" as const,
+        signal_families: [],
+        evidence_status: "partial",
+        headline: "Audit substrate.",
+        detail_notes: [],
+      },
+    ],
+    aggregation_notes: [],
+  };
+}
+
 describe("PlatformHealthView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -324,6 +404,7 @@ describe("PlatformHealthView", () => {
       isRefreshing: false,
       reload: vi.fn(async () => undefined),
     });
+    useRecentChangeSummaryQuery.mockReturnValue(createQueryState(createRecentChangeSummaryData()));
   });
 
   it("surfaces same-workspace recovery summary card and trust cue when recovery contract is present", () => {
@@ -339,6 +420,15 @@ describe("PlatformHealthView", () => {
     expect(html).toContain("Recovery posture");
     expect(html).toContain("Same-workspace persisted baseline is present");
     expect(html).toContain("see Overview for richer recovery cues");
+    expect(html).toContain("Bounded recent change");
+    expect(html).toContain("2 present • 2 partial • 2 absent");
+    expect(html).toContain("Recent change (bounded support)");
+    expect(html).toContain("Evidence mix (6 domains)");
+    expect(html).toContain("Open Devices, Topology, Policies");
+    expect(html).toContain("Open Devices");
+    expect(html).toContain("Open Topology");
+    expect(html).toContain("Open Policies");
+    expect(html).toContain("not a validation verdict");
     expect(html).toContain("Policy history");
     expect(html).toContain("No snapshots • unavailable • ready");
   });
@@ -480,5 +570,29 @@ describe("PlatformHealthView", () => {
     expect(html).toContain("Inventory history");
     expect(html).toContain("Unavailable");
     expect(html).toContain("could not load the supporting Devices response");
+  });
+
+  it("shows loading placeholders for bounded recent change when the summary is still loading", () => {
+    useRecentChangeSummaryQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatus()));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+
+    const html = renderToStaticMarkup(<PlatformHealthView />);
+
+    expect(html).toContain("Loading bounded change-intelligence summary");
+    expect(html).toContain("Loading the supporting change-intelligence summary");
+  });
+
+  it("surfaces unavailable bounded recent change when the change-intelligence query fails", () => {
+    useRecentChangeSummaryQuery.mockReturnValue(
+      createQueryState(null, { error: new ApiClientError("change summary failed", 503, "request_failed") }),
+    );
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatus()));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+
+    const html = renderToStaticMarkup(<PlatformHealthView />);
+
+    expect(html).toContain("change summary failed");
+    expect(html).toContain("Unavailable");
   });
 });

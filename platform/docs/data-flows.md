@@ -38,6 +38,18 @@ The current repository state includes:
   metrics; not a validation engine); vendor/adapters overview uses **real**
   bounded collector and collector-boundary metrics (**Nokia-first** scope)—see
   `dashboards.md` and `production-readiness-assessment.md`
+- **Change intelligence (week 24):** backend-owned bounded vocabulary and
+  **`GET /api/v1/change-intelligence/recent-summary`** cross-domain summary over
+  existing snapshot metrics, readiness snapshot recency context, and sync-run history—see
+  `change-intelligence-contract.md`; **WebUI** **Overview** (**`RecentChangeIntelligencePanel`**) and
+  **Platform Health** (coarse supporting card + trust cue) consume the same contract with explicit
+  non-claims; **read-only** **`view=`** drilldowns jump from the panel to **Devices**, **Topology**,
+  **Policies**, **Workflow history**, and **Audit history** (lists are **not** filtered by the summary
+  window); **Workflow history** and **Audit history** pages link back to **Overview** for the bounded
+  aggregate panel—interpretation and navigation only; **`verify-core-runtime.sh`** includes **structural**
+  substring checks on the live **`recent-summary`** JSON (contract id, window semantics, key domain fields,
+  **`sync_runs_limit`** echo)—**not** validation, drift detection, safe-to-change scoring, or workflow
+  authority; summaries remain **app-api**–owned (Grafana does not implement this semantics layer)
 
 It does not yet include:
 
