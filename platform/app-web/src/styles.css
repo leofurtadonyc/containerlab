@@ -726,7 +726,118 @@ section h2 {
 .situation-room-product {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 28px;
+}
+
+.situation-room-cross-section {
+  padding-bottom: 8px;
+  border-bottom: 1px solid #24324a;
+}
+
+.situation-room-cross-section:last-of-type {
+  border-bottom: none;
+}
+
+.situation-room-cross-section__title {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+  color: #e8f1ff;
+}
+
+.situation-room-section-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  background: #3d3218;
+  border: 1px solid #8b7355;
+  color: #fff4dc;
+}
+
+.situation-room-cross-section__intro {
+  margin-bottom: 14px;
+}
+
+.situation-room-pack-grid--triple {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.situation-room-platform-card {
+  padding: 14px 16px;
+}
+
+.situation-room-platform-card__lead {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+.situation-room-capabilities-card {
+  padding: 14px 16px;
+}
+
+.situation-room-capabilities-card__stat {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+.situation-room-recent-change-strip {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #2a3f63;
+  background: #0f1724;
+}
+
+.situation-room-recent-change-strip__meta {
+  margin: 0 0 12px;
+}
+
+.situation-room-recent-domain-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.situation-room-recent-domain-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+}
+
+.situation-room-recent-domain-label {
+  font-weight: 600;
+  color: #d7e4f8;
+  min-width: 8rem;
+}
+
+.situation-room-recent-domain-headline {
+  flex: 1 1 220px;
+  margin: 0;
+  min-width: 0;
+}
+
+.situation-room-gap-list {
+  margin: 8px 0 0;
+  padding-left: 1.2rem;
+  line-height: 1.5;
+  font-size: 0.88rem;
+  color: #c9d4e8;
+}
+
+.situation-room-gaps-empty {
+  margin: 4px 0 0;
+  font-style: italic;
 }
 
 .situation-room-metadata-strip {
