@@ -1,6 +1,8 @@
 import type { ChangeEvidenceDomain, RecentChangeSummaryResponse } from "../../api/contracts";
-import { formatDateTime } from "../../lib/presentation";
 import { QueryStateSummaryCard } from "../../components/query-states";
+import { isChangeIntelligenceProductSurfaceDomain } from "../../lib/change-intelligence-navigation";
+import { formatDateTime } from "../../lib/presentation";
+import { navigateToEvidenceView } from "../../lib/url-app-state";
 
 const DOMAIN_LABELS: Record<ChangeEvidenceDomain, string> = {
   devices: "Devices",
@@ -100,6 +102,11 @@ export function RecentChangeIntelligencePanel({
         </li>
       </ul>
 
+      <p className="table-note recent-change-product-drilldown-note">
+        For Devices, Topology, and Policies, use <strong>Open …</strong> below each row to jump to that
+        read-only product surface — evidence may still be absent; lists are not filtered by this summary window.
+      </p>
+
       <ul className="recent-change-domain-list">
         {data.domains.map((slice) => (
           <li key={slice.domain}>
@@ -108,6 +115,17 @@ export function RecentChangeIntelligencePanel({
               {slice.evidence_status}
             </span>
             <p className="recent-change-headline">{slice.headline}</p>
+            {isChangeIntelligenceProductSurfaceDomain(slice.domain) ? (
+              <div className="recent-change-domain-actions">
+                <button
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() => navigateToEvidenceView(slice.domain)}
+                >
+                  Open {DOMAIN_LABELS[slice.domain]}
+                </button>
+              </div>
+            ) : null}
           </li>
         ))}
       </ul>

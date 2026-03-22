@@ -585,10 +585,14 @@ section h2 {
   padding: 0;
 }
 
+.recent-change-product-drilldown-note {
+  margin: 10px 0 0;
+}
+
 .recent-change-domain-list li {
   display: grid;
   grid-template-columns: minmax(140px, 1fr) auto;
-  grid-template-rows: auto auto;
+  grid-template-rows: auto auto auto;
   gap: 6px 12px;
   align-items: start;
   margin-bottom: 10px;
@@ -610,6 +614,18 @@ section h2 {
   color: #c9d4e8;
 }
 
+.recent-change-domain-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .recent-change-domain-label {
   font-weight: 600;
+}
+
+.change-intelligence-product-surface-links {
+  margin: 0;
 }

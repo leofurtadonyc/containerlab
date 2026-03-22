@@ -1,3 +1,4 @@
+import { ChangeIntelligenceProductSurfaceLinks } from "../../components/change-intelligence-product-surface-links";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { TrustCueCard } from "../../components/trust-cue-card";
@@ -397,17 +398,22 @@ export function PlatformHealthView() {
           </article>
         ) : null}
         {recentChangeQuery.data && recentChangeCounts ? (
-          <article className="summary-card">
-            <p className="summary-label">Bounded recent change</p>
-            <strong>
-              {recentChangeCounts.present} present • {recentChangeCounts.partial} partial • {recentChangeCounts.absent}{" "}
-              absent
-            </strong>
-            <p>Coarse persisted-evidence mix across six read-side domains (same change-intelligence API as Overview).</p>
-            <p className="table-note">
-              Supporting context only — use <strong>Overview</strong> for the full recent-change panel and disclaimers.
-            </p>
-          </article>
+          <>
+            <article className="summary-card">
+              <p className="summary-label">Bounded recent change</p>
+              <strong>
+                {recentChangeCounts.present} present • {recentChangeCounts.partial} partial •{" "}
+                {recentChangeCounts.absent} absent
+              </strong>
+              <p>Coarse persisted-evidence mix across six read-side domains (same change-intelligence API as Overview).</p>
+              <p className="table-note">
+                Supporting context only — use <strong>Overview</strong> for the full recent-change panel and disclaimers.
+              </p>
+            </article>
+            <article className="summary-card">
+              <ChangeIntelligenceProductSurfaceLinks />
+            </article>
+          </>
         ) : recentChangeQuery.isLoading && !recentChangeQuery.data ? (
           <article className="summary-card">
             <p className="summary-label">Bounded recent change</p>

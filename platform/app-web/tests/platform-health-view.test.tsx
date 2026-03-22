@@ -424,6 +424,10 @@ describe("PlatformHealthView", () => {
     expect(html).toContain("2 present • 2 partial • 2 absent");
     expect(html).toContain("Recent change (bounded support)");
     expect(html).toContain("Evidence mix (6 domains)");
+    expect(html).toContain("Open Devices, Topology, Policies");
+    expect(html).toContain("Open Devices");
+    expect(html).toContain("Open Topology");
+    expect(html).toContain("Open Policies");
     expect(html).toContain("not a validation verdict");
     expect(html).toContain("Policy history");
     expect(html).toContain("No snapshots • unavailable • ready");
