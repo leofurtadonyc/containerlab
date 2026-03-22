@@ -4,7 +4,18 @@
  * so hooks can re-fetch with new bounded read-side parameters.
  */
 
+import { PLATFORM_NAV_VIEW_IDS } from "../nav-views";
+
 export const APP_URL_SEARCH_CHANGED = "app:urlsearchchanged";
+
+/** Navigate to another shell view while preserving other query params (bounded read-side ergonomics). */
+export function navigateToEvidenceView(viewId: string): void {
+  if (!PLATFORM_NAV_VIEW_IDS.has(viewId)) {
+    return;
+  }
+  const sp = mergeViewIntoSearch(window.location.search, viewId);
+  replaceUrlSearchParams(sp);
+}
 
 export function getLocationSearchString(): string {
   return window.location.search;

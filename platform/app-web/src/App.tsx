@@ -2,7 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 
 import { appApiBaseUrl } from "./api/client";
 import { AppShell } from "./components/shell";
-import { mergeViewIntoSearch, readViewIdFromSearch, replaceUrlSearchParams } from "./lib/url-app-state";
+import {
+  APP_URL_SEARCH_CHANGED,
+  mergeViewIntoSearch,
+  readViewIdFromSearch,
+  replaceUrlSearchParams,
+} from "./lib/url-app-state";
+import { PLATFORM_NAV_VIEW_IDS } from "./nav-views";
 import { AuditView } from "./features/audit/view";
 import { CapabilitiesView } from "./features/capabilities/view";
 import { DevicesView } from "./features/devices/view";
@@ -25,10 +31,8 @@ const NAV_ITEMS = [
   { id: "platform-health", label: "Platform Health" },
 ] as const;
 
-const NAV_VIEW_IDS = new Set<string>(NAV_ITEMS.map((item) => item.id));
-
 function readInitialView(): string {
-  const fromUrl = readViewIdFromSearch(window.location.search, NAV_VIEW_IDS);
+  const fromUrl = readViewIdFromSearch(window.location.search, PLATFORM_NAV_VIEW_IDS);
   return fromUrl ?? "overview";
 }
 
@@ -60,14 +64,18 @@ export function App() {
   const [activeView, setActiveView] = useState<string>(readInitialView());
 
   useEffect(() => {
-    const syncFromHistory = () => {
-      const next = readViewIdFromSearch(window.location.search, NAV_VIEW_IDS);
+    const syncViewFromUrl = () => {
+      const next = readViewIdFromSearch(window.location.search, PLATFORM_NAV_VIEW_IDS);
       if (next) {
         setActiveView(next);
       }
     };
-    window.addEventListener("popstate", syncFromHistory);
-    return () => window.removeEventListener("popstate", syncFromHistory);
+    window.addEventListener("popstate", syncViewFromUrl);
+    window.addEventListener(APP_URL_SEARCH_CHANGED, syncViewFromUrl);
+    return () => {
+      window.removeEventListener("popstate", syncViewFromUrl);
+      window.removeEventListener(APP_URL_SEARCH_CHANGED, syncViewFromUrl);
+    };
   }, []);
 
   const handleSelectView = useCallback((id: string) => {

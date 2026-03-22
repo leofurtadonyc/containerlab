@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 
 import type { WorkflowHistoryItem } from "../../api/contracts";
+import { HistoryEvidenceDrilldown } from "../../components/history-evidence-drilldown";
 import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
+import { workflowHistoryDrilldownTargets } from "../../lib/history-evidence-drilldown";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
 import { useWorkflowHistoryQuery } from "./api";
 
@@ -793,6 +795,7 @@ export function WorkflowsView() {
           {selectedWorkflow ? (
             <article className="detail-card">
               <h3>Selected Sync Detail</h3>
+              <HistoryEvidenceDrilldown targets={workflowHistoryDrilldownTargets(selectedWorkflow)} />
               <div className="key-value-list">
                 <div className="key-value-row">
                   <span>Workflow</span>

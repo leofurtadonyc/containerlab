@@ -509,3 +509,31 @@ section h2 {
   font-size: 0.85rem;
   color: #f6ad55;
 }
+
+.history-evidence-drilldown {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2d3e5c;
+}
+
+.history-evidence-drilldown-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.nav-drilldown-button {
+  border: 1px solid #5b7ab8;
+  background: rgba(37, 50, 75, 0.95);
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.nav-drilldown-button:hover {
+  background: #2b3d5c;
+}
