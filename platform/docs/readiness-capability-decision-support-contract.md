@@ -9,6 +9,7 @@ Implementation lives in:
 - `platform/app-api/src/app_api/schemas/capabilities.py` — Pydantic models and closed identifier sets
 - `platform/app-api/src/app_api/services/capabilities.py` — populated `DryRunReadinessSummary` and `CapabilityRecord` rows for `GET /api/v1/capabilities`
 - `platform/app-api/src/app_api/persistence/readiness.py` — persisted readiness snapshots aligned with the same JSON shape
+- `GET /api/v1/readiness-snapshot-history` — bounded list of persisted readiness snapshots with optional `ReadinessBlockerName` filter and `include_blockers_detail` (read-only inspection; see `read_side_query` echo)
 
 ## Explicit non-authorization
 

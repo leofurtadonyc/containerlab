@@ -732,6 +732,14 @@ export function AuditView() {
           {selectedEvent ? (
             <article className="detail-card">
               <h3>Selected Event Detail</h3>
+              {selectedEvent.readiness_snapshot_summary ||
+              selectedEvent.event_type === "readiness_snapshot_recorded" ? (
+                <p className="table-note">
+                  Readiness snapshot context on this event can add a Readiness drilldown; when a
+                  strongest-blocker name is present, navigation may set a bounded URL scroll hint —
+                  interpretation only, not a validation verdict.
+                </p>
+              ) : null}
               <HistoryEvidenceDrilldown targets={auditHistoryDrilldownTargets(selectedEvent)} />
               <div className="key-value-list">
                 <div className="key-value-row">

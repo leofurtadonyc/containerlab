@@ -12,8 +12,11 @@ import {
   formatDateTime,
   formatLabel,
 } from "../../lib/presentation";
+import { formatEntrySurfaceReadinessSummaryLines } from "../../lib/entry-surface-readiness-trust";
 import { buildInventoryHistoryTrustCueRow } from "../../lib/inventory-history-trust";
 import { buildPolicyHistoryTrustCueRow } from "../../lib/policy-history-trust";
+import { describeDryRunReadinessStatus, normalizeDryRunReadiness } from "../../lib/readiness";
+import { useCapabilitiesQuery } from "../capabilities/api";
 import { useDevicesQuery } from "../devices/api";
 import { usePoliciesQuery } from "../policies/api";
 import { getPlatformReadPath, usePlatformStatusQuery } from "./api";
@@ -156,6 +159,7 @@ export function PlatformHealthView() {
     error: policiesError,
     isLoading: isPoliciesLoading,
   } = usePoliciesQuery();
+  const { data: capabilitiesData, isLoading: isCapabilitiesLoading } = useCapabilitiesQuery();
 
   if (isLoading) {
     return (
@@ -237,6 +241,10 @@ export function PlatformHealthView() {
     policyReadPath?.detail_ready_target_count ?? 0,
   );
   const recoveryReadout = describeRecoveryPosture(data.recovery);
+  const readinessFromCapabilities = normalizeDryRunReadiness(capabilitiesData?.dry_run_readiness);
+  const entryReadinessCue = capabilitiesData
+    ? formatEntrySurfaceReadinessSummaryLines(readinessFromCapabilities)
+    : null;
 
   return (
     <section>
@@ -360,6 +368,18 @@ export function PlatformHealthView() {
           <strong>{policySourceReadiness.label}</strong>
           <p>{policySourceReadiness.detail}</p>
         </article>
+        {capabilitiesData && entryReadinessCue ? (
+          <article className="summary-card">
+            <p className="summary-label">Readiness decision support</p>
+            <strong>{entryReadinessCue.headline}</strong>
+            <p>{entryReadinessCue.supportingLine}</p>
+            <p className="table-note">{entryReadinessCue.trustNote}</p>
+            <p className="table-note">
+              Matrix status {formatLabel(capabilitiesData.data_status)}. Use Capabilities and Readiness for full
+              interpretation — not workflow or dry-run execution.
+            </p>
+          </article>
+        ) : null}
         {recoveryReadout ? (
           <article className="summary-card">
             <p className="summary-label">Same-Workspace Recovery</p>
@@ -374,7 +394,7 @@ export function PlatformHealthView() {
       <div className="content-grid">
         <TrustCueCard
           title="Routine-Use Trust Cues"
-          summary="Platform Health is a current API response rather than an anchored history surface, so the key cues are freshness, observation coverage, read-path scope, four orthogonal topology partiality axes from platform status (inference, endpoint pairing, collection, node participation)—trust cues only, not adjacency validation—and how much of the page is probe-backed versus declared-only. Richer topology API trust cues stay on the Topology page. Inventory history and policy history rows below are coarse cues from the supporting Devices and Policies APIs—detailed persisted history stays on those product pages."
+          summary="Platform Health is a current API response rather than an anchored history surface, so the key cues are freshness, observation coverage, read-path scope, four orthogonal topology partiality axes from platform status (inference, endpoint pairing, collection, node participation)—trust cues only, not adjacency validation—and how much of the page is probe-backed versus declared-only. Richer topology API trust cues stay on the Topology page. Inventory history and policy history rows below are coarse cues from the supporting Devices and Policies APIs. When the capabilities response is available, this page also carries a single coarse readiness decision-support line—detailed capability and readiness interpretation stays on those product pages."
           rows={[
             {
               label: "API freshness",
@@ -465,10 +485,23 @@ export function PlatformHealthView() {
             buildInventoryHistoryTrustCueRow(devicesData, isDevicesLoading, devicesError != null),
             buildPolicyHistoryTrustCueRow(policiesData, isPoliciesLoading, policiesError !== null),
             {
-              label: "Readiness identity cues",
+              label: "Capability & readiness posture",
               kind: "text",
-              value: "See Readiness page",
-              note: "Readiness snapshot anchors and any per-item readiness identifiers are intentionally kept with the readiness-support contract instead of this platform-status view.",
+              value: capabilitiesData
+                ? `${formatLabel(readinessFromCapabilities.status)} • ${formatLabel(capabilitiesData.data_status)}`
+                : isCapabilitiesLoading
+                  ? "Loading"
+                  : "Unavailable",
+              note:
+                capabilitiesData && entryReadinessCue
+                  ? [
+                      entryReadinessCue.supportingLine,
+                      describeDryRunReadinessStatus(readinessFromCapabilities.status),
+                      "Snapshot anchors and per-item readiness identifiers stay on Readiness; bounded matrix detail stays on Capabilities. Interpretation-only — not workflow eligibility or dry-run execution.",
+                    ]
+                  : isCapabilitiesLoading
+                    ? "Loading the supporting capabilities response for this coarse entry-surface cue."
+                    : "Capabilities response not available on this load; use Capabilities and Readiness when the slice is reachable.",
             },
             {
               label: "Degraded scope",

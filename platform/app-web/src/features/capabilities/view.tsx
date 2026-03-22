@@ -14,6 +14,7 @@ import {
   describePlanningReadiness,
   normalizeDryRunReadiness,
 } from "../../lib/readiness";
+import { navigateToReadinessContext } from "../../lib/readiness-navigation";
 import { useCapabilitiesQuery } from "./api";
 
 function describeSupportState(value: string): string {
@@ -355,6 +356,23 @@ export function CapabilitiesView() {
       </div>
 
       <p className="callout">{data.summary}</p>
+
+      <div className="history-evidence-drilldown">
+        <p className="summary-label">Readiness interpretation</p>
+        <p className="table-note">
+          Open the Readiness page for the same bounded snapshot: blocker posture, prerequisites,
+          and assessment coverage. Read-only navigation only — no workflow or execution context.
+        </p>
+        <div className="history-evidence-drilldown-actions">
+          <button
+            type="button"
+            className="nav-drilldown-button"
+            onClick={() => navigateToReadinessContext({})}
+          >
+            Open Readiness
+          </button>
+        </div>
+      </div>
 
       <div className="summary-grid">
         <article className="summary-card">
@@ -1136,6 +1154,26 @@ export function CapabilitiesView() {
                   <strong>Roadmap:</strong> {describeRoadmapPosture(selectedCapability)}
                 </li>
               </ul>
+              <div className="history-evidence-drilldown">
+                <p className="summary-label">Readiness navigation</p>
+                <p className="table-note">
+                  Jump to Readiness with optional scroll to a related blocker. Same evaluation
+                  sample as this table; navigation does not authorize workflow or change actions.
+                </p>
+                <div className="history-evidence-drilldown-actions">
+                  <button
+                    type="button"
+                    className="nav-drilldown-button"
+                    onClick={() =>
+                      navigateToReadinessContext({
+                        capabilityFeature: selectedCapability.feature,
+                      })
+                    }
+                  >
+                    Open Readiness (this capability)
+                  </button>
+                </div>
+              </div>
               {selectedCapability.related_readiness_blockers.length > 0 ? (
                 <>
                   <p className="summary-label">Related Readiness Blockers</p>
@@ -1145,9 +1183,25 @@ export function CapabilitiesView() {
 
                       return (
                         <li key={blockerName}>
-                          <strong>{formatLabel(blockerName)}:</strong>{" "}
-                          {blocker?.summary ??
-                            "No blocker summary is available from the current readiness response."}
+                          <div>
+                            <strong>{formatLabel(blockerName)}:</strong>{" "}
+                            {blocker?.summary ??
+                              "No blocker summary is available from the current readiness response."}
+                          </div>
+                          <div className="history-evidence-drilldown-actions">
+                            <button
+                              type="button"
+                              className="nav-drilldown-button"
+                              onClick={() =>
+                                navigateToReadinessContext({
+                                  blocker: blockerName,
+                                  capabilityFeature: selectedCapability.feature,
+                                })
+                              }
+                            >
+                              View on Readiness
+                            </button>
+                          </div>
                         </li>
                       );
                     })}

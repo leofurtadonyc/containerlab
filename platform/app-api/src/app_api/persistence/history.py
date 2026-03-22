@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 from datetime import datetime
 from logging import getLogger
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import joinedload, selectinload
 
 from app_api.models.inventory import InventoryDevice, InventoryHistoryChangePreview
@@ -238,6 +238,13 @@ class PersistedReadinessSnapshotHistoryRecord(BaseModel):
     summary: str
     blocker_count: int
     strongest_blockers: list[str] = Field(default_factory=list)
+    blockers_json: list[dict[str, object]] | None = Field(
+        default=None,
+        description=(
+            "Raw persisted blocker objects when a caller requests blocker inspection detail; "
+            "omit for audit-history merge surfaces that only need summaries."
+        ),
+    )
 
 
 class SyncRunHistorySummary(BaseModel):
@@ -978,17 +985,51 @@ def load_sync_runs(limit: int = 50) -> list[PersistedSyncRun]:
         return []
 
 
+def count_readiness_snapshots_matching(*, blocker_filter: str | None = None) -> int:
+    """Return total persisted readiness snapshots, optionally filtered by blocker name."""
+    try:
+        with create_session() as session:
+            if blocker_filter is None:
+                return int(
+                    session.scalar(select(func.count()).select_from(ReadinessSnapshotTable)) or 0
+                )
+            stmt = text(
+                """
+                SELECT COUNT(*) FROM platform_app.readiness_snapshots
+                WHERE EXISTS (
+                  SELECT 1
+                  FROM jsonb_array_elements(blockers::jsonb) AS elem
+                  WHERE elem->>'blocker' = :name
+                )
+                """
+            )
+            return int(session.execute(stmt, {"name": blocker_filter}).scalar() or 0)
+    except Exception:
+        logger.exception("Failed to count readiness snapshots.")
+        return 0
+
+
 def load_readiness_snapshot_history(
     limit: int = 20,
+    *,
+    blocker_filter: str | None = None,
+    include_blockers_json: bool = False,
 ) -> list[PersistedReadinessSnapshotHistoryRecord]:
     """Load recent persisted readiness snapshots for bounded history surfaces."""
     try:
         with create_session() as session:
-            rows = session.scalars(
-                select(ReadinessSnapshotTable)
-                .order_by(ReadinessSnapshotTable.persisted_at.desc())
-                .limit(limit)
-            ).all()
+            stmt = select(ReadinessSnapshotTable).order_by(
+                ReadinessSnapshotTable.persisted_at.desc()
+            )
+            if blocker_filter is not None:
+                stmt = stmt.where(
+                    text(
+                        "EXISTS (SELECT 1 FROM jsonb_array_elements(blockers::jsonb) AS elem "
+                        "WHERE elem->>'blocker' = :name)"
+                    ).bindparams(name=blocker_filter)
+                )
+            stmt = stmt.limit(limit)
+            rows = session.scalars(stmt).all()
             return [
                 PersistedReadinessSnapshotHistoryRecord(
                     snapshot_id=row.id,
@@ -999,6 +1040,11 @@ def load_readiness_snapshot_history(
                     summary=row.summary,
                     blocker_count=len(row.blockers or []),
                     strongest_blockers=list(row.strongest_blockers or []),
+                    blockers_json=(
+                        list(row.blockers or [])
+                        if include_blockers_json
+                        else None
+                    ),
                 )
                 for row in rows
             ]

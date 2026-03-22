@@ -795,6 +795,12 @@ export function WorkflowsView() {
           {selectedWorkflow ? (
             <article className="detail-card">
               <h3>Selected Sync Detail</h3>
+              {selectedWorkflow.persisted_artifacts.includes("readiness_snapshot") ? (
+                <p className="table-note">
+                  This sync run persisted a readiness snapshot artifact. The drilldown below may include
+                  Readiness for bounded planning-support navigation — not workflow execution or approvals.
+                </p>
+              ) : null}
               <HistoryEvidenceDrilldown targets={workflowHistoryDrilldownTargets(selectedWorkflow)} />
               <div className="key-value-list">
                 <div className="key-value-row">

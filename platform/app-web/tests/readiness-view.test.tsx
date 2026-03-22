@@ -6,6 +6,11 @@ import type { CapabilitiesListResponse } from "../src/api/contracts";
 import { ReadinessView } from "../src/features/readiness/view";
 
 const useCapabilitiesQuery = vi.hoisted(() => vi.fn());
+const useUrlSearchParamsMock = vi.hoisted(() => vi.fn(() => new URLSearchParams()));
+
+vi.mock("../src/lib/use-url-search-params", () => ({
+  useUrlSearchParams: () => useUrlSearchParamsMock(),
+}));
 
 vi.mock("../src/features/capabilities/api", () => ({
   useCapabilitiesQuery,
@@ -73,6 +78,8 @@ function createReadinessCapabilitiesData(): CapabilitiesListResponse {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  useUrlSearchParamsMock.mockReset();
+  useUrlSearchParamsMock.mockReturnValue(new URLSearchParams());
 });
 
 describe("readiness view", () => {
@@ -130,5 +137,87 @@ describe("readiness view", () => {
     const html = renderToStaticMarkup(<ReadinessView />);
 
     expect(html).toContain("No readiness data");
+  });
+
+  it("shows capability navigation framing when readiness_capability_feature is present", () => {
+    useUrlSearchParamsMock.mockReturnValue(
+      new URLSearchParams("readiness_capability_feature=device_inventory_read"),
+    );
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createReadinessCapabilitiesData()));
+
+    const html = renderToStaticMarkup(<ReadinessView />);
+
+    expect(html).toContain("Capability navigation context");
+    expect(html).toContain("device_inventory_read");
+  });
+
+  it("exposes stable DOM ids for blocker cards for URL scroll alignment", () => {
+    const data = createReadinessCapabilitiesData();
+    const withBlockers = {
+      ...data,
+      dry_run_readiness: {
+        ...data.dry_run_readiness,
+        blockers: [
+          {
+            blocker: "dry_run_contract_missing" as const,
+            category: "contract" as const,
+            severity: "major" as const,
+            evidence_basis: "design_review" as const,
+            summary: "Test blocker.",
+            blocked_readiness_scopes: ["planning_depth"] as const,
+            related_prerequisites: ["inventory_read_model"] as const,
+            notes: [],
+          },
+        ],
+      },
+    };
+    useCapabilitiesQuery.mockReturnValue(createQueryState(withBlockers));
+
+    const html = renderToStaticMarkup(<ReadinessView />);
+
+    expect(html).toContain('id="readiness-blocker-dry_run_contract_missing"');
+  });
+
+  it("surfaces blocker and prerequisite drilldown affordances and stable prerequisite ids", () => {
+    const data = createReadinessCapabilitiesData();
+    const withDrilldown = {
+      ...data,
+      dry_run_readiness: {
+        ...data.dry_run_readiness,
+        blockers: [
+          {
+            blocker: "dry_run_contract_missing" as const,
+            category: "contract" as const,
+            severity: "major" as const,
+            evidence_basis: "design_review" as const,
+            summary: "Test blocker.",
+            blocked_readiness_scopes: ["planning_depth"] as const,
+            related_prerequisites: ["inventory_read_model"] as const,
+            notes: [],
+          },
+        ],
+        prerequisites: [
+          {
+            prerequisite: "inventory_read_model" as const,
+            status: "partial" as const,
+            support_posture: "partially_supported" as const,
+            evidence_basis: "persisted_validated" as const,
+            evidence_coverage: "bounded" as const,
+            related_capabilities: ["device_inventory_read"],
+            current_evidence: "Evidence line.",
+            blocking_gaps: [],
+          },
+        ],
+      },
+    };
+    useCapabilitiesQuery.mockReturnValue(createQueryState(withDrilldown));
+
+    const html = renderToStaticMarkup(<ReadinessView />);
+
+    expect(html).toContain("Blocker drilldown");
+    expect(html).toContain("Prerequisite drilldown");
+    expect(html).toContain('id="readiness-prerequisite-inventory_read_model"');
+    expect(html).toContain("Blockers referencing this prerequisite");
+    expect(html).toContain("nav-drilldown-button");
   });
 });

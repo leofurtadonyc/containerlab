@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiClientError } from "../src/api/client";
+import type { CapabilitiesListResponse } from "../src/api/contracts";
 import { OverviewView } from "../src/features/overview/view";
 
 const {
@@ -283,27 +284,55 @@ function createPoliciesData() {
   };
 }
 
-function createCapabilitiesData() {
+function createCapabilitiesData(): CapabilitiesListResponse {
   return {
     service: "app-api",
     version: "test",
     phase: "phase_2_read_only_foundation",
     generated_at: "2025-01-01T00:00:00Z",
-    data_status: "live",
+    data_status: "bounded_matrix",
     summary: "Capabilities summary.",
     count: 1,
     readiness_snapshot_id: "readiness-1",
     readiness_persisted_at: "2025-01-01T00:00:00Z",
-    dry_run_readiness: [
-      {
-        name: "Inventory",
-        readiness: "ready",
-        support_state: "supported",
-        reason: "ok",
-        notes: [],
-        identifier: null,
-      },
-    ],
+    domain_counts: {},
+    support_counts: {},
+    implementation_counts: {},
+    delivery_tier_counts: {},
+    evidence_basis_counts: {},
+    vendor_counts: {},
+    vendor_posture_counts: {},
+    workflow_readiness_counts: {},
+    workflow_readiness_scope_counts: {},
+    dry_run_readiness: {
+      status: "bounded_readiness_support",
+      planning_readiness: "readiness_planning_supported",
+      phase_recommendation: "remain_phase_2_read_only_foundation",
+      summary: "Readiness summary.",
+      readiness_scope: "Bounded dry-run planning scope.",
+      notes: [],
+      strongest_blockers: [],
+      bounded_next_steps: [],
+      evidence_coverage_counts: {},
+      support_posture_counts: {},
+      blocker_category_counts: {},
+      blocker_severity_counts: {},
+      blocked_scope_counts: {},
+      assessment_areas: [],
+      blockers: [
+        {
+          blocker: "dry_run_contract_missing",
+          category: "contract",
+          severity: "major",
+          evidence_basis: "design_review",
+          summary: "Gap.",
+          blocked_readiness_scopes: ["planning_depth"],
+          related_prerequisites: ["inventory_read_model"],
+          notes: [],
+        },
+      ],
+      prerequisites: [],
+    },
     items: [],
   };
 }
@@ -366,6 +395,21 @@ describe("overview view", () => {
     expect(html).toContain("Preserved same-workspace baseline");
     expect(html).toContain("Live recollection ready");
     expect(html).toContain("Preserved baseline and fresh live recollection are not the same thing");
+  });
+
+  it("surfaces coarse readiness decision-support cues on the capabilities summary card and trust cue", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
+    useDevicesQuery.mockReturnValue(createQueryState(null));
+    useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    const html = renderToStaticMarkup(<OverviewView />);
+
+    expect(html).toContain("Readiness posture:");
+    expect(html).toContain("Dry-run readiness status");
+    expect(html).toContain("bounded readiness support");
+    expect(html).toContain("explicit blocker records");
   });
 
   it("surfaces recovery notes row when backend supplies recovery.notes", () => {

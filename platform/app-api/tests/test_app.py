@@ -4467,6 +4467,101 @@ def test_policies_endpoint_rejects_invalid_read_side_query_params() -> None:
     assert client.get("/api/v1/policies?history_recent_limit=51").status_code == 422
 
 
+def test_readiness_snapshot_history_endpoint_empty(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app_api.services.readiness_snapshot_history.count_readiness_snapshots_matching",
+        lambda **kwargs: 0,
+    )
+    monkeypatch.setattr(
+        "app_api.services.readiness_snapshot_history.load_readiness_snapshot_history",
+        lambda limit, **kwargs: [],
+    )
+    response = client.get("/api/v1/readiness-snapshot-history")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_status"] == "empty"
+    assert payload["count"] == 0
+    assert payload["read_side_query"]["items_total"] == 0
+    assert payload["read_side_query"]["items_returned"] == 0
+    assert payload["read_side_query"]["readiness_blocker_filter_requested"] is None
+
+
+def test_readiness_snapshot_history_endpoint_bounded_history_and_blocker_echo(
+    monkeypatch,
+) -> None:
+    rec = PersistedReadinessSnapshotHistoryRecord(
+        snapshot_id="snap-1",
+        persisted_at=datetime.fromisoformat("2026-03-10T02:00:00+00:00"),
+        readiness_status="bounded_readiness_support",
+        planning_readiness="readiness_planning_supported",
+        phase_recommendation="remain_phase_2_read_only_foundation",
+        summary="Bounded readiness snapshot summary.",
+        blocker_count=1,
+        strongest_blockers=["dry_run_contract_missing"],
+    )
+    monkeypatch.setattr(
+        "app_api.services.readiness_snapshot_history.count_readiness_snapshots_matching",
+        lambda **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        "app_api.services.readiness_snapshot_history.load_readiness_snapshot_history",
+        lambda limit, **kwargs: [rec],
+    )
+    response = client.get(
+        "/api/v1/readiness-snapshot-history?limit=5&blocker=dry_run_contract_missing",
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_status"] == "bounded_history"
+    assert payload["count"] == 1
+    rsq = payload["read_side_query"]
+    assert rsq["limit_requested"] == 5
+    assert rsq["items_total"] == 1
+    assert rsq["items_returned"] == 1
+    assert rsq["readiness_blocker_filter_requested"] == "dry_run_contract_missing"
+
+
+def test_readiness_snapshot_history_invalid_blocker_returns_422() -> None:
+    response = client.get("/api/v1/readiness-snapshot-history?blocker=not_a_real_blocker")
+    assert response.status_code == 422
+
+
+def test_readiness_snapshot_history_include_blockers_detail(monkeypatch) -> None:
+    raw_blocker = {
+        "blocker": "dry_run_contract_missing",
+        "category": "contract",
+        "severity": "critical",
+        "evidence_basis": "design_review",
+        "summary": "No dry-run API contract exists yet.",
+        "blocked_readiness_scopes": ["preview_contracts"],
+        "related_prerequisites": ["topology_comparison_evidence"],
+        "notes": [],
+    }
+    rec = PersistedReadinessSnapshotHistoryRecord(
+        snapshot_id="snap-1",
+        persisted_at=datetime.fromisoformat("2026-03-10T02:00:00+00:00"),
+        readiness_status="bounded_readiness_support",
+        planning_readiness="readiness_planning_supported",
+        phase_recommendation="remain_phase_2_read_only_foundation",
+        summary="s",
+        blocker_count=1,
+        strongest_blockers=["dry_run_contract_missing"],
+        blockers_json=[raw_blocker],
+    )
+    monkeypatch.setattr(
+        "app_api.services.readiness_snapshot_history.count_readiness_snapshots_matching",
+        lambda **kwargs: 1,
+    )
+    monkeypatch.setattr(
+        "app_api.services.readiness_snapshot_history.load_readiness_snapshot_history",
+        lambda limit, **kwargs: [rec],
+    )
+    response = client.get("/api/v1/readiness-snapshot-history?include_blockers_detail=true")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["items"][0]["blockers_detail"][0]["blocker"] == "dry_run_contract_missing"
+
+
 def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
     fixed_readiness_persisted_at = datetime.fromisoformat("2026-03-16T00:00:00+00:00")
     fixed_readiness_reference = SimpleNamespace(
@@ -4578,6 +4673,19 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
             payload["dry_run_readiness"]["blockers"][0]["blocked_readiness_scopes"][0]
             == "planning_depth"
         )
+        assert payload["dry_run_readiness"]["blockers"][0]["related_prerequisites"] == [
+            "workflow_audit_visibility"
+        ]
+        assert payload["dry_run_readiness"]["blockers"][1]["related_prerequisites"] == [
+            "topology_comparison_evidence",
+            "policy_comparison_evidence",
+            "capability_matrix_precision",
+        ]
+        assert payload["items"][0]["related_readiness_blockers"] == []
+        assert payload["items"][1]["related_readiness_blockers"] == [
+            "topology_truth_still_bounded",
+            "validation_result_contract_missing",
+        ]
         assert payload["items"][1]["feature"] == "topology_observation"
         assert payload["items"][1]["workflow_readiness_status"] == "partial_foundation"
         assert "validation_contracts" in payload["items"][1]["workflow_readiness_scopes"]
