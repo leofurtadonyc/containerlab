@@ -4,13 +4,14 @@
 
 This document is the **backend-owned bounded contract** for a future **read-only path-analysis** product surface: an operator-facing answer to **“why this path?”** (and related questions) that **honestly** relates **policy intent**, **policy observed/candidate-path signals**, and **bounded topology/inventory context**—without claiming dataplane forwarding truth, traffic-engineering resolution, per-hop label verification, or controller-computed path authority.
 
-Implementation references (contract vocabulary only in week **27** Monday task **01**):
+Implementation references:
 
 - `platform/app-api/src/app_api/schemas/path_analysis.py` — **`PATH_ANALYSIS_CONTRACT_ID`**, **`PathAnalysisViewResponse`**, **`PathAnalysisSafetyFraming`**, **`PathAnalysisExplicitNonClaim`**, intended/observed hints, candidate-path summaries, freshness, truth-alignment posture, caveats
+- `platform/app-api/src/app_api/services/path_analysis.py` — **`build_policy_path_analysis_response`** (composes policy inventory with optional latest persisted topology/inventory anchors for freshness; does not run the full live topology collector path)
+- `platform/app-api/src/app_api/routers/policies.py` — **`GET /api/v1/policies/{policy_id}/path-analysis`**
 - `platform/app-api/tests/test_path_analysis_contract.py` — literal and shape regression tests
+- `platform/app-api/tests/test_app.py` — route tests (success, partial support, unsupported, not-found, persisted fallback)
 - Architectural decision: `platform/docs/decisions/ADR-0002-path-analysis-phase2-read-only-contract.md`
-
-**No** HTTP route is required for this task; follow-on tasks may implement e.g. `GET /api/v1/path-analysis/...` using the same vocabulary.
 
 ---
 
@@ -98,8 +99,8 @@ This task **does not reopen**:
 
 | Layer | Likely files / areas |
 | --- | --- |
-| **Backend router** | New router module under `platform/app-api/src/app_api/routers/`; register in `api/v1/router.py`. |
-| **Backend service** | New service (e.g. `path_analysis.py`) composing existing policy/topology/inventory **read builders**—**no** new collector models in the first vertical slice unless a later task proves need. |
+| **Backend router** | **`GET /api/v1/policies/{policy_id}/path-analysis`** on `routers/policies.py` (included from `api/v1/router.py`). |
+| **Backend service** | `services/path_analysis.py` — **`build_policy_path_analysis_response`** uses **`_build_policy_inventory`** plus optional **`load_latest_topology_snapshot`** / **`load_latest_inventory_snapshot`** for freshness anchors only. |
 | **Schemas** | `schemas/path_analysis.py` (this task); extend only when follow-on fields are required. |
 | **Tests** | `tests/test_path_analysis_contract.py` (this task); `tests/test_app.py` for future route; optional repository **`pytest`** for assembly. |
 | **WebUI** | New feature folder under `platform/app-web/src/features/path-analysis/` (or policy drill-through entry); `contracts.ts`, `client.ts`, `nav-views.ts`, `App.tsx` wiring. |

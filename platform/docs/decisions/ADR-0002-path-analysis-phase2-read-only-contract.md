@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (contract and gap audit delivered in week **27** Monday task **01**).
+Accepted (contract and gap audit in week **27** Monday task **01**; **`GET /api/v1/policies/{policy_id}/path-analysis`** implemented in week **27** Monday task **02**).
 
 ## Context
 
@@ -16,15 +16,17 @@ Introduce a **backend-owned path-analysis contract** (`path_analysis_phase2_v1`)
 - Separate **intended** and **observed** hint lists, **candidate-path summaries**, **evidence attribution**, **freshness**, **truth-alignment posture** (interpretation-only), and **caveats**.
 - Explicit **non-claims** excluding dataplane certainty, TE resolution, controller path authority, and ODL-as-substitute-for-collector semantics.
 
-Implementation of HTTP routes and UI is **deferred** to follow-on tasks; this ADR only locks the **vocabulary and honesty boundaries**.
+The read API **`GET /api/v1/policies/{policy_id}/path-analysis`** implements this vocabulary; WebUI consumption remains a follow-on when needed.
 
 ## Consequences
 
-- Follow-on work can implement `GET /api/v1/path-analysis/...` and WebUI without inventing new truth domains in the first slice.
+- Follow-on work can add WebUI or alternate route families without inventing new truth domains beyond the existing policy inventory pipeline.
 - Topology and policy **closed slices** remain closed; path analysis **consumes** their contracts and adds **interpretation framing**, not replacement semantics.
-- **`conditionally_ready_with_explicit_limits`** is unchanged until a shipped path-analysis surface is proven end to end.
+- **`conditionally_ready_with_explicit_limits`** is unchanged; the new endpoint is a bounded read-side assembly over existing evidence.
 
 ## References
 
 - `platform/docs/path-analysis-contract.md`
 - `platform/app-api/src/app_api/schemas/path_analysis.py`
+- `platform/app-api/src/app_api/services/path_analysis.py`
+- `platform/app-api/src/app_api/routers/policies.py`

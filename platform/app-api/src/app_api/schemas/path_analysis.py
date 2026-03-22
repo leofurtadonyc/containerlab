@@ -214,6 +214,7 @@ class PathAnalysisCaveat(BaseModel):
         "no_dataplane_evidence",
         "inferred_topology_links",
         "odl_probe_only",
+        "persisted_fallback_stale_row",
         "unknown",
     ]
     message: str
@@ -227,9 +228,9 @@ class PathAnalysisTruthAlignment(BaseModel):
 
 
 class PathAnalysisViewResponse(BaseModel):
-    """Future read-only path-analysis product response (contract-only in week 27 task 01).
+    """Read-only path-analysis product response.
 
-    Follow-on tasks may implement ``GET /api/v1/path-analysis/...`` using this shape.
+    Served by ``GET /api/v1/policies/{policy_id}/path-analysis``.
     """
 
     metadata: ApiResponseMetadata

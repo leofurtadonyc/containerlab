@@ -224,6 +224,8 @@ curl -s http://localhost:8000/api/v1/platform/status | python -m json.tool
 curl -s http://localhost:8000/api/v1/devices | python -m json.tool
 curl -s http://localhost:8000/api/v1/topology | python -m json.tool
 curl -s http://localhost:8000/api/v1/policies | python -m json.tool
+# Path analysis (replace POLICY_ID with an `items[].policy_id` from `/api/v1/policies`):
+curl -s 'http://localhost:8000/api/v1/policies/POLICY_ID/path-analysis' | python -m json.tool
 curl -s http://localhost:8000/api/v1/capabilities | python -m json.tool
 curl -s 'http://localhost:8000/api/v1/change-intelligence/recent-summary?sync_runs_limit=20' | python -m json.tool
 curl -s 'http://localhost:8000/api/v1/investigation-workspace/context?sync_runs_limit=20' | python -m json.tool
