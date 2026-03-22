@@ -177,4 +177,47 @@ describe("readiness view", () => {
 
     expect(html).toContain('id="readiness-blocker-dry_run_contract_missing"');
   });
+
+  it("surfaces blocker and prerequisite drilldown affordances and stable prerequisite ids", () => {
+    const data = createReadinessCapabilitiesData();
+    const withDrilldown = {
+      ...data,
+      dry_run_readiness: {
+        ...data.dry_run_readiness,
+        blockers: [
+          {
+            blocker: "dry_run_contract_missing" as const,
+            category: "contract" as const,
+            severity: "major" as const,
+            evidence_basis: "design_review" as const,
+            summary: "Test blocker.",
+            blocked_readiness_scopes: ["planning_depth"] as const,
+            related_prerequisites: ["inventory_read_model"] as const,
+            notes: [],
+          },
+        ],
+        prerequisites: [
+          {
+            prerequisite: "inventory_read_model" as const,
+            status: "partial" as const,
+            support_posture: "partially_supported" as const,
+            evidence_basis: "persisted_validated" as const,
+            evidence_coverage: "bounded" as const,
+            related_capabilities: ["device_inventory_read"],
+            current_evidence: "Evidence line.",
+            blocking_gaps: [],
+          },
+        ],
+      },
+    };
+    useCapabilitiesQuery.mockReturnValue(createQueryState(withDrilldown));
+
+    const html = renderToStaticMarkup(<ReadinessView />);
+
+    expect(html).toContain("Blocker drilldown");
+    expect(html).toContain("Prerequisite drilldown");
+    expect(html).toContain('id="readiness-prerequisite-inventory_read_model"');
+    expect(html).toContain("Blockers referencing this prerequisite");
+    expect(html).toContain("nav-drilldown-button");
+  });
 });

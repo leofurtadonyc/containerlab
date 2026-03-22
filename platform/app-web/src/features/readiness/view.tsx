@@ -3,11 +3,15 @@ import { useEffect } from "react";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { StatusPill } from "../../components/status-pill";
+import type { DryRunReadinessBlocker, DryRunReadinessPrerequisite } from "../../api/contracts";
 import { formatDateTime, formatLabel } from "../../lib/presentation";
 import {
   READINESS_BLOCKER_PARAM,
   READINESS_CAPABILITY_FEATURE_PARAM,
+  READINESS_PREREQUISITE_PARAM,
+  navigateReadinessDrilldown,
   readinessBlockerDomId,
+  readinessPrerequisiteDomId,
 } from "../../lib/readiness-navigation";
 import { useUrlSearchParams } from "../../lib/use-url-search-params";
 import {
@@ -22,29 +26,48 @@ import {
 } from "../../lib/readiness";
 import { useCapabilitiesQuery } from "../capabilities/api";
 
+function blockersLinkedToPrerequisite(
+  prerequisite: DryRunReadinessPrerequisite["prerequisite"],
+  blockers: DryRunReadinessBlocker[],
+): DryRunReadinessBlocker[] {
+  return blockers.filter((b) => b.related_prerequisites.includes(prerequisite));
+}
+
 export function ReadinessView() {
   const { data, error, isLoading, reload } = useCapabilitiesQuery();
   const searchParams = useUrlSearchParams();
   const blockerScrollTarget = searchParams.get(READINESS_BLOCKER_PARAM);
+  const prerequisiteScrollTarget = searchParams.get(READINESS_PREREQUISITE_PARAM);
   const capabilityFeatureContext = searchParams.get(READINESS_CAPABILITY_FEATURE_PARAM);
 
   useEffect(() => {
-    if (!blockerScrollTarget || !data) {
+    if (!data) {
       return;
     }
     const readiness = normalizeDryRunReadiness(data.dry_run_readiness);
-    if (!readiness.blockers.some((b) => b.blocker === blockerScrollTarget)) {
+    const scrollToId = (elementId: string) => {
+      const el = document.getElementById(elementId);
+      if (!el) {
+        return;
+      }
+      requestAnimationFrame(() => {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    };
+    if (
+      prerequisiteScrollTarget &&
+      readiness.prerequisites.some((p) => p.prerequisite === prerequisiteScrollTarget)
+    ) {
+      scrollToId(readinessPrerequisiteDomId(prerequisiteScrollTarget));
       return;
     }
-    const id = readinessBlockerDomId(blockerScrollTarget);
-    const el = document.getElementById(id);
-    if (!el) {
-      return;
+    if (
+      blockerScrollTarget &&
+      readiness.blockers.some((b) => b.blocker === blockerScrollTarget)
+    ) {
+      scrollToId(readinessBlockerDomId(blockerScrollTarget));
     }
-    requestAnimationFrame(() => {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }, [blockerScrollTarget, data]);
+  }, [blockerScrollTarget, prerequisiteScrollTarget, data]);
 
   if (isLoading) {
     return (
@@ -405,46 +428,79 @@ export function ReadinessView() {
           description="The backend did not return explicit blocker records for the current readiness snapshot."
         />
       ) : (
-        <div className="content-grid">
-          {blockers.map((blocker) => (
-            <article
-              className="detail-card"
-              id={readinessBlockerDomId(blocker.blocker)}
-              key={blocker.blocker}
-            >
-              <p className="summary-label">Blocker</p>
-              <h3>{formatLabel(blocker.blocker)}</h3>
-              <p>{blocker.summary}</p>
-              <ul className="compact-list">
-                <li>
-                  <span>Severity</span>
-                  <strong>{formatLabel(blocker.severity)}</strong>
-                </li>
-                <li>
-                  <span>Category</span>
-                  <strong>{formatLabel(blocker.category)}</strong>
-                </li>
-                <li>
-                  <span>Evidence basis</span>
-                  <strong>{formatLabel(blocker.evidence_basis)}</strong>
-                </li>
-                <li>
-                  <span>Blocked scopes</span>
-                  <strong>
-                    {blocker.blocked_readiness_scopes.length > 0
-                      ? blocker.blocked_readiness_scopes.map((value) => formatLabel(value)).join(" • ")
-                      : "None recorded"}
-                  </strong>
-                </li>
-                <li>
-                  <span>Related prerequisites</span>
-                  <strong>
-                    {blocker.related_prerequisites.length > 0
-                      ? blocker.related_prerequisites.map((value) => formatLabel(value)).join(" • ")
-                      : "None recorded"}
-                  </strong>
-                </li>
-              </ul>
+        <>
+          <div className="history-evidence-drilldown">
+            <p className="summary-label">Blocker drilldown</p>
+            <p className="table-note">
+              Jump to a blocker card below. Related prerequisites link to the prerequisite section on this
+              page — bounded interpretation only, not validation or workflow execution.
+            </p>
+            <div className="history-evidence-drilldown-actions">
+              {blockers.map((b) => (
+                <button
+                  key={b.blocker}
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() => navigateReadinessDrilldown({ blocker: b.blocker })}
+                >
+                  {formatLabel(b.blocker)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="content-grid">
+            {blockers.map((blocker) => (
+              <article
+                className={`detail-card${
+                  blockerScrollTarget === blocker.blocker ? " drilldown-focused" : ""
+                }`}
+                id={readinessBlockerDomId(blocker.blocker)}
+                key={blocker.blocker}
+              >
+                <p className="summary-label">Blocker</p>
+                <h3>{formatLabel(blocker.blocker)}</h3>
+                <p>{blocker.summary}</p>
+                <ul className="compact-list">
+                  <li>
+                    <span>Severity</span>
+                    <strong>{formatLabel(blocker.severity)}</strong>
+                  </li>
+                  <li>
+                    <span>Category</span>
+                    <strong>{formatLabel(blocker.category)}</strong>
+                  </li>
+                  <li>
+                    <span>Evidence basis</span>
+                    <strong>{formatLabel(blocker.evidence_basis)}</strong>
+                  </li>
+                  <li>
+                    <span>Blocked scopes</span>
+                    <strong>
+                      {blocker.blocked_readiness_scopes.length > 0
+                        ? blocker.blocked_readiness_scopes.map((value) => formatLabel(value)).join(" • ")
+                        : "None recorded"}
+                    </strong>
+                  </li>
+                  <li>
+                    <span>Related prerequisites</span>
+                    {blocker.related_prerequisites.length > 0 ? (
+                      <div className="history-evidence-drilldown-actions">
+                        {blocker.related_prerequisites.map((value) => (
+                          <button
+                            key={value}
+                            type="button"
+                            className="nav-drilldown-button"
+                            onClick={() => navigateReadinessDrilldown({ prerequisite: value })}
+                          >
+                            {formatLabel(value)}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <strong> None recorded</strong>
+                    )}
+                  </li>
+                </ul>
               <p className="table-note">
                 Item identifier:{" "}
                 <IdentifierChip value={blocker.item_id} emptyLabel="Snapshot-scoped only" />
@@ -453,16 +509,17 @@ export function ReadinessView() {
                 {describeReadinessBlockerSeverity(blocker.severity)}{" "}
                 {describeReadinessBlockerCategory(blocker.category)}
               </p>
-              {blocker.notes.length > 0 ? (
-                <ul className="notes-list">
-                  {blocker.notes.map((note) => (
-                    <li key={note}>{note}</li>
-                  ))}
-                </ul>
-              ) : null}
-            </article>
-          ))}
-        </div>
+                {blocker.notes.length > 0 ? (
+                  <ul className="notes-list">
+                    {blocker.notes.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </>
       )}
 
       {prerequisites.length === 0 ? (
@@ -471,38 +528,86 @@ export function ReadinessView() {
           description="The backend did not return prerequisite detail for the current readiness snapshot."
         />
       ) : (
-        <div className="content-grid">
-          {prerequisites.map((prerequisite) => (
-            <article className="detail-card" key={prerequisite.prerequisite}>
-              <p className="summary-label">Prerequisite</p>
-              <h3>{formatLabel(prerequisite.prerequisite)}</h3>
-              <p>{prerequisite.current_evidence}</p>
-              <ul className="compact-list">
-                <li>
-                  <span>Status</span>
-                  <strong>{formatLabel(prerequisite.status)}</strong>
-                </li>
-                <li>
-                  <span>Support posture</span>
-                  <strong>{formatLabel(prerequisite.support_posture)}</strong>
-                </li>
-                <li>
-                  <span>Evidence basis</span>
-                  <strong>{formatLabel(prerequisite.evidence_basis)}</strong>
-                </li>
-                <li>
-                  <span>Evidence coverage</span>
-                  <strong>{formatLabel(prerequisite.evidence_coverage)}</strong>
-                </li>
-                <li>
-                  <span>Related capabilities</span>
-                  <strong>
-                    {prerequisite.related_capabilities.length > 0
-                      ? prerequisite.related_capabilities.map((value) => formatLabel(value)).join(" • ")
-                      : "None recorded"}
-                  </strong>
-                </li>
-              </ul>
+        <>
+          <div className="history-evidence-drilldown">
+            <p className="summary-label">Prerequisite drilldown</p>
+            <p className="table-note">
+              Jump to a prerequisite card. Blockers that reference a prerequisite appear as reverse links
+              when the contract lists them — planning-support navigation only.
+            </p>
+            <div className="history-evidence-drilldown-actions">
+              {prerequisites.map((p) => (
+                <button
+                  key={p.prerequisite}
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() => navigateReadinessDrilldown({ prerequisite: p.prerequisite })}
+                >
+                  {formatLabel(p.prerequisite)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="content-grid">
+            {prerequisites.map((prerequisite) => {
+              const linkedBlockers = blockersLinkedToPrerequisite(prerequisite.prerequisite, blockers);
+
+              return (
+                <article
+                  className={`detail-card${
+                    prerequisiteScrollTarget === prerequisite.prerequisite ? " drilldown-focused" : ""
+                  }`}
+                  id={readinessPrerequisiteDomId(prerequisite.prerequisite)}
+                  key={prerequisite.prerequisite}
+                >
+                  <p className="summary-label">Prerequisite</p>
+                  <h3>{formatLabel(prerequisite.prerequisite)}</h3>
+                  <p>{prerequisite.current_evidence}</p>
+                  <ul className="compact-list">
+                    <li>
+                      <span>Status</span>
+                      <strong>{formatLabel(prerequisite.status)}</strong>
+                    </li>
+                    <li>
+                      <span>Support posture</span>
+                      <strong>{formatLabel(prerequisite.support_posture)}</strong>
+                    </li>
+                    <li>
+                      <span>Evidence basis</span>
+                      <strong>{formatLabel(prerequisite.evidence_basis)}</strong>
+                    </li>
+                    <li>
+                      <span>Evidence coverage</span>
+                      <strong>{formatLabel(prerequisite.evidence_coverage)}</strong>
+                    </li>
+                    <li>
+                      <span>Related capabilities</span>
+                      <strong>
+                        {prerequisite.related_capabilities.length > 0
+                          ? prerequisite.related_capabilities.map((value) => formatLabel(value)).join(" • ")
+                          : "None recorded"}
+                      </strong>
+                    </li>
+                    <li>
+                      <span>Blockers referencing this prerequisite</span>
+                      {linkedBlockers.length > 0 ? (
+                        <div className="history-evidence-drilldown-actions">
+                          {linkedBlockers.map((b) => (
+                            <button
+                              key={b.blocker}
+                              type="button"
+                              className="nav-drilldown-button"
+                              onClick={() => navigateReadinessDrilldown({ blocker: b.blocker })}
+                            >
+                              {formatLabel(b.blocker)}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <strong> None recorded</strong>
+                      )}
+                    </li>
+                  </ul>
               <p className="table-note">
                 Item identifier:{" "}
                 <IdentifierChip
@@ -513,19 +618,21 @@ export function ReadinessView() {
               <p className="table-note">
                 {describeEvidenceCoverage(prerequisite.evidence_coverage)}
               </p>
-              {prerequisite.blocking_gaps.length > 0 ? (
-                <>
-                  <p className="summary-label">Blocking Gaps</p>
-                  <ul className="notes-list">
-                    {prerequisite.blocking_gaps.map((gap) => (
-                      <li key={gap}>{gap}</li>
-                    ))}
-                  </ul>
-                </>
-              ) : null}
-            </article>
-          ))}
-        </div>
+                  {prerequisite.blocking_gaps.length > 0 ? (
+                    <>
+                      <p className="summary-label">Blocking Gaps</p>
+                      <ul className="notes-list">
+                        {prerequisite.blocking_gaps.map((gap) => (
+                          <li key={gap}>{gap}</li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+        </>
       )}
 
       <p className="footnote">

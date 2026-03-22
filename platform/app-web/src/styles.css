@@ -154,6 +154,10 @@ section h2 {
   padding: 16px;
 }
 
+.detail-card.drilldown-focused {
+  border-left: 3px solid #4a8cff;
+}
+
 .summary-card strong {
   display: block;
   font-size: 1.6rem;
