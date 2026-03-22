@@ -8,6 +8,7 @@ Implementation references:
 
 - `platform/app-api/src/app_api/schemas/investigation_workspace.py` — stable literals, safety framing, explicit non-claims, and **`InvestigationContextAssemblyResponse`**
 - **`GET /api/v1/investigation-workspace/context`** — backend-owned assembly of nested **existing** responses (change-intelligence recent summary, platform status, capabilities matrix); optional **`sync_runs_limit`** query (forwarded to the nested change-intelligence assembly only)
+- **WebUI** **`view=investigation`** — dedicated read-only **Investigation workspace** product surface (`InvestigationWorkspaceProduct`) that renders safety framing, domain-level recent-change rows with navigation, platform recovery/read-paths/components, capabilities matrix preview, and hub navigation—**no** client-side scoring or workflow semantics
 - `platform/app-api/src/app_api/services/investigation_workspace.py` — composition only; **no** new collection or scoring
 
 Services and routes assemble **only** allowed sources; this document does **not** prescribe UI layout.
