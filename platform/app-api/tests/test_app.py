@@ -4398,6 +4398,173 @@ def test_investigation_workspace_context_rejects_invalid_sync_runs_limit() -> No
     )
 
 
+def test_evidence_pack_situation_rejects_invalid_sync_runs_limit() -> None:
+    assert client.get("/api/v1/evidence-pack/situation?sync_runs_limit=0").status_code == 422
+    assert client.get("/api/v1/evidence-pack/situation?sync_runs_limit=101").status_code == 422
+
+
+def test_evidence_pack_situation_assembly_returns_nested_contracts(monkeypatch) -> None:
+    """Week 26: situation pack composes existing services; nested contracts stay intact."""
+    _disable_read_side_persistence(monkeypatch)
+    monkeypatch.setattr(
+        "app_api.services.devices.get_collector_inventory_client",
+        lambda: SimpleNamespace(read_inventory_snapshot=_build_live_inventory_snapshot),
+    )
+    monkeypatch.setattr(
+        "app_api.services.topology.get_collector_topology_client",
+        lambda: SimpleNamespace(read_topology_snapshot=_build_live_topology_snapshot),
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: SimpleNamespace(read_policy_snapshot=_build_live_policy_snapshot),
+    )
+    monkeypatch.setattr(
+        "app_api.services.readiness_snapshot_history.count_readiness_snapshots_matching",
+        lambda *args, **kwargs: 0,
+    )
+    monkeypatch.setattr(
+        "app_api.services.readiness_snapshot_history.load_readiness_snapshot_history",
+        lambda *args, **kwargs: [],
+    )
+    monkeypatch.setattr(
+        "app_api.services.workflow_history.load_sync_runs",
+        lambda *args, **kwargs: [],
+    )
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_sync_runs",
+        lambda *args, **kwargs: [],
+    )
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_readiness_snapshot_history",
+        lambda *args, **kwargs: [],
+    )
+
+    fixed_readiness_persisted_at = datetime.fromisoformat("2026-03-16T00:00:00+00:00")
+    fixed_readiness_reference = SimpleNamespace(
+        snapshot_id="readiness-snapshot-current",
+        persisted_at=fixed_readiness_persisted_at,
+    )
+    import app_api.services.capabilities as capabilities_service
+
+    monkeypatch.setattr(
+        capabilities_service,
+        "persist_readiness_snapshot",
+        lambda *, dry_run_readiness: fixed_readiness_persisted_at,
+    )
+    monkeypatch.setattr(
+        capabilities_service,
+        "load_latest_readiness_snapshot_reference",
+        lambda: fixed_readiness_reference,
+    )
+
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.summarize_inventory_snapshot_metrics",
+        lambda: InventorySnapshotMetricsSummary(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.summarize_topology_snapshot_metrics",
+        lambda: TopologySnapshotMetricsSummary(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.summarize_policy_snapshot_metrics",
+        lambda: PolicySnapshotMetricsSummary(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.count_readiness_snapshots_matching",
+        lambda: 0,
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.load_readiness_snapshot_history",
+        lambda **kwargs: [],
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.load_sync_runs",
+        lambda **kwargs: [],
+    )
+
+    class StubOdlClient:
+        def read_controller_observation(self) -> OdlControllerObservation:
+            return OdlControllerObservation(
+                observation_state="ok",
+                observed_source="odl_restconf_capability_probe",
+                observation_summary="ODL probe succeeded.",
+                observed_capabilities=[],
+                notes=[],
+            )
+
+    monkeypatch.setattr(
+        "app_api.services.platform.get_odl_client",
+        lambda: StubOdlClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_inventory_client",
+        lambda: SimpleNamespace(read_inventory_snapshot=_build_live_inventory_snapshot),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_topology_client",
+        lambda: SimpleNamespace(read_topology_snapshot=_build_live_topology_snapshot),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.get_collector_policy_client",
+        lambda: SimpleNamespace(read_policy_snapshot=_build_live_policy_snapshot),
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_inventory_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_topology_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_policy_snapshot",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.summarize_sync_run_history",
+        _build_empty_sync_run_history_summary,
+    )
+    monkeypatch.setattr(
+        "app_api.services.platform.load_latest_readiness_snapshot_reference",
+        lambda: None,
+    )
+
+    response = client.get(
+        "/api/v1/evidence-pack/situation",
+        headers={"X-Request-ID": "sit-pack-test"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert response.headers["X-Request-ID"] == "sit-pack-test"
+    assert payload["metadata"]["phase"] == "phase_2_read_only_foundation"
+    assert payload["safety"]["contract_id"] == "evidence_pack_phase2_v1"
+    assert payload["safety"]["authority_posture"] == "interpretation_support_only"
+    assert "not_validation_verdict" in payload["safety"]["explicit_non_claims"]
+    assert any("evidence_pack_phase2_v1" in n for n in payload["assembly_notes"])
+    assert payload["situation_pack_guidance_framing"]
+    assert payload["devices"]["data_status"] == "live"
+    assert payload["topology"]["data_status"] == "live"
+    assert payload["policies"]["data_status"] == "live"
+    assert payload["readiness"]["data_status"] in ("empty", "bounded_history")
+    assert payload["workflow_history"]["data_status"] is not None
+    assert payload["audit_history"]["read_side_query"] is not None
+
+    inv = payload["investigation_context"]
+    assert inv["safety"]["contract_id"] == "investigation_workspace_phase2_v1"
+    assert inv["recent_change"]["sync_runs_limit_applied"] == 20
+    assert inv["recent_change"]["safety"]["contract_id"] == "change_intelligence_phase2_v1"
+    assert inv["platform_status"]["status"] == "ok"
+    assert inv["capabilities"]["readiness_snapshot_id"] == "readiness-snapshot-current"
+
+    bounded = client.get(
+        "/api/v1/evidence-pack/situation?sync_runs_limit=10",
+        headers={"X-Request-ID": "sit-pack-bounded"},
+    ).json()
+    assert bounded["investigation_context"]["recent_change"]["sync_runs_limit_applied"] == 10
+    assert bounded["audit_history"]["read_side_query"]["sync_runs_limit_effective"] == 10
+    assert bounded["workflow_history"]["read_side_query"]["sync_runs_limit_effective"] == 10
+
+
 def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> None:
     monkeypatch.setattr(
         "app_api.services.audit_history.load_sync_runs",

@@ -20,6 +20,15 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app_api.schemas.audit_history import AuditHistoryResponse
+from app_api.schemas.common import ApiResponseMetadata
+from app_api.schemas.devices import DevicesListResponse
+from app_api.schemas.investigation_workspace import InvestigationContextAssemblyResponse
+from app_api.schemas.policies import PoliciesListResponse
+from app_api.schemas.readiness_snapshot_history import ReadinessSnapshotHistoryResponse
+from app_api.schemas.topology import TopologyResponse
+from app_api.schemas.workflow_history import WorkflowHistoryResponse
+
 EVIDENCE_PACK_CONTRACT_ID = "evidence_pack_phase2_v1"
 """Stable identifier for this contract revision (bump when vocabulary changes)."""
 
@@ -109,3 +118,44 @@ class EvidencePackSafetyFraming(BaseModel):
             "execution."
         )
     )
+
+
+SITUATION_PACK_GUIDANCE_FRAMING = (
+    "This situation pack composes existing read-side evidence surfaces only. "
+    "Change intelligence, platform status, and capabilities are nested under "
+    "investigation_context (same assembly as GET /api/v1/investigation-workspace/context); "
+    "they are not repeated as separate top-level keys. Missing or partial evidence remains "
+    "explicit inside each nested payload under its own contracts."
+)
+
+
+class SituationPackAssemblyResponse(BaseModel):
+    """Backend-owned read-only situation (evidence) pack from existing services only.
+
+    Composes nested responses already defined by their own contracts—no new
+    persistence, scoring, or cross-domain authority. Missing or partial evidence
+    remains explicit inside each nested payload.
+    """
+
+    metadata: ApiResponseMetadata
+    safety: EvidencePackSafetyFraming
+    assembly_notes: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Bounded explanation of what was assembled; not a verdict or recommendation."
+        ),
+    )
+    situation_pack_guidance_framing: str = Field(
+        default=SITUATION_PACK_GUIDANCE_FRAMING,
+        description=(
+            "How to read nested investigation_context vs other domains without "
+            "duplicating change/platform/capabilities at the top level."
+        ),
+    )
+    devices: DevicesListResponse
+    topology: TopologyResponse
+    policies: PoliciesListResponse
+    readiness: ReadinessSnapshotHistoryResponse
+    workflow_history: WorkflowHistoryResponse
+    audit_history: AuditHistoryResponse
+    investigation_context: InvestigationContextAssemblyResponse

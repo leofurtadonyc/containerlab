@@ -4,9 +4,11 @@
 
 This document is the **backend-owned bounded contract** for an **operator evidence pack** (also described as a **situation-room style** read-only artifact): a **composed** view that may bring together **current posture**, **recent change** signals, **bounded history context**, and **honest known gaps** from **existing** API-visible evidence—so operators can orient in one place **without** inventing validation engines, execution authority, safe-to-change recommendations, or incident/runbook command semantics.
 
-Implementation references (week **26** task **01** — contract vocabulary only until a later task wires an API or UI):
+Implementation references:
 
-- `platform/app-api/src/app_api/schemas/evidence_pack.py` — stable literals, **`EVIDENCE_PACK_CONTRACT_ID`**, **`EvidencePackContentDomain`**, **`EvidencePackSafetyFraming`**, **`EvidencePackExplicitNonClaim`**, **`EvidencePackGuidanceRule`**
+- `platform/app-api/src/app_api/schemas/evidence_pack.py` — stable literals, **`EVIDENCE_PACK_CONTRACT_ID`**, **`EvidencePackContentDomain`**, **`EvidencePackSafetyFraming`**, **`EvidencePackExplicitNonClaim`**, **`EvidencePackGuidanceRule`**, **`SituationPackAssemblyResponse`**
+- `platform/app-api/src/app_api/services/situation_pack.py` — **`build_situation_pack_assembly_response`** (existing read-side builders only)
+- **`GET /api/v1/evidence-pack/situation`** — bounded situation pack (week **26** task **02**); optional **`sync_runs_limit`** (aligned with nested change intelligence and workflow/audit sync-run windows)
 
 Services and routes that adopt this contract must remain **read-only** and **backend-owned**; Grafana does not implement evidence-pack semantics.
 
