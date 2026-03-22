@@ -437,6 +437,8 @@ assert_contains "investigation workspace response" "$investigation_workspace_res
 assert_contains "investigation workspace response" "$investigation_workspace_response" '"contract_id":"change_intelligence_phase2_v1"'
 assert_contains "investigation workspace response" "$investigation_workspace_response" '"platform_status":{'
 assert_contains "investigation workspace response" "$investigation_workspace_response" '"capabilities":{'
+assert_contains "investigation workspace response" "$investigation_workspace_response" '"next_inspection_framing":"'
+assert_contains "investigation workspace response" "$investigation_workspace_response" '"next_inspection_suggestions":[{'
 investigation_workspace_bounded_query=$(fetch_compact_json "$APP_API_URL/api/v1/investigation-workspace/context?sync_runs_limit=10")
 assert_contains "investigation workspace bounded query (sync_runs echo)" "$investigation_workspace_bounded_query" '"sync_runs_limit_applied":10'
 

@@ -4366,6 +4366,12 @@ def test_investigation_workspace_context_assembly_returns_nested_contracts(monke
     assert cap["readiness_snapshot_id"] == "readiness-snapshot-current"
     assert cap["count"] == 13
 
+    assert payload["next_inspection_framing"]
+    assert isinstance(payload["next_inspection_suggestions"], list)
+    suggestion_ids = {s["suggestion_id"] for s in payload["next_inspection_suggestions"]}
+    assert "change-intelligence-absent-devices" in suggestion_ids
+    assert all("headline" in s and "rationale" in s and "context_domain" in s for s in payload["next_inspection_suggestions"])
+
 
 def test_investigation_workspace_context_rejects_invalid_sync_runs_limit() -> None:
     assert client.get("/api/v1/investigation-workspace/context?sync_runs_limit=0").status_code == 422

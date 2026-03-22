@@ -8,7 +8,9 @@ from app_api.schemas.investigation_workspace import (
     INVESTIGATION_WORKSPACE_CONTRACT_ID,
     InvestigationContextAssemblyResponse,
     InvestigationWorkspaceSafetyFraming,
+    NEXT_INSPECTION_FRAMING,
 )
+from app_api.services.investigation_next_inspection import build_next_inspection_suggestions
 from app_api.services.capabilities import build_capabilities_list_response
 from app_api.services.change_intelligence import (
     RECENT_CHANGE_SYNC_RUNS_DEFAULT,
@@ -35,6 +37,12 @@ def build_investigation_context_assembly_response(
     capabilities = build_capabilities_list_response()
 
     now = datetime.now(UTC)
+    suggestions = build_next_inspection_suggestions(
+        recent_change,
+        platform_status,
+        capabilities,
+    )
+
     assembly_notes = [
         (
             f"Assembly contract {INVESTIGATION_WORKSPACE_CONTRACT_ID}; nested sources: "
@@ -45,6 +53,10 @@ def build_investigation_context_assembly_response(
             "contracts; this assembly does not synthesize scores or safe-to-change posture."
         ),
         "No validation verdict, drift detection, or workflow authorization is introduced here.",
+        (
+            "Next-inspection suggestions are optional navigation prompts from nested evidence fields "
+            "only; they are not ranked priorities or safe-to-change guidance."
+        ),
     ]
 
     return InvestigationContextAssemblyResponse(
@@ -61,4 +73,6 @@ def build_investigation_context_assembly_response(
         recent_change=recent_change,
         platform_status=platform_status,
         capabilities=capabilities,
+        next_inspection_framing=NEXT_INSPECTION_FRAMING,
+        next_inspection_suggestions=suggestions,
     )

@@ -83,6 +83,8 @@ function minimalAssembly(overrides: Partial<InvestigationContextAssemblyResponse
       workflow_readiness_scope_counts: {},
       items: [],
     },
+    next_inspection_framing: "Optional navigation prompts only.",
+    next_inspection_suggestions: [],
   };
   return { ...base, ...overrides };
 }

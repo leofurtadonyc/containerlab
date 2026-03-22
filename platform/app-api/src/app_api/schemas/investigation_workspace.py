@@ -34,6 +34,7 @@ InvestigationContextDomain = Literal[
     "audit_history",
     "change_intelligence",
     "platform_status",
+    "capabilities",
 ]
 """Sources that may contribute **bounded** context to an investigation workspace.
 
@@ -84,6 +85,30 @@ InvestigationSuggestionRule = Literal[
 ]
 """How bounded 'next place to look' hints may be expressed—never as execution."""
 
+NEXT_INSPECTION_FRAMING = (
+    "These hints are optional read-only navigation prompts derived from fields already "
+    "present in this assembly. They are not validation verdicts, safe-to-change guidance, "
+    "or ranked execution steps. Suggestion order is sorted by suggestion_id and does not "
+    "imply an operator action sequence."
+)
+"""Stable copy surfaced alongside ``next_inspection_suggestions`` (Phase 2)."""
+
+
+class InvestigationNextInspectionSuggestion(BaseModel):
+    """One bounded 'where to look next' hint—evidence navigation only."""
+
+    suggestion_id: str = Field(
+        ...,
+        description=(
+            "Stable identifier for tests and support; responses sort by this field. "
+            "Not a priority rank."
+        ),
+    )
+    context_domain: InvestigationContextDomain
+    framing_rule: InvestigationSuggestionRule = "evidence_backed_read_only_surfaces_only"
+    headline: str
+    rationale: str
+
 
 class InvestigationWorkspaceSafetyFraming(BaseModel):
     """Standard safety framing for investigation workspace responses."""
@@ -123,3 +148,13 @@ class InvestigationContextAssemblyResponse(BaseModel):
     recent_change: RecentChangeSummaryResponse
     platform_status: PlatformStatusResponse
     capabilities: CapabilitiesListResponse
+    next_inspection_framing: str = Field(
+        default=NEXT_INSPECTION_FRAMING,
+        description="Explicit non-authority copy for optional next-inspection hints.",
+    )
+    next_inspection_suggestions: list[InvestigationNextInspectionSuggestion] = Field(
+        default_factory=list,
+        description=(
+            "Bounded navigation prompts from nested evidence only; no scoring or workflow semantics."
+        ),
+    )

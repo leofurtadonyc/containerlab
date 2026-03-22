@@ -32,4 +32,4 @@ def test_safety_framing_round_trip() -> None:
 
 
 def test_context_domain_literal_count() -> None:
-    assert len(get_args(InvestigationContextDomain)) == 8
+    assert len(get_args(InvestigationContextDomain)) == 9

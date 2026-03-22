@@ -183,6 +183,24 @@ function createInvestigationAssemblyFixture(): InvestigationContextAssemblyRespo
         },
       ],
     },
+    next_inspection_framing:
+      "These hints are optional read-only navigation prompts derived from fields already present in this assembly.",
+    next_inspection_suggestions: [
+      {
+        suggestion_id: "change-intelligence-absent-devices",
+        context_domain: "devices",
+        framing_rule: "evidence_backed_read_only_surfaces_only",
+        headline: "Inspect the Devices (inventory) read surface",
+        rationale: "Recent change intelligence reports no evidence in the bounded lookback window for this domain.",
+      },
+      {
+        suggestion_id: "change-intelligence-absent-readiness",
+        context_domain: "readiness",
+        framing_rule: "evidence_backed_read_only_surfaces_only",
+        headline: "Inspect the Readiness read surface",
+        rationale: "Recent change intelligence reports no evidence in the bounded lookback window for this domain.",
+      },
+    ],
   };
 }
 
@@ -215,6 +233,9 @@ describe("InvestigationView", () => {
     expect(html).toContain("Current posture snapshot");
     expect(html).toContain("Aggregated change signals");
     expect(html).toContain("Planning &amp; capability anchors");
+    expect(html).toContain("Where to inspect next (optional)");
+    expect(html).toContain("These hints are optional read-only navigation prompts");
+    expect(html).toContain("Open related surface");
     expect(html).toContain("Navigate to full product surfaces");
     expect(html).toContain("Reload assembly");
     expect(html).toContain("Open Readiness");

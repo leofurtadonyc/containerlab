@@ -7,8 +7,8 @@ This document is the **backend-owned bounded contract** for an **operator invest
 Implementation references:
 
 - `platform/app-api/src/app_api/schemas/investigation_workspace.py` — stable literals, safety framing, explicit non-claims, and **`InvestigationContextAssemblyResponse`**
-- **`GET /api/v1/investigation-workspace/context`** — backend-owned assembly of nested **existing** responses (change-intelligence recent summary, platform status, capabilities matrix); optional **`sync_runs_limit`** query (forwarded to the nested change-intelligence assembly only)
-- **WebUI** **`view=investigation`** — dedicated read-only **Investigation workspace** product surface (`InvestigationWorkspaceProduct`) that renders safety framing, domain-level recent-change rows with navigation, platform recovery/read-paths/components, capabilities matrix preview, and hub navigation—**no** client-side scoring or workflow semantics
+- **`GET /api/v1/investigation-workspace/context`** — backend-owned assembly of nested **existing** responses (change-intelligence recent summary, platform status, capabilities matrix); optional **`sync_runs_limit`** query (forwarded to the nested change-intelligence assembly only); includes **`next_inspection_framing`** and **`next_inspection_suggestions`** (evidence-derived navigation prompts only—no scoring or execution authority)
+- **WebUI** **`view=investigation`** — dedicated read-only **Investigation workspace** product surface (`InvestigationWorkspaceProduct`) that renders safety framing, domain-level recent-change rows with navigation, platform recovery/read-paths/components, capabilities matrix preview, bounded next-inspection hints, and hub navigation—**no** client-side scoring or workflow semantics
 - `platform/app-api/src/app_api/services/investigation_workspace.py` — composition only; **no** new collection or scoring
 
 Services and routes assemble **only** allowed sources; this document does **not** prescribe UI layout.
@@ -51,6 +51,7 @@ These name **where** assembly may pull **existing** API-visible or persisted evi
 | `audit_history` | Audit-style events from persisted sync substrate | Not SOC-grade change control |
 | `change_intelligence` | Cross-domain **recent change** summary (`recent-summary`) | Aggregation only; same non-goals as change intelligence |
 | `platform_status` | Recovery, read paths, component posture — **current** slice | Bounded probes; ODL remains helper probe |
+| `capabilities` | Capability matrix, dry-run readiness excerpt | Interpretation and planning-support only; not dry-run execution |
 
 **Naming:** words like “investigate,” “suggest,” or “next read” mean **read-only navigation and interpretation support**, not operational authorization.
 

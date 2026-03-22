@@ -1005,3 +1005,60 @@ section h2 {
 .investigation-context-domain-name {
   font-weight: 600;
 }
+
+.investigation-next-inspection {
+  margin-top: 18px;
+  padding: 16px 18px;
+  border-radius: 10px;
+  border: 1px solid #2a3f63;
+  background: #101a2c;
+}
+
+.investigation-next-inspection h3 {
+  margin-top: 0;
+}
+
+.investigation-next-inspection__framing {
+  margin-top: 8px;
+}
+
+.investigation-next-inspection__list {
+  margin: 12px 0 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.investigation-next-inspection__item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #24324a;
+  background: #0c1526;
+}
+
+.investigation-next-inspection__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.investigation-next-inspection__headline {
+  margin: 0 0 6px;
+  font-weight: 600;
+  color: #e3ecfb;
+}
+
+.investigation-next-inspection__rationale {
+  margin: 0 0 8px;
+  font-size: 0.88rem;
+  color: #c9d4e8;
+}
+
+.investigation-next-inspection__meta {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #7a8fb3;
+}
