@@ -1,5 +1,9 @@
-import type { ChangeEvidenceDomain, RecentChangeSummaryResponse } from "../../api/contracts";
+import type { RecentChangeSummaryResponse } from "../../api/contracts";
 import { QueryStateSummaryCard } from "../../components/query-states";
+import {
+  CHANGE_INTELLIGENCE_DOMAIN_LABELS,
+  evidenceStatusPillClass,
+} from "../../lib/change-intelligence-domain-labels";
 import {
   isChangeIntelligenceHistorySurfaceDomain,
   isChangeIntelligenceProductSurfaceDomain,
@@ -7,26 +11,6 @@ import {
 } from "../../lib/change-intelligence-navigation";
 import { formatDateTime } from "../../lib/presentation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
-
-const DOMAIN_LABELS: Record<ChangeEvidenceDomain, string> = {
-  devices: "Devices",
-  topology: "Topology",
-  policies: "Policies",
-  readiness: "Readiness",
-  workflow_history: "Workflow history",
-  audit_history: "Audit history",
-};
-
-function statusPillClass(evidenceStatus: string): string {
-  switch (evidenceStatus) {
-    case "present":
-      return "status-pill status-good";
-    case "partial":
-      return "status-pill status-warn";
-    default:
-      return "status-pill status-neutral";
-  }
-}
 
 export interface RecentChangeIntelligencePanelProps {
   data: RecentChangeSummaryResponse | null;
@@ -119,8 +103,8 @@ export function RecentChangeIntelligencePanel({
       <ul className="recent-change-domain-list">
         {data.domains.map((slice) => (
           <li key={slice.domain}>
-            <span className="recent-change-domain-label">{DOMAIN_LABELS[slice.domain]}</span>
-            <span className={statusPillClass(slice.evidence_status)} title={slice.evidence_status}>
+            <span className="recent-change-domain-label">{CHANGE_INTELLIGENCE_DOMAIN_LABELS[slice.domain]}</span>
+            <span className={evidenceStatusPillClass(slice.evidence_status)} title={slice.evidence_status}>
               {slice.evidence_status}
             </span>
             <p className="recent-change-headline">{slice.headline}</p>
@@ -131,7 +115,7 @@ export function RecentChangeIntelligencePanel({
                   className="nav-drilldown-button"
                   onClick={() => navigateToEvidenceView(slice.domain)}
                 >
-                  Open {DOMAIN_LABELS[slice.domain]}
+                  Open {CHANGE_INTELLIGENCE_DOMAIN_LABELS[slice.domain]}
                 </button>
               </div>
             ) : isChangeIntelligenceHistorySurfaceDomain(slice.domain) ? (
@@ -146,7 +130,7 @@ export function RecentChangeIntelligencePanel({
                     }
                   }}
                 >
-                  Open {DOMAIN_LABELS[slice.domain]}
+                  Open {CHANGE_INTELLIGENCE_DOMAIN_LABELS[slice.domain]}
                 </button>
               </div>
             ) : null}

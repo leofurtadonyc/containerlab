@@ -55,9 +55,13 @@ vi.mock("../src/features/capabilities/api", () => ({
   useCapabilitiesQuery,
 }));
 
-vi.mock("../src/features/overview/api", () => ({
-  useRecentChangeSummaryQuery,
-}));
+vi.mock("../src/features/overview/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/features/overview/api")>();
+  return {
+    ...actual,
+    useRecentChangeSummaryQuery,
+  };
+});
 
 function createQueryState<T>(data: T | null, overrides: Partial<{ error: ApiClientError | null; isLoading: boolean; isRefreshing: boolean }> = {}) {
   return {
@@ -417,6 +421,20 @@ beforeEach(() => {
 });
 
 describe("overview view", () => {
+  it("surfaces a bounded investigation workspace entrypoint above recent change", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
+    useDevicesQuery.mockReturnValue(createQueryState(null));
+    useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    const html = renderToStaticMarkup(<OverviewView />);
+
+    expect(html).toContain("Investigation workspace (bounded)");
+    expect(html).toContain("Open investigation workspace");
+    expect(html).toContain("sync run window");
+  });
+
   it("stages collector-backed overview queries instead of starting them all at once", () => {
     usePlatformStatusQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
     useDevicesQuery.mockReturnValue(createQueryState(null, { isLoading: true }));

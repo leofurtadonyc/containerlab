@@ -965,3 +965,47 @@ export interface RecentChangeSummaryResponse {
   domains: RecentChangeDomainSlice[];
   aggregation_notes: string[];
 }
+
+/** Backend-owned investigation workspace assembly (`GET /api/v1/investigation-workspace/context`). */
+export interface InvestigationWorkspaceSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: string[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export type InvestigationContextDomain =
+  | "devices"
+  | "topology"
+  | "policies"
+  | "readiness"
+  | "workflow_history"
+  | "audit_history"
+  | "change_intelligence"
+  | "platform_status"
+  | "capabilities";
+
+export type InvestigationSuggestionRule =
+  | "evidence_backed_read_only_surfaces_only"
+  | "optional_next_product_surfaces_without_preference_ordering";
+
+export interface InvestigationNextInspectionSuggestion {
+  suggestion_id: string;
+  context_domain: InvestigationContextDomain;
+  framing_rule: InvestigationSuggestionRule;
+  headline: string;
+  rationale: string;
+}
+
+/** Nested read-only assembly of existing app-api responses; not a new truth domain. */
+export interface InvestigationContextAssemblyResponse {
+  metadata: ApiResponseMetadata;
+  safety: InvestigationWorkspaceSafetyFraming;
+  assembly_notes: string[];
+  recent_change: RecentChangeSummaryResponse;
+  platform_status: PlatformStatusResponse;
+  capabilities: CapabilitiesListResponse;
+  next_inspection_framing: string;
+  next_inspection_suggestions: InvestigationNextInspectionSuggestion[];
+}
