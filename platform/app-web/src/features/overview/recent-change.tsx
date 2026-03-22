@@ -139,9 +139,12 @@ export function RecentChangeIntelligencePanel({
                 <button
                   type="button"
                   className="nav-drilldown-button"
-                  onClick={() =>
-                    navigateToEvidenceView(viewIdForChangeIntelligenceHistoryDomain(slice.domain))
-                  }
+                  onClick={() => {
+                    const d = slice.domain;
+                    if (isChangeIntelligenceHistorySurfaceDomain(d)) {
+                      navigateToEvidenceView(viewIdForChangeIntelligenceHistoryDomain(d));
+                    }
+                  }}
                 >
                   Open {DOMAIN_LABELS[slice.domain]}
                 </button>
