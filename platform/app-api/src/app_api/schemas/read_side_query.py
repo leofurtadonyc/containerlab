@@ -20,6 +20,10 @@ Contract rules (see also ``platform/docs/data-flows.md``):
   sync-run rows are loaded. **Audit** also accepts ``readiness_snapshot_history_limit``
   (default **20**, max **50**) for readiness snapshot rows before merge. These are
   **not** workflow engines—still sync-derived Phase 2 views.
+- **Allowed:** optional ``limit`` (default **20**, max **50**) and optional ``blocker``
+  (``ReadinessBlockerName``) on ``GET /api/v1/readiness-snapshot-history``, plus optional
+  ``include_blockers_detail`` for persisted JSON blocker objects—planning-support inspection
+  only; not workflow or dry-run execution.
 - **Allowed later:** anchor-oriented lookups (for example snapshot id) only where
   persistence and APIs already support them—add per-endpoint with the same echo
   pattern.
@@ -101,6 +105,13 @@ class ReadSideQueryEcho(BaseModel):
         default=None,
         description="Effective readiness snapshot history load limit (audit only); ``null`` elsewhere.",
     )
+    readiness_blocker_filter_requested: str | None = Field(
+        default=None,
+        description=(
+            "Client-requested ``ReadinessBlockerName`` filter on readiness-snapshot history endpoints; "
+            "``null`` when no blocker filter was requested."
+        ),
+    )
 
 
 def build_read_side_query_echo(
@@ -115,6 +126,7 @@ def build_read_side_query_echo(
     sync_runs_limit_effective: int | None = None,
     readiness_snapshot_history_limit_requested: int | None = None,
     readiness_snapshot_history_limit_effective: int | None = None,
+    readiness_blocker_filter_requested: str | None = None,
 ) -> ReadSideQueryEcho:
     """Construct echo metadata; keeps truncation visible without implying truth shrinkage."""
     return ReadSideQueryEcho(
@@ -128,4 +140,5 @@ def build_read_side_query_echo(
         sync_runs_limit_effective=sync_runs_limit_effective,
         readiness_snapshot_history_limit_requested=readiness_snapshot_history_limit_requested,
         readiness_snapshot_history_limit_effective=readiness_snapshot_history_limit_effective,
+        readiness_blocker_filter_requested=readiness_blocker_filter_requested,
     )
