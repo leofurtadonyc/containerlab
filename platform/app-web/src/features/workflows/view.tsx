@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import type { WorkflowHistoryItem } from "../../api/contracts";
+import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
@@ -351,6 +352,7 @@ export function WorkflowsView() {
     return (
       <section>
         <h2>Workflow History</h2>
+        <ReadSideQueryPanel variant="workflow-history" />
         <LoadingState label="Loading read-only workflow history." />
       </section>
     );
@@ -360,6 +362,7 @@ export function WorkflowsView() {
     return (
       <section>
         <h2>Workflow History</h2>
+        <ReadSideQueryPanel variant="workflow-history" />
         <ErrorState error={error} onRetry={reload} />
       </section>
     );
@@ -369,6 +372,7 @@ export function WorkflowsView() {
     return (
       <section>
         <h2>Workflow History</h2>
+        <ReadSideQueryPanel variant="workflow-history" />
         <EmptyState
           title="No workflow history"
           description="The backend returned no workflow-history response."
@@ -379,6 +383,7 @@ export function WorkflowsView() {
 
   return (
     <section>
+      <ReadSideQueryPanel variant="workflow-history" />
       <div className="section-header">
         <div>
           <h2>Workflow History</h2>

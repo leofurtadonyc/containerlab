@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import type { EvidenceConfidenceSummary } from "../../api/contracts";
+import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
@@ -182,6 +183,7 @@ export function DevicesView() {
     return (
       <section>
         <h2>Devices</h2>
+        <ReadSideQueryPanel variant="devices-policies" />
         <LoadingState label="Loading normalized device inventory." />
       </section>
     );
@@ -191,6 +193,7 @@ export function DevicesView() {
     return (
       <section>
         <h2>Devices</h2>
+        <ReadSideQueryPanel variant="devices-policies" />
         <ErrorState error={error} onRetry={reload} />
       </section>
     );
@@ -200,6 +203,7 @@ export function DevicesView() {
     return (
       <section>
         <h2>Devices</h2>
+        <ReadSideQueryPanel variant="devices-policies" />
         <EmptyState
           title="No device inventory"
           description="The backend returned no device records for the current query."
@@ -239,6 +243,7 @@ export function DevicesView() {
 
   return (
     <section>
+      <ReadSideQueryPanel variant="devices-policies" />
       <div className="section-header">
         <div>
           <h2>Devices</h2>

@@ -8,6 +8,14 @@ import type {
   TopologyResponse,
   WorkflowHistoryResponse,
 } from "./contracts";
+import {
+  buildAuditHistoryQueryString,
+  buildDevicesPoliciesQueryString,
+  buildWorkflowHistoryQueryString,
+  type AuditHistoryReadSideQuery,
+  type DevicesPoliciesReadSideQuery,
+  type WorkflowHistoryReadSideQuery,
+} from "./read-side-query-params";
 
 export interface ApiClientConfig {
   baseUrl: string;
@@ -37,24 +45,28 @@ export class ApiClient {
     return this.request<PlatformStatusResponse>("/api/v1/platform/status");
   }
 
-  async getDevices(): Promise<DevicesListResponse> {
-    return this.request<DevicesListResponse>("/api/v1/devices");
+  async getDevices(query?: DevicesPoliciesReadSideQuery): Promise<DevicesListResponse> {
+    const qs = query ? buildDevicesPoliciesQueryString(query) : "";
+    return this.request<DevicesListResponse>(`/api/v1/devices${qs}`);
   }
 
   async getTopology(): Promise<TopologyResponse> {
     return this.request<TopologyResponse>("/api/v1/topology");
   }
 
-  async getPolicies(): Promise<PoliciesListResponse> {
-    return this.request<PoliciesListResponse>("/api/v1/policies");
+  async getPolicies(query?: DevicesPoliciesReadSideQuery): Promise<PoliciesListResponse> {
+    const qs = query ? buildDevicesPoliciesQueryString(query) : "";
+    return this.request<PoliciesListResponse>(`/api/v1/policies${qs}`);
   }
 
-  async getWorkflowHistory(): Promise<WorkflowHistoryResponse> {
-    return this.request<WorkflowHistoryResponse>("/api/v1/workflow-history");
+  async getWorkflowHistory(query?: WorkflowHistoryReadSideQuery): Promise<WorkflowHistoryResponse> {
+    const qs = query ? buildWorkflowHistoryQueryString(query) : "";
+    return this.request<WorkflowHistoryResponse>(`/api/v1/workflow-history${qs}`);
   }
 
-  async getAuditHistory(): Promise<AuditHistoryResponse> {
-    return this.request<AuditHistoryResponse>("/api/v1/audit-history");
+  async getAuditHistory(query?: AuditHistoryReadSideQuery): Promise<AuditHistoryResponse> {
+    const qs = query ? buildAuditHistoryQueryString(query) : "";
+    return this.request<AuditHistoryResponse>(`/api/v1/audit-history${qs}`);
   }
 
   async getCapabilities(): Promise<CapabilitiesListResponse> {

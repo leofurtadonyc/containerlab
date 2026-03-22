@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { StatusPill } from "../../components/status-pill";
@@ -638,6 +639,7 @@ export function PoliciesView() {
     return (
       <section>
         <h2>Policies</h2>
+        <ReadSideQueryPanel variant="devices-policies" />
         <LoadingState label="Loading normalized policy inventory." />
       </section>
     );
@@ -647,6 +649,7 @@ export function PoliciesView() {
     return (
       <section>
         <h2>Policies</h2>
+        <ReadSideQueryPanel variant="devices-policies" />
         <ErrorState error={error} onRetry={reload} />
       </section>
     );
@@ -656,6 +659,7 @@ export function PoliciesView() {
     return (
       <section>
         <h2>Policies</h2>
+        <ReadSideQueryPanel variant="devices-policies" />
         <EmptyState
           title="No policy inventory"
           description="The backend returned no policy inventory response."
@@ -755,6 +759,7 @@ export function PoliciesView() {
 
   return (
     <section>
+      <ReadSideQueryPanel variant="devices-policies" />
       <div className="section-header">
         <div>
           <h2>Policies</h2>

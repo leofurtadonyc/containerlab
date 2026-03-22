@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { appApiBaseUrl } from "./api/client";
 import { AppShell } from "./components/shell";
+import { mergeViewIntoSearch, readViewIdFromSearch, replaceUrlSearchParams } from "./lib/url-app-state";
 import { AuditView } from "./features/audit/view";
 import { CapabilitiesView } from "./features/capabilities/view";
 import { DevicesView } from "./features/devices/view";
@@ -23,6 +24,13 @@ const NAV_ITEMS = [
   { id: "readiness", label: "Readiness" },
   { id: "platform-health", label: "Platform Health" },
 ] as const;
+
+const NAV_VIEW_IDS = new Set<string>(NAV_ITEMS.map((item) => item.id));
+
+function readInitialView(): string {
+  const fromUrl = readViewIdFromSearch(window.location.search, NAV_VIEW_IDS);
+  return fromUrl ?? "overview";
+}
 
 function renderView(viewId: string) {
   switch (viewId) {
@@ -49,14 +57,31 @@ function renderView(viewId: string) {
 }
 
 export function App() {
-  const [activeView, setActiveView] = useState<string>("overview");
+  const [activeView, setActiveView] = useState<string>(readInitialView());
+
+  useEffect(() => {
+    const syncFromHistory = () => {
+      const next = readViewIdFromSearch(window.location.search, NAV_VIEW_IDS);
+      if (next) {
+        setActiveView(next);
+      }
+    };
+    window.addEventListener("popstate", syncFromHistory);
+    return () => window.removeEventListener("popstate", syncFromHistory);
+  }, []);
+
+  const handleSelectView = useCallback((id: string) => {
+    setActiveView(id);
+    const sp = mergeViewIntoSearch(window.location.search, id);
+    replaceUrlSearchParams(sp);
+  }, []);
 
   return (
     <AppShell
       title="Platform WebUI"
       navigationItems={NAV_ITEMS.map((item) => ({ ...item }))}
       activeItemId={activeView}
-      onSelect={setActiveView}
+      onSelect={handleSelectView}
     >
       <div className="page-header">
         <p className="eyebrow">Phase 2 Read-Only Foundation</p>
