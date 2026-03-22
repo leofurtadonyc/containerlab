@@ -840,6 +840,40 @@ section h2 {
   font-style: italic;
 }
 
+.situation-room-review-framing {
+  margin: 10px 0 14px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.situation-room-review-prompt-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.situation-room-review-prompt {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #2a3f63;
+  background: #0f1724;
+}
+
+.situation-room-review-prompt__headline {
+  margin: 0 0 6px;
+  font-weight: 600;
+  color: #e8f1ff;
+  font-size: 0.95rem;
+}
+
+.situation-room-review-prompt__rationale {
+  margin: 0 0 10px;
+}
+
 .situation-room-metadata-strip {
   display: flex;
   flex-wrap: wrap;

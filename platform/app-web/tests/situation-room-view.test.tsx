@@ -46,6 +46,23 @@ function createSituationPackFixture(): SituationPackAssemblyResponse {
     },
     assembly_notes: ["Note one.", "Note two."],
     situation_pack_guidance_framing: "Nested investigation context; no duplicate top-level change rows.",
+    situation_review_guidance: {
+      review_framing:
+        "Optional review prompts below are read-only navigation hints derived from fields already present in this assembly.",
+      explicit_missing_evidence_notes: [
+        "Readiness snapshot history: no persisted rows in this workspace for the list returned in this pack.",
+        "Workflow history and audit history are both empty here—no persisted sync-substrate events in the bounded loads included in this pack.",
+      ],
+      review_navigation_prompts: [
+        {
+          prompt_id: "situation-review-readiness-history-empty",
+          headline: "Review readiness snapshot history",
+          rationale: "Readiness snapshot history returned no rows in this bounded assembly—open the full readiness surface for list semantics and persistence.",
+          framing_rule: "evidence_navigation_only",
+          product_view: "readiness",
+        },
+      ],
+    },
     devices: {
       ...meta,
       data_status: "live",
@@ -286,6 +303,8 @@ describe("SituationRoomView", () => {
     expect(html).toContain("Persistence");
     expect(html).toContain("Readiness");
     expect(html).toContain("capability planning posture");
+    expect(html).toContain("Bounded review navigation");
+    expect(html).toContain("Optional review prompts below are read-only navigation hints");
     expect(html).toContain("Honest evidence gaps");
     expect(html).toContain("Interpretation support");
     expect(html).toContain("Cross-domain context at a glance");

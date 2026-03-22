@@ -4542,6 +4542,24 @@ def test_evidence_pack_situation_assembly_returns_nested_contracts(monkeypatch) 
     assert "not_validation_verdict" in payload["safety"]["explicit_non_claims"]
     assert any("evidence_pack_phase2_v1" in n for n in payload["assembly_notes"])
     assert payload["situation_pack_guidance_framing"]
+    srg = payload["situation_review_guidance"]
+    assert srg["review_framing"]
+    assert isinstance(srg["explicit_missing_evidence_notes"], list)
+    assert isinstance(srg["review_navigation_prompts"], list)
+    assert len(srg["review_navigation_prompts"]) >= 1
+    first_prompt = srg["review_navigation_prompts"][0]
+    assert first_prompt["prompt_id"]
+    assert first_prompt["headline"]
+    assert first_prompt["framing_rule"] == "evidence_navigation_only"
+    assert first_prompt["product_view"] in (
+        "devices",
+        "topology",
+        "policies",
+        "readiness",
+        "workflows",
+        "audit",
+        "platform-health",
+    )
     assert payload["devices"]["data_status"] == "live"
     assert payload["topology"]["data_status"] == "live"
     assert payload["policies"]["data_status"] == "live"

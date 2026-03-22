@@ -24,6 +24,7 @@ from app_api.services.readiness_snapshot_history import (
     build_readiness_snapshot_history_response,
 )
 from app_api.services.topology import build_topology_response
+from app_api.services.situation_review_guidance import build_situation_review_guidance
 from app_api.services.workflow_history import build_workflow_history_response
 
 
@@ -79,6 +80,16 @@ def build_situation_pack_assembly_response(
         ),
     ]
 
+    situation_review_guidance = build_situation_review_guidance(
+        devices=devices,
+        topology=topology,
+        policies=policies,
+        readiness=readiness,
+        workflow_history=workflow_history,
+        audit_history=audit_history,
+        investigation_context=investigation_context,
+    )
+
     return SituationPackAssemblyResponse(
         metadata=ApiResponseMetadata(
             service="app-api",
@@ -89,6 +100,7 @@ def build_situation_pack_assembly_response(
         safety=EvidencePackSafetyFraming(authority_posture="interpretation_support_only"),
         assembly_notes=assembly_notes,
         situation_pack_guidance_framing=SITUATION_PACK_GUIDANCE_FRAMING,
+        situation_review_guidance=situation_review_guidance,
         devices=devices,
         topology=topology,
         policies=policies,

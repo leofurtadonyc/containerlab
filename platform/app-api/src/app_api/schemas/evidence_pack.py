@@ -128,6 +128,56 @@ SITUATION_PACK_GUIDANCE_FRAMING = (
     "explicit inside each nested payload under its own contracts."
 )
 
+SITUATION_REVIEW_FRAMING = (
+    "Optional review prompts below are read-only navigation hints derived from fields already "
+    "present in this assembly. They are not validation verdicts, safe-to-change guidance, "
+    "incident command, ranked execution steps, or approval to act. Prompt order is sorted by "
+    "prompt_id and does not imply operator priority."
+)
+
+SituationReviewNavPromptRule = Literal[
+    "evidence_navigation_only",
+    "no_preference_ordering",
+]
+"""How situation-pack review prompts must be read—never as execution or approval."""
+
+
+class SituationReviewNavigationPrompt(BaseModel):
+    """One bounded 'where to look next' hint for the situation pack—navigation only."""
+
+    prompt_id: str = Field(
+        ...,
+        description="Stable id for tests and support; sort order uses this field.",
+    )
+    headline: str
+    rationale: str
+    framing_rule: SituationReviewNavPromptRule = "evidence_navigation_only"
+    product_view: str = Field(
+        ...,
+        description=(
+            "WebUI shell `view` target (e.g. devices, workflows)—read-only navigation anchor."
+        ),
+    )
+
+
+class SituationReviewGuidance(BaseModel):
+    """Backend-owned bounded review framing and gap language for the situation pack."""
+
+    review_framing: str = Field(
+        default=SITUATION_REVIEW_FRAMING,
+        description="Non-authority copy surfaced with review prompts and gap notes.",
+    )
+    explicit_missing_evidence_notes: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Evidence-backed missing/partiality notes from this assembly only—no synthetic scores."
+        ),
+    )
+    review_navigation_prompts: list[SituationReviewNavigationPrompt] = Field(
+        default_factory=list,
+        description="Optional navigation prompts; not ranked safe-to-change steps.",
+    )
+
 
 class SituationPackAssemblyResponse(BaseModel):
     """Backend-owned read-only situation (evidence) pack from existing services only.
@@ -152,6 +202,7 @@ class SituationPackAssemblyResponse(BaseModel):
             "duplicating change/platform/capabilities at the top level."
         ),
     )
+    situation_review_guidance: SituationReviewGuidance
     devices: DevicesListResponse
     topology: TopologyResponse
     policies: PoliciesListResponse

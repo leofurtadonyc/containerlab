@@ -1,7 +1,6 @@
 import type { SituationPackAssemblyResponse } from "../../api/contracts";
 import { StatusPill } from "../../components/status-pill";
 import { CHANGE_INTELLIGENCE_DOMAIN_LABELS } from "../../lib/change-intelligence-domain-labels";
-import { buildSituationEvidenceGapNotes } from "../../lib/situation-room-evidence-gaps";
 import { formatDateTime } from "../../lib/presentation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 import { navigateToInvestigationView } from "../../lib/investigation-navigation";
@@ -26,7 +25,8 @@ export function SituationRoomProduct({ data, syncRunsLimit, onReload }: Situatio
   const ps = inv.platform_status;
   const cap = inv.capabilities;
   const dry = cap.dry_run_readiness;
-  const gapNotes = buildSituationEvidenceGapNotes(data);
+  const sr = data.situation_review_guidance;
+  const gapNotes = sr.explicit_missing_evidence_notes;
   const readPaths = ps.read_paths ?? [];
   const degradedPaths = readPaths.filter((rp) => rp.observation_state !== "ok").length;
 
@@ -274,10 +274,45 @@ export function SituationRoomProduct({ data, syncRunsLimit, onReload }: Situatio
         </article>
       </section>
 
-      <section className="situation-room-cross-section" aria-labelledby="sr-s6-heading">
-        <h3 id="sr-s6-heading" className="situation-room-cross-section__title">
+      <section className="situation-room-cross-section" aria-labelledby="sr-s6-review-heading">
+        <h3 id="sr-s6-review-heading" className="situation-room-cross-section__title">
           <span className="situation-room-section-index" aria-hidden="true">
             6
+          </span>
+          Bounded review navigation
+        </h3>
+        <p className="table-note situation-room-cross-section__intro">
+          Backend-derived hints from fields already in this assembly—evidence routing only, not validation, ranked
+          execution steps, safe-to-change authority, or approval to act.
+        </p>
+        <p className="callout situation-room-review-framing">{sr.review_framing}</p>
+        {sr.review_navigation_prompts.length === 0 ? (
+          <p className="table-note situation-room-gaps-empty">
+            No optional navigation prompts were emitted for this response—still use full-domain routes for detail.
+          </p>
+        ) : (
+          <ul className="situation-room-review-prompt-list" aria-label="Bounded review navigation prompts">
+            {sr.review_navigation_prompts.map((p) => (
+              <li key={p.prompt_id} className="situation-room-review-prompt">
+                <p className="situation-room-review-prompt__headline">{p.headline}</p>
+                <p className="table-note situation-room-review-prompt__rationale">{p.rationale}</p>
+                <button
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() => navigateToEvidenceView(p.product_view)}
+                >
+                  Open {p.product_view.replace(/-/g, " ")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="situation-room-cross-section" aria-labelledby="sr-s7-gaps-heading">
+        <h3 id="sr-s7-gaps-heading" className="situation-room-cross-section__title">
+          <span className="situation-room-section-index" aria-hidden="true">
+            7
           </span>
           Honest evidence gaps &amp; partiality
         </h3>
@@ -302,7 +337,7 @@ export function SituationRoomProduct({ data, syncRunsLimit, onReload }: Situatio
       <section className="situation-room-nested-investigation situation-room-cross-section" aria-labelledby="sr-inv-nested-heading">
         <h3 id="sr-inv-nested-heading" className="situation-room-cross-section__title">
           <span className="situation-room-section-index" aria-hidden="true">
-            7
+            8
           </span>
           Interpretation support (nested investigation)
         </h3>
@@ -318,7 +353,7 @@ export function SituationRoomProduct({ data, syncRunsLimit, onReload }: Situatio
       <section className="situation-room-pack-notes situation-room-cross-section" aria-labelledby="sr-notes-heading">
         <h3 id="sr-notes-heading" className="situation-room-cross-section__title">
           <span className="situation-room-section-index" aria-hidden="true">
-            8
+            9
           </span>
           Pack assembly notes
         </h3>
@@ -332,7 +367,7 @@ export function SituationRoomProduct({ data, syncRunsLimit, onReload }: Situatio
       <section className="situation-room-nav-hub situation-room-cross-section" aria-labelledby="sr-nav-heading">
         <h3 id="sr-nav-heading" className="situation-room-cross-section__title">
           <span className="situation-room-section-index" aria-hidden="true">
-            9
+            10
           </span>
           Open full product surfaces
         </h3>

@@ -1039,6 +1039,26 @@ export interface ReadinessSnapshotHistoryResponse extends ApiResponseMetadata {
   items: ReadinessSnapshotHistoryItem[];
 }
 
+/** Situation-pack review prompt rule (`schemas/evidence_pack.py`). */
+export type SituationReviewNavPromptRule = "evidence_navigation_only" | "no_preference_ordering";
+
+/** One bounded navigation hint from the situation pack assembly—never execution authority. */
+export interface SituationReviewNavigationPrompt {
+  prompt_id: string;
+  headline: string;
+  rationale: string;
+  framing_rule: SituationReviewNavPromptRule;
+  /** Shell `view` query target (e.g. `devices`, `workflows`). */
+  product_view: string;
+}
+
+/** Backend-derived gap notes and optional review prompts for the situation room. */
+export interface SituationReviewGuidance {
+  review_framing: string;
+  explicit_missing_evidence_notes: string[];
+  review_navigation_prompts: SituationReviewNavigationPrompt[];
+}
+
 /**
  * Backend-owned situation pack (`GET /api/v1/evidence-pack/situation`).
  * Change intelligence / platform / capabilities are nested under `investigation_context` only.
@@ -1048,6 +1068,7 @@ export interface SituationPackAssemblyResponse {
   safety: EvidencePackSafetyFraming;
   assembly_notes: string[];
   situation_pack_guidance_framing: string;
+  situation_review_guidance: SituationReviewGuidance;
   devices: DevicesListResponse;
   topology: TopologyResponse;
   policies: PoliciesListResponse;

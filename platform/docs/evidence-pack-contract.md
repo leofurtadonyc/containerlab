@@ -6,8 +6,8 @@ This document is the **backend-owned bounded contract** for an **operator eviden
 
 Implementation references:
 
-- `platform/app-api/src/app_api/schemas/evidence_pack.py` — stable literals, **`EVIDENCE_PACK_CONTRACT_ID`**, **`EvidencePackContentDomain`**, **`EvidencePackSafetyFraming`**, **`EvidencePackExplicitNonClaim`**, **`EvidencePackGuidanceRule`**, **`SituationPackAssemblyResponse`**
-- `platform/app-api/src/app_api/services/situation_pack.py` — **`build_situation_pack_assembly_response`** (existing read-side builders only)
+- `platform/app-api/src/app_api/schemas/evidence_pack.py` — stable literals, **`EVIDENCE_PACK_CONTRACT_ID`**, **`EvidencePackContentDomain`**, **`EvidencePackSafetyFraming`**, **`EvidencePackExplicitNonClaim`**, **`EvidencePackGuidanceRule`**, **`SituationReviewGuidance`**, **`SituationPackAssemblyResponse`**
+- `platform/app-api/src/app_api/services/situation_pack.py` — **`build_situation_pack_assembly_response`** (existing read-side builders only); **`services/situation_review_guidance.py`** — **`build_situation_review_guidance`** (bounded gap notes and navigation prompts from nested payloads only)
 - **`GET /api/v1/evidence-pack/situation`** — bounded situation pack (week **26** task **02**); optional **`sync_runs_limit`** (aligned with nested change intelligence and workflow/audit sync-run windows)
 - WebUI **Overview** **Open situation room** + shell **`view=situation-room`** (week **26** task **01**) — consumes the same endpoint; read-only framing only
 - WebUI **`SituationRoomProduct`** (week **26** Tuesday task **02** + Wednesday task **01**) — cross-domain numbered sections, gap callouts from existing fields, nested investigation context; no scoring or validation semantics
