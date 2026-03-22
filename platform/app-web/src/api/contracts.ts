@@ -1009,3 +1009,50 @@ export interface InvestigationContextAssemblyResponse {
   next_inspection_framing: string;
   next_inspection_suggestions: InvestigationNextInspectionSuggestion[];
 }
+
+/** Evidence pack safety framing (`schemas/evidence_pack.py`). */
+export interface EvidencePackSafetyFraming {
+  contract_id: string;
+  authority_posture: string;
+  explicit_non_claims: string[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface ReadinessSnapshotHistoryItem {
+  snapshot_id: string;
+  persisted_at: string;
+  readiness_status: string;
+  planning_readiness: string;
+  phase_recommendation: string;
+  summary: string;
+  blocker_count: number;
+  strongest_blockers: string[];
+}
+
+/** Persisted readiness snapshot list (`GET /api/v1/readiness-snapshot-history`). */
+export interface ReadinessSnapshotHistoryResponse extends ApiResponseMetadata {
+  data_status: "empty" | "bounded_history";
+  summary: string;
+  count: number;
+  read_side_query: ReadSideQueryEcho;
+  items: ReadinessSnapshotHistoryItem[];
+}
+
+/**
+ * Backend-owned situation pack (`GET /api/v1/evidence-pack/situation`).
+ * Change intelligence / platform / capabilities are nested under `investigation_context` only.
+ */
+export interface SituationPackAssemblyResponse {
+  metadata: ApiResponseMetadata;
+  safety: EvidencePackSafetyFraming;
+  assembly_notes: string[];
+  situation_pack_guidance_framing: string;
+  devices: DevicesListResponse;
+  topology: TopologyResponse;
+  policies: PoliciesListResponse;
+  readiness: ReadinessSnapshotHistoryResponse;
+  workflow_history: WorkflowHistoryResponse;
+  audit_history: AuditHistoryResponse;
+  investigation_context: InvestigationContextAssemblyResponse;
+}

@@ -421,7 +421,7 @@ beforeEach(() => {
 });
 
 describe("overview view", () => {
-  it("surfaces a bounded investigation workspace entrypoint above recent change", () => {
+  it("surfaces bounded situation room and investigation entrypoints above recent change", () => {
     usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
     useDevicesQuery.mockReturnValue(createQueryState(null));
     useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
@@ -430,6 +430,8 @@ describe("overview view", () => {
 
     const html = renderToStaticMarkup(<OverviewView />);
 
+    expect(html).toContain("Situation room (bounded evidence pack)");
+    expect(html).toContain("Open situation room");
     expect(html).toContain("Investigation workspace (bounded)");
     expect(html).toContain("Open investigation workspace");
     expect(html).toContain("sync run window");
