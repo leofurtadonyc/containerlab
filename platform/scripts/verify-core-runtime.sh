@@ -341,6 +341,43 @@ assert_comparison_to_latest_status_allowed "devices response" "$devices_response
 assert_comparison_to_latest_status_allowed "topology response" "$topology_response"
 assert_comparison_to_latest_status_allowed "policies response" "$policies_response"
 
+# Cross-slice list/history metadata and evidence shape (contract posture, not business truth).
+assert_contains "devices response (API metadata)" "$devices_response" '"service":"app-api"'
+assert_contains "devices response (API metadata)" "$devices_response" '"phase":"phase_2_read_only_foundation"'
+assert_contains "topology response (API metadata)" "$topology_response" '"service":"app-api"'
+assert_contains "topology response (API metadata)" "$topology_response" '"phase":"phase_2_read_only_foundation"'
+assert_contains "policies response (API metadata)" "$policies_response" '"service":"app-api"'
+assert_contains "policies response (API metadata)" "$policies_response" '"phase":"phase_2_read_only_foundation"'
+assert_contains "workflow history response (API metadata)" "$workflow_history_response" '"service":"app-api"'
+assert_contains "workflow history response (API metadata)" "$workflow_history_response" '"phase":"phase_2_read_only_foundation"'
+assert_contains "audit history response (API metadata)" "$audit_history_response" '"service":"app-api"'
+assert_contains "audit history response (API metadata)" "$audit_history_response" '"phase":"phase_2_read_only_foundation"'
+assert_contains "capabilities response (API metadata)" "$capabilities_response" '"service":"app-api"'
+assert_contains "capabilities response (API metadata)" "$capabilities_response" '"phase":"phase_2_read_only_foundation"'
+
+assert_contains "devices response (evidence_confidence fields)" "$devices_response" '"source_posture":"'
+assert_contains "devices response (evidence_confidence fields)" "$devices_response" '"evidence_kind":"'
+assert_contains "devices response (evidence_confidence fields)" "$devices_response" '"confidence_posture":"'
+assert_contains "devices response (evidence_confidence fields)" "$devices_response" '"freshness_posture":"'
+assert_contains "devices response (evidence_confidence fields)" "$devices_response" '"blocked_reason":"'
+assert_contains "topology response (evidence_confidence fields)" "$topology_response" '"source_posture":"'
+assert_contains "topology response (evidence_confidence fields)" "$topology_response" '"evidence_kind":"'
+assert_contains "topology response (evidence_confidence fields)" "$topology_response" '"confidence_posture":"'
+assert_contains "topology response (evidence_confidence fields)" "$topology_response" '"freshness_posture":"'
+assert_contains "topology response (evidence_confidence fields)" "$topology_response" '"blocked_reason":"'
+assert_contains "policies response (evidence_confidence fields)" "$policies_response" '"source_posture":"'
+assert_contains "policies response (evidence_confidence fields)" "$policies_response" '"evidence_kind":"'
+assert_contains "policies response (evidence_confidence fields)" "$policies_response" '"confidence_posture":"'
+assert_contains "policies response (evidence_confidence fields)" "$policies_response" '"freshness_posture":"'
+assert_contains "policies response (evidence_confidence fields)" "$policies_response" '"blocked_reason":"'
+
+assert_not_contains "devices response (legacy policy-only comparison status)" "$devices_response" '"current_vs_latest_persisted_ready"'
+assert_not_contains "topology response (legacy policy-only comparison status)" "$topology_response" '"current_vs_latest_persisted_ready"'
+assert_not_contains "policies response (legacy policy-only comparison status)" "$policies_response" '"current_vs_latest_persisted_ready"'
+assert_comparison_to_latest_status_allowed "devices response" "$devices_response"
+assert_comparison_to_latest_status_allowed "topology response" "$topology_response"
+assert_comparison_to_latest_status_allowed "policies response" "$policies_response"
+
 assert_contains "capabilities response" "$capabilities_response" '"data_status":"bounded_matrix"'
 assert_contains "capabilities response" "$capabilities_response" '"dry_run_readiness":{'
 assert_contains "capabilities response" "$capabilities_response" '"planning_readiness":"readiness_planning_supported"'
