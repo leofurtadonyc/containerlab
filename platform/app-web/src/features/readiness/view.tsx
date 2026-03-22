@@ -1,7 +1,15 @@
+import { useEffect } from "react";
+
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { StatusPill } from "../../components/status-pill";
 import { formatDateTime, formatLabel } from "../../lib/presentation";
+import {
+  READINESS_BLOCKER_PARAM,
+  READINESS_CAPABILITY_FEATURE_PARAM,
+  readinessBlockerDomId,
+} from "../../lib/readiness-navigation";
+import { useUrlSearchParams } from "../../lib/use-url-search-params";
 import {
   describeAssessmentAreaStatus,
   describeDryRunReadinessStatus,
@@ -16,6 +24,27 @@ import { useCapabilitiesQuery } from "../capabilities/api";
 
 export function ReadinessView() {
   const { data, error, isLoading, reload } = useCapabilitiesQuery();
+  const searchParams = useUrlSearchParams();
+  const blockerScrollTarget = searchParams.get(READINESS_BLOCKER_PARAM);
+  const capabilityFeatureContext = searchParams.get(READINESS_CAPABILITY_FEATURE_PARAM);
+
+  useEffect(() => {
+    if (!blockerScrollTarget || !data) {
+      return;
+    }
+    const readiness = normalizeDryRunReadiness(data.dry_run_readiness);
+    if (!readiness.blockers.some((b) => b.blocker === blockerScrollTarget)) {
+      return;
+    }
+    const id = readinessBlockerDomId(blockerScrollTarget);
+    const el = document.getElementById(id);
+    if (!el) {
+      return;
+    }
+    requestAnimationFrame(() => {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [blockerScrollTarget, data]);
 
   if (isLoading) {
     return (
@@ -66,6 +95,14 @@ export function ReadinessView() {
         </div>
         <StatusPill value={readiness.status} />
       </div>
+
+      {capabilityFeatureContext ? (
+        <p className="table-note">
+          <strong>Capability navigation context.</strong> Linked from a capability detail using
+          feature <code>{capabilityFeatureContext}</code> as read-only framing. Readiness is still
+          the full bounded snapshot, not filtered to that tuple.
+        </p>
+      ) : null}
 
       <p className="table-note">
         <strong>Two different clocks.</strong> The <strong>evaluation sample (this response)</strong>{" "}
@@ -370,7 +407,11 @@ export function ReadinessView() {
       ) : (
         <div className="content-grid">
           {blockers.map((blocker) => (
-            <article className="detail-card" key={blocker.blocker}>
+            <article
+              className="detail-card"
+              id={readinessBlockerDomId(blocker.blocker)}
+              key={blocker.blocker}
+            >
               <p className="summary-label">Blocker</p>
               <h3>{formatLabel(blocker.blocker)}</h3>
               <p>{blocker.summary}</p>
