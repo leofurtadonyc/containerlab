@@ -27,6 +27,7 @@ from app_api.persistence.read_side import (
     load_recent_policy_snapshot_summaries,
     persist_policy_snapshot,
 )
+from app_api.schemas.common import EvidenceConfidenceSummary
 from app_api.schemas.policies import (
     CandidatePathRecord,
     PolicyComparisonChangePreviewResponse,
@@ -39,7 +40,7 @@ from app_api.schemas.policies import (
     PolicyRecord,
     PolicyTargetFootprintRecord,
 )
-from app_api.schemas.common import EvidenceConfidenceSummary
+from app_api.schemas.read_side_query import build_read_side_query_echo
 
 
 def _policy_data_status_literal(data_status: str) -> Literal["live", "degraded"]:
@@ -694,8 +695,12 @@ def _build_policy_evidence_confidence(
     )
 
 
-def build_policies_list_response() -> PoliciesListResponse:
-    """Build the policy inventory response from the live collector boundary."""
+def build_policies_list_response(*, limit: int | None = None) -> PoliciesListResponse:
+    """Build the policy inventory response from the live collector boundary.
+
+    ``limit`` optionally truncates the primary ``items`` list. ``count`` and
+    ``read_side_query.items_total`` remain the full logical list size.
+    """
     settings = get_settings()
     collector_snapshot, snapshot, persisted_at = _build_policy_inventory()
     row_current_posture = (
@@ -759,6 +764,9 @@ def build_policies_list_response() -> PoliciesListResponse:
         )
         for policy in snapshot.records
     ]
+    items_total = len(items)
+    if limit is not None:
+        items = items[:limit]
     detail_note = (
         "Bounded per-target detail coverage currently exists for "
         f"{collector_snapshot.detail_ready_target_count} observed targets."
@@ -912,7 +920,7 @@ def build_policies_list_response() -> PoliciesListResponse:
         ttm_preference_count=snapshot.ttm_preference_count,
         binding_sid_count=snapshot.binding_sid_count,
         srv6_binding_sid_count=snapshot.srv6_binding_sid_count,
-        count=len(items),
+        count=items_total,
         notes=snapshot.notes,
         target_footprints=[
             PolicyTargetFootprintRecord(
@@ -1056,4 +1064,9 @@ def build_policies_list_response() -> PoliciesListResponse:
             ),
         ),
         items=items,
+        read_side_query=build_read_side_query_echo(
+            limit_requested=limit,
+            items_total=items_total,
+            items_returned=len(items),
+        ),
     )

@@ -95,6 +95,17 @@ Collector-boundary latency and failure posture (bounded):
 - **`partial_live_feed`** means the fetch **finished within budget** but the collector still returned only **bounded partial** live coverage; platform status may mark the read path **degraded** even though the budget was not exceeded.
 - **`/api/v1/platform/status`** `read_paths[].notes` may include a short **latency posture line** for operators; it supplements but does not replace slice-level serving and evidence fields.
 
+## Read-side query ergonomics (Phase 2)
+
+Read-only list endpoints may expose **bounded optional query parameters** so clients can reduce payload size without implying new truth semantics. Shared rules:
+
+- **Primary flat lists:** `GET /api/v1/devices` and `GET /api/v1/policies` accept an optional `limit` query parameter (integer **1–500**). When present, the response truncates the **`items`** array only. **`count`** and **`read_side_query.items_total`** remain the **full logical list size** before truncation; **`read_side_query`** echoes `limit_requested`, `items_total`, and `items_returned` so truncation is never mistaken for inventory shrinkage.
+- **Not supported via query:** free-text search, arbitrary filters that claim new domains, workflow or dry-run flags, vendor-specific query vocabulary on generic routes, or unbounded pagination cursors.
+- **History windows:** persisted snapshot lists inside `history` (and workflow/audit embeddings) keep their **existing** bounded internal limits unless a dedicated future contract extends them; do not reinterpret `limit` on devices/policies as changing history depth.
+- **Topology:** `GET /api/v1/topology` does not apply `limit` to nested `nodes` / `links` in the current contract—graph payloads need a separate truncation story.
+
+Implementation reference: `platform/app-api/src/app_api/schemas/read_side_query.py` and `platform/app-api/src/app_api/dependencies/read_side_query.py`.
+
 Important current limitation:
 
 - the current topology now uses host-backed Postgres, Prometheus, and Grafana data directories, so bounded read-side state and observability state survive normal container replacement within the same workspace, but backup, restore, and broader lifecycle hardening are still intentionally out of scope

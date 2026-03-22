@@ -10,6 +10,7 @@ from app_api.schemas.common import (
     ComparisonToLatestPersistedStatus,
     EvidenceConfidenceSummary,
 )
+from app_api.schemas.read_side_query import ReadSideQueryEcho
 
 
 CurrentRowPosture = Literal["current", "stale"]
@@ -274,3 +275,4 @@ class PoliciesListResponse(ApiResponseMetadata):
     comparison_to_latest_persisted: PolicyCurrentComparisonResponse
     history: PolicyHistoryWindowResponse
     items: list[PolicyRecord]
+    read_side_query: ReadSideQueryEcho
