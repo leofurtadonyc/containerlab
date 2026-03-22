@@ -15,9 +15,11 @@ import {
 import { formatEntrySurfaceReadinessSummaryLines } from "../../lib/entry-surface-readiness-trust";
 import { buildInventoryHistoryTrustCueRow } from "../../lib/inventory-history-trust";
 import { buildPolicyHistoryTrustCueRow } from "../../lib/policy-history-trust";
+import { countRecentChangeEvidenceStatuses } from "../../lib/change-intelligence-cues";
 import { describeDryRunReadinessStatus, normalizeDryRunReadiness } from "../../lib/readiness";
 import { useCapabilitiesQuery } from "../capabilities/api";
 import { useDevicesQuery } from "../devices/api";
+import { useRecentChangeSummaryQuery } from "../overview/api";
 import { usePoliciesQuery } from "../policies/api";
 import { getPlatformReadPath, usePlatformStatusQuery } from "./api";
 
@@ -149,6 +151,7 @@ function buildPolicySourceReadinessReadout(
 
 export function PlatformHealthView() {
   const { data, error, isLoading, reload } = usePlatformStatusQuery();
+  const recentChangeQuery = useRecentChangeSummaryQuery();
   const {
     data: devicesData,
     error: devicesError,
@@ -244,6 +247,10 @@ export function PlatformHealthView() {
   const readinessFromCapabilities = normalizeDryRunReadiness(capabilitiesData?.dry_run_readiness);
   const entryReadinessCue = capabilitiesData
     ? formatEntrySurfaceReadinessSummaryLines(readinessFromCapabilities)
+    : null;
+
+  const recentChangeCounts = recentChangeQuery.data
+    ? countRecentChangeEvidenceStatuses(recentChangeQuery.data.domains)
     : null;
 
   return (
@@ -389,9 +396,109 @@ export function PlatformHealthView() {
             </p>
           </article>
         ) : null}
+        {recentChangeQuery.data && recentChangeCounts ? (
+          <article className="summary-card">
+            <p className="summary-label">Bounded recent change</p>
+            <strong>
+              {recentChangeCounts.present} present • {recentChangeCounts.partial} partial • {recentChangeCounts.absent}{" "}
+              absent
+            </strong>
+            <p>Coarse persisted-evidence mix across six read-side domains (same change-intelligence API as Overview).</p>
+            <p className="table-note">
+              Supporting context only — use <strong>Overview</strong> for the full recent-change panel and disclaimers.
+            </p>
+          </article>
+        ) : recentChangeQuery.isLoading && !recentChangeQuery.data ? (
+          <article className="summary-card">
+            <p className="summary-label">Bounded recent change</p>
+            <strong>Loading…</strong>
+            <p>Loading bounded change-intelligence summary…</p>
+          </article>
+        ) : recentChangeQuery.error ? (
+          <article className="summary-card">
+            <p className="summary-label">Bounded recent change</p>
+            <strong>Unavailable</strong>
+            <p>{recentChangeQuery.error.message}</p>
+          </article>
+        ) : null}
       </div>
 
       <div className="content-grid">
+        <TrustCueCard
+          title="Recent change (bounded support)"
+          summary="Coarse cross-domain summary from the same backend change-intelligence contract as Overview — persisted snapshot tables plus read-side sync-run window. This page stays posture-first; Overview remains the primary bounded recent-change surface. Not validation, drift detection, safe-to-change scoring, or workflow authority."
+          rows={
+            recentChangeQuery.isLoading && !recentChangeQuery.data
+              ? [
+                  {
+                    label: "Change summary",
+                    kind: "status",
+                    value: "loading",
+                    note: "Loading the supporting change-intelligence summary from app-api.",
+                  },
+                ]
+              : recentChangeQuery.error
+                ? [
+                    {
+                      label: "Change summary",
+                      kind: "status",
+                      value: "unavailable",
+                      note: recentChangeQuery.error.message,
+                    },
+                  ]
+                : recentChangeQuery.data && recentChangeCounts
+                  ? [
+                      {
+                        label: "Evidence mix (6 domains)",
+                        kind: "text",
+                        value: `${recentChangeCounts.present} present • ${recentChangeCounts.partial} partial • ${recentChangeCounts.absent} absent`,
+                        note: "Devices, topology, policies, readiness, workflow-history, audit-history — honest absence stays explicit when a domain has no persisted rows.",
+                      },
+                      {
+                        label: "Summary generated",
+                        kind: "text",
+                        value: formatDateTime(recentChangeQuery.data.metadata.generated_at),
+                        note: "Independent timestamp from the change-intelligence response (not Grafana).",
+                      },
+                      {
+                        label: "Sync-run window",
+                        kind: "text",
+                        value: `${recentChangeQuery.data.sync_runs_limit_applied} recent sync runs`,
+                        note: "Bounded lookback for workflow/audit substrate signals; not workflow execution history.",
+                      },
+                      {
+                        label: "Readiness rows listed",
+                        kind: "text",
+                        value: `${recentChangeQuery.data.readiness_snapshots_considered}`,
+                        note: "Recent readiness snapshot summaries considered for recency context — planning-support only.",
+                      },
+                      {
+                        label: "Completeness posture",
+                        kind: "status",
+                        value: recentChangeQuery.data.completeness_posture,
+                        note: "Best-effort aggregation over existing evidence — not a completeness guarantee for the network.",
+                      },
+                      {
+                        label: "Where to read more",
+                        kind: "text",
+                        value: "Overview",
+                        note: [
+                          "Overview carries the full recent-change panel, per-domain headlines, and the canonical safety disclaimer.",
+                          recentChangeQuery.data.safety.summary_disclaimer,
+                        ],
+                      },
+                    ]
+                  : [
+                      {
+                        label: "Change summary",
+                        kind: "status",
+                        value: "unknown",
+                        note: "No change-intelligence payload is currently available.",
+                      },
+                    ]
+          }
+        />
+
         <TrustCueCard
           title="Routine-Use Trust Cues"
           summary="Platform Health is a current API response rather than an anchored history surface, so the key cues are freshness, observation coverage, read-path scope, four orthogonal topology partiality axes from platform status (inference, endpoint pairing, collection, node participation)—trust cues only, not adjacency validation—and how much of the page is probe-backed versus declared-only. Richer topology API trust cues stay on the Topology page. Inventory history and policy history rows below are coarse cues from the supporting Devices and Policies APIs. When the capabilities response is available, this page also carries a single coarse readiness decision-support line—detailed capability and readiness interpretation stays on those product pages."
