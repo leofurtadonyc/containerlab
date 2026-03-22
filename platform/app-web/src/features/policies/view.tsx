@@ -29,6 +29,7 @@ import {
 import { recentSnapshotsEmptyFootnote } from "../../lib/read-side-query-product-copy";
 import { useTopologyQuery } from "../topology/api";
 import { usePoliciesQuery } from "./api";
+import { PolicyPathAnalysisPanel } from "./policy-path-analysis-panel";
 
 import type { PolicyDetailSourceReadinessRecord } from "../../api/contracts";
 
@@ -2218,6 +2219,7 @@ export function PoliciesView() {
                   </>
                 ) : null}
               </article>
+              <PolicyPathAnalysisPanel key={selectedPolicy.policy_id} policyId={selectedPolicy.policy_id} />
             </div>
           ) : null}
         </>

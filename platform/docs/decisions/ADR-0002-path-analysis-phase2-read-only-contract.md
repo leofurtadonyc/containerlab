@@ -16,7 +16,7 @@ Introduce a **backend-owned path-analysis contract** (`path_analysis_phase2_v1`)
 - Separate **intended** and **observed** hint lists, **candidate-path summaries**, **evidence attribution**, **freshness**, **truth-alignment posture** (interpretation-only), and **caveats**.
 - Explicit **non-claims** excluding dataplane certainty, TE resolution, controller path authority, and ODL-as-substitute-for-collector semantics.
 
-The read API **`GET /api/v1/policies/{policy_id}/path-analysis`** implements this vocabulary; WebUI consumption remains a follow-on when needed.
+The read API **`GET /api/v1/policies/{policy_id}/path-analysis`** implements this vocabulary; the **WebUI Policies** view consumes it in a **Path analysis** panel for the selected policy row (week **27** Monday task **03**), without adding new truth claims beyond this contract.
 
 ## Consequences
 
@@ -30,3 +30,4 @@ The read API **`GET /api/v1/policies/{policy_id}/path-analysis`** implements thi
 - `platform/app-api/src/app_api/schemas/path_analysis.py`
 - `platform/app-api/src/app_api/services/path_analysis.py`
 - `platform/app-api/src/app_api/routers/policies.py`
+- `platform/app-web/src/features/policies/policy-path-analysis-panel.tsx`

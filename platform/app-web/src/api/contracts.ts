@@ -316,6 +316,143 @@ export interface PolicyRecord {
   notes: string[];
 }
 
+/** Bounded read-only path analysis (`GET /api/v1/policies/{policy_id}/path-analysis`). */
+export type PathEvidenceDomain =
+  | "devices"
+  | "topology"
+  | "policies"
+  | "platform_status"
+  | "odl_controller_probe"
+  | "workflow_history"
+  | "audit_history"
+  | "unknown";
+
+export interface PathEvidenceAttribution {
+  domain: PathEvidenceDomain;
+  reference: string;
+}
+
+export type PathAnalysisAuthorityPosture =
+  | "interpretation_support_only"
+  | "read_only_assembly_non_authoritative";
+
+export type PathAnalysisExplicitNonClaim =
+  | "not_validation_verdict"
+  | "not_drift_engine_result"
+  | "not_safe_to_change_recommendation"
+  | "not_workflow_execution_or_authorization"
+  | "not_dry_run_execution"
+  | "not_dataplane_forwarding_truth"
+  | "not_traffic_engineering_resolution_truth"
+  | "not_per_hop_label_stack_verification"
+  | "not_controller_computed_path_truth"
+  | "not_odl_substitute_for_gnmi_collector_read_paths"
+  | "not_cross_domain_completeness_guarantee"
+  | "not_implied_forwarding_equivalence";
+
+export interface PathAnalysisSafetyFraming {
+  contract_id: string;
+  authority_posture: PathAnalysisAuthorityPosture;
+  explicit_non_claims: PathAnalysisExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface PathAnalysisSubject {
+  anchor_kind: "policy";
+  policy_id: string;
+  policy_name: string;
+  policy_type: "static_local" | "static_non_local" | "unknown";
+  color: number;
+  headend: string;
+  endpoint: string;
+  source_target: string;
+}
+
+export type IntendedPathHintKind =
+  | "policy_intent_endpoints"
+  | "policy_declared_candidate"
+  | "unknown";
+
+export interface IntendedPathHint {
+  hint_id: string;
+  kind: IntendedPathHintKind;
+  summary: string;
+  evidence_sources: PathEvidenceAttribution[];
+}
+
+export type ObservedPathHintKind =
+  | "policy_observed_state"
+  | "policy_candidate_path_state"
+  | "topology_context_only"
+  | "inventory_context_only"
+  | "unknown";
+
+export interface ObservedPathHint {
+  hint_id: string;
+  kind: ObservedPathHintKind;
+  summary: string;
+  candidate_path_name: string | null;
+  observed_path_state: "active" | "inactive" | "unknown" | null;
+  evidence_sources: PathEvidenceAttribution[];
+  notes: string[];
+}
+
+export interface PathAnalysisCandidatePathSummary {
+  name: string;
+  current_posture: CurrentRowPosture;
+  path_state: "active" | "inactive" | "unknown";
+  last_recorded_path_state: "active" | "inactive" | "unknown";
+  preference: number | null;
+  notes: string[];
+}
+
+export interface PathAnalysisFreshness {
+  assembly_generated_at: string;
+  policy_snapshot_observed_at: string | null;
+  topology_snapshot_observed_at: string | null;
+  inventory_snapshot_observed_at: string | null;
+  serving_mode_echo: "live" | "persisted_fallback" | "mixed" | "unknown" | null;
+}
+
+export type PathAnalysisCaveatCode =
+  | "topology_partial"
+  | "policy_detail_partial"
+  | "no_dataplane_evidence"
+  | "inferred_topology_links"
+  | "odl_probe_only"
+  | "persisted_fallback_stale_row"
+  | "unknown";
+
+export interface PathAnalysisCaveat {
+  code: PathAnalysisCaveatCode;
+  message: string;
+}
+
+export type PathAnalysisTruthAlignmentPosture =
+  | "intended_vs_observed_aligned"
+  | "uncertain"
+  | "contradictory"
+  | "insufficient_evidence";
+
+export interface PathAnalysisTruthAlignment {
+  posture: PathAnalysisTruthAlignmentPosture;
+  summary: string;
+}
+
+export interface PathAnalysisViewResponse {
+  metadata: ApiResponseMetadata;
+  safety_framing: PathAnalysisSafetyFraming;
+  subject: PathAnalysisSubject;
+  intended_path_hints: IntendedPathHint[];
+  observed_path_hints: ObservedPathHint[];
+  candidate_path_summaries: PathAnalysisCandidatePathSummary[];
+  evidence_sources: PathEvidenceAttribution[];
+  freshness: PathAnalysisFreshness;
+  truth_alignment: PathAnalysisTruthAlignment;
+  caveats: PathAnalysisCaveat[];
+}
+
 export interface PolicyTargetFootprintRecord {
   target_name: string;
   target_role: string | null;

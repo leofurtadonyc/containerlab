@@ -68,6 +68,7 @@ export function useApiQuery<T>(
 
   useEffect(() => {
     if (!enabled) {
+      setIsLoading(false);
       return;
     }
 

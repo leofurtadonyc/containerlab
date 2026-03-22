@@ -3,6 +3,7 @@ import type {
   CapabilitiesListResponse,
   DevicesListResponse,
   ErrorResponse,
+  PathAnalysisViewResponse,
   PlatformStatusResponse,
   PoliciesListResponse,
   InvestigationContextAssemblyResponse,
@@ -60,6 +61,11 @@ export class ApiClient {
   async getPolicies(query?: DevicesPoliciesReadSideQuery): Promise<PoliciesListResponse> {
     const qs = query ? buildDevicesPoliciesQueryString(query) : "";
     return this.request<PoliciesListResponse>(`/api/v1/policies${qs}`);
+  }
+
+  async getPolicyPathAnalysis(policyId: string): Promise<PathAnalysisViewResponse> {
+    const encoded = encodeURIComponent(policyId);
+    return this.request<PathAnalysisViewResponse>(`/api/v1/policies/${encoded}/path-analysis`);
   }
 
   async getWorkflowHistory(query?: WorkflowHistoryReadSideQuery): Promise<WorkflowHistoryResponse> {

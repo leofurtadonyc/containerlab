@@ -8,13 +8,15 @@ import {
   PoliciesView,
 } from "../src/features/policies/view";
 
-const { usePoliciesQuery, useTopologyQuery } = vi.hoisted(() => ({
+const { usePoliciesQuery, usePolicyPathAnalysisQuery, useTopologyQuery } = vi.hoisted(() => ({
   usePoliciesQuery: vi.fn(),
+  usePolicyPathAnalysisQuery: vi.fn(),
   useTopologyQuery: vi.fn(),
 }));
 
 vi.mock("../src/features/policies/api", () => ({
   usePoliciesQuery,
+  usePolicyPathAnalysisQuery,
 }));
 
 vi.mock("../src/features/topology/api", async () => {
@@ -33,7 +35,94 @@ function createQueryState<T>(data: T | null) {
     data,
     error: null,
     isLoading: false,
+    isRefreshing: false,
     reload: vi.fn(async () => undefined),
+  };
+}
+
+function createSamplePolicyItem() {
+  return {
+    policy_id: "PE1:static_local:192.0.2.11:100",
+    policy_name: "sample-policy",
+    policy_type: "static_local" as const,
+    headend: "PE1",
+    endpoint: "192.0.2.11",
+    color: 100,
+    source_target: "PE1",
+    source_target_role: "pe",
+    candidate_paths: [] as [],
+    current_posture: "current" as const,
+    intent_state: "declared" as const,
+    observed_state: "active" as const,
+    last_recorded_observed_state: "active" as const,
+    support_state: "supported" as const,
+    health_state: "healthy" as const,
+    last_recorded_health_state: "healthy" as const,
+    source: "gnmi_collector",
+    notes: [] as [],
+  };
+}
+
+function createPathAnalysisFixture() {
+  return {
+    metadata: {
+      service: "app-api" as const,
+      version: "test",
+      phase: "phase_2_read_only_foundation" as const,
+      generated_at: "2025-01-01T00:00:00Z",
+    },
+    safety_framing: {
+      contract_id: "path_analysis_phase2_v1",
+      authority_posture: "read_only_assembly_non_authoritative" as const,
+      explicit_non_claims: [
+        "not_validation_verdict",
+        "not_dataplane_forwarding_truth",
+      ] as const,
+      phase: "phase_2_read_only_foundation" as const,
+      summary_disclaimer: "Path analysis organizes existing read-side signals for operator interpretation.",
+    },
+    subject: {
+      anchor_kind: "policy" as const,
+      policy_id: "PE1:static_local:192.0.2.11:100",
+      policy_name: "sample-policy",
+      policy_type: "static_local" as const,
+      color: 100,
+      headend: "PE1",
+      endpoint: "192.0.2.11",
+      source_target: "PE1",
+    },
+    intended_path_hints: [
+      {
+        hint_id: "intent_endpoints",
+        kind: "policy_intent_endpoints" as const,
+        summary: "Headend to endpoint scope.",
+        evidence_sources: [{ domain: "policies" as const, reference: "GET /api/v1/policies" }],
+      },
+    ],
+    observed_path_hints: [],
+    candidate_path_summaries: [
+      {
+        name: "primary",
+        current_posture: "current" as const,
+        path_state: "active" as const,
+        last_recorded_path_state: "active" as const,
+        preference: 1,
+        notes: [],
+      },
+    ],
+    evidence_sources: [{ domain: "policies" as const, reference: "GET /api/v1/policies" }],
+    freshness: {
+      assembly_generated_at: "2025-01-01T00:00:00Z",
+      policy_snapshot_observed_at: "2025-01-01T00:00:00Z",
+      topology_snapshot_observed_at: null,
+      inventory_snapshot_observed_at: null,
+      serving_mode_echo: "live" as const,
+    },
+    truth_alignment: {
+      posture: "intended_vs_observed_aligned" as const,
+      summary: "Signals align for this bounded slice.",
+    },
+    caveats: [],
   };
 }
 
@@ -343,6 +432,7 @@ describe("policy detail blocker readouts", () => {
 describe("policies view", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    usePolicyPathAnalysisQuery.mockReturnValue(createQueryState(null));
   });
 
   it("renders persisted policy history and recent snapshot anchors", () => {
@@ -482,5 +572,24 @@ describe("policies view", () => {
     const html = renderToStaticMarkup(<PoliciesView />);
 
     expect(html).toContain("Primary policy inventory list shows 2 of 4 rows");
+  });
+
+  it("renders the path analysis panel when policies are listed and path analysis returns data", () => {
+    usePoliciesQuery.mockReturnValue(
+      createQueryState({
+        ...createPolicyDataWithHistory(),
+        items: [createSamplePolicyItem()],
+      }),
+    );
+    useTopologyQuery.mockReturnValue(createQueryState(null));
+    usePolicyPathAnalysisQuery.mockReturnValue(createQueryState(createPathAnalysisFixture()));
+
+    const html = renderToStaticMarkup(<PoliciesView />);
+
+    expect(html).toContain("Path analysis");
+    expect(html).toContain("path_analysis_phase2_v1");
+    expect(html).toContain("Explicit non-claims");
+    expect(html).toContain("Truth alignment");
+    expect(html).toContain("Signals align for this bounded slice.");
   });
 });
