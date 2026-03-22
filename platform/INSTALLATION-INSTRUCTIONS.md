@@ -177,8 +177,10 @@ The `app-api` Dockerfile installs the service package from `pyproject.toml` but 
 ```bash
 docker build -t platform-app-api:0.1.0 app-api
 docker run --rm -u root -v "$(pwd)/app-api:/app" -w /app platform-app-api:0.1.0 \
-  sh -c "python3 -m pip install -q pytest && PYTHONPATH=src python3 -m pytest tests/ -q"
+  sh -c "python3 -m pip install -q pytest httpx && PYTHONPATH=src python3 -m pytest tests/ -q"
 ```
+
+The production image does not include **`httpx`**, but repository **`pytest`** uses **`fastapi.testclient`**, which requires it. Install **`httpx`** alongside **`pytest`** as shown (or `pip install -q -e '.[dev]'` from the mounted `app-api` tree to pull the full dev extra from `pyproject.toml`).
 
 To run a **single** test module (for example bounded contract tests only), replace the final `tests/` path with that file. This exercises the same Python dependency set as the shipped image without relying on host-side `pytest`.
 

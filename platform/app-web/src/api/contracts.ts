@@ -453,6 +453,37 @@ export interface PathAnalysisViewResponse {
   caveats: PathAnalysisCaveat[];
 }
 
+/** `GET /api/v1/topology/objects/{object_id}/related-policies` (bounded string-equality pivot). */
+export type TopologyObjectKind = "node" | "link";
+
+export type RelatedPolicyMatchedField = "headend" | "endpoint" | "source_target";
+
+export type RelatedPolicyRelationshipKind =
+  | "policy_field_matches_node_identifier"
+  | "policy_field_matches_link_endpoint_identifier";
+
+export interface TopologyRelatedPolicyReference {
+  policy_id: string;
+  policy_name: string;
+  policy_type: "static_local" | "static_non_local" | "unknown";
+  relationship_kind: RelatedPolicyRelationshipKind;
+  matched_field: RelatedPolicyMatchedField;
+  matched_policy_value: string;
+  matched_topology_identifier: string;
+  anchor_topology_node_id: string;
+  evidence_source: string;
+  caveats: string[];
+}
+
+export interface TopologyObjectRelatedPoliciesResponse {
+  metadata: ApiResponseMetadata;
+  object_kind: TopologyObjectKind;
+  object_id: string;
+  derivation_summary: string;
+  global_caveats: string[];
+  items: TopologyRelatedPolicyReference[];
+}
+
 export interface PolicyTargetFootprintRecord {
   target_name: string;
   target_role: string | null;

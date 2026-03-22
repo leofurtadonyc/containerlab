@@ -9,6 +9,7 @@ import type {
   InvestigationContextAssemblyResponse,
   RecentChangeSummaryResponse,
   SituationPackAssemblyResponse,
+  TopologyObjectRelatedPoliciesResponse,
   TopologyResponse,
   WorkflowHistoryResponse,
 } from "./contracts";
@@ -56,6 +57,15 @@ export class ApiClient {
 
   async getTopology(): Promise<TopologyResponse> {
     return this.request<TopologyResponse>("/api/v1/topology");
+  }
+
+  async getTopologyObjectRelatedPolicies(
+    objectId: string,
+  ): Promise<TopologyObjectRelatedPoliciesResponse> {
+    const encoded = encodeURIComponent(objectId);
+    return this.request<TopologyObjectRelatedPoliciesResponse>(
+      `/api/v1/topology/objects/${encoded}/related-policies`,
+    );
   }
 
   async getPolicies(query?: DevicesPoliciesReadSideQuery): Promise<PoliciesListResponse> {
