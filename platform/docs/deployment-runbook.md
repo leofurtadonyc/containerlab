@@ -226,6 +226,8 @@ curl -s http://localhost:8000/api/v1/topology | python -m json.tool
 curl -s http://localhost:8000/api/v1/policies | python -m json.tool
 # Path analysis (replace POLICY_ID with an `items[].policy_id` from `/api/v1/policies`):
 curl -s 'http://localhost:8000/api/v1/policies/POLICY_ID/path-analysis' | python -m json.tool
+# Related policies for a topology node or link (replace OBJECT_ID with a `topology.nodes[].node_id` or `topology.links[].link_id` from `/api/v1/topology`):
+curl -s 'http://localhost:8000/api/v1/topology/objects/OBJECT_ID/related-policies' | python -m json.tool
 curl -s http://localhost:8000/api/v1/capabilities | python -m json.tool
 curl -s 'http://localhost:8000/api/v1/change-intelligence/recent-summary?sync_runs_limit=20' | python -m json.tool
 curl -s 'http://localhost:8000/api/v1/investigation-workspace/context?sync_runs_limit=20' | python -m json.tool

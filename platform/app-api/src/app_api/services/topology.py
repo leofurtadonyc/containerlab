@@ -515,6 +515,18 @@ def _build_topology_snapshot() -> tuple[
     return collector_snapshot, snapshot, None, comparison
 
 
+def load_topology_snapshot_for_topology_relationship_queries() -> tuple[
+    CollectorTopologySnapshot, TopologySnapshot, datetime | None
+]:
+    """Return the same normalized topology snapshot backing ``GET /api/v1/topology``.
+
+    Used by bounded relationship queries (e.g. related policies for a node or link) so they
+    stay aligned with the primary topology read surface.
+    """
+    collector_snapshot, snapshot, persisted_at, _ = _build_topology_snapshot()
+    return collector_snapshot, snapshot, persisted_at
+
+
 def build_topology_response() -> TopologyResponse:
     """Build the topology response from a normalized backend model."""
     settings = get_settings()
