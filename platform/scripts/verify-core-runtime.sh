@@ -399,6 +399,11 @@ assert_contains "audit history response" "$audit_history_response" '"data_status
 assert_contains "audit history response" "$audit_history_response" '"count":'
 assert_contains "audit history response" "$audit_history_response" '"items":['
 
+assert_contains "workflow history response" "$workflow_history_response" '"read_side_query":{'
+assert_contains "workflow history response" "$workflow_history_response" '"sync_runs_limit_effective":'
+assert_contains "audit history response" "$audit_history_response" '"read_side_query":{'
+assert_contains "audit history response" "$audit_history_response" '"readiness_snapshot_history_limit_effective":'
+
 if [ "$sync_runs_count" -gt 0 ]; then
   assert_not_contains "workflow history response" "$workflow_history_response" '"data_status":"empty"'
   assert_not_contains "workflow history response" "$workflow_history_response" '"count":0'

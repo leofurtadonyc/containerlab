@@ -16,6 +16,11 @@ from app_api.models.audit import (
 )
 from app_api.persistence.history import load_readiness_snapshot_history, load_sync_runs
 from app_api.services.history_baseline import build_history_baseline_summary
+from app_api.schemas.read_side_query import (
+    READ_SIDE_READINESS_SNAPSHOT_HISTORY_DEFAULT,
+    READ_SIDE_SYNC_RUNS_LIMIT_DEFAULT,
+    build_read_side_query_echo,
+)
 from app_api.schemas.devices import InventoryHistoryChangePreview as InventoryHistoryChangePreviewSchema
 from app_api.schemas.policies import PolicyDetailSourceReadinessRecord
 from app_api.schemas.audit_history import (
@@ -129,9 +134,24 @@ def _build_topology_snapshot_note(
     return notes
 
 
-def build_audit_history_response() -> AuditHistoryResponse:
+def build_audit_history_response(
+    *,
+    limit: int | None = None,
+    sync_runs_limit: int | None = None,
+    readiness_snapshot_history_limit: int | None = None,
+) -> AuditHistoryResponse:
     """Build the bounded audit-style history response from persisted sync runs."""
     settings = get_settings()
+    effective_sync = (
+        sync_runs_limit
+        if sync_runs_limit is not None
+        else READ_SIDE_SYNC_RUNS_LIMIT_DEFAULT
+    )
+    effective_readiness = (
+        readiness_snapshot_history_limit
+        if readiness_snapshot_history_limit is not None
+        else READ_SIDE_READINESS_SNAPSHOT_HISTORY_DEFAULT
+    )
     sync_run_records = [
         AuditEventRecord(
             event_id=f"sync-run:{sync_run.sync_run_id}",
@@ -335,7 +355,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 *_build_policy_snapshot_note(sync_run),
             ],
         )
-        for sync_run in load_sync_runs()
+        for sync_run in load_sync_runs(limit=effective_sync)
     ]
     readiness_records = [
         AuditEventRecord(
@@ -374,7 +394,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 "A new readiness history record exists only when the persisted readiness content changed materially.",
             ],
         )
-        for snapshot in load_readiness_snapshot_history()
+        for snapshot in load_readiness_snapshot_history(limit=effective_readiness)
     ]
     records = sorted(
         [*sync_run_records, *readiness_records],
@@ -394,16 +414,7 @@ def build_audit_history_response() -> AuditHistoryResponse:
             "No persisted platform audit-style sync events or readiness-support snapshots are currently available."
         )
     baseline_summary = build_history_baseline_summary(data_status, len(records))
-    return AuditHistoryResponse(
-        service="app-api",
-        version=settings.app_version,
-        phase="phase_2_read_only_foundation",
-        generated_at=datetime.now(UTC),
-        data_status=data_status,
-        summary=summary,
-        baseline_summary=baseline_summary,
-        count=len(records),
-        items=[
+    items_list = [
             AuditHistoryItem(
                 event_id=record.event_id,
                 event_type=record.event_type,
@@ -622,5 +633,30 @@ def build_audit_history_response() -> AuditHistoryResponse:
                 notes=record.notes,
             )
             for record in records
-        ],
+        ]
+    items_total = len(items_list)
+    if limit is not None:
+        items_list = items_list[:limit]
+    return AuditHistoryResponse(
+        service="app-api",
+        version=settings.app_version,
+        phase="phase_2_read_only_foundation",
+        generated_at=datetime.now(UTC),
+        data_status=data_status,
+        summary=summary,
+        baseline_summary=baseline_summary,
+        count=items_total,
+        items=items_list,
+        read_side_query=build_read_side_query_echo(
+            limit_requested=limit,
+            items_total=items_total,
+            items_returned=len(items_list),
+            history_recent_limit_requested=None,
+            history_recent_limit_effective=None,
+            history_recent_snapshots_returned=None,
+            sync_runs_limit_requested=sync_runs_limit,
+            sync_runs_limit_effective=effective_sync,
+            readiness_snapshot_history_limit_requested=readiness_snapshot_history_limit,
+            readiness_snapshot_history_limit_effective=effective_readiness,
+        ),
     )

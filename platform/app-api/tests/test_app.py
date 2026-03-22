@@ -1465,8 +1465,8 @@ def _build_recent_policy_snapshot_summaries() -> list[PersistedPolicySnapshotSum
     ]
 
 
-def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
-    return [
+def _build_persisted_sync_runs(*, limit: int = 50, **kwargs: object) -> list[PersistedSyncRun]:
+    runs = [
         PersistedSyncRun(
             sync_run_id="sync-policy-1",
             model_family="policy",
@@ -1687,9 +1687,12 @@ def _build_persisted_sync_runs() -> list[PersistedSyncRun]:
             notes=["Inventory sync completed from the bounded live path."],
         ),
     ]
+    return runs[:limit]
 
 
-def _build_topology_sync_run_without_previous_comparison() -> list[PersistedSyncRun]:
+def _build_topology_sync_run_without_previous_comparison(
+    *, limit: int = 50, **kwargs: object
+) -> list[PersistedSyncRun]:
     """Single topology sync with summary but no persisted previous-snapshot comparison row."""
     return [
         PersistedSyncRun(
@@ -1722,7 +1725,9 @@ def _build_topology_sync_run_without_previous_comparison() -> list[PersistedSync
     ]
 
 
-def _build_inventory_sync_run_without_previous_comparison() -> list[PersistedSyncRun]:
+def _build_inventory_sync_run_without_previous_comparison(
+    *, limit: int = 50, **kwargs: object
+) -> list[PersistedSyncRun]:
     """Single inventory sync with snapshot summary but no persisted previous-snapshot comparison."""
     return [
         PersistedSyncRun(
@@ -1756,8 +1761,10 @@ def _build_inventory_sync_run_without_previous_comparison() -> list[PersistedSyn
     ]
 
 
-def _build_persisted_readiness_snapshot_history() -> list[PersistedReadinessSnapshotHistoryRecord]:
-    return [
+def _build_persisted_readiness_snapshot_history(
+    *, limit: int = 20, **kwargs: object
+) -> list[PersistedReadinessSnapshotHistoryRecord]:
+    rows = [
         PersistedReadinessSnapshotHistoryRecord(
             snapshot_id="readiness-snapshot-1",
             persisted_at=datetime.fromisoformat("2026-03-10T02:00:00+00:00"),
@@ -1772,6 +1779,7 @@ def _build_persisted_readiness_snapshot_history() -> list[PersistedReadinessSnap
             ],
         )
     ]
+    return rows[:limit]
 
 
 def _build_sync_run_history_summary() -> SyncRunHistorySummary:
@@ -3749,6 +3757,17 @@ def test_workflow_history_endpoint_returns_persisted_sync_activity(monkeypatch) 
     assert response.headers["X-Request-ID"] == "workflow-test"
     assert payload["data_status"] == "persisted_activity_history"
     assert payload["count"] == 3
+    rsq = payload["read_side_query"]
+    assert rsq["limit_requested"] is None
+    assert rsq["items_total"] == 3
+    assert rsq["items_returned"] == 3
+    assert rsq["history_recent_limit_requested"] is None
+    assert rsq["history_recent_limit_effective"] is None
+    assert rsq["history_recent_snapshots_returned"] is None
+    assert rsq["sync_runs_limit_requested"] is None
+    assert rsq["sync_runs_limit_effective"] == 50
+    assert rsq["readiness_snapshot_history_limit_requested"] is None
+    assert rsq["readiness_snapshot_history_limit_effective"] is None
     assert "platform-side read-only sync activity" in payload["summary"]
     assert payload["items"][0]["workflow_type"] == "read_side_sync"
     assert payload["items"][0]["sync_run_id"] == "sync-policy-1"
@@ -3926,7 +3945,10 @@ def test_workflow_history_inventory_honest_absence_when_no_previous_comparison(m
 
 
 def test_workflow_history_endpoint_handles_empty_persisted_history(monkeypatch) -> None:
-    monkeypatch.setattr("app_api.services.workflow_history.load_sync_runs", lambda: [])
+    monkeypatch.setattr(
+        "app_api.services.workflow_history.load_sync_runs",
+        lambda *args, **kwargs: [],
+    )
 
     response = client.get("/api/v1/workflow-history")
 
@@ -3978,7 +4000,10 @@ def test_workflow_history_baseline_summary_preserved_baseline(monkeypatch) -> No
 
 def test_workflow_history_baseline_summary_new_baseline(monkeypatch) -> None:
     """Workflow history exposes new_baseline when no persisted artifacts exist."""
-    monkeypatch.setattr("app_api.services.workflow_history.load_sync_runs", lambda: [])
+    monkeypatch.setattr(
+        "app_api.services.workflow_history.load_sync_runs",
+        lambda *args, **kwargs: [],
+    )
     monkeypatch.setattr(
         "app_api.services.history_baseline.load_latest_inventory_snapshot",
         lambda: None,
@@ -4007,6 +4032,42 @@ def test_workflow_history_baseline_summary_new_baseline(monkeypatch) -> None:
     assert "new baseline" in payload["baseline_summary"]["summary"]
 
 
+def test_workflow_history_primary_limit_truncates_items_only(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app_api.services.workflow_history.load_sync_runs",
+        _build_persisted_sync_runs,
+    )
+    response = client.get("/api/v1/workflow-history?limit=1")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 3
+    assert len(payload["items"]) == 1
+    rsq = payload["read_side_query"]
+    assert rsq["limit_requested"] == 1
+    assert rsq["items_total"] == 3
+    assert rsq["items_returned"] == 1
+
+
+def test_workflow_history_sync_runs_limit_and_echo(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app_api.services.workflow_history.load_sync_runs",
+        _build_persisted_sync_runs,
+    )
+    response = client.get("/api/v1/workflow-history?sync_runs_limit=2")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 2
+    assert len(payload["items"]) == 2
+    rsq = payload["read_side_query"]
+    assert rsq["sync_runs_limit_requested"] == 2
+    assert rsq["sync_runs_limit_effective"] == 2
+
+
+def test_workflow_history_rejects_non_positive_limit() -> None:
+    response = client.get("/api/v1/workflow-history?limit=0")
+    assert response.status_code == 422
+
+
 def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> None:
     monkeypatch.setattr(
         "app_api.services.audit_history.load_sync_runs",
@@ -4024,6 +4085,14 @@ def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> No
     assert response.headers["X-Request-ID"] == "audit-test"
     assert payload["data_status"] == "persisted_activity_history"
     assert payload["count"] == 4
+    rsq = payload["read_side_query"]
+    assert rsq["limit_requested"] is None
+    assert rsq["items_total"] == 4
+    assert rsq["items_returned"] == 4
+    assert rsq["sync_runs_limit_requested"] is None
+    assert rsq["sync_runs_limit_effective"] == 50
+    assert rsq["readiness_snapshot_history_limit_requested"] is None
+    assert rsq["readiness_snapshot_history_limit_effective"] == 20
     assert "persisted readiness-support snapshots" in payload["summary"]
     assert payload["items"][0]["event_type"] == "readiness_snapshot_recorded"
     assert payload["items"][0]["target_scope"] == "dry_run_readiness_support"
@@ -4129,7 +4198,7 @@ def test_audit_history_topology_honest_absence_when_no_previous_comparison(monke
     )
     monkeypatch.setattr(
         "app_api.services.audit_history.load_readiness_snapshot_history",
-        lambda: [],
+        lambda *args, **kwargs: [],
     )
 
     response = client.get("/api/v1/audit-history")
@@ -4152,7 +4221,7 @@ def test_audit_history_inventory_honest_absence_when_no_previous_comparison(monk
     )
     monkeypatch.setattr(
         "app_api.services.audit_history.load_readiness_snapshot_history",
-        lambda: [],
+        lambda *args, **kwargs: [],
     )
 
     response = client.get("/api/v1/audit-history")
@@ -4187,10 +4256,13 @@ def test_audit_history_inventory_honest_absence_when_no_previous_comparison(monk
 
 
 def test_audit_history_endpoint_handles_empty_persisted_history(monkeypatch) -> None:
-    monkeypatch.setattr("app_api.services.audit_history.load_sync_runs", lambda: [])
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_sync_runs",
+        lambda *args, **kwargs: [],
+    )
     monkeypatch.setattr(
         "app_api.services.audit_history.load_readiness_snapshot_history",
-        lambda: [],
+        lambda *args, **kwargs: [],
     )
 
     response = client.get("/api/v1/audit-history")
@@ -4243,10 +4315,13 @@ def test_audit_history_baseline_summary_preserved_baseline(monkeypatch) -> None:
 
 def test_audit_history_baseline_summary_new_baseline(monkeypatch) -> None:
     """Audit history exposes new_baseline when no persisted artifacts exist."""
-    monkeypatch.setattr("app_api.services.audit_history.load_sync_runs", lambda: [])
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_sync_runs",
+        lambda *args, **kwargs: [],
+    )
     monkeypatch.setattr(
         "app_api.services.audit_history.load_readiness_snapshot_history",
-        lambda: [],
+        lambda *args, **kwargs: [],
     )
     monkeypatch.setattr(
         "app_api.services.history_baseline.load_latest_inventory_snapshot",
@@ -4274,6 +4349,43 @@ def test_audit_history_baseline_summary_new_baseline(monkeypatch) -> None:
     payload = response.json()
     assert payload["baseline_summary"]["baseline_posture"] == "new_baseline"
     assert "new baseline" in payload["baseline_summary"]["summary"]
+
+
+def test_audit_history_primary_limit_truncates_items_only(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_sync_runs",
+        _build_persisted_sync_runs,
+    )
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_readiness_snapshot_history",
+        _build_persisted_readiness_snapshot_history,
+    )
+    response = client.get("/api/v1/audit-history?limit=2")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 4
+    assert len(payload["items"]) == 2
+    rsq = payload["read_side_query"]
+    assert rsq["limit_requested"] == 2
+    assert rsq["items_total"] == 4
+    assert rsq["items_returned"] == 2
+
+
+def test_audit_history_readiness_snapshot_history_limit_echo(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_sync_runs",
+        _build_persisted_sync_runs,
+    )
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_readiness_snapshot_history",
+        _build_persisted_readiness_snapshot_history,
+    )
+    response = client.get("/api/v1/audit-history?readiness_snapshot_history_limit=1")
+    assert response.status_code == 200
+    payload = response.json()
+    rsq = payload["read_side_query"]
+    assert rsq["readiness_snapshot_history_limit_requested"] == 1
+    assert rsq["readiness_snapshot_history_limit_effective"] == 1
 
 
 def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:

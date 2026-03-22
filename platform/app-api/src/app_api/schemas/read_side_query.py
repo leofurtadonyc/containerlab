@@ -15,6 +15,11 @@ Contract rules (see also ``platform/docs/data-flows.md``):
   loaded into ``history.recent_snapshots`` (default **3**, max **50**). This does
   **not** change latest-vs-previous comparison semantics (still the two newest full
   snapshots); it only widens or narrows the **recent snapshot list** for operator context.
+- **Allowed:** optional ``sync_runs_limit`` on ``/api/v1/workflow-history`` and
+  ``/api/v1/audit-history`` (default **50**, max **100**) controlling how many persisted
+  sync-run rows are loaded. **Audit** also accepts ``readiness_snapshot_history_limit``
+  (default **20**, max **50**) for readiness snapshot rows before merge. These are
+  **not** workflow engines—still sync-derived Phase 2 views.
 - **Allowed later:** anchor-oriented lookups (for example snapshot id) only where
   persistence and APIs already support them—add per-endpoint with the same echo
   pattern.
@@ -37,6 +42,11 @@ READ_SIDE_PRIMARY_LIST_LIMIT_MAX = 500
 # Bounded window for persisted snapshot summaries in ``history.recent_snapshots``.
 READ_SIDE_HISTORY_RECENT_LIMIT_DEFAULT = 3
 READ_SIDE_HISTORY_RECENT_LIMIT_MAX = 50
+
+READ_SIDE_SYNC_RUNS_LIMIT_DEFAULT = 50
+READ_SIDE_SYNC_RUNS_LIMIT_MAX = 100
+READ_SIDE_READINESS_SNAPSHOT_HISTORY_DEFAULT = 20
+READ_SIDE_READINESS_SNAPSHOT_HISTORY_MAX = 50
 
 
 class ReadSideQueryEcho(BaseModel):
@@ -64,16 +74,32 @@ class ReadSideQueryEcho(BaseModel):
             "``null`` means the default window applies."
         ),
     )
-    history_recent_limit_effective: int = Field(
-        default=READ_SIDE_HISTORY_RECENT_LIMIT_DEFAULT,
-        ge=1,
-        le=READ_SIDE_HISTORY_RECENT_LIMIT_MAX,
-        description="Effective limit passed to persistence load (default or clamped request).",
+    history_recent_limit_effective: int | None = Field(
+        default=None,
+        description=(
+            "Effective ``history_recent_limit`` when the endpoint exposes ``history.recent_snapshots``; "
+            "``null`` on workflow/audit history endpoints."
+        ),
     )
-    history_recent_snapshots_returned: int = Field(
-        default=0,
-        ge=0,
-        description="Number of snapshot summary rows in ``history.recent_snapshots`` (may be less than effective if DB has fewer rows).",
+    history_recent_snapshots_returned: int | None = Field(
+        default=None,
+        description="Snapshot summary rows returned in ``history.recent_snapshots``; ``null`` when not applicable.",
+    )
+    sync_runs_limit_requested: int | None = Field(
+        default=None,
+        description="Client-requested ``sync_runs_limit`` for workflow/audit history; ``null`` on devices/policies.",
+    )
+    sync_runs_limit_effective: int | None = Field(
+        default=None,
+        description="Effective sync-run load limit; ``null`` on devices/policies.",
+    )
+    readiness_snapshot_history_limit_requested: int | None = Field(
+        default=None,
+        description="Client-requested readiness snapshot history limit (audit only); ``null`` elsewhere.",
+    )
+    readiness_snapshot_history_limit_effective: int | None = Field(
+        default=None,
+        description="Effective readiness snapshot history load limit (audit only); ``null`` elsewhere.",
     )
 
 
@@ -83,8 +109,12 @@ def build_read_side_query_echo(
     items_total: int,
     items_returned: int,
     history_recent_limit_requested: int | None = None,
-    history_recent_limit_effective: int = READ_SIDE_HISTORY_RECENT_LIMIT_DEFAULT,
-    history_recent_snapshots_returned: int = 0,
+    history_recent_limit_effective: int | None = None,
+    history_recent_snapshots_returned: int | None = None,
+    sync_runs_limit_requested: int | None = None,
+    sync_runs_limit_effective: int | None = None,
+    readiness_snapshot_history_limit_requested: int | None = None,
+    readiness_snapshot_history_limit_effective: int | None = None,
 ) -> ReadSideQueryEcho:
     """Construct echo metadata; keeps truncation visible without implying truth shrinkage."""
     return ReadSideQueryEcho(
@@ -94,4 +124,8 @@ def build_read_side_query_echo(
         history_recent_limit_requested=history_recent_limit_requested,
         history_recent_limit_effective=history_recent_limit_effective,
         history_recent_snapshots_returned=history_recent_snapshots_returned,
+        sync_runs_limit_requested=sync_runs_limit_requested,
+        sync_runs_limit_effective=sync_runs_limit_effective,
+        readiness_snapshot_history_limit_requested=readiness_snapshot_history_limit_requested,
+        readiness_snapshot_history_limit_effective=readiness_snapshot_history_limit_effective,
     )

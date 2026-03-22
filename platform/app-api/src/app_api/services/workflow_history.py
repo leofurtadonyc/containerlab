@@ -17,6 +17,10 @@ from app_api.persistence.history import load_sync_runs
 from app_api.services.history_baseline import build_history_baseline_summary
 from app_api.schemas.devices import InventoryHistoryChangePreview as InventoryHistoryChangePreviewSchema
 from app_api.schemas.policies import PolicyDetailSourceReadinessRecord
+from app_api.schemas.read_side_query import (
+    READ_SIDE_SYNC_RUNS_LIMIT_DEFAULT,
+    build_read_side_query_echo,
+)
 from app_api.schemas.workflow_history import (
     WorkflowHistoryItem,
     WorkflowInventorySnapshotComparison as WorkflowInventorySnapshotComparisonResponse,
@@ -58,9 +62,19 @@ def _map_scope(model_family: str) -> str:
     }.get(model_family, "platform_read_side")
 
 
-def build_workflow_history_response() -> WorkflowHistoryResponse:
+def build_workflow_history_response(
+    *,
+    limit: int | None = None,
+    sync_runs_limit: int | None = None,
+) -> WorkflowHistoryResponse:
     """Build the bounded workflow-style history response from persisted sync runs."""
     settings = get_settings()
+    effective_sync = (
+        sync_runs_limit
+        if sync_runs_limit is not None
+        else READ_SIDE_SYNC_RUNS_LIMIT_DEFAULT
+    )
+    sync_runs = load_sync_runs(limit=effective_sync)
     records = [
         WorkflowHistoryRecord(
             workflow_id=sync_run.sync_run_id,
@@ -256,7 +270,7 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
             ),
             notes=sync_run.notes,
         )
-        for sync_run in load_sync_runs()
+        for sync_run in sync_runs
     ]
     if records:
         data_status = "persisted_activity_history"
@@ -272,16 +286,7 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
             "workflow-history view."
         )
     baseline_summary = build_history_baseline_summary(data_status, len(records))
-    return WorkflowHistoryResponse(
-        service="app-api",
-        version=settings.app_version,
-        phase="phase_2_read_only_foundation",
-        generated_at=datetime.now(UTC),
-        data_status=data_status,
-        summary=summary,
-        baseline_summary=baseline_summary,
-        count=len(records),
-        items=[
+    items_list = [
             WorkflowHistoryItem(
                 workflow_id=record.workflow_id,
                 sync_run_id=record.sync_run_id,
@@ -487,6 +492,31 @@ def build_workflow_history_response() -> WorkflowHistoryResponse:
                 ),
                 notes=record.notes,
             )
-            for record in records
-        ],
+        for record in records
+    ]
+    items_total = len(items_list)
+    if limit is not None:
+        items_list = items_list[:limit]
+    return WorkflowHistoryResponse(
+        service="app-api",
+        version=settings.app_version,
+        phase="phase_2_read_only_foundation",
+        generated_at=datetime.now(UTC),
+        data_status=data_status,
+        summary=summary,
+        baseline_summary=baseline_summary,
+        count=items_total,
+        items=items_list,
+        read_side_query=build_read_side_query_echo(
+            limit_requested=limit,
+            items_total=items_total,
+            items_returned=len(items_list),
+            history_recent_limit_requested=None,
+            history_recent_limit_effective=None,
+            history_recent_snapshots_returned=None,
+            sync_runs_limit_requested=sync_runs_limit,
+            sync_runs_limit_effective=effective_sync,
+            readiness_snapshot_history_limit_requested=None,
+            readiness_snapshot_history_limit_effective=None,
+        ),
     )
