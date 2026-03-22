@@ -7,6 +7,7 @@ import type {
   PoliciesListResponse,
   InvestigationContextAssemblyResponse,
   RecentChangeSummaryResponse,
+  SituationPackAssemblyResponse,
   TopologyResponse,
   WorkflowHistoryResponse,
 } from "./contracts";
@@ -88,6 +89,13 @@ export class ApiClient {
     const limit = Math.min(100, Math.max(1, syncRunsLimit));
     return this.request<InvestigationContextAssemblyResponse>(
       `/api/v1/investigation-workspace/context?sync_runs_limit=${limit}`,
+    );
+  }
+
+  async getEvidencePackSituation(syncRunsLimit = 20): Promise<SituationPackAssemblyResponse> {
+    const limit = Math.min(100, Math.max(1, syncRunsLimit));
+    return this.request<SituationPackAssemblyResponse>(
+      `/api/v1/evidence-pack/situation?sync_runs_limit=${limit}`,
     );
   }
 

@@ -17,7 +17,7 @@ It does **not** authorize:
 
 ## Relationship to prior guidance
 
-Week **21** posture remains in [`post-week-21-bounded-phase2-recommendation.md`](./post-week-21-bounded-phase2-recommendation.md). Week **22** posture remains in [`post-week-22-bounded-phase2-recommendation.md`](./post-week-22-bounded-phase2-recommendation.md). Week **23** posture remains in [`post-week-23-bounded-phase2-recommendation.md`](./post-week-23-bounded-phase2-recommendation.md). Week **24** bounded **change-intelligence** closure remains in [`post-week-24-bounded-phase2-recommendation.md`](./post-week-24-bounded-phase2-recommendation.md). Week **25** **adds** explicit closure of the bounded **investigation workspace** workstream (read-only assembly and interpretation support only); it does **not** replace ADR-0001 or the topology/policy reviews, and it does **not** subsume week **24** change-intelligence or week **23** readiness decision-support semantics.
+Week **21** posture remains in [`post-week-21-bounded-phase2-recommendation.md`](./post-week-21-bounded-phase2-recommendation.md). Week **22** posture remains in [`post-week-22-bounded-phase2-recommendation.md`](./post-week-22-bounded-phase2-recommendation.md). Week **23** posture remains in [`post-week-23-bounded-phase2-recommendation.md`](./post-week-23-bounded-phase2-recommendation.md). Week **24** bounded **change-intelligence** closure remains in [`post-week-24-bounded-phase2-recommendation.md`](./post-week-24-bounded-phase2-recommendation.md). Week **25** **adds** explicit closure of the bounded **investigation workspace** workstream (read-only assembly and interpretation support only); it does **not** replace ADR-0001 or the topology/policy reviews, and it does **not** subsume week **24** change-intelligence or week **23** readiness decision-support semantics. Week **26** bounded **operator evidence pack / situation room** closure is documented in [`post-week-26-bounded-phase2-recommendation.md`](./post-week-26-bounded-phase2-recommendation.md).
 
 ## What week 25 actually closed
 
@@ -50,8 +50,9 @@ The **primary gate** remains an **evidence-gated reassessment** using:
 - [`post-week-22-bounded-phase2-recommendation.md`](./post-week-22-bounded-phase2-recommendation.md)
 - [`post-week-23-bounded-phase2-recommendation.md`](./post-week-23-bounded-phase2-recommendation.md)
 - [`post-week-24-bounded-phase2-recommendation.md`](./post-week-24-bounded-phase2-recommendation.md)
+- [`post-week-26-bounded-phase2-recommendation.md`](./post-week-26-bounded-phase2-recommendation.md)
 
-**Meaning:** choose **at most one** narrow read-only slice only after **live lab or repository evidence** identifies a concrete, bounded gap. Prefer **small blast radius** and **clear operator value** inside Phase **2**. Investigation workspace is **not** the default next churn lane.
+**Meaning:** choose **at most one** narrow read-only slice only after **live lab or repository evidence** identifies a concrete, bounded gap. Prefer **small blast radius** and **clear operator value** inside Phase **2**. Investigation workspace is **not** the default next churn lane; evidence pack / situation room is **not** the default next churn lane.
 
 ## Narrow follow-ons that remain *plausible* when evidence appears
 
@@ -84,6 +85,8 @@ When a gap is proven—not assumed—these categories stay **architecture-aligne
 | Post–week 22 posture | [`post-week-22-bounded-phase2-recommendation.md`](./post-week-22-bounded-phase2-recommendation.md) |
 | Post–week 23 posture | [`post-week-23-bounded-phase2-recommendation.md`](./post-week-23-bounded-phase2-recommendation.md) |
 | Post–week 24 posture (change intelligence closure) | [`post-week-24-bounded-phase2-recommendation.md`](./post-week-24-bounded-phase2-recommendation.md) |
+| Post–week 25 posture (investigation workspace closure) | [`post-week-25-bounded-phase2-recommendation.md`](./post-week-25-bounded-phase2-recommendation.md) |
+| Post–week 26 posture (evidence pack / situation room closure) | [`post-week-26-bounded-phase2-recommendation.md`](./post-week-26-bounded-phase2-recommendation.md) |
 | Investigation workspace contract (shipped) | [`investigation-workspace-contract.md`](./investigation-workspace-contract.md) |
 | Topology: what is closed vs deferred | [`topology-truth-depth-review.md`](./topology-truth-depth-review.md) |
 | Policy: proven vs deferred | [`policy-truth-depth-review.md`](./policy-truth-depth-review.md) |

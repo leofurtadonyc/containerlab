@@ -446,6 +446,24 @@ investigation_workspace_bounded_query=$(fetch_compact_json "$APP_API_URL/api/v1/
 assert_contains "investigation workspace bounded query (sync_runs echo)" "$investigation_workspace_bounded_query" '"sync_runs_limit_applied":10'
 assert_contains "investigation workspace bounded query (next_inspection present)" "$investigation_workspace_bounded_query" '"next_inspection_suggestions":[{'
 
+# Week 26 evidence-pack / situation room: structural assembly (nested contracts; interpretation-only).
+evidence_pack_situation_response=$(fetch_compact_json "$APP_API_URL/api/v1/evidence-pack/situation")
+assert_contains "evidence pack situation response" "$evidence_pack_situation_response" '"contract_id":"evidence_pack_phase2_v1"'
+assert_contains "evidence pack situation response" "$evidence_pack_situation_response" '"authority_posture":"interpretation_support_only"'
+assert_contains "evidence pack situation response" "$evidence_pack_situation_response" '"situation_pack_guidance_framing":"'
+assert_contains "evidence pack situation response" "$evidence_pack_situation_response" '"situation_review_guidance":{'
+assert_contains "evidence pack situation response" "$evidence_pack_situation_response" '"review_framing":"'
+assert_contains "evidence pack situation response" "$evidence_pack_situation_response" '"explicit_missing_evidence_notes":['
+assert_contains "evidence pack situation response" "$evidence_pack_situation_response" '"review_navigation_prompts":['
+assert_contains "evidence pack situation response" "$evidence_pack_situation_response" '"investigation_context":{'
+assert_contains "evidence pack situation response" "$evidence_pack_situation_response" '"contract_id":"investigation_workspace_phase2_v1"'
+assert_contains "evidence pack situation response" "$evidence_pack_situation_response" '"devices":{'
+assert_contains "evidence pack situation response" "$evidence_pack_situation_response" '"workflow_history":{'
+assert_contains "evidence pack situation response" "$evidence_pack_situation_response" '"audit_history":{'
+evidence_pack_situation_bounded=$(fetch_compact_json "$APP_API_URL/api/v1/evidence-pack/situation?sync_runs_limit=10")
+assert_contains "evidence pack bounded query (nested change window)" "$evidence_pack_situation_bounded" '"sync_runs_limit_applied":10'
+assert_contains "evidence pack bounded query (situation_review_guidance present)" "$evidence_pack_situation_bounded" '"situation_review_guidance":{'
+
 if [ "$sync_runs_count" -gt 0 ]; then
   assert_not_contains "workflow history response" "$workflow_history_response" '"data_status":"empty"'
   assert_not_contains "workflow history response" "$workflow_history_response" '"count":0'
