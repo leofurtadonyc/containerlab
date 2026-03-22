@@ -206,6 +206,29 @@ describe("workflows view", () => {
     expect(html).toContain("Not workflow execution");
   });
 
+  it("shows honest absence copy when no product drilldown applies to the selected sync", () => {
+    const item: WorkflowHistoryItem = {
+      ...baseWorkflowItem(),
+      scope: "platform_read_side",
+      persisted_artifacts: [],
+    };
+    useWorkflowHistoryQuery.mockReturnValue(createQueryState(workflowHistoryPayloadForItems([item])));
+
+    const { host, cleanup } = renderWithDom(<WorkflowsView />);
+    try {
+      const btn = host.querySelector("button.table-select");
+      expect(btn).toBeTruthy();
+      act(() => {
+        (btn as HTMLButtonElement).click();
+      });
+      expect(host.innerHTML).toContain(
+        "No Devices, Topology, Policies, or Readiness drilldown applies",
+      );
+    } finally {
+      cleanup();
+    }
+  });
+
   it("shows inventory trust copy and comparison when snapshot and comparison are present", () => {
     const item: WorkflowHistoryItem = {
       ...baseWorkflowItem(),
@@ -226,6 +249,8 @@ describe("workflows view", () => {
       expect(html).toContain(INVENTORY_TRUST_SNIPPET);
       expect(html).toContain("Inventory snapshot summary");
       expect(html).toContain("Inventory latest-versus-previous comparison");
+      expect(html).toContain("Open related product surface");
+      expect(html).toContain("Devices (inventory read-side)");
       expect(html).toContain("Sync source");
       expect(html).toContain("gnmi collector");
       expect(html).toContain("Comparison note for test.");

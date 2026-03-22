@@ -5,11 +5,22 @@ export interface ApiResponseMetadata {
   generated_at: string;
 }
 
-/** Phase 2 optional `limit` query echo on primary list endpoints (devices/policies `items`). */
+/**
+ * Phase 2 bounded query echo: devices/policies use `limit` + `history_recent_limit`;
+ * workflow/audit history use `limit` on `items` plus source load limits (`sync_runs_limit`,
+ * and for audit, `readiness_snapshot_history_limit`). Fields are `null` when not applicable.
+ */
 export interface ReadSideQueryEcho {
   limit_requested: number | null;
   items_total: number;
   items_returned: number;
+  history_recent_limit_requested: number | null;
+  history_recent_limit_effective: number | null;
+  history_recent_snapshots_returned: number | null;
+  sync_runs_limit_requested: number | null;
+  sync_runs_limit_effective: number | null;
+  readiness_snapshot_history_limit_requested: number | null;
+  readiness_snapshot_history_limit_effective: number | null;
 }
 
 export interface ErrorDetail {
@@ -689,6 +700,7 @@ export interface WorkflowHistoryResponse extends ApiResponseMetadata {
   baseline_summary: HistoryBaselineSummary;
   count: number;
   items: WorkflowHistoryItem[];
+  read_side_query: ReadSideQueryEcho;
 }
 
 export interface AuditHistoryItem {
@@ -730,6 +742,7 @@ export interface AuditHistoryResponse extends ApiResponseMetadata {
   baseline_summary: HistoryBaselineSummary;
   count: number;
   items: AuditHistoryItem[];
+  read_side_query: ReadSideQueryEcho;
 }
 
 export interface CapabilityRecord {

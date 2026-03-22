@@ -428,3 +428,112 @@ section h2 {
   margin-top: 16px;
   font-size: 0.92rem;
 }
+
+.read-side-query-panel {
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border: 1px solid #2d3e5c;
+  border-radius: 10px;
+  background: rgba(12, 18, 28, 0.92);
+}
+
+.read-side-query-panel-title {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.read-side-query-panel-copy {
+  margin: 0 0 14px;
+  font-size: 0.85rem;
+  color: #a0aec0;
+  line-height: 1.45;
+}
+
+.read-side-query-panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 16px;
+  margin-bottom: 12px;
+}
+
+.read-side-query-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #b7c2d3;
+}
+
+.read-side-query-field span code {
+  font-size: 0.78rem;
+}
+
+.read-side-query-field input {
+  border: 1px solid #3a4c69;
+  border-radius: 6px;
+  background: #0f1724;
+  color: #edf2f7;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.read-side-query-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.read-side-query-apply {
+  border: 1px solid #5b7ab8;
+  background: #25324b;
+  color: #edf2f7;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.read-side-query-clear {
+  border: 1px solid #3a4c69;
+  background: transparent;
+  color: #b7c2d3;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.read-side-query-error {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  color: #f6ad55;
+}
+
+.history-evidence-drilldown {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2d3e5c;
+}
+
+.history-evidence-drilldown-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.nav-drilldown-button {
+  border: 1px solid #5b7ab8;
+  background: rgba(37, 50, 75, 0.95);
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.nav-drilldown-button:hover {
+  background: #2b3d5c;
+}

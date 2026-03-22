@@ -32,7 +32,10 @@ from app_api.schemas.devices import (
     InventoryHistoryWindow as InventoryHistoryWindowResponse,
 )
 from app_api.schemas.common import EvidenceConfidenceSummary
-from app_api.schemas.read_side_query import build_read_side_query_echo
+from app_api.schemas.read_side_query import (
+    READ_SIDE_HISTORY_RECENT_LIMIT_DEFAULT,
+    build_read_side_query_echo,
+)
 
 
 def _describe_capability_summary(value: str) -> str:
@@ -322,9 +325,12 @@ def _build_inventory_evidence_confidence(
     )
 
 
-def _build_inventory_history_window() -> InventoryHistoryWindow:
+def _build_inventory_history_window(
+    *,
+    history_recent_limit: int = READ_SIDE_HISTORY_RECENT_LIMIT_DEFAULT,
+) -> InventoryHistoryWindow:
     """Build a bounded persisted history/comparison view for inventory snapshots."""
-    recent_snapshots = load_recent_inventory_snapshot_summaries(limit=3)
+    recent_snapshots = load_recent_inventory_snapshot_summaries(limit=history_recent_limit)
     if not recent_snapshots:
         return InventoryHistoryWindow(
             status="unavailable",
@@ -521,15 +527,27 @@ def _build_inventory_devices() -> tuple[
     return snapshot, inventory_devices, None, comparison
 
 
-def build_devices_list_response(*, limit: int | None = None) -> DevicesListResponse:
+def build_devices_list_response(
+    *,
+    limit: int | None = None,
+    history_recent_limit: int | None = None,
+) -> DevicesListResponse:
     """Build the device inventory response from the live collector boundary.
 
     ``limit`` optionally truncates the primary ``items`` list for payload ergonomics.
     ``count`` and ``read_side_query.items_total`` remain the full logical list size.
+
+    ``history_recent_limit`` optionally widens or narrows ``history.recent_snapshots``;
+    latest-vs-previous comparison still uses the two newest full persisted snapshots.
     """
     settings = get_settings()
     snapshot, inventory_devices, persisted_at, comparison = _build_inventory_devices()
-    history = _build_inventory_history_window()
+    effective_history = (
+        history_recent_limit
+        if history_recent_limit is not None
+        else READ_SIDE_HISTORY_RECENT_LIMIT_DEFAULT
+    )
+    history = _build_inventory_history_window(history_recent_limit=effective_history)
     row_current_posture = (
         "stale"
         if snapshot.status == "collector_unavailable" and persisted_at is not None
@@ -678,5 +696,8 @@ def build_devices_list_response(*, limit: int | None = None) -> DevicesListRespo
             limit_requested=limit,
             items_total=items_total,
             items_returned=len(items),
+            history_recent_limit_requested=history_recent_limit,
+            history_recent_limit_effective=effective_history,
+            history_recent_snapshots_returned=len(history.recent_snapshots),
         ),
     )

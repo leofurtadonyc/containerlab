@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
 
 import type { AuditHistoryItem } from "../../api/contracts";
+import { HistoryEvidenceDrilldown } from "../../components/history-evidence-drilldown";
+import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
+import { auditHistoryDrilldownTargets } from "../../lib/history-evidence-drilldown";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
 import { useAuditHistoryQuery } from "./api";
 
@@ -311,6 +314,7 @@ export function AuditView() {
     return (
       <section>
         <h2>Audit History</h2>
+        <ReadSideQueryPanel variant="audit-history" />
         <LoadingState label="Loading read-only audit history." />
       </section>
     );
@@ -320,6 +324,7 @@ export function AuditView() {
     return (
       <section>
         <h2>Audit History</h2>
+        <ReadSideQueryPanel variant="audit-history" />
         <ErrorState error={error} onRetry={reload} />
       </section>
     );
@@ -329,6 +334,7 @@ export function AuditView() {
     return (
       <section>
         <h2>Audit History</h2>
+        <ReadSideQueryPanel variant="audit-history" />
         <EmptyState
           title="No audit history"
           description="The backend returned no audit-history response."
@@ -339,6 +345,7 @@ export function AuditView() {
 
   return (
     <section>
+      <ReadSideQueryPanel variant="audit-history" />
       <div className="section-header">
         <div>
           <h2>Audit History</h2>
@@ -725,6 +732,7 @@ export function AuditView() {
           {selectedEvent ? (
             <article className="detail-card">
               <h3>Selected Event Detail</h3>
+              <HistoryEvidenceDrilldown targets={auditHistoryDrilldownTargets(selectedEvent)} />
               <div className="key-value-list">
                 <div className="key-value-row">
                   <span>Event</span>

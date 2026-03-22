@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
 
 import type { WorkflowHistoryItem } from "../../api/contracts";
+import { HistoryEvidenceDrilldown } from "../../components/history-evidence-drilldown";
+import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
+import { workflowHistoryDrilldownTargets } from "../../lib/history-evidence-drilldown";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
 import { useWorkflowHistoryQuery } from "./api";
 
@@ -351,6 +354,7 @@ export function WorkflowsView() {
     return (
       <section>
         <h2>Workflow History</h2>
+        <ReadSideQueryPanel variant="workflow-history" />
         <LoadingState label="Loading read-only workflow history." />
       </section>
     );
@@ -360,6 +364,7 @@ export function WorkflowsView() {
     return (
       <section>
         <h2>Workflow History</h2>
+        <ReadSideQueryPanel variant="workflow-history" />
         <ErrorState error={error} onRetry={reload} />
       </section>
     );
@@ -369,6 +374,7 @@ export function WorkflowsView() {
     return (
       <section>
         <h2>Workflow History</h2>
+        <ReadSideQueryPanel variant="workflow-history" />
         <EmptyState
           title="No workflow history"
           description="The backend returned no workflow-history response."
@@ -379,6 +385,7 @@ export function WorkflowsView() {
 
   return (
     <section>
+      <ReadSideQueryPanel variant="workflow-history" />
       <div className="section-header">
         <div>
           <h2>Workflow History</h2>
@@ -788,6 +795,7 @@ export function WorkflowsView() {
           {selectedWorkflow ? (
             <article className="detail-card">
               <h3>Selected Sync Detail</h3>
+              <HistoryEvidenceDrilldown targets={workflowHistoryDrilldownTargets(selectedWorkflow)} />
               <div className="key-value-list">
                 <div className="key-value-row">
                   <span>Workflow</span>

@@ -224,6 +224,8 @@ describe("audit view", () => {
       expect(html).toContain(INVENTORY_TRUST_SNIPPET);
       expect(html).toContain("Inventory snapshot summary");
       expect(html).toContain("Inventory latest-versus-previous comparison");
+      expect(html).toContain("Open related product surface");
+      expect(html).toContain("Devices (inventory read-side)");
       expect(html).toContain("Sync source");
       expect(html).toContain("gnmi collector");
       expect(html).toContain("Capability summary distribution");
@@ -257,6 +259,53 @@ describe("audit view", () => {
       expect(html).toContain("incomplete persisted history for this event");
       expect(html).toContain("honest and expected");
       expect(html).not.toContain("Inventory Comparison Evidence");
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("offers readiness page drilldown for readiness_snapshot_recorded events", () => {
+    const item: AuditHistoryItem = {
+      event_id: "readiness-snapshot:rs-1",
+      event_type: "readiness_snapshot_recorded",
+      source: "app-api",
+      actor: "platform_system",
+      target_scope: "dry_run_readiness_support",
+      result: "succeeded",
+      correlation_id: "rs-1",
+      sync_run_id: null,
+      readiness_snapshot_id: "rs-1",
+      occurred_at: "2025-01-01T00:00:01Z",
+      message: "Readiness snapshot recorded.",
+      inventory_snapshot_summary: null,
+      inventory_comparison_to_previous: null,
+      topology_snapshot_summary: null,
+      topology_comparison_to_previous: null,
+      policy_snapshot_summary: null,
+      policy_comparison_to_previous: null,
+      readiness_snapshot_summary: {
+        snapshot_id: "rs-1",
+        persisted_at: "2025-01-01T00:00:00Z",
+        readiness_status: "bounded_readiness_support",
+        planning_readiness: "readiness_planning_supported",
+        phase_recommendation: "remain_phase_2_read_only_foundation",
+        summary: "Bounded readiness support.",
+        blocker_count: 0,
+        strongest_blockers: [],
+      },
+      notes: [],
+    };
+    useAuditHistoryQuery.mockReturnValue(createQueryState(auditHistoryPayloadForItems([item])));
+
+    const { host, cleanup } = renderWithDom(<AuditView />);
+    try {
+      const btn = host.querySelector("button.table-select");
+      expect(btn).toBeTruthy();
+      act(() => {
+        (btn as HTMLButtonElement).click();
+      });
+      expect(host.innerHTML).toContain("Open related product surface");
+      expect(host.innerHTML).toContain("Readiness (planning support)");
     } finally {
       cleanup();
     }

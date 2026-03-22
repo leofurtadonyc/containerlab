@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 
+import { ReadSideQueryEchoCallout } from "../../components/read-side-query-echo";
+import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { StatusPill } from "../../components/status-pill";
@@ -24,6 +26,7 @@ import {
   describeEvidenceSource,
   normalizeEvidenceConfidence,
 } from "../../lib/evidence-confidence";
+import { recentSnapshotsEmptyFootnote } from "../../lib/read-side-query-product-copy";
 import { useTopologyQuery } from "../topology/api";
 import { usePoliciesQuery } from "./api";
 
@@ -638,6 +641,7 @@ export function PoliciesView() {
     return (
       <section>
         <h2>Policies</h2>
+        <ReadSideQueryPanel variant="devices-policies" />
         <LoadingState label="Loading normalized policy inventory." />
       </section>
     );
@@ -647,6 +651,7 @@ export function PoliciesView() {
     return (
       <section>
         <h2>Policies</h2>
+        <ReadSideQueryPanel variant="devices-policies" />
         <ErrorState error={error} onRetry={reload} />
       </section>
     );
@@ -656,6 +661,7 @@ export function PoliciesView() {
     return (
       <section>
         <h2>Policies</h2>
+        <ReadSideQueryPanel variant="devices-policies" />
         <EmptyState
           title="No policy inventory"
           description="The backend returned no policy inventory response."
@@ -755,6 +761,7 @@ export function PoliciesView() {
 
   return (
     <section>
+      <ReadSideQueryPanel variant="devices-policies" />
       <div className="section-header">
         <div>
           <h2>Policies</h2>
@@ -884,6 +891,8 @@ export function PoliciesView() {
           <p>How far the current observed timestamp lags behind API generation.</p>
         </article>
       </div>
+
+      <ReadSideQueryEchoCallout echo={data.read_side_query} slice="policies" />
 
       {data.data_status === "degraded" ? (
         <div className="callout">
@@ -1671,11 +1680,11 @@ export function PoliciesView() {
             </ul>
           ) : (
             <p className="footnote">
-              {data.history.status === "unavailable"
-                ? "No persisted policy-history window is currently available from the backend."
-                : data.history.status === "current_only"
-                  ? "Only one persisted snapshot exists on file; a second persisted sync is required before comparison and richer history readouts can appear."
-                  : "No persisted normalized policy snapshots are currently available for this bounded view."}
+              {recentSnapshotsEmptyFootnote(
+                data.history.status,
+                data.read_side_query,
+                "policies",
+              )}
             </p>
           )}
         </article>

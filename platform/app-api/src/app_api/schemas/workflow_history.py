@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from app_api.schemas.common import ApiResponseMetadata, HistoryBaselineSummary
+from app_api.schemas.read_side_query import ReadSideQueryEcho
 from app_api.schemas.devices import InventoryHistoryChangePreview
 from app_api.schemas.policies import PolicyDetailSourceReadinessRecord
 
@@ -215,3 +216,4 @@ class WorkflowHistoryResponse(ApiResponseMetadata):
     baseline_summary: HistoryBaselineSummary
     count: int
     items: list[WorkflowHistoryItem]
+    read_side_query: ReadSideQueryEcho
