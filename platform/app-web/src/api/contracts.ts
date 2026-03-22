@@ -5,6 +5,13 @@ export interface ApiResponseMetadata {
   generated_at: string;
 }
 
+/** Phase 2 optional `limit` query echo on primary list endpoints (devices/policies `items`). */
+export interface ReadSideQueryEcho {
+  limit_requested: number | null;
+  items_total: number;
+  items_returned: number;
+}
+
 export interface ErrorDetail {
   field: string | null;
   issue: string;
@@ -178,6 +185,7 @@ export interface DevicesListResponse extends ApiResponseMetadata {
   history: InventoryHistoryWindow;
   count: number;
   items: DeviceRecord[];
+  read_side_query: ReadSideQueryEcho;
 }
 
 export interface TopologyNodeRecord {
@@ -643,6 +651,7 @@ export interface PoliciesListResponse extends ApiResponseMetadata {
   comparison_to_latest_persisted: PolicyCurrentComparison;
   history: PolicyHistoryWindow;
   items: PolicyRecord[];
+  read_side_query: ReadSideQueryEcho;
 }
 
 export interface WorkflowHistoryItem {

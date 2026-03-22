@@ -10,6 +10,7 @@ from app_api.schemas.common import (
     ComparisonToLatestPersistedStatus,
     EvidenceConfidenceSummary,
 )
+from app_api.schemas.read_side_query import ReadSideQueryEcho
 
 
 CurrentRowPosture = Literal["current", "stale"]
@@ -132,3 +133,4 @@ class DevicesListResponse(ApiResponseMetadata):
     history: InventoryHistoryWindow
     count: int
     items: list[DeviceRecord]
+    read_side_query: ReadSideQueryEcho

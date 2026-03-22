@@ -32,6 +32,7 @@ from app_api.schemas.devices import (
     InventoryHistoryWindow as InventoryHistoryWindowResponse,
 )
 from app_api.schemas.common import EvidenceConfidenceSummary
+from app_api.schemas.read_side_query import build_read_side_query_echo
 
 
 def _describe_capability_summary(value: str) -> str:
@@ -520,8 +521,12 @@ def _build_inventory_devices() -> tuple[
     return snapshot, inventory_devices, None, comparison
 
 
-def build_devices_list_response() -> DevicesListResponse:
-    """Build the device inventory response from the live collector boundary."""
+def build_devices_list_response(*, limit: int | None = None) -> DevicesListResponse:
+    """Build the device inventory response from the live collector boundary.
+
+    ``limit`` optionally truncates the primary ``items`` list for payload ergonomics.
+    ``count`` and ``read_side_query.items_total`` remain the full logical list size.
+    """
     settings = get_settings()
     snapshot, inventory_devices, persisted_at, comparison = _build_inventory_devices()
     history = _build_inventory_history_window()
@@ -550,6 +555,9 @@ def build_devices_list_response() -> DevicesListResponse:
         )
         for device in inventory_devices
     ]
+    items_total = len(items)
+    if limit is not None:
+        items = items[:limit]
     if snapshot.status == "live_normalized_feed":
         data_status = "live"
         serving_mode = "live_collector"
@@ -664,6 +672,11 @@ def build_devices_list_response() -> DevicesListResponse:
                 else None
             ),
         ),
-        count=len(items),
+        count=items_total,
         items=items,
+        read_side_query=build_read_side_query_echo(
+            limit_requested=limit,
+            items_total=items_total,
+            items_returned=len(items),
+        ),
     )

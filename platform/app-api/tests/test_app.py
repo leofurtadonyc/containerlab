@@ -2655,6 +2655,31 @@ def test_devices_endpoint_returns_live_inventory(monkeypatch) -> None:
     assert payload["items"][0]["capability_summary"] == "partially_supported"
     assert "useful read-only data" in payload["items"][0]["capability_detail"]
     assert datetime.fromisoformat(payload["generated_at"]) is not None
+    assert payload["read_side_query"]["limit_requested"] is None
+    assert payload["read_side_query"]["items_total"] == 2
+    assert payload["read_side_query"]["items_returned"] == 2
+
+
+def test_devices_endpoint_limit_truncates_items_without_shrinking_count(monkeypatch) -> None:
+    _disable_read_side_persistence(monkeypatch)
+
+    class StubCollectorInventoryClient:
+        def read_inventory_snapshot(self) -> CollectorInventorySnapshot:
+            return _build_live_inventory_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.devices.get_collector_inventory_client",
+        lambda: StubCollectorInventoryClient(),
+    )
+    response = client.get("/api/v1/devices?limit=1")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 2
+    assert len(payload["items"]) == 1
+    assert payload["read_side_query"]["limit_requested"] == 1
+    assert payload["read_side_query"]["items_total"] == 2
+    assert payload["read_side_query"]["items_returned"] == 1
 
 
 def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None:
@@ -3275,6 +3300,42 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["items"][0]["candidate_paths"][0]["current_posture"] == "current"
     assert payload["items"][0]["candidate_paths"][0]["last_recorded_path_state"] == "active"
     assert datetime.fromisoformat(payload["generated_at"]) is not None
+    assert payload["read_side_query"]["limit_requested"] is None
+    assert payload["read_side_query"]["items_total"] == 2
+    assert payload["read_side_query"]["items_returned"] == 2
+
+
+def test_policies_endpoint_limit_truncates_items_without_shrinking_count(monkeypatch) -> None:
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return _build_live_policy_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr("app_api.services.policies.persist_policy_snapshot", lambda **kwargs: None)
+    monkeypatch.setattr(
+        "app_api.services.policies.load_recent_policy_snapshot_summaries",
+        lambda limit=3: _build_recent_policy_snapshot_summaries()[:limit],
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_latest_policy_snapshot",
+        _build_persisted_policy_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_previous_policy_snapshot",
+        _build_previous_persisted_policy_snapshot,
+    )
+    response = client.get("/api/v1/policies?limit=1")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 2
+    assert len(payload["items"]) == 1
+    assert payload["read_side_query"]["limit_requested"] == 1
+    assert payload["read_side_query"]["items_total"] == 2
+    assert payload["read_side_query"]["items_returned"] == 1
 
 
 def test_policies_history_current_only_exposes_readiness_without_comparison(monkeypatch) -> None:
