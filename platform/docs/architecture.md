@@ -101,6 +101,7 @@ Current read-model reality:
 - inventory, topology, and policy snapshots are now persisted in Postgres along with sync-run records, and the API can fall back to the latest persisted normalized snapshot when the collector path is temporarily unavailable
 - `/api/v1/devices`, `/api/v1/topology`, and `/api/v1/policies` now expose explicit serving-mode and bounded comparison semantics so operators can distinguish live collector reads, persisted fallback responses, and current-versus-latest-persisted comparison-ready responses without implying a drift engine
 - policy persistence remains intentionally bounded to normalized snapshot history and candidate-path records rather than a broader durable policy domain model
+- a **path-analysis** read-side **contract** (`path_analysis_phase2_v1`) exists for follow-on work: see `docs/path-analysis-contract.md` and `docs/decisions/ADR-0002-path-analysis-phase2-read-only-contract.md`—policy-anchored intended vs observed **hints**, candidate-path summaries, evidence attribution, and explicit non-claims (**not** dataplane or TE resolution truth)
 - workflow-history and audit-history remain bounded views derived from persisted sync-run activity rather than independently persisted workflow or audit domains
 - backend metrics remain transient in-memory service state for Prometheus scraping; they are not durable application records
 - these are stable product-owned contracts, but they remain bounded read-side slices rather than mature operational truth
