@@ -77,5 +77,6 @@ Summaries use **`bounded_partial`** / **`best_effort_visible_signals_only`** com
 ## Related documents
 
 - `readiness-capability-decision-support-contract.md`
+- `investigation-workspace-contract.md` — week **25** bounded **investigation workspace** assembly (read-only interpretation; may **reference** change intelligence as one context source)
 - `topology-truth-depth-review.md`, `policy-truth-depth-review.md`
 - `agent/sdn/03-CURRENT-STATUS.md` (operational verdict and closed slices)

@@ -170,6 +170,18 @@ docker run --rm -v "$(pwd)/app-web:/app" -w /app node:22-alpine sh -c "npm ci --
 
 This matches the same pinned major line as the `app-web` build stage (Node 22) without installing Node on the host.
 
+### Optional: run `app-api` pytest without host Python tooling
+
+The `app-api` Dockerfile installs the service package from `pyproject.toml` but does not run `pytest` during the image build. Routine packaged validation remains **build images → deploy → verify scripts**. If you still need **`pytest`** for repository contract tests on a Linux host that has **Docker** but no local Python toolchain aligned to `app-api` (or you choose not to install `pytest` on the host per the Quick Validation Rule above), build the **`platform-app-api`** image first, then run tests inside a **throwaway** container that reuses the same image dependency set:
+
+```bash
+docker build -t platform-app-api:0.1.0 app-api
+docker run --rm -u root -v "$(pwd)/app-api:/app" -w /app platform-app-api:0.1.0 \
+  sh -c "python3 -m pip install -q pytest && PYTHONPATH=src python3 -m pytest tests/ -q"
+```
+
+To run a **single** test module (for example bounded contract tests only), replace the final `tests/` path with that file. This exercises the same Python dependency set as the shipped image without relying on host-side `pytest`.
+
 ## Deploy The Platform Topology
 
 From `platform/`, deploy the current topology:
