@@ -1,4 +1,10 @@
-"""Typed schemas for capability responses."""
+"""Typed schemas for capability responses.
+
+Phase 2 **decision-support** linking between the capability matrix and dry-run *planning*
+readiness (prerequisites, blockers, scopes) is documented in:
+``platform/docs/readiness-capability-decision-support-contract.md``.
+That contract is read-only and interpretation-oriented—no workflow execution or dry-run APIs.
+"""
 
 from datetime import datetime
 from typing import Literal
@@ -36,6 +42,14 @@ ReadinessBlockerName = Literal[
     "policy_truth_still_bounded",
     "history_still_sync_derived",
 ]
+
+PrerequisiteName = Literal[
+    "inventory_read_model",
+    "topology_comparison_evidence",
+    "policy_comparison_evidence",
+    "workflow_audit_visibility",
+    "capability_matrix_precision",
+]
 CapabilityEvidenceBasis = Literal[
     "live_validated",
     "persisted_validated",
@@ -59,7 +73,12 @@ class CapabilityRecord(BaseModel):
         "workflow_history",
         "audit_history",
     ]
-    feature: str
+    feature: str = Field(
+        description=(
+            "Stable row key within the matrix. Matches strings used in "
+            "`DryRunReadinessPrerequisite.related_capabilities` for forward links."
+        ),
+    )
     support_status: SupportStatus
     implementation_status: Literal["planned", "placeholder", "partial", "implemented"]
     delivery_tier: Literal[
@@ -79,26 +98,35 @@ class CapabilityRecord(BaseModel):
     caveats: list[str]
     source_of_determination: str
     workflow_readiness_status: WorkflowReadinessStatus
-    workflow_readiness_scopes: list[WorkflowReadinessScope] = Field(default_factory=list)
+    workflow_readiness_scopes: list[WorkflowReadinessScope] = Field(
+        default_factory=list,
+        description=(
+            "Planning scopes associated with this feature for interpretation only—not coverage guarantees."
+        ),
+    )
     workflow_readiness_detail: str
-    related_readiness_blockers: list[ReadinessBlockerName] = Field(default_factory=list)
+    related_readiness_blockers: list[ReadinessBlockerName] = Field(
+        default_factory=list,
+        description="Named readiness blockers that materially affect how this row is read.",
+    )
 
 
 class DryRunReadinessPrerequisite(BaseModel):
     """One bounded prerequisite used to assess future dry-run readiness."""
 
-    prerequisite: Literal[
-        "inventory_read_model",
-        "topology_comparison_evidence",
-        "policy_comparison_evidence",
-        "workflow_audit_visibility",
-        "capability_matrix_precision",
-    ]
+    prerequisite: PrerequisiteName = Field(
+        description="Foundation area assessed for planning-support posture (not execution).",
+    )
     status: Literal["ready", "partial", "not_ready"]
     support_posture: SupportStatus
     evidence_basis: CapabilityEvidenceBasis
     evidence_coverage: Literal["strong", "bounded", "partial", "blocked"]
-    related_capabilities: list[str] = Field(default_factory=list)
+    related_capabilities: list[str] = Field(
+        default_factory=list,
+        description=(
+            "`CapabilityRecord.feature` values from the same matrix carrying evidence for this prerequisite."
+        ),
+    )
     current_evidence: str
     blocking_gaps: list[str] = Field(default_factory=list)
 
@@ -111,16 +139,14 @@ class DryRunReadinessBlocker(BaseModel):
     severity: Literal["critical", "major"]
     evidence_basis: CapabilityEvidenceBasis
     summary: str
-    blocked_readiness_scopes: list[WorkflowReadinessScope] = Field(default_factory=list)
-    related_prerequisites: list[
-        Literal[
-            "inventory_read_model",
-            "topology_comparison_evidence",
-            "policy_comparison_evidence",
-            "workflow_audit_visibility",
-            "capability_matrix_precision",
-        ]
-    ] = Field(default_factory=list)
+    blocked_readiness_scopes: list[WorkflowReadinessScope] = Field(
+        default_factory=list,
+        description="Planning scopes not satisfiable for workflow-grade work while this blocker exists.",
+    )
+    related_prerequisites: list[PrerequisiteName] = Field(
+        default_factory=list,
+        description="Prerequisite areas tied to this blocker for explanation—not a full dependency graph.",
+    )
     notes: list[str] = Field(default_factory=list)
 
 
