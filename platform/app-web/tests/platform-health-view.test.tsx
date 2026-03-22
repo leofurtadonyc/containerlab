@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiClientError } from "../src/api/client";
 import type {
+  CapabilitiesListResponse,
   DevicesListResponse,
   PlatformReadPathStatus,
   PlatformStatusResponse,
@@ -11,11 +12,14 @@ import type {
 } from "../src/api/contracts";
 import { PlatformHealthView } from "../src/features/platform-health/view";
 
-const { usePlatformStatusQuery, usePoliciesQuery, useDevicesQuery } = vi.hoisted(() => ({
-  usePlatformStatusQuery: vi.fn(),
-  usePoliciesQuery: vi.fn(),
-  useDevicesQuery: vi.fn(),
-}));
+const { usePlatformStatusQuery, usePoliciesQuery, useDevicesQuery, useCapabilitiesQuery } = vi.hoisted(
+  () => ({
+    usePlatformStatusQuery: vi.fn(),
+    usePoliciesQuery: vi.fn(),
+    useDevicesQuery: vi.fn(),
+    useCapabilitiesQuery: vi.fn(),
+  }),
+);
 
 vi.mock("../src/features/platform-health/api", async () => {
   const actual = await vi.importActual<typeof import("../src/features/platform-health/api")>(
@@ -36,11 +40,16 @@ vi.mock("../src/features/devices/api", () => ({
   useDevicesQuery,
 }));
 
+vi.mock("../src/features/capabilities/api", () => ({
+  useCapabilitiesQuery,
+}));
+
 function createQueryState<T>(data: T | null) {
   return {
     data,
     error: null,
     isLoading: false,
+    isRefreshing: false,
     reload: vi.fn(async () => undefined),
   };
 }
@@ -176,6 +185,59 @@ function createDevicesData(): DevicesListResponse {
   };
 }
 
+function createCapabilitiesData(): CapabilitiesListResponse {
+  return {
+    service: "app-api",
+    version: "test",
+    phase: "phase_2_read_only_foundation",
+    generated_at: "2025-01-01T00:00:00Z",
+    data_status: "bounded_matrix",
+    summary: "Capabilities summary.",
+    count: 1,
+    readiness_snapshot_id: "readiness-1",
+    readiness_persisted_at: "2025-01-01T00:00:00Z",
+    domain_counts: {},
+    support_counts: {},
+    implementation_counts: {},
+    delivery_tier_counts: {},
+    evidence_basis_counts: {},
+    vendor_counts: {},
+    vendor_posture_counts: {},
+    workflow_readiness_counts: {},
+    workflow_readiness_scope_counts: {},
+    dry_run_readiness: {
+      status: "bounded_readiness_support",
+      planning_readiness: "readiness_planning_supported",
+      phase_recommendation: "remain_phase_2_read_only_foundation",
+      summary: "Readiness summary.",
+      readiness_scope: "Bounded dry-run planning scope.",
+      notes: [],
+      strongest_blockers: [],
+      bounded_next_steps: [],
+      evidence_coverage_counts: {},
+      support_posture_counts: {},
+      blocker_category_counts: {},
+      blocker_severity_counts: {},
+      blocked_scope_counts: {},
+      assessment_areas: [],
+      blockers: [
+        {
+          blocker: "dry_run_contract_missing",
+          category: "contract",
+          severity: "major",
+          evidence_basis: "design_review",
+          summary: "Gap.",
+          blocked_readiness_scopes: ["planning_depth"],
+          related_prerequisites: ["inventory_read_model"],
+          notes: [],
+        },
+      ],
+      prerequisites: [],
+    },
+    items: [],
+  };
+}
+
 function createPoliciesData(): PoliciesListResponse {
   return {
     service: "app-api",
@@ -255,6 +317,13 @@ describe("PlatformHealthView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useDevicesQuery.mockReturnValue(createQueryState(createDevicesData()));
+    useCapabilitiesQuery.mockReturnValue({
+      data: null,
+      error: null,
+      isLoading: false,
+      isRefreshing: false,
+      reload: vi.fn(async () => undefined),
+    });
   });
 
   it("surfaces same-workspace recovery summary card and trust cue when recovery contract is present", () => {
@@ -272,6 +341,21 @@ describe("PlatformHealthView", () => {
     expect(html).toContain("see Overview for richer recovery cues");
     expect(html).toContain("Policy history");
     expect(html).toContain("No snapshots • unavailable • ready");
+  });
+
+  it("surfaces coarse readiness decision-support summary when the capabilities response is available", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatus()));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    const html = renderToStaticMarkup(<PlatformHealthView />);
+
+    expect(html).toContain("Readiness decision support");
+    expect(html).toContain("bounded readiness support");
+    expect(html).toContain("explicit blocker records");
+    expect(html).toContain("readiness posture");
+    expect(html).toContain("bounded matrix");
+    expect(html).toContain("not workflow eligibility or dry-run execution");
   });
 
   it("surfaces new baseline and degraded read-side posture in recovery trust cue", () => {

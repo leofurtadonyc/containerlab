@@ -24,9 +24,14 @@ import {
   formatDateTime,
   formatLabel,
 } from "../../lib/presentation";
+import { formatEntrySurfaceReadinessSummaryLines } from "../../lib/entry-surface-readiness-trust";
 import { buildInventoryHistoryTrustCueRow } from "../../lib/inventory-history-trust";
 import { buildPolicyHistoryTrustCueRow } from "../../lib/policy-history-trust";
-import { normalizeDryRunReadiness, summarizeReadinessItemIdentitySupport } from "../../lib/readiness";
+import {
+  describeDryRunReadinessStatus,
+  normalizeDryRunReadiness,
+  summarizeReadinessItemIdentitySupport,
+} from "../../lib/readiness";
 import { useCapabilitiesQuery } from "../capabilities/api";
 import { useDevicesQuery } from "../devices/api";
 import {
@@ -337,6 +342,7 @@ export function OverviewView() {
   const topologyReadPathNodeParticipation = describeTopologyReadPathNodeParticipation(topologyReadPath);
   const readiness = normalizeDryRunReadiness(capabilitiesData?.dry_run_readiness);
   const readinessIdentity = summarizeReadinessItemIdentitySupport(readiness);
+  const entryReadinessCue = formatEntrySurfaceReadinessSummaryLines(readiness);
   const recoveryReadout = describeRecoveryPosture(platformData?.recovery);
   const degradedPolicyCount = policiesData
     ? countBy(policiesData.items, (policy) => policy.health_state).degraded ?? 0
@@ -503,6 +509,10 @@ export function OverviewView() {
             <p className="summary-label">Capabilities</p>
             <strong>{capabilitiesData.count}</strong>
             <p>{formatLabel(capabilitiesData.data_status)}</p>
+            <p className="table-note">
+              Readiness posture: {entryReadinessCue.headline} • {entryReadinessCue.supportingLine}
+            </p>
+            <p className="table-note">{entryReadinessCue.trustNote}</p>
             {buildSliceAvailabilityNote(capabilitiesSliceState) ? (
               <p className="table-note">{buildSliceAvailabilityNote(capabilitiesSliceState)}</p>
             ) : null}
@@ -978,6 +988,12 @@ export function OverviewView() {
                 kind: "status",
                 value: capabilitiesData.data_status,
                 note: capabilitiesData.summary,
+              },
+              {
+                label: "Dry-run readiness status",
+                kind: "status",
+                value: readiness.status,
+                note: describeDryRunReadinessStatus(readiness.status),
               },
               {
                 label: "Planning readiness",
