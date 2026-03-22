@@ -208,6 +208,7 @@ policies_response=$(fetch_compact_json "$APP_API_URL/api/v1/policies")
 capabilities_response=$(fetch_compact_json "$APP_API_URL/api/v1/capabilities")
 workflow_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-history")
 audit_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/audit-history")
+change_intelligence_response=$(fetch_compact_json "$APP_API_URL/api/v1/change-intelligence/recent-summary")
 app_api_metrics=$(curl -fsS "$APP_API_URL/metrics")
 collector_metrics=$(curl -fsS "$GNMI_COLLECTOR_URL/metrics")
 
@@ -415,6 +416,17 @@ assert_contains "workflow history bounded query (read_side echo)" "$workflow_his
 assert_contains "audit history bounded query (read_side echo)" "$audit_history_bounded_query" '"limit_requested":2'
 assert_contains "audit history bounded query (read_side echo)" "$audit_history_bounded_query" '"sync_runs_limit_requested":3'
 assert_contains "audit history bounded query (read_side echo)" "$audit_history_bounded_query" '"readiness_snapshot_history_limit_requested":5'
+
+# Week 24 change-intelligence: structural presence of bounded cross-domain summary (not business scoring).
+assert_contains "change intelligence response" "$change_intelligence_response" '"contract_id":"change_intelligence_phase2_v1"'
+assert_contains "change intelligence response" "$change_intelligence_response" '"window_semantics":"backend_defined_bounded_lookback"'
+assert_contains "change intelligence response" "$change_intelligence_response" '"authority_posture":"evidence_aggregated_non_authoritative"'
+assert_contains "change intelligence response" "$change_intelligence_response" '"domain":"devices"'
+assert_contains "change intelligence response" "$change_intelligence_response" '"domain":"workflow_history"'
+assert_contains "change intelligence response" "$change_intelligence_response" '"domain":"audit_history"'
+assert_contains "change intelligence response" "$change_intelligence_response" '"completeness_posture":"bounded_partial"'
+change_intelligence_bounded_query=$(fetch_compact_json "$APP_API_URL/api/v1/change-intelligence/recent-summary?sync_runs_limit=10")
+assert_contains "change intelligence bounded query (sync_runs_limit echo)" "$change_intelligence_bounded_query" '"sync_runs_limit_applied":10'
 
 if [ "$sync_runs_count" -gt 0 ]; then
   assert_not_contains "workflow history response" "$workflow_history_response" '"data_status":"empty"'

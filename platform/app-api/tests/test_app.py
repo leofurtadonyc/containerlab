@@ -50,6 +50,7 @@ from app_api.persistence.read_side import (
     PersistedTopologySnapshotSummary as PersistedTopologyReadSideSnapshotSummary,
 )
 from app_api.config.settings import get_settings
+from app_api.schemas.change_intelligence import DEFAULT_CHANGE_INTELLIGENCE_EXPLICIT_NON_CLAIMS
 from app_api.schemas.platform import PlatformReadPathStatus
 
 
@@ -4109,9 +4110,23 @@ def test_change_intelligence_recent_summary_honest_empty_evidence(monkeypatch) -
     assert payload["safety"]["contract_id"] == "change_intelligence_phase2_v1"
     assert payload["safety"]["authority_posture"] == "evidence_aggregated_non_authoritative"
     assert "not_validation_verdict" in payload["safety"]["explicit_non_claims"]
+    assert sorted(payload["safety"]["explicit_non_claims"]) == sorted(
+        DEFAULT_CHANGE_INTELLIGENCE_EXPLICIT_NON_CLAIMS
+    )
+    assert payload["window_semantics"] == "backend_defined_bounded_lookback"
     assert payload["completeness_posture"] == "bounded_partial"
     assert payload["sync_runs_limit_applied"] == 20
     assert payload["readiness_snapshots_considered"] == 0
+    domain_order = [d["domain"] for d in payload["domains"]]
+    assert domain_order == [
+        "devices",
+        "topology",
+        "policies",
+        "readiness",
+        "workflow_history",
+        "audit_history",
+    ]
+    assert any("change_intelligence_phase2_v1" in n for n in payload["aggregation_notes"])
     domains = {d["domain"]: d for d in payload["domains"]}
     assert domains["devices"]["evidence_status"] == "absent"
     assert domains["topology"]["evidence_status"] == "absent"
@@ -4184,6 +4199,43 @@ def test_change_intelligence_recent_summary_with_metrics_and_sync(monkeypatch) -
     assert domains["workflow_history"]["evidence_status"] == "present"
     assert domains["workflow_history"]["sync_runs_in_window"] == 3
     assert domains["audit_history"]["evidence_status"] == "present"
+
+
+def test_change_intelligence_recent_summary_audit_partial_when_only_sync_runs(monkeypatch) -> None:
+    """Audit-history domain can be partial when sync runs exist but readiness snapshots do not."""
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.summarize_inventory_snapshot_metrics",
+        lambda: InventorySnapshotMetricsSummary(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.summarize_topology_snapshot_metrics",
+        lambda: TopologySnapshotMetricsSummary(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.summarize_policy_snapshot_metrics",
+        lambda: PolicySnapshotMetricsSummary(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.count_readiness_snapshots_matching",
+        lambda: 0,
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.load_readiness_snapshot_history",
+        lambda **kwargs: [],
+    )
+    monkeypatch.setattr(
+        "app_api.services.change_intelligence.load_sync_runs",
+        lambda **kwargs: _build_persisted_sync_runs(limit=2),
+    )
+
+    response = client.get("/api/v1/change-intelligence/recent-summary?sync_runs_limit=5")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["sync_runs_limit_applied"] == 5
+    domains = {d["domain"]: d for d in payload["domains"]}
+    assert domains["workflow_history"]["evidence_status"] == "present"
+    assert domains["audit_history"]["evidence_status"] == "partial"
+    assert domains["audit_history"]["sync_runs_in_window"] >= 1
 
 
 def test_change_intelligence_recent_summary_rejects_invalid_sync_runs_limit() -> None:
