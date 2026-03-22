@@ -56,6 +56,26 @@ describe("workflowHistoryDrilldownTargets", () => {
     );
     expect(t).toEqual([]);
   });
+
+  it("adds Readiness when a readiness_snapshot artifact is persisted on the sync run", () => {
+    const t = workflowHistoryDrilldownTargets(
+      minimalWorkflow({
+        persisted_artifacts: ["readiness_snapshot"],
+        scope: "platform_read_side",
+      }),
+    );
+    expect(t.map((x) => x.view)).toEqual(["readiness"]);
+    expect(t[0].readinessParams).toBeUndefined();
+  });
+
+  it("keeps inventory surfaces alongside readiness when multiple artifacts are present", () => {
+    const t = workflowHistoryDrilldownTargets(
+      minimalWorkflow({
+        persisted_artifacts: ["inventory_snapshot", "readiness_snapshot"],
+      }),
+    );
+    expect(t.map((x) => x.view)).toEqual(["devices", "readiness"]);
+  });
 });
 
 describe("auditHistoryDrilldownTargets", () => {
@@ -91,6 +111,93 @@ describe("auditHistoryDrilldownTargets", () => {
       notes: [],
     };
     expect(auditHistoryDrilldownTargets(item).map((x) => x.view)).toEqual(["readiness"]);
+    expect(auditHistoryDrilldownTargets(item)[0].readinessParams).toBeUndefined();
+  });
+
+  it("passes a bounded readiness blocker hint from strongest_blockers when present", () => {
+    const item: AuditHistoryItem = {
+      event_id: "r2",
+      event_type: "readiness_snapshot_recorded",
+      source: "app-api",
+      actor: "platform_system",
+      target_scope: "dry_run_readiness_support",
+      result: "succeeded",
+      correlation_id: "x",
+      sync_run_id: null,
+      readiness_snapshot_id: "rs",
+      occurred_at: "2025-01-01T00:00:00Z",
+      message: "m",
+      inventory_snapshot_summary: null,
+      inventory_comparison_to_previous: null,
+      topology_snapshot_summary: null,
+      topology_comparison_to_previous: null,
+      policy_snapshot_summary: null,
+      policy_comparison_to_previous: null,
+      readiness_snapshot_summary: {
+        snapshot_id: "rs",
+        persisted_at: "2025-01-01T00:00:00Z",
+        readiness_status: "x",
+        planning_readiness: "x",
+        phase_recommendation: "x",
+        summary: "s",
+        blocker_count: 1,
+        strongest_blockers: ["dry_run_contract_missing"],
+      },
+      notes: [],
+    };
+    const targets = auditHistoryDrilldownTargets(item);
+    expect(targets[0].readinessParams).toEqual({ blocker: "dry_run_contract_missing" });
+  });
+
+  it("adds Readiness with blocker hint when a sync event carries readiness_snapshot_summary", () => {
+    const item: AuditHistoryItem = {
+      event_id: "e-mixed",
+      event_type: "read_side_sync_recorded",
+      source: "app-api",
+      actor: "platform_system",
+      target_scope: "device_inventory_read_side",
+      result: "succeeded",
+      correlation_id: "c",
+      sync_run_id: "s",
+      readiness_snapshot_id: null,
+      occurred_at: "2025-01-01T00:00:00Z",
+      message: "m",
+      inventory_snapshot_summary: {
+        snapshot_id: "snap-current",
+        sync_run_id: "s",
+        persisted_at: "2025-01-01T00:00:02Z",
+        observed_at: "2025-01-01T00:00:00Z",
+        sync_source: "gnmi_collector",
+        sync_status: "ok",
+        data_status: "live",
+        source_endpoint: "http://collector",
+        device_count: 1,
+        role_counts: {},
+        collector_status_counts: {},
+        capability_summary_counts: {},
+      },
+      inventory_comparison_to_previous: null,
+      topology_snapshot_summary: null,
+      topology_comparison_to_previous: null,
+      policy_snapshot_summary: null,
+      policy_comparison_to_previous: null,
+      readiness_snapshot_summary: {
+        snapshot_id: "rs2",
+        persisted_at: "2025-01-01T00:00:00Z",
+        readiness_status: "bounded_readiness_support",
+        planning_readiness: "readiness_planning_supported",
+        phase_recommendation: "remain_phase_2_read_only_foundation",
+        summary: "s",
+        blocker_count: 1,
+        strongest_blockers: ["topology_truth_still_bounded"],
+      },
+      notes: [],
+    };
+    const targets = auditHistoryDrilldownTargets(item);
+    expect(targets.map((x) => x.view)).toEqual(["devices", "readiness"]);
+    expect(targets.find((x) => x.view === "readiness")?.readinessParams).toEqual({
+      blocker: "topology_truth_still_bounded",
+    });
   });
 
   it("maps sync events using target_scope like device_inventory_read_side", () => {

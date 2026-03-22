@@ -1,4 +1,15 @@
-import type { AuditHistoryItem, WorkflowHistoryItem } from "../api/contracts";
+import type { AuditHistoryItem, AuditReadinessSnapshotSummary, WorkflowHistoryItem } from "../api/contracts";
+
+function readinessTargetFromSummary(
+  summary: AuditReadinessSnapshotSummary | null | undefined,
+): EvidenceDrilldownTarget {
+  const firstBlocker = summary?.strongest_blockers?.[0];
+  return {
+    view: "readiness",
+    label: "Readiness (planning support)",
+    readinessParams: firstBlocker ? { blocker: firstBlocker } : undefined,
+  };
+}
 
 /** Product surfaces operators can open from history rows (read-only navigation). */
 export type EvidenceProductViewId = "devices" | "topology" | "policies" | "readiness";
@@ -6,6 +17,14 @@ export type EvidenceProductViewId = "devices" | "topology" | "policies" | "readi
 export interface EvidenceDrilldownTarget {
   view: EvidenceProductViewId;
   label: string;
+  /**
+   * When `view` is `readiness`, optional bounded URL hints for the Readiness page (scroll only;
+   * does not filter backend payloads). Omitted when this history row has no usable blocker name.
+   */
+  readinessParams?: {
+    blocker?: string;
+    prerequisite?: string;
+  };
 }
 
 function buildSyncDerivedTargets(
@@ -53,25 +72,43 @@ function buildSyncDerivedTargets(
 }
 
 export function workflowHistoryDrilldownTargets(item: WorkflowHistoryItem): EvidenceDrilldownTarget[] {
-  return buildSyncDerivedTargets(
+  const targets = buildSyncDerivedTargets(
     item.scope,
     item.persisted_artifacts,
     item.inventory_snapshot_summary != null || item.inventory_comparison_to_previous != null,
     item.topology_snapshot_summary != null || item.topology_comparison_to_previous != null,
     item.policy_snapshot_summary != null || item.policy_comparison_to_previous != null,
   );
+  if (
+    item.persisted_artifacts.includes("readiness_snapshot") &&
+    !targets.some((t) => t.view === "readiness")
+  ) {
+    targets.push({
+      view: "readiness",
+      label: "Readiness (planning support)",
+      readinessParams: undefined,
+    });
+  }
+  return targets;
 }
 
 export function auditHistoryDrilldownTargets(item: AuditHistoryItem): EvidenceDrilldownTarget[] {
   if (item.event_type === "readiness_snapshot_recorded") {
-    return [{ view: "readiness", label: "Readiness (planning support)" }];
+    return [readinessTargetFromSummary(item.readiness_snapshot_summary)];
   }
 
-  return buildSyncDerivedTargets(
+  const targets = buildSyncDerivedTargets(
     item.target_scope,
     [],
     item.inventory_snapshot_summary != null || item.inventory_comparison_to_previous != null,
     item.topology_snapshot_summary != null || item.topology_comparison_to_previous != null,
     item.policy_snapshot_summary != null || item.policy_comparison_to_previous != null,
   );
+  if (
+    item.readiness_snapshot_summary &&
+    !targets.some((t) => t.view === "readiness")
+  ) {
+    targets.push(readinessTargetFromSummary(item.readiness_snapshot_summary));
+  }
+  return targets;
 }
