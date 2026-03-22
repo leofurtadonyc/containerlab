@@ -404,6 +404,15 @@ assert_contains "workflow history response" "$workflow_history_response" '"sync_
 assert_contains "audit history response" "$audit_history_response" '"read_side_query":{'
 assert_contains "audit history response" "$audit_history_response" '"readiness_snapshot_history_limit_effective":'
 
+# Optional bounded query strings: structural echo-only check (week 22 query ergonomics contract).
+workflow_history_bounded_query=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-history?limit=1&sync_runs_limit=3")
+audit_history_bounded_query=$(fetch_compact_json "$APP_API_URL/api/v1/audit-history?limit=2&sync_runs_limit=3&readiness_snapshot_history_limit=5")
+assert_contains "workflow history bounded query (read_side echo)" "$workflow_history_bounded_query" '"limit_requested":1'
+assert_contains "workflow history bounded query (read_side echo)" "$workflow_history_bounded_query" '"sync_runs_limit_requested":3'
+assert_contains "audit history bounded query (read_side echo)" "$audit_history_bounded_query" '"limit_requested":2'
+assert_contains "audit history bounded query (read_side echo)" "$audit_history_bounded_query" '"sync_runs_limit_requested":3'
+assert_contains "audit history bounded query (read_side echo)" "$audit_history_bounded_query" '"readiness_snapshot_history_limit_requested":5'
+
 if [ "$sync_runs_count" -gt 0 ]; then
   assert_not_contains "workflow history response" "$workflow_history_response" '"data_status":"empty"'
   assert_not_contains "workflow history response" "$workflow_history_response" '"count":0'

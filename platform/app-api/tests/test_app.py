@@ -4068,6 +4068,13 @@ def test_workflow_history_rejects_non_positive_limit() -> None:
     assert response.status_code == 422
 
 
+def test_workflow_history_rejects_invalid_sync_runs_limit() -> None:
+    assert client.get("/api/v1/workflow-history?sync_runs_limit=0").status_code == 422
+    assert (
+        client.get("/api/v1/workflow-history?sync_runs_limit=101").status_code == 422
+    )
+
+
 def test_audit_history_endpoint_returns_persisted_sync_events(monkeypatch) -> None:
     monkeypatch.setattr(
         "app_api.services.audit_history.load_sync_runs",
@@ -4386,6 +4393,78 @@ def test_audit_history_readiness_snapshot_history_limit_echo(monkeypatch) -> Non
     rsq = payload["read_side_query"]
     assert rsq["readiness_snapshot_history_limit_requested"] == 1
     assert rsq["readiness_snapshot_history_limit_effective"] == 1
+
+
+def test_audit_history_sync_runs_limit_echo(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_sync_runs",
+        _build_persisted_sync_runs,
+    )
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_readiness_snapshot_history",
+        _build_persisted_readiness_snapshot_history,
+    )
+    response = client.get("/api/v1/audit-history?sync_runs_limit=2")
+    assert response.status_code == 200
+    rsq = response.json()["read_side_query"]
+    assert rsq["sync_runs_limit_requested"] == 2
+    assert rsq["sync_runs_limit_effective"] == 2
+
+
+def test_audit_history_combined_bounded_query_params_echo(monkeypatch) -> None:
+    """Pins week-22 optional query composition on audit-history (echo-only contract)."""
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_sync_runs",
+        _build_persisted_sync_runs,
+    )
+    monkeypatch.setattr(
+        "app_api.services.audit_history.load_readiness_snapshot_history",
+        _build_persisted_readiness_snapshot_history,
+    )
+    response = client.get(
+        "/api/v1/audit-history?limit=2&sync_runs_limit=3&readiness_snapshot_history_limit=5",
+    )
+    assert response.status_code == 200
+    rsq = response.json()["read_side_query"]
+    assert rsq["limit_requested"] == 2
+    assert rsq["sync_runs_limit_requested"] == 3
+    assert rsq["sync_runs_limit_effective"] == 3
+    assert rsq["readiness_snapshot_history_limit_requested"] == 5
+    assert rsq["readiness_snapshot_history_limit_effective"] == 5
+
+
+def test_audit_history_rejects_non_positive_limit() -> None:
+    assert client.get("/api/v1/audit-history?limit=0").status_code == 422
+
+
+def test_audit_history_rejects_invalid_sync_runs_limit() -> None:
+    assert client.get("/api/v1/audit-history?sync_runs_limit=0").status_code == 422
+    assert client.get("/api/v1/audit-history?sync_runs_limit=101").status_code == 422
+
+
+def test_audit_history_rejects_invalid_readiness_snapshot_history_limit() -> None:
+    assert (
+        client.get("/api/v1/audit-history?readiness_snapshot_history_limit=0").status_code
+        == 422
+    )
+    assert (
+        client.get("/api/v1/audit-history?readiness_snapshot_history_limit=51").status_code
+        == 422
+    )
+
+
+def test_devices_endpoint_rejects_invalid_read_side_query_params() -> None:
+    assert client.get("/api/v1/devices?limit=0").status_code == 422
+    assert client.get("/api/v1/devices?limit=501").status_code == 422
+    assert client.get("/api/v1/devices?history_recent_limit=0").status_code == 422
+    assert client.get("/api/v1/devices?history_recent_limit=51").status_code == 422
+
+
+def test_policies_endpoint_rejects_invalid_read_side_query_params() -> None:
+    assert client.get("/api/v1/policies?limit=0").status_code == 422
+    assert client.get("/api/v1/policies?limit=501").status_code == 422
+    assert client.get("/api/v1/policies?history_recent_limit=0").status_code == 422
+    assert client.get("/api/v1/policies?history_recent_limit=51").status_code == 422
 
 
 def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:

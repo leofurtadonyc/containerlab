@@ -10,8 +10,21 @@ import {
   parseAuditHistoryReadSideQuery,
   parseDevicesPoliciesReadSideQuery,
   parseWorkflowHistoryReadSideQuery,
+  READ_SIDE_HISTORY_RECENT_LIMIT_MAX,
   READ_SIDE_PRIMARY_LIST_LIMIT_MAX,
+  READ_SIDE_READINESS_SNAPSHOT_HISTORY_MAX,
+  READ_SIDE_SYNC_RUNS_LIMIT_MAX,
 } from "../src/api/read-side-query-params";
+
+/** Pinned to `platform/app-api/src/app_api/schemas/read_side_query.py` maxima. */
+describe("read-side query contract maxima", () => {
+  it("matches backend READ_SIDE_* constants", () => {
+    expect(READ_SIDE_PRIMARY_LIST_LIMIT_MAX).toBe(500);
+    expect(READ_SIDE_HISTORY_RECENT_LIMIT_MAX).toBe(50);
+    expect(READ_SIDE_SYNC_RUNS_LIMIT_MAX).toBe(100);
+    expect(READ_SIDE_READINESS_SNAPSHOT_HISTORY_MAX).toBe(50);
+  });
+});
 
 describe("parseDevicesPoliciesReadSideQuery", () => {
   it("parses bounded limit and history_recent_limit", () => {
@@ -43,6 +56,11 @@ describe("parseWorkflowHistoryReadSideQuery", () => {
       limit: 25,
       sync_runs_limit: 40,
     });
+  });
+
+  it("drops out-of-range sync_runs_limit (matches FastAPI Query bounds)", () => {
+    const sp = new URLSearchParams(`sync_runs_limit=${READ_SIDE_SYNC_RUNS_LIMIT_MAX + 1}`);
+    expect(parseWorkflowHistoryReadSideQuery(sp)).toEqual({});
   });
 
   it("builds query string", () => {
