@@ -210,6 +210,11 @@ describe("InvestigationView", () => {
     expect(html).toContain("Capabilities &amp; planning posture");
     expect(html).toContain("Dry-run readiness assessment");
     expect(html).toContain("Strongest blockers");
+    expect(html).toContain("Recency anchors (bounded, not a unified event log)");
+    expect(html).toContain("Cross-domain context at a glance");
+    expect(html).toContain("Current posture snapshot");
+    expect(html).toContain("Aggregated change signals");
+    expect(html).toContain("Planning &amp; capability anchors");
     expect(html).toContain("Navigate to full product surfaces");
     expect(html).toContain("Reload assembly");
     expect(html).toContain("Open Readiness");

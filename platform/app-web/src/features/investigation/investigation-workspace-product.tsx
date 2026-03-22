@@ -14,6 +14,8 @@ import {
 } from "../../lib/change-intelligence-navigation";
 import { formatDateTime } from "../../lib/presentation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
+import { InvestigationContextPanels } from "./investigation-context-panels";
+import { InvestigationEvidenceTimeline } from "./investigation-evidence-timeline";
 
 export interface InvestigationWorkspaceProductProps {
   data: InvestigationContextAssemblyResponse;
@@ -101,6 +103,9 @@ export function InvestigationWorkspaceProduct({
           Sync window requested: {syncRunsLimit} · applied in nested summary: {rc.sync_runs_limit_applied}
         </span>
       </div>
+
+      <InvestigationEvidenceTimeline data={data} />
+      <InvestigationContextPanels data={data} syncRunsLimit={syncRunsLimit} />
 
       <section className="investigation-workspace-safety" aria-labelledby="inv-safety-heading">
         <h3 id="inv-safety-heading">Safety framing (always visible)</h3>
