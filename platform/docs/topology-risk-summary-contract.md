@@ -139,7 +139,7 @@ Stable keys (align with schema literals when implemented):
 ### Follow-on (optional)
 
 - **WebUI** — optional attention-summary panel; **not** required for contract satisfaction.
-- **Verifier** — optional **`verify-core-runtime.sh`** structural checks — **not** shell duplication of ranking rules.
+- **Verifier** — **`verify-core-runtime.sh`** asserts **`contract_id":"topology_risk_summary_v1`** and **`ranked_objects`** on **`GET /api/v1/topology/risk-summary`** — **not** shell duplication of ranking rules.
 
 ---
 

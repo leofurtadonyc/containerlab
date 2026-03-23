@@ -322,12 +322,18 @@ assert_contains "policies response (read_side query ergonomics)" "$policies_resp
 assert_contains "policies response (read_side query ergonomics)" "$policies_response" '"history_recent_snapshots_returned":'
 assert_contains "policies response (degraded_policy_v1)" "$policies_response" '"degraded_policy_v1"'
 
-# Week 27: path-analysis + topology-related-policies structural sampling (uses python3 when available).
+# Week 28: topology risk summary (structural contract sampling; no python3 required).
+topology_risk_summary_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/risk-summary")
+assert_contains "topology risk summary response (contract id)" "$topology_risk_summary_response" '"contract_id":"topology_risk_summary_v1"'
+assert_contains "topology risk summary response (ranked_objects)" "$topology_risk_summary_response" '"ranked_objects":['
+
+# Week 27–28: path-analysis, topology-related-policies, failure-impact, policy evidence timeline+delta
+# (uses python3 when available to sample first policy id and first topology node id).
 if command -v python3 >/dev/null 2>&1; then
   first_policy_id=$(printf '%s' "$policies_response" | python3 -c "import sys,json; d=json.load(sys.stdin); items=d.get('items') or []; print(items[0]['policy_id'] if items else '')")
   first_node_id=$(printf '%s' "$topology_response" | python3 -c "import sys,json; d=json.load(sys.stdin); t=d.get('topology'); nodes=t.get('nodes') if t else None; print(nodes[0]['node_id'] if nodes else '')")
 else
-  notice "python3 not found; skipping week 27 path-analysis and topology-related-policies structural sampling in verify-core-runtime.sh."
+  notice "python3 not found; skipping week 27–28 path-analysis, related-policies, failure-impact, and policy evidence timeline/delta structural sampling in verify-core-runtime.sh."
   first_policy_id=""
   first_node_id=""
 fi
@@ -338,8 +344,13 @@ if [ -n "$first_policy_id" ]; then
   assert_contains "path analysis response (subject anchor)" "$path_analysis_response" '"anchor_kind":"policy"'
   assert_contains "path analysis response (truth_alignment)" "$path_analysis_response" '"truth_alignment":{'
   assert_contains "policies response (degraded_policy_v1 contract_id in items)" "$policies_response" '"contract_id":"degraded_policy_v1"'
+  policy_evidence_timeline_response=$(fetch_compact_json "$APP_API_URL/api/v1/policies/${first_policy_id}/evidence-timeline")
+  assert_contains "policy evidence timeline response (contract id)" "$policy_evidence_timeline_response" '"contract_id":"policy_evidence_timeline_v1"'
+  policy_evidence_delta_response=$(fetch_compact_json "$APP_API_URL/api/v1/policies/${first_policy_id}/evidence-delta")
+  assert_contains "policy evidence delta response (contract id)" "$policy_evidence_delta_response" '"contract_id":"policy_evidence_delta_v1"'
+  assert_contains "policy evidence delta response (comparison_status)" "$policy_evidence_delta_response" '"comparison_status":"'
 else
-  notice "Policies items list empty; skipping path-analysis and degraded_policy_v1 contract_id structural checks."
+  notice "Policies items list empty; skipping path-analysis, degraded_policy_v1 contract_id, policy evidence timeline, and policy evidence delta structural checks."
 fi
 
 if [ -n "$first_node_id" ]; then
@@ -348,8 +359,11 @@ if [ -n "$first_node_id" ]; then
   assert_contains "topology related policies response (object_id)" "$related_policies_response" "\"object_id\":\"${first_node_id}\""
   assert_contains "topology related policies response (derivation_summary)" "$related_policies_response" '"derivation_summary":"'
   assert_contains "topology related policies response (items array)" "$related_policies_response" '"items":'
+  failure_impact_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/objects/${first_node_id}/failure-impact")
+  assert_contains "failure impact response (contract id)" "$failure_impact_response" '"contract_id":"failure_impact_v1"'
+  assert_contains "failure impact response (subject)" "$failure_impact_response" '"subject":{'
 else
-  notice "Topology nodes list empty; skipping topology-related-policies structural checks."
+  notice "Topology nodes list empty; skipping topology-related-policies and failure-impact structural checks."
 fi
 
 # Cross-slice list/history metadata and evidence shape (contract posture, not business truth).
