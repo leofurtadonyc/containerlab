@@ -8,7 +8,16 @@ This document is the **product-owned bounded contract** for **evidence export v1
 
 Stable **`contract_id`:** **`evidence_export_v1`**
 
-**Implementation posture (v1):** May ship as **client-side** download from responses already held in the WebUI (JSON stringify / Markdown render), or as a thin **read-only** backend **`GET /api/v1/.../export`** later—this file defines **what may be exported**, **how it must be framed**, and **honesty limits**, not a mandatory API shape.
+**Implementation posture (v1):** Shipped as **read-only** backend exports under **`GET /api/v1/exports/...`** (see below). **JSON** is canonical (`format=json`, default); **Markdown** is a human-readable companion (`format=markdown`). Client-side download from responses already held in the WebUI (JSON stringify / Markdown render) remains optional. This file defines **what may be exported**, **how it must be framed**, and **honesty limits**.
+
+| Route | `export_kind` | Notes |
+| --- | --- | --- |
+| **`GET /api/v1/exports/policies/{policy_id}/dossier`** | `policy_dossier` | **404** when the underlying policy dossier would be absent (same as `GET /api/v1/policies/{policy_id}/dossier`). |
+| **`GET /api/v1/exports/topology-objects/{object_id}/dossier`** | `topology_object_dossier` | **404** when the underlying topology object dossier would be absent (same as `GET /api/v1/topology/objects/{object_id}/dossier`). |
+| **`GET /api/v1/exports/situation-room/summary`** | `situation_room` | Same bounded assembly as **`GET /api/v1/evidence-pack/situation`**; optional **`sync_runs_limit`** (same bounds as that route). |
+| **`GET /api/v1/exports/investigation-workspace/summary`** | `investigation_workspace` | Same bounded assembly as **`GET /api/v1/investigation-workspace/context`**; optional **`sync_runs_limit`**. |
+
+Shared query parameter: **`format`** — `json` (default) or `markdown`.
 
 ---
 
