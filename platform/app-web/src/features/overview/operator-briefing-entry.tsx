@@ -6,12 +6,17 @@ import {
 export interface OperatorBriefingOverviewEntryProps {
   /** Same bounded window as the Overview recent-change summary (forwarded to app-api). */
   syncRunsLimit: number;
+  /** NOC cockpit quick grid: tighter copy pointing at bundle + per-surface exports. */
+  cockpitVariant?: boolean;
 }
 
 /**
  * Landing entry for the composed operator briefing workspace: single handoff surface before deeper pivots.
  */
-export function OperatorBriefingOverviewEntry({ syncRunsLimit }: OperatorBriefingOverviewEntryProps) {
+export function OperatorBriefingOverviewEntry({
+  syncRunsLimit,
+  cockpitVariant = false,
+}: OperatorBriefingOverviewEntryProps) {
   const bounded = Math.min(100, Math.max(1, Math.floor(syncRunsLimit)));
   return (
     <article className="detail-card operator-briefing-entry-card">
@@ -19,10 +24,17 @@ export function OperatorBriefingOverviewEntry({ syncRunsLimit }: OperatorBriefin
         <h3>Operator briefing workspace</h3>
         <p className="table-note">
           Open a dedicated briefing that composes delta digest, optional policy and topology dossiers, situation pack,
-          and investigation context—with section evidence strips, merged caveats, export entry points, and live pivots.
-          Read-only interpretation support for handoffs—not change approval, incident command, or unified cross-domain
-          truth.
+          and investigation context—with section evidence strips, merged caveats,{" "}
+          <strong>briefing bundle + per-surface export</strong> entry points, and live pivots. Read-only interpretation
+          support for handoffs—not change approval, incident command, or unified cross-domain truth.
         </p>
+        {cockpitVariant ? (
+          <p className="table-note operator-briefing-entry-card__cockpit-note">
+            In the briefing workspace, use <strong>Briefing archive (bundle)</strong> for a single{" "}
+            <code>briefing_export_bundle_v1</code> download aligned to your scope echo — or export individual{" "}
+            <code>evidence_export_v1</code> surfaces from the same page.
+          </p>
+        ) : null}
       </div>
       <div className="operator-briefing-entry-card__actions">
         <button

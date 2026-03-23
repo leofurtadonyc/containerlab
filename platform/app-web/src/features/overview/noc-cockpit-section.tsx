@@ -6,7 +6,9 @@ import type {
   TopologyRiskSummaryResponse,
 } from "../../api/contracts";
 import { DeltaDigestOverviewEntry } from "./delta-digest-overview-entry";
+import { EvidenceReplayOverviewEntry } from "./evidence-replay-overview-entry";
 import { InvestigationOverviewEntry } from "./investigation-entry";
+import { NocCockpitStrategicPivots } from "./noc-cockpit-strategic-pivots";
 import { OperatorBriefingOverviewEntry } from "./operator-briefing-entry";
 import { OperatorWorkspaceEntry } from "./operator-workspace-entry";
 import { SituationRoomOverviewEntry } from "./situation-room-entry";
@@ -58,9 +60,10 @@ export function NocCockpitSection({
         <p className="eyebrow">noc_cockpit_v1 · Phase 2 read-only</p>
         <h3 id="noc-cockpit-heading">NOC cockpit</h3>
         <p className="body-copy noc-cockpit__lede">
-          Bounded situational awareness from the same inventory, risk summary, change intelligence, cross-domain
-          delta digest, and workspace assemblies already exposed by app-api — <strong>not</strong> incident command,
-          unified health scoring, or substitute for full Policies / Topology / Investigation / Situation room views.
+          Strategic launch surface: cross-domain digest, composed briefing (with bundle exports), frozen evidence replay,
+          bounded packs and investigation, then attention rows — all from existing Phase 2 assemblies.{" "}
+          <strong>Not</strong> incident command, unified health scoring, or substitute for full Policies / Topology /
+          Investigation / Situation room views.
         </p>
       </header>
 
@@ -70,11 +73,14 @@ export function NocCockpitSection({
       </p>
 
       <div className="noc-cockpit__quick-grid">
-        <OperatorBriefingOverviewEntry syncRunsLimit={syncRunsLimit} />
+        <DeltaDigestOverviewEntry syncRunsLimit={syncRunsLimit} deltaDigest={deltaDigest} />
+        <OperatorBriefingOverviewEntry syncRunsLimit={syncRunsLimit} cockpitVariant />
+        <EvidenceReplayOverviewEntry syncRunsLimit={syncRunsLimit} />
         <SituationRoomOverviewEntry syncRunsLimit={syncRunsLimit} />
         <InvestigationOverviewEntry syncRunsLimit={syncRunsLimit} />
-        <DeltaDigestOverviewEntry syncRunsLimit={syncRunsLimit} deltaDigest={deltaDigest} />
       </div>
+
+      <NocCockpitStrategicPivots riskSummary={riskSummary.data} policiesData={policiesData} />
 
       <RecentChangeIntelligencePanel
         data={recentChange.data}

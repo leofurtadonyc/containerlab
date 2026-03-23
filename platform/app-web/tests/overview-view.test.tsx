@@ -614,13 +614,42 @@ describe("overview view", () => {
     useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
     usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
     useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+    useTopologyRiskSummaryQuery.mockReturnValue(
+      createQueryState({
+        ...createTopologyRiskSummaryData(),
+        ranked_objects: [
+          {
+            rank_index: 0,
+            object_kind: "node",
+            object_id: "PE1",
+            ranking_inputs: {
+              degraded_related_count: 1,
+              unknown_related_count: 0,
+              related_policy_breadth: 1,
+              ok_related_count: 0,
+            },
+            degraded_posture_breakdown: { ok: 0, degraded: 1, unknown: 0 },
+          },
+        ],
+        total_objects: 1,
+      }),
+    );
 
     const html = renderToStaticMarkup(<OverviewView />);
 
     expect(html).toContain('data-testid="noc-cockpit-section"');
     expect(html).toContain("noc_cockpit_v1");
+    expect(html).toContain("Strategic launch surface");
     expect(html).toContain("delta-digest-overview-entry");
     expect(html).toContain("cross_domain_delta_digest_v1");
+    expect(html).toContain('data-testid="evidence-replay-overview-entry"');
+    expect(html).toContain("evidence_export_v1");
+    expect(html).toContain("briefing_export_bundle_v1");
+    expect(html).toContain('data-testid="noc-cockpit-strategic-pivots"');
+    expect(html).toContain("Priority navigation (cockpit)");
+    expect(html).toContain("Topology dossier (top risk)");
+    expect(html).toContain("Investigation (top risk)");
+    expect(html).toContain("Policy dossier (worst degraded)");
     expect(html).not.toContain("Routine-use trust cues stay explicit here");
     expect(html).not.toContain("Declared platform components");
     expect(html).toContain("Full overview");

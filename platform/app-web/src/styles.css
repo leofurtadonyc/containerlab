@@ -366,6 +366,64 @@ section h2 {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
+.noc-cockpit-strategic-pivots__grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin-top: 10px;
+}
+
+.noc-cockpit-strategic-pivots__cluster .summary-label {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9aa8bc;
+}
+
+.noc-cockpit-strategic-pivots__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.evidence-replay-entry-card__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.evidence-replay-entry-primary {
+  padding: 0.55rem 1.1rem;
+  border-radius: 6px;
+  border: 1px solid #8b6a3a;
+  background: rgba(139, 106, 58, 0.15);
+  color: #ffe8c8;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.evidence-replay-entry-primary:hover {
+  border-color: #c49a4a;
+  background: rgba(196, 154, 74, 0.22);
+}
+
+.evidence-replay-entry-card__hint {
+  max-width: 52rem;
+  margin: 0;
+}
+
+.operator-briefing-entry-card__cockpit-note {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(74, 122, 184, 0.35);
+  background: rgba(74, 122, 184, 0.08);
+}
+
 .noc-cockpit-standard-fallback .nav-item {
   margin-top: 8px;
   display: inline-block;
