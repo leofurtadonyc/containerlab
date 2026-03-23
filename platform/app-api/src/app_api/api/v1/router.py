@@ -9,6 +9,7 @@ from app_api.routers.delta_digest import router as delta_digest_router
 from app_api.routers.evidence_pack import router as evidence_pack_router
 from app_api.routers.exports import router as exports_router
 from app_api.routers.investigation_workspace import router as investigation_workspace_router
+from app_api.routers.operator_briefing import router as operator_briefing_router
 from app_api.routers.operator_search import router as operator_search_router
 from app_api.routers.devices import router as devices_router
 from app_api.routers.health import router as health_router
@@ -27,6 +28,7 @@ router.include_router(change_intelligence_router)
 router.include_router(exports_router)
 router.include_router(evidence_pack_router)
 router.include_router(investigation_workspace_router)
+router.include_router(operator_briefing_router)
 router.include_router(operator_search_router)
 router.include_router(workflow_history_router)
 router.include_router(audit_history_router)
