@@ -138,3 +138,39 @@ def test_export_policy_dossier_markdown_format(monkeypatch: pytest.MonkeyPatch) 
     assert "# Evidence export: policy_dossier" in body
     assert "```json" in body
     assert "policy_dossier_v1" in body
+
+
+def test_export_investigation_workspace_subject_ref_echoes_sync_runs_limit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _stub_live_policy_and_topology(monkeypatch)
+    r = client.get("/api/v1/exports/investigation-workspace/summary?sync_runs_limit=7")
+    assert r.status_code == 200
+    payload = r.json()
+    assert payload["subject_ref"]["sync_runs_limit"] == 7
+    assert payload["nested"]["recent_change"]["sync_runs_limit_applied"] == 7
+
+
+def test_export_situation_room_markdown_format(monkeypatch: pytest.MonkeyPatch) -> None:
+    _stub_live_policy_and_topology(monkeypatch)
+    r = client.get("/api/v1/exports/situation-room/summary?format=markdown&sync_runs_limit=3")
+    assert r.status_code == 200
+    assert r.headers.get("content-type", "").startswith("text/markdown")
+    assert "# Evidence export: situation_room" in r.text
+    assert "evidence_pack_phase2_v1" in r.text
+
+
+def test_export_nested_policy_contract_ids_subset_of_source_contract_ids(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Nested dossier contract_id values appear in source_contract_ids (depth-first echo)."""
+    _stub_live_policy_and_topology(monkeypatch)
+    pid = "PE1:static_local:192.0.2.11:100"
+    r = client.get(f"/api/v1/exports/policies/{pid}/dossier")
+    assert r.status_code == 200
+    payload = r.json()
+    nested = payload["nested"]
+    ids = payload["source_contract_ids"]
+    assert nested["contract_id"] in ids
+    assert nested["path_analysis"]["safety_framing"]["contract_id"] in ids
+    assert "path_analysis_phase2_v1" in ids
