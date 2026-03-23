@@ -7,9 +7,11 @@ from app_api.dependencies.read_side_query import (
     read_side_primary_list_limit,
 )
 from app_api.schemas.path_analysis import PathAnalysisViewResponse
+from app_api.schemas.policy_evidence_timeline import PolicyEvidenceTimelineResponse
 from app_api.schemas.policy_topology_impact import PolicyTopologyImpactResponse
 from app_api.schemas.policies import PoliciesListResponse
 from app_api.services.path_analysis import build_policy_path_analysis_response
+from app_api.services.policy_evidence_timeline import build_policy_evidence_timeline_response
 from app_api.services.policy_topology_impact import build_policy_topology_impact_response
 from app_api.services.policies import build_policies_list_response
 
@@ -27,6 +29,21 @@ def list_policies(
         limit=limit,
         history_recent_limit=history_recent_limit,
     )
+
+
+@router.get(
+    "/policies/{policy_id}/evidence-timeline",
+    response_model=PolicyEvidenceTimelineResponse,
+)
+def get_policy_evidence_timeline(policy_id: str) -> PolicyEvidenceTimelineResponse:
+    """Bounded read-only evidence timeline for one normalized policy record (ordering, not forensic truth)."""
+    body = build_policy_evidence_timeline_response(policy_id)
+    if body is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No normalized policy record exists for the requested policy_id.",
+        )
+    return body
 
 
 @router.get(

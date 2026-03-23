@@ -6,7 +6,7 @@ This document is the **backend-owned bounded contract** for a future **per-polic
 
 The timeline is **evidence-derived** and **policy-scoped**: the subject is a **`policy_id`** (or equivalent inventory anchor) on the normalized policy inventory that backs **`GET /api/v1/policies`**. It **assembles** and **labels** time-bearing fields already present in API-visible or persisted policy evidence; it does **not** invent new collection streams, controller event buses, or dataplane samplers.
 
-Planned stable **`contract_id`:** **`policy_evidence_timeline_v1`** (use in schemas when implemented).
+Stable **`contract_id`:** **`policy_evidence_timeline_v1`** — implemented in **`platform/app-api/src/app_api/schemas/policy_evidence_timeline.py`** and served by **`GET /api/v1/policies/{policy_id}/evidence-timeline`** (**`services/policy_evidence_timeline.py`**).
 
 ---
 
@@ -110,14 +110,14 @@ Stable keys (align with schema literals when implemented):
 
 ---
 
-## Gap audit: implementation follow-on (not required by this document)
+## Gap audit: optional follow-on
 
-| Gap | Notes |
+| Area | Status |
 | --- | --- |
-| **Schema + route** | e.g. **`GET /api/v1/policies/{policy_id}/evidence-timeline`** with **`policy_evidence_timeline_v1`** response—read-only. |
-| **Assembly service** | Compose anchors from policies + history + optional path-analysis pointer; no new collectors in v1. |
+| **Schema + route** | **Shipped:** **`GET /api/v1/policies/{policy_id}/evidence-timeline`** — **`PolicyEvidenceTimelineResponse`** (**`policy_evidence_timeline_v1`**) in **`schemas/policy_evidence_timeline.py`**, **`routers/policies.py`**. |
+| **Assembly service** | **Shipped:** **`services/policy_evidence_timeline.py`** — inventory, history checkpoints, path-analysis anchor, degraded v1; no new collectors. |
 | **WebUI** | Optional **Policies** drill-through panel with the same non-claims. |
-| **Tests** | **`pytest`** / **`vitest`** lock literals and ordering—**not** shell duplication of business rules. |
+| **Tests** | **`pytest`** in **`tests/test_policy_evidence_timeline.py`** (run in **`platform-app-api`** image per **`INSTALLATION-INSTRUCTIONS.md`**). |
 
 ---
 
