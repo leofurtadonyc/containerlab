@@ -1,5 +1,11 @@
 #!/bin/sh
 set -eu
+#
+# Optional tuning (environment):
+#   VERIFY_ATTEMPTS (default 45) × VERIFY_SLEEP_SECONDS (default 2) ≈ max wall time per
+#     wait_for_postgres / wait_for_http_ok / wait_for_container_healthy loop when the target stays down.
+#   CURL_MAX_TIME (default 25) — per-request total time limit for curl (avoids indefinite hangs on stuck TCP).
+#   CURL_CONNECT_TIMEOUT (default 10) — connection phase limit for curl.
 
 POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-clab-platform-postgres}"
 POSTGRES_USER="${POSTGRES_USER:-platform}"
@@ -18,7 +24,15 @@ GRAFANA_USER="${GRAFANA_USER:-admin}"
 GRAFANA_PASSWORD="${GRAFANA_PASSWORD:-change_me}"
 VERIFY_ATTEMPTS="${VERIFY_ATTEMPTS:-45}"
 VERIFY_SLEEP_SECONDS="${VERIFY_SLEEP_SECONDS:-2}"
+CURL_MAX_TIME="${CURL_MAX_TIME:-25}"
+CURL_CONNECT_TIMEOUT="${CURL_CONNECT_TIMEOUT:-10}"
 warning_count=0
+
+# All HTTP checks use bounded curl so a single bad endpoint cannot block the whole script (common when
+# app-api is down but the port is half-open, or a proxy wedges).
+curl_http() {
+  curl -fsS --connect-timeout "$CURL_CONNECT_TIMEOUT" --max-time "$CURL_MAX_TIME" "$@"
+}
 
 require_command() {
   command_name=$1
@@ -41,7 +55,7 @@ notice() {
 }
 
 fetch_compact_json() {
-  curl -fsS "$1" | tr -d '\n\r\t '
+  curl_http "$1" | tr -d '\n\r\t '
 }
 
 assert_contains() {
@@ -111,7 +125,7 @@ wait_for_http_ok() {
   attempts=$VERIFY_ATTEMPTS
 
   while [ "$attempts" -gt 0 ]; do
-    if curl -fsS "$url" >/dev/null 2>&1; then
+    if curl_http "$url" >/dev/null 2>&1; then
       return 0
     fi
 
@@ -182,7 +196,7 @@ wait_for_http_ok "app-web root" "$APP_WEB_URL/"
 wait_for_http_ok "app-web API proxy health" "$APP_WEB_URL/api/v1/health"
 
 # Week 29–30 NOC cockpit / handoff WebUI: shipped /assets/*.js must retain stable composition markers (repository vitest covers UI behavior).
-app_web_index_html=$(curl -fsS "$APP_WEB_URL/")
+app_web_index_html=$(curl_http "$APP_WEB_URL/")
 app_web_noc_cockpit_marker=0
 app_web_overview_mode_marker=0
 app_web_delta_digest_marker=0
@@ -192,7 +206,7 @@ app_web_evidence_replay_marker=0
 app_web_noc_cockpit_strategic_pivots_marker=0
 app_web_global_search_week30_marker=0
 for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n' | grep -E '^/assets/.*\.js$' || true); do
-  app_web_chunk=$(curl -fsS "$APP_WEB_URL$asset_path")
+  app_web_chunk=$(curl_http "$APP_WEB_URL$asset_path")
   if printf '%s' "$app_web_chunk" | grep -qF 'noc_cockpit_v1'; then
     app_web_noc_cockpit_marker=1
   fi
@@ -225,7 +239,7 @@ fi
 
 wait_for_http_ok "Prometheus readiness" "$PROMETHEUS_URL/-/ready"
 
-prometheus_targets=$(curl -fsS "$PROMETHEUS_URL/api/v1/targets" | tr -d '\n')
+prometheus_targets=$(curl_http "$PROMETHEUS_URL/api/v1/targets" | tr -d '\n')
 echo "$prometheus_targets" | grep '"job":"prometheus".*"health":"up"' >/dev/null
 echo "$prometheus_targets" | grep '"job":"app-api".*"health":"up"' >/dev/null
 echo "$prometheus_targets" | grep '"job":"gnmi-collector".*"health":"up"' >/dev/null
@@ -237,10 +251,10 @@ fi
 
 wait_for_http_ok "Grafana health" "$GRAFANA_URL/api/health"
 
-grafana_datasources=$(curl -fsS -u "$GRAFANA_USER:$GRAFANA_PASSWORD" "$GRAFANA_URL/api/datasources")
+grafana_datasources=$(curl_http -u "$GRAFANA_USER:$GRAFANA_PASSWORD" "$GRAFANA_URL/api/datasources")
 echo "$grafana_datasources" | grep '"uid":"prometheus"' >/dev/null
 
-grafana_dashboards=$(curl -fsS -u "$GRAFANA_USER:$GRAFANA_PASSWORD" "$GRAFANA_URL/api/search?query=overview")
+grafana_dashboards=$(curl_http -u "$GRAFANA_USER:$GRAFANA_PASSWORD" "$GRAFANA_URL/api/search?query=overview")
 echo "$grafana_dashboards" | grep 'platform-overview' >/dev/null
 echo "$grafana_dashboards" | grep 'topology-overview' >/dev/null
 echo "$grafana_dashboards" | grep 'sr-policy-overview' >/dev/null
@@ -264,8 +278,8 @@ workflow_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-his
 audit_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/audit-history")
 change_intelligence_response=$(fetch_compact_json "$APP_API_URL/api/v1/change-intelligence/recent-summary")
 investigation_workspace_response=$(fetch_compact_json "$APP_API_URL/api/v1/investigation-workspace/context")
-app_api_metrics=$(curl -fsS "$APP_API_URL/metrics")
-collector_metrics=$(curl -fsS "$GNMI_COLLECTOR_URL/metrics")
+app_api_metrics=$(curl_http "$APP_API_URL/metrics")
+collector_metrics=$(curl_http "$GNMI_COLLECTOR_URL/metrics")
 
 sync_runs_count=$(query_postgres_scalar "SELECT count(*) FROM platform_app.sync_runs;")
 inventory_snapshots_count=$(query_postgres_scalar "SELECT count(*) FROM platform_app.inventory_snapshots;")

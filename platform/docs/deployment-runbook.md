@@ -260,6 +260,20 @@ What healthy means here:
 - empty or partial data remains possible and may still be healthy if it is honest about current evidence limits
 - topology may still report `completeness=partial` and may honestly report `endpoint_pairing_posture=partially_paired` or `endpoint_pairing_posture=single_sided`; those are bounded evidence-depth cues, not validation failures
 
+### verify-core-runtime.sh: slow runs, hangs, or tuning
+
+The script waits for **Docker health** and **HTTP readiness** on several services. **Worst-case** wall time per wait is approximately **`VERIFY_ATTEMPTS` × `VERIFY_SLEEP_SECONDS`** (defaults **45 × 2 s ≈ 90 s**) for each loop that never succeeds—so a **missing or unhealthy container** can make the script feel “stuck” for minutes before it exits.
+
+**Every HTTP fetch** uses bounded **`curl`** with **`CURL_CONNECT_TIMEOUT`** (default **10 s**) and **`CURL_MAX_TIME`** (default **25 s**) so a single wedged endpoint cannot hang the script indefinitely.
+
+**To fail faster while debugging**, run from `platform/` for example:
+
+```bash
+VERIFY_ATTEMPTS=15 VERIFY_SLEEP_SECONDS=1 ./scripts/verify-core-runtime.sh
+```
+
+**Common hard failures** (see sections below this chapter): **container not found** (stack not deployed or wrong `*_CONTAINER` names), **container never reaches `healthy`** (image or dependency issue), **app-web bundle substring** mismatch (rebuild **app-web** after UI changes), **Prometheus scrape target `down`**, **Grafana duplicate dashboard `uid`**.
+
 ### Verification Warnings
 
 `./scripts/verify-core-runtime.sh` now distinguishes between hard failures and bounded warnings.
