@@ -19,7 +19,8 @@ export type TopologyDossierNavigationSource =
   | "topology_table"
   | "failure_impact"
   | "risk_summary"
-  | "overview_risk";
+  | "overview_risk"
+  | "global_search";
 
 /** Read `dossier_source` from the shell query string. */
 export function readDossierSourceFromSearch(search: string): TopologyDossierNavigationSource | null {
@@ -28,7 +29,8 @@ export function readDossierSourceFromSearch(search: string): TopologyDossierNavi
     raw === "topology_table" ||
     raw === "failure_impact" ||
     raw === "risk_summary" ||
-    raw === "overview_risk"
+    raw === "overview_risk" ||
+    raw === "global_search"
   ) {
     return raw;
   }

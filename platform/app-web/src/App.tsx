@@ -20,6 +20,7 @@ import { PoliciesView } from "./features/policies/view";
 import { ReadinessView } from "./features/readiness/view";
 import { TopologyView } from "./features/topology/view";
 import { WorkflowsView } from "./features/workflows/view";
+import { GlobalOperatorSearch } from "./features/global-search/global-operator-search";
 
 const NAV_ITEMS = [
   { id: "overview", label: "Overview" },
@@ -99,6 +100,7 @@ export function App() {
       activeItemId={activeView}
       onSelect={handleSelectView}
     >
+      <GlobalOperatorSearch />
       <div className="page-header">
         <p className="eyebrow">Phase 2 Read-Only Foundation</p>
         <p className="body-copy">

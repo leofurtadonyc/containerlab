@@ -1590,3 +1590,48 @@ export interface SituationPackAssemblyResponse {
   audit_history: AuditHistoryResponse;
   investigation_context: InvestigationContextAssemblyResponse;
 }
+
+/** `GET /api/v1/operator-search` — bounded inventory field search (`operator_search_pivot_v1`). */
+export type OperatorSearchFamily =
+  | "policies"
+  | "topology_nodes"
+  | "topology_links"
+  | "devices"
+  | "capabilities";
+
+export type OperatorSearchRankingBasis = "exact_id" | "multi_token_substring" | "substring_match";
+
+export interface OperatorSearchPivotTarget {
+  view: string;
+  policy_id?: string | null;
+  device_id?: string | null;
+  topology_object?: string | null;
+  topology_object_kind?: "node" | "link" | null;
+  readiness_capability_feature?: string | null;
+}
+
+export interface OperatorSearchHit {
+  object_kind: string;
+  primary_id: string;
+  title: string;
+  ranking_basis: OperatorSearchRankingBasis;
+  match_reason: string;
+  pivot: OperatorSearchPivotTarget;
+}
+
+export interface OperatorSearchFamilyGroup {
+  family: OperatorSearchFamily;
+  items: OperatorSearchHit[];
+  items_total_matched: number;
+  capped?: boolean;
+  cap?: number | null;
+}
+
+export interface OperatorSearchResponse extends ApiResponseMetadata {
+  contract_id: "operator_search_pivot_v1";
+  q: string;
+  result_state: "hits" | "no_hits" | "ambiguous";
+  guidance: string | null;
+  groups: OperatorSearchFamilyGroup[];
+  explicit_non_claims: string[];
+}

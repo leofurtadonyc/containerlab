@@ -335,4 +335,30 @@ describe("ApiClient week 28 bounded paths", () => {
     const url = fetchMock.mock.calls[0][0] as string;
     expect(url).toContain("/api/v1/policies/PE1%3Astatic%3A1%3A100/dossier");
   });
+
+  it("getOperatorSearch encodes the query parameter", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          service: "app-api",
+          version: "0.1.0",
+          phase: "phase_2_read_only_foundation",
+          generated_at: "2025-01-01T00:00:00Z",
+          contract_id: "operator_search_pivot_v1",
+          q: "PE1:static",
+          result_state: "no_hits",
+          guidance: "No matches.",
+          groups: [],
+          explicit_non_claims: [],
+        }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getOperatorSearch("PE1:static");
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("/api/v1/operator-search?q=");
+    expect(url).toContain("PE1%3Astatic");
+  });
 });

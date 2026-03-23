@@ -21,6 +21,7 @@ const KNOWN_POLICY_DOSSIER_ENTRY_VALUES = new Set([
   "audit_history_drilldown",
   "overview_operator_workspace",
   "topology_related_policies_panel",
+  "global_search",
 ]);
 
 export function readPolicyWorkspaceFromSearch(search: string): "standard" | "dossier" {

@@ -18,6 +18,7 @@ import type {
   FailureImpactViewResponse,
   TopologyObjectDossierResponse,
   PolicyDossierResponse,
+  OperatorSearchResponse,
   WorkflowHistoryResponse,
 } from "./contracts";
 import {
@@ -158,6 +159,11 @@ export class ApiClient {
     return this.request<SituationPackAssemblyResponse>(
       `/api/v1/evidence-pack/situation?sync_runs_limit=${limit}`,
     );
+  }
+
+  async getOperatorSearch(q: string): Promise<OperatorSearchResponse> {
+    const encoded = encodeURIComponent(q);
+    return this.request<OperatorSearchResponse>(`/api/v1/operator-search?q=${encoded}`);
   }
 
   private async request<T>(path: string): Promise<T> {

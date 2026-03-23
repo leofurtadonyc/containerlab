@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type {
   CapabilityRecord,
@@ -14,7 +14,8 @@ import {
   describePlanningReadiness,
   normalizeDryRunReadiness,
 } from "../../lib/readiness";
-import { navigateToReadinessContext } from "../../lib/readiness-navigation";
+import { navigateToReadinessContext, READINESS_CAPABILITY_FEATURE_PARAM } from "../../lib/readiness-navigation";
+import { useUrlSearchParams } from "../../lib/use-url-search-params";
 import { useCapabilitiesQuery } from "./api";
 
 function describeSupportState(value: string): string {
@@ -200,6 +201,13 @@ export function CapabilitiesView() {
   const [workflowReadinessScopeFilter, setWorkflowReadinessScopeFilter] = useState("all");
   const [searchValue, setSearchValue] = useState("");
   const [selectedCapabilityKey, setSelectedCapabilityKey] = useState<string | null>(null);
+  const searchParams = useUrlSearchParams();
+  const capabilityFeatureHint = searchParams.get(READINESS_CAPABILITY_FEATURE_PARAM);
+  useEffect(() => {
+    if (capabilityFeatureHint) {
+      setSearchValue(capabilityFeatureHint);
+    }
+  }, [capabilityFeatureHint]);
   const items = (data?.items ?? []).map((capability) => normalizeCapabilityRecord(capability));
   const vendorCounts = countBy(items, (capability) => capability.vendor);
   const supportCounts = countBy(items, (capability) => capability.support_status);
