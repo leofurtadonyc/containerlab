@@ -2,7 +2,11 @@
  * Navigate to the bounded investigation workspace view while preserving other URL params.
  */
 
-import { INV_FROM_PARAM, type InvestigationNavSourceId } from "./investigation-url-context";
+import {
+  FAILURE_IMPACT_ENTRY_PARAM,
+  INV_FROM_PARAM,
+  type InvestigationNavSourceId,
+} from "./investigation-url-context";
 import { mergeViewIntoSearch, replaceUrlSearchParams } from "./url-app-state";
 
 /** Default sync-run window aligned with Overview recent-change summary when the URL omits `sync_runs_limit`. */
@@ -11,6 +15,10 @@ export const DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT = 20;
 export interface NavigateToInvestigationViewOptions {
   /** When set, records which shell surface opened investigation (`inv_from`); when omitted, clears `inv_from`. */
   invFrom?: InvestigationNavSourceId;
+  /** Pins `topology_object` / `topology_object_kind` for investigation breadcrumb context (read-only). */
+  topologyObject?: { id: string; kind: "node" | "link" };
+  /** When true, sets `failure_impact_entry=v1` (bounded entry from Topology failure-impact panel). */
+  failureImpactEntry?: boolean;
 }
 
 /** Bounded sync-run window for nested change-intelligence assembly (1–100). */
@@ -40,6 +48,15 @@ export function navigateToInvestigationView(
     sp.set(INV_FROM_PARAM, options.invFrom);
   } else {
     sp.delete(INV_FROM_PARAM);
+  }
+  if (options?.topologyObject) {
+    sp.set("topology_object", options.topologyObject.id);
+    sp.set("topology_object_kind", options.topologyObject.kind);
+  }
+  if (options?.failureImpactEntry) {
+    sp.set(FAILURE_IMPACT_ENTRY_PARAM, "v1");
+  } else {
+    sp.delete(FAILURE_IMPACT_ENTRY_PARAM);
   }
   replaceUrlSearchParams(sp);
 }

@@ -5,6 +5,9 @@
 
 export const INV_FROM_PARAM = "inv_from";
 
+/** When `v1`, investigation was opened from Topology **Failure impact (v1)** (read-only framing). */
+export const FAILURE_IMPACT_ENTRY_PARAM = "failure_impact_entry";
+
 /** Shell views that may set `inv_from` when opening the investigation workspace. */
 export const INVESTIGATION_NAV_SOURCE_IDS = [
   "overview",
@@ -47,6 +50,8 @@ export interface InvestigationNavContextParsed {
   policyId: string | null;
   topologyObjectId: string | null;
   topologyObjectKind: string | null;
+  /** Present when shell recorded entry from the Topology failure-impact panel (`failure_impact_entry=v1`). */
+  failureImpactEntry: "v1" | null;
 }
 
 export function parseInvestigationNavContext(search: string): InvestigationNavContextParsed {
@@ -54,11 +59,14 @@ export function parseInvestigationNavContext(search: string): InvestigationNavCo
   const raw = sp.get(INV_FROM_PARAM);
   const invFrom =
     raw && isInvestigationNavSourceId(raw) ? (raw as InvestigationNavSourceId) : null;
+  const rawFi = sp.get(FAILURE_IMPACT_ENTRY_PARAM);
+  const failureImpactEntry = rawFi === "v1" ? ("v1" as const) : null;
   return {
     invFrom,
     deviceId: sp.get("device_id"),
     policyId: sp.get("policy_id"),
     topologyObjectId: sp.get("topology_object"),
     topologyObjectKind: sp.get("topology_object_kind"),
+    failureImpactEntry,
   };
 }

@@ -206,11 +206,22 @@ export function TopologyFailureImpactPanel({ objectId, objectKind }: TopologyFai
         ) : null}{" "}
         <button
           type="button"
-          className="inline-action"
-          onClick={() => navigateToInvestigationView(syncRuns, { invFrom: "topology" })}
+          className="table-select"
+          onClick={() =>
+            navigateToInvestigationView(syncRuns, {
+              invFrom: "topology",
+              topologyObject: { id: objectId, kind: objectKind },
+              failureImpactEntry: true,
+            })
+          }
         >
-          Investigation workspace
+          Open in Investigation
         </button>
+      </p>
+      <p className="footnote">
+        Opens the investigation workspace with <code>topology_object</code>,{" "}
+        <code>topology_object_kind</code>, and <code>failure_impact_entry=v1</code> in the URL for
+        breadcrumb context — read-only navigation, not workflow execution.
       </p>
     </article>
   );

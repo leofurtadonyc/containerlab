@@ -216,6 +216,26 @@ afterEach(() => {
 });
 
 describe("InvestigationView", () => {
+  it("renders failure-impact entry framing when failure_impact_entry=v1", () => {
+    window.history.replaceState(
+      {},
+      "",
+      `/?view=investigation&${INV_FROM_PARAM}=topology&topology_object=PE1&topology_object_kind=node&failure_impact_entry=v1`,
+    );
+    useInvestigationWorkspaceContextQuery.mockReturnValue({
+      data: createInvestigationAssemblyFixture(),
+      error: null,
+      isLoading: false,
+      isRefreshing: false,
+      reload: vi.fn(),
+    });
+
+    const html = renderToStaticMarkup(<InvestigationView />);
+
+    expect(html).toContain("Entry from Topology failure impact (v1)");
+    expect(html).toContain("blast-radius simulation");
+  });
+
   it("renders navigation context banner when inv_from and shell object params are set", () => {
     window.history.replaceState(
       {},

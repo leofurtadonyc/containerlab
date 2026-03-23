@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  FAILURE_IMPACT_ENTRY_PARAM,
   INV_FROM_PARAM,
   parseInvestigationNavContext,
 } from "../src/lib/investigation-url-context";
@@ -28,5 +29,17 @@ describe("parseInvestigationNavContext", () => {
   it("accepts situation-room as a source", () => {
     const p = parseInvestigationNavContext(`?${INV_FROM_PARAM}=situation-room`);
     expect(p.invFrom).toBe("situation-room");
+  });
+
+  it("parses failure_impact_entry=v1", () => {
+    const p = parseInvestigationNavContext(
+      `?view=investigation&${INV_FROM_PARAM}=topology&${FAILURE_IMPACT_ENTRY_PARAM}=v1`,
+    );
+    expect(p.failureImpactEntry).toBe("v1");
+  });
+
+  it("returns null failureImpactEntry for unknown values", () => {
+    const p = parseInvestigationNavContext(`?${FAILURE_IMPACT_ENTRY_PARAM}=other`);
+    expect(p.failureImpactEntry).toBeNull();
   });
 });
