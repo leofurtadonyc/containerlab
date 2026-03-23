@@ -613,6 +613,90 @@ export interface TopologyRiskSummaryResponse {
   missing_evidence_notes: string[];
 }
 
+/** `GET /api/v1/topology/objects/{object_id}/dossier` (composed read-only briefing; not blast radius or workflow). */
+export interface TopologyObjectIdentitySection {
+  object_kind: TopologyObjectKind;
+  object_id: string;
+  display_label: string;
+  identity_detail_lines: string[];
+}
+
+export interface TopologyRiskAttentionSection {
+  ranking_basis: string;
+  row: TopologyRiskSummaryRow | null;
+  risk_row_gap_note: string | null;
+}
+
+export interface TopologyObjectDossierDegradedRelatedPreviewItem {
+  policy_id: string;
+  policy_name: string;
+  degraded_policy_v1: DegradedPolicyV1Classification;
+}
+
+export interface TopologyObjectDossierNavigationTargets {
+  investigation_shell_params: Record<string, string>;
+  situation_room_shell_params: Record<string, string>;
+  topology_shell_params: Record<string, string>;
+  related_policy_ids_for_policies_view: string[];
+}
+
+export interface TopologyObjectDossierFreshnessBlock {
+  dossier_assembled_at: string;
+  policy_inventory_observed_at: string | null;
+  topology_snapshot_observed_at: string | null;
+  policy_inventory_empty_reason: string | null;
+  policy_serving_mode_echo: string;
+  topology_risk_summary_assembly_generated_at: string | null;
+}
+
+export interface TopologyObjectDossierResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "topology_object_dossier_v1";
+  object_identity: TopologyObjectIdentitySection;
+  topology_posture_summary_lines: string[];
+  failure_impact: FailureImpactViewResponse;
+  risk_attention: TopologyRiskAttentionSection;
+  related_policies: TopologyObjectRelatedPoliciesResponse;
+  degraded_related_policies_preview: TopologyObjectDossierDegradedRelatedPreviewItem[];
+  navigation_targets: TopologyObjectDossierNavigationTargets;
+  freshness: TopologyObjectDossierFreshnessBlock;
+  merged_caveats: string[];
+}
+
+export interface PolicyDossierTopologyObjectHint {
+  topology_object_kind: TopologyObjectKind;
+  topology_object_id: string;
+}
+
+export interface PolicyDossierNavigationTargets {
+  investigation_shell_params: Record<string, string>;
+  situation_room_shell_params: Record<string, string>;
+  policies_view_params: Record<string, string>;
+  topology_object_hints: PolicyDossierTopologyObjectHint[];
+}
+
+export interface PolicyDossierFreshnessBlock {
+  dossier_assembled_at: string;
+  policy_inventory_observed_at: string | null;
+  topology_snapshot_observed_at: string | null;
+  policy_inventory_empty_reason: string | null;
+  policy_serving_mode_echo: string;
+}
+
+/** `GET /api/v1/policies/{policy_id}/dossier` (composed read-only briefing; not dataplane or workflow truth). */
+export interface PolicyDossierResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "policy_dossier_v1";
+  policy_record: PolicyRecord;
+  path_analysis: PathAnalysisViewResponse;
+  topology_impact: PolicyTopologyImpactResponse;
+  evidence_timeline: PolicyEvidenceTimelineResponse;
+  evidence_delta: PolicyEvidenceDeltaResponse;
+  navigation_targets: PolicyDossierNavigationTargets;
+  freshness: PolicyDossierFreshnessBlock;
+  merged_caveats: string[];
+}
+
 /** `GET /api/v1/policies/{policy_id}/topology-impact` (inverse pivot; naming alignment only). */
 export interface PolicyTopologyImpactRow {
   topology_object_kind: TopologyObjectKind;
@@ -1505,4 +1589,49 @@ export interface SituationPackAssemblyResponse {
   workflow_history: WorkflowHistoryResponse;
   audit_history: AuditHistoryResponse;
   investigation_context: InvestigationContextAssemblyResponse;
+}
+
+/** `GET /api/v1/operator-search` — bounded inventory field search (`operator_search_pivot_v1`). */
+export type OperatorSearchFamily =
+  | "policies"
+  | "topology_nodes"
+  | "topology_links"
+  | "devices"
+  | "capabilities";
+
+export type OperatorSearchRankingBasis = "exact_id" | "multi_token_substring" | "substring_match";
+
+export interface OperatorSearchPivotTarget {
+  view: string;
+  policy_id?: string | null;
+  device_id?: string | null;
+  topology_object?: string | null;
+  topology_object_kind?: "node" | "link" | null;
+  readiness_capability_feature?: string | null;
+}
+
+export interface OperatorSearchHit {
+  object_kind: string;
+  primary_id: string;
+  title: string;
+  ranking_basis: OperatorSearchRankingBasis;
+  match_reason: string;
+  pivot: OperatorSearchPivotTarget;
+}
+
+export interface OperatorSearchFamilyGroup {
+  family: OperatorSearchFamily;
+  items: OperatorSearchHit[];
+  items_total_matched: number;
+  capped?: boolean;
+  cap?: number | null;
+}
+
+export interface OperatorSearchResponse extends ApiResponseMetadata {
+  contract_id: "operator_search_pivot_v1";
+  q: string;
+  result_state: "hits" | "no_hits" | "ambiguous";
+  guidance: string | null;
+  groups: OperatorSearchFamilyGroup[];
+  explicit_non_claims: string[];
 }

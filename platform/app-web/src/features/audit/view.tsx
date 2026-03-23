@@ -753,6 +753,7 @@ export function AuditView() {
               <HistoryEvidenceDrilldown targets={auditHistoryDrilldownTargets(selectedEvent)} />
               <HistoryPolicyEvidenceTimelineDrilldown
                 rows={policyEvidenceTimelineRowsFromComparison(selectedEvent)}
+                dossierEntryHint="audit_history_drilldown"
               />
               <div className="key-value-list">
                 <div className="key-value-row">

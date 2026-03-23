@@ -77,6 +77,21 @@ describe("TopologyRiskAttentionPanel", () => {
     expect(html).toContain("Loading ranked topology attention");
   });
 
+  it("overview variant dossier button documents overview_risk source", () => {
+    const html = renderToStaticMarkup(
+      <TopologyRiskAttentionPanel
+        variant="overview"
+        data={baseRiskSummary()}
+        error={null}
+        isLoading={false}
+        isRefreshing={false}
+        onRetry={() => {}}
+      />,
+    );
+    expect(html).toContain("Open dossier");
+    expect(html).toContain("dossier_source=overview_risk");
+  });
+
   it("renders error summary card", () => {
     const html = renderToStaticMarkup(
       <TopologyRiskAttentionPanel
@@ -104,6 +119,8 @@ describe("TopologyRiskAttentionPanel", () => {
     );
     expect(html).toContain("P1--PE1");
     expect(html).toContain("Open in Topology");
+    expect(html).toContain("Open dossier");
+    expect(html).toContain("dossier_source=risk_summary");
     expect(html).toContain("Open investigation");
   });
 

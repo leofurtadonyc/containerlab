@@ -37,10 +37,18 @@ import {
   POLICY_EVIDENCE_DELTA_FOCUS_PARAM,
   POLICY_EVIDENCE_TIMELINE_FOCUS_PARAM,
 } from "../../lib/topology-policy-navigation";
+import {
+  navigateToPolicyDossierWorkspace,
+  POLICY_DOSSIER_ENTRY_PARAM,
+  POLICY_WORKSPACE_PARAM,
+  readPolicyWorkspaceFromSearch,
+  readPolicyWorkspaceFromUrl,
+} from "../../lib/policy-dossier-navigation";
 import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { InvestigationSurfaceEntry } from "../investigation/investigation-surface-entry";
 import { useTopologyQuery } from "../topology/api";
 import { usePoliciesQuery } from "./api";
+import { PolicyDossierWorkspace } from "./policy-dossier-workspace";
 import { PolicyEvidenceDeltaPanel } from "./policy-evidence-delta-panel";
 import { PolicyEvidenceTimelinePanel } from "./policy-evidence-timeline-panel";
 import { PolicyPathAnalysisPanel } from "./policy-path-analysis-panel";
@@ -514,6 +522,7 @@ export function PoliciesView() {
   const [sortBy, setSortBy] = useState("health_then_name");
   const [searchValue, setSearchValue] = useState("");
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
+  const [workspaceMode, setWorkspaceMode] = useState<"standard" | "dossier">(readPolicyWorkspaceFromUrl);
   const [evidenceTimelineEmphasize, setEvidenceTimelineEmphasize] = useState(false);
   const [evidenceDeltaEmphasize, setEvidenceDeltaEmphasize] = useState(false);
   const items = data?.items ?? [];
@@ -665,6 +674,30 @@ export function PoliciesView() {
   useEffect(() => {
     setDegradedV1PostureFilter(readDegradedPolicyV1PostureFromSearch(searchKey));
   }, [searchKey]);
+
+  useEffect(() => {
+    setWorkspaceMode(readPolicyWorkspaceFromSearch(searchKey));
+  }, [searchKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const sp = new URLSearchParams(window.location.search);
+    const wsCurrent = sp.get(POLICY_WORKSPACE_PARAM);
+    let changed = false;
+    if (workspaceMode === "dossier" && wsCurrent !== "dossier") {
+      sp.set(POLICY_WORKSPACE_PARAM, "dossier");
+      changed = true;
+    } else if (workspaceMode === "standard" && (wsCurrent !== null || sp.get(POLICY_DOSSIER_ENTRY_PARAM))) {
+      sp.delete(POLICY_WORKSPACE_PARAM);
+      sp.delete(POLICY_DOSSIER_ENTRY_PARAM);
+      changed = true;
+    }
+    if (changed) {
+      replaceUrlSearchParams(sp);
+    }
+  }, [workspaceMode, replaceUrlSearchParams]);
 
   useEffect(() => {
     if (!selectedPolicy) {
@@ -2124,6 +2157,41 @@ export function PoliciesView() {
         </p>
       ) : null}
 
+      {data.items.length > 0 ? (
+        <>
+          <div className="page-header topology-workspace-switch">
+            <div>
+              <p className="eyebrow">Policy workspace</p>
+              <h3 className="topology-workspace-switch__title">Standard detail panels vs policy dossier</h3>
+              <p className="meta-copy">
+                Week 27–28 panels stay available in <strong>Standard</strong> view. <strong>Policy dossier</strong>{" "}
+                loads one composed <code>policy_dossier_v1</code> response—interpretation support only; not a
+                replacement for full path-analysis, timeline, or delta panels.
+              </p>
+            </div>
+            <div className="topology-workspace-switch__toggle" role="group" aria-label="Policy workspace mode">
+              <button
+                type="button"
+                className={workspaceMode === "standard" ? "nav-item active" : "nav-item"}
+                onClick={() => setWorkspaceMode("standard")}
+              >
+                Standard panels
+              </button>
+              <button
+                type="button"
+                className={workspaceMode === "dossier" ? "nav-item active" : "nav-item"}
+                onClick={() => setWorkspaceMode("dossier")}
+              >
+                Policy dossier
+              </button>
+            </div>
+          </div>
+          {workspaceMode === "dossier" ? (
+            <PolicyDossierWorkspace policyId={selectedPolicy?.policy_id ?? null} />
+          ) : null}
+        </>
+      ) : null}
+
       {data.items.length === 0 ? (
         <EmptyState
           title={
@@ -2158,6 +2226,7 @@ export function PoliciesView() {
                   <th>Support</th>
                   <th>Health</th>
                   <th>Degraded (v1)</th>
+                  <th>Dossier</th>
                 </tr>
               </thead>
               <tbody>
@@ -2224,13 +2293,23 @@ export function PoliciesView() {
                         <StatusPill value={policy.degraded_policy_v1.posture} />
                         <div className="table-note">{buildDegradedPolicyV1ListRowHint(policy)}</div>
                       </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="nav-drilldown-button"
+                          onClick={() => navigateToPolicyDossierWorkspace(policy.policy_id, "policy_table")}
+                        >
+                          Open dossier
+                        </button>
+                        <div className="table-note">Composed briefing for this policy.</div>
+                      </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-          {selectedPolicy ? (
+          {selectedPolicy && workspaceMode === "standard" ? (
             <div className="content-grid">
               <article className="detail-card">
                 <h3>Selected Policy Detail</h3>
@@ -2239,6 +2318,15 @@ export function PoliciesView() {
                   <span>Type: {formatLabel(selectedPolicy.policy_type)}</span>
                   <span>Source target: {selectedPolicy.source_target}</span>
                   <span>Current posture: {formatRowCurrentPosture(selectedPolicy.current_posture)}</span>
+                  <span>
+                    <button
+                      type="button"
+                      className="inline-action"
+                      onClick={() => navigateToPolicyDossierWorkspace(selectedPolicy.policy_id, "policy_detail")}
+                    >
+                      Open policy dossier
+                    </button>
+                  </span>
                 </div>
                 <div className="content-grid">
                   <article>

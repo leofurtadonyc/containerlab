@@ -1,3 +1,4 @@
+import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 import {
   navigateToPoliciesPolicyEvidenceDeltaFocus,
@@ -84,6 +85,15 @@ export function OperatorWorkspaceEntry({ firstNodeId, firstPolicyId }: OperatorW
                 onClick={() => navigateToPoliciesPolicyEvidenceDeltaFocus(firstPolicyId)}
               >
                 Evidence delta (first policy)
+              </button>
+              <button
+                type="button"
+                className="inline-action"
+                onClick={() =>
+                  navigateToPolicyDossierWorkspace(firstPolicyId, "overview_operator_workspace")
+                }
+              >
+                Policy dossier (first policy)
               </button>
             </>
           ) : (

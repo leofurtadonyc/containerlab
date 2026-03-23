@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import {
   EmptyState,
@@ -53,6 +53,9 @@ import {
   useTopologyRiskSummaryQuery,
 } from "../topology/api";
 import { TopologyRiskAttentionPanel } from "../topology/topology-risk-attention-panel";
+import { navigateOverviewLayoutMode, readOverviewModeFromSearch } from "../../lib/overview-mode";
+import { useUrlSearchParamsKey } from "../../lib/use-url-search-params";
+import { NocCockpitSection } from "./noc-cockpit-section";
 
 function formatReadPathCoverage(readPath: PlatformReadPathStatus | null): string {
   if (!readPath) {
@@ -132,6 +135,8 @@ export function OverviewView() {
   const capabilitiesQuery = useCapabilitiesQuery();
   const recentChangeQuery = useRecentChangeSummaryQuery();
   const riskSummaryQuery = useTopologyRiskSummaryQuery(topologySettled);
+  const searchKey = useUrlSearchParamsKey();
+  const overviewMode = useMemo(() => readOverviewModeFromSearch(searchKey), [searchKey]);
 
   const reloadAllSlices = useCallback(async () => {
     if (refreshInFlightRef.current) {
@@ -381,7 +386,7 @@ export function OverviewView() {
 
   return (
     <section>
-      <div className="section-header">
+      <div className="section-header overview-section-header">
         <div>
           <h2>Overview</h2>
           <p>
@@ -389,6 +394,22 @@ export function OverviewView() {
             what exists, what is healthy, and where the current read-only foundation remains intentionally
             partial.
           </p>
+        </div>
+        <div className="overview-layout-switch" role="group" aria-label="Overview layout">
+          <button
+            type="button"
+            className={overviewMode === "standard" ? "nav-item active" : "nav-item"}
+            onClick={() => navigateOverviewLayoutMode("standard")}
+          >
+            Standard
+          </button>
+          <button
+            type="button"
+            className={overviewMode === "cockpit" ? "nav-item active" : "nav-item"}
+            onClick={() => navigateOverviewLayoutMode("cockpit")}
+          >
+            NOC cockpit
+          </button>
         </div>
         <StatusPill value={platformData?.status ?? (showPartialWarning ? "degraded" : "unknown")} />
       </div>
@@ -420,46 +441,77 @@ export function OverviewView() {
         </div>
       ) : null}
 
-      <p className="callout">
-        Routine-use trust cues stay explicit here: {liveBackedSliceCount} of {availableCoreSlices.length} currently available core read-side
-        slice{liveBackedSliceCount === 1 ? " is" : "slices are"} live-backed,
-        {" "}
-        {fallbackOrBlockedSliceCount} slice
-        {fallbackOrBlockedSliceCount === 1 ? " remains" : "s remain"} fallback or blocked,
-        and {anchorBackedSurfaceCount} surface
-        {anchorBackedSurfaceCount === 1 ? " currently exposes" : "s currently expose"}{" "}
-        a persisted anchor for bounded comparison or readiness support. Bounded collector-to-backend
-        coverage is currently visible
-        {platformData
-          ? ` for ${okReadPathCount} of ${readPaths.length} exposed read paths, with ${coverageWindowCount} freshness window${coverageWindowCount === 1 ? "" : "s"} and ${degradedReadPathCount} read path${degradedReadPathCount === 1 ? " needing" : "s needing"} closer interpretation.`
-          : " only where the platform-status slice is available; read-path coverage cues are temporarily absent while that slice reloads."}
-        {availableCoreSlices.length < 3
-          ? ` ${3 - availableCoreSlices.length} core slice${3 - availableCoreSlices.length === 1 ? " is" : "s are"} currently unavailable and called out separately below.`
-          : ""}
-      </p>
+      {overviewMode === "cockpit" ? (
+        <>
+          <p className="callout noc-cockpit-trust-cue">
+            <strong>NOC cockpit</strong> prioritizes attention rows and workspace entry. Switch to <strong>Standard</strong> for full summary cards, recovery posture, and detailed trust cues.
+          </p>
+          <NocCockpitSection
+            syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT}
+            firstNodeId={firstOverviewNodeId}
+            firstPolicyId={firstOverviewPolicyId}
+            policiesData={policiesData}
+            recentChange={{
+              data: recentChangeQuery.data,
+              error: recentChangeQuery.error,
+              isLoading: recentChangeQuery.isLoading,
+              reload: recentChangeQuery.reload,
+            }}
+            riskSummary={{
+              data: riskSummaryQuery.data,
+              error: riskSummaryQuery.error,
+              isLoading: riskSummaryQuery.isLoading,
+              isRefreshing: riskSummaryQuery.isRefreshing,
+              reload: riskSummaryQuery.reload,
+            }}
+          />
+        </>
+      ) : (
+        <>
+          <p className="callout">
+            Routine-use trust cues stay explicit here: {liveBackedSliceCount} of {availableCoreSlices.length} currently available core read-side
+            slice{liveBackedSliceCount === 1 ? " is" : "slices are"} live-backed,
+            {" "}
+            {fallbackOrBlockedSliceCount} slice
+            {fallbackOrBlockedSliceCount === 1 ? " remains" : "s remain"} fallback or blocked,
+            and {anchorBackedSurfaceCount} surface
+            {anchorBackedSurfaceCount === 1 ? " currently exposes" : "s currently expose"}{" "}
+            a persisted anchor for bounded comparison or readiness support. Bounded collector-to-backend
+            coverage is currently visible
+            {platformData
+              ? ` for ${okReadPathCount} of ${readPaths.length} exposed read paths, with ${coverageWindowCount} freshness window${coverageWindowCount === 1 ? "" : "s"} and ${degradedReadPathCount} read path${degradedReadPathCount === 1 ? " needing" : "s needing"} closer interpretation.`
+              : " only where the platform-status slice is available; read-path coverage cues are temporarily absent while that slice reloads."}
+            {availableCoreSlices.length < 3
+              ? ` ${3 - availableCoreSlices.length} core slice${3 - availableCoreSlices.length === 1 ? " is" : "s are"} currently unavailable and called out separately below.`
+              : ""}
+          </p>
 
-      <OperatorWorkspaceEntry firstNodeId={firstOverviewNodeId} firstPolicyId={firstOverviewPolicyId} />
+          <OperatorWorkspaceEntry firstNodeId={firstOverviewNodeId} firstPolicyId={firstOverviewPolicyId} />
 
-      <SituationRoomOverviewEntry syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT} />
+          <SituationRoomOverviewEntry syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT} />
 
-      <InvestigationOverviewEntry syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT} />
+          <InvestigationOverviewEntry syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT} />
 
-      <RecentChangeIntelligencePanel
-        data={recentChangeQuery.data}
-        error={recentChangeQuery.error}
-        isLoading={recentChangeQuery.isLoading}
-        onRetry={recentChangeQuery.reload}
-      />
+          <RecentChangeIntelligencePanel
+            data={recentChangeQuery.data}
+            error={recentChangeQuery.error}
+            isLoading={recentChangeQuery.isLoading}
+            onRetry={recentChangeQuery.reload}
+          />
 
-      <TopologyRiskAttentionPanel
-        variant="overview"
-        data={riskSummaryQuery.data}
-        error={riskSummaryQuery.error}
-        isLoading={riskSummaryQuery.isLoading}
-        isRefreshing={riskSummaryQuery.isRefreshing}
-        onRetry={riskSummaryQuery.reload}
-      />
+          <TopologyRiskAttentionPanel
+            variant="overview"
+            data={riskSummaryQuery.data}
+            error={riskSummaryQuery.error}
+            isLoading={riskSummaryQuery.isLoading}
+            isRefreshing={riskSummaryQuery.isRefreshing}
+            onRetry={riskSummaryQuery.reload}
+          />
+        </>
+      )}
 
+      {overviewMode === "standard" ? (
+      <>
       <div className="summary-grid">
         {platformData ? (
           <article className="summary-card">
@@ -1148,6 +1200,18 @@ export function OverviewView() {
           </p>
         </article>
       </div>
+      </>
+      ) : (
+        <article className="detail-card noc-cockpit-standard-fallback">
+          <h3>Full overview</h3>
+          <p>
+            Summary cards, recovery posture, device and topology trust cues, and interpretation notes are available in Standard layout.
+          </p>
+          <button type="button" className="nav-item" onClick={() => navigateOverviewLayoutMode("standard")}>
+            Open standard overview
+          </button>
+        </article>
+      )}
     </section>
   );
 }

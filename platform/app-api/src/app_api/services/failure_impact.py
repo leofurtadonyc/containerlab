@@ -7,6 +7,7 @@ per-policy posture consistent with ``GET /api/v1/policies``.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import UTC, datetime
 
 from app_api.config.settings import get_settings
@@ -23,6 +24,7 @@ from app_api.schemas.failure_impact import (
     FailureImpactSubject,
     FailureImpactViewResponse,
 )
+from app_api.schemas.topology_related_policies import TopologyObjectRelatedPoliciesResponse
 from app_api.services.degraded_policy_v1 import build_degraded_policy_v1_classification
 from app_api.services.policies import _build_policy_inventory
 from app_api.services.topology import load_topology_snapshot_for_topology_relationship_queries
@@ -104,9 +106,17 @@ def degraded_posture_breakdown_for_distinct_policy_ids(
     )
 
 
-def build_failure_impact_view_response(object_id: str) -> FailureImpactViewResponse | None:
-    """Return failure-impact v1 rollup for ``object_id``, or ``None`` if topology object unknown."""
-    related = build_topology_object_related_policies_response(object_id)
+def build_failure_impact_view_response(
+    object_id: str,
+    *,
+    related_policies: TopologyObjectRelatedPoliciesResponse | None = None,
+) -> FailureImpactViewResponse | None:
+    """Return failure-impact v1 rollup for ``object_id``, or ``None`` if topology object unknown.
+
+    When ``related_policies`` is supplied (e.g. from a dossier assembly), it must be the
+    related-policies response for the same ``object_id``; the service skips a second lookup.
+    """
+    related = related_policies or build_topology_object_related_policies_response(object_id)
     if related is None:
         return None
 

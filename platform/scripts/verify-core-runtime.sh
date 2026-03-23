@@ -180,6 +180,25 @@ wait_for_http_ok "app-api health" "$APP_API_URL/api/v1/health"
 wait_for_http_ok "app-api metrics" "$APP_API_URL/metrics"
 wait_for_http_ok "app-web root" "$APP_WEB_URL/"
 wait_for_http_ok "app-web API proxy health" "$APP_WEB_URL/api/v1/health"
+
+# Week 29 NOC cockpit WebUI: shipped /assets/*.js must retain stable composition markers (repository vitest covers UI behavior).
+app_web_index_html=$(curl -fsS "$APP_WEB_URL/")
+app_web_noc_cockpit_marker=0
+app_web_overview_mode_marker=0
+for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n' | grep -E '^/assets/.*\.js$' || true); do
+  app_web_chunk=$(curl -fsS "$APP_WEB_URL$asset_path")
+  if printf '%s' "$app_web_chunk" | grep -qF 'noc_cockpit_v1'; then
+    app_web_noc_cockpit_marker=1
+  fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'overview_mode'; then
+    app_web_overview_mode_marker=1
+  fi
+done
+if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ]; then
+  echo "app-web: expected noc_cockpit_v1 and overview_mode substrings in shipped /assets/*.js (NOC cockpit v1 UI)" >&2
+  exit 1
+fi
+
 wait_for_http_ok "Prometheus readiness" "$PROMETHEUS_URL/-/ready"
 
 prometheus_targets=$(curl -fsS "$PROMETHEUS_URL/api/v1/targets" | tr -d '\n')
@@ -327,6 +346,12 @@ topology_risk_summary_response=$(fetch_compact_json "$APP_API_URL/api/v1/topolog
 assert_contains "topology risk summary response (contract id)" "$topology_risk_summary_response" '"contract_id":"topology_risk_summary_v1"'
 assert_contains "topology risk summary response (ranked_objects)" "$topology_risk_summary_response" '"ranked_objects":['
 
+# Week 29: global operator search (bounded inventory field search; structural contract check).
+operator_search_response=$(fetch_compact_json "$APP_API_URL/api/v1/operator-search?q=__verify_runtime__")
+assert_contains "operator search response (contract id)" "$operator_search_response" '"contract_id":"operator_search_pivot_v1"'
+assert_contains "operator search response (result_state)" "$operator_search_response" '"result_state":"'
+assert_contains "operator search response (groups array)" "$operator_search_response" '"groups":'
+
 # Week 27–28: path-analysis, topology-related-policies, failure-impact, policy evidence timeline+delta
 # (uses python3 when available to sample first policy id and first topology node id).
 if command -v python3 >/dev/null 2>&1; then
@@ -349,8 +374,18 @@ if [ -n "$first_policy_id" ]; then
   policy_evidence_delta_response=$(fetch_compact_json "$APP_API_URL/api/v1/policies/${first_policy_id}/evidence-delta")
   assert_contains "policy evidence delta response (contract id)" "$policy_evidence_delta_response" '"contract_id":"policy_evidence_delta_v1"'
   assert_contains "policy evidence delta response (comparison_status)" "$policy_evidence_delta_response" '"comparison_status":"'
+  policy_dossier_response=$(fetch_compact_json "$APP_API_URL/api/v1/policies/${first_policy_id}/dossier")
+  assert_contains "policy dossier response (contract id)" "$policy_dossier_response" '"contract_id":"policy_dossier_v1"'
+  assert_contains "policy dossier response (nested path_analysis)" "$policy_dossier_response" '"path_analysis":{'
+  assert_contains "policy dossier response (nested evidence_delta)" "$policy_dossier_response" '"evidence_delta":{'
+  assert_contains "policy dossier response (merged_caveats)" "$policy_dossier_response" '"merged_caveats":'
+  policy_export_response=$(fetch_compact_json "$APP_API_URL/api/v1/exports/policies/${first_policy_id}/dossier?format=json")
+  assert_contains "policy evidence export response (envelope contract id)" "$policy_export_response" '"contract_id":"evidence_export_v1"'
+  assert_contains "policy evidence export response (export_kind)" "$policy_export_response" '"export_kind":"policy_dossier"'
+  assert_contains "policy evidence export response (nested policy dossier)" "$policy_export_response" '"contract_id":"policy_dossier_v1"'
+  assert_contains "policy evidence export response (source_contract_ids)" "$policy_export_response" '"source_contract_ids":'
 else
-  notice "Policies items list empty; skipping path-analysis, degraded_policy_v1 contract_id, policy evidence timeline, and policy evidence delta structural checks."
+  notice "Policies items list empty; skipping path-analysis, degraded_policy_v1 contract_id, policy evidence timeline, policy evidence delta, and policy dossier structural checks."
 fi
 
 if [ -n "$first_node_id" ]; then
@@ -362,8 +397,16 @@ if [ -n "$first_node_id" ]; then
   failure_impact_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/objects/${first_node_id}/failure-impact")
   assert_contains "failure impact response (contract id)" "$failure_impact_response" '"contract_id":"failure_impact_v1"'
   assert_contains "failure impact response (subject)" "$failure_impact_response" '"subject":{'
+  topology_object_dossier_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/objects/${first_node_id}/dossier")
+  assert_contains "topology object dossier response (contract id)" "$topology_object_dossier_response" '"contract_id":"topology_object_dossier_v1"'
+  assert_contains "topology object dossier response (nested failure_impact)" "$topology_object_dossier_response" '"failure_impact":{'
+  assert_contains "topology object dossier response (risk_attention)" "$topology_object_dossier_response" '"risk_attention":{'
+  topology_export_response=$(fetch_compact_json "$APP_API_URL/api/v1/exports/topology-objects/${first_node_id}/dossier?format=json")
+  assert_contains "topology evidence export response (envelope contract id)" "$topology_export_response" '"contract_id":"evidence_export_v1"'
+  assert_contains "topology evidence export response (export_kind)" "$topology_export_response" '"export_kind":"topology_object_dossier"'
+  assert_contains "topology evidence export response (nested topology dossier)" "$topology_export_response" '"contract_id":"topology_object_dossier_v1"'
 else
-  notice "Topology nodes list empty; skipping topology-related-policies and failure-impact structural checks."
+  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, and topology-object-dossier structural checks."
 fi
 
 # Cross-slice list/history metadata and evidence shape (contract posture, not business truth).
@@ -519,6 +562,19 @@ assert_contains "evidence pack situation response" "$evidence_pack_situation_res
 evidence_pack_situation_bounded=$(fetch_compact_json "$APP_API_URL/api/v1/evidence-pack/situation?sync_runs_limit=10")
 assert_contains "evidence pack bounded query (nested change window)" "$evidence_pack_situation_bounded" '"sync_runs_limit_applied":10'
 assert_contains "evidence pack bounded query (situation_review_guidance present)" "$evidence_pack_situation_bounded" '"situation_review_guidance":{'
+
+# Week 29 evidence export v1 (serialization envelope over existing assemblies; structural only).
+export_situation_summary=$(fetch_compact_json "$APP_API_URL/api/v1/exports/situation-room/summary")
+assert_contains "evidence export situation summary (envelope contract id)" "$export_situation_summary" '"contract_id":"evidence_export_v1"'
+assert_contains "evidence export situation summary (export_kind)" "$export_situation_summary" '"export_kind":"situation_room"'
+assert_contains "evidence export situation summary (explicit_non_claims)" "$export_situation_summary" '"explicit_non_claims":'
+assert_contains "evidence export situation summary (nested evidence pack)" "$export_situation_summary" '"contract_id":"evidence_pack_phase2_v1"'
+export_investigation_summary=$(fetch_compact_json "$APP_API_URL/api/v1/exports/investigation-workspace/summary")
+assert_contains "evidence export investigation summary (envelope contract id)" "$export_investigation_summary" '"contract_id":"evidence_export_v1"'
+assert_contains "evidence export investigation summary (export_kind)" "$export_investigation_summary" '"export_kind":"investigation_workspace"'
+assert_contains "evidence export investigation summary (nested investigation assembly)" "$export_investigation_summary" '"contract_id":"investigation_workspace_phase2_v1"'
+export_investigation_bounded=$(fetch_compact_json "$APP_API_URL/api/v1/exports/investigation-workspace/summary?sync_runs_limit=10")
+assert_contains "evidence export investigation bounded query (subject_ref sync_runs_limit)" "$export_investigation_bounded" '"sync_runs_limit":10'
 
 if [ "$sync_runs_count" -gt 0 ]; then
   assert_not_contains "workflow history response" "$workflow_history_response" '"data_status":"empty"'

@@ -16,6 +16,9 @@ import type {
   TopologyResponse,
   TopologyRiskSummaryResponse,
   FailureImpactViewResponse,
+  TopologyObjectDossierResponse,
+  PolicyDossierResponse,
+  OperatorSearchResponse,
   WorkflowHistoryResponse,
 } from "./contracts";
 import {
@@ -84,6 +87,13 @@ export class ApiClient {
     return this.request<TopologyRiskSummaryResponse>("/api/v1/topology/risk-summary");
   }
 
+  async getTopologyObjectDossier(objectId: string): Promise<TopologyObjectDossierResponse> {
+    const encoded = encodeURIComponent(objectId);
+    return this.request<TopologyObjectDossierResponse>(
+      `/api/v1/topology/objects/${encoded}/dossier`,
+    );
+  }
+
   async getPolicies(query?: DevicesPoliciesReadSideQuery): Promise<PoliciesListResponse> {
     const qs = query ? buildDevicesPoliciesQueryString(query) : "";
     return this.request<PoliciesListResponse>(`/api/v1/policies${qs}`);
@@ -107,6 +117,11 @@ export class ApiClient {
   async getPolicyEvidenceDelta(policyId: string): Promise<PolicyEvidenceDeltaResponse> {
     const encoded = encodeURIComponent(policyId);
     return this.request<PolicyEvidenceDeltaResponse>(`/api/v1/policies/${encoded}/evidence-delta`);
+  }
+
+  async getPolicyDossier(policyId: string): Promise<PolicyDossierResponse> {
+    const encoded = encodeURIComponent(policyId);
+    return this.request<PolicyDossierResponse>(`/api/v1/policies/${encoded}/dossier`);
   }
 
   async getWorkflowHistory(query?: WorkflowHistoryReadSideQuery): Promise<WorkflowHistoryResponse> {
@@ -144,6 +159,11 @@ export class ApiClient {
     return this.request<SituationPackAssemblyResponse>(
       `/api/v1/evidence-pack/situation?sync_runs_limit=${limit}`,
     );
+  }
+
+  async getOperatorSearch(q: string): Promise<OperatorSearchResponse> {
+    const encoded = encodeURIComponent(q);
+    return this.request<OperatorSearchResponse>(`/api/v1/operator-search?q=${encoded}`);
   }
 
   private async request<T>(path: string): Promise<T> {

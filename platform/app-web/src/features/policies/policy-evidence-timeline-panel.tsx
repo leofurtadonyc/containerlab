@@ -6,6 +6,7 @@ import {
   navigateToInvestigationView,
   readSyncRunsLimitFromSearch,
 } from "../../lib/investigation-navigation";
+import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
 import { scrollToPolicyPathAnalysisCard } from "../../lib/topology-policy-navigation";
 import { usePolicyEvidenceTimelineQuery } from "./api";
 
@@ -171,6 +172,14 @@ export function PolicyEvidenceTimelinePanel({ policyId, emphasize }: PolicyEvide
         {" · "}
         <button type="button" className="inline-action" onClick={() => scrollToPolicyPathAnalysisCard()}>
           Path analysis
+        </button>
+        {" · "}
+        <button
+          type="button"
+          className="inline-action"
+          onClick={() => navigateToPolicyDossierWorkspace(policyId, "evidence_timeline_panel")}
+        >
+          Policy dossier
         </button>
         {hasPathAnalysisAnchor ? (
           <span className="table-note"> — timeline includes a path-analysis anchor above.</span>

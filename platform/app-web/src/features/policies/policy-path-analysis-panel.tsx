@@ -2,6 +2,7 @@ import { ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { ApiClientError } from "../../api/client";
 import type { PathAnalysisViewResponse } from "../../api/contracts";
+import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
 import { buildRowPostureStatusDisplay, formatDateTime, formatLabel } from "../../lib/presentation";
 import { usePolicyPathAnalysisQuery } from "./api";
 
@@ -76,6 +77,16 @@ export function PolicyPathAnalysisPanel({ policyId }: PolicyPathAnalysisPanelPro
           Refreshing path analysis…
         </p>
       ) : null}
+      <p className="table-note">
+        <button
+          type="button"
+          className="inline-action"
+          onClick={() => navigateToPolicyDossierWorkspace(policyId, "path_analysis_panel")}
+        >
+          Open policy dossier
+        </button>
+        <span className="table-note"> — composed briefing for this policy (read-only).</span>
+      </p>
       <p className="footnote">{safety_framing.summary_disclaimer}</p>
       <p className="summary-label">Authority and scope</p>
       <div className="key-value-list">

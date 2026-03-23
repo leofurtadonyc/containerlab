@@ -814,6 +814,7 @@ export function WorkflowsView() {
               <HistoryEvidenceDrilldown targets={workflowHistoryDrilldownTargets(selectedWorkflow)} />
               <HistoryPolicyEvidenceTimelineDrilldown
                 rows={policyEvidenceTimelineRowsFromComparison(selectedWorkflow)}
+                dossierEntryHint="workflow_history_drilldown"
               />
               <div className="key-value-list">
                 <div className="key-value-row">

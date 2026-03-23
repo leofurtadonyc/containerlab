@@ -13,6 +13,7 @@ const {
   useCapabilitiesQuery,
   useRecentChangeSummaryQuery,
   useTopologyRiskSummaryQuery,
+  useUrlSearchParamsKey,
 } = vi.hoisted(() => ({
   usePlatformStatusQuery: vi.fn(),
   useDevicesQuery: vi.fn(),
@@ -21,6 +22,7 @@ const {
   useCapabilitiesQuery: vi.fn(),
   useRecentChangeSummaryQuery: vi.fn(),
   useTopologyRiskSummaryQuery: vi.fn(),
+  useUrlSearchParamsKey: vi.fn(),
 }));
 
 vi.mock("../src/features/platform-health/api", async () => {
@@ -65,6 +67,10 @@ vi.mock("../src/features/overview/api", async (importOriginal) => {
     useRecentChangeSummaryQuery,
   };
 });
+
+vi.mock("../src/lib/use-url-search-params", () => ({
+  useUrlSearchParamsKey,
+}));
 
 function createQueryState<T>(data: T | null, overrides: Partial<{ error: ApiClientError | null; isLoading: boolean; isRefreshing: boolean }> = {}) {
   return {
@@ -497,6 +503,7 @@ function createTopologyRiskSummaryData() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  useUrlSearchParamsKey.mockReturnValue("?view=overview");
   useRecentChangeSummaryQuery.mockReturnValue(createQueryState(createRecentChangeSummaryData()));
   useTopologyRiskSummaryQuery.mockReturnValue(createQueryState(createTopologyRiskSummaryData()));
 });
@@ -516,6 +523,23 @@ describe("overview view", () => {
     expect(html).toContain("bounded inventory classification");
     expect(html).toContain("Topology attention (risk summary v1)");
     expect(html).toContain("Open investigation");
+  });
+
+  it("renders NOC cockpit composition when overview_mode=cockpit", () => {
+    useUrlSearchParamsKey.mockReturnValue("?view=overview&overview_mode=cockpit");
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
+    useDevicesQuery.mockReturnValue(createQueryState(null));
+    useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    const html = renderToStaticMarkup(<OverviewView />);
+
+    expect(html).toContain('data-testid="noc-cockpit-section"');
+    expect(html).toContain("noc_cockpit_v1");
+    expect(html).not.toContain("Routine-use trust cues stay explicit here");
+    expect(html).not.toContain("Declared platform components");
+    expect(html).toContain("Full overview");
   });
 
   it("surfaces bounded situation room and investigation entrypoints above recent change", () => {

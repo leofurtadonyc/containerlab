@@ -3,6 +3,7 @@ import { useCallback } from "react";
 import type {
   FailureImpactViewResponse,
   TopologyLinkRecord,
+  TopologyObjectDossierResponse,
   TopologyObjectRelatedPoliciesResponse,
   TopologyResponse,
   TopologyRiskSummaryResponse,
@@ -49,6 +50,16 @@ export function useTopologyRiskSummaryQuery(enabled = true) {
   const queryFn = useCallback<() => Promise<TopologyRiskSummaryResponse>>(
     () => apiClient.getTopologyRiskSummary(),
     [],
+  );
+
+  return useApiQuery(queryFn, { enabled });
+}
+
+export function useTopologyObjectDossierQuery(objectId: string | null) {
+  const enabled = objectId !== null && objectId.length > 0;
+  const queryFn = useCallback<() => Promise<TopologyObjectDossierResponse>>(
+    () => apiClient.getTopologyObjectDossier(objectId as string),
+    [objectId],
   );
 
   return useApiQuery(queryFn, { enabled });

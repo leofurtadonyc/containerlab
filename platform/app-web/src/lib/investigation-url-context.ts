@@ -18,6 +18,7 @@ export const INVESTIGATION_NAV_SOURCE_IDS = [
   "topology",
   "devices",
   "policies",
+  "global_search",
 ] as const;
 
 export type InvestigationNavSourceId = (typeof INVESTIGATION_NAV_SOURCE_IDS)[number];
@@ -40,6 +41,8 @@ export function labelForInvestigationNavSource(id: InvestigationNavSourceId): st
       return "Devices";
     case "policies":
       return "Policies";
+    case "global_search":
+      return "Global search";
     default: {
       const _exhaustive: never = id;
       return _exhaustive;

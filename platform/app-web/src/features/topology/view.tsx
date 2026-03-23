@@ -31,7 +31,12 @@ import {
   describeEvidenceSource,
   normalizeEvidenceConfidence,
 } from "../../lib/evidence-confidence";
-import { useReplaceUrlSearchParams } from "../../lib/use-url-search-params";
+import {
+  DOSSIER_SOURCE_PARAM,
+  TOPOLOGY_WORKSPACE_PARAM,
+  navigateToTopologyDossier,
+} from "../../lib/topology-dossier-navigation";
+import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { InvestigationSurfaceEntry } from "../investigation/investigation-surface-entry";
 import { usePoliciesQuery } from "../policies/api";
 import {
@@ -45,6 +50,16 @@ import {
 import { TopologyRiskAttentionPanel } from "./topology-risk-attention-panel";
 import { TopologyFailureImpactPanel } from "./topology-failure-impact-panel";
 import { TopologyRelatedPoliciesPanel } from "./topology-related-policies-panel";
+import { TopologyObjectDossierWorkspace } from "./topology-object-dossier-workspace";
+
+function readTopologyWorkspaceFromUrl(): "standard" | "dossier" {
+  if (typeof window === "undefined") {
+    return "standard";
+  }
+  return new URLSearchParams(window.location.search).get(TOPOLOGY_WORKSPACE_PARAM) === "dossier"
+    ? "dossier"
+    : "standard";
+}
 
 function readTopologySelectionFromUrl(): { nodeId: string | null; linkId: string | null } {
   if (typeof window === "undefined") {
@@ -236,6 +251,30 @@ export function TopologyView() {
   const [linkEvidenceFilter, setLinkEvidenceFilter] = useState("all");
   const [linkSortBy, setLinkSortBy] = useState("state_then_id");
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(initialTopologySelection.linkId);
+  const [workspaceMode, setWorkspaceMode] = useState<"standard" | "dossier">(readTopologyWorkspaceFromUrl);
+  const searchKey = useUrlSearchParamsKey();
+
+  useEffect(() => {
+    const sp = new URLSearchParams(searchKey);
+    const next = sp.get(TOPOLOGY_WORKSPACE_PARAM) === "dossier" ? "dossier" : "standard";
+    setWorkspaceMode(next);
+  }, [searchKey]);
+
+  useEffect(() => {
+    const sp = new URLSearchParams(searchKey);
+    const oid = sp.get("topology_object");
+    const kind = sp.get("topology_object_kind");
+    if (!oid || !kind) {
+      return;
+    }
+    if (kind === "node") {
+      setSelectedNodeId(oid);
+      setSelectedLinkId(null);
+    } else if (kind === "link") {
+      setSelectedLinkId(oid);
+      setSelectedNodeId(null);
+    }
+  }, [searchKey]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -246,18 +285,31 @@ export function TopologyView() {
     const kind = sp.get("topology_object_kind");
     const nextOid = selectedNodeId ?? selectedLinkId ?? null;
     const nextKind = selectedNodeId ? "node" : selectedLinkId ? "link" : null;
-    if (nextOid === oid && nextKind === kind) {
-      return;
+
+    let changed = false;
+    if (nextOid !== oid || nextKind !== kind) {
+      if (nextOid && nextKind) {
+        sp.set("topology_object", nextOid);
+        sp.set("topology_object_kind", nextKind);
+      } else {
+        sp.delete("topology_object");
+        sp.delete("topology_object_kind");
+      }
+      changed = true;
     }
-    if (nextOid && nextKind) {
-      sp.set("topology_object", nextOid);
-      sp.set("topology_object_kind", nextKind);
-    } else {
-      sp.delete("topology_object");
-      sp.delete("topology_object_kind");
+    const wsCurrent = sp.get(TOPOLOGY_WORKSPACE_PARAM);
+    if (workspaceMode === "dossier" && wsCurrent !== "dossier") {
+      sp.set(TOPOLOGY_WORKSPACE_PARAM, "dossier");
+      changed = true;
+    } else if (workspaceMode === "standard" && (wsCurrent !== null || sp.get(DOSSIER_SOURCE_PARAM))) {
+      sp.delete(TOPOLOGY_WORKSPACE_PARAM);
+      sp.delete(DOSSIER_SOURCE_PARAM);
+      changed = true;
     }
-    replaceUrlSearchParams(sp);
-  }, [selectedNodeId, selectedLinkId, replaceUrlSearchParams]);
+    if (changed) {
+      replaceUrlSearchParams(sp);
+    }
+  }, [selectedNodeId, selectedLinkId, workspaceMode, replaceUrlSearchParams]);
   const topology = data?.topology;
   const nodes = topology?.nodes ?? [];
   const links = topology?.links ?? [];
@@ -403,6 +455,9 @@ export function TopologyView() {
   }, [filteredLinks, linkSortBy]);
   const selectedLink =
     sortedLinks.find((link) => link.link_id === selectedLinkId) ?? sortedLinks[0] ?? null;
+  const dossierObjectId = selectedNodeId ?? selectedLinkId;
+  const dossierObjectKind =
+    selectedNodeId !== null ? "node" : selectedLinkId !== null ? "link" : null;
   const selectedLinkStateDisplay = selectedLink
     ? buildRowPostureStatusDisplay(
         selectedLink.current_posture,
@@ -1370,6 +1425,38 @@ export function TopologyView() {
         }}
       />
 
+      <div className="page-header topology-workspace-switch">
+        <div>
+          <p className="eyebrow">Topology object workspace</p>
+          <h3 className="topology-workspace-switch__title">Standard detail panels vs dossier briefing</h3>
+          <p className="meta-copy">
+            Week 28 panels stay available in <strong>Standard</strong> view. <strong>Dossier workspace</strong> loads one
+            composed <code>topology_object_dossier_v1</code> response—interpretation support only; not a replacement
+            for path-analysis or policy detail.
+          </p>
+        </div>
+        <div className="topology-workspace-switch__toggle" role="group" aria-label="Topology object workspace mode">
+          <button
+            type="button"
+            className={workspaceMode === "standard" ? "nav-item active" : "nav-item"}
+            onClick={() => setWorkspaceMode("standard")}
+          >
+            Standard panels
+          </button>
+          <button
+            type="button"
+            className={workspaceMode === "dossier" ? "nav-item active" : "nav-item"}
+            onClick={() => setWorkspaceMode("dossier")}
+          >
+            Dossier workspace
+          </button>
+        </div>
+      </div>
+
+      {workspaceMode === "dossier" ? (
+        <TopologyObjectDossierWorkspace objectId={dossierObjectId} objectKind={dossierObjectKind} />
+      ) : null}
+
       <div className="toolbar">
         <label className="field-group">
           <span>Search nodes</span>
@@ -1440,6 +1527,7 @@ export function TopologyView() {
                   <th>Management</th>
                   <th>Source</th>
                   <th>Device ID</th>
+                  <th>Dossier</th>
                 </tr>
               </thead>
               <tbody>
@@ -1474,13 +1562,23 @@ export function TopologyView() {
                       <td>{node.attributes.management_address ?? "Unknown"}</td>
                       <td>{node.source}</td>
                       <td>{node.device_id ?? "Not linked"}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="nav-drilldown-button"
+                          onClick={() => navigateToTopologyDossier(node.node_id, "node", "topology_table")}
+                        >
+                          Open dossier
+                        </button>
+                        <div className="table-note">Composed briefing for this node.</div>
+                      </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-          {selectedNode ? (
+          {selectedNode && workspaceMode === "standard" ? (
             <div className="content-grid">
               <article className="detail-card">
                 <h3>Selected Node Detail</h3>
@@ -1633,6 +1731,7 @@ export function TopologyView() {
                   <th>Knowledge</th>
                   <th>Evidence</th>
                   <th>Source</th>
+                  <th>Dossier</th>
                 </tr>
               </thead>
               <tbody>
@@ -1680,13 +1779,23 @@ export function TopologyView() {
                         </div>
                       </td>
                       <td>{link.source}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="nav-drilldown-button"
+                          onClick={() => navigateToTopologyDossier(link.link_id, "link", "topology_table")}
+                        >
+                          Open dossier
+                        </button>
+                        <div className="table-note">Composed briefing for this link.</div>
+                      </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-          {selectedLink ? (
+          {selectedLink && workspaceMode === "standard" ? (
             <div className="content-grid">
               <article className="detail-card">
                 <h3>Selected Link Detail</h3>

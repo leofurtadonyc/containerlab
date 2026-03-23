@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { ChangeEvidenceDomain, InvestigationContextAssemblyResponse } from "../../api/contracts";
+import { EvidenceExportActions } from "../../components/evidence-export-actions";
 import { StatusPill } from "../../components/status-pill";
 import {
   CHANGE_INTELLIGENCE_DOMAIN_LABELS,
@@ -85,6 +86,10 @@ export function InvestigationWorkspaceProduct({
           </p>
         </div>
         <div className="investigation-workspace-hero__actions">
+          <EvidenceExportActions
+            variant="investigation"
+            target={{ kind: "investigation_workspace", syncRunsLimit }}
+          />
           <button type="button" className="inline-action" onClick={() => navigateToEvidenceView("overview")}>
             Back to Overview
           </button>
