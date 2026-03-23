@@ -163,4 +163,5 @@ Stable keys (illustrative; align with schema literals when added):
 - [`path-analysis-contract.md`](./path-analysis-contract.md)
 - [`investigation-workspace-contract.md`](./investigation-workspace-contract.md)
 - [`post-week-27-bounded-phase2-recommendation.md`](./post-week-27-bounded-phase2-recommendation.md)
+- [`post-week-28-bounded-phase2-recommendation.md`](./post-week-28-bounded-phase2-recommendation.md)
 - [`agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md)

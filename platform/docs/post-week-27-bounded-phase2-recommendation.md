@@ -25,7 +25,7 @@ It does **not** authorize:
 
 ## Relationship to prior guidance
 
-Week **21** posture remains in [`post-week-21-bounded-phase2-recommendation.md`](./post-week-21-bounded-phase2-recommendation.md). Week **22**–**26** post notes remain in [`post-week-22-bounded-phase2-recommendation.md`](./post-week-22-bounded-phase2-recommendation.md) through [`post-week-26-bounded-phase2-recommendation.md`](./post-week-26-bounded-phase2-recommendation.md). Week **27** **adds** explicit closure of the bounded **path / naming-pivot / degraded-policy v1 / investigation URL context / verifier** workstream; it does **not** replace ADR-0001, topology or policy truth-depth reviews, or weeks **22–26** closures.
+Week **21** posture remains in [`post-week-21-bounded-phase2-recommendation.md`](./post-week-21-bounded-phase2-recommendation.md). Week **22**–**26** post notes remain in [`post-week-22-bounded-phase2-recommendation.md`](./post-week-22-bounded-phase2-recommendation.md) through [`post-week-26-bounded-phase2-recommendation.md`](./post-week-26-bounded-phase2-recommendation.md). Week **27** **adds** explicit closure of the bounded **path / naming-pivot / degraded-policy v1 / investigation URL context / verifier** workstream; it does **not** replace ADR-0001, topology or policy truth-depth reviews, or weeks **22–26** closures. Week **28** bounded **failure-impact / topology risk summary / policy evidence timeline+delta / operator-workspace / investigation shell hints / verifier** closure is recorded in [`post-week-28-bounded-phase2-recommendation.md`](./post-week-28-bounded-phase2-recommendation.md).
 
 ## What week 27 actually closed
 
@@ -92,3 +92,4 @@ If **no** new evidence appears, the default next step is **not** a new feature s
 | Topology: closed vs deferred | [`topology-truth-depth-review.md`](./topology-truth-depth-review.md) |
 | Policy: proven vs deferred | [`policy-truth-depth-review.md`](./policy-truth-depth-review.md) |
 | Roadmap | [`roadmap.md`](./roadmap.md) |
+| Post–week 28 posture (failure-impact / risk summary / policy evidence / operator workspace closure) | [`post-week-28-bounded-phase2-recommendation.md`](./post-week-28-bounded-phase2-recommendation.md) |
