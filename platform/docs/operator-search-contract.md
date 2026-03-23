@@ -8,7 +8,7 @@ This document is the **product-owned bounded contract** for a future **global op
 
 Stable **`contract_id`:** **`operator_search_pivot_v1`**
 
-**Implementation posture (v1):** May ship as **WebUI-side** assembly over existing **`GET /api/v1/...`** list payloads (and optional in-memory cache), or as a thin **read-only** backend aggregator later—this file defines **behavior and honesty**, not a mandatory API shape. Any future **`GET /api/v1/operator-search`** would **mirror** the same vocabulary and non-claims.
+**Implementation posture (v1):** **`GET /api/v1/operator-search?q=...`** (**`OperatorSearchResponse`**, **`schemas/operator_search.py`**, **`services/operator_search.py`**, route on **`routers/operator_search.py`**) aggregates the same normalized list fields as **`GET /api/v1/devices`**, **`GET /api/v1/policies`**, **`GET /api/v1/topology`**, and **`GET /api/v1/capabilities`**—grouped, capped per family, with **`ranking_basis`**, **`match_reason`**, and recommended **`pivot`** targets. A **WebUI-side** client may still layer additional UX; this file remains the honesty contract for both paths.
 
 ---
 
