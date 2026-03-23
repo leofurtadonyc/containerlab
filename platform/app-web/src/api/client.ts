@@ -20,6 +20,7 @@ import type {
   PolicyDossierResponse,
   OperatorSearchResponse,
   WorkflowHistoryResponse,
+  CrossDomainDeltaDigestResponse,
 } from "./contracts";
 import {
   buildAuditHistoryQueryString,
@@ -142,6 +143,13 @@ export class ApiClient {
     const limit = Math.min(100, Math.max(1, syncRunsLimit));
     return this.request<RecentChangeSummaryResponse>(
       `/api/v1/change-intelligence/recent-summary?sync_runs_limit=${limit}`,
+    );
+  }
+
+  async getDeltaDigest(syncRunsLimit = 20): Promise<CrossDomainDeltaDigestResponse> {
+    const limit = Math.min(100, Math.max(1, syncRunsLimit));
+    return this.request<CrossDomainDeltaDigestResponse>(
+      `/api/v1/delta-digest?sync_runs_limit=${limit}`,
     );
   }
 

@@ -14,6 +14,7 @@ export const RISK_SUMMARY_ENTRY_PARAM = "risk_summary_entry";
 /** Shell views that may set `inv_from` when opening the investigation workspace. */
 export const INVESTIGATION_NAV_SOURCE_IDS = [
   "overview",
+  "delta-digest",
   "situation-room",
   "topology",
   "devices",
@@ -33,6 +34,8 @@ export function labelForInvestigationNavSource(id: InvestigationNavSourceId): st
   switch (id) {
     case "overview":
       return "Overview";
+    case "delta-digest":
+      return "Delta digest";
     case "situation-room":
       return "Situation room";
     case "topology":

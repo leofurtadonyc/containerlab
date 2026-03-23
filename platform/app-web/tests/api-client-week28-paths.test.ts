@@ -336,6 +336,61 @@ describe("ApiClient week 28 bounded paths", () => {
     expect(url).toContain("/api/v1/policies/PE1%3Astatic%3A1%3A100/dossier");
   });
 
+  it("getDeltaDigest uses the delta-digest route and bounds sync_runs_limit", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          metadata: {
+            service: "app-api",
+            version: "0.1.0",
+            phase: "phase_2_read_only_foundation",
+            generated_at: "2025-01-01T00:00:00Z",
+          },
+          contract_id: "cross_domain_delta_digest_v1",
+          safety: {
+            contract_id: "cross_domain_delta_digest_v1",
+            authority_posture: "interpretation_support_only",
+            explicit_non_claims: [],
+            phase: "phase_2_read_only_foundation",
+            summary_disclaimer: "x",
+          },
+          sync_runs_limit_applied: 100,
+          completeness_posture: "best_effort_visible_signals_only",
+          recent_change_summary: {
+            metadata: {
+              service: "app-api",
+              version: "0.1.0",
+              phase: "phase_2_read_only_foundation",
+              generated_at: "2025-01-01T00:00:00Z",
+            },
+            safety: {
+              contract_id: "change_intelligence_phase2_v1",
+              authority_posture: "evidence_aggregated_non_authoritative",
+              explicit_non_claims: [],
+              phase: "phase_2_read_only_foundation",
+              summary_disclaimer: "y",
+            },
+            window_semantics: "backend_defined_bounded_lookback",
+            completeness_posture: "bounded_partial",
+            sync_runs_limit_applied: 100,
+            readiness_snapshots_considered: 0,
+            domains: [],
+            aggregation_notes: [],
+          },
+          source_provenance: [],
+          sections: [],
+          digest_framing_notes: [],
+        }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getDeltaDigest(500);
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toBe("http://api/api/v1/delta-digest?sync_runs_limit=100");
+  });
+
   it("getOperatorSearch encodes the query parameter", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

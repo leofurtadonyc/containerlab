@@ -11,6 +11,7 @@ import {
 import { PLATFORM_NAV_VIEW_IDS } from "./nav-views";
 import { AuditView } from "./features/audit/view";
 import { CapabilitiesView } from "./features/capabilities/view";
+import { DeltaDigestView } from "./features/delta-digest/view";
 import { DevicesView } from "./features/devices/view";
 import { InvestigationView } from "./features/investigation/view";
 import { OverviewView } from "./features/overview/view";
@@ -24,6 +25,7 @@ import { GlobalOperatorSearch } from "./features/global-search/global-operator-s
 
 const NAV_ITEMS = [
   { id: "overview", label: "Overview" },
+  { id: "delta-digest", label: "Delta digest" },
   { id: "situation-room", label: "Situation room" },
   { id: "investigation", label: "Investigation" },
   { id: "devices", label: "Devices" },
@@ -43,6 +45,8 @@ function readInitialView(): string {
 
 function renderView(viewId: string) {
   switch (viewId) {
+    case "delta-digest":
+      return <DeltaDigestView />;
     case "situation-room":
       return <SituationRoomView />;
     case "investigation":

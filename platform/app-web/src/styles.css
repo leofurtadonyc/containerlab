@@ -1940,3 +1940,192 @@ ol.notes-list.evidence-timeline-ordered {
   font-size: 0.75rem;
   color: #7a8fb3;
 }
+
+/* Delta digest workspace (cross_domain_delta_digest_v1) */
+.delta-digest-route {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.delta-digest-route-sparse-callout {
+  margin-bottom: 16px;
+}
+
+.delta-digest-product {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.delta-digest-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #24324a;
+}
+
+.delta-digest-hero__title {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  color: #e8f1ff;
+}
+
+.delta-digest-hero__lede {
+  margin: 0;
+  max-width: 52rem;
+}
+
+.delta-digest-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.delta-digest-toolbar-reload {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #3d5a8a;
+  background: #152238;
+  color: #cfe4ff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.delta-digest-toolbar-reload:hover {
+  border-color: #5a7eb8;
+  background: #1a2d4a;
+}
+
+.delta-digest-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  font-size: 0.82rem;
+  color: #9aa8c8;
+}
+
+.delta-digest-sparse-banner {
+  margin: 0;
+}
+
+.delta-digest-pivots__hint {
+  margin-top: 0;
+}
+
+.delta-digest-pivots__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.delta-digest-safety__primary {
+  margin-top: 0;
+}
+
+.delta-digest-framing-notes {
+  margin: 8px 0 0;
+  padding-left: 1.2rem;
+  color: #b8c5df;
+  font-size: 0.88rem;
+}
+
+.delta-digest-nonclaims ul {
+  margin: 6px 0 0;
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+  color: #9aa8c8;
+}
+
+.delta-digest-embedded-rc {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #2a3f63;
+  background: #0c1420;
+}
+
+.delta-digest-embedded-rc summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #cfe4ff;
+}
+
+.delta-digest-embedded-rc .recent-change-card {
+  margin-top: 12px;
+}
+
+.delta-digest-section-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.delta-digest-section-card {
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid #2a3f63;
+  background: #0f1724;
+}
+
+.delta-digest-section-card__head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px 14px;
+  align-items: start;
+}
+
+.delta-digest-section-card__title {
+  margin: 0;
+  font-size: 1.02rem;
+  color: #e8f1ff;
+}
+
+.delta-digest-detail-notes {
+  margin: 10px 0 0;
+  padding-left: 1.2rem;
+  font-size: 0.86rem;
+  color: #b8c5df;
+  line-height: 1.45;
+}
+
+.delta-digest-caveats {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #2f415e;
+}
+
+.delta-digest-caveats__label {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8a9bb8;
+}
+
+.delta-digest-caveats ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.84rem;
+  color: #d4c4a8;
+}
+
+.delta-digest-provenance-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.delta-digest-prov-time {
+  font-size: 0.82rem;
+  color: #7a8fb3;
+}

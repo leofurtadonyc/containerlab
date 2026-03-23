@@ -1479,6 +1479,51 @@ export interface RecentChangeSummaryResponse {
   aggregation_notes: string[];
 }
 
+export type DeltaDigestSectionKey =
+  | "recent_sync_anchor"
+  | "device_inventory_delta"
+  | "topology_coverage_posture"
+  | "policy_delta_degraded"
+  | "change_intelligence_pointer"
+  | "recommended_pivots"
+  | "caveats_missing_evidence";
+
+export interface DeltaDigestSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only";
+  explicit_non_claims: string[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface DeltaDigestSourceProvenance {
+  source: string;
+  note: string;
+  generated_at?: string | null;
+  data_status_or_serving_hint?: string | null;
+}
+
+export interface DeltaDigestSection {
+  section_key: DeltaDigestSectionKey;
+  headline: string;
+  evidence_status: "present" | "partial" | "absent" | "unavailable";
+  detail_notes: string[];
+  caveats: string[];
+}
+
+/** `GET /api/v1/delta-digest` — cross_domain_delta_digest_v1 assembly. */
+export interface CrossDomainDeltaDigestResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety: DeltaDigestSafetyFraming;
+  sync_runs_limit_applied: number;
+  completeness_posture: string;
+  recent_change_summary: RecentChangeSummaryResponse;
+  source_provenance: DeltaDigestSourceProvenance[];
+  sections: DeltaDigestSection[];
+  digest_framing_notes: string[];
+}
+
 /** Backend-owned investigation workspace assembly (`GET /api/v1/investigation-workspace/context`). */
 export interface InvestigationWorkspaceSafetyFraming {
   contract_id: string;
