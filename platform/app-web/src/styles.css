@@ -991,6 +991,60 @@ ol.notes-list.evidence-timeline-ordered {
   margin: 0;
 }
 
+.delta-digest-entry-card {
+  border: 1px solid #3d5a4a;
+  background: linear-gradient(145deg, #101a16 0%, #0f1724 50%, #0e1820 100%);
+  margin-bottom: 18px;
+}
+
+.delta-digest-entry-card__intro h3 {
+  margin-top: 0;
+}
+
+.delta-digest-entry-card__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.delta-digest-entry-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 6px;
+  border: 1px solid #5a9a7a;
+  background: #143a2a;
+  color: #e8fff4;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.delta-digest-entry-primary:hover {
+  background: #1a4d38;
+  border-color: #6ec49a;
+}
+
+.delta-digest-entry-card__hint {
+  max-width: 52rem;
+  margin: 0;
+}
+
+.delta-digest-entry-card__summary {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #2a3f4c;
+  background: rgba(15, 23, 36, 0.85);
+}
+
+.delta-digest-entry-card__state--error {
+  margin-top: 8px;
+}
+
 .operator-workspace-entry {
   border: 1px solid #2a3f5c;
   background: linear-gradient(160deg, #101820 0%, #0c1219 50%, #0e1620 100%);

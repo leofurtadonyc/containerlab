@@ -9,6 +9,7 @@ import { navigateToInvestigationView } from "../../lib/investigation-navigation"
 import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToSituationRoomView } from "../../lib/situation-room-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
+import { navigateOverviewLayoutMode } from "../../lib/overview-mode";
 import { formatDateTime } from "../../lib/presentation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 
@@ -48,6 +49,9 @@ export function DeltaDigestProduct({ data, syncRunsLimit, onReload }: DeltaDiges
         <div className="delta-digest-hero__actions">
           <button type="button" className="inline-action" onClick={() => navigateToEvidenceView("overview")}>
             Back to Overview
+          </button>
+          <button type="button" className="inline-action" onClick={() => navigateOverviewLayoutMode("cockpit")}>
+            NOC cockpit (Overview)
           </button>
           <button type="button" className="delta-digest-toolbar-reload" onClick={() => void onReload()}>
             Reload digest

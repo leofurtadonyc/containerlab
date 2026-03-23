@@ -185,6 +185,7 @@ wait_for_http_ok "app-web API proxy health" "$APP_WEB_URL/api/v1/health"
 app_web_index_html=$(curl -fsS "$APP_WEB_URL/")
 app_web_noc_cockpit_marker=0
 app_web_overview_mode_marker=0
+app_web_delta_digest_marker=0
 for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n' | grep -E '^/assets/.*\.js$' || true); do
   app_web_chunk=$(curl -fsS "$APP_WEB_URL$asset_path")
   if printf '%s' "$app_web_chunk" | grep -qF 'noc_cockpit_v1'; then
@@ -193,9 +194,12 @@ for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n
   if printf '%s' "$app_web_chunk" | grep -qF 'overview_mode'; then
     app_web_overview_mode_marker=1
   fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'cross_domain_delta_digest_v1'; then
+    app_web_delta_digest_marker=1
+  fi
 done
-if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ]; then
-  echo "app-web: expected noc_cockpit_v1 and overview_mode substrings in shipped /assets/*.js (NOC cockpit v1 UI)" >&2
+if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ]; then
+  echo "app-web: expected noc_cockpit_v1, overview_mode, and cross_domain_delta_digest_v1 substrings in shipped /assets/*.js (NOC cockpit + delta digest UI)" >&2
   exit 1
 fi
 

@@ -181,5 +181,6 @@ describe("DeltaDigestView", () => {
     expect(html).toContain("Investigation workspace");
     expect(html).toContain("Example policy dossier");
     expect(html).toContain("Example topology dossier");
+    expect(html).toContain("NOC cockpit (Overview)");
   });
 });
