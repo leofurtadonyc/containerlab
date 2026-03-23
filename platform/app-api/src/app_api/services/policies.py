@@ -40,6 +40,7 @@ from app_api.schemas.policies import (
     PolicyRecord,
     PolicyTargetFootprintRecord,
 )
+from app_api.services.degraded_policy_v1 import build_degraded_policy_v1_classification
 from app_api.schemas.read_side_query import (
     READ_SIDE_HISTORY_RECENT_LIMIT_DEFAULT,
     build_read_side_query_echo,
@@ -778,6 +779,10 @@ def build_policies_list_response(
             last_recorded_health_state=policy.health_state,
             source=policy.source,
             notes=policy.notes,
+            degraded_policy_v1=build_degraded_policy_v1_classification(
+                policy=policy,
+                row_current_posture=row_current_posture,
+            ),
         )
         for policy in snapshot.records
     ]

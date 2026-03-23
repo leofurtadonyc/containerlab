@@ -290,6 +290,23 @@ export interface CandidatePathRecord {
   notes: string[];
 }
 
+export type DegradedPolicyV1ReasonCode =
+  | "intent_declared_observed_not_active"
+  | "persisted_row_stale"
+  | "partial_or_unsupported_support_posture"
+  | "health_not_healthy"
+  | "no_active_candidate_path_when_paths_present";
+
+/** Bounded read-side degraded-policy interpretation (`contract_id: degraded_policy_v1`). */
+export interface DegradedPolicyV1Classification {
+  contract_id: "degraded_policy_v1";
+  posture: "ok" | "degraded" | "unknown";
+  reason_codes: DegradedPolicyV1ReasonCode[];
+  confidence: "low" | "medium";
+  summary: string;
+  explicit_non_claims: string[];
+}
+
 export interface PolicyRecord {
   policy_id: string;
   policy_name: string;
@@ -314,6 +331,7 @@ export interface PolicyRecord {
   last_recorded_health_state: "healthy" | "degraded" | "down" | "unknown";
   source: string;
   notes: string[];
+  degraded_policy_v1: DegradedPolicyV1Classification;
 }
 
 /** Bounded read-only path analysis (`GET /api/v1/policies/{policy_id}/path-analysis`). */

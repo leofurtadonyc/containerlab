@@ -2146,6 +2146,46 @@ export function PoliciesView() {
                     <p className="footnote">{describeSupportState(selectedPolicy.support_state)}</p>
                   </article>
                   <article>
+                    <p className="summary-label">Degraded policy (v1)</p>
+                    <p className="footnote">{selectedPolicy.degraded_policy_v1.summary}</p>
+                    <div className="key-value-list">
+                      <div className="key-value-row">
+                        <span>Posture</span>
+                        <strong>
+                          <StatusPill value={selectedPolicy.degraded_policy_v1.posture} />
+                        </strong>
+                      </div>
+                      <div className="key-value-row">
+                        <span>Confidence</span>
+                        <strong>
+                          <StatusPill value={selectedPolicy.degraded_policy_v1.confidence} />
+                        </strong>
+                      </div>
+                    </div>
+                    {selectedPolicy.degraded_policy_v1.reason_codes.length > 0 ? (
+                      <>
+                        <p className="summary-label">V1 reason codes</p>
+                        <ul className="notes-list">
+                          {selectedPolicy.degraded_policy_v1.reason_codes.map((code) => (
+                            <li key={code}>{formatLabel(code)}</li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : (
+                      <p className="footnote">No v1 reason codes on this record.</p>
+                    )}
+                    <details className="footnote">
+                      <summary>
+                        Explicit non-claims ({selectedPolicy.degraded_policy_v1.explicit_non_claims.length})
+                      </summary>
+                      <ul className="notes-list">
+                        {selectedPolicy.degraded_policy_v1.explicit_non_claims.map((claim) => (
+                          <li key={claim}>{formatLabel(claim)}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  </article>
+                  <article>
                     <p className="summary-label">Identity And Scope</p>
                     <div className="key-value-list">
                       <div className="key-value-row">

@@ -63,6 +63,20 @@ function createSamplePolicyItem() {
     last_recorded_health_state: "healthy" as const,
     source: "gnmi_collector",
     notes: [] as [],
+    degraded_policy_v1: {
+      contract_id: "degraded_policy_v1" as const,
+      posture: "ok" as const,
+      reason_codes: [] as [],
+      confidence: "medium" as const,
+      summary:
+        "Degraded-policy v1: no v1 reason codes triggered on this record given current normalized inventory fields.",
+      explicit_non_claims: [
+        "not_sla_or_availability_guarantee",
+        "not_dataplane_or_te_resolution_verdict",
+        "not_validation_or_safe_to_change_authority",
+        "not_replacement_for_controller_computed_policy_truth",
+      ],
+    },
   };
 }
 
@@ -617,5 +631,7 @@ describe("policies view", () => {
     expect(html).toContain("Signals align for this bounded slice.");
     expect(html).toContain("Topology impact");
     expect(html).toContain("Read-only naming alignment");
+    expect(html).toContain("Degraded policy (v1)");
+    expect(html).toContain("Explicit non-claims (4)");
   });
 });

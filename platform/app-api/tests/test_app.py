@@ -3379,6 +3379,19 @@ def test_policies_endpoint_returns_live_policy_inventory(monkeypatch) -> None:
     assert payload["items"][0]["last_recorded_health_state"] == "healthy"
     assert payload["items"][0]["candidate_paths"][0]["current_posture"] == "current"
     assert payload["items"][0]["candidate_paths"][0]["last_recorded_path_state"] == "active"
+    assert payload["items"][0]["degraded_policy_v1"]["contract_id"] == "degraded_policy_v1"
+    assert payload["items"][0]["degraded_policy_v1"]["posture"] == "ok"
+    assert payload["items"][0]["degraded_policy_v1"]["reason_codes"] == []
+    assert "not_sla_or_availability_guarantee" in payload["items"][0]["degraded_policy_v1"][
+        "explicit_non_claims"
+    ]
+    assert payload["items"][1]["degraded_policy_v1"]["posture"] == "degraded"
+    assert set(payload["items"][1]["degraded_policy_v1"]["reason_codes"]) == {
+        "intent_declared_observed_not_active",
+        "partial_or_unsupported_support_posture",
+        "health_not_healthy",
+        "no_active_candidate_path_when_paths_present",
+    }
     assert datetime.fromisoformat(payload["generated_at"]) is not None
     assert payload["read_side_query"]["limit_requested"] is None
     assert payload["read_side_query"]["items_total"] == 2

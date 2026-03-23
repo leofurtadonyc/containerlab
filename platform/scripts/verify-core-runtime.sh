@@ -320,6 +320,7 @@ assert_contains "policies response (read_side query ergonomics)" "$policies_resp
 assert_contains "policies response (read_side query ergonomics)" "$policies_response" '"items_returned":'
 assert_contains "policies response (read_side query ergonomics)" "$policies_response" '"history_recent_limit_effective":'
 assert_contains "policies response (read_side query ergonomics)" "$policies_response" '"history_recent_snapshots_returned":'
+assert_contains "policies response (degraded_policy_v1)" "$policies_response" '"degraded_policy_v1"'
 
 # Cross-slice list/history metadata and evidence shape (contract posture, not business truth).
 assert_contains "devices response (API metadata)" "$devices_response" '"service":"app-api"'
