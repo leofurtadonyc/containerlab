@@ -17,6 +17,7 @@ import type {
   TopologyRiskSummaryResponse,
   FailureImpactViewResponse,
   TopologyObjectDossierResponse,
+  PolicyDossierResponse,
   WorkflowHistoryResponse,
 } from "./contracts";
 import {
@@ -115,6 +116,11 @@ export class ApiClient {
   async getPolicyEvidenceDelta(policyId: string): Promise<PolicyEvidenceDeltaResponse> {
     const encoded = encodeURIComponent(policyId);
     return this.request<PolicyEvidenceDeltaResponse>(`/api/v1/policies/${encoded}/evidence-delta`);
+  }
+
+  async getPolicyDossier(policyId: string): Promise<PolicyDossierResponse> {
+    const encoded = encodeURIComponent(policyId);
+    return this.request<PolicyDossierResponse>(`/api/v1/policies/${encoded}/dossier`);
   }
 
   async getWorkflowHistory(query?: WorkflowHistoryReadSideQuery): Promise<WorkflowHistoryResponse> {

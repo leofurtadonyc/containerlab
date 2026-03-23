@@ -663,6 +663,40 @@ export interface TopologyObjectDossierResponse {
   merged_caveats: string[];
 }
 
+export interface PolicyDossierTopologyObjectHint {
+  topology_object_kind: TopologyObjectKind;
+  topology_object_id: string;
+}
+
+export interface PolicyDossierNavigationTargets {
+  investigation_shell_params: Record<string, string>;
+  situation_room_shell_params: Record<string, string>;
+  policies_view_params: Record<string, string>;
+  topology_object_hints: PolicyDossierTopologyObjectHint[];
+}
+
+export interface PolicyDossierFreshnessBlock {
+  dossier_assembled_at: string;
+  policy_inventory_observed_at: string | null;
+  topology_snapshot_observed_at: string | null;
+  policy_inventory_empty_reason: string | null;
+  policy_serving_mode_echo: string;
+}
+
+/** `GET /api/v1/policies/{policy_id}/dossier` (composed read-only briefing; not dataplane or workflow truth). */
+export interface PolicyDossierResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "policy_dossier_v1";
+  policy_record: PolicyRecord;
+  path_analysis: PathAnalysisViewResponse;
+  topology_impact: PolicyTopologyImpactResponse;
+  evidence_timeline: PolicyEvidenceTimelineResponse;
+  evidence_delta: PolicyEvidenceDeltaResponse;
+  navigation_targets: PolicyDossierNavigationTargets;
+  freshness: PolicyDossierFreshnessBlock;
+  merged_caveats: string[];
+}
+
 /** `GET /api/v1/policies/{policy_id}/topology-impact` (inverse pivot; naming alignment only). */
 export interface PolicyTopologyImpactRow {
   topology_object_kind: TopologyObjectKind;

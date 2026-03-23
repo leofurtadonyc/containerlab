@@ -138,6 +138,35 @@ section p {
   margin-top: 0;
 }
 
+.policy-dossier-workspace {
+  margin-bottom: 24px;
+  padding: 24px;
+  border: 1px solid #5a3d6e;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(58, 35, 90, 0.35) 0%, rgba(20, 29, 44, 0.95) 65%);
+}
+
+.policy-dossier-workspace__header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2d3e5c;
+}
+
+.policy-dossier-workspace__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.policy-dossier-workspace__section {
+  margin-top: 16px;
+}
+
+.policy-dossier-workspace__section h4 {
+  margin-top: 0;
+}
+
 .eyebrow {
   margin: 0 0 8px;
   color: #8fb3ff;

@@ -3,6 +3,7 @@ import { useCallback, useMemo } from "react";
 import type {
   PathAnalysisViewResponse,
   PoliciesListResponse,
+  PolicyDossierResponse,
   PolicyEvidenceDeltaResponse,
   PolicyEvidenceTimelineResponse,
   PolicyTopologyImpactResponse,
@@ -58,6 +59,15 @@ export function usePolicyEvidenceDeltaQuery(policyId: string | null) {
   const enabled = policyId !== null && policyId.length > 0;
   const queryFn = useCallback<() => Promise<PolicyEvidenceDeltaResponse>>(
     () => apiClient.getPolicyEvidenceDelta(policyId as string),
+    [policyId],
+  );
+  return useApiQuery(queryFn, { enabled });
+}
+
+export function usePolicyDossierQuery(policyId: string | null) {
+  const enabled = policyId !== null && policyId.length > 0;
+  const queryFn = useCallback<() => Promise<PolicyDossierResponse>>(
+    () => apiClient.getPolicyDossier(policyId as string),
     [policyId],
   );
   return useApiQuery(queryFn, { enabled });

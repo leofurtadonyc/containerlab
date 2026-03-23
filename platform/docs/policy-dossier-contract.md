@@ -8,7 +8,9 @@ This document is the **backend-owned bounded contract** for a future **read-only
 
 Stable **`contract_id`:** **`policy_dossier_v1`**
 
-**Implemented read API:** **`GET /api/v1/policies/{policy_id}/dossier`** returns **`PolicyDossierResponse`** (**`schemas/policy_dossier.py`**, **`services/policy_dossier.py`**, route on **`routers/policies.py`**), composing nested **`path_analysis_phase2_v1`**, **`policy_topology_impact`** rows, **`policy_evidence_timeline_v1`**, **`policy_evidence_delta_v1`**, plus **`policy_record`** (inventory row + **`degraded_policy_v1`**), navigation shell hints, merged freshness/caveats, and **404** when **`policy_id`** is absent from the served inventory slice. A **WebUI-side** composition may still mirror the same section contract without calling this endpoint.
+**Implemented read API:** **`GET /api/v1/policies/{policy_id}/dossier`** returns **`PolicyDossierResponse`** (**`schemas/policy_dossier.py`**, **`services/policy_dossier.py`**, route on **`routers/policies.py`**), composing nested **`path_analysis_phase2_v1`**, **`policy_topology_impact`** rows, **`policy_evidence_timeline_v1`**, **`policy_evidence_delta_v1`**, plus **`policy_record`** (inventory row + **`degraded_policy_v1`**), navigation shell hints, merged freshness/caveats, and **404** when **`policy_id`** is absent from the served inventory slice.
+
+**WebUI:** **Policies** exposes **Policy dossier** workspace toggled against **Standard panels** via **`policy_workspace=dossier`** (**`policy-dossier-workspace.tsx`**); table **Open dossier** sets **`policy_id`** + dossier mode; loads the same composed response through **`ApiClient.getPolicyDossier`** / **`usePolicyDossierQuery`**; deep-link buttons return to full path-analysis, timeline, and delta panels; loading/error/empty/partial states preserved.
 
 ---
 
