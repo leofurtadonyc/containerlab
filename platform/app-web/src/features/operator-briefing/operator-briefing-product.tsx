@@ -191,29 +191,67 @@ export function OperatorBriefingProduct({ data, syncRunsLimit, onReload }: Opera
       </section>
 
       <section className="operator-briefing-exports" aria-labelledby="ob-export-heading">
-        <h3 id="ob-export-heading">Export entry points</h3>
-        <p className="table-note">
-          Per-surface bounded snapshots (same assemblies as live views)—no unified “export entire briefing” bundle in
-          v1.
+        <h3 id="ob-export-heading">Exports</h3>
+        <p className="table-note operator-briefing-exports__intro">
+          <strong>This page is live briefing</strong> (<code>operator_briefing_workspace_v1</code>) — it can change on
+          reload. <strong>Downloads</strong> are point-in-time files. <strong>Evidence replay</strong> is for reviewing a
+          frozen <code>evidence_export_v1</code> artifact you already saved — not a substitute for this live workspace.
         </p>
-        <div className="operator-briefing-exports__row">
-          <EvidenceExportActions variant="situation" target={{ kind: "situation_room", syncRunsLimit }} />
+
+        <div className="operator-briefing-exports__bundle" aria-labelledby="ob-export-bundle-heading">
+          <h4 id="ob-export-bundle-heading">Briefing archive (bundle)</h4>
+          <p className="table-note">
+            One file aligned to the briefing scope echo below (same <code>sync_runs_limit</code> window and optional
+            dossier context). Optional dossier slots may be omitted in the file if the subject is unavailable — the bundle
+            stays honest.
+          </p>
           <EvidenceExportActions
-            variant="investigation"
-            target={{ kind: "investigation_workspace", syncRunsLimit }}
+            variant="briefing_bundle"
+            target={{
+              kind: "operator_briefing_bundle",
+              syncRunsLimit: ctx.sync_runs_limit_requested,
+              policyId: ctx.policy_id,
+              topologyObject: ctx.topology_object,
+              topologyObjectKind: ctx.topology_object_kind,
+              invFrom: ctx.inv_from_client_hint,
+              globalSearchQ: ctx.global_search_q_client_hint,
+            }}
           />
-          {pol?.policy_record ? (
+          <p className="table-note operator-briefing-exports__replay-link">
+            <button type="button" className="inline-action" onClick={() => navigateToEvidenceView("evidence-replay")}>
+              Open Evidence replay
+            </button>
+            <span> — load a saved single export or extract a member JSON from a bundle.</span>
+          </p>
+        </div>
+
+        <div className="operator-briefing-exports__members" aria-labelledby="ob-export-members-heading">
+          <h4 id="ob-export-members-heading">Per-surface exports (single evidence_export_v1 each)</h4>
+          <p className="table-note">
+            Same bounded assemblies as the live Situation / Investigation / dossier routes — one envelope per download.
+          </p>
+          <div className="operator-briefing-exports__row">
             <EvidenceExportActions
-              variant="dossier"
-              target={{ kind: "policy_dossier", policyId: pol.policy_record.policy_id }}
+              variant="situation"
+              target={{ kind: "situation_room", syncRunsLimit: ctx.sync_runs_limit_requested }}
             />
-          ) : null}
-          {topo?.object_identity ? (
             <EvidenceExportActions
-              variant="dossier"
-              target={{ kind: "topology_object_dossier", objectId: topo.object_identity.object_id }}
+              variant="investigation"
+              target={{ kind: "investigation_workspace", syncRunsLimit: ctx.sync_runs_limit_requested }}
             />
-          ) : null}
+            {pol?.policy_record ? (
+              <EvidenceExportActions
+                variant="dossier"
+                target={{ kind: "policy_dossier", policyId: pol.policy_record.policy_id }}
+              />
+            ) : null}
+            {topo?.object_identity ? (
+              <EvidenceExportActions
+                variant="dossier"
+                target={{ kind: "topology_object_dossier", objectId: topo.object_identity.object_id }}
+              />
+            ) : null}
+          </div>
         </div>
       </section>
 

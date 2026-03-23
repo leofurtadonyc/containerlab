@@ -63,6 +63,7 @@ def _recommended_pivots(
         f"Live shell: view=delta-digest (sync_runs_limit={bounded}) — cross_domain_delta_digest_v1.",
         f"Live shell: view=investigation (sync_runs_limit={bounded}) — investigation_workspace_phase2_v1.",
         f"Live shell: view=situation-room (sync_runs_limit={bounded}) — evidence_pack situation assembly.",
+        "Exports (briefing_export_bundle_v1): GET /api/v1/exports/operator-briefing",
         "Exports (evidence_export_v1): GET /api/v1/exports/situation-room/summary",
         "Exports (evidence_export_v1): GET /api/v1/exports/investigation-workspace/summary",
     ]

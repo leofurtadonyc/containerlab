@@ -71,5 +71,9 @@ describe("OperatorBriefingView", () => {
     expect(html).toContain("Operator briefing workspace");
     expect(html).toContain("operator_briefing_workspace_v1");
     expect(html).toContain("Live pivots");
+    expect(html).toContain("Briefing archive (bundle)");
+    expect(html).toContain("briefing_export_bundle_v1");
+    expect(html).toContain("Per-surface exports");
+    expect(html).toContain("briefing-bundle-export-actions");
   });
 });

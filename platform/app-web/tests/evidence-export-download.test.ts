@@ -36,4 +36,33 @@ describe("buildEvidenceExportRequestPath", () => {
     );
     expect(inv).toContain("sync_runs_limit=1");
   });
+
+  it("builds operator briefing bundle path with optional query dimensions", () => {
+    const minimal = buildEvidenceExportRequestPath(
+      { kind: "operator_briefing_bundle", syncRunsLimit: 12 },
+      "json",
+    );
+    expect(minimal).toBe("/api/v1/exports/operator-briefing?sync_runs_limit=12&format=json");
+
+    const full = buildEvidenceExportRequestPath(
+      {
+        kind: "operator_briefing_bundle",
+        syncRunsLimit: 5,
+        policyId: "p:a",
+        topologyObject: "PE1",
+        topologyObjectKind: "node",
+        invFrom: "delta-digest",
+        globalSearchQ: "PE",
+      },
+      "markdown",
+    );
+    expect(full).toContain("/api/v1/exports/operator-briefing?");
+    expect(full).toContain("sync_runs_limit=5");
+    expect(full).toContain("format=markdown");
+    expect(full).toContain(`policy_id=${encodeURIComponent("p:a")}`);
+    expect(full).toContain("topology_object=PE1");
+    expect(full).toContain("topology_object_kind=node");
+    expect(full).toContain(`inv_from=${encodeURIComponent("delta-digest")}`);
+    expect(full).toContain(`global_search_q=${encodeURIComponent("PE")}`);
+  });
 });

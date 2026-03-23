@@ -187,6 +187,7 @@ app_web_noc_cockpit_marker=0
 app_web_overview_mode_marker=0
 app_web_delta_digest_marker=0
 app_web_operator_briefing_marker=0
+app_web_briefing_bundle_export_marker=0
 app_web_evidence_replay_marker=0
 for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n' | grep -E '^/assets/.*\.js$' || true); do
   app_web_chunk=$(curl -fsS "$APP_WEB_URL$asset_path")
@@ -202,12 +203,15 @@ for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n
   if printf '%s' "$app_web_chunk" | grep -qF 'operator_briefing_workspace_v1'; then
     app_web_operator_briefing_marker=1
   fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'briefing_export_bundle_v1'; then
+    app_web_briefing_bundle_export_marker=1
+  fi
   if printf '%s' "$app_web_chunk" | grep -qF 'evidence_replay_viewer_v1'; then
     app_web_evidence_replay_marker=1
   fi
 done
-if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ]; then
-  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, and evidence_replay_viewer_v1 substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing + evidence replay UI)" >&2
+if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ]; then
+  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, and evidence_replay_viewer_v1 substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing bundle export + evidence replay UI)" >&2
   exit 1
 fi
 
@@ -587,6 +591,11 @@ assert_contains "evidence export investigation summary (export_kind)" "$export_i
 assert_contains "evidence export investigation summary (nested investigation assembly)" "$export_investigation_summary" '"contract_id":"investigation_workspace_phase2_v1"'
 export_investigation_bounded=$(fetch_compact_json "$APP_API_URL/api/v1/exports/investigation-workspace/summary?sync_runs_limit=10")
 assert_contains "evidence export investigation bounded query (subject_ref sync_runs_limit)" "$export_investigation_bounded" '"sync_runs_limit":10'
+
+export_operator_briefing_bundle=$(fetch_compact_json "$APP_API_URL/api/v1/exports/operator-briefing?sync_runs_limit=10")
+assert_contains "briefing export bundle (contract id)" "$export_operator_briefing_bundle" '"contract_id":"briefing_export_bundle_v1"'
+assert_contains "briefing export bundle (bundle_members)" "$export_operator_briefing_bundle" '"bundle_members":'
+assert_contains "briefing export bundle (briefing_subject)" "$export_operator_briefing_bundle" '"briefing_subject":'
 
 if [ "$sync_runs_count" -gt 0 ]; then
   assert_not_contains "workflow history response" "$workflow_history_response" '"data_status":"empty"'

@@ -258,6 +258,17 @@ section p {
   background: #1a2d48;
 }
 
+.evidence-export-actions__btn--briefing-bundle {
+  border: 1px solid #5a8a5a;
+  background: #142218;
+  color: #e4f2e4;
+}
+
+.evidence-export-actions__btn--briefing-bundle:hover:not(:disabled) {
+  border-color: #7aaf7a;
+  background: #1a3020;
+}
+
 .policy-dossier-workspace__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -2303,6 +2314,34 @@ ol.notes-list.evidence-timeline-ordered {
 
 .operator-briefing-exports {
   margin: 1.5rem 0;
+}
+
+.operator-briefing-exports__intro {
+  margin-bottom: 1rem;
+}
+
+.operator-briefing-exports__bundle {
+  padding: 1rem 1.1rem;
+  margin: 0.75rem 0 1.25rem;
+  border: 1px solid rgba(184, 168, 120, 0.45);
+  border-radius: 8px;
+  background: rgba(24, 28, 36, 0.55);
+}
+
+.operator-briefing-exports__bundle h4 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  color: #e8dcc8;
+}
+
+.operator-briefing-exports__replay-link {
+  margin-top: 0.65rem;
+}
+
+.operator-briefing-exports__members h4 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  color: #d4c4a8;
 }
 
 .operator-briefing-exports__row {

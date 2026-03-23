@@ -29,4 +29,17 @@ describe("EvidenceExportActions", () => {
     );
     expect(investigation).toContain("Export Markdown");
   });
+
+  it("renders briefing bundle variant with distinct copy and test id", () => {
+    const html = renderToStaticMarkup(
+      <EvidenceExportActions
+        variant="briefing_bundle"
+        target={{ kind: "operator_briefing_bundle", syncRunsLimit: 10 }}
+      />,
+    );
+    expect(html).toContain("data-testid=\"briefing-bundle-export-actions\"");
+    expect(html).toContain("Download bundle (JSON)");
+    expect(html).toContain("briefing_export_bundle_v1");
+    expect(html).toContain("Evidence replay");
+  });
 });

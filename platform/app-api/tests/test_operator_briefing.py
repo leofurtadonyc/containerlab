@@ -68,6 +68,7 @@ def test_operator_briefing_default_sparse_contract_and_sections(monkeypatch: pyt
     }
     assert len(payload["recommended_pivots"]) >= 3
     assert any("delta-digest" in p for p in payload["recommended_pivots"])
+    assert any("exports/operator-briefing" in p for p in payload["recommended_pivots"])
 
 
 def test_operator_briefing_with_selected_policy_id(monkeypatch: pytest.MonkeyPatch) -> None:
