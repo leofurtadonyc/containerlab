@@ -28,7 +28,7 @@ Replay **must** support exactly the same **`export_kind`** values and subject se
 | **`situation_room`** | **`sync_runs_limit`** (or equivalent window in `subject_ref`) | [`GET /api/v1/evidence-pack/situation`](./evidence-pack-contract.md) |
 | **`investigation_workspace`** | **`sync_runs_limit`** (or equivalent window in `subject_ref`) | [`GET /api/v1/investigation-workspace/context`](./investigation-workspace-contract.md) |
 
-**Out of scope for v1 replay:** unified “replay the whole operator briefing” bundle (no single export envelope for full briefing in export v1), ad-hoc file types, encrypted or opaque blobs without a parseable **`evidence_export_v1`** envelope, exports generated outside **`GET /api/v1/exports/...`**, or replay of **non-export** JSON (e.g. raw `curl` dumps of arbitrary APIs).
+**Out of scope for v1 replay:** unified interactive replay of a full **[`briefing_export_bundle_v1`](./briefing-export-bundle-contract.md)** file as **one** viewer session (operators replay **individual** embedded **`evidence_export_v1`** members per [`briefing-export-bundle-contract.md`](./briefing-export-bundle-contract.md) §Live vs replay); ad-hoc file types; encrypted or opaque blobs without a parseable **`evidence_export_v1`** envelope; exports generated outside **`GET /api/v1/exports/...`**; or replay of **non-export** JSON (e.g. raw `curl` dumps of arbitrary APIs).
 
 ---
 

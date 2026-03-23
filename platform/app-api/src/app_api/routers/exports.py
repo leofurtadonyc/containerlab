@@ -11,6 +11,10 @@ from app_api.schemas.evidence_export import (
     SituationRoomEvidenceExportResponse,
     TopologyObjectDossierEvidenceExportResponse,
 )
+from app_api.services.briefing_export_bundle import (
+    briefing_export_bundle_to_markdown,
+    build_briefing_export_bundle_response,
+)
 from app_api.services.change_intelligence import (
     RECENT_CHANGE_SYNC_RUNS_DEFAULT,
     RECENT_CHANGE_SYNC_RUNS_MAX,
@@ -180,3 +184,68 @@ def export_investigation_workspace_summary(
 ) -> JSONResponse | PlainTextResponse:
     out = build_investigation_workspace_export(sync_runs_limit=sync_runs_limit)
     return _export_response(response_format, out, merged_caveats=None)
+
+
+@router.get(
+    "/exports/operator-briefing",
+    response_model=None,
+    responses={
+        200: {
+            "content": {
+                "application/json": {},
+                "text/markdown": {},
+            },
+        },
+    },
+)
+def export_operator_briefing_bundle(
+    sync_runs_limit: int = Query(
+        default=RECENT_CHANGE_SYNC_RUNS_DEFAULT,
+        ge=1,
+        le=RECENT_CHANGE_SYNC_RUNS_MAX,
+        description="Same bounded window as GET /api/v1/operator-briefing.",
+    ),
+    policy_id: str | None = Query(
+        default=None,
+        description="When set, a policy_dossier member may be included (or omitted if unavailable).",
+    ),
+    topology_object: str | None = Query(
+        default=None,
+        description="With topology_object_kind, a topology_object_dossier member may be included.",
+    ),
+    topology_object_kind: Literal["node", "link"] | None = Query(
+        default=None,
+        description="Required with topology_object for topology dossier membership.",
+    ),
+    inv_from: str | None = Query(
+        default=None,
+        description="Client-only echo for handoff context (not authority).",
+    ),
+    global_search_q: str | None = Query(
+        default=None,
+        description="Optional client echo of operator search query.",
+    ),
+    response_format: Annotated[
+        ExportFormat,
+        Query(
+            alias="format",
+            description="json (canonical) or markdown (human-readable companion).",
+        ),
+    ] = "json",
+) -> JSONResponse | PlainTextResponse:
+    """Export briefing_export_bundle_v1: ordered evidence_export_v1 members for briefing context."""
+    out = build_briefing_export_bundle_response(
+        sync_runs_limit=sync_runs_limit,
+        policy_id=policy_id,
+        topology_object=topology_object,
+        topology_object_kind=topology_object_kind,
+        inv_from=inv_from,
+        global_search_q=global_search_q,
+    )
+    if response_format == "json":
+        return JSONResponse(content=out.model_dump(mode="json"))
+    md = briefing_export_bundle_to_markdown(out)
+    return PlainTextResponse(
+        content=md,
+        media_type="text/markdown; charset=utf-8",
+    )

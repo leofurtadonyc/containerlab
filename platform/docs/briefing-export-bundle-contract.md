@@ -8,6 +8,8 @@ This document is the **product-owned bounded contract** for a **briefing export 
 
 Stable product vocabulary (for implementation and tests when the bundle ships): **`briefing_export_bundle_v1`**
 
+**Shipped read API (Phase 2):** **`GET /api/v1/exports/operator-briefing`** — JSON (default) or Markdown (`format=markdown`); query parameters align with **`GET /api/v1/operator-briefing`** (`sync_runs_limit`, optional `policy_id`, optional `topology_object` + `topology_object_kind`, optional `inv_from`, `global_search_q`). Members are assembled with the same builders as standalone **`GET /api/v1/exports/...`** routes; optional dossier slots may be **`null`** with **`omission_reason`** when the subject is absent.
+
 **Relationship to adjacent contracts:**
 
 | Contract | Role |
