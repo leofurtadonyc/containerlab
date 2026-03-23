@@ -27,7 +27,7 @@ It does **not** authorize:
 
 ## Relationship to prior guidance
 
-Week **21** posture remains in [`post-week-21-bounded-phase2-recommendation.md`](./post-week-21-bounded-phase2-recommendation.md). Week **22**–**28** post notes remain in [`post-week-22-bounded-phase2-recommendation.md`](./post-week-22-bounded-phase2-recommendation.md) through [`post-week-28-bounded-phase2-recommendation.md`](./post-week-28-bounded-phase2-recommendation.md). Week **29** **adds** explicit closure of the bounded **dossiers / global operator search / evidence export / NOC cockpit / verifier+test hardening** workstream; it does **not** replace ADR-0001, topology or policy truth-depth reviews, or weeks **22–28** closures. It does **not** subsume change intelligence (week **24**), investigation workspace (week **25**), or evidence pack (week **26**) as separate product brains—those assemblies remain **downstream** of the same read-side contracts.
+Week **21** posture remains in [`post-week-21-bounded-phase2-recommendation.md`](./post-week-21-bounded-phase2-recommendation.md). Week **22**–**28** post notes remain in [`post-week-22-bounded-phase2-recommendation.md`](./post-week-22-bounded-phase2-recommendation.md) through [`post-week-28-bounded-phase2-recommendation.md`](./post-week-28-bounded-phase2-recommendation.md). Week **29** **adds** explicit closure of the bounded **dossiers / global operator search / evidence export / NOC cockpit / verifier+test hardening** workstream; it does **not** replace ADR-0001, topology or policy truth-depth reviews, or weeks **22–28** closures. It does **not** subsume change intelligence (week **24**), investigation workspace (week **25**), or evidence pack (week **26**) as separate product brains—those assemblies remain **downstream** of the same read-side contracts. Week **30** closure and anti-reopen guardrails for digest, briefing, replay, export bundle, and cockpit **2.0** are recorded in [`post-week-30-bounded-phase2-recommendation.md`](./post-week-30-bounded-phase2-recommendation.md); that note does **not** replace week **29** or prior post notes.
 
 ## What week 29 actually closed
 
@@ -113,3 +113,4 @@ The project remains **`Phase 2 — read-only product foundation`** until workflo
 | Topology: closed vs deferred | [`topology-truth-depth-review.md`](./topology-truth-depth-review.md) |
 | Policy: proven vs deferred | [`policy-truth-depth-review.md`](./policy-truth-depth-review.md) |
 | Roadmap | [`roadmap.md`](./roadmap.md) |
+| Post–week 30 posture | [`post-week-30-bounded-phase2-recommendation.md`](./post-week-30-bounded-phase2-recommendation.md) |
