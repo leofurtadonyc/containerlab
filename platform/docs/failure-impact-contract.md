@@ -6,10 +6,11 @@ This document is the **backend-owned bounded contract** for a future **read-only
 
 **Failure impact v1** is **evidence-derived** and **relationship-based**: it **assembles and classifies** pointers to **existing** normalized policy rows and their **`degraded_policy_v1`** slices (and optionally **navigation** to path-analysis or other read-only surfaces). It is **not** a new truth domain and **not** a graph walk or TE computation.
 
-Implementation references (when a route exists):
+Implementation references:
 
-- Planned stable **`contract_id`:** **`failure_impact_v1`**
-- Bounded inputs: **`GET /api/v1/topology`**, **`GET /api/v1/policies`**, **`GET /api/v1/topology/objects/{object_id}/related-policies`**, **`GET /api/v1/policies/{policy_id}/topology-impact`**, **`GET /api/v1/policies/{policy_id}/path-analysis`** — each keeps **its own** contract and non-claims; failure impact v1 **does not replace** them.
+- Stable **`contract_id`:** **`failure_impact_v1`**
+- **`GET /api/v1/topology/objects/{object_id}/failure-impact`** — **`FailureImpactViewResponse`** (`schemas/failure_impact.py`, `services/failure_impact.py`); **404** when **`object_id`** is not a known node or link on the current topology snapshot (same identity as related-policies).
+- Bounded inputs: **`GET /api/v1/topology`**, **`GET /api/v1/policies`**, related-policies assembly, **`degraded_policy_v1`**, path-analysis **support** (`support_state` not `unsupported` / `not_implemented_in_platform`) — each upstream contract keeps **its own** non-claims; failure impact v1 **does not replace** them.
 
 ---
 
@@ -137,14 +138,12 @@ Stable keys (illustrative; align with schema literals when added):
 | **Path interpretation** | `GET /api/v1/policies/{policy_id}/path-analysis` | Optional **interpretation_support** pointer. |
 | **Topology / policy honesty** | Partiality axes, stale/persisted fallbacks | **caveats** and **freshness** fields. |
 
-### Missing for a dedicated failure-impact **implementation** (follow-on work)
+### Missing or optional follow-ons
 
 | Gap | Notes |
 | --- | --- |
-| **Unified API route** | No single **`GET .../failure-impact`** yet; v1 can be implemented as a **composed** service or thin wrapper over existing endpoints—**read-only**, same non-claims. |
-| **Schema literals** | `failure_impact_v1` response schema and **`pytest`** locks when implemented. |
-| **WebUI** | Optional surface (e.g. Topology/Devices detail) must reuse **explicit** copy patterns above. |
-| **Verifier** | Structural checks when a route ships—**not** shell duplication of assembly rules. |
+| **WebUI** | Optional surface (e.g. Topology/Devices detail) consuming **`GET .../failure-impact`** with **explicit** copy patterns above. |
+| **Verifier** | Optional **`verify-core-runtime.sh`** structural checks—**not** shell duplication of assembly rules. |
 
 ---
 
