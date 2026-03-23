@@ -1,4 +1,5 @@
 import type { OperatorSearchHit, OperatorSearchPivotTarget } from "../api/contracts";
+import { navigateToDeltaDigestView } from "./delta-digest-navigation";
 import { applyGlobalSearchQueryEcho } from "./global-search-deeplink";
 import { navigateToInvestigationView } from "./investigation-navigation";
 import { navigateToOperatorBriefingView } from "./operator-briefing-navigation";
@@ -10,6 +11,21 @@ import {
 import { navigateToSituationRoomView } from "./situation-room-navigation";
 import { navigateToTopologyDossier } from "./topology-dossier-navigation";
 import { mergeViewIntoSearch, navigateToEvidenceView, replaceUrlSearchParams } from "./url-app-state";
+
+/** Cross-domain delta digest with the same bounded window as other global-search pivots. */
+export function navigateToDeltaDigestFromGlobalSearch(echoSearchQuery: string, syncRunsLimit = 20): void {
+  navigateToDeltaDigestView(syncRunsLimit, echoSearchQuery);
+}
+
+/**
+ * Evidence replay (frozen file import only). Preserves `global_search_q` for breadcrumb-style context only —
+ * not a claim that search results match an imported export.
+ */
+export function navigateToEvidenceReplayFromGlobalSearch(echoSearchQuery: string): void {
+  const sp = mergeViewIntoSearch(window.location.search, "evidence-replay");
+  applyGlobalSearchQueryEcho(sp, echoSearchQuery);
+  replaceUrlSearchParams(sp);
+}
 
 export interface OperatorSearchNavigateOptions {
   /** Effective query echo (`global_search_q`) for shareable deep links. */

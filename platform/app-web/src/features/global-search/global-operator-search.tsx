@@ -7,6 +7,8 @@ import {
   describeOperatorSearchAction,
   familyLabel,
   navigateFromOperatorSearchPivot,
+  navigateToDeltaDigestFromGlobalSearch,
+  navigateToEvidenceReplayFromGlobalSearch,
   navigateToInvestigationFromOperatorSearchHit,
   navigateToOperatorBriefingFromGlobalSearch,
   navigateToReadinessFromOperatorCapabilityHit,
@@ -211,6 +213,18 @@ export function GlobalOperatorSearch() {
                                   type="button"
                                   className="inline-action global-operator-search__deeplink"
                                   onClick={() => {
+                                    navigateToDeltaDigestFromGlobalSearch(data.q);
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Delta digest
+                                </button>
+                              ) : null}
+                              {supportsInvestigationShortcut(hit.object_kind) ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  onClick={() => {
                                     navigateToInvestigationFromOperatorSearchHit(hit, data.q);
                                     clearSearchUi();
                                   }}
@@ -244,6 +258,16 @@ export function GlobalOperatorSearch() {
                   type="button"
                   className="inline-action"
                   onClick={() => {
+                    navigateToDeltaDigestFromGlobalSearch(data.q);
+                    clearSearchUi();
+                  }}
+                >
+                  Delta digest
+                </button>
+                <button
+                  type="button"
+                  className="inline-action"
+                  onClick={() => {
                     navigateToOperatorBriefingFromGlobalSearch(data.q);
                     clearSearchUi();
                   }}
@@ -259,6 +283,17 @@ export function GlobalOperatorSearch() {
                   }}
                 >
                   Situation room (evidence pack)
+                </button>
+                <button
+                  type="button"
+                  className="inline-action"
+                  title="Import a previously downloaded evidence_export_v1 JSON — not live inventory matches."
+                  onClick={() => {
+                    navigateToEvidenceReplayFromGlobalSearch(data.q);
+                    clearSearchUi();
+                  }}
+                >
+                  Evidence replay (frozen file)
                 </button>
               </div>
             </>
