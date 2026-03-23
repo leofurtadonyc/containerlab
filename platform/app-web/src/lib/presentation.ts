@@ -2,6 +2,7 @@ import type {
   CurrentRowPosture,
   PlatformReadPathStatus,
   PlatformRecoveryStatus,
+  PolicyRecord,
   TopologyCollectionPosture,
   TopologyCoverageSummaryRecord,
   TopologyEndpointPairingPosture,
@@ -13,6 +14,31 @@ import type {
 
 export function formatLabel(value: string): string {
   return value.split("_").join(" ");
+}
+
+/** One-line hint for policies list column (degraded-policy v1). */
+export function buildDegradedPolicyV1ListRowHint(policy: PolicyRecord): string {
+  const v = policy.degraded_policy_v1;
+  if (v.posture === "ok") {
+    return "No v1 reason codes";
+  }
+  if (v.posture === "unknown") {
+    return "Ambiguous inventory signals (v1)";
+  }
+  if (v.reason_codes.length === 0) {
+    return v.summary;
+  }
+  const parts = v.reason_codes.slice(0, 2).map((code) => formatLabel(code));
+  return v.reason_codes.length > 2 ? `${parts.join(" · ")} · +${v.reason_codes.length - 2}` : parts.join(" · ");
+}
+
+export type DegradedPolicyV1PostureFilter = "all" | "ok" | "degraded" | "unknown";
+
+export function matchesDegradedPolicyV1PostureFilter(
+  posture: PolicyRecord["degraded_policy_v1"]["posture"],
+  filter: DegradedPolicyV1PostureFilter,
+): boolean {
+  return filter === "all" || posture === filter;
 }
 
 export function formatDateTime(value: string | null): string {

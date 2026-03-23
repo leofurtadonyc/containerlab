@@ -41,11 +41,16 @@ Every response includes:
 - `not_validation_or_safe_to_change_authority`
 - `not_replacement_for_controller_computed_policy_truth`
 
+## WebUI (policies page)
+
+On **Policies**, the primary inventory table includes a **Degraded (v1)** column (posture pill plus a short reason hint). The toolbar adds a **Degraded policy (v1)** filter (all / degraded / unknown / ok), optional sort **Degraded v1 posture then name**, and **State distribution** summarizes counts for each v1 posture. These controls reuse the same contract as the API—interpretation support, not a global health score.
+
 ## Implementation
 
 - Schema: `platform/app-api/src/app_api/schemas/degraded_policy_v1.py`
 - Assembly: `platform/app-api/src/app_api/services/degraded_policy_v1.py`
 - Response wiring: `platform/app-api/src/app_api/services/policies.py` (`build_policies_list_response`)
+- List hints / filter helpers: `platform/app-web/src/lib/presentation.ts` (`buildDegradedPolicyV1ListRowHint`, `matchesDegradedPolicyV1PostureFilter`)
 
 ## Out of scope (v1)
 
