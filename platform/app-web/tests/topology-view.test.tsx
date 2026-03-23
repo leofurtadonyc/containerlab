@@ -3,9 +3,28 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TopologyView } from "../src/features/topology/view";
 
-const { useTopologyQuery, usePoliciesQuery } = vi.hoisted(() => ({
+const { useTopologyQuery, usePoliciesQuery, useTopologyRelatedPoliciesQuery } = vi.hoisted(() => ({
   useTopologyQuery: vi.fn(),
   usePoliciesQuery: vi.fn(),
+  useTopologyRelatedPoliciesQuery: vi.fn((objectId: string | null) => ({
+    data: {
+      metadata: {
+        service: "app-api",
+        version: "test",
+        phase: "phase_2_read_only_foundation",
+        generated_at: "2025-01-01T00:00:00Z",
+      },
+      object_kind: objectId?.includes("--") ? ("link" as const) : ("node" as const),
+      object_id: objectId ?? "",
+      derivation_summary: "Test derivation for related policies.",
+      global_caveats: [],
+      items: [],
+    },
+    error: null,
+    isLoading: false,
+    isRefreshing: false,
+    reload: vi.fn(async () => undefined),
+  })),
 }));
 
 vi.mock("../src/features/topology/api", async () => {
@@ -16,6 +35,7 @@ vi.mock("../src/features/topology/api", async () => {
   return {
     ...actual,
     useTopologyQuery,
+    useTopologyRelatedPoliciesQuery,
   };
 });
 
@@ -280,5 +300,15 @@ describe("topology view", () => {
 
     expect(html).toContain("No persisted normalized topology snapshots");
     expect(html).toContain("Bounded comparison is only available once at least two");
+  });
+
+  it("renders related policies drill-through panels for node and link selections", () => {
+    useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
+    usePoliciesQuery.mockReturnValue(createQueryState(null));
+
+    const html = renderToStaticMarkup(<TopologyView />);
+
+    expect(html).toContain("Related policies");
+    expect(html).toContain("Test derivation for related policies.");
   });
 });

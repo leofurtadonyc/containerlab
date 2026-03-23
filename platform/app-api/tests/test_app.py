@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from threading import Lock
 from time import sleep
 from types import SimpleNamespace
@@ -5866,3 +5866,210 @@ def test_devices_endpoint_allows_webui_origin_via_cors(monkeypatch) -> None:
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://localhost:8088"
+
+
+def _path_analysis_policy_stubs(monkeypatch) -> None:
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return _build_live_policy_snapshot()
+
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr("app_api.services.policies.persist_policy_snapshot", lambda **kwargs: None)
+    monkeypatch.setattr(
+        "app_api.services.policies.load_recent_policy_snapshot_summaries",
+        lambda limit=3: _build_recent_policy_snapshot_summaries()[:limit],
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_latest_policy_snapshot",
+        _build_persisted_policy_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_previous_policy_snapshot",
+        _build_previous_persisted_policy_snapshot,
+    )
+    monkeypatch.setattr("app_api.services.path_analysis.load_latest_topology_snapshot", lambda: None)
+    monkeypatch.setattr("app_api.services.path_analysis.load_latest_inventory_snapshot", lambda: None)
+
+
+def test_policy_path_analysis_returns_contract_and_aligned_truth(monkeypatch) -> None:
+    _path_analysis_policy_stubs(monkeypatch)
+    pid = "PE1:static_local:192.0.2.11:100"
+    response = client.get(f"/api/v1/policies/{pid}/path-analysis")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["metadata"]["phase"] == "phase_2_read_only_foundation"
+    assert payload["safety_framing"]["contract_id"] == "path_analysis_phase2_v1"
+    assert set(payload["safety_framing"]["explicit_non_claims"]) == set(
+        [
+            "not_validation_verdict",
+            "not_drift_engine_result",
+            "not_safe_to_change_recommendation",
+            "not_workflow_execution_or_authorization",
+            "not_dry_run_execution",
+            "not_dataplane_forwarding_truth",
+            "not_traffic_engineering_resolution_truth",
+            "not_per_hop_label_stack_verification",
+            "not_controller_computed_path_truth",
+            "not_odl_substitute_for_gnmi_collector_read_paths",
+            "not_cross_domain_completeness_guarantee",
+            "not_implied_forwarding_equivalence",
+        ]
+    )
+    assert payload["subject"]["policy_id"] == pid
+    assert payload["freshness"]["serving_mode_echo"] == "live"
+    assert payload["truth_alignment"]["posture"] == "intended_vs_observed_aligned"
+    assert any(h["hint_id"] == "intent_endpoints" for h in payload["intended_path_hints"])
+    assert len(payload["candidate_path_summaries"]) == 1
+    assert payload["candidate_path_summaries"][0]["name"] == "primary"
+
+
+def test_policy_path_analysis_with_inventory_snapshot_observed_at(monkeypatch) -> None:
+    """Regression: inventory freshness must use PersistedInventorySnapshot.observed_at (no .snapshot)."""
+    _path_analysis_policy_stubs(monkeypatch)
+    inv_at = datetime.now(tz=UTC)
+    inv_stub = PersistedInventorySnapshot(
+        snapshot_id="inv-snap-1",
+        sync_run_id="run-1",
+        persisted_at=inv_at,
+        data_status="live",
+        observed_at=inv_at,
+        devices=[],
+    )
+    monkeypatch.setattr(
+        "app_api.services.path_analysis.load_latest_inventory_snapshot",
+        lambda: inv_stub,
+    )
+    pid = "PE1:static_local:192.0.2.11:100"
+    response = client.get(f"/api/v1/policies/{pid}/path-analysis")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["freshness"]["inventory_snapshot_observed_at"] is not None
+    assert any(h["hint_id"] == "inventory_context" for h in payload["observed_path_hints"])
+
+
+def test_policy_path_analysis_partial_support_is_uncertain(monkeypatch) -> None:
+    _path_analysis_policy_stubs(monkeypatch)
+    pid = "P1:static_non_local:198.51.100.1:200"
+    response = client.get(f"/api/v1/policies/{pid}/path-analysis")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["truth_alignment"]["posture"] == "uncertain"
+    assert any(c["code"] == "policy_detail_partial" for c in payload["caveats"])
+
+
+def test_policy_path_analysis_not_found(monkeypatch) -> None:
+    _path_analysis_policy_stubs(monkeypatch)
+    response = client.get("/api/v1/policies/does-not-exist/path-analysis")
+
+    assert response.status_code == 404
+    err = response.json()
+    assert err["code"] == "http_error"
+    assert "policy_id" in err["message"].lower() or "policy" in err["message"].lower()
+
+
+def test_policy_path_analysis_unsupported_policy_insufficient_evidence(monkeypatch) -> None:
+    base = _build_live_policy_snapshot()
+    r0 = base.records[0].model_copy(update={"support_state": "unsupported"})
+    updated = base.model_copy(update={"records": [r0, base.records[1]]})
+
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return updated
+
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr("app_api.services.policies.persist_policy_snapshot", lambda **kwargs: None)
+    monkeypatch.setattr(
+        "app_api.services.policies.load_recent_policy_snapshot_summaries",
+        lambda limit=3: _build_recent_policy_snapshot_summaries()[:limit],
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_latest_policy_snapshot",
+        _build_persisted_policy_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_previous_policy_snapshot",
+        _build_previous_persisted_policy_snapshot,
+    )
+    monkeypatch.setattr("app_api.services.path_analysis.load_latest_topology_snapshot", lambda: None)
+    monkeypatch.setattr("app_api.services.path_analysis.load_latest_inventory_snapshot", lambda: None)
+
+    pid = "PE1:static_local:192.0.2.11:100"
+    response = client.get(f"/api/v1/policies/{pid}/path-analysis")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["truth_alignment"]["posture"] == "insufficient_evidence"
+
+
+def test_policy_path_analysis_persisted_fallback_stale_row(monkeypatch) -> None:
+    class StubCollectorPolicyClient:
+        def read_policy_snapshot(self) -> CollectorPolicySnapshot:
+            return CollectorPolicySnapshot(
+                integration="gnmi_collector_policy",
+                status="collector_unavailable",
+                destination_service="app-api",
+                source_endpoint="http://gnmi-collector:9804/policies/snapshot",
+                configured_target_count=0,
+                collection_success_count=0,
+                collection_partial_count=0,
+                collection_failure_count=0,
+                oldest_observed_at=None,
+                newest_observed_at=None,
+                detail_ready_target_count=0,
+                degraded_scope_summary="No configured policy targets returned usable live policy evidence.",
+                sync_source="gnmi_collector_policy",
+                sync_status="failed",
+                completeness="unknown",
+                detail_mode="unknown",
+                observed_at=None,
+                observed_target_count=0,
+                policy_capable_target_count=0,
+                observed_target_role_counts={},
+                policy_capable_target_role_counts={},
+                policy_count=0,
+                active_policy_count=0,
+                static_policy_count=0,
+                static_local_policy_count=0,
+                static_non_local_policy_count=0,
+                bgp_policy_count=0,
+                ttm_preference_count=0,
+                binding_sid_count=0,
+                srv6_binding_sid_count=0,
+                notes=[],
+                records=[],
+                fetch_error="collector down",
+            )
+
+    monkeypatch.setattr(
+        "app_api.services.policies.get_collector_policy_client",
+        lambda: StubCollectorPolicyClient(),
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_latest_policy_snapshot",
+        _build_persisted_policy_snapshot,
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_recent_policy_snapshot_summaries",
+        lambda limit=3: _build_recent_policy_snapshot_summaries()[:limit],
+    )
+    monkeypatch.setattr(
+        "app_api.services.policies.load_previous_policy_snapshot",
+        _build_previous_persisted_policy_snapshot,
+    )
+    monkeypatch.setattr("app_api.services.path_analysis.load_latest_topology_snapshot", lambda: None)
+    monkeypatch.setattr("app_api.services.path_analysis.load_latest_inventory_snapshot", lambda: None)
+
+    response = client.get("/api/v1/policies/persisted-policy-1/path-analysis")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["freshness"]["serving_mode_echo"] == "persisted_fallback"
+    assert payload["candidate_path_summaries"][0]["current_posture"] == "stale"
+    assert any(c["code"] == "persisted_fallback_stale_row" for c in payload["caveats"])

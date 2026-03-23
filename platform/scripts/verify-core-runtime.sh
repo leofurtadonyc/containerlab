@@ -200,6 +200,17 @@ echo "$grafana_datasources" | grep '"uid":"prometheus"' >/dev/null
 grafana_dashboards=$(curl -fsS -u "$GRAFANA_USER:$GRAFANA_PASSWORD" "$GRAFANA_URL/api/search?query=overview")
 echo "$grafana_dashboards" | grep 'platform-overview' >/dev/null
 echo "$grafana_dashboards" | grep 'topology-overview' >/dev/null
+echo "$grafana_dashboards" | grep 'sr-policy-overview' >/dev/null
+echo "$grafana_dashboards" | grep 'vendor-overview' >/dev/null
+echo "$grafana_dashboards" | grep 'change-validation-overview' >/dev/null
+grafana_uid_lines=$(echo "$grafana_dashboards" | grep -o '"uid":"[^"]*"' || true)
+grafana_uid_count=$(printf '%s\n' "$grafana_uid_lines" | grep -cve '^$' || true)
+grafana_uid_unique=$(printf '%s\n' "$grafana_uid_lines" | sort -u | grep -cve '^$' || true)
+if [ "$grafana_uid_count" != "$grafana_uid_unique" ]; then
+  echo "Grafana /api/search?query=overview returned duplicate dashboard uid entries (count=$grafana_uid_count unique=$grafana_uid_unique). Clear stale Grafana state or remove forked dashboards; see dashboards.md." >&2
+  printf '%s\n' "$grafana_dashboards" >&2
+  exit 1
+fi
 
 platform_status_response=$(fetch_compact_json "$APP_API_URL/api/v1/platform/status")
 devices_response=$(fetch_compact_json "$APP_API_URL/api/v1/devices")

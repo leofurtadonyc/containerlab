@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { ReadSideQueryEchoCallout } from "../../components/read-side-query-echo";
 import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
@@ -27,8 +27,11 @@ import {
   normalizeEvidenceConfidence,
 } from "../../lib/evidence-confidence";
 import { recentSnapshotsEmptyFootnote } from "../../lib/read-side-query-product-copy";
+import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { useTopologyQuery } from "../topology/api";
 import { usePoliciesQuery } from "./api";
+import { PolicyPathAnalysisPanel } from "./policy-path-analysis-panel";
+import { PolicyTopologyImpactPanel } from "./policy-topology-impact-panel";
 
 import type { PolicyDetailSourceReadinessRecord } from "../../api/contracts";
 
@@ -482,6 +485,8 @@ export function PoliciesView() {
     error: topologyError,
     isLoading: isTopologyLoading,
   } = useTopologyQuery();
+  const searchKey = useUrlSearchParamsKey();
+  const replaceUrlSearchParams = useReplaceUrlSearchParams();
   const [healthFilter, setHealthFilter] = useState("all");
   const [supportFilter, setSupportFilter] = useState("all");
   const [observedFilter, setObservedFilter] = useState("all");
@@ -603,6 +608,38 @@ export function PoliciesView() {
   }, [filteredPolicies, sortBy]);
   const selectedPolicy =
     sortedPolicies.find((policy) => policy.policy_id === selectedPolicyId) ?? sortedPolicies[0] ?? null;
+
+  useEffect(() => {
+    if (!data?.items.length) {
+      return;
+    }
+    const sp = new URLSearchParams(searchKey);
+    const raw = sp.get("policy_id");
+    if (!raw) {
+      return;
+    }
+    const decoded = decodeURIComponent(raw);
+    if (data.items.some((policy) => policy.policy_id === decoded)) {
+      setSelectedPolicyId(decoded);
+    }
+  }, [data, searchKey]);
+
+  useEffect(() => {
+    if (!selectedPolicy) {
+      return;
+    }
+    if (typeof window === "undefined") {
+      return;
+    }
+    const sp = new URLSearchParams(window.location.search);
+    const current = sp.get("policy_id");
+    if (current === selectedPolicy.policy_id) {
+      return;
+    }
+    sp.set("policy_id", selectedPolicy.policy_id);
+    replaceUrlSearchParams(sp);
+  }, [selectedPolicy, replaceUrlSearchParams]);
+
   const selectedObservedStateDisplay = selectedPolicy
     ? buildRowPostureStatusDisplay(
         selectedPolicy.current_posture,
@@ -2218,6 +2255,8 @@ export function PoliciesView() {
                   </>
                 ) : null}
               </article>
+              <PolicyTopologyImpactPanel key={`impact-${selectedPolicy.policy_id}`} policyId={selectedPolicy.policy_id} />
+              <PolicyPathAnalysisPanel key={selectedPolicy.policy_id} policyId={selectedPolicy.policy_id} />
             </div>
           ) : null}
         </>

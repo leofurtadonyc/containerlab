@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type {
   EvidenceConfidenceSummary,
@@ -31,6 +31,7 @@ import {
   describeEvidenceSource,
   normalizeEvidenceConfidence,
 } from "../../lib/evidence-confidence";
+import { useReplaceUrlSearchParams } from "../../lib/use-url-search-params";
 import { usePoliciesQuery } from "../policies/api";
 import {
   getTopologyCoverageSummary,
@@ -39,6 +40,23 @@ import {
   getTopologyNodeParticipationReadout,
   useTopologyQuery,
 } from "./api";
+import { TopologyRelatedPoliciesPanel } from "./topology-related-policies-panel";
+
+function readTopologySelectionFromUrl(): { nodeId: string | null; linkId: string | null } {
+  if (typeof window === "undefined") {
+    return { nodeId: null, linkId: null };
+  }
+  const sp = new URLSearchParams(window.location.search);
+  const oid = sp.get("topology_object");
+  const kind = sp.get("topology_object_kind");
+  if (oid && kind === "node") {
+    return { nodeId: oid, linkId: null };
+  }
+  if (oid && kind === "link") {
+    return { nodeId: null, linkId: oid };
+  }
+  return { nodeId: null, linkId: null };
+}
 
 function getLinkKnowledgeState(link: TopologyLinkRecord): string {
   return link.attributes.knowledge_state ?? "unknown";
@@ -200,17 +218,41 @@ export function TopologyView() {
     error: policyError,
     isLoading: isPolicyLoading,
   } = usePoliciesQuery();
+  const replaceUrlSearchParams = useReplaceUrlSearchParams();
+  const initialTopologySelection = readTopologySelectionFromUrl();
   const [nodeSearchValue, setNodeSearchValue] = useState("");
   const [nodeStateFilter, setNodeStateFilter] = useState("all");
   const [nodeRoleFilter, setNodeRoleFilter] = useState("all");
   const [nodeSortBy, setNodeSortBy] = useState("state_then_name");
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(initialTopologySelection.nodeId);
   const [linkSearchValue, setLinkSearchValue] = useState("");
   const [linkStateFilter, setLinkStateFilter] = useState("all");
   const [linkKnowledgeFilter, setLinkKnowledgeFilter] = useState("all");
   const [linkEvidenceFilter, setLinkEvidenceFilter] = useState("all");
   const [linkSortBy, setLinkSortBy] = useState("state_then_id");
-  const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
+  const [selectedLinkId, setSelectedLinkId] = useState<string | null>(initialTopologySelection.linkId);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const sp = new URLSearchParams(window.location.search);
+    const oid = sp.get("topology_object");
+    const kind = sp.get("topology_object_kind");
+    const nextOid = selectedNodeId ?? selectedLinkId ?? null;
+    const nextKind = selectedNodeId ? "node" : selectedLinkId ? "link" : null;
+    if (nextOid === oid && nextKind === kind) {
+      return;
+    }
+    if (nextOid && nextKind) {
+      sp.set("topology_object", nextOid);
+      sp.set("topology_object_kind", nextKind);
+    } else {
+      sp.delete("topology_object");
+      sp.delete("topology_object_kind");
+    }
+    replaceUrlSearchParams(sp);
+  }, [selectedNodeId, selectedLinkId, replaceUrlSearchParams]);
   const topology = data?.topology;
   const nodes = topology?.nodes ?? [];
   const links = topology?.links ?? [];
@@ -1474,6 +1516,11 @@ export function TopologyView() {
                     ))}
                 </div>
               </article>
+              <TopologyRelatedPoliciesPanel
+                objectId={selectedNode.node_id}
+                objectKind="node"
+                policiesList={policyData}
+              />
             </div>
           ) : null}
         </>
@@ -1688,6 +1735,11 @@ export function TopologyView() {
                     ))}
                 </div>
               </article>
+              <TopologyRelatedPoliciesPanel
+                objectId={selectedLink.link_id}
+                objectKind="link"
+                policiesList={policyData}
+              />
             </div>
           ) : null}
         </>

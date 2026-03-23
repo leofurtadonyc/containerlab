@@ -15,7 +15,7 @@
       },
       "id": 1,
       "options": {
-          "content": "## Platform Observability Overview\nThis dashboard follows the current read-only platform boundary: Prometheus scrape health, backend API responsiveness, collector-backed snapshot signals, bounded persisted sync-history evidence, one bounded readiness-support posture slice, and a small amount of honest live-versus-persisted or backend-versus-collector comparison context where those metrics already exist.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- Inventory, topology, policy, and bounded readiness-support freshness now surface where the backend already owns those metrics.\n- **`platform_app_api_inventory_snapshots_persisted_total`** and **`platform_app_api_inventory_snapshot_latest_persisted_at_seconds`** mirror only the **Postgres `inventory_snapshots` table** (row count and latest `persisted_at`). They do **not** replace **`/api/v1/devices`** **`history`** (recent snapshots, comparisons, change previews)—those remain **product-owned** in **`app-web`** and the API.\n- **`platform_app_api_policy_snapshots_persisted_total`** and **`platform_app_api_policy_snapshot_latest_persisted_at_seconds`** mirror only the **Postgres `policy_snapshots` table** (row count and latest `persisted_at`). They do **not** replace **`/api/v1/policies`** **`history`**—that remains **product-owned**.\n- Collector read-path coverage, observation age, and detail-ready gaps are visualized here as numeric observability signals; the product-facing degraded-scope summaries still belong in `app-web`.\n- Collector-boundary latest fetch duration, configured timeout budget, and latest timeout or failure outcome are visualized here as observability-only signals; they explain fallback triggers but do not become product truth records or workflow meaning.\n- Cross-slice posture panels show freshness, persisted sync result mix, and current topology snapshot labels where those backend metrics already exist.\n- Topology partiality is now mirrored through four backend-owned cues where metrics expose them: inference posture, endpoint-pairing posture, node-participation posture, and collection posture.\n- Readiness age stat panels use the same phrases as the app-web Readiness page: Evaluation sample (this response) age (bounded recomputation cadence; aligns with API `generated_at`) versus Persisted snapshot (last material change) age (last materially changed persisted snapshot; aligns with `readiness_persisted_at`). Observability-only—not interchangeable freshness claims, not dry-run verdicts, not phase-transition control.\n- Same-workspace recovery posture is mirrored numerically through backend-owned platform_app_api_recovery_posture and platform_app_api_recovery_persisted_artifacts metrics; the product-facing explanation remains in app-web Overview and Platform Health.\n- Comparison panels here show bounded aggregate deltas only; they are not drift engines or product truth.\n- Policy operational truth remains intentionally partial even though bounded policy sync evidence now exists.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels.",
+        "content": "## Platform Observability Overview\nThis dashboard follows the current read-only platform boundary: Prometheus scrape health, backend API responsiveness, collector-backed snapshot signals, bounded persisted sync-history evidence, one bounded readiness-support posture slice, and a small amount of honest live-versus-persisted or backend-versus-collector comparison context where those metrics already exist.\n\nCurrent limits:\n- `app-api` and `gnmi-collector` expose meaningful metrics today.\n- Inventory, topology, policy, and bounded readiness-support freshness now surface where the backend already owns those metrics.\n- **`platform_app_api_inventory_snapshots_persisted_total`** and **`platform_app_api_inventory_snapshot_latest_persisted_at_seconds`** mirror only the **Postgres `inventory_snapshots` table** (row count and latest `persisted_at`). They do **not** replace **`/api/v1/devices`** **`history`** (recent snapshots, comparisons, change previews)\u2014those remain **product-owned** in **`app-web`** and the API.\n- **`platform_app_api_policy_snapshots_persisted_total`** and **`platform_app_api_policy_snapshot_latest_persisted_at_seconds`** mirror only the **Postgres `policy_snapshots` table** (row count and latest `persisted_at`). They do **not** replace **`/api/v1/policies`** **`history`**\u2014that remains **product-owned**.\n- Collector read-path coverage, observation age, and detail-ready gaps are visualized here as numeric observability signals; the product-facing degraded-scope summaries still belong in `app-web`.\n- Collector-boundary latest fetch duration, configured timeout budget, and latest timeout or failure outcome are visualized here as observability-only signals; they explain fallback triggers but do not become product truth records or workflow meaning.\n- Cross-slice posture panels show freshness, persisted sync result mix, and current topology snapshot labels where those backend metrics already exist.\n- Topology partiality is now mirrored through four backend-owned cues where metrics expose them: inference posture, endpoint-pairing posture, node-participation posture, and collection posture.\n- Readiness age stat panels use the same phrases as the app-web Readiness page: Evaluation sample (this response) age (bounded recomputation cadence; aligns with API `generated_at`) versus Persisted snapshot (last material change) age (last materially changed persisted snapshot; aligns with `readiness_persisted_at`). Observability-only\u2014not interchangeable freshness claims, not dry-run verdicts, not phase-transition control.\n- Same-workspace recovery posture is mirrored numerically through backend-owned platform_app_api_recovery_posture and platform_app_api_recovery_persisted_artifacts metrics; the product-facing explanation remains in app-web Overview and Platform Health.\n- Comparison panels here show bounded aggregate deltas only; they are not drift engines or product truth.\n- Policy operational truth remains intentionally partial even though bounded policy sync evidence now exists.\n- ODL, Grafana, and Postgres exporter metrics remain future placeholders and are intentionally excluded from active panels.",
         "mode": "markdown"
       },
       "pluginVersion": "11.0.0",
@@ -69,7 +69,7 @@
       "targets": [
         {
           "expr": "platform_app_api_recovery_posture",
-          "legendFormat": "{{baseline_posture}} • {{read_side_posture}}",
+          "legendFormat": "{{baseline_posture}} \u2022 {{read_side_posture}}",
           "refId": "A"
         }
       ],
@@ -538,261 +538,6 @@
       ],
       "title": "Policy Evidence Gap Summary",
       "type": "bargauge"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "color": "red",
-                  "index": 0,
-                  "text": "Down"
-                },
-                "1": {
-                  "color": "green",
-                  "index": 1,
-                  "text": "Up"
-                }
-              },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 0,
-        "y": 6
-      },
-      "id": 3,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "value_and_name"
-      },
-      "pluginVersion": "11.0.0",
-      "targets": [
-        {
-          "expr": "max(up{job=\"prometheus\"})",
-          "refId": "A"
-        }
-      ],
-      "title": "Prometheus Scrape Health",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "color": "red",
-                  "index": 0,
-                  "text": "Down"
-                },
-                "1": {
-                  "color": "green",
-                  "index": 1,
-                  "text": "Up"
-                }
-              },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 6,
-        "y": 6
-      },
-      "id": 4,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "value_and_name"
-      },
-      "pluginVersion": "11.0.0",
-      "targets": [
-        {
-          "expr": "max(up{job=\"app-api\"})",
-          "refId": "A"
-        }
-      ],
-      "title": "App API Scrape Health",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "color": "red",
-                  "index": 0,
-                  "text": "Down"
-                },
-                "1": {
-                  "color": "green",
-                  "index": 1,
-                  "text": "Up"
-                }
-              },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 12,
-        "y": 6
-      },
-      "id": 5,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "value_and_name"
-      },
-      "pluginVersion": "11.0.0",
-      "targets": [
-        {
-          "expr": "max(up{job=\"gnmi-collector\"})",
-          "refId": "A"
-        }
-      ],
-      "title": "Collector Scrape Health",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "min": 0
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 18,
-        "y": 6
-      },
-      "id": 6,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "value_and_name"
-      },
-      "pluginVersion": "11.0.0",
-      "targets": [
-        {
-          "expr": "platform_app_api_sync_runs_total",
-          "refId": "A"
-        }
-      ],
-      "title": "Recent Persisted Sync Runs",
-      "type": "stat"
     },
     {
       "datasource": {
@@ -1688,7 +1433,7 @@
       "targets": [
         {
           "expr": "platform_app_api_sync_runs_by_family_and_result",
-          "legendFormat": "{{model_family}} • {{result}}",
+          "legendFormat": "{{model_family}} \u2022 {{result}}",
           "refId": "A"
         }
       ],
@@ -1729,12 +1474,12 @@
       "targets": [
         {
           "expr": "platform_app_api_topology_snapshot_status",
-          "legendFormat": "{{data_status}} • {{sync_status}} • {{completeness}}",
+          "legendFormat": "{{data_status}} \u2022 {{sync_status}} \u2022 {{completeness}}",
           "refId": "A"
         },
         {
           "expr": "platform_app_api_topology_coverage_posture",
-          "legendFormat": "{{inference_posture}} • {{endpoint_pairing_posture}} • {{node_participation_posture}} • {{collection_posture}}",
+          "legendFormat": "{{inference_posture}} \u2022 {{endpoint_pairing_posture}} \u2022 {{node_participation_posture}} \u2022 {{collection_posture}}",
           "refId": "B"
         }
       ],
@@ -1776,7 +1521,7 @@
       "targets": [
         {
           "expr": "platform_app_api_policy_snapshot_status",
-          "legendFormat": "{{data_status}} • {{sync_status}} • {{completeness}} • {{detail_mode}}",
+          "legendFormat": "{{data_status}} \u2022 {{sync_status}} \u2022 {{completeness}} \u2022 {{detail_mode}}",
           "refId": "A"
         }
       ],
@@ -1921,7 +1666,7 @@
       "targets": [
         {
           "expr": "platform_app_api_readiness_status",
-          "legendFormat": "{{status}} • {{planning_readiness}}",
+          "legendFormat": "{{status}} \u2022 {{planning_readiness}}",
           "refId": "A"
         }
       ],
@@ -1963,7 +1708,7 @@
       "targets": [
         {
           "expr": "platform_app_api_readiness_blockers_by_category_and_severity",
-          "legendFormat": "{{category}} • {{severity}}",
+          "legendFormat": "{{category}} \u2022 {{severity}}",
           "refId": "A"
         }
       ],
@@ -2058,7 +1803,7 @@
       "targets": [
         {
           "expr": "platform_app_api_collector_boundary_latest_fetch_duration_seconds{model_family=~\"inventory|topology|policy\"}",
-          "legendFormat": "{{model_family}} • {{outcome}}",
+          "legendFormat": "{{model_family}} \u2022 {{outcome}}",
           "refId": "A"
         }
       ],
@@ -2141,7 +1886,7 @@
       "targets": [
         {
           "expr": "platform_app_api_collector_boundary_latest_fetch_posture{model_family=~\"inventory|topology|policy\"}",
-          "legendFormat": "{{model_family}} • {{outcome}}",
+          "legendFormat": "{{model_family}} \u2022 {{outcome}}",
           "refId": "A"
         }
       ],

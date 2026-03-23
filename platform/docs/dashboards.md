@@ -60,6 +60,24 @@ Grafana is not responsible for:
 
 Those responsibilities belong to the backend and the WebUI.
 
+## Provisioned dashboard inventory (authoritative)
+
+The repo ships **exactly five** file-provisioned dashboards (one JSON file each, **distinct `uid` and title**):
+
+| Folder (Grafana) | File | Grafana `uid` | Title |
+| --- | --- | --- | --- |
+| `platform` | `platform/grafana/dashboards/platform/platform-overview.json` | `platform-overview` | Platform Overview |
+| `topology` | `platform/grafana/dashboards/topology/topology-overview.json` | `topology-overview` | Topology Overview |
+| `sr-policy` | `platform/grafana/dashboards/sr-policy/sr-policy-overview.json` | `sr-policy-overview` | SR Policy Overview |
+| `vendor` | `platform/grafana/dashboards/vendor/vendor-overview-placeholder.json` | `vendor-overview` | Vendor / adapter overview (Nokia gNMI) |
+| `change-validation` | `platform/grafana/dashboards/change-validation/change-validation-overview-placeholder.json` | `change-validation-overview` | Change Validation Overview Placeholder |
+
+If the Grafana UI shows **more than one row per `uid`** (for example two "Platform Overview" entries), that is **not** coming from duplicate JSON in git: it is usually **stale or forked Grafana database state** (manual save/import on top of provisioning). `./scripts/verify-core-runtime.sh` fails when `/api/search?query=overview` returns **duplicate `uid` strings**. Recovery: stop Grafana, remove the host-backed `platform/grafana/data` volume (or delete the forked dashboard in the UI), redeploy so only provisioned definitions load.
+
+**Cross-dashboard panels:** Platform overview intentionally includes some **topology- and policy-oriented rows** that **overlap** panels on the dedicated Topology and SR Policy dashboards (shared scrape health, sync ages, partiality labels). That is **repeated panels**, not duplicate dashboard definitions. Use the **Topology Overview** and **SR Policy Overview** dashboards for slice depth; use **Platform Overview** for cross-slice context.
+
+**Same dashboard — duplicate stat row (fixed in repo):** an earlier edit accidentally pasted a **second** row of the same four stat panels (**Prometheus / App API / Collector Scrape Health** and **Recent Persisted Sync Runs**) inside **Platform Overview** after the **Policy Evidence Gap Summary** bargauge, reusing internal panel ids `3`–`6`. Grafana rendered both rows, so operators saw each title twice. The duplicate block was removed from `platform/grafana/dashboards/platform/platform-overview.json`; redeploy or re-provision Grafana to pick up the single row.
+
 ## Provisioning As Code
 
 Dashboards and datasources must be provisioned from files stored in the repository.

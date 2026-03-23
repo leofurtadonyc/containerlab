@@ -3,11 +3,14 @@ import type {
   CapabilitiesListResponse,
   DevicesListResponse,
   ErrorResponse,
+  PathAnalysisViewResponse,
   PlatformStatusResponse,
   PoliciesListResponse,
+  PolicyTopologyImpactResponse,
   InvestigationContextAssemblyResponse,
   RecentChangeSummaryResponse,
   SituationPackAssemblyResponse,
+  TopologyObjectRelatedPoliciesResponse,
   TopologyResponse,
   WorkflowHistoryResponse,
 } from "./contracts";
@@ -57,9 +60,28 @@ export class ApiClient {
     return this.request<TopologyResponse>("/api/v1/topology");
   }
 
+  async getTopologyObjectRelatedPolicies(
+    objectId: string,
+  ): Promise<TopologyObjectRelatedPoliciesResponse> {
+    const encoded = encodeURIComponent(objectId);
+    return this.request<TopologyObjectRelatedPoliciesResponse>(
+      `/api/v1/topology/objects/${encoded}/related-policies`,
+    );
+  }
+
   async getPolicies(query?: DevicesPoliciesReadSideQuery): Promise<PoliciesListResponse> {
     const qs = query ? buildDevicesPoliciesQueryString(query) : "";
     return this.request<PoliciesListResponse>(`/api/v1/policies${qs}`);
+  }
+
+  async getPolicyPathAnalysis(policyId: string): Promise<PathAnalysisViewResponse> {
+    const encoded = encodeURIComponent(policyId);
+    return this.request<PathAnalysisViewResponse>(`/api/v1/policies/${encoded}/path-analysis`);
+  }
+
+  async getPolicyTopologyImpact(policyId: string): Promise<PolicyTopologyImpactResponse> {
+    const encoded = encodeURIComponent(policyId);
+    return this.request<PolicyTopologyImpactResponse>(`/api/v1/policies/${encoded}/topology-impact`);
   }
 
   async getWorkflowHistory(query?: WorkflowHistoryReadSideQuery): Promise<WorkflowHistoryResponse> {

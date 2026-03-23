@@ -224,6 +224,10 @@ curl -s http://localhost:8000/api/v1/platform/status | python -m json.tool
 curl -s http://localhost:8000/api/v1/devices | python -m json.tool
 curl -s http://localhost:8000/api/v1/topology | python -m json.tool
 curl -s http://localhost:8000/api/v1/policies | python -m json.tool
+# Path analysis (replace POLICY_ID with an `items[].policy_id` from `/api/v1/policies`):
+curl -s 'http://localhost:8000/api/v1/policies/POLICY_ID/path-analysis' | python -m json.tool
+# Related policies for a topology node or link (replace OBJECT_ID with a `topology.nodes[].node_id` or `topology.links[].link_id` from `/api/v1/topology`):
+curl -s 'http://localhost:8000/api/v1/topology/objects/OBJECT_ID/related-policies' | python -m json.tool
 curl -s http://localhost:8000/api/v1/capabilities | python -m json.tool
 curl -s 'http://localhost:8000/api/v1/change-intelligence/recent-summary?sync_runs_limit=20' | python -m json.tool
 curl -s 'http://localhost:8000/api/v1/investigation-workspace/context?sync_runs_limit=20' | python -m json.tool
@@ -476,6 +480,7 @@ What to look for:
 - missing or broken mounted config under `platform/prometheus/`
 - broken Grafana provisioning files or dashboard discovery
 - target scrape failures for `app-api` or `gnmi-collector`
+- **Duplicate Grafana dashboards (same title or `uid` twice):** the repository defines **five** provisioned dashboards with **unique** `uid` values (see **`dashboards.md`**). Duplicates in the UI usually mean **forked or imported** dashboards in Grafana’s SQLite DB on top of provisioning, or stale state under `platform/grafana/data`. **`verify-core-runtime.sh`** fails if `/api/search?query=overview` returns the same `"uid"` more than once. Recovery: delete the extra copy in the Grafana UI **or** stop Grafana, remove `platform/grafana/data`, and redeploy so only file provisioning loads (you lose local Grafana preferences).
 
 If the container health check is failing before the HTTP checks, inspect the packaged health state directly:
 
