@@ -6,6 +6,7 @@ import type {
   PathAnalysisViewResponse,
   PlatformStatusResponse,
   PoliciesListResponse,
+  PolicyTopologyImpactResponse,
   InvestigationContextAssemblyResponse,
   RecentChangeSummaryResponse,
   SituationPackAssemblyResponse,
@@ -76,6 +77,11 @@ export class ApiClient {
   async getPolicyPathAnalysis(policyId: string): Promise<PathAnalysisViewResponse> {
     const encoded = encodeURIComponent(policyId);
     return this.request<PathAnalysisViewResponse>(`/api/v1/policies/${encoded}/path-analysis`);
+  }
+
+  async getPolicyTopologyImpact(policyId: string): Promise<PolicyTopologyImpactResponse> {
+    const encoded = encodeURIComponent(policyId);
+    return this.request<PolicyTopologyImpactResponse>(`/api/v1/policies/${encoded}/topology-impact`);
   }
 
   async getWorkflowHistory(query?: WorkflowHistoryReadSideQuery): Promise<WorkflowHistoryResponse> {

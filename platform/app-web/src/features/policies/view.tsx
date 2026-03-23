@@ -31,6 +31,7 @@ import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-
 import { useTopologyQuery } from "../topology/api";
 import { usePoliciesQuery } from "./api";
 import { PolicyPathAnalysisPanel } from "./policy-path-analysis-panel";
+import { PolicyTopologyImpactPanel } from "./policy-topology-impact-panel";
 
 import type { PolicyDetailSourceReadinessRecord } from "../../api/contracts";
 
@@ -2254,6 +2255,7 @@ export function PoliciesView() {
                   </>
                 ) : null}
               </article>
+              <PolicyTopologyImpactPanel key={`impact-${selectedPolicy.policy_id}`} policyId={selectedPolicy.policy_id} />
               <PolicyPathAnalysisPanel key={selectedPolicy.policy_id} policyId={selectedPolicy.policy_id} />
             </div>
           ) : null}

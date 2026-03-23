@@ -1,7 +1,11 @@
 import { ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
+import {
+  PolicyImpactSummaryBlock,
+  PolicyImpactSummaryIntro,
+} from "../../components/policy-impact-summary";
 import { ApiClientError } from "../../api/client";
-import type { PoliciesListResponse, TopologyObjectKind } from "../../api/contracts";
+import type { PoliciesListResponse, TopologyObjectKind, TopologyRelatedPolicyReference } from "../../api/contracts";
 import { formatLabel } from "../../lib/presentation";
 import { navigateToPoliciesPolicy } from "../../lib/topology-policy-navigation";
 import { useTopologyRelatedPoliciesQuery } from "./api";
@@ -21,6 +25,18 @@ function enrichHealth(
     return { health: null, observed: null };
   }
   return { health: row.health_state, observed: row.observed_state };
+}
+
+function impactFields(item: TopologyRelatedPolicyReference) {
+  return {
+    relationship_kind: item.relationship_kind,
+    matched_field: item.matched_field,
+    matched_policy_value: item.matched_policy_value,
+    matched_topology_identifier: item.matched_topology_identifier,
+    anchor_topology_node_id: item.anchor_topology_node_id,
+    evidence_source: item.evidence_source,
+    caveats: item.caveats,
+  };
 }
 
 export function TopologyRelatedPoliciesPanel({
@@ -72,6 +88,7 @@ export function TopologyRelatedPoliciesPanel({
           Refreshing related policies…
         </p>
       ) : null}
+      <PolicyImpactSummaryIntro />
       <p className="footnote">{data.derivation_summary}</p>
       <p className="table-note">
         Object: <strong>{formatLabel(objectKind)}</strong> <code>{data.object_id}</code> — string
@@ -98,26 +115,13 @@ export function TopologyRelatedPoliciesPanel({
             const { health, observed } = enrichHealth(item.policy_id, policiesList);
             return (
               <li key={`${item.policy_id}-${item.matched_field}-${item.matched_topology_identifier}`}>
+                <p className="summary-label">
+                  {item.policy_name} <span className="table-note">({item.policy_id})</span>
+                </p>
                 <div className="key-value-list">
-                  <div className="key-value-row">
-                    <span>Policy</span>
-                    <strong>{item.policy_name}</strong>
-                  </div>
-                  <div className="key-value-row">
-                    <span>Policy id</span>
-                    <strong>{item.policy_id}</strong>
-                  </div>
                   <div className="key-value-row">
                     <span>Type</span>
                     <strong>{formatLabel(item.policy_type)}</strong>
-                  </div>
-                  <div className="key-value-row">
-                    <span>Relationship</span>
-                    <strong>{formatLabel(item.relationship_kind)}</strong>
-                  </div>
-                  <div className="key-value-row">
-                    <span>Matched field</span>
-                    <strong>{item.matched_field}</strong>
                   </div>
                   <div className="key-value-row">
                     <span>Health / observed</span>
@@ -135,13 +139,7 @@ export function TopologyRelatedPoliciesPanel({
                     </span>
                   </div>
                 </div>
-                {item.caveats.length > 0 ? (
-                  <ul className="notes-list">
-                    {item.caveats.map((c) => (
-                      <li key={c}>{c}</li>
-                    ))}
-                  </ul>
-                ) : null}
+                <PolicyImpactSummaryBlock fields={impactFields(item)} />
                 <p>
                   <button
                     type="button"

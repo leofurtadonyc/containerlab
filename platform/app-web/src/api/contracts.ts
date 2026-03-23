@@ -484,6 +484,28 @@ export interface TopologyObjectRelatedPoliciesResponse {
   items: TopologyRelatedPolicyReference[];
 }
 
+/** `GET /api/v1/policies/{policy_id}/topology-impact` (inverse pivot; naming alignment only). */
+export interface PolicyTopologyImpactRow {
+  topology_object_kind: TopologyObjectKind;
+  topology_object_id: string;
+  relationship_kind: RelatedPolicyRelationshipKind;
+  matched_field: RelatedPolicyMatchedField;
+  matched_policy_value: string;
+  matched_topology_identifier: string;
+  anchor_topology_node_id: string;
+  evidence_source: string;
+  caveats: string[];
+}
+
+export interface PolicyTopologyImpactResponse {
+  metadata: ApiResponseMetadata;
+  policy_id: string;
+  policy_name: string;
+  derivation_summary: string;
+  global_caveats: string[];
+  items: PolicyTopologyImpactRow[];
+}
+
 export interface PolicyTargetFootprintRecord {
   target_name: string;
   target_role: string | null;

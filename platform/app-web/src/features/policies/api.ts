@@ -1,6 +1,10 @@
 import { useCallback, useMemo } from "react";
 
-import type { PathAnalysisViewResponse, PoliciesListResponse } from "../../api/contracts";
+import type {
+  PathAnalysisViewResponse,
+  PoliciesListResponse,
+  PolicyTopologyImpactResponse,
+} from "../../api/contracts";
 import { apiClient } from "../../api/client";
 import { parseDevicesPoliciesReadSideQuery } from "../../api/read-side-query-params";
 import { useApiQuery } from "../../api/use-api-query";
@@ -25,6 +29,15 @@ export function usePolicyPathAnalysisQuery(policyId: string | null) {
   const enabled = policyId !== null && policyId.length > 0;
   const queryFn = useCallback<() => Promise<PathAnalysisViewResponse>>(
     () => apiClient.getPolicyPathAnalysis(policyId as string),
+    [policyId],
+  );
+  return useApiQuery(queryFn, { enabled });
+}
+
+export function usePolicyTopologyImpactQuery(policyId: string | null) {
+  const enabled = policyId !== null && policyId.length > 0;
+  const queryFn = useCallback<() => Promise<PolicyTopologyImpactResponse>>(
+    () => apiClient.getPolicyTopologyImpact(policyId as string),
     [policyId],
   );
   return useApiQuery(queryFn, { enabled });

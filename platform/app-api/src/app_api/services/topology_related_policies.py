@@ -68,6 +68,7 @@ def _emit_matches_for_node(
     policies: list[PolicyInventoryRecord],
     node: TopologyNode,
     context: Literal["node", "link"],
+    policy_filter: PolicyInventoryRecord | None = None,
 ) -> list[TopologyRelatedPolicyReference]:
     rel: RelatedPolicyRelationshipKind = (
         "policy_field_matches_node_identifier"
@@ -76,7 +77,8 @@ def _emit_matches_for_node(
     )
     nids = _node_identifier_set(node)
     items: list[TopologyRelatedPolicyReference] = []
-    for policy in policies:
+    scoped_policies = [policy_filter] if policy_filter is not None else policies
+    for policy in scoped_policies:
         per_policy_caveats: list[str] = []
         if policy.support_state in ("unsupported", "not_implemented_in_platform"):
             per_policy_caveats.append(

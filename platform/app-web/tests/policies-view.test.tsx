@@ -8,15 +8,18 @@ import {
   PoliciesView,
 } from "../src/features/policies/view";
 
-const { usePoliciesQuery, usePolicyPathAnalysisQuery, useTopologyQuery } = vi.hoisted(() => ({
-  usePoliciesQuery: vi.fn(),
-  usePolicyPathAnalysisQuery: vi.fn(),
-  useTopologyQuery: vi.fn(),
-}));
+const { usePoliciesQuery, usePolicyPathAnalysisQuery, usePolicyTopologyImpactQuery, useTopologyQuery } =
+  vi.hoisted(() => ({
+    usePoliciesQuery: vi.fn(),
+    usePolicyPathAnalysisQuery: vi.fn(),
+    usePolicyTopologyImpactQuery: vi.fn(),
+    useTopologyQuery: vi.fn(),
+  }));
 
 vi.mock("../src/features/policies/api", () => ({
   usePoliciesQuery,
   usePolicyPathAnalysisQuery,
+  usePolicyTopologyImpactQuery,
 }));
 
 vi.mock("../src/features/topology/api", async () => {
@@ -429,10 +432,31 @@ describe("policy detail blocker readouts", () => {
   });
 });
 
+function createTopologyImpactEmptyFixture(policyId: string, policyName: string) {
+  return {
+    metadata: {
+      service: "app-api" as const,
+      version: "test",
+      phase: "phase_2_read_only_foundation" as const,
+      generated_at: "2025-01-01T00:00:00Z",
+    },
+    policy_id: policyId,
+    policy_name: policyName,
+    derivation_summary: "Test derivation for topology impact.",
+    global_caveats: [] as string[],
+    items: [] as [],
+  };
+}
+
 describe("policies view", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     usePolicyPathAnalysisQuery.mockReturnValue(createQueryState(null));
+    usePolicyTopologyImpactQuery.mockReturnValue(
+      createQueryState(
+        createTopologyImpactEmptyFixture("PE1:static_local:192.0.2.11:100", "sample-policy"),
+      ),
+    );
   });
 
   it("renders persisted policy history and recent snapshot anchors", () => {
@@ -591,5 +615,7 @@ describe("policies view", () => {
     expect(html).toContain("Explicit non-claims");
     expect(html).toContain("Truth alignment");
     expect(html).toContain("Signals align for this bounded slice.");
+    expect(html).toContain("Topology impact");
+    expect(html).toContain("Read-only naming alignment");
   });
 });

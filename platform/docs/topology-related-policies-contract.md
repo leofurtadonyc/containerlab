@@ -32,6 +32,13 @@ Give operators a **bounded pivot** from a topology **node** (`node_id`) or **lin
 - Not completeness across devices outside the current policy inventory slice.
 - Topology inference/pairing partiality axes on `GET /api/v1/topology` still apply; this endpoint does not reopen topology truth-depth work.
 
+## Inverse endpoint (policy → topology)
+
+`GET /api/v1/policies/{policy_id}/topology-impact` lists topology **nodes** and **links** (link rows appear when an endpoint node matches) that **string-align** with this policy’s `headend`, `endpoint`, and `source_target` using the **same** equality rules as above. It is an inverse pivot for operator context, **not** blast-radius or dependency simulation. **404** when `policy_id` is not in the current normalized policy inventory.
+
+- Schema: `platform/app-api/src/app_api/schemas/policy_topology_impact.py`
+- Assembly: `platform/app-api/src/app_api/services/policy_topology_impact.py`
+
 ## References
 
 - Schema: `platform/app-api/src/app_api/schemas/topology_related_policies.py`
