@@ -4,6 +4,7 @@
  */
 
 import type { TopologyObjectKind } from "../api/contracts";
+import { applyGlobalSearchQueryEcho } from "./global-search-deeplink";
 import { mergeViewIntoSearch, replaceUrlSearchParams } from "./url-app-state";
 
 /** When `dossier`, Topology shows the composed dossier workspace (`topology_workspace=dossier`). */
@@ -45,11 +46,13 @@ export function navigateToTopologyDossier(
   objectId: string,
   kind: TopologyObjectKind,
   source: TopologyDossierNavigationSource,
+  echoSearchQuery?: string,
 ): void {
   const sp = mergeViewIntoSearch(window.location.search, "topology");
   sp.set("topology_object", objectId);
   sp.set("topology_object_kind", kind);
   sp.set(TOPOLOGY_WORKSPACE_PARAM, "dossier");
   sp.set(DOSSIER_SOURCE_PARAM, source);
+  applyGlobalSearchQueryEcho(sp, echoSearchQuery);
   replaceUrlSearchParams(sp);
 }

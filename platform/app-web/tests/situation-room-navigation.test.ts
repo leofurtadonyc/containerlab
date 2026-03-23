@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { GLOBAL_SEARCH_QUERY_PARAM } from "../src/lib/global-search-deeplink";
 import { navigateToSituationRoomView } from "../src/lib/situation-room-navigation";
 
 describe("navigateToSituationRoomView", () => {
@@ -20,6 +21,22 @@ describe("navigateToSituationRoomView", () => {
     expect(next.searchParams.get("view")).toBe("situation-room");
     expect(next.searchParams.get("sync_runs_limit")).toBe("12");
     expect(next.searchParams.get("foo")).toBe("bar");
+
+    replaceState.mockRestore();
+  });
+
+  it("sets global_search_q when echo is provided", () => {
+    const replaceState = vi.spyOn(window.history, "replaceState").mockImplementation(() => undefined);
+    vi.stubGlobal("location", {
+      ...window.location,
+      href: "http://localhost/?view=overview",
+      search: "?view=overview",
+    });
+
+    navigateToSituationRoomView(20, "echo-q");
+
+    const urlArg = replaceState.mock.calls[0][2] as string;
+    expect(new URL(urlArg).searchParams.get(GLOBAL_SEARCH_QUERY_PARAM)).toBe("echo-q");
 
     replaceState.mockRestore();
   });

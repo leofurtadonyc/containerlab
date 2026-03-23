@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { ApiClientError, apiClient } from "../../api/client";
-import type { OperatorSearchResponse } from "../../api/contracts";
+import type { OperatorSearchPivotTarget, OperatorSearchResponse } from "../../api/contracts";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import {
   describeOperatorSearchAction,
   familyLabel,
   navigateFromOperatorSearchPivot,
+  navigateToInvestigationFromOperatorSearchHit,
+  navigateToReadinessFromOperatorCapabilityHit,
+  navigateToSituationRoomFromGlobalSearch,
+  supportsInvestigationShortcut,
 } from "../../lib/operator-search-navigation";
 
 const DEBOUNCE_MS = 400;
@@ -76,15 +80,19 @@ export function GlobalOperatorSearch() {
     return () => document.removeEventListener("mousedown", onDocDown);
   }, [open]);
 
+  const clearSearchUi = useCallback(() => {
+    setOpen(false);
+    setInputValue("");
+    setDebounced("");
+    setData(null);
+  }, []);
+
   const onSelectHit = useCallback(
-    (pivot: OperatorSearchResponse["groups"][number]["items"][number]["pivot"]) => {
-      navigateFromOperatorSearchPivot(pivot);
-      setOpen(false);
-      setInputValue("");
-      setDebounced("");
-      setData(null);
+    (pivot: OperatorSearchPivotTarget, echoQuery: string) => {
+      navigateFromOperatorSearchPivot(pivot, { echoSearchQuery: echoQuery });
+      clearSearchUi();
     },
-    [],
+    [clearSearchUi],
   );
 
   const showPanel = open && (loading || error !== null || data !== null);
@@ -143,39 +151,82 @@ export function GlobalOperatorSearch() {
             />
           )}
           {debounced.length >= 2 && !loading && !error && data?.result_state === "hits" && (
-            <div className="global-operator-search__groups">
-              {data.groups.map((group) => (
-                <section key={group.family} className="global-operator-search__group">
-                  <h3 className="global-operator-search__group-title">
-                    {familyLabel(group.family)}
-                    {group.capped ? (
-                      <span className="global-operator-search__cap">
-                        {" "}
-                        showing {group.items.length} of {group.items_total_matched}
-                      </span>
-                    ) : null}
-                  </h3>
-                  <ul className="global-operator-search__list">
-                    {group.items.map((hit) => (
-                      <li key={`${group.family}-${hit.primary_id}-${hit.object_kind}`}>
-                        <button
-                          type="button"
-                          className="global-operator-search__hit"
-                          onClick={() => onSelectHit(hit.pivot)}
-                        >
-                          <span className="global-operator-search__hit-title">{hit.title}</span>
-                          <span className="global-operator-search__hit-id">{hit.primary_id}</span>
-                          <span className="global-operator-search__hit-kind">{hit.object_kind}</span>
-                          <span className="global-operator-search__hit-action">
-                            {describeOperatorSearchAction(hit.object_kind)}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </div>
+            <>
+              <div className="global-operator-search__groups">
+                {data.groups.map((group) => (
+                  <section key={group.family} className="global-operator-search__group">
+                    <h3 className="global-operator-search__group-title">
+                      {familyLabel(group.family)}
+                      {group.capped ? (
+                        <span className="global-operator-search__cap">
+                          {" "}
+                          showing {group.items.length} of {group.items_total_matched}
+                        </span>
+                      ) : null}
+                    </h3>
+                    <ul className="global-operator-search__list">
+                      {group.items.map((hit) => (
+                        <li key={`${group.family}-${hit.primary_id}-${hit.object_kind}`}>
+                          <div className="global-operator-search__hit-block">
+                            <button
+                              type="button"
+                              className="global-operator-search__hit"
+                              onClick={() => onSelectHit(hit.pivot, data.q)}
+                            >
+                              <span className="global-operator-search__hit-title">{hit.title}</span>
+                              <span className="global-operator-search__hit-id">{hit.primary_id}</span>
+                              <span className="global-operator-search__hit-kind">{hit.object_kind}</span>
+                              <span className="global-operator-search__hit-action">
+                                {describeOperatorSearchAction(hit.object_kind)}
+                              </span>
+                            </button>
+                            <div className="global-operator-search__deeplink-row">
+                              {supportsInvestigationShortcut(hit.object_kind) ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  onClick={() => {
+                                    navigateToInvestigationFromOperatorSearchHit(hit, data.q);
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Investigation
+                                </button>
+                              ) : null}
+                              {hit.object_kind === "capability" ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  onClick={() => {
+                                    navigateToReadinessFromOperatorCapabilityHit(hit.primary_id, data.q);
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Readiness
+                                </button>
+                              ) : null}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+              <div className="global-operator-search__panel-footer">
+                <span className="global-operator-search__panel-footer-label">Cross-surface</span>
+                <button
+                  type="button"
+                  className="inline-action"
+                  onClick={() => {
+                    navigateToSituationRoomFromGlobalSearch(data.q);
+                    clearSearchUi();
+                  }}
+                >
+                  Situation room (evidence pack)
+                </button>
+              </div>
+            </>
           )}
           {debounced.length >= 2 && !loading && !error && data && data.explicit_non_claims.length > 0 && (
             <ul className="global-operator-search__nonclaims">

@@ -4,6 +4,7 @@ import {
   FAILURE_IMPACT_ENTRY_PARAM,
   INV_FROM_PARAM,
   RISK_SUMMARY_ENTRY_PARAM,
+  labelForInvestigationNavSource,
   parseInvestigationNavContext,
 } from "../src/lib/investigation-url-context";
 
@@ -30,6 +31,12 @@ describe("parseInvestigationNavContext", () => {
   it("accepts situation-room as a source", () => {
     const p = parseInvestigationNavContext(`?${INV_FROM_PARAM}=situation-room`);
     expect(p.invFrom).toBe("situation-room");
+  });
+
+  it("accepts global_search as a source", () => {
+    const p = parseInvestigationNavContext(`?${INV_FROM_PARAM}=global_search`);
+    expect(p.invFrom).toBe("global_search");
+    expect(labelForInvestigationNavSource("global_search")).toBe("Global search");
   });
 
   it("parses failure_impact_entry=v1", () => {

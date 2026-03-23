@@ -327,6 +327,12 @@ topology_risk_summary_response=$(fetch_compact_json "$APP_API_URL/api/v1/topolog
 assert_contains "topology risk summary response (contract id)" "$topology_risk_summary_response" '"contract_id":"topology_risk_summary_v1"'
 assert_contains "topology risk summary response (ranked_objects)" "$topology_risk_summary_response" '"ranked_objects":['
 
+# Week 29: global operator search (bounded inventory field search; structural contract check).
+operator_search_response=$(fetch_compact_json "$APP_API_URL/api/v1/operator-search?q=__verify_runtime__")
+assert_contains "operator search response (contract id)" "$operator_search_response" '"contract_id":"operator_search_pivot_v1"'
+assert_contains "operator search response (result_state)" "$operator_search_response" '"result_state":"'
+assert_contains "operator search response (groups array)" "$operator_search_response" '"groups":'
+
 # Week 27–28: path-analysis, topology-related-policies, failure-impact, policy evidence timeline+delta
 # (uses python3 when available to sample first policy id and first topology node id).
 if command -v python3 >/dev/null 2>&1; then

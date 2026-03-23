@@ -8,6 +8,7 @@ import {
   RISK_SUMMARY_ENTRY_PARAM,
   type InvestigationNavSourceId,
 } from "./investigation-url-context";
+import { applyGlobalSearchQueryEcho } from "./global-search-deeplink";
 import { mergeViewIntoSearch, replaceUrlSearchParams } from "./url-app-state";
 
 /** Default sync-run window aligned with Overview recent-change summary when the URL omits `sync_runs_limit`. */
@@ -18,10 +19,16 @@ export interface NavigateToInvestigationViewOptions {
   invFrom?: InvestigationNavSourceId;
   /** Pins `topology_object` / `topology_object_kind` for investigation breadcrumb context (read-only). */
   topologyObject?: { id: string; kind: "node" | "link" };
+  /** When set, pins `policy_id` for cross-surface investigation context (read-only). */
+  policyId?: string;
+  /** When set, pins `device_id` for cross-surface investigation context (read-only). */
+  deviceId?: string;
   /** When true, sets `failure_impact_entry=v1` (bounded entry from Topology failure-impact panel). */
   failureImpactEntry?: boolean;
   /** When true, sets `risk_summary_entry=v1` (bounded entry from Overview/Topology risk summary panel). */
   riskSummaryEntry?: boolean;
+  /** Echo of the global search query string (`global_search_q`) when opened from operator search. */
+  echoSearchQuery?: string;
 }
 
 /** Bounded sync-run window for nested change-intelligence assembly (1–100). */
@@ -56,6 +63,13 @@ export function navigateToInvestigationView(
     sp.set("topology_object", options.topologyObject.id);
     sp.set("topology_object_kind", options.topologyObject.kind);
   }
+  if (options?.policyId) {
+    sp.set("policy_id", options.policyId);
+  }
+  if (options?.deviceId) {
+    sp.set("device_id", options.deviceId);
+  }
+  applyGlobalSearchQueryEcho(sp, options?.echoSearchQuery);
   if (options?.failureImpactEntry) {
     sp.set(FAILURE_IMPACT_ENTRY_PARAM, "v1");
     sp.delete(RISK_SUMMARY_ENTRY_PARAM);

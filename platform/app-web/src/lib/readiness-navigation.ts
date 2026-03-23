@@ -3,6 +3,7 @@
  * Does not filter backend payloads — URL params are UI context and scroll hints only.
  */
 
+import { applyGlobalSearchQueryEcho } from "./global-search-deeplink";
 import { mergeViewIntoSearch, replaceUrlSearchParams } from "./url-app-state";
 
 export const READINESS_BLOCKER_PARAM = "readiness_blocker";
@@ -41,6 +42,7 @@ export function navigateReadinessDrilldown(options: {
 export function navigateToReadinessContext(options?: {
   blocker?: string;
   capabilityFeature?: string;
+  echoSearchQuery?: string;
 }): void {
   const sp = mergeViewIntoSearch(window.location.search, "readiness");
   sp.delete(READINESS_PREREQUISITE_PARAM);
@@ -54,5 +56,6 @@ export function navigateToReadinessContext(options?: {
   } else {
     sp.delete(READINESS_CAPABILITY_FEATURE_PARAM);
   }
+  applyGlobalSearchQueryEcho(sp, options?.echoSearchQuery);
   replaceUrlSearchParams(sp);
 }

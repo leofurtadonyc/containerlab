@@ -1,3 +1,4 @@
+import { applyGlobalSearchQueryEcho } from "./global-search-deeplink";
 import { mergeViewIntoSearch, replaceUrlSearchParams } from "./url-app-state";
 import {
   POLICY_EVIDENCE_DELTA_FOCUS_PARAM,
@@ -36,7 +37,11 @@ export function readPolicyWorkspaceFromUrl(): "standard" | "dossier" {
 }
 
 /** Navigate to Policies with `policy_id` and dossier workspace (read-only composed briefing). */
-export function navigateToPolicyDossierWorkspace(policyId: string, entryHint?: string): void {
+export function navigateToPolicyDossierWorkspace(
+  policyId: string,
+  entryHint?: string,
+  echoSearchQuery?: string,
+): void {
   const sp = mergeViewIntoSearch(window.location.search, "policies");
   sp.set("policy_id", policyId);
   sp.set(POLICY_WORKSPACE_PARAM, "dossier");
@@ -47,6 +52,7 @@ export function navigateToPolicyDossierWorkspace(policyId: string, entryHint?: s
   } else {
     sp.delete(POLICY_DOSSIER_ENTRY_PARAM);
   }
+  applyGlobalSearchQueryEcho(sp, echoSearchQuery);
   replaceUrlSearchParams(sp);
 }
 

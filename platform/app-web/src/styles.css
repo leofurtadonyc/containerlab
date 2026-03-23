@@ -1742,3 +1742,35 @@ ol.notes-list.evidence-timeline-ordered {
   color: #7a8fb3;
   line-height: 1.4;
 }
+
+.global-operator-search__hit-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.global-operator-search__deeplink-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 4px 4px;
+}
+
+.global-operator-search__deeplink {
+  font-size: 0.78rem;
+}
+
+.global-operator-search__panel-footer {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #24324a;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.global-operator-search__panel-footer-label {
+  font-size: 0.75rem;
+  color: #7a8fb3;
+}
