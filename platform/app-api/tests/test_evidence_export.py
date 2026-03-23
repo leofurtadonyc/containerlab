@@ -160,6 +160,17 @@ def test_export_situation_room_markdown_format(monkeypatch: pytest.MonkeyPatch) 
     assert "evidence_pack_phase2_v1" in r.text
 
 
+def test_export_investigation_workspace_markdown_format(monkeypatch: pytest.MonkeyPatch) -> None:
+    _stub_live_policy_and_topology(monkeypatch)
+    r = client.get("/api/v1/exports/investigation-workspace/summary?format=markdown&sync_runs_limit=4")
+    assert r.status_code == 200
+    assert r.headers.get("content-type", "").startswith("text/markdown")
+    body = r.text
+    assert "# Evidence export: investigation_workspace" in body
+    assert "investigation_workspace_phase2_v1" in body
+    assert "```json" in body
+
+
 def test_export_nested_policy_contract_ids_subset_of_source_contract_ids(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

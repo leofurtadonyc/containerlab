@@ -150,7 +150,7 @@ This now validates:
 - Grafana Docker health visibility and API readiness
 - `gnmi-collector` startup-contract readiness and metrics availability
 - `app-api` startup-contract readiness, HTTP health, and metrics availability
-- `app-web` startup-contract readiness, static HTTP availability, and `/api` proxy reachability to `app-api`
+- `app-web` startup-contract readiness, static HTTP availability, `/api` proxy reachability to `app-api`, and (week **29** structural) shipped **`/assets/*.js`** references from **`/`** must include **`noc_cockpit_v1`** and **`overview_mode`** substrings somewhere in the downloaded scripts—proves the NOC cockpit composition markers remain in the packaged WebUI bundle; **not** a substitute for repository **`vitest`**
 - Prometheus live scrape target posture for the current real targets
 - read-side API contract sanity for platform status, devices, topology, policies, and capabilities, now including bounded `read_paths` coverage and freshness fields plus capability vendor-posture and roadmap rollups
 - **readiness/capability decision-support (week 23, structural):** the default **`/api/v1/capabilities`** compact JSON must still include **`related_readiness_blockers`** on capability items and **`related_prerequisites`** on dry-run readiness blockers—proves the decision-support link fields did not disappear from the payload; not a substitute for repository **`pytest`** or for interpreting readiness semantics
