@@ -502,6 +502,117 @@ export interface TopologyObjectRelatedPoliciesResponse {
   items: TopologyRelatedPolicyReference[];
 }
 
+export type FailureImpactExplicitNonClaim =
+  | "not_blast_radius_or_dependency_truth"
+  | "not_dataplane_or_te_impact_truth"
+  | "not_graph_simulation"
+  | "not_validation_or_safe_change_authority"
+  | "not_sla_or_availability_guarantee"
+  | "not_replace_controller_computed_truth"
+  | "not_global_policy_health_proxy";
+
+export interface FailureImpactSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: FailureImpactExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface FailureImpactSubject {
+  kind: TopologyObjectKind;
+  object_id: string;
+}
+
+export interface FailureImpactRollupCounts {
+  related_policies_total: number;
+  degraded_related_policies_total: number;
+  non_degraded_related_policies_total: number;
+  related_policies_path_analysis_supported_total: number;
+}
+
+export interface FailureImpactDegradedPostureBreakdown {
+  ok: number;
+  degraded: number;
+  unknown: number;
+}
+
+export interface FailureImpactFreshness {
+  assembly_generated_at: string;
+  policy_inventory_observed_at: string | null;
+  topology_snapshot_observed_at: string | null;
+  policy_inventory_empty_reason: string | null;
+  policy_serving_mode_echo: string;
+}
+
+/** `GET /api/v1/topology/objects/{object_id}/failure-impact` (bounded evidence rollup; not blast radius). */
+export interface FailureImpactViewResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "failure_impact_v1";
+  safety_framing: FailureImpactSafetyFraming;
+  subject: FailureImpactSubject;
+  rollup_counts: FailureImpactRollupCounts;
+  degraded_posture_breakdown: FailureImpactDegradedPostureBreakdown;
+  freshness: FailureImpactFreshness;
+  caveats: string[];
+  missing_evidence_notes: string[];
+}
+
+export type TopologyRiskSummaryExplicitNonClaim =
+  | "not_sla_or_service_risk_truth"
+  | "not_traffic_or_dataplane_risk_truth"
+  | "not_failure_probability"
+  | "not_validated_blast_radius"
+  | "not_optimization_engine"
+  | "not_global_policy_health_ranking"
+  | "not_validation_or_safe_change_authority"
+  | "not_replace_per_object_failure_impact";
+
+export interface TopologyRiskSummarySafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: TopologyRiskSummaryExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface TopologyRiskSummaryRankingInputs {
+  degraded_related_count: number;
+  unknown_related_count: number;
+  related_policy_breadth: number;
+  ok_related_count: number;
+}
+
+export interface TopologyRiskSummaryRow {
+  rank_index: number;
+  object_kind: TopologyObjectKind;
+  object_id: string;
+  ranking_inputs: TopologyRiskSummaryRankingInputs;
+  degraded_posture_breakdown: FailureImpactDegradedPostureBreakdown;
+}
+
+export interface TopologyRiskSummaryFreshness {
+  assembly_generated_at: string;
+  policy_inventory_observed_at: string | null;
+  topology_snapshot_observed_at: string | null;
+  policy_inventory_empty_reason: string | null;
+  policy_serving_mode_echo: string;
+}
+
+/** `GET /api/v1/topology/risk-summary` (attention ranking from related policies + degraded v1; not SLA/traffic risk). */
+export interface TopologyRiskSummaryResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "topology_risk_summary_v1";
+  ranking_basis: string;
+  safety_framing: TopologyRiskSummarySafetyFraming;
+  assembly_confidence: "low" | "medium";
+  ranked_objects: TopologyRiskSummaryRow[];
+  total_objects: number;
+  freshness: TopologyRiskSummaryFreshness;
+  caveats: string[];
+  missing_evidence_notes: string[];
+}
+
 /** `GET /api/v1/policies/{policy_id}/topology-impact` (inverse pivot; naming alignment only). */
 export interface PolicyTopologyImpactRow {
   topology_object_kind: TopologyObjectKind;
@@ -522,6 +633,116 @@ export interface PolicyTopologyImpactResponse {
   derivation_summary: string;
   global_caveats: string[];
   items: PolicyTopologyImpactRow[];
+}
+
+/** `GET /api/v1/policies/{policy_id}/evidence-timeline` (bounded read-side anchors; not forensic chronology). */
+export type PolicyEvidenceTimelineEntryKind =
+  | "policy_inventory_snapshot_anchor"
+  | "policy_history_persisted_checkpoint"
+  | "policy_history_comparison_span"
+  | "path_analysis_assembly_anchor"
+  | "degraded_policy_v1_signal_anchor";
+
+export type PolicyEvidenceTimelineExplicitNonClaim =
+  | "not_unified_forensic_chronology"
+  | "not_packet_path_proof"
+  | "not_workflow_execution_history"
+  | "not_validation_truth"
+  | "not_change_causality_engine"
+  | "not_controller_event_bus"
+  | "not_cross_policy_ranking";
+
+export interface PolicyEvidenceTimelineSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: PolicyEvidenceTimelineExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface PolicyEvidenceTimelineEntry {
+  entry_kind: PolicyEvidenceTimelineEntryKind;
+  sort_key: string;
+  tie_break: number;
+  summary: string;
+  provenance: string;
+  reference: string;
+}
+
+export interface PolicyEvidenceTimelineResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: PolicyEvidenceTimelineSafetyFraming;
+  policy_id: string;
+  scope_summary: string;
+  entries: PolicyEvidenceTimelineEntry[];
+  missing_evidence_notes: string[];
+}
+
+/** `GET /api/v1/policies/{policy_id}/evidence-delta` (bounded read-side difference hints; not drift truth). */
+export type PolicyEvidenceDeltaCategory =
+  | "posture_or_state_field_change"
+  | "degraded_policy_v1_change"
+  | "candidate_path_shape_change"
+  | "path_analysis_availability_change"
+  | "serving_mode_or_freshness_change"
+  | "no_comparable_fields"
+  | "gap_note";
+
+export type PolicyEvidenceDeltaExplicitNonClaim =
+  | "not_drift_truth"
+  | "not_config_diff_truth"
+  | "not_policy_correctness_verdict"
+  | "not_workflow_validation"
+  | "not_dataplane_or_te_verdict"
+  | "not_replacement_for_timeline"
+  | "not_cross_policy_ranking";
+
+export interface PolicyEvidenceDeltaSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: PolicyEvidenceDeltaExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface PolicyEvidenceDeltaAnchorCurrent {
+  anchor_role: "current_inventory";
+  observed_at: string | null;
+  row_posture: "current" | "stale";
+  serving_mode: "live" | "partial_live" | "persisted_fallback" | "unknown";
+}
+
+export interface PolicyEvidenceDeltaAnchorPrevious {
+  anchor_role: "previous_persisted_snapshot";
+  snapshot_id: string;
+  persisted_at: string;
+  observed_at: string | null;
+}
+
+export type PolicyEvidenceDeltaComparisonStatus =
+  | "delta_ready"
+  | "no_comparable_anchor"
+  | "anchor_policy_absent"
+  | "insufficient_evidence";
+
+export interface PolicyEvidenceDeltaItem {
+  category: PolicyEvidenceDeltaCategory;
+  summary: string;
+  detail: string | null;
+}
+
+export interface PolicyEvidenceDeltaResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: PolicyEvidenceDeltaSafetyFraming;
+  policy_id: string;
+  comparison_status: PolicyEvidenceDeltaComparisonStatus;
+  scope_summary: string;
+  current_anchor: PolicyEvidenceDeltaAnchorCurrent;
+  previous_anchor: PolicyEvidenceDeltaAnchorPrevious | null;
+  delta_items: PolicyEvidenceDeltaItem[];
+  caveats: string[];
 }
 
 export interface PolicyTargetFootprintRecord {

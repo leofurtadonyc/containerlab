@@ -43,6 +43,33 @@ const inventoryComparisonFixture = {
   notes: ["Comparison note for test."],
 };
 
+const policyComparisonWithPreviewFixture = {
+  current_snapshot_id: "pol-a",
+  previous_snapshot_id: "pol-b",
+  current_persisted_at: "2025-01-01T00:00:02Z",
+  previous_persisted_at: "2024-12-31T00:00:00Z",
+  current_observed_policy_count: 4,
+  previous_observed_policy_count: 4,
+  current_detail_record_count: 4,
+  previous_detail_record_count: 4,
+  observed_policy_delta: 0,
+  detail_record_delta: 0,
+  added_policy_count: 0,
+  removed_policy_count: 0,
+  changed_policy_count: 1,
+  change_preview: [
+    {
+      policy_id: "PE1:static_local:192.0.2.11:100",
+      policy_name: "sample-policy",
+      source_target: "PE1",
+      source_target_role: "pe",
+      change_kind: "changed" as const,
+      changed_fields: ["observed_state"],
+    },
+  ],
+  notes: [],
+};
+
 function createQueryState<T>(data: T | null) {
   return {
     data,
@@ -272,6 +299,30 @@ describe("workflows view", () => {
       expect(html).toContain("gnmi collector");
       expect(html).toContain("Comparison note for test.");
       expect(html).not.toContain(INVENTORY_NO_COMPARISON_SNIPPET);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("shows policy evidence timeline drilldown when policy comparison preview lists policy ids", () => {
+    const item: WorkflowHistoryItem = {
+      ...baseWorkflowItem(),
+      scope: "policy_inventory_read_side",
+      persisted_artifacts: ["policy_snapshot"],
+      policy_comparison_to_previous: policyComparisonWithPreviewFixture,
+    };
+    useWorkflowHistoryQuery.mockReturnValue(createQueryState(workflowHistoryPayloadForItems([item])));
+
+    const { host, cleanup } = renderWithDom(<WorkflowsView />);
+    try {
+      const btn = host.querySelector("button.table-select");
+      expect(btn).toBeTruthy();
+      act(() => {
+        (btn as HTMLButtonElement).click();
+      });
+      const html = host.innerHTML;
+      expect(html).toContain("Policy evidence timeline (from comparison preview)");
+      expect(html).toContain("Policy timeline · sample-policy");
     } finally {
       cleanup();
     }

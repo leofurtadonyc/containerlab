@@ -7,11 +7,15 @@ import type {
   PlatformStatusResponse,
   PoliciesListResponse,
   PolicyTopologyImpactResponse,
+  PolicyEvidenceDeltaResponse,
+  PolicyEvidenceTimelineResponse,
   InvestigationContextAssemblyResponse,
   RecentChangeSummaryResponse,
   SituationPackAssemblyResponse,
   TopologyObjectRelatedPoliciesResponse,
   TopologyResponse,
+  TopologyRiskSummaryResponse,
+  FailureImpactViewResponse,
   WorkflowHistoryResponse,
 } from "./contracts";
 import {
@@ -69,6 +73,17 @@ export class ApiClient {
     );
   }
 
+  async getTopologyObjectFailureImpact(objectId: string): Promise<FailureImpactViewResponse> {
+    const encoded = encodeURIComponent(objectId);
+    return this.request<FailureImpactViewResponse>(
+      `/api/v1/topology/objects/${encoded}/failure-impact`,
+    );
+  }
+
+  async getTopologyRiskSummary(): Promise<TopologyRiskSummaryResponse> {
+    return this.request<TopologyRiskSummaryResponse>("/api/v1/topology/risk-summary");
+  }
+
   async getPolicies(query?: DevicesPoliciesReadSideQuery): Promise<PoliciesListResponse> {
     const qs = query ? buildDevicesPoliciesQueryString(query) : "";
     return this.request<PoliciesListResponse>(`/api/v1/policies${qs}`);
@@ -82,6 +97,16 @@ export class ApiClient {
   async getPolicyTopologyImpact(policyId: string): Promise<PolicyTopologyImpactResponse> {
     const encoded = encodeURIComponent(policyId);
     return this.request<PolicyTopologyImpactResponse>(`/api/v1/policies/${encoded}/topology-impact`);
+  }
+
+  async getPolicyEvidenceTimeline(policyId: string): Promise<PolicyEvidenceTimelineResponse> {
+    const encoded = encodeURIComponent(policyId);
+    return this.request<PolicyEvidenceTimelineResponse>(`/api/v1/policies/${encoded}/evidence-timeline`);
+  }
+
+  async getPolicyEvidenceDelta(policyId: string): Promise<PolicyEvidenceDeltaResponse> {
+    const encoded = encodeURIComponent(policyId);
+    return this.request<PolicyEvidenceDeltaResponse>(`/api/v1/policies/${encoded}/evidence-delta`);
   }
 
   async getWorkflowHistory(query?: WorkflowHistoryReadSideQuery): Promise<WorkflowHistoryResponse> {

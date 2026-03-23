@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiClientError } from "../src/api/client";
 import type { InvestigationContextAssemblyResponse } from "../src/api/contracts";
-import { INV_FROM_PARAM } from "../src/lib/investigation-url-context";
+import { INV_FROM_PARAM, RISK_SUMMARY_ENTRY_PARAM } from "../src/lib/investigation-url-context";
 import { InvestigationView } from "../src/features/investigation/view";
 
 const { useInvestigationWorkspaceContextQuery } = vi.hoisted(() => ({
@@ -216,6 +216,46 @@ afterEach(() => {
 });
 
 describe("InvestigationView", () => {
+  it("renders risk-summary entry framing when risk_summary_entry=v1", () => {
+    window.history.replaceState(
+      {},
+      "",
+      `/?view=investigation&${INV_FROM_PARAM}=overview&topology_object=PE1&topology_object_kind=node&${RISK_SUMMARY_ENTRY_PARAM}=v1`,
+    );
+    useInvestigationWorkspaceContextQuery.mockReturnValue({
+      data: createInvestigationAssemblyFixture(),
+      error: null,
+      isLoading: false,
+      isRefreshing: false,
+      reload: vi.fn(),
+    });
+
+    const html = renderToStaticMarkup(<InvestigationView />);
+
+    expect(html).toContain("Entry from topology risk summary (v1)");
+    expect(html).toContain("attention ranking");
+  });
+
+  it("renders failure-impact entry framing when failure_impact_entry=v1", () => {
+    window.history.replaceState(
+      {},
+      "",
+      `/?view=investigation&${INV_FROM_PARAM}=topology&topology_object=PE1&topology_object_kind=node&failure_impact_entry=v1`,
+    );
+    useInvestigationWorkspaceContextQuery.mockReturnValue({
+      data: createInvestigationAssemblyFixture(),
+      error: null,
+      isLoading: false,
+      isRefreshing: false,
+      reload: vi.fn(),
+    });
+
+    const html = renderToStaticMarkup(<InvestigationView />);
+
+    expect(html).toContain("Entry from Topology failure impact (v1)");
+    expect(html).toContain("blast-radius simulation");
+  });
+
   it("renders navigation context banner when inv_from and shell object params are set", () => {
     window.history.replaceState(
       {},

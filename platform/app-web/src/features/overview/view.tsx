@@ -41,12 +41,18 @@ import {
 } from "./model";
 import { OVERVIEW_RECENT_CHANGE_SYNC_LIMIT, useRecentChangeSummaryQuery } from "./api";
 import { InvestigationOverviewEntry } from "./investigation-entry";
+import { OperatorWorkspaceEntry } from "./operator-workspace-entry";
 import { SituationRoomOverviewEntry } from "./situation-room-entry";
 import { RecentChangeIntelligencePanel } from "./recent-change";
 import { navigateToPoliciesWithDegradedPolicyV1Posture } from "../../lib/url-app-state";
 import { getPlatformReadPath, usePlatformStatusQuery } from "../platform-health/api";
 import { usePoliciesQuery } from "../policies/api";
-import { getTopologyCoverageSummary, useTopologyQuery } from "../topology/api";
+import {
+  getTopologyCoverageSummary,
+  useTopologyQuery,
+  useTopologyRiskSummaryQuery,
+} from "../topology/api";
+import { TopologyRiskAttentionPanel } from "../topology/topology-risk-attention-panel";
 
 function formatReadPathCoverage(readPath: PlatformReadPathStatus | null): string {
   if (!readPath) {
@@ -125,6 +131,7 @@ export function OverviewView() {
   const platformQuery = usePlatformStatusQuery(policiesSettled);
   const capabilitiesQuery = useCapabilitiesQuery();
   const recentChangeQuery = useRecentChangeSummaryQuery();
+  const riskSummaryQuery = useTopologyRiskSummaryQuery(topologySettled);
 
   const reloadAllSlices = useCallback(async () => {
     if (refreshInFlightRef.current) {
@@ -141,6 +148,7 @@ export function OverviewView() {
         platformQuery,
         capabilitiesQuery,
         recentChangeQuery,
+        riskSummaryQuery,
       ]);
     } finally {
       refreshInFlightRef.current = false;
@@ -151,6 +159,7 @@ export function OverviewView() {
     platformQuery.reload,
     policiesQuery.reload,
     recentChangeQuery.reload,
+    riskSummaryQuery.reload,
     topologyQuery.reload,
   ]);
 
@@ -367,6 +376,8 @@ export function OverviewView() {
     ...(topologyData?.topology.notes ?? []),
     ...(policiesData?.items.flatMap((policy) => policy.notes).slice(0, 2) ?? []),
   ];
+  const firstOverviewNodeId = topologyData?.topology.nodes[0]?.node_id ?? null;
+  const firstOverviewPolicyId = policiesData?.items[0]?.policy_id ?? null;
 
   return (
     <section>
@@ -427,6 +438,8 @@ export function OverviewView() {
           : ""}
       </p>
 
+      <OperatorWorkspaceEntry firstNodeId={firstOverviewNodeId} firstPolicyId={firstOverviewPolicyId} />
+
       <SituationRoomOverviewEntry syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT} />
 
       <InvestigationOverviewEntry syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT} />
@@ -436,6 +449,15 @@ export function OverviewView() {
         error={recentChangeQuery.error}
         isLoading={recentChangeQuery.isLoading}
         onRetry={recentChangeQuery.reload}
+      />
+
+      <TopologyRiskAttentionPanel
+        variant="overview"
+        data={riskSummaryQuery.data}
+        error={riskSummaryQuery.error}
+        isLoading={riskSummaryQuery.isLoading}
+        isRefreshing={riskSummaryQuery.isRefreshing}
+        onRetry={riskSummaryQuery.reload}
       />
 
       <div className="summary-grid">

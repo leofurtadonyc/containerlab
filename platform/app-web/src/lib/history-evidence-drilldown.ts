@@ -1,4 +1,9 @@
-import type { AuditHistoryItem, AuditReadinessSnapshotSummary, WorkflowHistoryItem } from "../api/contracts";
+import type {
+  AuditHistoryItem,
+  AuditReadinessSnapshotSummary,
+  PolicyHistoryComparison,
+  WorkflowHistoryItem,
+} from "../api/contracts";
 
 function readinessTargetFromSummary(
   summary: AuditReadinessSnapshotSummary | null | undefined,
@@ -25,6 +30,33 @@ export interface EvidenceDrilldownTarget {
     blocker?: string;
     prerequisite?: string;
   };
+}
+
+/** One row per unique policy id from a persisted policy comparison preview (workflow/audit history). */
+export interface PolicyEvidenceTimelineDrilldownRow {
+  policyId: string;
+  policyName: string;
+}
+
+/**
+ * Builds stable, de-duplicated policy rows from `policy_comparison_to_previous.change_preview`
+ * when the backend attached bounded comparison rows. Used for read-only navigation to the policy
+ * evidence timeline—not a claim that the workflow touched only these policies.
+ */
+export function policyEvidenceTimelineRowsFromComparison(item: {
+  policy_comparison_to_previous: PolicyHistoryComparison | null;
+}): PolicyEvidenceTimelineDrilldownRow[] {
+  const preview = item.policy_comparison_to_previous?.change_preview ?? [];
+  const seen = new Set<string>();
+  const out: PolicyEvidenceTimelineDrilldownRow[] = [];
+  for (const row of preview) {
+    if (!row.policy_id || seen.has(row.policy_id)) {
+      continue;
+    }
+    seen.add(row.policy_id);
+    out.push({ policyId: row.policy_id, policyName: row.policy_name });
+  }
+  return out;
 }
 
 function buildSyncDerivedTargets(

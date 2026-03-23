@@ -158,6 +158,12 @@ section h2 {
   border-left: 3px solid #4a8cff;
 }
 
+.detail-card.detail-card--focus-flash {
+  outline: 2px solid rgba(125, 211, 252, 0.55);
+  outline-offset: 2px;
+  transition: outline 0.25s ease;
+}
+
 .summary-card strong {
   display: block;
   font-size: 1.6rem;
@@ -258,6 +264,15 @@ section h2 {
 
 .notes-list li {
   margin-bottom: 8px;
+}
+
+ol.notes-list.evidence-timeline-ordered {
+  list-style: decimal;
+  padding-left: 1.4rem;
+}
+
+.evidence-timeline-entry-meta {
+  margin-top: 0.35rem;
 }
 
 .query-message {
@@ -716,6 +731,32 @@ section h2 {
 .investigation-entry-card__hint {
   max-width: 52rem;
   margin: 0;
+}
+
+.operator-workspace-entry {
+  border: 1px solid #2a3f5c;
+  background: linear-gradient(160deg, #101820 0%, #0c1219 50%, #0e1620 100%);
+  margin-bottom: 18px;
+}
+
+.operator-workspace-entry h3 {
+  margin-top: 0;
+}
+
+.operator-workspace-entry__section {
+  margin-top: 14px;
+}
+
+.operator-workspace-entry__section .summary-label {
+  margin-bottom: 4px;
+}
+
+.operator-workspace-entry__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin-top: 8px;
 }
 
 .situation-room-route {

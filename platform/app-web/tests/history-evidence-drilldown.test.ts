@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { AuditHistoryItem, WorkflowHistoryItem } from "../src/api/contracts";
 import {
   auditHistoryDrilldownTargets,
+  policyEvidenceTimelineRowsFromComparison,
   workflowHistoryDrilldownTargets,
 } from "../src/lib/history-evidence-drilldown";
 
@@ -28,6 +29,63 @@ const minimalWorkflow = (overrides: Partial<WorkflowHistoryItem>): WorkflowHisto
   policy_comparison_to_previous: null,
   notes: [],
   ...overrides,
+});
+
+describe("policyEvidenceTimelineRowsFromComparison", () => {
+  it("returns de-duplicated policy rows from comparison change_preview", () => {
+    const rows = policyEvidenceTimelineRowsFromComparison({
+      policy_comparison_to_previous: {
+        current_snapshot_id: "a",
+        previous_snapshot_id: "b",
+        current_persisted_at: "2025-01-01T00:00:00Z",
+        previous_persisted_at: "2024-12-31T00:00:00Z",
+        current_observed_policy_count: 2,
+        previous_observed_policy_count: 2,
+        current_detail_record_count: 2,
+        previous_detail_record_count: 2,
+        observed_policy_delta: 0,
+        detail_record_delta: 0,
+        added_policy_count: 0,
+        removed_policy_count: 0,
+        changed_policy_count: 1,
+        change_preview: [
+          {
+            policy_id: "P1",
+            policy_name: "One",
+            source_target: "x",
+            source_target_role: "pe",
+            change_kind: "changed",
+            changed_fields: [],
+          },
+          {
+            policy_id: "P1",
+            policy_name: "One",
+            source_target: "x",
+            source_target_role: "pe",
+            change_kind: "changed",
+            changed_fields: [],
+          },
+          {
+            policy_id: "P2",
+            policy_name: "Two",
+            source_target: "y",
+            source_target_role: "pe",
+            change_kind: "added",
+            changed_fields: [],
+          },
+        ],
+        notes: [],
+      },
+    });
+    expect(rows).toEqual([
+      { policyId: "P1", policyName: "One" },
+      { policyId: "P2", policyName: "Two" },
+    ]);
+  });
+
+  it("returns empty rows when comparison is absent", () => {
+    expect(policyEvidenceTimelineRowsFromComparison({ policy_comparison_to_previous: null })).toEqual([]);
+  });
 });
 
 describe("workflowHistoryDrilldownTargets", () => {

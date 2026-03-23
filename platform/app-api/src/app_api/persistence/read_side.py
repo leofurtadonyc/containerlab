@@ -7,7 +7,7 @@ from logging import getLogger
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.orm import joinedload
 
 from app_api.integrations.collector.inventory import CollectorInventorySnapshot
@@ -844,3 +844,23 @@ def load_recent_policy_snapshot_summaries(limit: int = 3) -> list[PersistedPolic
     except Exception:
         logger.exception("Failed to load recent persisted policy snapshot summaries.")
         return []
+
+
+def policy_record_exists_in_policy_snapshot(snapshot_id: str, policy_id: str) -> bool:
+    """Return whether a normalized policy row exists for ``policy_id`` in a persisted snapshot."""
+    try:
+        with create_session() as session:
+            stmt = select(
+                exists().where(
+                    PolicyRecordTable.snapshot_id == snapshot_id,
+                    PolicyRecordTable.policy_id == policy_id,
+                )
+            )
+            return bool(session.scalar(stmt))
+    except Exception:
+        logger.exception(
+            "Failed to check policy record membership for snapshot_id=%s policy_id=%s",
+            snapshot_id,
+            policy_id,
+        )
+        return False

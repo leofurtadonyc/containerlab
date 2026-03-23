@@ -17,7 +17,15 @@ export interface InvestigationNavContextBannerProps {
  */
 export function InvestigationNavContextBanner({ search }: InvestigationNavContextBannerProps) {
   const parsed = useMemo(() => parseInvestigationNavContext(search), [search]);
-  const { invFrom, deviceId, policyId, topologyObjectId, topologyObjectKind } = parsed;
+  const {
+    invFrom,
+    deviceId,
+    policyId,
+    topologyObjectId,
+    topologyObjectKind,
+    failureImpactEntry,
+    riskSummaryEntry,
+  } = parsed;
 
   if (!invFrom) {
     return null;
@@ -57,6 +65,19 @@ export function InvestigationNavContextBanner({ search }: InvestigationNavContex
           <li className="investigation-nav-context-banner__here">Investigation workspace</li>
         </ol>
       </nav>
+      {failureImpactEntry === "v1" ? (
+        <p className="table-note investigation-nav-context-banner__focus" role="presentation">
+          <strong>Entry from Topology failure impact (v1):</strong> bounded read-only evidence rollup; not
+          blast-radius simulation, dependency analysis, or safe-change authority.
+        </p>
+      ) : null}
+      {riskSummaryEntry === "v1" ? (
+        <p className="table-note investigation-nav-context-banner__focus" role="presentation">
+          <strong>Entry from topology risk summary (v1):</strong> attention ranking from related-policy and
+          degraded-policy (v1) counts only — not SLA or traffic risk, not blast radius, not global policy
+          health; navigation context only.
+        </p>
+      ) : null}
       {focusParts.length > 0 ? (
         <p className="table-note investigation-nav-context-banner__focus">
           Shell parameters preserved with this session:{" "}
