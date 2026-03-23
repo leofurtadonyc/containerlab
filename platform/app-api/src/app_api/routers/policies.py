@@ -7,11 +7,13 @@ from app_api.dependencies.read_side_query import (
     read_side_primary_list_limit,
 )
 from app_api.schemas.path_analysis import PathAnalysisViewResponse
+from app_api.schemas.policy_dossier import PolicyDossierResponse
 from app_api.schemas.policy_evidence_delta import PolicyEvidenceDeltaResponse
 from app_api.schemas.policy_evidence_timeline import PolicyEvidenceTimelineResponse
 from app_api.schemas.policy_topology_impact import PolicyTopologyImpactResponse
 from app_api.schemas.policies import PoliciesListResponse
 from app_api.services.path_analysis import build_policy_path_analysis_response
+from app_api.services.policy_dossier import build_policy_dossier_response
 from app_api.services.policy_evidence_delta import build_policy_evidence_delta_response
 from app_api.services.policy_evidence_timeline import build_policy_evidence_timeline_response
 from app_api.services.policy_topology_impact import build_policy_topology_impact_response
@@ -85,6 +87,21 @@ def get_policy_path_analysis(policy_id: str) -> PathAnalysisViewResponse:
 def get_policy_topology_impact(policy_id: str) -> PolicyTopologyImpactResponse:
     """Bounded topology objects that string-align with this policy (naming pivot, not blast radius)."""
     body = build_policy_topology_impact_response(policy_id)
+    if body is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No normalized policy record exists for the requested policy_id.",
+        )
+    return body
+
+
+@router.get(
+    "/policies/{policy_id}/dossier",
+    response_model=PolicyDossierResponse,
+)
+def get_policy_dossier(policy_id: str) -> PolicyDossierResponse:
+    """Read-only composed policy dossier (week 27–28 evidence only; not dataplane or workflow truth)."""
+    body = build_policy_dossier_response(policy_id)
     if body is None:
         raise HTTPException(
             status_code=404,

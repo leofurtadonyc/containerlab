@@ -8,7 +8,7 @@ This document is the **backend-owned bounded contract** for a future **read-only
 
 Stable **`contract_id`:** **`policy_dossier_v1`**
 
-**Future implementation (not required by this document alone):** a single read API such as **`GET /api/v1/policies/{policy_id}/dossier`** (name illustrative until routed) returning **`PolicyDossierResponse`**—or an equivalent **WebUI-side** composition that **strictly** mirrors the same section contract. Until implemented, this file is the **authoritative vocabulary** for dossier layout, non-claims, and navigation rules.
+**Implemented read API:** **`GET /api/v1/policies/{policy_id}/dossier`** returns **`PolicyDossierResponse`** (**`schemas/policy_dossier.py`**, **`services/policy_dossier.py`**, route on **`routers/policies.py`**), composing nested **`path_analysis_phase2_v1`**, **`policy_topology_impact`** rows, **`policy_evidence_timeline_v1`**, **`policy_evidence_delta_v1`**, plus **`policy_record`** (inventory row + **`degraded_policy_v1`**), navigation shell hints, merged freshness/caveats, and **404** when **`policy_id`** is absent from the served inventory slice. A **WebUI-side** composition may still mirror the same section contract without calling this endpoint.
 
 ---
 

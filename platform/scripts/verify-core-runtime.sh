@@ -349,8 +349,12 @@ if [ -n "$first_policy_id" ]; then
   policy_evidence_delta_response=$(fetch_compact_json "$APP_API_URL/api/v1/policies/${first_policy_id}/evidence-delta")
   assert_contains "policy evidence delta response (contract id)" "$policy_evidence_delta_response" '"contract_id":"policy_evidence_delta_v1"'
   assert_contains "policy evidence delta response (comparison_status)" "$policy_evidence_delta_response" '"comparison_status":"'
+  policy_dossier_response=$(fetch_compact_json "$APP_API_URL/api/v1/policies/${first_policy_id}/dossier")
+  assert_contains "policy dossier response (contract id)" "$policy_dossier_response" '"contract_id":"policy_dossier_v1"'
+  assert_contains "policy dossier response (nested path_analysis)" "$policy_dossier_response" '"path_analysis":{'
+  assert_contains "policy dossier response (nested evidence_delta)" "$policy_dossier_response" '"evidence_delta":{'
 else
-  notice "Policies items list empty; skipping path-analysis, degraded_policy_v1 contract_id, policy evidence timeline, and policy evidence delta structural checks."
+  notice "Policies items list empty; skipping path-analysis, degraded_policy_v1 contract_id, policy evidence timeline, policy evidence delta, and policy dossier structural checks."
 fi
 
 if [ -n "$first_node_id" ]; then
