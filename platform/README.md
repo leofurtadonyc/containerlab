@@ -190,7 +190,7 @@ At this stage, contributors should assume:
 - Grafana dashboard provisioning for platform, topology, SR policy, and vendor (Nokia-first) bounded observability; change-validation remains markdown-only until metrics exist (see `docs/dashboards.md`)
 - repo-built local images for the initial service set, with bounded startup validators now in place for Postgres, Prometheus, and Grafana plus a bounded deploy-time verification flow for the core runtime and ODL auth path
 - schema and shared-directory scaffolding
-- read-only inventory, topology, policy, capability, and platform status APIs (including week **27** bounded endpoints for **path-analysis**, **topology↔policy** naming pivots, and **degraded-policy v1** on policy records—**not** workflow or validation engines)
+- read-only inventory, topology, policy, capability, and platform status APIs (including week **27** bounded endpoints for **path-analysis**, **topology↔policy** naming pivots, and **degraded-policy v1** on policy records—**not** workflow or validation engines; week **28** **`failure-impact`**, **`topology/risk-summary`**, **`policy` evidence timeline/delta**—**not** blast-radius, SLA/traffic risk, or drift authority)
 - read-only WebUI pages backed by stable backend contracts
 - bounded Postgres-backed persistence for inventory, topology, and policy snapshots plus sync-run history
 
