@@ -25,6 +25,9 @@ describe("policy dossier navigation", () => {
     expect(readPolicyDossierEntryFromSearch("?policy_dossier_entry=delta_digest_workspace")).toBe(
       "delta_digest_workspace",
     );
+    expect(readPolicyDossierEntryFromSearch("?policy_dossier_entry=evidence_replay_viewer")).toBe(
+      "evidence_replay_viewer",
+    );
     expect(readPolicyDossierEntryFromSearch("?policy_dossier_entry=invalid")).toBeNull();
     expect(readPolicyDossierEntryFromSearch("")).toBeNull();
   });

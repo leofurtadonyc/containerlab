@@ -13,4 +13,5 @@ export const PLATFORM_NAV_VIEW_IDS = new Set<string>([
   "capabilities",
   "readiness",
   "platform-health",
+  "evidence-replay",
 ]);
