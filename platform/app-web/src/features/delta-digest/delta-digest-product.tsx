@@ -159,7 +159,7 @@ export function DeltaDigestProduct({ data, syncRunsLimit, onReload }: DeltaDiges
           data={data.recent_change_summary}
           error={null}
           isLoading={false}
-          onReload={() => void onReload()}
+          onRetry={() => void onReload()}
         />
       </details>
 
