@@ -101,14 +101,15 @@ Stable keys (align with schema literals when implemented):
 
 ## Gap audit: present vs future implementation
 
-### Present (contract-only)
+### Present
 
-- This document defines **bounded vocabulary** and **non-claims** for a future **`policy_evidence_delta_v1`** slice.
+- This document defines **bounded vocabulary** and **non-claims** for **`policy_evidence_delta_v1`**.
+- **`GET /api/v1/policies/{policy_id}/evidence-delta`** is implemented in **`app-api`** (see **Future** below for pointers); **WebUI** consumption remains optional follow-on work.
 
 ### Future (optional follow-ons)
 
-- **`GET /api/v1/policies/{policy_id}/evidence-delta`** (or equivalent) **schema** and **service** assembly.
-- **WebUI** panel on **Policies** or **Investigation** — **not** required for this contract document alone.
+- **Implemented (read API):** **`GET /api/v1/policies/{policy_id}/evidence-delta`** — **`PolicyEvidenceDeltaResponse`** in **`platform/app-api/src/app_api/schemas/policy_evidence_delta.py`**, assembly in **`platform/app-api/src/app_api/services/policy_evidence_delta.py`**, route on **`platform/app-api/src/app_api/routers/policies.py`**; repository **`pytest`** in **`platform/app-api/tests/test_policy_evidence_delta.py`**. Compares current inventory to the **previous** persisted snapshot row when **`GET /api/v1/policies`** history is **`comparison_ready`**; honest **`comparison_status`** and caveats when anchors are missing or not comparable.
+- **WebUI** panel on **Policies** or **Investigation** — **not** required for the backend slice above.
 
 ---
 
