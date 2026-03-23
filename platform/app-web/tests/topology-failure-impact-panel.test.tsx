@@ -169,6 +169,7 @@ describe("TopologyFailureImpactPanel", () => {
 
     expect(html).toContain("Related policies (distinct)");
     expect(html).toContain(">2<");
+    expect(html).toContain("Open dossier workspace");
     expect(html).toContain("Open in Investigation");
     expect(html).toContain("failure_impact_entry=v1");
     expect(html).toContain("Policies filtered to degraded (v1)");

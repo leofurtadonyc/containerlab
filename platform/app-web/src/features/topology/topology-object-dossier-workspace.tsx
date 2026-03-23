@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import { ErrorState, LoadingState } from "../../components/query-states";
 import { ApiClientError } from "../../api/client";
 import type { TopologyObjectKind } from "../../api/contracts";
@@ -8,7 +10,9 @@ import {
   DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
 } from "../../lib/investigation-navigation";
 import { navigateToEvidenceView, navigateToPoliciesWithDegradedPolicyV1Posture } from "../../lib/url-app-state";
+import { readDossierSourceFromSearch } from "../../lib/topology-dossier-navigation";
 import { navigateToPoliciesPolicy } from "../../lib/topology-policy-navigation";
+import { useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { useTopologyObjectDossierQuery } from "./api";
 
 export interface TopologyObjectDossierWorkspaceProps {
@@ -18,6 +22,8 @@ export interface TopologyObjectDossierWorkspaceProps {
 
 export function TopologyObjectDossierWorkspace({ objectId, objectKind }: TopologyObjectDossierWorkspaceProps) {
   const { data, error, isLoading, isRefreshing, reload } = useTopologyObjectDossierQuery(objectId);
+  const searchKey = useUrlSearchParamsKey();
+  const dossierSource = useMemo(() => readDossierSourceFromSearch(searchKey), [searchKey]);
 
   if (objectId === null || objectKind === null) {
     return (
@@ -112,6 +118,16 @@ export function TopologyObjectDossierWorkspace({ objectId, objectKind }: Topolog
         <strong>not</strong> blast-radius simulation, traffic or SLA risk, workflow authority, or a substitute for
         deep per-policy or per-path drill-downs.
       </p>
+
+      {dossierSource ? (
+        <div className="callout">
+          <strong>Navigation context</strong>
+          <p className="table-note">
+            Opened with <code>dossier_source={dossierSource}</code> — client-only shell hint for where you entered
+            the dossier; not sent to app-api and not a scoring signal.
+          </p>
+        </div>
+      ) : null}
 
       <section className="topology-dossier-workspace__section" aria-labelledby="dossier-posture-heading">
         <h4 id="dossier-posture-heading">Topology posture summary</h4>

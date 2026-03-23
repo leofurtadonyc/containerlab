@@ -362,8 +362,12 @@ if [ -n "$first_node_id" ]; then
   failure_impact_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/objects/${first_node_id}/failure-impact")
   assert_contains "failure impact response (contract id)" "$failure_impact_response" '"contract_id":"failure_impact_v1"'
   assert_contains "failure impact response (subject)" "$failure_impact_response" '"subject":{'
+  topology_object_dossier_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/objects/${first_node_id}/dossier")
+  assert_contains "topology object dossier response (contract id)" "$topology_object_dossier_response" '"contract_id":"topology_object_dossier_v1"'
+  assert_contains "topology object dossier response (nested failure_impact)" "$topology_object_dossier_response" '"failure_impact":{'
+  assert_contains "topology object dossier response (risk_attention)" "$topology_object_dossier_response" '"risk_attention":{'
 else
-  notice "Topology nodes list empty; skipping topology-related-policies and failure-impact structural checks."
+  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, and topology-object-dossier structural checks."
 fi
 
 # Cross-slice list/history metadata and evidence shape (contract posture, not business truth).

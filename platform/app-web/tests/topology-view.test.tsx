@@ -39,6 +39,13 @@ vi.mock("../src/features/topology/api", async () => {
     useTopologyQuery,
     useTopologyRelatedPoliciesQuery,
     useTopologyRiskSummaryQuery,
+    useTopologyObjectDossierQuery: vi.fn(() => ({
+      data: null,
+      error: null,
+      isLoading: false,
+      isRefreshing: false,
+      reload: vi.fn(async () => undefined),
+    })),
   };
 });
 
@@ -348,5 +355,6 @@ describe("topology view", () => {
 
     expect(html).toContain("Related policies");
     expect(html).toContain("Test derivation for related policies.");
+    expect(html).toContain("Open dossier");
   });
 });

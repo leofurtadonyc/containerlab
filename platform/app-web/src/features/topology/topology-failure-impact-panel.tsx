@@ -8,6 +8,7 @@ import {
   DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
 } from "../../lib/investigation-navigation";
 import { navigateToEvidenceView, navigateToPoliciesWithDegradedPolicyV1Posture } from "../../lib/url-app-state";
+import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { useTopologyFailureImpactQuery } from "./api";
 
 function formatExplicitNonClaim(key: string): string {
@@ -192,6 +193,13 @@ export function TopologyFailureImpactPanel({ objectId, objectKind }: TopologyFai
       </div>
       <p className="summary-label">Related views</p>
       <p className="table-note">
+        <button
+          type="button"
+          className="nav-drilldown-button"
+          onClick={() => navigateToTopologyDossier(objectId, objectKind, "failure_impact")}
+        >
+          Open dossier workspace
+        </button>{" "}
         <button type="button" className="table-select" onClick={() => navigateToEvidenceView("policies")}>
           Open policy inventory
         </button>{" "}

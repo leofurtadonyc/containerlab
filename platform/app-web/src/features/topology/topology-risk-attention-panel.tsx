@@ -6,6 +6,7 @@ import {
   readSyncRunsLimitFromSearch,
 } from "../../lib/investigation-navigation";
 import { formatDateTime, formatLabel } from "../../lib/presentation";
+import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { navigateToTopologyObject } from "../../lib/topology-policy-navigation";
 
 export interface TopologyRiskAttentionPanelProps {
@@ -123,6 +124,7 @@ export function TopologyRiskAttentionPanel({
                 <th>Object</th>
                 <th>D / U / R / K</th>
                 <th>Topology</th>
+                <th>Dossier</th>
                 <th>Investigation</th>
               </tr>
             </thead>
@@ -157,6 +159,25 @@ export function TopologyRiskAttentionPanel({
                       {drillToObject
                         ? "Selects the object for related policies and failure-impact below."
                         : "Opens Topology with this object selected."}
+                    </div>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="nav-drilldown-button"
+                      onClick={() =>
+                        navigateToTopologyDossier(
+                          row.object_id,
+                          row.object_kind,
+                          variant === "overview" ? "overview_risk" : "risk_summary",
+                        )
+                      }
+                    >
+                      Open dossier
+                    </button>
+                    <div className="table-note">
+                      Opens Topology with dossier workspace and{" "}
+                      <code>dossier_source={variant === "overview" ? "overview_risk" : "risk_summary"}</code>.
                     </div>
                   </td>
                   <td>
