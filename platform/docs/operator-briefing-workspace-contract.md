@@ -65,7 +65,7 @@ Sections **SHOULD** appear in this **order** so operators get a stable **briefin
 
 1. **Same export contracts** — Briefing **must** route export actions to the **same** **`GET /api/v1/exports/...`** families and **`export_kind`** values as [`evidence-export-contract.md`](./evidence-export-contract.md); **no** new export MIME “briefing-only” authority.
 2. **Subject alignment** — Exports **require** resolvable **`subject_ref`** (e.g. **`policy_id`**, **`object_id`**, **`sync_runs_limit`** for situation/investigation). The briefing **must** make **which export applies** obvious **before** download.
-3. **No briefing-shaped export required in v1** — A **single** “export the whole briefing” bundle is **optional** and **out of scope** unless a future **`operator_briefing_workspace_v2`** defines a **dedicated** export envelope; v1 **reuses** per-subject exports only.
+3. **No briefing-shaped export required in v1** — A **single** “export the whole briefing” bundle is **optional** and **out of scope** unless a future **`operator_briefing_workspace_v2`** defines a **dedicated** export envelope; v1 **reuses** per-subject exports only. When a **multi-export bundle** is introduced, its bounded shape is defined by [`briefing-export-bundle-contract.md`](./briefing-export-bundle-contract.md) (**`briefing_export_bundle_v1`**).
 
 ---
 
