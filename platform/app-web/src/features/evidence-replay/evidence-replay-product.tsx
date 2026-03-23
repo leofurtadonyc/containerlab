@@ -8,9 +8,9 @@ import {
   type EvidenceReplayModel,
 } from "../../lib/evidence-replay";
 import {
-  readPolicyIdFromSubjectRef,
+  readPolicyIdForReplay,
   readSyncRunsFromSubjectRef,
-  readTopologyPivotFromSubjectRef,
+  readTopologyPivotForReplay,
 } from "../../lib/evidence-replay/evidence-replay-pivots";
 import { navigateToInvestigationView } from "../../lib/investigation-navigation";
 import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
@@ -117,8 +117,8 @@ export function EvidenceReplayProduct() {
 
   const renderJsonModel = (model: EvidenceReplayModel) => {
     const syncRuns = readSyncRunsFromSubjectRef(model.subjectRef);
-    const policyId = readPolicyIdFromSubjectRef(model.subjectRef);
-    const topology = readTopologyPivotFromSubjectRef(model.subjectRef);
+    const policyPivot = readPolicyIdForReplay(model.subjectRef, model.nested);
+    const topologyPivot = readTopologyPivotForReplay(model.subjectRef, model.nested);
 
     return (
       <>
@@ -221,21 +221,25 @@ export function EvidenceReplayProduct() {
                 Open live investigation workspace
               </button>
             ) : null}
-            {model.exportKind === "policy_dossier" && policyId ? (
+            {model.exportKind === "policy_dossier" && policyPivot ? (
               <button
                 type="button"
                 className="nav-drilldown-button"
-                onClick={() => navigateToPolicyDossierWorkspace(policyId, "evidence_replay_viewer")}
+                onClick={() => navigateToPolicyDossierWorkspace(policyPivot.policyId, "evidence_replay_viewer")}
               >
                 Open live policy dossier
               </button>
             ) : null}
-            {model.exportKind === "topology_object_dossier" && topology ? (
+            {model.exportKind === "topology_object_dossier" && topologyPivot ? (
               <button
                 type="button"
                 className="nav-drilldown-button"
                 onClick={() =>
-                  navigateToTopologyDossier(topology.objectId, topology.kind, "evidence_replay_viewer")
+                  navigateToTopologyDossier(
+                    topologyPivot.objectId,
+                    topologyPivot.kind,
+                    "evidence_replay_viewer",
+                  )
                 }
               >
                 Open live topology dossier
@@ -245,11 +249,19 @@ export function EvidenceReplayProduct() {
               Overview
             </button>
           </div>
-          {(model.exportKind === "policy_dossier" && !policyId) ||
-          (model.exportKind === "topology_object_dossier" && !topology) ? (
-            <p className="meta-copy">
-              Pivot to live {model.exportKind.replace(/_/g, " ")} is unavailable — subject_ref did not include the
-              expected ids.
+          {policyPivot?.source === "nested_policy_record" || topologyPivot?.source === "nested_object_identity" ? (
+            <p className="meta-copy evidence-replay-pivots__fallback">
+              Live pivot identity was taken from the nested dossier payload (usable ids were not present in{" "}
+              <code>subject_ref</code>).
+            </p>
+          ) : null}
+          {(model.exportKind === "policy_dossier" && !policyPivot) ||
+          (model.exportKind === "topology_object_dossier" && !topologyPivot) ? (
+            <p className="meta-copy evidence-replay-pivots__unmapped" role="status">
+              Unmapped pivot: cannot derive a live {model.exportKind.replace(/_/g, " ")} target from{" "}
+              <code>subject_ref</code>
+              {model.nested && Object.keys(model.nested).length > 0 ? " or nested identity fields" : ""}. Use Overview or
+              navigate manually — do not guess ids from the file.
             </p>
           ) : null}
         </div>
