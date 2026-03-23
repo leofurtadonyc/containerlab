@@ -6,6 +6,7 @@ import {
   navigateToInvestigationView,
   readSyncRunsLimitFromSearch,
 } from "../../lib/investigation-navigation";
+import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
 import { scrollToPolicyEvidenceTimelineCard, scrollToPolicyPathAnalysisCard } from "../../lib/topology-policy-navigation";
 import { usePolicyEvidenceDeltaQuery } from "./api";
 
@@ -242,6 +243,14 @@ export function PolicyEvidenceDeltaPanel({ policyId, emphasize }: PolicyEvidence
         {" · "}
         <button type="button" className="inline-action" onClick={() => scrollToPolicyPathAnalysisCard()}>
           Path analysis
+        </button>
+        {" · "}
+        <button
+          type="button"
+          className="inline-action"
+          onClick={() => navigateToPolicyDossierWorkspace(policyId, "evidence_delta_panel")}
+        >
+          Policy dossier
         </button>
       </p>
 

@@ -39,6 +39,7 @@ import {
 } from "../../lib/topology-policy-navigation";
 import {
   navigateToPolicyDossierWorkspace,
+  POLICY_DOSSIER_ENTRY_PARAM,
   POLICY_WORKSPACE_PARAM,
   readPolicyWorkspaceFromSearch,
   readPolicyWorkspaceFromUrl,
@@ -688,9 +689,9 @@ export function PoliciesView() {
     if (workspaceMode === "dossier" && wsCurrent !== "dossier") {
       sp.set(POLICY_WORKSPACE_PARAM, "dossier");
       changed = true;
-    } else if (workspaceMode === "standard" && (wsCurrent !== null || sp.get("policy_dossier_entry"))) {
+    } else if (workspaceMode === "standard" && (wsCurrent !== null || sp.get(POLICY_DOSSIER_ENTRY_PARAM))) {
       sp.delete(POLICY_WORKSPACE_PARAM);
-      sp.delete("policy_dossier_entry");
+      sp.delete(POLICY_DOSSIER_ENTRY_PARAM);
       changed = true;
     }
     if (changed) {
@@ -2317,6 +2318,15 @@ export function PoliciesView() {
                   <span>Type: {formatLabel(selectedPolicy.policy_type)}</span>
                   <span>Source target: {selectedPolicy.source_target}</span>
                   <span>Current posture: {formatRowCurrentPosture(selectedPolicy.current_posture)}</span>
+                  <span>
+                    <button
+                      type="button"
+                      className="inline-action"
+                      onClick={() => navigateToPolicyDossierWorkspace(selectedPolicy.policy_id, "policy_detail")}
+                    >
+                      Open policy dossier
+                    </button>
+                  </span>
                 </div>
                 <div className="content-grid">
                   <article>

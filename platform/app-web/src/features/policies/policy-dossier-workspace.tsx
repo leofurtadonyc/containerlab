@@ -16,6 +16,7 @@ import {
   navigateToPoliciesPolicyPathAnalysis,
   navigateToTopologyObject,
 } from "../../lib/topology-policy-navigation";
+import { readPolicyDossierEntryFromSearch } from "../../lib/policy-dossier-navigation";
 import { useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { usePolicyDossierQuery } from "./api";
 
@@ -26,7 +27,7 @@ export interface PolicyDossierWorkspaceProps {
 export function PolicyDossierWorkspace({ policyId }: PolicyDossierWorkspaceProps) {
   const { data, error, isLoading, isRefreshing, reload } = usePolicyDossierQuery(policyId);
   const searchKey = useUrlSearchParamsKey();
-  const dossierEntry = useMemo(() => new URLSearchParams(searchKey).get("policy_dossier_entry"), [searchKey]);
+  const dossierEntry = useMemo(() => readPolicyDossierEntryFromSearch(searchKey), [searchKey]);
 
   if (policyId === null || policyId.length === 0) {
     return (

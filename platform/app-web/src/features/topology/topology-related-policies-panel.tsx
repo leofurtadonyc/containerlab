@@ -7,6 +7,7 @@ import {
 import { ApiClientError } from "../../api/client";
 import type { PoliciesListResponse, TopologyObjectKind, TopologyRelatedPolicyReference } from "../../api/contracts";
 import { buildDegradedPolicyV1ListRowHint, formatLabel } from "../../lib/presentation";
+import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToPoliciesPolicy, navigateToPoliciesPolicyPathAnalysis } from "../../lib/topology-policy-navigation";
 import { useTopologyRelatedPoliciesQuery } from "./api";
 
@@ -183,6 +184,15 @@ export function TopologyRelatedPoliciesPanel({
                     onClick={() => navigateToPoliciesPolicyPathAnalysis(item.policy_id)}
                   >
                     Path analysis
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-action"
+                    onClick={() =>
+                      navigateToPolicyDossierWorkspace(item.policy_id, "topology_related_policies_panel")
+                    }
+                  >
+                    Policy dossier
                   </button>
                 </p>
               </li>

@@ -5,6 +5,7 @@ import {
 } from "../../components/policy-impact-summary";
 import { ApiClientError } from "../../api/client";
 import type { PolicyTopologyImpactRow } from "../../api/contracts";
+import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
 import { formatLabel } from "../../lib/presentation";
 import { navigateToTopologyObject } from "../../lib/topology-policy-navigation";
 import { usePolicyTopologyImpactQuery } from "./api";
@@ -69,6 +70,16 @@ export function PolicyTopologyImpactPanel({ policyId }: PolicyTopologyImpactPane
           Refreshing topology impact…
         </p>
       ) : null}
+      <p className="table-note">
+        <button
+          type="button"
+          className="inline-action"
+          onClick={() => navigateToPolicyDossierWorkspace(policyId, "topology_impact_panel")}
+        >
+          Open policy dossier
+        </button>
+        <span className="table-note"> — unified path, timeline, and delta for this policy id.</span>
+      </p>
       <PolicyImpactSummaryIntro />
       <p className="footnote">{data.derivation_summary}</p>
       <p className="table-note">

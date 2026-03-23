@@ -634,9 +634,17 @@ ol.notes-list.evidence-timeline-ordered {
 
 .history-evidence-drilldown-actions {
   display: flex;
+  flex-direction: column;
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 8px;
+}
+
+.history-evidence-drilldown-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
 }
 
 .nav-drilldown-button {

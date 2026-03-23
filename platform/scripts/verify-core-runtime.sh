@@ -353,6 +353,7 @@ if [ -n "$first_policy_id" ]; then
   assert_contains "policy dossier response (contract id)" "$policy_dossier_response" '"contract_id":"policy_dossier_v1"'
   assert_contains "policy dossier response (nested path_analysis)" "$policy_dossier_response" '"path_analysis":{'
   assert_contains "policy dossier response (nested evidence_delta)" "$policy_dossier_response" '"evidence_delta":{'
+  assert_contains "policy dossier response (merged_caveats)" "$policy_dossier_response" '"merged_caveats":'
 else
   notice "Policies items list empty; skipping path-analysis, degraded_policy_v1 contract_id, policy evidence timeline, policy evidence delta, and policy dossier structural checks."
 fi
