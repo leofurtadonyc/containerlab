@@ -613,6 +613,56 @@ export interface TopologyRiskSummaryResponse {
   missing_evidence_notes: string[];
 }
 
+/** `GET /api/v1/topology/objects/{object_id}/dossier` (composed read-only briefing; not blast radius or workflow). */
+export interface TopologyObjectIdentitySection {
+  object_kind: TopologyObjectKind;
+  object_id: string;
+  display_label: string;
+  identity_detail_lines: string[];
+}
+
+export interface TopologyRiskAttentionSection {
+  ranking_basis: string;
+  row: TopologyRiskSummaryRow | null;
+  risk_row_gap_note: string | null;
+}
+
+export interface TopologyObjectDossierDegradedRelatedPreviewItem {
+  policy_id: string;
+  policy_name: string;
+  degraded_policy_v1: DegradedPolicyV1Classification;
+}
+
+export interface TopologyObjectDossierNavigationTargets {
+  investigation_shell_params: Record<string, string>;
+  situation_room_shell_params: Record<string, string>;
+  topology_shell_params: Record<string, string>;
+  related_policy_ids_for_policies_view: string[];
+}
+
+export interface TopologyObjectDossierFreshnessBlock {
+  dossier_assembled_at: string;
+  policy_inventory_observed_at: string | null;
+  topology_snapshot_observed_at: string | null;
+  policy_inventory_empty_reason: string | null;
+  policy_serving_mode_echo: string;
+  topology_risk_summary_assembly_generated_at: string | null;
+}
+
+export interface TopologyObjectDossierResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "topology_object_dossier_v1";
+  object_identity: TopologyObjectIdentitySection;
+  topology_posture_summary_lines: string[];
+  failure_impact: FailureImpactViewResponse;
+  risk_attention: TopologyRiskAttentionSection;
+  related_policies: TopologyObjectRelatedPoliciesResponse;
+  degraded_related_policies_preview: TopologyObjectDossierDegradedRelatedPreviewItem[];
+  navigation_targets: TopologyObjectDossierNavigationTargets;
+  freshness: TopologyObjectDossierFreshnessBlock;
+  merged_caveats: string[];
+}
+
 /** `GET /api/v1/policies/{policy_id}/topology-impact` (inverse pivot; naming alignment only). */
 export interface PolicyTopologyImpactRow {
   topology_object_kind: TopologyObjectKind;

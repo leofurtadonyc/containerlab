@@ -16,6 +16,7 @@ import type {
   TopologyResponse,
   TopologyRiskSummaryResponse,
   FailureImpactViewResponse,
+  TopologyObjectDossierResponse,
   WorkflowHistoryResponse,
 } from "./contracts";
 import {
@@ -82,6 +83,13 @@ export class ApiClient {
 
   async getTopologyRiskSummary(): Promise<TopologyRiskSummaryResponse> {
     return this.request<TopologyRiskSummaryResponse>("/api/v1/topology/risk-summary");
+  }
+
+  async getTopologyObjectDossier(objectId: string): Promise<TopologyObjectDossierResponse> {
+    const encoded = encodeURIComponent(objectId);
+    return this.request<TopologyObjectDossierResponse>(
+      `/api/v1/topology/objects/${encoded}/dossier`,
+    );
   }
 
   async getPolicies(query?: DevicesPoliciesReadSideQuery): Promise<PoliciesListResponse> {

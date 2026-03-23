@@ -83,6 +83,61 @@ section p {
   background: rgba(20, 29, 44, 0.75);
 }
 
+.topology-workspace-switch {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .topology-workspace-switch {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+}
+
+.topology-workspace-switch__title {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.topology-workspace-switch__toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.topology-dossier-workspace {
+  margin-bottom: 24px;
+  padding: 24px;
+  border: 1px solid #3d5a8a;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(35, 58, 98, 0.35) 0%, rgba(20, 29, 44, 0.95) 65%);
+}
+
+.topology-dossier-workspace__header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2d3e5c;
+}
+
+.topology-dossier-workspace__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.topology-dossier-workspace__section {
+  margin-top: 16px;
+}
+
+.topology-dossier-workspace__section h4 {
+  margin-top: 0;
+}
+
 .eyebrow {
   margin: 0 0 8px;
   color: #8fb3ff;
