@@ -41,6 +41,7 @@ import {
 } from "./model";
 import { OVERVIEW_RECENT_CHANGE_SYNC_LIMIT, useRecentChangeSummaryQuery } from "./api";
 import { InvestigationOverviewEntry } from "./investigation-entry";
+import { OperatorWorkspaceEntry } from "./operator-workspace-entry";
 import { SituationRoomOverviewEntry } from "./situation-room-entry";
 import { RecentChangeIntelligencePanel } from "./recent-change";
 import { navigateToPoliciesWithDegradedPolicyV1Posture } from "../../lib/url-app-state";
@@ -375,6 +376,8 @@ export function OverviewView() {
     ...(topologyData?.topology.notes ?? []),
     ...(policiesData?.items.flatMap((policy) => policy.notes).slice(0, 2) ?? []),
   ];
+  const firstOverviewNodeId = topologyData?.topology.nodes[0]?.node_id ?? null;
+  const firstOverviewPolicyId = policiesData?.items[0]?.policy_id ?? null;
 
   return (
     <section>
@@ -434,6 +437,8 @@ export function OverviewView() {
           ? ` ${3 - availableCoreSlices.length} core slice${3 - availableCoreSlices.length === 1 ? " is" : "s are"} currently unavailable and called out separately below.`
           : ""}
       </p>
+
+      <OperatorWorkspaceEntry firstNodeId={firstOverviewNodeId} firstPolicyId={firstOverviewPolicyId} />
 
       <SituationRoomOverviewEntry syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT} />
 

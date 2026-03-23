@@ -11,6 +11,7 @@ import { usePolicyEvidenceDeltaQuery } from "./api";
 
 export interface PolicyEvidenceDeltaPanelProps {
   policyId: string;
+  emphasize?: boolean;
 }
 
 function comparisonStatusLabel(status: PolicyEvidenceDeltaComparisonStatus): string {
@@ -36,7 +37,7 @@ function deltaCategoryLabel(category: PolicyEvidenceDeltaCategory): string {
   return labels[category] ?? formatLabel(category);
 }
 
-export function PolicyEvidenceDeltaPanel({ policyId }: PolicyEvidenceDeltaPanelProps) {
+export function PolicyEvidenceDeltaPanel({ policyId, emphasize }: PolicyEvidenceDeltaPanelProps) {
   const { data, error, isLoading, isRefreshing, reload } = usePolicyEvidenceDeltaQuery(policyId);
 
   if (!policyId) {
@@ -45,7 +46,10 @@ export function PolicyEvidenceDeltaPanel({ policyId }: PolicyEvidenceDeltaPanelP
 
   if (isLoading && !data) {
     return (
-      <article id="policy-evidence-delta" className="detail-card">
+      <article
+        id="policy-evidence-delta"
+        className={`detail-card${emphasize ? " detail-card--focus-flash" : ""}`}
+      >
         <h3>Policy evidence delta</h3>
         <p className="footnote">
           Read-side evidence difference between the current inventory row and the previous persisted
@@ -60,7 +64,10 @@ export function PolicyEvidenceDeltaPanel({ policyId }: PolicyEvidenceDeltaPanelP
   if (error) {
     const isNotFound = error instanceof ApiClientError && error.status === 404;
     return (
-      <article id="policy-evidence-delta" className="detail-card">
+      <article
+        id="policy-evidence-delta"
+        className={`detail-card${emphasize ? " detail-card--focus-flash" : ""}`}
+      >
         <h3>Policy evidence delta</h3>
         <p className="footnote">
           Read-side evidence difference between inventory snapshots—<strong>not</strong> drift detection
@@ -94,7 +101,10 @@ export function PolicyEvidenceDeltaPanel({ policyId }: PolicyEvidenceDeltaPanelP
     comparison_status === "anchor_policy_absent";
 
   return (
-    <article id="policy-evidence-delta" className="detail-card">
+    <article
+      id="policy-evidence-delta"
+      className={`detail-card${emphasize ? " detail-card--focus-flash" : ""}`}
+    >
       <h3>Policy evidence delta</h3>
       {isRefreshing ? (
         <p className="table-note" role="status">

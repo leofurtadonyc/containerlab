@@ -33,7 +33,10 @@ import {
   applyDegradedPolicyV1PostureToSearchParams,
   readDegradedPolicyV1PostureFromSearch,
 } from "../../lib/url-app-state";
-import { POLICY_EVIDENCE_TIMELINE_FOCUS_PARAM } from "../../lib/topology-policy-navigation";
+import {
+  POLICY_EVIDENCE_DELTA_FOCUS_PARAM,
+  POLICY_EVIDENCE_TIMELINE_FOCUS_PARAM,
+} from "../../lib/topology-policy-navigation";
 import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { InvestigationSurfaceEntry } from "../investigation/investigation-surface-entry";
 import { useTopologyQuery } from "../topology/api";
@@ -512,6 +515,7 @@ export function PoliciesView() {
   const [searchValue, setSearchValue] = useState("");
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
   const [evidenceTimelineEmphasize, setEvidenceTimelineEmphasize] = useState(false);
+  const [evidenceDeltaEmphasize, setEvidenceDeltaEmphasize] = useState(false);
   const items = data?.items ?? [];
   const healthCounts = countBy(items, (policy) => policy.health_state);
   const observedStateCounts = countBy(items, (policy) => policy.observed_state);
@@ -692,6 +696,25 @@ export function PoliciesView() {
       window.setTimeout(() => setEvidenceTimelineEmphasize(false), 3500);
       const next = new URLSearchParams(searchKey);
       next.delete(POLICY_EVIDENCE_TIMELINE_FOCUS_PARAM);
+      replaceUrlSearchParams(next);
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [selectedPolicy, searchKey, replaceUrlSearchParams]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !selectedPolicy) {
+      return;
+    }
+    const sp = new URLSearchParams(searchKey);
+    if (sp.get(POLICY_EVIDENCE_DELTA_FOCUS_PARAM) !== "v1") {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      document.getElementById("policy-evidence-delta")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setEvidenceDeltaEmphasize(true);
+      window.setTimeout(() => setEvidenceDeltaEmphasize(false), 3500);
+      const next = new URLSearchParams(searchKey);
+      next.delete(POLICY_EVIDENCE_DELTA_FOCUS_PARAM);
       replaceUrlSearchParams(next);
     }, 120);
     return () => window.clearTimeout(timer);
@@ -2410,7 +2433,11 @@ export function PoliciesView() {
                 policyId={selectedPolicy.policy_id}
                 emphasize={evidenceTimelineEmphasize}
               />
-              <PolicyEvidenceDeltaPanel key={`delta-${selectedPolicy.policy_id}`} policyId={selectedPolicy.policy_id} />
+              <PolicyEvidenceDeltaPanel
+                key={`delta-${selectedPolicy.policy_id}`}
+                policyId={selectedPolicy.policy_id}
+                emphasize={evidenceDeltaEmphasize}
+              />
               <PolicyPathAnalysisPanel key={selectedPolicy.policy_id} policyId={selectedPolicy.policy_id} />
             </div>
           ) : null}

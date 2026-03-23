@@ -733,6 +733,32 @@ ol.notes-list.evidence-timeline-ordered {
   margin: 0;
 }
 
+.operator-workspace-entry {
+  border: 1px solid #2a3f5c;
+  background: linear-gradient(160deg, #101820 0%, #0c1219 50%, #0e1620 100%);
+  margin-bottom: 18px;
+}
+
+.operator-workspace-entry h3 {
+  margin-top: 0;
+}
+
+.operator-workspace-entry__section {
+  margin-top: 14px;
+}
+
+.operator-workspace-entry__section .summary-label {
+  margin-bottom: 4px;
+}
+
+.operator-workspace-entry__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin-top: 8px;
+}
+
 .situation-room-route {
   max-width: 1180px;
   margin: 0 auto;

@@ -527,6 +527,13 @@ describe("overview view", () => {
 
     const html = renderToStaticMarkup(<OverviewView />);
 
+    expect(html).toContain("Operator workspace");
+    expect(html).toContain("Jump to topology risk on this page");
+    expect(html).toContain('href="#topology-risk-attention"');
+    expect(html).toContain("Open topology view (full table)");
+    expect(html).toContain("Open failure impact (first node)");
+    expect(html).toContain("Evidence timeline (first policy)");
+    expect(html).toContain("Evidence delta (first policy)");
     expect(html).toContain("Situation room (bounded evidence pack)");
     expect(html).toContain("Open situation room");
     expect(html).toContain("Investigation workspace (bounded)");

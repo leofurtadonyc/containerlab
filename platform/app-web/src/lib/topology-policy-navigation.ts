@@ -7,6 +7,12 @@ import { mergeViewIntoSearch, replaceUrlSearchParams } from "./url-app-state";
  */
 export const POLICY_EVIDENCE_TIMELINE_FOCUS_PARAM = "policy_evidence_timeline_focus";
 
+/**
+ * Client-only shell hint: Policies view scrolls to and briefly emphasizes the evidence delta
+ * panel (`policy-evidence-delta`). Not sent to app-api.
+ */
+export const POLICY_EVIDENCE_DELTA_FOCUS_PARAM = "policy_evidence_delta_focus";
+
 /** Navigate to Policies with a specific policy selected (bounded read-side `view=` + `policy_id`). */
 export function navigateToPoliciesPolicy(policyId: string): void {
   const sp = mergeViewIntoSearch(window.location.search, "policies");
@@ -38,6 +44,17 @@ export function navigateToPoliciesPolicyEvidenceTimelineFocus(policyId: string):
   const sp = mergeViewIntoSearch(window.location.search, "policies");
   sp.set("policy_id", policyId);
   sp.set(POLICY_EVIDENCE_TIMELINE_FOCUS_PARAM, "v1");
+  replaceUrlSearchParams(sp);
+}
+
+/**
+ * Navigate to Policies with `policy_id` and a client-only focus hint so the evidence delta panel
+ * scrolls into view after load (parallels {@link navigateToPoliciesPolicyEvidenceTimelineFocus}).
+ */
+export function navigateToPoliciesPolicyEvidenceDeltaFocus(policyId: string): void {
+  const sp = mergeViewIntoSearch(window.location.search, "policies");
+  sp.set("policy_id", policyId);
+  sp.set(POLICY_EVIDENCE_DELTA_FOCUS_PARAM, "v1");
   replaceUrlSearchParams(sp);
 }
 
