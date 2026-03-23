@@ -224,6 +224,10 @@ For host recreation and deployment steps, see `INSTALLATION-INSTRUCTIONS.md`. Fo
 
 **Path-analysis** (`GET /api/v1/policies/{policy_id}/path-analysis`), **topology↔policy** pivots (`/api/v1/topology/objects/{object_id}/related-policies`, `/api/v1/policies/{policy_id}/topology-impact`), and **degraded-policy v1** (each policy record on `GET /api/v1/policies`) are product-owned, read-only interpretation surfaces. Authoritative contract language and explicit non-claims live in `docs/path-analysis-contract.md`, `docs/topology-related-policies-contract.md`, and `docs/degraded-policy-v1-contract.md`. They are **not** dataplane or TE resolution truth, **not** blast-radius or dependency analysis, **not** SLA or validation verdicts, and **not** implemented in Grafana (see `docs/dashboards.md`). Higher-level narrative: `docs/architecture.md`, `docs/data-flows.md`, `docs/services.md`, `docs/roadmap.md`.
 
+### Week 28 bounded read contracts (Phase 2)
+
+**Failure-impact** (`GET /api/v1/topology/objects/{object_id}/failure-impact`), **topology risk summary** (`GET /api/v1/topology/risk-summary`), **policy evidence timeline** (`GET /api/v1/policies/{policy_id}/evidence-timeline`), and **policy evidence delta** (`GET /api/v1/policies/{policy_id}/evidence-delta`) are product-owned, read-only interpretation surfaces. Contracts: `docs/failure-impact-contract.md`, `docs/topology-risk-summary-contract.md`, `docs/policy-evidence-timeline-contract.md`, `docs/policy-evidence-delta-contract.md`. They are **not** blast-radius or traffic-risk simulation, **not** unified forensic logs or drift verdicts, **not** workflow or validation authority, and **not** implemented in Grafana. **Overview** **`OperatorWorkspaceEntry`** is WebUI-only composition and navigation into those surfaces (plus in-page risk attention)—**not** new backend semantics. Cross-doc alignment: `docs/architecture.md`, `docs/data-flows.md`, `docs/services.md`, `docs/roadmap.md`, `docs/dashboards.md`.
+
 Supporting documents live under `platform/docs/`:
 
 - `docs/architecture.md`
