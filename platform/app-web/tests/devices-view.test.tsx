@@ -4,13 +4,30 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiClientError } from "../src/api/client";
 import { DevicesView } from "../src/features/devices/view";
 
-const { useDevicesQuery } = vi.hoisted(() => ({
+const { useDevicesQuery, usePoliciesQuery, useTopologyRelatedPoliciesQuery } = vi.hoisted(() => ({
   useDevicesQuery: vi.fn(),
+  usePoliciesQuery: vi.fn(),
+  useTopologyRelatedPoliciesQuery: vi.fn(),
 }));
 
 vi.mock("../src/features/devices/api", () => ({
   useDevicesQuery,
 }));
+
+vi.mock("../src/features/policies/api", () => ({
+  usePoliciesQuery,
+}));
+
+vi.mock("../src/features/topology/api", async () => {
+  const actual = await vi.importActual<typeof import("../src/features/topology/api")>(
+    "../src/features/topology/api",
+  );
+
+  return {
+    ...actual,
+    useTopologyRelatedPoliciesQuery,
+  };
+});
 
 function createQueryState<T>(
   data: T | null,
@@ -237,8 +254,38 @@ function createDevicesDataUnavailableEmpty() {
   };
 }
 
+function createEmptyRelatedPoliciesResponse(objectId: string) {
+  return {
+    metadata: {
+      service: "app-api" as const,
+      version: "test",
+      phase: "phase_2_read_only_foundation" as const,
+      generated_at: "2025-01-01T00:00:00Z",
+    },
+    object_kind: "node" as const,
+    object_id: objectId,
+    derivation_summary: "Derived via string equality on inventory device id as topology node id.",
+    global_caveats: [] as string[],
+    items: [] as [],
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
+  usePoliciesQuery.mockReturnValue({
+    data: null,
+    error: null,
+    isLoading: false,
+    isRefreshing: false,
+    reload: vi.fn(async () => undefined),
+  });
+  useTopologyRelatedPoliciesQuery.mockReturnValue({
+    data: createEmptyRelatedPoliciesResponse("PE1"),
+    error: null,
+    isLoading: false,
+    isRefreshing: false,
+    reload: vi.fn(async () => undefined),
+  });
 });
 
 describe("devices view", () => {
@@ -327,5 +374,15 @@ describe("devices view", () => {
     const html = renderToStaticMarkup(<DevicesView />);
 
     expect(html).toContain("Loading normalized device inventory");
+  });
+
+  it("renders device context and related policies panel for the selected device", () => {
+    useDevicesQuery.mockReturnValue(createQueryState(createDevicesDataFullHistory()));
+
+    const html = renderToStaticMarkup(<DevicesView />);
+
+    expect(html).toContain("Device context");
+    expect(html).toContain("Related policies");
+    expect(html).toContain("Derived via string equality on inventory device id as topology node id.");
   });
 });

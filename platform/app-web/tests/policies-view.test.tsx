@@ -63,6 +63,20 @@ function createSamplePolicyItem() {
     last_recorded_health_state: "healthy" as const,
     source: "gnmi_collector",
     notes: [] as [],
+    degraded_policy_v1: {
+      contract_id: "degraded_policy_v1" as const,
+      posture: "ok" as const,
+      reason_codes: [] as [],
+      confidence: "medium" as const,
+      summary:
+        "Degraded-policy v1: no v1 reason codes triggered on this record given current normalized inventory fields.",
+      explicit_non_claims: [
+        "not_sla_or_availability_guarantee",
+        "not_dataplane_or_te_resolution_verdict",
+        "not_validation_or_safe_to_change_authority",
+        "not_replacement_for_controller_computed_policy_truth",
+      ],
+    },
   };
 }
 
@@ -598,6 +612,46 @@ describe("policies view", () => {
     expect(html).toContain("Primary policy inventory list shows 2 of 4 rows");
   });
 
+  it("shows degraded policy v1 column, toolbar filter, and distribution counts when policies are listed", () => {
+    const degradedRow: ReturnType<typeof createSamplePolicyItem> = {
+      ...createSamplePolicyItem(),
+      policy_id: "P1:static_non_local:198.51.100.1:200",
+      policy_name: "degraded-fixture",
+      support_state: "partially_supported",
+      degraded_policy_v1: {
+        contract_id: "degraded_policy_v1",
+        posture: "degraded",
+        reason_codes: ["partial_or_unsupported_support_posture"],
+        confidence: "medium",
+        summary: "Degraded-policy v1 fixture.",
+        explicit_non_claims: [
+          "not_sla_or_availability_guarantee",
+          "not_dataplane_or_te_resolution_verdict",
+          "not_validation_or_safe_to_change_authority",
+          "not_replacement_for_controller_computed_policy_truth",
+        ],
+      },
+    };
+    usePoliciesQuery.mockReturnValue(
+      createQueryState({
+        ...createPolicyDataWithHistory(),
+        items: [createSamplePolicyItem(), degradedRow],
+      }),
+    );
+    useTopologyQuery.mockReturnValue(createQueryState(null));
+
+    const html = renderToStaticMarkup(<PoliciesView />);
+
+    expect(html).toContain("Degraded (v1)");
+    expect(html).toContain("Degraded policy (v1)");
+    expect(html).toContain("All postures");
+    expect(html).toContain("Degraded policy v1 · degraded");
+    expect(html).toContain("Degraded policy v1 · unknown");
+    expect(html).toContain("Degraded policy v1 · ok");
+    expect(html).toContain("partial or unsupported support posture");
+    expect(html).toContain("bounded read-side classification on each policy row");
+  });
+
   it("renders the path analysis panel when policies are listed and path analysis returns data", () => {
     usePoliciesQuery.mockReturnValue(
       createQueryState({
@@ -617,5 +671,7 @@ describe("policies view", () => {
     expect(html).toContain("Signals align for this bounded slice.");
     expect(html).toContain("Topology impact");
     expect(html).toContain("Read-only naming alignment");
+    expect(html).toContain("Degraded policy (v1)");
+    expect(html).toContain("Explicit non-claims (4)");
   });
 });

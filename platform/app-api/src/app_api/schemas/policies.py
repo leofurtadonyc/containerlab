@@ -10,6 +10,7 @@ from app_api.schemas.common import (
     ComparisonToLatestPersistedStatus,
     EvidenceConfidenceSummary,
 )
+from app_api.schemas.degraded_policy_v1 import DegradedPolicyV1Classification
 from app_api.schemas.read_side_query import ReadSideQueryEcho
 
 
@@ -84,6 +85,7 @@ class PolicyRecord(BaseModel):
     last_recorded_health_state: PolicyHealthState
     source: str
     notes: list[str]
+    degraded_policy_v1: DegradedPolicyV1Classification
 
 
 class PolicyTargetFootprintRecord(BaseModel):

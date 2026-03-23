@@ -257,14 +257,59 @@ function createPoliciesData() {
     items: [
       {
         policy_id: "policy-1",
-        target_id: "leaf-1",
-        policy_type: "bgp",
-        name: "BGP Policy",
-        health_state: "degraded",
+        policy_name: "policy-one",
+        policy_type: "static_local",
+        headend: "PE1",
+        endpoint: "192.0.2.11",
+        color: 100,
+        source_target: "PE1",
+        source_target_role: "pe",
+        candidate_paths: [],
+        current_posture: "current",
+        intent_state: "declared",
+        observed_state: "active",
+        last_recorded_observed_state: "active",
         support_state: "supported",
-        observed_state: "present",
+        health_state: "degraded",
+        last_recorded_health_state: "degraded",
+        source: "gnmi",
         notes: ["Policy needs review."],
-        attributes: {},
+        degraded_policy_v1: {
+          contract_id: "degraded_policy_v1",
+          posture: "degraded",
+          reason_codes: ["health_not_healthy"],
+          confidence: "medium",
+          summary: "Degraded-policy v1: test.",
+          explicit_non_claims: ["not_sla_or_availability_guarantee"],
+        },
+      },
+      {
+        policy_id: "policy-2",
+        policy_name: "policy-two",
+        policy_type: "static_local",
+        headend: "PE2",
+        endpoint: "192.0.2.12",
+        color: 101,
+        source_target: "PE2",
+        source_target_role: "pe",
+        candidate_paths: [],
+        current_posture: "current",
+        intent_state: "declared",
+        observed_state: "active",
+        last_recorded_observed_state: "active",
+        support_state: "supported",
+        health_state: "healthy",
+        last_recorded_health_state: "healthy",
+        source: "gnmi",
+        notes: [],
+        degraded_policy_v1: {
+          contract_id: "degraded_policy_v1",
+          posture: "ok",
+          reason_codes: [],
+          confidence: "medium",
+          summary: "ok",
+          explicit_non_claims: ["not_sla_or_availability_guarantee"],
+        },
       },
     ],
     comparison_to_latest_persisted: {
@@ -421,6 +466,20 @@ beforeEach(() => {
 });
 
 describe("overview view", () => {
+  it("surfaces degraded policy v1 summary and policies drill-down on the policy inventory card", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
+    useDevicesQuery.mockReturnValue(createQueryState(null));
+    useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    const html = renderToStaticMarkup(<OverviewView />);
+
+    expect(html).toContain("Degraded policy (v1):");
+    expect(html).toContain("Open policies (degraded v1)");
+    expect(html).toContain("bounded inventory classification");
+  });
+
   it("surfaces bounded situation room and investigation entrypoints above recent change", () => {
     usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
     useDevicesQuery.mockReturnValue(createQueryState(null));

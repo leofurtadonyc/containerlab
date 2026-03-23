@@ -1041,6 +1041,47 @@ section h2 {
   margin: 0 auto;
 }
 
+.investigation-nav-context-banner {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #2f4a6e;
+  background: linear-gradient(135deg, #121c2e 0%, #0e1624 100%);
+}
+
+.investigation-nav-context-banner__crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.92rem;
+}
+
+.investigation-nav-context-banner__sep {
+  color: #6b7f9e;
+  user-select: none;
+}
+
+.investigation-nav-context-banner__here {
+  color: #c8d6ee;
+  font-weight: 600;
+}
+
+.investigation-nav-context-banner__focus {
+  margin: 10px 0 0;
+}
+
+.investigation-surface-entry {
+  margin: 10px 0 0;
+}
+
+.investigation-surface-entry__hint {
+  color: #9eb0cb;
+}
+
 .investigation-workspace-product {
   display: flex;
   flex-direction: column;

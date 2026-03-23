@@ -297,7 +297,36 @@ function createPoliciesData(): PoliciesListResponse {
     count: 1,
     notes: [],
     target_footprints: [],
-    items: [],
+    items: [
+      {
+        policy_id: "policy-1",
+        policy_name: "policy-one",
+        policy_type: "static_local",
+        headend: "PE1",
+        endpoint: "192.0.2.11",
+        color: 100,
+        source_target: "PE1",
+        source_target_role: "pe",
+        candidate_paths: [],
+        current_posture: "current",
+        intent_state: "declared",
+        observed_state: "active",
+        last_recorded_observed_state: "active",
+        support_state: "supported",
+        health_state: "healthy",
+        last_recorded_health_state: "healthy",
+        source: "gnmi",
+        notes: [],
+        degraded_policy_v1: {
+          contract_id: "degraded_policy_v1",
+          posture: "degraded",
+          reason_codes: ["partial_or_unsupported_support_posture"],
+          confidence: "medium",
+          summary: "Fixture.",
+          explicit_non_claims: ["not_sla_or_availability_guarantee"],
+        },
+      },
+    ],
     comparison_to_latest_persisted: {
       status: "unavailable",
       summary: "No comparison snapshot.",
@@ -405,6 +434,17 @@ describe("PlatformHealthView", () => {
       reload: vi.fn(async () => undefined),
     });
     useRecentChangeSummaryQuery.mockReturnValue(createQueryState(createRecentChangeSummaryData()));
+  });
+
+  it("surfaces degraded policy v1 card with drill-down when the policy list includes degraded v1 rows", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatus()));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+
+    const html = renderToStaticMarkup(<PlatformHealthView />);
+
+    expect(html).toContain("Degraded policy (v1)");
+    expect(html).toContain("Open policies (degraded v1)");
+    expect(html).toContain("inventory signals only");
   });
 
   it("surfaces same-workspace recovery summary card and trust cue when recovery contract is present", () => {

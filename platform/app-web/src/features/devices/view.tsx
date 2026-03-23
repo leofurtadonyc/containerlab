@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { EvidenceConfidenceSummary } from "../../api/contracts";
 import { ReadSideQueryEchoCallout } from "../../components/read-side-query-echo";
@@ -21,6 +21,10 @@ import {
   normalizeEvidenceConfidence,
 } from "../../lib/evidence-confidence";
 import { recentSnapshotsEmptyFootnote } from "../../lib/read-side-query-product-copy";
+import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
+import { InvestigationSurfaceEntry } from "../investigation/investigation-surface-entry";
+import { usePoliciesQuery } from "../policies/api";
+import { TopologyRelatedPoliciesPanel } from "../topology/topology-related-policies-panel";
 import { useDevicesQuery } from "./api";
 
 function getInventoryEvidenceFallback(
@@ -150,9 +154,13 @@ function inventoryComparisonAbsentFootnote(
 
 export function DevicesView() {
   const { data, error, isLoading, reload } = useDevicesQuery();
+  const { data: policiesData, error: policiesError } = usePoliciesQuery();
+  const searchKey = useUrlSearchParamsKey();
+  const replaceUrlSearchParams = useReplaceUrlSearchParams();
   const [searchValue, setSearchValue] = useState("");
   const [collectorFilter, setCollectorFilter] = useState("all");
   const [capabilityFilter, setCapabilityFilter] = useState("all");
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const items = data?.items ?? [];
   const collectorCounts = countBy(items, (device) => device.collector_status);
   const capabilityCounts = countBy(items, (device) => device.capability_summary);
@@ -180,6 +188,40 @@ export function DevicesView() {
       return matchesCollector && matchesCapability && matchesSearch;
     });
   }, [capabilityFilter, collectorFilter, items, searchValue]);
+
+  const selectedDevice =
+    filteredItems.find((device) => device.device_id === selectedDeviceId) ?? filteredItems[0] ?? null;
+
+  useEffect(() => {
+    if (!data?.items.length) {
+      return;
+    }
+    const sp = new URLSearchParams(searchKey);
+    const raw = sp.get("device_id");
+    if (!raw) {
+      return;
+    }
+    const decoded = decodeURIComponent(raw);
+    if (data.items.some((device) => device.device_id === decoded)) {
+      setSelectedDeviceId(decoded);
+    }
+  }, [data, searchKey]);
+
+  useEffect(() => {
+    if (!selectedDevice) {
+      return;
+    }
+    if (typeof window === "undefined") {
+      return;
+    }
+    const sp = new URLSearchParams(window.location.search);
+    const current = sp.get("device_id");
+    if (current === selectedDevice.device_id) {
+      return;
+    }
+    sp.set("device_id", selectedDevice.device_id);
+    replaceUrlSearchParams(sp);
+  }, [selectedDevice, replaceUrlSearchParams]);
 
   if (isLoading) {
     return (
@@ -256,6 +298,8 @@ export function DevicesView() {
         </div>
         <StatusPill value={data.data_status} />
       </div>
+
+      <InvestigationSurfaceEntry invFrom="devices" />
 
       <div className="metadata-row">
         <span>Count: {data.count}</span>
@@ -762,11 +806,18 @@ export function DevicesView() {
                   device.last_recorded_collector_status,
                   "Last recorded collector",
                 );
+                const isSelected = selectedDevice?.device_id === device.device_id;
 
                 return (
-                  <tr key={device.device_id}>
+                  <tr key={device.device_id} className={isSelected ? "data-row-selected" : undefined}>
                     <td>
-                      <strong>{device.device_id}</strong>
+                      <button
+                        type="button"
+                        className="table-select"
+                        onClick={() => setSelectedDeviceId(device.device_id)}
+                      >
+                        <strong>{device.device_id}</strong>
+                      </button>
                       {device.software_version ? (
                         <div className="table-note">{device.software_version}</div>
                       ) : null}
@@ -792,6 +843,44 @@ export function DevicesView() {
           </table>
         </div>
       )}
+
+      {selectedDevice && filteredItems.length > 0 ? (
+        <div className="content-grid">
+          <article className="detail-card">
+            <h3>Device context</h3>
+            <p className="table-note">
+              Related policies below use the same bounded string pivot as Topology (node identifier vs policy
+              headend, endpoint, source_target). This is naming alignment for investigation—not blast-radius,
+              operational dependency, or dataplane path truth.
+            </p>
+            <div className="key-value-list">
+              <div className="key-value-row">
+                <span>Device id</span>
+                <strong>{selectedDevice.device_id}</strong>
+              </div>
+              <div className="key-value-row">
+                <span>Role</span>
+                <strong>{selectedDevice.role ?? "Not set"}</strong>
+              </div>
+              <div className="key-value-row">
+                <span>Management</span>
+                <strong>{selectedDevice.management_address}</strong>
+              </div>
+            </div>
+            {policiesError ? (
+              <p className="table-note">
+                The policies list query failed; related-policy rows still load from the topology pivot, but
+                health, degraded-policy v1, and path-analysis shortcuts may be unavailable.
+              </p>
+            ) : null}
+          </article>
+          <TopologyRelatedPoliciesPanel
+            objectId={selectedDevice.device_id}
+            objectKind="node"
+            policiesList={policiesData}
+          />
+        </div>
+      ) : null}
 
       <p className="footnote">
         Current inventory status: {formatLabel(data.data_status)}. This view stays

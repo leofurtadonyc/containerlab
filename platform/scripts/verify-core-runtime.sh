@@ -320,6 +320,37 @@ assert_contains "policies response (read_side query ergonomics)" "$policies_resp
 assert_contains "policies response (read_side query ergonomics)" "$policies_response" '"items_returned":'
 assert_contains "policies response (read_side query ergonomics)" "$policies_response" '"history_recent_limit_effective":'
 assert_contains "policies response (read_side query ergonomics)" "$policies_response" '"history_recent_snapshots_returned":'
+assert_contains "policies response (degraded_policy_v1)" "$policies_response" '"degraded_policy_v1"'
+
+# Week 27: path-analysis + topology-related-policies structural sampling (uses python3 when available).
+if command -v python3 >/dev/null 2>&1; then
+  first_policy_id=$(printf '%s' "$policies_response" | python3 -c "import sys,json; d=json.load(sys.stdin); items=d.get('items') or []; print(items[0]['policy_id'] if items else '')")
+  first_node_id=$(printf '%s' "$topology_response" | python3 -c "import sys,json; d=json.load(sys.stdin); t=d.get('topology'); nodes=t.get('nodes') if t else None; print(nodes[0]['node_id'] if nodes else '')")
+else
+  notice "python3 not found; skipping week 27 path-analysis and topology-related-policies structural sampling in verify-core-runtime.sh."
+  first_policy_id=""
+  first_node_id=""
+fi
+
+if [ -n "$first_policy_id" ]; then
+  path_analysis_response=$(fetch_compact_json "$APP_API_URL/api/v1/policies/${first_policy_id}/path-analysis")
+  assert_contains "path analysis response (contract id)" "$path_analysis_response" '"contract_id":"path_analysis_phase2_v1"'
+  assert_contains "path analysis response (subject anchor)" "$path_analysis_response" '"anchor_kind":"policy"'
+  assert_contains "path analysis response (truth_alignment)" "$path_analysis_response" '"truth_alignment":{'
+  assert_contains "policies response (degraded_policy_v1 contract_id in items)" "$policies_response" '"contract_id":"degraded_policy_v1"'
+else
+  notice "Policies items list empty; skipping path-analysis and degraded_policy_v1 contract_id structural checks."
+fi
+
+if [ -n "$first_node_id" ]; then
+  related_policies_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/objects/${first_node_id}/related-policies")
+  assert_contains "topology related policies response (object_kind)" "$related_policies_response" '"object_kind":"node"'
+  assert_contains "topology related policies response (object_id)" "$related_policies_response" "\"object_id\":\"${first_node_id}\""
+  assert_contains "topology related policies response (derivation_summary)" "$related_policies_response" '"derivation_summary":"'
+  assert_contains "topology related policies response (items array)" "$related_policies_response" '"items":'
+else
+  notice "Topology nodes list empty; skipping topology-related-policies structural checks."
+fi
 
 # Cross-slice list/history metadata and evidence shape (contract posture, not business truth).
 assert_contains "devices response (API metadata)" "$devices_response" '"service":"app-api"'

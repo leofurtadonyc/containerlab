@@ -4,9 +4,42 @@
  * so hooks can re-fetch with new bounded read-side parameters.
  */
 
+import type { DegradedPolicyV1PostureFilter } from "./presentation";
 import { PLATFORM_NAV_VIEW_IDS } from "../nav-views";
 
 export const APP_URL_SEARCH_CHANGED = "app:urlsearchchanged";
+
+const DEGRADED_POLICY_V1_POSTURE_PARAM = "degraded_policy_v1_posture";
+
+/** Read `degraded_policy_v1_posture` from the shell query string (Policies page filter). */
+export function readDegradedPolicyV1PostureFromSearch(search: string): DegradedPolicyV1PostureFilter {
+  const raw = new URLSearchParams(search).get(DEGRADED_POLICY_V1_POSTURE_PARAM);
+  if (raw === "degraded" || raw === "unknown" || raw === "ok") {
+    return raw;
+  }
+  return "all";
+}
+
+/** Mutates `params` to set or clear the degraded-policy v1 posture filter. */
+export function applyDegradedPolicyV1PostureToSearchParams(
+  params: URLSearchParams,
+  posture: DegradedPolicyV1PostureFilter,
+): void {
+  if (posture === "all") {
+    params.delete(DEGRADED_POLICY_V1_POSTURE_PARAM);
+  } else {
+    params.set(DEGRADED_POLICY_V1_POSTURE_PARAM, posture);
+  }
+}
+
+/** Switch to Policies with optional degraded-policy v1 posture pre-selected (read-side drill-down). */
+export function navigateToPoliciesWithDegradedPolicyV1Posture(
+  posture: DegradedPolicyV1PostureFilter,
+): void {
+  const sp = mergeViewIntoSearch(window.location.search, "policies");
+  applyDegradedPolicyV1PostureToSearchParams(sp, posture);
+  replaceUrlSearchParams(sp);
+}
 
 /** Navigate to another shell view while preserving other query params (bounded read-side ergonomics). */
 export function navigateToEvidenceView(viewId: string): void {

@@ -220,6 +220,7 @@ These checks currently validate:
 - `app-web` packaged startup contract readiness
 - Prometheus readiness and the current real scrape targets
 - read-side API contract sanity for platform status, devices, topology, policies, and capabilities
+- **Week 27 (when `python3` is available and lists are non-empty):** structural sampling of **`GET /api/v1/policies/{policy_id}/path-analysis`** and **`GET /api/v1/topology/objects/{node_id}/related-policies`**, plus **`degraded_policy_v1`** **`contract_id`** on policy items—skipped with a notice when `python3` is absent or the sampled lists are empty
 - workflow-history and audit-history contract presence for the persisted read-side slice
 - persisted Postgres snapshot, sync-run, and readiness-snapshot table presence, plus API exposure of the corresponding bounded history and anchor surfaces when those rows already exist
 - when those persisted tables are non-empty, platform `recovery.baseline_posture` and both histories' `baseline_summary.baseline_posture` must read `preserved_same_workspace_baseline` (skipped with a notice when tables are empty)

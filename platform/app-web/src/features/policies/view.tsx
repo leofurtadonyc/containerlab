@@ -10,12 +10,14 @@ import {
   buildPolicySupportObservedReadout,
 } from "../../lib/cross-slice-consistency";
 import {
+  buildDegradedPolicyV1ListRowHint,
   buildFallbackAwareStatusDisplay,
   buildRowPostureStatusDisplay,
   countBy,
   formatRowCurrentPosture,
   formatDateTime,
   formatLabel,
+  matchesDegradedPolicyV1PostureFilter,
 } from "../../lib/presentation";
 import {
   buildPolicyEvidenceFallback,
@@ -27,7 +29,12 @@ import {
   normalizeEvidenceConfidence,
 } from "../../lib/evidence-confidence";
 import { recentSnapshotsEmptyFootnote } from "../../lib/read-side-query-product-copy";
+import {
+  applyDegradedPolicyV1PostureToSearchParams,
+  readDegradedPolicyV1PostureFromSearch,
+} from "../../lib/url-app-state";
 import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
+import { InvestigationSurfaceEntry } from "../investigation/investigation-surface-entry";
 import { useTopologyQuery } from "../topology/api";
 import { usePoliciesQuery } from "./api";
 import { PolicyPathAnalysisPanel } from "./policy-path-analysis-panel";
@@ -493,6 +500,11 @@ export function PoliciesView() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [sourceRoleFilter, setSourceRoleFilter] = useState("all");
   const [candidatePathFilter, setCandidatePathFilter] = useState("all");
+  const [degradedV1PostureFilter, setDegradedV1PostureFilter] = useState<
+    "all" | "ok" | "degraded" | "unknown"
+  >(() =>
+    typeof window !== "undefined" ? readDegradedPolicyV1PostureFromSearch(window.location.search) : "all",
+  );
   const [sortBy, setSortBy] = useState("health_then_name");
   const [searchValue, setSearchValue] = useState("");
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
@@ -504,6 +516,7 @@ export function PoliciesView() {
   const candidatePathPostureCounts = countBy(items, (policy) =>
     policy.candidate_paths.length > 0 ? "with_candidate_paths" : "without_candidate_paths",
   );
+  const degradedV1PostureCounts = countBy(items, (policy) => policy.degraded_policy_v1.posture);
   const hasObservedPolicies = items.length > 0;
   const freshness = useMemo(
     () => buildFreshnessSummary(data?.observed_at ?? null, data?.generated_at ?? ""),
@@ -524,6 +537,10 @@ export function PoliciesView() {
         (candidatePathFilter === "with_candidate_paths"
           ? policy.candidate_paths.length > 0
           : policy.candidate_paths.length === 0);
+      const matchesDegradedV1 = matchesDegradedPolicyV1PostureFilter(
+        policy.degraded_policy_v1.posture,
+        degradedV1PostureFilter,
+      );
       const matchesSearch =
         normalizedSearch.length === 0 ||
         [
@@ -534,6 +551,10 @@ export function PoliciesView() {
           policy.source_target,
           policy.source_target_role ?? "",
           policy.policy_type,
+          policy.degraded_policy_v1.posture,
+          policy.degraded_policy_v1.summary,
+          ...policy.degraded_policy_v1.reason_codes,
+          ...policy.degraded_policy_v1.reason_codes.map((code) => formatLabel(code)),
           ...policy.notes,
           ...policy.candidate_paths.flatMap((candidatePath) => [
             candidatePath.name,
@@ -551,12 +572,14 @@ export function PoliciesView() {
         matchesType &&
         matchesSourceRole &&
         matchesCandidatePaths &&
+        matchesDegradedV1 &&
         matchesSearch
       );
     });
   }, [
     items,
     candidatePathFilter,
+    degradedV1PostureFilter,
     healthFilter,
     observedFilter,
     searchValue,
@@ -574,6 +597,7 @@ export function PoliciesView() {
       unsupported: 4,
     };
     const observedOrder = { active: 0, inactive: 1, degraded: 2, unknown: 3 };
+    const degradedV1Order = { degraded: 0, unknown: 1, ok: 2 };
 
     return [...filteredPolicies].sort((left, right) => {
       switch (sortBy) {
@@ -583,6 +607,12 @@ export function PoliciesView() {
           return left.endpoint.localeCompare(right.endpoint);
         case "source_target":
           return left.source_target.localeCompare(right.source_target);
+        case "degraded_v1_then_name":
+          return (
+            (degradedV1Order[left.degraded_policy_v1.posture] ?? 99) -
+              (degradedV1Order[right.degraded_policy_v1.posture] ?? 99) ||
+            left.policy_name.localeCompare(right.policy_name)
+          );
         case "candidate_paths_then_name":
           return (
             right.candidate_paths.length - left.candidate_paths.length ||
@@ -623,6 +653,10 @@ export function PoliciesView() {
       setSelectedPolicyId(decoded);
     }
   }, [data, searchKey]);
+
+  useEffect(() => {
+    setDegradedV1PostureFilter(readDegradedPolicyV1PostureFromSearch(searchKey));
+  }, [searchKey]);
 
   useEffect(() => {
     if (!selectedPolicy) {
@@ -809,6 +843,8 @@ export function PoliciesView() {
         </div>
         <StatusPill value={data.data_status} />
       </div>
+
+      <InvestigationSurfaceEntry invFrom="policies" />
 
       <div className="metadata-row">
         <span>Data status: {data.data_status}</span>
@@ -1350,7 +1386,23 @@ export function PoliciesView() {
               <span>Support unknown</span>
               <strong>{supportCounts.unknown ?? 0}</strong>
             </li>
+            <li>
+              <span>Degraded policy v1 · degraded</span>
+              <strong>{degradedV1PostureCounts.degraded ?? 0}</strong>
+            </li>
+            <li>
+              <span>Degraded policy v1 · unknown</span>
+              <strong>{degradedV1PostureCounts.unknown ?? 0}</strong>
+            </li>
+            <li>
+              <span>Degraded policy v1 · ok</span>
+              <strong>{degradedV1PostureCounts.ok ?? 0}</strong>
+            </li>
           </ul>
+          <p className="table-note">
+            Degraded policy v1 counts come from the bounded read-side classification on each policy row,
+            not from a separate health engine. See the Degraded (v1) column and selected policy detail.
+          </p>
         </article>
         <article className="detail-card">
           <h3>Observation Footprint</h3>
@@ -1984,11 +2036,33 @@ export function PoliciesView() {
           </select>
         </label>
         <label className="field-group">
+          <span>Degraded policy (v1)</span>
+          <select
+            value={degradedV1PostureFilter}
+            onChange={(event) => {
+              const v = event.target.value as typeof degradedV1PostureFilter;
+              setDegradedV1PostureFilter(v);
+              if (typeof window === "undefined") {
+                return;
+              }
+              const sp = new URLSearchParams(window.location.search);
+              applyDegradedPolicyV1PostureToSearchParams(sp, v);
+              replaceUrlSearchParams(sp);
+            }}
+          >
+            <option value="all">All postures</option>
+            <option value="degraded">Degraded</option>
+            <option value="unknown">Unknown</option>
+            <option value="ok">Ok</option>
+          </select>
+        </label>
+        <label className="field-group">
           <span>Sort</span>
           <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
             <option value="health_then_name">Health then name</option>
             <option value="support_then_name">Support then name</option>
             <option value="observed_then_name">Observed then name</option>
+            <option value="degraded_v1_then_name">Degraded v1 posture then name</option>
             <option value="name">Name</option>
             <option value="endpoint">Endpoint</option>
             <option value="source_target">Source target</option>
@@ -1996,6 +2070,13 @@ export function PoliciesView() {
           </select>
         </label>
       </div>
+      {degradedV1PostureFilter !== "all" ? (
+        <p className="table-note">
+          Showing policies whose degraded-policy v1 posture is{" "}
+          <strong>{formatLabel(degradedV1PostureFilter)}</strong>. This is inventory-based classification
+          only—not a dataplane or SLA verdict.
+        </p>
+      ) : null}
 
       {data.items.length === 0 ? (
         <EmptyState
@@ -2030,6 +2111,7 @@ export function PoliciesView() {
                   <th>Observed</th>
                   <th>Support</th>
                   <th>Health</th>
+                  <th>Degraded (v1)</th>
                 </tr>
               </thead>
               <tbody>
@@ -2092,6 +2174,10 @@ export function PoliciesView() {
                           <div className="table-note">{policy.notes.join(" ")}</div>
                         ) : null}
                       </td>
+                      <td>
+                        <StatusPill value={policy.degraded_policy_v1.posture} />
+                        <div className="table-note">{buildDegradedPolicyV1ListRowHint(policy)}</div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -2144,6 +2230,46 @@ export function PoliciesView() {
                       </div>
                     </div>
                     <p className="footnote">{describeSupportState(selectedPolicy.support_state)}</p>
+                  </article>
+                  <article>
+                    <p className="summary-label">Degraded policy (v1)</p>
+                    <p className="footnote">{selectedPolicy.degraded_policy_v1.summary}</p>
+                    <div className="key-value-list">
+                      <div className="key-value-row">
+                        <span>Posture</span>
+                        <strong>
+                          <StatusPill value={selectedPolicy.degraded_policy_v1.posture} />
+                        </strong>
+                      </div>
+                      <div className="key-value-row">
+                        <span>Confidence</span>
+                        <strong>
+                          <StatusPill value={selectedPolicy.degraded_policy_v1.confidence} />
+                        </strong>
+                      </div>
+                    </div>
+                    {selectedPolicy.degraded_policy_v1.reason_codes.length > 0 ? (
+                      <>
+                        <p className="summary-label">V1 reason codes</p>
+                        <ul className="notes-list">
+                          {selectedPolicy.degraded_policy_v1.reason_codes.map((code) => (
+                            <li key={code}>{formatLabel(code)}</li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : (
+                      <p className="footnote">No v1 reason codes on this record.</p>
+                    )}
+                    <details className="footnote">
+                      <summary>
+                        Explicit non-claims ({selectedPolicy.degraded_policy_v1.explicit_non_claims.length})
+                      </summary>
+                      <ul className="notes-list">
+                        {selectedPolicy.degraded_policy_v1.explicit_non_claims.map((claim) => (
+                          <li key={claim}>{formatLabel(claim)}</li>
+                        ))}
+                      </ul>
+                    </details>
                   </article>
                   <article>
                     <p className="summary-label">Identity And Scope</p>

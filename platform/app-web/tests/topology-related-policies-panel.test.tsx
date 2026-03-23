@@ -34,6 +34,14 @@ const policiesListForEnrichment = {
       last_recorded_health_state: "healthy" as const,
       source: "gnmi",
       notes: [],
+      degraded_policy_v1: {
+        contract_id: "degraded_policy_v1",
+        posture: "degraded",
+        reason_codes: ["partial_or_unsupported_support_posture"],
+        confidence: "medium",
+        summary: "Degraded-policy v1: test fixture.",
+        explicit_non_claims: ["not_sla_or_availability_guarantee"],
+      },
     },
   ],
 } as unknown as PoliciesListResponse;
@@ -141,6 +149,9 @@ describe("TopologyRelatedPoliciesPanel", () => {
 
     expect(html).toContain("pol-a");
     expect(html).toContain("Open policy details");
+    expect(html).toContain("Path analysis");
+    expect(html).toContain("Degraded policy (v1)");
+    expect(html).toContain("partial or unsupported support posture");
     expect(html).toContain("Per-reference caveat.");
   });
 });

@@ -1,8 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiClientError } from "../src/api/client";
 import type { InvestigationContextAssemblyResponse } from "../src/api/contracts";
+import { INV_FROM_PARAM } from "../src/lib/investigation-url-context";
 import { InvestigationView } from "../src/features/investigation/view";
 
 const { useInvestigationWorkspaceContextQuery } = vi.hoisted(() => ({
@@ -207,9 +208,49 @@ function createInvestigationAssemblyFixture(): InvestigationContextAssemblyRespo
 
 beforeEach(() => {
   vi.clearAllMocks();
+  window.history.replaceState({}, "", "/");
+});
+
+afterEach(() => {
+  window.history.replaceState({}, "", "/");
 });
 
 describe("InvestigationView", () => {
+  it("renders navigation context banner when inv_from and shell object params are set", () => {
+    window.history.replaceState(
+      {},
+      "",
+      `/?view=investigation&${INV_FROM_PARAM}=devices&device_id=device-fixture-1`,
+    );
+    useInvestigationWorkspaceContextQuery.mockReturnValue({
+      data: createInvestigationAssemblyFixture(),
+      error: null,
+      isLoading: false,
+      isRefreshing: false,
+      reload: vi.fn(),
+    });
+
+    const html = renderToStaticMarkup(<InvestigationView />);
+
+    expect(html).toContain("investigation-nav-context-banner");
+    expect(html).toContain("Devices");
+    expect(html).toContain("device-fixture-1");
+  });
+
+  it("does not render navigation context banner when inv_from is absent (direct entry)", () => {
+    useInvestigationWorkspaceContextQuery.mockReturnValue({
+      data: createInvestigationAssemblyFixture(),
+      error: null,
+      isLoading: false,
+      isRefreshing: false,
+      reload: vi.fn(),
+    });
+
+    const html = renderToStaticMarkup(<InvestigationView />);
+
+    expect(html).not.toContain("investigation-nav-context-banner");
+  });
+
   it("renders the investigation workspace product surface when context loads", () => {
     useInvestigationWorkspaceContextQuery.mockReturnValue({
       data: createInvestigationAssemblyFixture(),
