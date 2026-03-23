@@ -3,6 +3,7 @@ import { EvidenceExportActions } from "../../components/evidence-export-actions"
 import { StatusPill } from "../../components/status-pill";
 import { CHANGE_INTELLIGENCE_DOMAIN_LABELS } from "../../lib/change-intelligence-domain-labels";
 import { formatDateTime } from "../../lib/presentation";
+import { navigateToOperatorBriefingView } from "../../lib/operator-briefing-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 import { navigateToInvestigationView } from "../../lib/investigation-navigation";
 import { InvestigationContextPanels } from "../investigation/investigation-context-panels";
@@ -45,6 +46,13 @@ export function SituationRoomProduct({ data, syncRunsLimit, onReload }: Situatio
           </p>
         </div>
         <div className="situation-room-hero__actions">
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToOperatorBriefingView(syncRunsLimit, { invFrom: "situation-room" })}
+          >
+            Open operator briefing
+          </button>
           <EvidenceExportActions variant="situation" target={{ kind: "situation_room", syncRunsLimit }} />
           <button type="button" className="situation-room-toolbar-reload" onClick={() => void onReload()}>
             Reload assembly

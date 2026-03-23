@@ -1,6 +1,7 @@
 import type { OperatorSearchHit, OperatorSearchPivotTarget } from "../api/contracts";
 import { applyGlobalSearchQueryEcho } from "./global-search-deeplink";
 import { navigateToInvestigationView } from "./investigation-navigation";
+import { navigateToOperatorBriefingView } from "./operator-briefing-navigation";
 import { navigateToPolicyDossierWorkspace } from "./policy-dossier-navigation";
 import {
   READINESS_CAPABILITY_FEATURE_PARAM,
@@ -131,6 +132,28 @@ export function navigateToReadinessFromOperatorCapabilityHit(
 /** Situation room (evidence pack) preserving search echo. */
 export function navigateToSituationRoomFromGlobalSearch(echoSearchQuery: string): void {
   navigateToSituationRoomView(20, echoSearchQuery);
+}
+
+/**
+ * Operator briefing workspace with optional policy/topology scope and `global_search_q` echo.
+ * When `scoped` is omitted, opens the default hub (clears stale dossier pins).
+ */
+export function navigateToOperatorBriefingFromGlobalSearch(
+  echoSearchQuery: string,
+  scoped?: {
+    policyId?: string;
+    topologyObject?: { id: string; kind: "node" | "link" };
+  },
+  syncRunsLimit = 20,
+): void {
+  const bounded = Math.min(100, Math.max(1, Math.floor(syncRunsLimit)));
+  navigateToOperatorBriefingView(bounded, {
+    invFrom: "global_search",
+    echoSearchQuery,
+    clearPinnedScope: !scoped?.policyId && !scoped?.topologyObject,
+    policyId: scoped?.policyId,
+    topologyObject: scoped?.topologyObject,
+  });
 }
 
 export function supportsInvestigationShortcut(objectKind: string): boolean {

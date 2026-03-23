@@ -6,6 +6,7 @@ import {
   extractExampleTopologyNodeIdFromDigestNotes,
 } from "../../lib/delta-digest-pivots";
 import { navigateToInvestigationView } from "../../lib/investigation-navigation";
+import { navigateToOperatorBriefingView } from "../../lib/operator-briefing-navigation";
 import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToSituationRoomView } from "../../lib/situation-room-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
@@ -98,6 +99,13 @@ export function DeltaDigestProduct({ data, syncRunsLimit, onReload }: DeltaDiges
             onClick={() => navigateToSituationRoomView(syncRunsLimit)}
           >
             Situation room
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button"
+            onClick={() => navigateToOperatorBriefingView(syncRunsLimit, { invFrom: "delta-digest" })}
+          >
+            Operator briefing
           </button>
           <button type="button" className="nav-drilldown-button" onClick={() => navigateToEvidenceView("devices")}>
             Devices

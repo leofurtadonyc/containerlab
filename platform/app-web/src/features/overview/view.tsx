@@ -43,6 +43,7 @@ import { useDeltaDigestQuery } from "../delta-digest/api";
 import { OVERVIEW_RECENT_CHANGE_SYNC_LIMIT, useRecentChangeSummaryQuery } from "./api";
 import { DeltaDigestOverviewEntry } from "./delta-digest-overview-entry";
 import { InvestigationOverviewEntry } from "./investigation-entry";
+import { OperatorBriefingOverviewEntry } from "./operator-briefing-entry";
 import { OperatorWorkspaceEntry } from "./operator-workspace-entry";
 import { SituationRoomOverviewEntry } from "./situation-room-entry";
 import { RecentChangeIntelligencePanel } from "./recent-change";
@@ -500,6 +501,8 @@ export function OverviewView() {
           <OperatorWorkspaceEntry firstNodeId={firstOverviewNodeId} firstPolicyId={firstOverviewPolicyId} />
 
           <SituationRoomOverviewEntry syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT} />
+
+          <OperatorBriefingOverviewEntry syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT} />
 
           <InvestigationOverviewEntry syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT} />
 

@@ -15,6 +15,7 @@ import { DeltaDigestView } from "./features/delta-digest/view";
 import { DevicesView } from "./features/devices/view";
 import { InvestigationView } from "./features/investigation/view";
 import { OverviewView } from "./features/overview/view";
+import { OperatorBriefingView } from "./features/operator-briefing/view";
 import { SituationRoomView } from "./features/situation-room/view";
 import { PlatformHealthView } from "./features/platform-health/view";
 import { PoliciesView } from "./features/policies/view";
@@ -49,6 +50,8 @@ function renderView(viewId: string) {
       return <DeltaDigestView />;
     case "situation-room":
       return <SituationRoomView />;
+    case "operator-briefing":
+      return <OperatorBriefingView />;
     case "investigation":
       return <InvestigationView />;
     case "devices":
@@ -111,7 +114,7 @@ export function App() {
           This WebUI now consumes the current read-only backend contracts for
           overview, platform status, devices, topology, policies, workflow
           history, audit history, capabilities, readiness, bounded situation room
-          evidence-pack assembly, and bounded investigation workspace assembly. Grafana remains
+          evidence-pack assembly, operator briefing workspace, and bounded investigation workspace assembly. Grafana remains
           the observability layer, and backend APIs remain the source of
           business logic.
         </p>

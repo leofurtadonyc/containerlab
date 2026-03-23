@@ -2183,3 +2183,228 @@ ol.notes-list.evidence-timeline-ordered {
   font-size: 0.82rem;
   color: #7a8fb3;
 }
+
+/* Operator briefing workspace (operator_briefing_workspace_v1) */
+.operator-briefing-route h2 {
+  margin-top: 0;
+}
+
+.operator-briefing-hero {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px 24px;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #2a3f63;
+}
+
+.operator-briefing-hero__title {
+  margin: 0.35rem 0 0;
+  font-size: 1.65rem;
+  color: #e8f1ff;
+}
+
+.operator-briefing-hero__lede {
+  max-width: 58rem;
+}
+
+.operator-briefing-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.operator-briefing-toolbar-reload {
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid #3d5a8a;
+  background: #152238;
+  color: #cfe4ff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.operator-briefing-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  font-size: 0.86rem;
+  color: #9fb8d9;
+  margin-bottom: 1.25rem;
+}
+
+.operator-briefing-safety {
+  margin-bottom: 1.5rem;
+}
+
+.operator-briefing-safety__primary {
+  margin-top: 0.5rem;
+}
+
+.operator-briefing-safety__sub {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8a9bb8;
+}
+
+.operator-briefing-nonclaims {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.88rem;
+  color: #c9d6e8;
+}
+
+.operator-briefing-context__dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px 20px;
+  margin: 0;
+}
+
+.operator-briefing-context__dl dt {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8a9bb8;
+}
+
+.operator-briefing-context__dl dd {
+  margin: 0.2rem 0 0;
+  font-size: 0.92rem;
+  color: #e8f1ff;
+  word-break: break-word;
+}
+
+.operator-briefing-live-pivots {
+  margin: 1.5rem 0;
+}
+
+.operator-briefing-live-pivots__hint {
+  margin-top: 0.25rem;
+}
+
+.operator-briefing-live-pivots__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 0.75rem;
+}
+
+.operator-briefing-live-pivots__primary {
+  border-color: #4a7ab8;
+  background: rgba(74, 122, 184, 0.12);
+}
+
+.operator-briefing-exports {
+  margin: 1.5rem 0;
+}
+
+.operator-briefing-exports__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-start;
+  margin-top: 0.75rem;
+}
+
+.operator-briefing-merged__list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+  color: #d4c4a8;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.operator-briefing-section-meta__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 0.75rem;
+}
+
+.operator-briefing-meta-card h4 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.operator-briefing-meta-card__caveats,
+.operator-briefing-meta-card__fresh {
+  margin: 0.35rem 0 0;
+  padding-left: 1rem;
+  font-size: 0.82rem;
+  color: #b8c5df;
+}
+
+.operator-briefing-meta-card__error {
+  margin: 0.5rem 0 0;
+  font-size: 0.84rem;
+  color: #e8b4b4;
+}
+
+.operator-briefing-api-pivots__list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+  color: #9fb8d9;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.operator-briefing-api-pivots__code {
+  display: block;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: #0f1724;
+  border: 1px solid #2a3f63;
+  font-size: 0.78rem;
+  word-break: break-word;
+}
+
+.operator-briefing-nested {
+  margin: 1.5rem 0;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid #2a3f63;
+  background: #0f1724;
+}
+
+.operator-briefing-nested--error {
+  border-color: #6b3a3a;
+}
+
+.operator-briefing-nested__lede {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+  color: #e8f1ff;
+}
+
+.operator-briefing-nested__bullets {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+  color: #c9d6e8;
+  font-size: 0.88rem;
+}
+
+.operator-briefing-entry-primary {
+  padding: 0.55rem 1.1rem;
+  border-radius: 6px;
+  border: 1px solid #4a7ab8;
+  background: rgba(74, 122, 184, 0.12);
+  color: #cfe4ff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.operator-briefing-entry-card__hint {
+  margin-top: 0.65rem;
+}

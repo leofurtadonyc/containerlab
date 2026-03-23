@@ -21,6 +21,7 @@ import type {
   OperatorSearchResponse,
   WorkflowHistoryResponse,
   CrossDomainDeltaDigestResponse,
+  OperatorBriefingWorkspaceResponse,
 } from "./contracts";
 import {
   buildAuditHistoryQueryString,
@@ -33,6 +34,16 @@ import {
 
 export interface ApiClientConfig {
   baseUrl: string;
+}
+
+/** Bounded query for `GET /api/v1/operator-briefing`. */
+export interface OperatorBriefingQuery {
+  syncRunsLimit?: number;
+  policyId?: string | null;
+  topologyObject?: string | null;
+  topologyObjectKind?: "node" | "link" | null;
+  invFrom?: string | null;
+  globalSearchQ?: string | null;
 }
 
 export class ApiClientError extends Error {
@@ -172,6 +183,30 @@ export class ApiClient {
   async getOperatorSearch(q: string): Promise<OperatorSearchResponse> {
     const encoded = encodeURIComponent(q);
     return this.request<OperatorSearchResponse>(`/api/v1/operator-search?q=${encoded}`);
+  }
+
+  async getOperatorBriefing(query: OperatorBriefingQuery = {}): Promise<OperatorBriefingWorkspaceResponse> {
+    const lim = Math.min(100, Math.max(1, Math.floor(query.syncRunsLimit ?? 20)));
+    const params = new URLSearchParams();
+    params.set("sync_runs_limit", String(lim));
+    if (query.policyId?.trim()) {
+      params.set("policy_id", query.policyId.trim());
+    }
+    if (query.topologyObject?.trim()) {
+      params.set("topology_object", query.topologyObject.trim());
+    }
+    if (query.topologyObjectKind) {
+      params.set("topology_object_kind", query.topologyObjectKind);
+    }
+    if (query.invFrom?.trim()) {
+      params.set("inv_from", query.invFrom.trim());
+    }
+    if (query.globalSearchQ?.trim()) {
+      params.set("global_search_q", query.globalSearchQ.trim());
+    }
+    return this.request<OperatorBriefingWorkspaceResponse>(
+      `/api/v1/operator-briefing?${params.toString()}`,
+    );
   }
 
   private async request<T>(path: string): Promise<T> {

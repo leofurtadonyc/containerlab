@@ -8,6 +8,7 @@ import {
   familyLabel,
   navigateFromOperatorSearchPivot,
   navigateToInvestigationFromOperatorSearchHit,
+  navigateToOperatorBriefingFromGlobalSearch,
   navigateToReadinessFromOperatorCapabilityHit,
   navigateToSituationRoomFromGlobalSearch,
   supportsInvestigationShortcut,
@@ -181,6 +182,30 @@ export function GlobalOperatorSearch() {
                               </span>
                             </button>
                             <div className="global-operator-search__deeplink-row">
+                              {hit.pivot.policy_id ||
+                              (hit.pivot.topology_object && hit.pivot.topology_object_kind) ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  onClick={() => {
+                                    const p = hit.pivot;
+                                    const scoped = p.policy_id
+                                      ? { policyId: p.policy_id }
+                                      : p.topology_object && p.topology_object_kind
+                                        ? {
+                                            topologyObject: {
+                                              id: p.topology_object,
+                                              kind: p.topology_object_kind,
+                                            },
+                                          }
+                                        : undefined;
+                                    navigateToOperatorBriefingFromGlobalSearch(data.q, scoped);
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Briefing
+                                </button>
+                              ) : null}
                               {supportsInvestigationShortcut(hit.object_kind) ? (
                                 <button
                                   type="button"
@@ -215,6 +240,16 @@ export function GlobalOperatorSearch() {
               </div>
               <div className="global-operator-search__panel-footer">
                 <span className="global-operator-search__panel-footer-label">Cross-surface</span>
+                <button
+                  type="button"
+                  className="inline-action"
+                  onClick={() => {
+                    navigateToOperatorBriefingFromGlobalSearch(data.q);
+                    clearSearchUi();
+                  }}
+                >
+                  Operator briefing
+                </button>
                 <button
                   type="button"
                   className="inline-action"

@@ -7,11 +7,13 @@ import * as urlAppState from "../src/lib/url-app-state";
 import * as investigationNav from "../src/lib/investigation-navigation";
 import * as situationNav from "../src/lib/situation-room-navigation";
 import * as readinessNav from "../src/lib/readiness-navigation";
+import * as obNav from "../src/lib/operator-briefing-navigation";
 import {
   describeOperatorSearchAction,
   familyLabel,
   navigateFromOperatorSearchPivot,
   navigateToInvestigationFromOperatorSearchHit,
+  navigateToOperatorBriefingFromGlobalSearch,
   navigateToReadinessFromOperatorCapabilityHit,
   navigateToSituationRoomFromGlobalSearch,
 } from "../src/lib/operator-search-navigation";
@@ -131,5 +133,26 @@ describe("operator search navigation", () => {
     const spy = vi.spyOn(situationNav, "navigateToSituationRoomView").mockImplementation(() => {});
     navigateToSituationRoomFromGlobalSearch("sitq");
     expect(spy).toHaveBeenCalledWith(20, "sitq");
+  });
+
+  it("navigateToOperatorBriefingFromGlobalSearch opens hub with echo and clearPinnedScope", () => {
+    const spy = vi.spyOn(obNav, "navigateToOperatorBriefingView").mockImplementation(() => {});
+    navigateToOperatorBriefingFromGlobalSearch("q1");
+    expect(spy).toHaveBeenCalledWith(20, {
+      invFrom: "global_search",
+      echoSearchQuery: "q1",
+      clearPinnedScope: true,
+    });
+  });
+
+  it("navigateToOperatorBriefingFromGlobalSearch passes scoped policy without clearPinnedScope", () => {
+    const spy = vi.spyOn(obNav, "navigateToOperatorBriefingView").mockImplementation(() => {});
+    navigateToOperatorBriefingFromGlobalSearch("q2", { policyId: "P1" });
+    expect(spy).toHaveBeenCalledWith(20, {
+      invFrom: "global_search",
+      echoSearchQuery: "q2",
+      clearPinnedScope: false,
+      policyId: "P1",
+    });
   });
 });

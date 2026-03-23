@@ -16,6 +16,7 @@ export const INVESTIGATION_NAV_SOURCE_IDS = [
   "overview",
   "delta-digest",
   "situation-room",
+  "operator-briefing",
   "topology",
   "devices",
   "policies",
@@ -38,6 +39,8 @@ export function labelForInvestigationNavSource(id: InvestigationNavSourceId): st
       return "Delta digest";
     case "situation-room":
       return "Situation room";
+    case "operator-briefing":
+      return "Operator briefing";
     case "topology":
       return "Topology";
     case "devices":

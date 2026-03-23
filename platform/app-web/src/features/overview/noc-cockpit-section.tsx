@@ -7,6 +7,7 @@ import type {
 } from "../../api/contracts";
 import { DeltaDigestOverviewEntry } from "./delta-digest-overview-entry";
 import { InvestigationOverviewEntry } from "./investigation-entry";
+import { OperatorBriefingOverviewEntry } from "./operator-briefing-entry";
 import { OperatorWorkspaceEntry } from "./operator-workspace-entry";
 import { SituationRoomOverviewEntry } from "./situation-room-entry";
 import { RecentChangeIntelligencePanel } from "./recent-change";
@@ -69,6 +70,7 @@ export function NocCockpitSection({
       </p>
 
       <div className="noc-cockpit__quick-grid">
+        <OperatorBriefingOverviewEntry syncRunsLimit={syncRunsLimit} />
         <SituationRoomOverviewEntry syncRunsLimit={syncRunsLimit} />
         <InvestigationOverviewEntry syncRunsLimit={syncRunsLimit} />
         <DeltaDigestOverviewEntry syncRunsLimit={syncRunsLimit} deltaDigest={deltaDigest} />

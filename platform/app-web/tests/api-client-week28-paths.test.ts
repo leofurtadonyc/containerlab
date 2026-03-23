@@ -391,6 +391,64 @@ describe("ApiClient week 28 bounded paths", () => {
     expect(url).toBe("http://api/api/v1/delta-digest?sync_runs_limit=100");
   });
 
+  it("getOperatorBriefing builds operator-briefing query string", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          metadata: {
+            service: "app-api",
+            version: "0.1.0",
+            phase: "phase_2_read_only_foundation",
+            generated_at: "2025-01-01T00:00:00Z",
+          },
+          contract_id: "operator_briefing_workspace_v1",
+          safety: {
+            contract_id: "operator_briefing_workspace_v1",
+            authority_posture: "interpretation_support_only",
+            explicit_non_claims: [],
+            phase: "phase_2_read_only_foundation",
+            summary_disclaimer: "x",
+          },
+          sync_runs_limit_applied: 5,
+          briefing_context: {
+            sync_runs_limit_requested: 5,
+            policy_id: "P1",
+            topology_object: null,
+            topology_object_kind: null,
+            inv_from_client_hint: "overview",
+            global_search_q_client_hint: null,
+          },
+          delta_digest: null,
+          delta_digest_error: null,
+          policy_dossier: null,
+          policy_dossier_note: null,
+          topology_object_dossier: null,
+          topology_object_dossier_note: null,
+          situation_pack: null,
+          situation_pack_error: null,
+          investigation_workspace: null,
+          investigation_workspace_error: null,
+          section_meta: [],
+          merged_caveats: [],
+          recommended_pivots: [],
+        }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getOperatorBriefing({
+      syncRunsLimit: 5,
+      policyId: "P1",
+      invFrom: "overview",
+    });
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("/api/v1/operator-briefing?");
+    expect(url).toContain("sync_runs_limit=5");
+    expect(url).toContain("policy_id=P1");
+    expect(url).toContain("inv_from=overview");
+  });
+
   it("getOperatorSearch encodes the query parameter", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
