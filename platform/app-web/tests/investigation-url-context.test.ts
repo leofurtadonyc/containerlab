@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   FAILURE_IMPACT_ENTRY_PARAM,
   INV_FROM_PARAM,
+  RISK_SUMMARY_ENTRY_PARAM,
   parseInvestigationNavContext,
 } from "../src/lib/investigation-url-context";
 
@@ -41,5 +42,17 @@ describe("parseInvestigationNavContext", () => {
   it("returns null failureImpactEntry for unknown values", () => {
     const p = parseInvestigationNavContext(`?${FAILURE_IMPACT_ENTRY_PARAM}=other`);
     expect(p.failureImpactEntry).toBeNull();
+  });
+
+  it("parses risk_summary_entry=v1", () => {
+    const p = parseInvestigationNavContext(
+      `?view=investigation&${INV_FROM_PARAM}=overview&${RISK_SUMMARY_ENTRY_PARAM}=v1`,
+    );
+    expect(p.riskSummaryEntry).toBe("v1");
+  });
+
+  it("returns null riskSummaryEntry for unknown values", () => {
+    const p = parseInvestigationNavContext(`?${RISK_SUMMARY_ENTRY_PARAM}=other`);
+    expect(p.riskSummaryEntry).toBeNull();
   });
 });

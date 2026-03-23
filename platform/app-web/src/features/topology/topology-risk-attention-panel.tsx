@@ -1,5 +1,10 @@
 import type { TopologyObjectKind, TopologyRiskSummaryResponse } from "../../api/contracts";
 import { EmptyState, LoadingState, QueryStateSummaryCard } from "../../components/query-states";
+import {
+  DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
+  navigateToInvestigationView,
+  readSyncRunsLimitFromSearch,
+} from "../../lib/investigation-navigation";
 import { formatDateTime, formatLabel } from "../../lib/presentation";
 import { navigateToTopologyObject } from "../../lib/topology-policy-navigation";
 
@@ -58,6 +63,12 @@ export function TopologyRiskAttentionPanel({
       : data.ranked_objects;
   const hasMore = variant === "overview" && data.ranked_objects.length > OVERVIEW_MAX_ROWS;
 
+  const syncRuns =
+    typeof window !== "undefined"
+      ? readSyncRunsLimitFromSearch(window.location.search, DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT)
+      : DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT;
+  const invFromForInvestigation = variant === "overview" ? "overview" : "topology";
+
   return (
     <article className="detail-card" id="topology-risk-attention">
       <div className="section-header">
@@ -111,7 +122,8 @@ export function TopologyRiskAttentionPanel({
                 <th>Rank</th>
                 <th>Object</th>
                 <th>D / U / R / K</th>
-                <th>Action</th>
+                <th>Topology</th>
+                <th>Investigation</th>
               </tr>
             </thead>
             <tbody>
@@ -143,8 +155,27 @@ export function TopologyRiskAttentionPanel({
                     </button>
                     <div className="table-note">
                       {drillToObject
-                        ? "Scroll to node/link tables if needed; related policies and failure-impact panels load below when selected."
-                        : "Opens Topology with this object selected so related policies and failure-impact panels load."}
+                        ? "Selects the object for related policies and failure-impact below."
+                        : "Opens Topology with this object selected."}
+                    </div>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="table-select"
+                      onClick={() =>
+                        navigateToInvestigationView(syncRuns, {
+                          invFrom: invFromForInvestigation,
+                          topologyObject: { id: row.object_id, kind: row.object_kind },
+                          riskSummaryEntry: true,
+                        })
+                      }
+                    >
+                      Open investigation
+                    </button>
+                    <div className="table-note">
+                      Seeds <code>inv_from</code>, topology object focus, and{" "}
+                      <code>risk_summary_entry=v1</code> — read-only navigation.
                     </div>
                   </td>
                 </tr>
@@ -181,6 +212,13 @@ export function TopologyRiskAttentionPanel({
           Open the <strong>Topology</strong> view for the full ranked list and per-object failure-impact detail.
         </p>
       ) : null}
+
+      <p className="footnote">
+        <strong>Open investigation</strong> uses the same bounded workspace as other read surfaces: it sets{" "}
+        <code>view=investigation</code>, <code>inv_from</code> ({invFromForInvestigation}), pinned{" "}
+        <code>topology_object</code> / <code>topology_object_kind</code>, and <code>risk_summary_entry=v1</code> for
+        breadcrumb context — not workflow execution or validation authority.
+      </p>
     </article>
   );
 }

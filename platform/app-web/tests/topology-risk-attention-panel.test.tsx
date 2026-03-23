@@ -104,6 +104,7 @@ describe("TopologyRiskAttentionPanel", () => {
     );
     expect(html).toContain("P1--PE1");
     expect(html).toContain("Open in Topology");
+    expect(html).toContain("Open investigation");
   });
 
   it("invokes drillToObject when Select object is activated", () => {

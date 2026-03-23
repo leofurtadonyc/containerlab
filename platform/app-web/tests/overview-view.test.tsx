@@ -515,6 +515,7 @@ describe("overview view", () => {
     expect(html).toContain("Open policies (degraded v1)");
     expect(html).toContain("bounded inventory classification");
     expect(html).toContain("Topology attention (risk summary v1)");
+    expect(html).toContain("Open investigation");
   });
 
   it("surfaces bounded situation room and investigation entrypoints above recent change", () => {

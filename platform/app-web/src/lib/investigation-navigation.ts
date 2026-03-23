@@ -5,6 +5,7 @@
 import {
   FAILURE_IMPACT_ENTRY_PARAM,
   INV_FROM_PARAM,
+  RISK_SUMMARY_ENTRY_PARAM,
   type InvestigationNavSourceId,
 } from "./investigation-url-context";
 import { mergeViewIntoSearch, replaceUrlSearchParams } from "./url-app-state";
@@ -19,6 +20,8 @@ export interface NavigateToInvestigationViewOptions {
   topologyObject?: { id: string; kind: "node" | "link" };
   /** When true, sets `failure_impact_entry=v1` (bounded entry from Topology failure-impact panel). */
   failureImpactEntry?: boolean;
+  /** When true, sets `risk_summary_entry=v1` (bounded entry from Overview/Topology risk summary panel). */
+  riskSummaryEntry?: boolean;
 }
 
 /** Bounded sync-run window for nested change-intelligence assembly (1–100). */
@@ -55,8 +58,13 @@ export function navigateToInvestigationView(
   }
   if (options?.failureImpactEntry) {
     sp.set(FAILURE_IMPACT_ENTRY_PARAM, "v1");
+    sp.delete(RISK_SUMMARY_ENTRY_PARAM);
+  } else if (options?.riskSummaryEntry) {
+    sp.set(RISK_SUMMARY_ENTRY_PARAM, "v1");
+    sp.delete(FAILURE_IMPACT_ENTRY_PARAM);
   } else {
     sp.delete(FAILURE_IMPACT_ENTRY_PARAM);
+    sp.delete(RISK_SUMMARY_ENTRY_PARAM);
   }
   replaceUrlSearchParams(sp);
 }
