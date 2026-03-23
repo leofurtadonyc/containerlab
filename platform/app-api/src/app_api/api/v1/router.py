@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from app_api.routers.audit_history import router as audit_history_router
 from app_api.routers.capabilities import router as capabilities_router
 from app_api.routers.change_intelligence import router as change_intelligence_router
+from app_api.routers.delta_digest import router as delta_digest_router
 from app_api.routers.evidence_pack import router as evidence_pack_router
 from app_api.routers.exports import router as exports_router
 from app_api.routers.investigation_workspace import router as investigation_workspace_router
@@ -21,6 +22,7 @@ from app_api.routers.workflow_history import router as workflow_history_router
 
 
 router = APIRouter()
+router.include_router(delta_digest_router)
 router.include_router(change_intelligence_router)
 router.include_router(exports_router)
 router.include_router(evidence_pack_router)
