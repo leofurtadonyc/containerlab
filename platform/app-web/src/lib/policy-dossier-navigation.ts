@@ -21,6 +21,7 @@ const KNOWN_POLICY_DOSSIER_ENTRY_VALUES = new Set([
   "workflow_history_drilldown",
   "audit_history_drilldown",
   "overview_operator_workspace",
+  "overview_noc_cockpit",
   "topology_related_policies_panel",
   "global_search",
 ]);

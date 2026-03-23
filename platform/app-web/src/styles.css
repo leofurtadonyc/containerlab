@@ -300,6 +300,66 @@ section h2 {
   margin-bottom: 16px;
 }
 
+.section-header.overview-section-header {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.section-header.overview-section-header > div:first-child {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.overview-layout-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.callout.noc-cockpit-trust-cue {
+  border-color: #3d5a8a;
+  background: rgba(35, 58, 98, 0.2);
+}
+
+.noc-cockpit {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.noc-cockpit__hero {
+  margin: 0;
+  padding: 20px;
+  border: 1px solid #3d5a8a;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(35, 58, 98, 0.35) 0%, rgba(20, 29, 44, 0.95) 65%);
+}
+
+.noc-cockpit__hero h3 {
+  margin: 8px 0 0;
+}
+
+.noc-cockpit__lede {
+  margin: 12px 0 0;
+}
+
+.noc-cockpit__search-hint code {
+  font-size: 0.85em;
+}
+
+.noc-cockpit__quick-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.noc-cockpit-standard-fallback .nav-item {
+  margin-top: 8px;
+  display: inline-block;
+}
+
 .section-header p,
 .summary-card p,
 .detail-card p,

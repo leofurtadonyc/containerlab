@@ -36,7 +36,7 @@ A conforming cockpit **SHOULD** surface the following **widget families**, each 
 | --- | --- |
 | **`sync_runs_limit`** (shared) | Aligns change-intelligence, investigation, situation-room, workflow/audit windows where those APIs already take it—**same bounds** as documented per route; cockpit **must not** invent a separate window math. |
 | **Manual refresh** | Re-fetch visible widgets; show per-widget loading/error without implying stronger evidence than the API returned. |
-| **URL / shell state** | Optional `view=` and selection params preserved when pivoting out of the cockpit—client-only hints follow existing navigation contracts. |
+| **URL / shell state** | Optional `view=` and selection params preserved when pivoting out of the cockpit—client-only hints follow existing navigation contracts. On **Overview**, **`overview_mode=cockpit`** selects the **NOC cockpit v1** layout in **`app-web`** (hero, attention rows, workspace entry, global-search hint); omit **`overview_mode`** or use any value other than **`cockpit`** for the **Standard** overview (full summary grid and trust cues). Implemented via **`readOverviewModeFromSearch`** / **`navigateOverviewLayoutMode`** (`overview_mode` query param). |
 
 ---
 
