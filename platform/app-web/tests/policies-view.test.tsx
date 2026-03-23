@@ -8,11 +8,12 @@ import {
   PoliciesView,
 } from "../src/features/policies/view";
 
-const { usePoliciesQuery, usePolicyPathAnalysisQuery, usePolicyTopologyImpactQuery, useTopologyQuery } =
+const { usePoliciesQuery, usePolicyPathAnalysisQuery, usePolicyTopologyImpactQuery, usePolicyEvidenceTimelineQuery, useTopologyQuery } =
   vi.hoisted(() => ({
     usePoliciesQuery: vi.fn(),
     usePolicyPathAnalysisQuery: vi.fn(),
     usePolicyTopologyImpactQuery: vi.fn(),
+    usePolicyEvidenceTimelineQuery: vi.fn(),
     useTopologyQuery: vi.fn(),
   }));
 
@@ -20,6 +21,7 @@ vi.mock("../src/features/policies/api", () => ({
   usePoliciesQuery,
   usePolicyPathAnalysisQuery,
   usePolicyTopologyImpactQuery,
+  usePolicyEvidenceTimelineQuery,
 }));
 
 vi.mock("../src/features/topology/api", async () => {
@@ -77,6 +79,41 @@ function createSamplePolicyItem() {
         "not_replacement_for_controller_computed_policy_truth",
       ],
     },
+  };
+}
+
+function createEvidenceTimelineFixture() {
+  return {
+    metadata: {
+      service: "app-api" as const,
+      version: "test",
+      phase: "phase_2_read_only_foundation" as const,
+      generated_at: "2025-01-01T00:00:00Z",
+    },
+    contract_id: "policy_evidence_timeline_v1",
+    safety_framing: {
+      contract_id: "policy_evidence_timeline_v1",
+      authority_posture: "interpretation_support_only" as const,
+      explicit_non_claims: [
+        "not_unified_forensic_chronology",
+        "not_validation_truth",
+      ] as const,
+      phase: "phase_2_read_only_foundation" as const,
+      summary_disclaimer: "Policy evidence timeline fixture disclaimer.",
+    },
+    policy_id: "PE1:static_local:192.0.2.11:100",
+    scope_summary: "Partial: bounded anchors for tests.",
+    entries: [
+      {
+        entry_kind: "policy_inventory_snapshot_anchor" as const,
+        sort_key: "2025-01-01T12:00:00Z",
+        tie_break: 0,
+        summary: "Inventory snapshot anchor.",
+        provenance: "Policies inventory",
+        reference: "GET /api/v1/policies",
+      },
+    ],
+    missing_evidence_notes: ["Fixture note: sparse history window."],
   };
 }
 
@@ -466,6 +503,7 @@ describe("policies view", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     usePolicyPathAnalysisQuery.mockReturnValue(createQueryState(null));
+    usePolicyEvidenceTimelineQuery.mockReturnValue(createQueryState(null));
     usePolicyTopologyImpactQuery.mockReturnValue(
       createQueryState(
         createTopologyImpactEmptyFixture("PE1:static_local:192.0.2.11:100", "sample-policy"),
@@ -661,6 +699,7 @@ describe("policies view", () => {
     );
     useTopologyQuery.mockReturnValue(createQueryState(null));
     usePolicyPathAnalysisQuery.mockReturnValue(createQueryState(createPathAnalysisFixture()));
+    usePolicyEvidenceTimelineQuery.mockReturnValue(createQueryState(createEvidenceTimelineFixture()));
 
     const html = renderToStaticMarkup(<PoliciesView />);
 
@@ -673,5 +712,9 @@ describe("policies view", () => {
     expect(html).toContain("Read-only naming alignment");
     expect(html).toContain("Degraded policy (v1)");
     expect(html).toContain("Explicit non-claims (4)");
+    expect(html).toContain("Policy evidence timeline");
+    expect(html).toContain("policy_evidence_timeline_v1");
+    expect(html).toContain("Fixture note: sparse history window.");
+    expect(html).toContain("Inventory snapshot anchor.");
   });
 });

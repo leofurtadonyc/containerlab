@@ -260,6 +260,15 @@ section h2 {
   margin-bottom: 8px;
 }
 
+ol.notes-list.evidence-timeline-ordered {
+  list-style: decimal;
+  padding-left: 1.4rem;
+}
+
+.evidence-timeline-entry-meta {
+  margin-top: 0.35rem;
+}
+
 .query-message {
   display: flex;
   flex-direction: column;

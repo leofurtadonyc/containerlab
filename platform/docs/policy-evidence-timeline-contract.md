@@ -116,7 +116,7 @@ Stable keys (align with schema literals when implemented):
 | --- | --- |
 | **Schema + route** | **Shipped:** **`GET /api/v1/policies/{policy_id}/evidence-timeline`** — **`PolicyEvidenceTimelineResponse`** (**`policy_evidence_timeline_v1`**) in **`schemas/policy_evidence_timeline.py`**, **`routers/policies.py`**. |
 | **Assembly service** | **Shipped:** **`services/policy_evidence_timeline.py`** — inventory, history checkpoints, path-analysis anchor, degraded v1; no new collectors. |
-| **WebUI** | Optional **Policies** drill-through panel with the same non-claims. |
+| **WebUI** | **Shipped:** **Policies** **`PolicyEvidenceTimelinePanel`** (selected policy) — same non-claims as the API. |
 | **Tests** | **`pytest`** in **`tests/test_policy_evidence_timeline.py`** (run in **`platform-app-api`** image per **`INSTALLATION-INSTRUCTIONS.md`**). |
 
 ---

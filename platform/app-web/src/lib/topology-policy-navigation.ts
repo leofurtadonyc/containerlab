@@ -11,11 +11,28 @@ export function navigateToPoliciesPolicy(policyId: string): void {
 /** Same as {@link navigateToPoliciesPolicy}, then scroll to the path-analysis card (`#policy-path-analysis`). */
 export function navigateToPoliciesPolicyPathAnalysis(policyId: string): void {
   navigateToPoliciesPolicy(policyId);
-  if (typeof window !== "undefined") {
-    window.setTimeout(() => {
-      document.getElementById("policy-path-analysis")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 0);
+  scrollToPolicyPathAnalysisCard();
+}
+
+/** Scroll to the path-analysis detail card without changing the URL (for use when already on Policies). */
+export function scrollToPolicyPathAnalysisCard(): void {
+  if (typeof window === "undefined") {
+    return;
   }
+  window.setTimeout(() => {
+    document.getElementById("policy-path-analysis")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 0);
+}
+
+/** Same pattern as path analysis: focus the evidence-timeline card (`#policy-evidence-timeline`). */
+export function navigateToPoliciesPolicyEvidenceTimeline(policyId: string): void {
+  navigateToPoliciesPolicy(policyId);
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.setTimeout(() => {
+    document.getElementById("policy-evidence-timeline")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 0);
 }
 
 /** Navigate to Topology with a node or link focused (bounded `topology_object` + `topology_object_kind`). */

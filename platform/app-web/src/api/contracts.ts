@@ -580,6 +580,50 @@ export interface PolicyTopologyImpactResponse {
   items: PolicyTopologyImpactRow[];
 }
 
+/** `GET /api/v1/policies/{policy_id}/evidence-timeline` (bounded read-side anchors; not forensic chronology). */
+export type PolicyEvidenceTimelineEntryKind =
+  | "policy_inventory_snapshot_anchor"
+  | "policy_history_persisted_checkpoint"
+  | "policy_history_comparison_span"
+  | "path_analysis_assembly_anchor"
+  | "degraded_policy_v1_signal_anchor";
+
+export type PolicyEvidenceTimelineExplicitNonClaim =
+  | "not_unified_forensic_chronology"
+  | "not_packet_path_proof"
+  | "not_workflow_execution_history"
+  | "not_validation_truth"
+  | "not_change_causality_engine"
+  | "not_controller_event_bus"
+  | "not_cross_policy_ranking";
+
+export interface PolicyEvidenceTimelineSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: PolicyEvidenceTimelineExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface PolicyEvidenceTimelineEntry {
+  entry_kind: PolicyEvidenceTimelineEntryKind;
+  sort_key: string;
+  tie_break: number;
+  summary: string;
+  provenance: string;
+  reference: string;
+}
+
+export interface PolicyEvidenceTimelineResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: PolicyEvidenceTimelineSafetyFraming;
+  policy_id: string;
+  scope_summary: string;
+  entries: PolicyEvidenceTimelineEntry[];
+  missing_evidence_notes: string[];
+}
+
 export interface PolicyTargetFootprintRecord {
   target_name: string;
   target_role: string | null;

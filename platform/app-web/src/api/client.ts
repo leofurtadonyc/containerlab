@@ -7,6 +7,7 @@ import type {
   PlatformStatusResponse,
   PoliciesListResponse,
   PolicyTopologyImpactResponse,
+  PolicyEvidenceTimelineResponse,
   InvestigationContextAssemblyResponse,
   RecentChangeSummaryResponse,
   SituationPackAssemblyResponse,
@@ -90,6 +91,11 @@ export class ApiClient {
   async getPolicyTopologyImpact(policyId: string): Promise<PolicyTopologyImpactResponse> {
     const encoded = encodeURIComponent(policyId);
     return this.request<PolicyTopologyImpactResponse>(`/api/v1/policies/${encoded}/topology-impact`);
+  }
+
+  async getPolicyEvidenceTimeline(policyId: string): Promise<PolicyEvidenceTimelineResponse> {
+    const encoded = encodeURIComponent(policyId);
+    return this.request<PolicyEvidenceTimelineResponse>(`/api/v1/policies/${encoded}/evidence-timeline`);
   }
 
   async getWorkflowHistory(query?: WorkflowHistoryReadSideQuery): Promise<WorkflowHistoryResponse> {
