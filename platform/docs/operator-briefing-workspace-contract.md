@@ -63,9 +63,9 @@ Sections **SHOULD** appear in this **order** so operators get a stable **briefin
 
 ## Export relationship
 
-1. **Same export contracts** — Briefing **must** route export actions to the **same** **`GET /api/v1/exports/...`** families and **`export_kind`** values as [`evidence-export-contract.md`](./evidence-export-contract.md); **no** new export MIME “briefing-only” authority.
-2. **Subject alignment** — Exports **require** resolvable **`subject_ref`** (e.g. **`policy_id`**, **`object_id`**, **`sync_runs_limit`** for situation/investigation). The briefing **must** make **which export applies** obvious **before** download.
-3. **No briefing-shaped export required in v1** — A **single** “export the whole briefing” bundle is **optional** and **out of scope** unless a future **`operator_briefing_workspace_v2`** defines a **dedicated** export envelope; v1 **reuses** per-subject exports only. When a **multi-export bundle** is introduced, its bounded shape is defined by [`briefing-export-bundle-contract.md`](./briefing-export-bundle-contract.md) (**`briefing_export_bundle_v1`**).
+1. **Same export contracts** — Briefing **must** route export actions to the **same** **`GET /api/v1/exports/...`** families and **`export_kind`** values as [`evidence-export-contract.md`](./evidence-export-contract.md) for per-surface **`evidence_export_v1`** downloads; **no** new export MIME “briefing-only” authority.
+2. **Subject alignment** — Per-surface exports **require** resolvable **`subject_ref`** (e.g. **`policy_id`**, **`object_id`**, **`sync_runs_limit`** for situation/investigation). The briefing **must** make **which export applies** obvious **before** download.
+3. **Briefing archive bundle** — A **multi-member** **`briefing_export_bundle_v1`** file is **shipped** at **`GET /api/v1/exports/operator-briefing`** per [`briefing-export-bundle-contract.md`](./briefing-export-bundle-contract.md), aligned with this contract’s bounded context dimensions. It **embeds** **`evidence_export_v1`** members; it is **not** a second live briefing response and **not** a substitute for **`operator_briefing_workspace_v1`** on-screen composition.
 
 ---
 
@@ -74,7 +74,8 @@ Sections **SHOULD** appear in this **order** so operators get a stable **briefin
 | Mode | Meaning | Operator obligation |
 | --- | --- | --- |
 | **Live briefing** | On-screen composition fed by **current** API responses | Staleness and **refresh** semantics are those of each **source route**; “Reload” refreshes previews, **not** the physical network |
-| **Exported artifact** | File generated via **`evidence_export_v1`** at **`generated_at`** | **Point-in-time** snapshot; **not** a live feed; **not** tamper-proof by default |
+| **Exported artifact (single subject)** | File generated via **`evidence_export_v1`** at **`generated_at`** | **Point-in-time** snapshot; **not** a live feed; **not** tamper-proof by default |
+| **Exported artifact (briefing bundle)** | File with root **`briefing_export_bundle_v1`** from **`GET /api/v1/exports/operator-briefing`** | **Point-in-time** multi-member archive; replay **individual** embedded **`evidence_export_v1`** members in **Evidence replay**—**not** whole-bundle interactive replay in v1 (see [`evidence-replay-viewer-contract.md`](./evidence-replay-viewer-contract.md)) |
 
 Implementations **must** avoid implying that **export** is **fresher** than **live** product views, or vice versa, without explicit timestamps per source.
 
@@ -112,7 +113,7 @@ The word **“briefing”** means **read-only interpretation support for handoff
 | **Full delta digest** | Shell navigation to **`view=delta-digest`** with preserved **`sync_runs_limit`** |
 | **Full dossiers** | **`navigateToTopologyDossier`**, **`navigateToPolicyDossierWorkspace`** (or equivalents) with **`policy_dossier_entry` / `dossier_source`** hints such as a **briefing**-specific entry token when implemented client-side |
 | **Situation / Investigation** | **`navigateToSituationRoomView`**, **`navigateToInvestigationView`** with **`inv_from`** set to a **documented** briefing source id when the shell supports it |
-| **Export** | Invoke **`GET /api/v1/exports/...`** per [`evidence-export-contract.md`](./evidence-export-contract.md) |
+| **Export** | Invoke **`GET /api/v1/exports/...`** per [`evidence-export-contract.md`](./evidence-export-contract.md) (including optional **`GET /api/v1/exports/operator-briefing`** for **`briefing_export_bundle_v1`**) |
 
 ---
 
@@ -123,6 +124,8 @@ The word **“briefing”** means **read-only interpretation support for handoff
 - [`evidence-pack-contract.md`](./evidence-pack-contract.md) — situation room assembly  
 - [`investigation-workspace-contract.md`](./investigation-workspace-contract.md) — investigation assembly  
 - [`evidence-export-contract.md`](./evidence-export-contract.md) — export routes and non-claims  
+- [`briefing-export-bundle-contract.md`](./briefing-export-bundle-contract.md) — **`briefing_export_bundle_v1`** multi-member archive  
+- [`evidence-replay-viewer-contract.md`](./evidence-replay-viewer-contract.md) — replay of frozen **`evidence_export_v1`** (not whole-bundle replay in v1)  
 - [`noc-cockpit-contract.md`](./noc-cockpit-contract.md) — Overview cockpit composition  
 - [`operator-search-contract.md`](./operator-search-contract.md) — search pivot semantics  
 - [`../../agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md) — operational verdict  

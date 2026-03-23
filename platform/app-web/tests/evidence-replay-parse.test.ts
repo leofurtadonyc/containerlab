@@ -117,6 +117,20 @@ describe("parseEvidenceExportJson", () => {
     }
   });
 
+  it("rejects briefing_export_bundle_v1 root (replay expects single evidence_export_v1 envelope)", () => {
+    const raw = JSON.stringify({
+      contract_id: "briefing_export_bundle_v1",
+      generated_at: "2025-01-01T00:00:00Z",
+      briefing_subject: { sync_runs_limit: 10 },
+      bundle_members: [],
+    });
+    const r = parseEvidenceExportJson(raw);
+    expect(r.status).toBe("error");
+    if (r.status === "error") {
+      expect(r.error.code).toBe("unsupported_envelope_contract");
+    }
+  });
+
   it("assertExportKindMatches errors on mismatch", () => {
     const r = parseEvidenceExportJson(minimalSituationRoomExport());
     expect(r.status).toBe("ok");
