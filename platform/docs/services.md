@@ -77,6 +77,7 @@ Current state:
 - workflow-history and audit-history currently expose bounded views derived from persisted sync-run activity rather than full workflow or audit tables
 - `/api/v1/platform/status` now includes one bounded ODL-backed controller capability probe derived from RESTCONF YANG-library and operations discovery, while the backend remains the owner of the normalized product response
 - `/api/v1/capabilities` now exposes a bounded capability matrix that makes supported, partially-supported, unknown, and not-implemented states explicit across the current Nokia-first read-only product slice without implying Juniper parity
+- **week 27:** **`GET /api/v1/policies/{policy_id}/path-analysis`** (**`path_analysis_phase2_v1`**) assembles bounded path hints from existing policy/topology/inventory signals—**not** dataplane or controller path authority; **`GET /api/v1/topology/objects/{object_id}/related-policies`** and **`GET /api/v1/policies/{policy_id}/topology-impact`** implement the topology↔policy **string-equality** pivots documented in `topology-related-policies-contract.md`—**not** graph impact simulation; each **`PolicyRecord`** includes **`degraded_policy_v1`** per `degraded-policy-v1-contract.md`—bounded classification from normalized fields, **not** SLA or validation verdicts
 
 ### `gnmi-collector`
 
@@ -245,6 +246,7 @@ Current state:
 - a typed API client layer now consumes stable backend contracts
 - topology, Overview, and Platform Health now surface backend-owned endpoint-pairing posture and paired-versus-single-sided inferred-link counts as bounded topology trust cues without turning the WebUI into a validation surface
 - workflow and audit views now surface bounded platform-side sync visibility rather than remaining placeholders
+- **week 27:** **Policies** detail includes **Path analysis** and **Topology impact** panels; **Topology** and **Devices** include **related policies** where object ids align; **Overview** / **Platform Health** include degraded-policy v1 drill-downs; **Investigation** supports optional **`inv_from`** breadcrumb context— all **read-only** product consumption of the same **`app-api`** contracts; Grafana does not implement these surfaces (see `dashboards.md`)
 
 ## Service Relationship Summary
 

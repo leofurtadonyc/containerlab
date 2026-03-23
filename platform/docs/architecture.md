@@ -139,6 +139,7 @@ Current truth-presentation reality:
 - the WebUI now also surfaces backend-owned topology endpoint-pairing posture and paired-versus-single-sided counts as bounded trust cues on the dedicated topology page and in coarser summary form on Overview and Platform Health
 - the WebUI may describe evidence as recent, aging, stale, partial, inferred, or unavailable where the backend contract and timestamps support that interpretation
 - those labels remain explanatory operator cues rather than workflow decisions, policy validation outcomes, or drift verdicts
+- **week 27 read surfaces (Phase 2, interpretation-only):** the **Policies** page exposes **Path analysis** (`PolicyPathAnalysisPanel`) and **Topology impact** for the selected policy—backend contracts **`path_analysis_phase2_v1`** and topology↔policy pivots per `path-analysis-contract.md` and `topology-related-policies-contract.md`; **Topology** and **Devices** reuse **`TopologyRelatedPoliciesPanel`** where a topology **node** or **link** id aligns with the selection (string-equality pivot—**not** dependency or blast-radius simulation); **Overview** / **Platform Health** surface bounded **degraded-policy v1** counts with drill-down to **Policies** via URL sync; **Investigation** (`view=investigation`) can show optional shell-only **`inv_from`** breadcrumbs when the operator opened the workspace from another surface—**not** workflow routing, **not** dataplane or TE truth, **not** validation authority
 
 ### `gnmi-collector`
 

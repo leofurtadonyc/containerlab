@@ -190,7 +190,7 @@ At this stage, contributors should assume:
 - Grafana dashboard provisioning for platform, topology, SR policy, and vendor (Nokia-first) bounded observability; change-validation remains markdown-only until metrics exist (see `docs/dashboards.md`)
 - repo-built local images for the initial service set, with bounded startup validators now in place for Postgres, Prometheus, and Grafana plus a bounded deploy-time verification flow for the core runtime and ODL auth path
 - schema and shared-directory scaffolding
-- read-only inventory, topology, policy, capability, and platform status APIs
+- read-only inventory, topology, policy, capability, and platform status APIs (including week **27** bounded endpoints for **path-analysis**, **topology↔policy** naming pivots, and **degraded-policy v1** on policy records—**not** workflow or validation engines)
 - read-only WebUI pages backed by stable backend contracts
 - bounded Postgres-backed persistence for inventory, topology, and policy snapshots plus sync-run history
 
@@ -219,6 +219,10 @@ Future contributors should be able to tell immediately that:
 For host recreation and deployment steps, see `INSTALLATION-INSTRUCTIONS.md`. For the bounded operator-facing build, deploy, verify, healthy-state, and first-response troubleshooting flow, see `docs/deployment-runbook.md`. For the **Phase 2** safe-use verdict, verification semantics, and drill limits, see `docs/production-readiness-assessment.md` and keep it aligned with the runbook and the repo’s current-status narrative (`../agent/sdn/03-CURRENT-STATUS.md`).
 
 ## Additional Docs
+
+### Week 27 bounded read contracts (Phase 2)
+
+**Path-analysis** (`GET /api/v1/policies/{policy_id}/path-analysis`), **topology↔policy** pivots (`/api/v1/topology/objects/{object_id}/related-policies`, `/api/v1/policies/{policy_id}/topology-impact`), and **degraded-policy v1** (each policy record on `GET /api/v1/policies`) are product-owned, read-only interpretation surfaces. Authoritative contract language and explicit non-claims live in `docs/path-analysis-contract.md`, `docs/topology-related-policies-contract.md`, and `docs/degraded-policy-v1-contract.md`. They are **not** dataplane or TE resolution truth, **not** blast-radius or dependency analysis, **not** SLA or validation verdicts, and **not** implemented in Grafana (see `docs/dashboards.md`). Higher-level narrative: `docs/architecture.md`, `docs/data-flows.md`, `docs/services.md`, `docs/roadmap.md`.
 
 Supporting documents live under `platform/docs/`:
 

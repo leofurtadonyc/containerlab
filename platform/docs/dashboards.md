@@ -29,6 +29,7 @@ The platform currently has:
 - the platform overview dashboard now also mirrors the narrower topology read-path coverage posture through paired-versus-single-sided link counts, linked-versus-isolated node counts, and backend-owned inference, pairing, node-participation, and collection posture labels without turning Grafana into the product contract
 - a bounded post-deploy core-runtime regression check that now validates Grafana API health, the provisioned Prometheus datasource, and the provisioned overview dashboards alongside Postgres and Prometheus readiness
 - clearly marked placeholder or bounded-real-metrics dashboard files per family (for example **change-validation** remains markdown-only until metrics exist; **vendor** now combines scope text with real collector and collector-boundary panels)
+- **week 27 product versus observability:** **path-analysis**, **topology↔policy related-policies / topology-impact** pivots, and **degraded-policy v1** classification are **app-api + WebUI** read surfaces (`path-analysis-contract.md`, `topology-related-policies-contract.md`, `degraded-policy-v1-contract.md`). Grafana does **not** implement those semantics; existing SR policy and platform panels continue to mirror **metrics and table-age signals** only—not path-analysis views, not naming-pivot “impact,” and not degraded-policy v1 rows
 
 What does not exist yet:
 
