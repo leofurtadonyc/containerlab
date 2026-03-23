@@ -40,7 +40,9 @@ import {
   getTopologyLinkEndpointPairingState,
   getTopologyNodeParticipationReadout,
   useTopologyQuery,
+  useTopologyRiskSummaryQuery,
 } from "./api";
+import { TopologyRiskAttentionPanel } from "./topology-risk-attention-panel";
 import { TopologyFailureImpactPanel } from "./topology-failure-impact-panel";
 import { TopologyRelatedPoliciesPanel } from "./topology-related-policies-panel";
 
@@ -215,6 +217,7 @@ function buildFreshnessSummary(observedAt: string | null, generatedAt: string) {
 
 export function TopologyView() {
   const { data, error, isLoading, reload } = useTopologyQuery();
+  const riskSummaryQuery = useTopologyRiskSummaryQuery(Boolean(data));
   const {
     data: policyData,
     error: policyError,
@@ -1348,6 +1351,24 @@ export function TopologyView() {
           </ul>
         </div>
       ) : null}
+
+      <TopologyRiskAttentionPanel
+        variant="topology"
+        data={riskSummaryQuery.data}
+        error={riskSummaryQuery.error}
+        isLoading={riskSummaryQuery.isLoading}
+        isRefreshing={riskSummaryQuery.isRefreshing}
+        onRetry={riskSummaryQuery.reload}
+        drillToObject={(objectId, kind) => {
+          if (kind === "node") {
+            setSelectedNodeId(objectId);
+            setSelectedLinkId(null);
+          } else {
+            setSelectedLinkId(objectId);
+            setSelectedNodeId(null);
+          }
+        }}
+      />
 
       <div className="toolbar">
         <label className="field-group">

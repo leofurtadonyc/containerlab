@@ -5,6 +5,7 @@ import type {
   TopologyLinkRecord,
   TopologyObjectRelatedPoliciesResponse,
   TopologyResponse,
+  TopologyRiskSummaryResponse,
 } from "../../api/contracts";
 import { apiClient } from "../../api/client";
 import { useApiQuery } from "../../api/use-api-query";
@@ -39,6 +40,15 @@ export function useTopologyFailureImpactQuery(objectId: string | null) {
   const queryFn = useCallback<() => Promise<FailureImpactViewResponse>>(
     () => apiClient.getTopologyObjectFailureImpact(objectId as string),
     [objectId],
+  );
+
+  return useApiQuery(queryFn, { enabled });
+}
+
+export function useTopologyRiskSummaryQuery(enabled = true) {
+  const queryFn = useCallback<() => Promise<TopologyRiskSummaryResponse>>(
+    () => apiClient.getTopologyRiskSummary(),
+    [],
   );
 
   return useApiQuery(queryFn, { enabled });

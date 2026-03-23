@@ -13,6 +13,7 @@ import type {
   SituationPackAssemblyResponse,
   TopologyObjectRelatedPoliciesResponse,
   TopologyResponse,
+  TopologyRiskSummaryResponse,
   FailureImpactViewResponse,
   WorkflowHistoryResponse,
 } from "./contracts";
@@ -76,6 +77,10 @@ export class ApiClient {
     return this.request<FailureImpactViewResponse>(
       `/api/v1/topology/objects/${encoded}/failure-impact`,
     );
+  }
+
+  async getTopologyRiskSummary(): Promise<TopologyRiskSummaryResponse> {
+    return this.request<TopologyRiskSummaryResponse>("/api/v1/topology/risk-summary");
   }
 
   async getPolicies(query?: DevicesPoliciesReadSideQuery): Promise<PoliciesListResponse> {

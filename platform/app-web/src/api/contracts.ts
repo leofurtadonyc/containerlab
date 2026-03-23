@@ -558,6 +558,61 @@ export interface FailureImpactViewResponse {
   missing_evidence_notes: string[];
 }
 
+export type TopologyRiskSummaryExplicitNonClaim =
+  | "not_sla_or_service_risk_truth"
+  | "not_traffic_or_dataplane_risk_truth"
+  | "not_failure_probability"
+  | "not_validated_blast_radius"
+  | "not_optimization_engine"
+  | "not_global_policy_health_ranking"
+  | "not_validation_or_safe_change_authority"
+  | "not_replace_per_object_failure_impact";
+
+export interface TopologyRiskSummarySafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: TopologyRiskSummaryExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface TopologyRiskSummaryRankingInputs {
+  degraded_related_count: number;
+  unknown_related_count: number;
+  related_policy_breadth: number;
+  ok_related_count: number;
+}
+
+export interface TopologyRiskSummaryRow {
+  rank_index: number;
+  object_kind: TopologyObjectKind;
+  object_id: string;
+  ranking_inputs: TopologyRiskSummaryRankingInputs;
+  degraded_posture_breakdown: FailureImpactDegradedPostureBreakdown;
+}
+
+export interface TopologyRiskSummaryFreshness {
+  assembly_generated_at: string;
+  policy_inventory_observed_at: string | null;
+  topology_snapshot_observed_at: string | null;
+  policy_inventory_empty_reason: string | null;
+  policy_serving_mode_echo: string;
+}
+
+/** `GET /api/v1/topology/risk-summary` (attention ranking from related policies + degraded v1; not SLA/traffic risk). */
+export interface TopologyRiskSummaryResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "topology_risk_summary_v1";
+  ranking_basis: string;
+  safety_framing: TopologyRiskSummarySafetyFraming;
+  assembly_confidence: "low" | "medium";
+  ranked_objects: TopologyRiskSummaryRow[];
+  total_objects: number;
+  freshness: TopologyRiskSummaryFreshness;
+  caveats: string[];
+  missing_evidence_notes: string[];
+}
+
 /** `GET /api/v1/policies/{policy_id}/topology-impact` (inverse pivot; naming alignment only). */
 export interface PolicyTopologyImpactRow {
   topology_object_kind: TopologyObjectKind;

@@ -12,6 +12,7 @@ const {
   usePoliciesQuery,
   useCapabilitiesQuery,
   useRecentChangeSummaryQuery,
+  useTopologyRiskSummaryQuery,
 } = vi.hoisted(() => ({
   usePlatformStatusQuery: vi.fn(),
   useDevicesQuery: vi.fn(),
@@ -19,6 +20,7 @@ const {
   usePoliciesQuery: vi.fn(),
   useCapabilitiesQuery: vi.fn(),
   useRecentChangeSummaryQuery: vi.fn(),
+  useTopologyRiskSummaryQuery: vi.fn(),
 }));
 
 vi.mock("../src/features/platform-health/api", async () => {
@@ -44,6 +46,7 @@ vi.mock("../src/features/topology/api", async () => {
   return {
     ...actual,
     useTopologyQuery,
+    useTopologyRiskSummaryQuery,
   };
 });
 
@@ -460,9 +463,42 @@ function createCapabilitiesData(): CapabilitiesListResponse {
   };
 }
 
+function createTopologyRiskSummaryData() {
+  return {
+    metadata: {
+      service: "app-api",
+      version: "test",
+      phase: "phase_2_read_only_foundation" as const,
+      generated_at: "2025-01-01T00:00:00Z",
+    },
+    contract_id: "topology_risk_summary_v1" as const,
+    ranking_basis: "test basis",
+    safety_framing: {
+      contract_id: "topology_risk_summary_v1",
+      authority_posture: "interpretation_support_only" as const,
+      explicit_non_claims: ["not_failure_probability"] as const,
+      phase: "phase_2_read_only_foundation" as const,
+      summary_disclaimer: "Test disclaimer.",
+    },
+    assembly_confidence: "medium" as const,
+    ranked_objects: [],
+    total_objects: 0,
+    freshness: {
+      assembly_generated_at: "2025-01-01T00:00:01Z",
+      policy_inventory_observed_at: null,
+      topology_snapshot_observed_at: null,
+      policy_inventory_empty_reason: null,
+      policy_serving_mode_echo: "live",
+    },
+    caveats: [],
+    missing_evidence_notes: [],
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   useRecentChangeSummaryQuery.mockReturnValue(createQueryState(createRecentChangeSummaryData()));
+  useTopologyRiskSummaryQuery.mockReturnValue(createQueryState(createTopologyRiskSummaryData()));
 });
 
 describe("overview view", () => {
@@ -478,6 +514,7 @@ describe("overview view", () => {
     expect(html).toContain("Degraded policy (v1):");
     expect(html).toContain("Open policies (degraded v1)");
     expect(html).toContain("bounded inventory classification");
+    expect(html).toContain("Topology attention (risk summary v1)");
   });
 
   it("surfaces bounded situation room and investigation entrypoints above recent change", () => {
@@ -508,6 +545,7 @@ describe("overview view", () => {
     expect(useTopologyQuery).toHaveBeenCalledWith(false);
     expect(usePoliciesQuery).toHaveBeenCalledWith(false);
     expect(usePlatformStatusQuery).toHaveBeenCalledWith(false);
+    expect(useTopologyRiskSummaryQuery).toHaveBeenCalledWith(false);
   });
 
   it("renders available slices when one core query fails", () => {
