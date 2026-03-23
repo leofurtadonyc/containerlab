@@ -32,6 +32,7 @@ import {
   normalizeEvidenceConfidence,
 } from "../../lib/evidence-confidence";
 import { useReplaceUrlSearchParams } from "../../lib/use-url-search-params";
+import { InvestigationSurfaceEntry } from "../investigation/investigation-surface-entry";
 import { usePoliciesQuery } from "../policies/api";
 import {
   getTopologyCoverageSummary,
@@ -536,6 +537,8 @@ export function TopologyView() {
         </div>
         <StatusPill value={topology.completeness} />
       </div>
+
+      <InvestigationSurfaceEntry invFrom="topology" />
 
       <div className="metadata-row">
         <span>Data status: {data.data_status}</span>

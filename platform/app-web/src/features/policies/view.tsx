@@ -34,6 +34,7 @@ import {
   readDegradedPolicyV1PostureFromSearch,
 } from "../../lib/url-app-state";
 import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
+import { InvestigationSurfaceEntry } from "../investigation/investigation-surface-entry";
 import { useTopologyQuery } from "../topology/api";
 import { usePoliciesQuery } from "./api";
 import { PolicyPathAnalysisPanel } from "./policy-path-analysis-panel";
@@ -842,6 +843,8 @@ export function PoliciesView() {
         </div>
         <StatusPill value={data.data_status} />
       </div>
+
+      <InvestigationSurfaceEntry invFrom="policies" />
 
       <div className="metadata-row">
         <span>Data status: {data.data_status}</span>

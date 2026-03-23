@@ -376,7 +376,7 @@ export function SituationRoomProduct({ data, syncRunsLimit, onReload }: Situatio
           nested assembly without the numbered cross-domain sections above.
         </p>
         <div className="situation-room-nav-hub__buttons">
-          <button type="button" className="nav-drilldown-button" onClick={() => navigateToInvestigationView(syncRunsLimit)}>
+          <button type="button" className="nav-drilldown-button" onClick={() => navigateToInvestigationView(syncRunsLimit, { invFrom: "situation-room" })}>
             Open investigation workspace
           </button>
           <button type="button" className="nav-drilldown-button" onClick={() => navigateToEvidenceView("devices")}>

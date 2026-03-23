@@ -25,7 +25,7 @@ export function InvestigationOverviewEntry({ syncRunsLimit }: InvestigationOverv
         <button
           type="button"
           className="investigation-entry-primary"
-          onClick={() => navigateToInvestigationView(syncRunsLimit)}
+          onClick={() => navigateToInvestigationView(syncRunsLimit, { invFrom: "overview" })}
         >
           Open investigation workspace
         </button>
