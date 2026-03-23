@@ -502,6 +502,62 @@ export interface TopologyObjectRelatedPoliciesResponse {
   items: TopologyRelatedPolicyReference[];
 }
 
+export type FailureImpactExplicitNonClaim =
+  | "not_blast_radius_or_dependency_truth"
+  | "not_dataplane_or_te_impact_truth"
+  | "not_graph_simulation"
+  | "not_validation_or_safe_change_authority"
+  | "not_sla_or_availability_guarantee"
+  | "not_replace_controller_computed_truth"
+  | "not_global_policy_health_proxy";
+
+export interface FailureImpactSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: FailureImpactExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface FailureImpactSubject {
+  kind: TopologyObjectKind;
+  object_id: string;
+}
+
+export interface FailureImpactRollupCounts {
+  related_policies_total: number;
+  degraded_related_policies_total: number;
+  non_degraded_related_policies_total: number;
+  related_policies_path_analysis_supported_total: number;
+}
+
+export interface FailureImpactDegradedPostureBreakdown {
+  ok: number;
+  degraded: number;
+  unknown: number;
+}
+
+export interface FailureImpactFreshness {
+  assembly_generated_at: string;
+  policy_inventory_observed_at: string | null;
+  topology_snapshot_observed_at: string | null;
+  policy_inventory_empty_reason: string | null;
+  policy_serving_mode_echo: string;
+}
+
+/** `GET /api/v1/topology/objects/{object_id}/failure-impact` (bounded evidence rollup; not blast radius). */
+export interface FailureImpactViewResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "failure_impact_v1";
+  safety_framing: FailureImpactSafetyFraming;
+  subject: FailureImpactSubject;
+  rollup_counts: FailureImpactRollupCounts;
+  degraded_posture_breakdown: FailureImpactDegradedPostureBreakdown;
+  freshness: FailureImpactFreshness;
+  caveats: string[];
+  missing_evidence_notes: string[];
+}
+
 /** `GET /api/v1/policies/{policy_id}/topology-impact` (inverse pivot; naming alignment only). */
 export interface PolicyTopologyImpactRow {
   topology_object_kind: TopologyObjectKind;

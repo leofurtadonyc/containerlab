@@ -1,6 +1,11 @@
 import { useCallback } from "react";
 
-import type { TopologyLinkRecord, TopologyObjectRelatedPoliciesResponse, TopologyResponse } from "../../api/contracts";
+import type {
+  FailureImpactViewResponse,
+  TopologyLinkRecord,
+  TopologyObjectRelatedPoliciesResponse,
+  TopologyResponse,
+} from "../../api/contracts";
 import { apiClient } from "../../api/client";
 import { useApiQuery } from "../../api/use-api-query";
 import {
@@ -23,6 +28,16 @@ export function useTopologyRelatedPoliciesQuery(objectId: string | null) {
   const enabled = objectId !== null && objectId.length > 0;
   const queryFn = useCallback<() => Promise<TopologyObjectRelatedPoliciesResponse>>(
     () => apiClient.getTopologyObjectRelatedPolicies(objectId as string),
+    [objectId],
+  );
+
+  return useApiQuery(queryFn, { enabled });
+}
+
+export function useTopologyFailureImpactQuery(objectId: string | null) {
+  const enabled = objectId !== null && objectId.length > 0;
+  const queryFn = useCallback<() => Promise<FailureImpactViewResponse>>(
+    () => apiClient.getTopologyObjectFailureImpact(objectId as string),
     [objectId],
   );
 

@@ -12,6 +12,7 @@ import type {
   SituationPackAssemblyResponse,
   TopologyObjectRelatedPoliciesResponse,
   TopologyResponse,
+  FailureImpactViewResponse,
   WorkflowHistoryResponse,
 } from "./contracts";
 import {
@@ -66,6 +67,13 @@ export class ApiClient {
     const encoded = encodeURIComponent(objectId);
     return this.request<TopologyObjectRelatedPoliciesResponse>(
       `/api/v1/topology/objects/${encoded}/related-policies`,
+    );
+  }
+
+  async getTopologyObjectFailureImpact(objectId: string): Promise<FailureImpactViewResponse> {
+    const encoded = encodeURIComponent(objectId);
+    return this.request<FailureImpactViewResponse>(
+      `/api/v1/topology/objects/${encoded}/failure-impact`,
     );
   }
 

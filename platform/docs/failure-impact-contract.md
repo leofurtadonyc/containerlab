@@ -142,7 +142,7 @@ Stable keys (illustrative; align with schema literals when added):
 
 | Gap | Notes |
 | --- | --- |
-| **WebUI** | Optional surface (e.g. Topology/Devices detail) consuming **`GET .../failure-impact`** with **explicit** copy patterns above. |
+| **WebUI** | **Topology** **`TopologyFailureImpactPanel`** (week **28**) beside related policies when a node or link is selected; optional follow-ons elsewhere remain possible. |
 | **Verifier** | Optional **`verify-core-runtime.sh`** structural checks—**not** shell duplication of assembly rules. |
 
 ---

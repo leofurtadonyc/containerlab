@@ -41,6 +41,7 @@ import {
   getTopologyNodeParticipationReadout,
   useTopologyQuery,
 } from "./api";
+import { TopologyFailureImpactPanel } from "./topology-failure-impact-panel";
 import { TopologyRelatedPoliciesPanel } from "./topology-related-policies-panel";
 
 function readTopologySelectionFromUrl(): { nodeId: string | null; linkId: string | null } {
@@ -1524,6 +1525,7 @@ export function TopologyView() {
                 objectKind="node"
                 policiesList={policyData}
               />
+              <TopologyFailureImpactPanel objectId={selectedNode.node_id} objectKind="node" />
             </div>
           ) : null}
         </>
@@ -1743,6 +1745,7 @@ export function TopologyView() {
                 objectKind="link"
                 policiesList={policyData}
               />
+              <TopologyFailureImpactPanel objectId={selectedLink.link_id} objectKind="link" />
             </div>
           ) : null}
         </>
