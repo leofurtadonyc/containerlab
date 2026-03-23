@@ -181,7 +181,7 @@ wait_for_http_ok "app-api metrics" "$APP_API_URL/metrics"
 wait_for_http_ok "app-web root" "$APP_WEB_URL/"
 wait_for_http_ok "app-web API proxy health" "$APP_WEB_URL/api/v1/health"
 
-# Week 29 NOC cockpit WebUI: shipped /assets/*.js must retain stable composition markers (repository vitest covers UI behavior).
+# Week 29–30 NOC cockpit / handoff WebUI: shipped /assets/*.js must retain stable composition markers (repository vitest covers UI behavior).
 app_web_index_html=$(curl -fsS "$APP_WEB_URL/")
 app_web_noc_cockpit_marker=0
 app_web_overview_mode_marker=0
@@ -189,6 +189,8 @@ app_web_delta_digest_marker=0
 app_web_operator_briefing_marker=0
 app_web_briefing_bundle_export_marker=0
 app_web_evidence_replay_marker=0
+app_web_noc_cockpit_strategic_pivots_marker=0
+app_web_global_search_week30_marker=0
 for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n' | grep -E '^/assets/.*\.js$' || true); do
   app_web_chunk=$(curl -fsS "$APP_WEB_URL$asset_path")
   if printf '%s' "$app_web_chunk" | grep -qF 'noc_cockpit_v1'; then
@@ -209,9 +211,15 @@ for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n
   if printf '%s' "$app_web_chunk" | grep -qF 'evidence_replay_viewer_v1'; then
     app_web_evidence_replay_marker=1
   fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'noc-cockpit-strategic-pivots'; then
+    app_web_noc_cockpit_strategic_pivots_marker=1
+  fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'Evidence replay (frozen file)'; then
+    app_web_global_search_week30_marker=1
+  fi
 done
-if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ]; then
-  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, and evidence_replay_viewer_v1 substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing bundle export + evidence replay UI)" >&2
+if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ] || [ "$app_web_noc_cockpit_strategic_pivots_marker" != "1" ] || [ "$app_web_global_search_week30_marker" != "1" ]; then
+  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, evidence_replay_viewer_v1, noc-cockpit-strategic-pivots, and Evidence replay (frozen file) substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing + bundle export + evidence replay + cockpit 2.0 pivots + global search week 30 footer)" >&2
   exit 1
 fi
 
@@ -596,6 +604,15 @@ export_operator_briefing_bundle=$(fetch_compact_json "$APP_API_URL/api/v1/export
 assert_contains "briefing export bundle (contract id)" "$export_operator_briefing_bundle" '"contract_id":"briefing_export_bundle_v1"'
 assert_contains "briefing export bundle (bundle_members)" "$export_operator_briefing_bundle" '"bundle_members":'
 assert_contains "briefing export bundle (briefing_subject)" "$export_operator_briefing_bundle" '"briefing_subject":'
+
+# Week 30: cross-domain delta digest + operator briefing read APIs (structural contract sampling; repository pytest covers semantics).
+delta_digest_runtime_response=$(fetch_compact_json "$APP_API_URL/api/v1/delta-digest?sync_runs_limit=10")
+assert_contains "delta digest response (contract id)" "$delta_digest_runtime_response" '"contract_id":"cross_domain_delta_digest_v1"'
+assert_contains "delta digest response (sections)" "$delta_digest_runtime_response" '"sections":['
+
+operator_briefing_runtime_response=$(fetch_compact_json "$APP_API_URL/api/v1/operator-briefing?sync_runs_limit=10")
+assert_contains "operator briefing response (contract id)" "$operator_briefing_runtime_response" '"contract_id":"operator_briefing_workspace_v1"'
+assert_contains "operator briefing response (section_meta)" "$operator_briefing_runtime_response" '"section_meta":['
 
 if [ "$sync_runs_count" -gt 0 ]; then
   assert_not_contains "workflow history response" "$workflow_history_response" '"data_status":"empty"'
