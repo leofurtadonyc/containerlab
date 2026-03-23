@@ -11,6 +11,8 @@ import { usePolicyEvidenceTimelineQuery } from "./api";
 
 export interface PolicyEvidenceTimelinePanelProps {
   policyId: string;
+  /** Brief visual emphasis (e.g. after history drillthrough with `policy_evidence_timeline_focus=v1`). */
+  emphasize?: boolean;
 }
 
 function entryKindLabel(kind: PolicyEvidenceTimelineEntry["entry_kind"]): string {
@@ -24,7 +26,7 @@ function entryKindLabel(kind: PolicyEvidenceTimelineEntry["entry_kind"]): string
   return labels[kind] ?? formatLabel(kind);
 }
 
-export function PolicyEvidenceTimelinePanel({ policyId }: PolicyEvidenceTimelinePanelProps) {
+export function PolicyEvidenceTimelinePanel({ policyId, emphasize }: PolicyEvidenceTimelinePanelProps) {
   const { data, error, isLoading, isRefreshing, reload } = usePolicyEvidenceTimelineQuery(policyId);
 
   if (!policyId) {
@@ -33,7 +35,10 @@ export function PolicyEvidenceTimelinePanel({ policyId }: PolicyEvidenceTimeline
 
   if (isLoading && !data) {
     return (
-      <article id="policy-evidence-timeline" className="detail-card">
+      <article
+        id="policy-evidence-timeline"
+        className={`detail-card${emphasize ? " detail-card--focus-flash" : ""}`}
+      >
         <h3>Policy evidence timeline</h3>
         <LoadingState label="Loading bounded policy evidence timeline (read-only assembly)…" />
       </article>
@@ -43,7 +48,10 @@ export function PolicyEvidenceTimelinePanel({ policyId }: PolicyEvidenceTimeline
   if (error) {
     const isNotFound = error instanceof ApiClientError && error.status === 404;
     return (
-      <article id="policy-evidence-timeline" className="detail-card">
+      <article
+        id="policy-evidence-timeline"
+        className={`detail-card${emphasize ? " detail-card--focus-flash" : ""}`}
+      >
         <h3>Policy evidence timeline</h3>
         {isNotFound ? (
           <div className="query-message">
@@ -71,7 +79,10 @@ export function PolicyEvidenceTimelinePanel({ policyId }: PolicyEvidenceTimeline
   );
 
   return (
-    <article id="policy-evidence-timeline" className="detail-card">
+    <article
+      id="policy-evidence-timeline"
+      className={`detail-card${emphasize ? " detail-card--focus-flash" : ""}`}
+    >
       <h3>Policy evidence timeline</h3>
       {isRefreshing ? (
         <p className="table-note" role="status">

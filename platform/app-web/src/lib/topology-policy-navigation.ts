@@ -1,6 +1,12 @@
 import type { TopologyObjectKind } from "../api/contracts";
 import { mergeViewIntoSearch, replaceUrlSearchParams } from "./url-app-state";
 
+/**
+ * Client-only shell hint: Policies view scrolls to and briefly emphasizes the evidence timeline
+ * panel (`policy-evidence-timeline`). Not sent to app-api.
+ */
+export const POLICY_EVIDENCE_TIMELINE_FOCUS_PARAM = "policy_evidence_timeline_focus";
+
 /** Navigate to Policies with a specific policy selected (bounded read-side `view=` + `policy_id`). */
 export function navigateToPoliciesPolicy(policyId: string): void {
   const sp = mergeViewIntoSearch(window.location.search, "policies");
@@ -24,9 +30,19 @@ export function scrollToPolicyPathAnalysisCard(): void {
   }, 0);
 }
 
-/** Same pattern as path analysis: focus the evidence-timeline card (`#policy-evidence-timeline`). */
-export function navigateToPoliciesPolicyEvidenceTimeline(policyId: string): void {
-  navigateToPoliciesPolicy(policyId);
+/**
+ * Navigate to Policies with `policy_id` and a client-only focus hint so the evidence timeline panel
+ * scrolls into view after load (used from workflow/audit history drillthroughs).
+ */
+export function navigateToPoliciesPolicyEvidenceTimelineFocus(policyId: string): void {
+  const sp = mergeViewIntoSearch(window.location.search, "policies");
+  sp.set("policy_id", policyId);
+  sp.set(POLICY_EVIDENCE_TIMELINE_FOCUS_PARAM, "v1");
+  replaceUrlSearchParams(sp);
+}
+
+/** Scroll to the evidence-timeline detail card without changing the URL (for use when already on Policies). */
+export function scrollToPolicyEvidenceTimelineCard(): void {
   if (typeof window === "undefined") {
     return;
   }

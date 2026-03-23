@@ -158,6 +158,12 @@ section h2 {
   border-left: 3px solid #4a8cff;
 }
 
+.detail-card.detail-card--focus-flash {
+  outline: 2px solid rgba(125, 211, 252, 0.55);
+  outline-offset: 2px;
+  transition: outline 0.25s ease;
+}
+
 .summary-card strong {
   display: block;
   font-size: 1.6rem;

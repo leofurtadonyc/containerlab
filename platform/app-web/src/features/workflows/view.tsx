@@ -3,11 +3,15 @@ import { useMemo, useState } from "react";
 import type { WorkflowHistoryItem } from "../../api/contracts";
 import { ChangeIntelligenceOverviewLink } from "../../components/change-intelligence-overview-link";
 import { HistoryEvidenceDrilldown } from "../../components/history-evidence-drilldown";
+import { HistoryPolicyEvidenceTimelineDrilldown } from "../../components/history-policy-evidence-timeline-drilldown";
 import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
-import { workflowHistoryDrilldownTargets } from "../../lib/history-evidence-drilldown";
+import {
+  policyEvidenceTimelineRowsFromComparison,
+  workflowHistoryDrilldownTargets,
+} from "../../lib/history-evidence-drilldown";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
 import { useWorkflowHistoryQuery } from "./api";
 
@@ -808,6 +812,9 @@ export function WorkflowsView() {
                 </p>
               ) : null}
               <HistoryEvidenceDrilldown targets={workflowHistoryDrilldownTargets(selectedWorkflow)} />
+              <HistoryPolicyEvidenceTimelineDrilldown
+                rows={policyEvidenceTimelineRowsFromComparison(selectedWorkflow)}
+              />
               <div className="key-value-list">
                 <div className="key-value-row">
                   <span>Workflow</span>

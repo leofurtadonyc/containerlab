@@ -3,11 +3,15 @@ import { useMemo, useState } from "react";
 import type { AuditHistoryItem } from "../../api/contracts";
 import { ChangeIntelligenceOverviewLink } from "../../components/change-intelligence-overview-link";
 import { HistoryEvidenceDrilldown } from "../../components/history-evidence-drilldown";
+import { HistoryPolicyEvidenceTimelineDrilldown } from "../../components/history-policy-evidence-timeline-drilldown";
 import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
-import { auditHistoryDrilldownTargets } from "../../lib/history-evidence-drilldown";
+import {
+  auditHistoryDrilldownTargets,
+  policyEvidenceTimelineRowsFromComparison,
+} from "../../lib/history-evidence-drilldown";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
 import { useAuditHistoryQuery } from "./api";
 
@@ -747,6 +751,9 @@ export function AuditView() {
                 </p>
               ) : null}
               <HistoryEvidenceDrilldown targets={auditHistoryDrilldownTargets(selectedEvent)} />
+              <HistoryPolicyEvidenceTimelineDrilldown
+                rows={policyEvidenceTimelineRowsFromComparison(selectedEvent)}
+              />
               <div className="key-value-list">
                 <div className="key-value-row">
                   <span>Event</span>

@@ -131,6 +131,20 @@ describe("PolicyEvidenceTimelinePanel", () => {
     expect(html).toContain("timeline includes a path-analysis anchor");
   });
 
+  it("applies focus emphasis class when emphasize is requested", () => {
+    usePolicyEvidenceTimelineQuery.mockReturnValue({
+      data: baseFixture(),
+      error: null,
+      isLoading: false,
+      isRefreshing: false,
+      reload: vi.fn(async () => undefined),
+    });
+
+    const html = renderToStaticMarkup(<PolicyEvidenceTimelinePanel policyId="p1" emphasize />);
+
+    expect(html).toContain("detail-card--focus-flash");
+  });
+
   it("shows empty-anchor copy when the API returns no entries but is otherwise supported", () => {
     usePolicyEvidenceTimelineQuery.mockReturnValue({
       data: baseFixture({
