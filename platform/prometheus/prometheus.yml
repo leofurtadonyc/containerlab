@@ -19,8 +19,12 @@ scrape_configs:
           component: metrics
 
   # These are the currently real platform-semantic metrics targets in Phase 2.
+  # /metrics can take ~10s+ (readiness + DB-backed gauges); default scrape_timeout
+  # is 10s, which causes "context deadline exceeded" and up=0. Allow headroom.
   - job_name: app-api
     metrics_path: /metrics
+    scrape_interval: 30s
+    scrape_timeout: 25s
     static_configs:
       - targets:
           - app-api:8000
