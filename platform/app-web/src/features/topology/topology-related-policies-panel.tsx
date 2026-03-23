@@ -6,8 +6,8 @@ import {
 } from "../../components/policy-impact-summary";
 import { ApiClientError } from "../../api/client";
 import type { PoliciesListResponse, TopologyObjectKind, TopologyRelatedPolicyReference } from "../../api/contracts";
-import { formatLabel } from "../../lib/presentation";
-import { navigateToPoliciesPolicy } from "../../lib/topology-policy-navigation";
+import { buildDegradedPolicyV1ListRowHint, formatLabel } from "../../lib/presentation";
+import { navigateToPoliciesPolicy, navigateToPoliciesPolicyPathAnalysis } from "../../lib/topology-policy-navigation";
 import { useTopologyRelatedPoliciesQuery } from "./api";
 
 export interface TopologyRelatedPoliciesPanelProps {
@@ -16,15 +16,25 @@ export interface TopologyRelatedPoliciesPanelProps {
   policiesList: PoliciesListResponse | null;
 }
 
-function enrichHealth(
+function enrichPolicyInventoryRow(
   policyId: string,
   policiesList: PoliciesListResponse | null,
-): { health: string | null; observed: string | null } {
+): {
+  health: string | null;
+  observed: string | null;
+  degradedPosture: string | null;
+  degradedHint: string | null;
+} {
   const row = policiesList?.items.find((p) => p.policy_id === policyId);
   if (!row) {
-    return { health: null, observed: null };
+    return { health: null, observed: null, degradedPosture: null, degradedHint: null };
   }
-  return { health: row.health_state, observed: row.observed_state };
+  return {
+    health: row.health_state,
+    observed: row.observed_state,
+    degradedPosture: row.degraded_policy_v1.posture,
+    degradedHint: buildDegradedPolicyV1ListRowHint(row),
+  };
 }
 
 function impactFields(item: TopologyRelatedPolicyReference) {
@@ -112,7 +122,10 @@ export function TopologyRelatedPoliciesPanel({
       ) : (
         <ul className="notes-list">
           {data.items.map((item) => {
-            const { health, observed } = enrichHealth(item.policy_id, policiesList);
+            const { health, observed, degradedPosture, degradedHint } = enrichPolicyInventoryRow(
+              item.policy_id,
+              policiesList,
+            );
             return (
               <li key={`${item.policy_id}-${item.matched_field}-${item.matched_topology_identifier}`}>
                 <p className="summary-label">
@@ -138,6 +151,22 @@ export function TopologyRelatedPoliciesPanel({
                       )}
                     </span>
                   </div>
+                  <div className="key-value-row">
+                    <span>Degraded policy (v1)</span>
+                    <span>
+                      {degradedPosture && degradedHint ? (
+                        <>
+                          <StatusPill value={degradedPosture} />
+                          <span className="table-note"> {degradedHint}</span>
+                        </>
+                      ) : (
+                        <span className="table-note">
+                          Not present in the current policies list response (list may be truncated or
+                          stale versus this assembly).
+                        </span>
+                      )}
+                    </span>
+                  </div>
                 </div>
                 <PolicyImpactSummaryBlock fields={impactFields(item)} />
                 <p>
@@ -147,6 +176,13 @@ export function TopologyRelatedPoliciesPanel({
                     onClick={() => navigateToPoliciesPolicy(item.policy_id)}
                   >
                     Open policy details
+                  </button>{" "}
+                  <button
+                    type="button"
+                    className="inline-action"
+                    onClick={() => navigateToPoliciesPolicyPathAnalysis(item.policy_id)}
+                  >
+                    Path analysis
                   </button>
                 </p>
               </li>

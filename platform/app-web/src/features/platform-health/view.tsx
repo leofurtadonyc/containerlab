@@ -16,6 +16,7 @@ import {
 import { formatEntrySurfaceReadinessSummaryLines } from "../../lib/entry-surface-readiness-trust";
 import { buildInventoryHistoryTrustCueRow } from "../../lib/inventory-history-trust";
 import { buildPolicyHistoryTrustCueRow } from "../../lib/policy-history-trust";
+import { navigateToPoliciesWithDegradedPolicyV1Posture } from "../../lib/url-app-state";
 import { countRecentChangeEvidenceStatuses } from "../../lib/change-intelligence-cues";
 import { describeDryRunReadinessStatus, normalizeDryRunReadiness } from "../../lib/readiness";
 import { useCapabilitiesQuery } from "../capabilities/api";
@@ -244,6 +245,10 @@ export function PlatformHealthView() {
     policiesError !== null,
     policyReadPath?.detail_ready_target_count ?? 0,
   );
+  const degradedPolicyV1Counts = policiesData
+    ? countBy(policiesData.items, (policy) => policy.degraded_policy_v1.posture)
+    : null;
+  const degradedPolicyV1DegradedCount = degradedPolicyV1Counts?.degraded ?? 0;
   const recoveryReadout = describeRecoveryPosture(data.recovery);
   const readinessFromCapabilities = normalizeDryRunReadiness(capabilitiesData?.dry_run_readiness);
   const entryReadinessCue = capabilitiesData
@@ -376,6 +381,40 @@ export function PlatformHealthView() {
           <strong>{policySourceReadiness.label}</strong>
           <p>{policySourceReadiness.detail}</p>
         </article>
+        {!isPoliciesLoading && policiesData && policiesError === null ? (
+          <article className="summary-card">
+            <p className="summary-label">Degraded policy (v1)</p>
+            <strong>{degradedPolicyV1DegradedCount}</strong>
+            <p>
+              Policies on the current inventory list whose bounded v1 classification is degraded
+              (inventory signals only — not SLA or dataplane verdicts).
+            </p>
+            {policiesData.items.length === 0 ? (
+              <p className="table-note">No per-policy rows on this response.</p>
+            ) : degradedPolicyV1DegradedCount > 0 ? (
+              <p>
+                <button
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() => navigateToPoliciesWithDegradedPolicyV1Posture("degraded")}
+                >
+                  Open policies (degraded v1)
+                </button>
+              </p>
+            ) : (
+              <p className="table-note">
+                No degraded-policy v1 rows on the current list.{" "}
+                <button
+                  type="button"
+                  className="inline-action"
+                  onClick={() => navigateToPoliciesWithDegradedPolicyV1Posture("all")}
+                >
+                  Open policies
+                </button>
+              </p>
+            )}
+          </article>
+        ) : null}
         {capabilitiesData && entryReadinessCue ? (
           <article className="summary-card">
             <p className="summary-label">Readiness decision support</p>

@@ -43,6 +43,7 @@ import { OVERVIEW_RECENT_CHANGE_SYNC_LIMIT, useRecentChangeSummaryQuery } from "
 import { InvestigationOverviewEntry } from "./investigation-entry";
 import { SituationRoomOverviewEntry } from "./situation-room-entry";
 import { RecentChangeIntelligencePanel } from "./recent-change";
+import { navigateToPoliciesWithDegradedPolicyV1Posture } from "../../lib/url-app-state";
 import { getPlatformReadPath, usePlatformStatusQuery } from "../platform-health/api";
 import { usePoliciesQuery } from "../policies/api";
 import { getTopologyCoverageSummary, useTopologyQuery } from "../topology/api";
@@ -354,6 +355,11 @@ export function OverviewView() {
   const degradedPolicyCount = policiesData
     ? countBy(policiesData.items, (policy) => policy.health_state).degraded ?? 0
     : 0;
+  const degradedPolicyV1PostureCounts = policiesData
+    ? countBy(policiesData.items, (policy) => policy.degraded_policy_v1.posture)
+    : null;
+  const degradedPolicyV1DegradedCount = degradedPolicyV1PostureCounts?.degraded ?? 0;
+  const degradedPolicyV1UnknownCount = degradedPolicyV1PostureCounts?.unknown ?? 0;
   const degradedTopologyNodeCount = topologyData
     ? countBy(topologyData.topology.nodes, (node) => node.state).degraded ?? 0
     : 0;
@@ -508,6 +514,38 @@ export function OverviewView() {
             <p>
               Observed policies • Detailed records: {policiesData.count} • {formatLabel(policiesData.data_status)}
             </p>
+            {policiesData.items.length > 0 ? (
+              <p className="table-note">
+                Degraded policy (v1): {degradedPolicyV1DegradedCount} degraded · {degradedPolicyV1UnknownCount}{" "}
+                unknown · {degradedPolicyV1PostureCounts?.ok ?? 0} ok — bounded inventory classification, not a
+                dataplane or SLA verdict.
+              </p>
+            ) : (
+              <p className="table-note">
+                No per-policy rows on this response, so degraded-policy v1 is not summarized here.
+              </p>
+            )}
+            {degradedPolicyV1DegradedCount > 0 ? (
+              <p>
+                <button
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() => navigateToPoliciesWithDegradedPolicyV1Posture("degraded")}
+                >
+                  Open policies (degraded v1)
+                </button>
+              </p>
+            ) : policiesData.items.length > 0 ? (
+              <p className="table-note">
+                <button
+                  type="button"
+                  className="inline-action"
+                  onClick={() => navigateToPoliciesWithDegradedPolicyV1Posture("all")}
+                >
+                  Open policies
+                </button>
+              </p>
+            ) : null}
             {buildSliceAvailabilityNote(policiesSliceState) ? (
               <p className="table-note">{buildSliceAvailabilityNote(policiesSliceState)}</p>
             ) : null}

@@ -34,7 +34,7 @@ export function PolicyPathAnalysisPanel({ policyId }: PolicyPathAnalysisPanelPro
 
   if (isLoading && !data) {
     return (
-      <article className="detail-card">
+      <article id="policy-path-analysis" className="detail-card">
         <h3>Path analysis</h3>
         <LoadingState label="Loading bounded path analysis (read-only assembly)…" />
       </article>
@@ -44,7 +44,7 @@ export function PolicyPathAnalysisPanel({ policyId }: PolicyPathAnalysisPanelPro
   if (error) {
     const isNotFound = error instanceof ApiClientError && error.status === 404;
     return (
-      <article className="detail-card">
+      <article id="policy-path-analysis" className="detail-card">
         <h3>Path analysis</h3>
         {isNotFound ? (
           <div className="query-message">
@@ -69,7 +69,7 @@ export function PolicyPathAnalysisPanel({ policyId }: PolicyPathAnalysisPanelPro
   const { safety_framing, freshness, truth_alignment, caveats } = data;
 
   return (
-    <article className="detail-card">
+    <article id="policy-path-analysis" className="detail-card">
       <h3>Path analysis</h3>
       {isRefreshing ? (
         <p className="table-note" role="status">

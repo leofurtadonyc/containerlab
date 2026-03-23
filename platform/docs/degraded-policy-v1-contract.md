@@ -45,6 +45,8 @@ Every response includes:
 
 On **Policies**, the primary inventory table includes a **Degraded (v1)** column (posture pill plus a short reason hint). The toolbar adds a **Degraded policy (v1)** filter (all / degraded / unknown / ok), optional sort **Degraded v1 posture then name**, and **State distribution** summarizes counts for each v1 posture. These controls reuse the same contract as the API—interpretation support, not a global health score.
 
+**URL sync:** the shell query parameter **`degraded_policy_v1_posture`** (`degraded` \| `unknown` \| `ok`; omit or any other value means all postures) keeps the filter shareable from the address bar. **Overview** and **Platform Health** use **`navigateToPoliciesWithDegradedPolicyV1Posture`** to open **Policies** with this parameter set for degraded drill-down.
+
 ## Implementation
 
 - Schema: `platform/app-api/src/app_api/schemas/degraded_policy_v1.py`

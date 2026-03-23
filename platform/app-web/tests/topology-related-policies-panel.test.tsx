@@ -149,6 +149,9 @@ describe("TopologyRelatedPoliciesPanel", () => {
 
     expect(html).toContain("pol-a");
     expect(html).toContain("Open policy details");
+    expect(html).toContain("Path analysis");
+    expect(html).toContain("Degraded policy (v1)");
+    expect(html).toContain("partial or unsupported support posture");
     expect(html).toContain("Per-reference caveat.");
   });
 });

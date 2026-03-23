@@ -29,6 +29,10 @@ import {
   normalizeEvidenceConfidence,
 } from "../../lib/evidence-confidence";
 import { recentSnapshotsEmptyFootnote } from "../../lib/read-side-query-product-copy";
+import {
+  applyDegradedPolicyV1PostureToSearchParams,
+  readDegradedPolicyV1PostureFromSearch,
+} from "../../lib/url-app-state";
 import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { useTopologyQuery } from "../topology/api";
 import { usePoliciesQuery } from "./api";
@@ -497,7 +501,9 @@ export function PoliciesView() {
   const [candidatePathFilter, setCandidatePathFilter] = useState("all");
   const [degradedV1PostureFilter, setDegradedV1PostureFilter] = useState<
     "all" | "ok" | "degraded" | "unknown"
-  >("all");
+  >(() =>
+    typeof window !== "undefined" ? readDegradedPolicyV1PostureFromSearch(window.location.search) : "all",
+  );
   const [sortBy, setSortBy] = useState("health_then_name");
   const [searchValue, setSearchValue] = useState("");
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
@@ -646,6 +652,10 @@ export function PoliciesView() {
       setSelectedPolicyId(decoded);
     }
   }, [data, searchKey]);
+
+  useEffect(() => {
+    setDegradedV1PostureFilter(readDegradedPolicyV1PostureFromSearch(searchKey));
+  }, [searchKey]);
 
   useEffect(() => {
     if (!selectedPolicy) {
@@ -2026,9 +2036,16 @@ export function PoliciesView() {
           <span>Degraded policy (v1)</span>
           <select
             value={degradedV1PostureFilter}
-            onChange={(event) =>
-              setDegradedV1PostureFilter(event.target.value as typeof degradedV1PostureFilter)
-            }
+            onChange={(event) => {
+              const v = event.target.value as typeof degradedV1PostureFilter;
+              setDegradedV1PostureFilter(v);
+              if (typeof window === "undefined") {
+                return;
+              }
+              const sp = new URLSearchParams(window.location.search);
+              applyDegradedPolicyV1PostureToSearchParams(sp, v);
+              replaceUrlSearchParams(sp);
+            }}
           >
             <option value="all">All postures</option>
             <option value="degraded">Degraded</option>
