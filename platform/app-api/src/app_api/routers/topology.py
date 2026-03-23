@@ -5,12 +5,23 @@ from fastapi import APIRouter, HTTPException
 from app_api.schemas.failure_impact import FailureImpactViewResponse
 from app_api.schemas.topology import TopologyResponse
 from app_api.schemas.topology_related_policies import TopologyObjectRelatedPoliciesResponse
+from app_api.schemas.topology_risk_summary import TopologyRiskSummaryResponse
 from app_api.services.failure_impact import build_failure_impact_view_response
 from app_api.services.topology import build_topology_response
 from app_api.services.topology_related_policies import build_topology_object_related_policies_response
+from app_api.services.topology_risk_summary import build_topology_risk_summary_response
 
 
 router = APIRouter(tags=["topology"])
+
+
+@router.get("/topology/risk-summary", response_model=TopologyRiskSummaryResponse)
+def get_topology_risk_summary() -> TopologyRiskSummaryResponse:
+    """Return bounded topology risk summary v1: ranked nodes and links by related-policy degraded counts.
+
+    Read-only evidence assembly; not SLA/traffic risk, blast radius, or global policy health.
+    """
+    return build_topology_risk_summary_response()
 
 
 @router.get("/topology/objects/{object_id}/related-policies", response_model=TopologyObjectRelatedPoliciesResponse)

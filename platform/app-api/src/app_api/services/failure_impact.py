@@ -47,34 +47,24 @@ def _path_analysis_interpretation_supported(policy: PolicyInventoryRecord) -> bo
     return policy.support_state not in ("unsupported", "not_implemented_in_platform")
 
 
-def build_failure_impact_view_response(object_id: str) -> FailureImpactViewResponse | None:
-    """Return failure-impact v1 rollup for ``object_id``, or ``None`` if topology object unknown."""
-    related = build_topology_object_related_policies_response(object_id)
-    if related is None:
-        return None
+def degraded_posture_breakdown_for_distinct_policy_ids(
+    unique_policy_ids: Iterable[str],
+    *,
+    policy_by_id: dict[str, PolicyInventoryRecord],
+    row_current_posture: str,
+) -> tuple[FailureImpactDegradedPostureBreakdown, int, list[str]]:
+    """Count ``degraded_policy_v1`` postures for distinct related policy ids (failure-impact semantics).
 
-    settings = get_settings()
-    collector_snapshot, policy_snapshot, persisted_at = _build_policy_inventory()
-    _, topo_snapshot, _ = load_topology_snapshot_for_topology_relationship_queries()
-
-    row_current_posture: str = (
-        "stale"
-        if collector_snapshot.status == "collector_unavailable" and persisted_at is not None
-        else "current"
-    )
-
-    policy_by_id: dict[str, PolicyInventoryRecord] = {
-        p.policy_id: p for p in policy_snapshot.records
-    }
-    unique_policy_ids = sorted({item.policy_id for item in related.items})
-
+    Returns ``(breakdown, path_analysis_supported_count, missing_evidence_notes)``.
+    """
+    unique = sorted({pid for pid in unique_policy_ids})
     breakdown_ok = 0
     breakdown_degraded = 0
     breakdown_unknown = 0
     path_supported = 0
     missing_notes: list[str] = []
 
-    for pid in unique_policy_ids:
+    for pid in unique:
         policy = policy_by_id.get(pid)
         if policy is None:
             breakdown_unknown += 1
@@ -96,12 +86,50 @@ def build_failure_impact_view_response(object_id: str) -> FailureImpactViewRespo
         if _path_analysis_interpretation_supported(policy):
             path_supported += 1
 
-    if len(unique_policy_ids) > 0 and path_supported < len(unique_policy_ids):
+    if len(unique) > 0 and path_supported < len(unique):
         missing_notes.append(
             "Path-analysis interpretation is limited or unavailable for one or more related "
             "policies (support_state unsupported or not_implemented_in_platform); see per-policy "
             "GET /api/v1/policies/{policy_id}/path-analysis for details."
         )
+
+    return (
+        FailureImpactDegradedPostureBreakdown(
+            ok=breakdown_ok,
+            degraded=breakdown_degraded,
+            unknown=breakdown_unknown,
+        ),
+        path_supported,
+        missing_notes,
+    )
+
+
+def build_failure_impact_view_response(object_id: str) -> FailureImpactViewResponse | None:
+    """Return failure-impact v1 rollup for ``object_id``, or ``None`` if topology object unknown."""
+    related = build_topology_object_related_policies_response(object_id)
+    if related is None:
+        return None
+
+    settings = get_settings()
+    collector_snapshot, policy_snapshot, persisted_at = _build_policy_inventory()
+    _, topo_snapshot, _ = load_topology_snapshot_for_topology_relationship_queries()
+
+    row_current_posture: str = (
+        "stale"
+        if collector_snapshot.status == "collector_unavailable" and persisted_at is not None
+        else "current"
+    )
+
+    policy_by_id: dict[str, PolicyInventoryRecord] = {
+        p.policy_id: p for p in policy_snapshot.records
+    }
+    unique_policy_ids = sorted({item.policy_id for item in related.items})
+
+    breakdown, path_supported, missing_notes = degraded_posture_breakdown_for_distinct_policy_ids(
+        unique_policy_ids,
+        policy_by_id=policy_by_id,
+        row_current_posture=row_current_posture,
+    )
 
     caveats = list(related.global_caveats)
     caveats.append(
@@ -129,15 +157,11 @@ def build_failure_impact_view_response(object_id: str) -> FailureImpactViewRespo
         ),
         rollup_counts=FailureImpactRollupCounts(
             related_policies_total=len(unique_policy_ids),
-            degraded_related_policies_total=breakdown_degraded,
-            non_degraded_related_policies_total=breakdown_ok + breakdown_unknown,
+            degraded_related_policies_total=breakdown.degraded,
+            non_degraded_related_policies_total=breakdown.ok + breakdown.unknown,
             related_policies_path_analysis_supported_total=path_supported,
         ),
-        degraded_posture_breakdown=FailureImpactDegradedPostureBreakdown(
-            ok=breakdown_ok,
-            degraded=breakdown_degraded,
-            unknown=breakdown_unknown,
-        ),
+        degraded_posture_breakdown=breakdown,
         freshness=FailureImpactFreshness(
             assembly_generated_at=now,
             policy_inventory_observed_at=policy_snapshot.observed_at,
