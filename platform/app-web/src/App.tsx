@@ -11,9 +11,12 @@ import {
 import { PLATFORM_NAV_VIEW_IDS } from "./nav-views";
 import { AuditView } from "./features/audit/view";
 import { CapabilitiesView } from "./features/capabilities/view";
+import { DeltaDigestView } from "./features/delta-digest/view";
+import { EvidenceReplayView } from "./features/evidence-replay/view";
 import { DevicesView } from "./features/devices/view";
 import { InvestigationView } from "./features/investigation/view";
 import { OverviewView } from "./features/overview/view";
+import { OperatorBriefingView } from "./features/operator-briefing/view";
 import { SituationRoomView } from "./features/situation-room/view";
 import { PlatformHealthView } from "./features/platform-health/view";
 import { PoliciesView } from "./features/policies/view";
@@ -24,6 +27,7 @@ import { GlobalOperatorSearch } from "./features/global-search/global-operator-s
 
 const NAV_ITEMS = [
   { id: "overview", label: "Overview" },
+  { id: "delta-digest", label: "Delta digest" },
   { id: "situation-room", label: "Situation room" },
   { id: "investigation", label: "Investigation" },
   { id: "devices", label: "Devices" },
@@ -34,6 +38,7 @@ const NAV_ITEMS = [
   { id: "capabilities", label: "Capabilities" },
   { id: "readiness", label: "Readiness" },
   { id: "platform-health", label: "Platform Health" },
+  { id: "evidence-replay", label: "Evidence replay" },
 ] as const;
 
 function readInitialView(): string {
@@ -43,8 +48,12 @@ function readInitialView(): string {
 
 function renderView(viewId: string) {
   switch (viewId) {
+    case "delta-digest":
+      return <DeltaDigestView />;
     case "situation-room":
       return <SituationRoomView />;
+    case "operator-briefing":
+      return <OperatorBriefingView />;
     case "investigation":
       return <InvestigationView />;
     case "devices":
@@ -63,6 +72,8 @@ function renderView(viewId: string) {
       return <ReadinessView />;
     case "platform-health":
       return <PlatformHealthView />;
+    case "evidence-replay":
+      return <EvidenceReplayView />;
     case "overview":
     default:
       return <OverviewView />;
@@ -107,7 +118,8 @@ export function App() {
           This WebUI now consumes the current read-only backend contracts for
           overview, platform status, devices, topology, policies, workflow
           history, audit history, capabilities, readiness, bounded situation room
-          evidence-pack assembly, and bounded investigation workspace assembly. Grafana remains
+          evidence-pack assembly, operator briefing workspace, bounded investigation workspace assembly, and evidence export
+          replay (not live). Grafana remains
           the observability layer, and backend APIs remain the source of
           business logic.
         </p>

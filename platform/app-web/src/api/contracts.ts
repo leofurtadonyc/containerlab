@@ -1479,6 +1479,51 @@ export interface RecentChangeSummaryResponse {
   aggregation_notes: string[];
 }
 
+export type DeltaDigestSectionKey =
+  | "recent_sync_anchor"
+  | "device_inventory_delta"
+  | "topology_coverage_posture"
+  | "policy_delta_degraded"
+  | "change_intelligence_pointer"
+  | "recommended_pivots"
+  | "caveats_missing_evidence";
+
+export interface DeltaDigestSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only";
+  explicit_non_claims: string[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface DeltaDigestSourceProvenance {
+  source: string;
+  note: string;
+  generated_at?: string | null;
+  data_status_or_serving_hint?: string | null;
+}
+
+export interface DeltaDigestSection {
+  section_key: DeltaDigestSectionKey;
+  headline: string;
+  evidence_status: "present" | "partial" | "absent" | "unavailable";
+  detail_notes: string[];
+  caveats: string[];
+}
+
+/** `GET /api/v1/delta-digest` — cross_domain_delta_digest_v1 assembly. */
+export interface CrossDomainDeltaDigestResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety: DeltaDigestSafetyFraming;
+  sync_runs_limit_applied: number;
+  completeness_posture: string;
+  recent_change_summary: RecentChangeSummaryResponse;
+  source_provenance: DeltaDigestSourceProvenance[];
+  sections: DeltaDigestSection[];
+  digest_framing_notes: string[];
+}
+
 /** Backend-owned investigation workspace assembly (`GET /api/v1/investigation-workspace/context`). */
 export interface InvestigationWorkspaceSafetyFraming {
   contract_id: string;
@@ -1634,4 +1679,61 @@ export interface OperatorSearchResponse extends ApiResponseMetadata {
   guidance: string | null;
   groups: OperatorSearchFamilyGroup[];
   explicit_non_claims: string[];
+}
+
+/** `GET /api/v1/operator-briefing` — operator_briefing_workspace_v1 composed assembly. */
+export type BriefingSectionKey =
+  | "briefing_context"
+  | "delta_digest"
+  | "policy_dossier"
+  | "topology_object_dossier"
+  | "situation_room"
+  | "investigation_workspace";
+
+export type BriefingEvidenceStatus = "present" | "partial" | "absent" | "unavailable";
+
+export interface OperatorBriefingSectionMeta {
+  section_key: BriefingSectionKey;
+  evidence_status: BriefingEvidenceStatus;
+  caveats: string[];
+  freshness_lines: string[];
+  error_note?: string | null;
+}
+
+export interface OperatorBriefingContextEcho {
+  sync_runs_limit_requested: number;
+  policy_id: string | null;
+  topology_object: string | null;
+  topology_object_kind: TopologyObjectKind | null;
+  inv_from_client_hint: string | null;
+  global_search_q_client_hint: string | null;
+}
+
+export interface OperatorBriefingSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only";
+  explicit_non_claims: string[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface OperatorBriefingWorkspaceResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety: OperatorBriefingSafetyFraming;
+  sync_runs_limit_applied: number;
+  briefing_context: OperatorBriefingContextEcho;
+  delta_digest: CrossDomainDeltaDigestResponse | null;
+  delta_digest_error: string | null;
+  policy_dossier: PolicyDossierResponse | null;
+  policy_dossier_note: string | null;
+  topology_object_dossier: TopologyObjectDossierResponse | null;
+  topology_object_dossier_note: string | null;
+  situation_pack: SituationPackAssemblyResponse | null;
+  situation_pack_error: string | null;
+  investigation_workspace: InvestigationContextAssemblyResponse | null;
+  investigation_workspace_error: string | null;
+  section_meta: OperatorBriefingSectionMeta[];
+  merged_caveats: string[];
+  recommended_pivots: string[];
 }

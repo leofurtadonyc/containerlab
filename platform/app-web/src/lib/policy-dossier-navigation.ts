@@ -24,6 +24,9 @@ const KNOWN_POLICY_DOSSIER_ENTRY_VALUES = new Set([
   "overview_noc_cockpit",
   "topology_related_policies_panel",
   "global_search",
+  "delta_digest_workspace",
+  "operator_briefing_workspace",
+  "evidence_replay_viewer",
 ]);
 
 export function readPolicyWorkspaceFromSearch(search: string): "standard" | "dossier" {

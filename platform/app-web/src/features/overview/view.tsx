@@ -39,8 +39,11 @@ import {
   reloadOverviewSlicesSequentially,
   type OverviewSliceState,
 } from "./model";
+import { useDeltaDigestQuery } from "../delta-digest/api";
 import { OVERVIEW_RECENT_CHANGE_SYNC_LIMIT, useRecentChangeSummaryQuery } from "./api";
+import { DeltaDigestOverviewEntry } from "./delta-digest-overview-entry";
 import { InvestigationOverviewEntry } from "./investigation-entry";
+import { OperatorBriefingOverviewEntry } from "./operator-briefing-entry";
 import { OperatorWorkspaceEntry } from "./operator-workspace-entry";
 import { SituationRoomOverviewEntry } from "./situation-room-entry";
 import { RecentChangeIntelligencePanel } from "./recent-change";
@@ -135,6 +138,7 @@ export function OverviewView() {
   const capabilitiesQuery = useCapabilitiesQuery();
   const recentChangeQuery = useRecentChangeSummaryQuery();
   const riskSummaryQuery = useTopologyRiskSummaryQuery(topologySettled);
+  const deltaDigestQuery = useDeltaDigestQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
   const searchKey = useUrlSearchParamsKey();
   const overviewMode = useMemo(() => readOverviewModeFromSearch(searchKey), [searchKey]);
 
@@ -154,6 +158,7 @@ export function OverviewView() {
         capabilitiesQuery,
         recentChangeQuery,
         riskSummaryQuery,
+        deltaDigestQuery,
       ]);
     } finally {
       refreshInFlightRef.current = false;
@@ -166,6 +171,7 @@ export function OverviewView() {
     recentChangeQuery.reload,
     riskSummaryQuery.reload,
     topologyQuery.reload,
+    deltaDigestQuery.reload,
   ]);
 
   const overviewSlices = [
@@ -464,6 +470,12 @@ export function OverviewView() {
               isRefreshing: riskSummaryQuery.isRefreshing,
               reload: riskSummaryQuery.reload,
             }}
+            deltaDigest={{
+              data: deltaDigestQuery.data,
+              error: deltaDigestQuery.error,
+              isLoading: deltaDigestQuery.isLoading,
+              reload: deltaDigestQuery.reload,
+            }}
           />
         </>
       ) : (
@@ -490,7 +502,19 @@ export function OverviewView() {
 
           <SituationRoomOverviewEntry syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT} />
 
+          <OperatorBriefingOverviewEntry syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT} />
+
           <InvestigationOverviewEntry syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT} />
+
+          <DeltaDigestOverviewEntry
+            syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT}
+            deltaDigest={{
+              data: deltaDigestQuery.data,
+              error: deltaDigestQuery.error,
+              isLoading: deltaDigestQuery.isLoading,
+              reload: deltaDigestQuery.reload,
+            }}
+          />
 
           <RecentChangeIntelligencePanel
             data={recentChangeQuery.data}

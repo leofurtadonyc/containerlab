@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiClientError } from "../src/api/client";
-import type { CapabilitiesListResponse } from "../src/api/contracts";
+import type { CapabilitiesListResponse, CrossDomainDeltaDigestResponse } from "../src/api/contracts";
 import { OverviewView } from "../src/features/overview/view";
 
 const {
@@ -13,6 +13,7 @@ const {
   useCapabilitiesQuery,
   useRecentChangeSummaryQuery,
   useTopologyRiskSummaryQuery,
+  useDeltaDigestQuery,
   useUrlSearchParamsKey,
 } = vi.hoisted(() => ({
   usePlatformStatusQuery: vi.fn(),
@@ -22,6 +23,7 @@ const {
   useCapabilitiesQuery: vi.fn(),
   useRecentChangeSummaryQuery: vi.fn(),
   useTopologyRiskSummaryQuery: vi.fn(),
+  useDeltaDigestQuery: vi.fn(),
   useUrlSearchParamsKey: vi.fn(),
 }));
 
@@ -67,6 +69,10 @@ vi.mock("../src/features/overview/api", async (importOriginal) => {
     useRecentChangeSummaryQuery,
   };
 });
+
+vi.mock("../src/features/delta-digest/api", () => ({
+  useDeltaDigestQuery,
+}));
 
 vi.mock("../src/lib/use-url-search-params", () => ({
   useUrlSearchParamsKey,
@@ -501,11 +507,87 @@ function createTopologyRiskSummaryData() {
   };
 }
 
+function createDeltaDigestOverviewData(): CrossDomainDeltaDigestResponse {
+  return {
+    metadata: {
+      service: "app-api",
+      version: "test",
+      phase: "phase_2_read_only_foundation",
+      generated_at: "2025-01-01T00:00:00Z",
+    },
+    contract_id: "cross_domain_delta_digest_v1",
+    safety: {
+      contract_id: "cross_domain_delta_digest_v1",
+      authority_posture: "interpretation_support_only",
+      explicit_non_claims: ["not_forensic_timeline"],
+      phase: "phase_2_read_only_foundation",
+      summary_disclaimer: "Digest disclaimer.",
+    },
+    sync_runs_limit_applied: 20,
+    completeness_posture: "best_effort_visible_signals_only",
+    recent_change_summary: createRecentChangeSummaryData(),
+    source_provenance: [],
+    digest_framing_notes: [],
+    sections: [
+      {
+        section_key: "recent_sync_anchor",
+        headline: "Recent sync anchor",
+        evidence_status: "present",
+        detail_notes: [],
+        caveats: [],
+      },
+      {
+        section_key: "device_inventory_delta",
+        headline: "Devices",
+        evidence_status: "partial",
+        detail_notes: [],
+        caveats: [],
+      },
+      {
+        section_key: "topology_coverage_posture",
+        headline: "Topology",
+        evidence_status: "present",
+        detail_notes: [],
+        caveats: [],
+      },
+      {
+        section_key: "policy_delta_degraded",
+        headline: "Policies",
+        evidence_status: "present",
+        detail_notes: [],
+        caveats: [],
+      },
+      {
+        section_key: "change_intelligence_pointer",
+        headline: "Change intelligence",
+        evidence_status: "present",
+        detail_notes: [],
+        caveats: [],
+      },
+      {
+        section_key: "recommended_pivots",
+        headline: "Pivots",
+        evidence_status: "present",
+        detail_notes: [],
+        caveats: [],
+      },
+      {
+        section_key: "caveats_missing_evidence",
+        headline: "Caveats",
+        evidence_status: "partial",
+        detail_notes: [],
+        caveats: [],
+      },
+    ],
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   useUrlSearchParamsKey.mockReturnValue("?view=overview");
   useRecentChangeSummaryQuery.mockReturnValue(createQueryState(createRecentChangeSummaryData()));
   useTopologyRiskSummaryQuery.mockReturnValue(createQueryState(createTopologyRiskSummaryData()));
+  useDeltaDigestQuery.mockReturnValue(createQueryState(createDeltaDigestOverviewData()));
 });
 
 describe("overview view", () => {
@@ -532,11 +614,42 @@ describe("overview view", () => {
     useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
     usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
     useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+    useTopologyRiskSummaryQuery.mockReturnValue(
+      createQueryState({
+        ...createTopologyRiskSummaryData(),
+        ranked_objects: [
+          {
+            rank_index: 0,
+            object_kind: "node",
+            object_id: "PE1",
+            ranking_inputs: {
+              degraded_related_count: 1,
+              unknown_related_count: 0,
+              related_policy_breadth: 1,
+              ok_related_count: 0,
+            },
+            degraded_posture_breakdown: { ok: 0, degraded: 1, unknown: 0 },
+          },
+        ],
+        total_objects: 1,
+      }),
+    );
 
     const html = renderToStaticMarkup(<OverviewView />);
 
     expect(html).toContain('data-testid="noc-cockpit-section"');
     expect(html).toContain("noc_cockpit_v1");
+    expect(html).toContain("Strategic launch surface");
+    expect(html).toContain("delta-digest-overview-entry");
+    expect(html).toContain("cross_domain_delta_digest_v1");
+    expect(html).toContain('data-testid="evidence-replay-overview-entry"');
+    expect(html).toContain("evidence_export_v1");
+    expect(html).toContain("briefing_export_bundle_v1");
+    expect(html).toContain('data-testid="noc-cockpit-strategic-pivots"');
+    expect(html).toContain("Priority navigation (cockpit)");
+    expect(html).toContain("Topology dossier (top risk)");
+    expect(html).toContain("Investigation (top risk)");
+    expect(html).toContain("Policy dossier (worst degraded)");
     expect(html).not.toContain("Routine-use trust cues stay explicit here");
     expect(html).not.toContain("Declared platform components");
     expect(html).toContain("Full overview");
@@ -562,6 +675,10 @@ describe("overview view", () => {
     expect(html).toContain("Open situation room");
     expect(html).toContain("Investigation workspace (bounded)");
     expect(html).toContain("Open investigation workspace");
+    expect(html).toContain("Delta digest (cross-domain)");
+    expect(html).toContain("cross_domain_delta_digest_v1");
+    expect(html).toContain("Open delta digest");
+    expect(html).toContain("delta-digest-overview-entry");
     expect(html).toContain("sync run window");
   });
 

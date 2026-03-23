@@ -95,6 +95,9 @@ def test_export_topology_object_dossier_json_success(monkeypatch: pytest.MonkeyP
     assert payload["subject_ref"]["object_id"] == "PE1"
     assert "topology_object_dossier_v1" in payload["source_contract_ids"]
     assert payload["nested"]["contract_id"] == "topology_object_dossier_v1"
+    # Replay viewer may fall back to nested.object_identity when subject_ref is incomplete; keep them aligned when both exist.
+    assert payload["nested"]["object_identity"]["object_id"] == payload["subject_ref"]["object_id"]
+    assert payload["nested"]["object_identity"]["object_kind"] == payload["subject_ref"]["topology_object_kind"]
 
 
 def test_export_topology_object_dossier_not_found(monkeypatch: pytest.MonkeyPatch) -> None:

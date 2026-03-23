@@ -6,7 +6,17 @@ export type EvidenceExportTarget =
   | { kind: "policy_dossier"; policyId: string }
   | { kind: "topology_object_dossier"; objectId: string }
   | { kind: "situation_room"; syncRunsLimit: number }
-  | { kind: "investigation_workspace"; syncRunsLimit: number };
+  | { kind: "investigation_workspace"; syncRunsLimit: number }
+  | {
+      kind: "operator_briefing_bundle";
+      /** Bounded window aligned with operator briefing / exports (1–100). */
+      syncRunsLimit: number;
+      policyId?: string | null;
+      topologyObject?: string | null;
+      topologyObjectKind?: "node" | "link" | null;
+      invFrom?: string | null;
+      globalSearchQ?: string | null;
+    };
 
 /** Builds the path and query string (no base URL) for tests and callers. */
 export function buildEvidenceExportRequestPath(
@@ -27,6 +37,31 @@ export function buildEvidenceExportRequestPath(
       const lim = Math.min(100, Math.max(1, Math.floor(target.syncRunsLimit)));
       return `/api/v1/exports/investigation-workspace/summary?sync_runs_limit=${lim}&${q}`;
     }
+    case "operator_briefing_bundle": {
+      const lim = Math.min(100, Math.max(1, Math.floor(target.syncRunsLimit)));
+      const params = new URLSearchParams();
+      params.set("sync_runs_limit", String(lim));
+      params.set("format", format);
+      const pid = target.policyId?.trim();
+      if (pid) {
+        params.set("policy_id", pid);
+      }
+      const tobj = target.topologyObject?.trim();
+      const tok = target.topologyObjectKind;
+      if (tobj && tok) {
+        params.set("topology_object", tobj);
+        params.set("topology_object_kind", tok);
+      }
+      const inv = target.invFrom?.trim();
+      if (inv) {
+        params.set("inv_from", inv);
+      }
+      const gsq = target.globalSearchQ?.trim();
+      if (gsq) {
+        params.set("global_search_q", gsq);
+      }
+      return `/api/v1/exports/operator-briefing?${params.toString()}`;
+    }
   }
 }
 
@@ -41,6 +76,8 @@ function filenameBaseForTarget(target: EvidenceExportTarget): string {
       return `evidence-export-situation-room-sync${Math.min(100, Math.max(1, Math.floor(target.syncRunsLimit)))}-${ts}`;
     case "investigation_workspace":
       return `evidence-export-investigation-sync${Math.min(100, Math.max(1, Math.floor(target.syncRunsLimit)))}-${ts}`;
+    case "operator_briefing_bundle":
+      return `briefing-export-bundle-sync${Math.min(100, Math.max(1, Math.floor(target.syncRunsLimit)))}-${ts}`;
   }
 }
 

@@ -13,7 +13,14 @@ import {
   isChangeIntelligenceProductSurfaceDomain,
   viewIdForChangeIntelligenceHistoryDomain,
 } from "../../lib/change-intelligence-navigation";
+import { GLOBAL_SEARCH_QUERY_PARAM } from "../../lib/global-search-deeplink";
 import { formatDateTime } from "../../lib/presentation";
+import { navigateToOperatorBriefingView } from "../../lib/operator-briefing-navigation";
+import {
+  DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
+  readSyncRunsLimitFromSearch,
+} from "../../lib/investigation-navigation";
+import { parseInvestigationNavContext } from "../../lib/investigation-url-context";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 import { InvestigationContextPanels } from "./investigation-context-panels";
 import { InvestigationEvidenceTimeline } from "./investigation-evidence-timeline";
@@ -86,6 +93,33 @@ export function InvestigationWorkspaceProduct({
           </p>
         </div>
         <div className="investigation-workspace-hero__actions">
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => {
+              const sync = readSyncRunsLimitFromSearch(
+                window.location.search,
+                DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
+              );
+              const ctx = parseInvestigationNavContext(window.location.search);
+              const gsq = new URLSearchParams(window.location.search).get(GLOBAL_SEARCH_QUERY_PARAM);
+              const topoKind =
+                ctx.topologyObjectKind === "node" || ctx.topologyObjectKind === "link"
+                  ? ctx.topologyObjectKind
+                  : undefined;
+              navigateToOperatorBriefingView(sync, {
+                invFrom: "investigation",
+                policyId: ctx.policyId ?? undefined,
+                topologyObject:
+                  ctx.topologyObjectId && topoKind
+                    ? { id: ctx.topologyObjectId, kind: topoKind }
+                    : undefined,
+                echoSearchQuery: gsq ?? undefined,
+              });
+            }}
+          >
+            Open operator briefing
+          </button>
           <EvidenceExportActions
             variant="investigation"
             target={{ kind: "investigation_workspace", syncRunsLimit }}

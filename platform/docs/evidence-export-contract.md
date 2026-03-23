@@ -17,7 +17,9 @@ Stable **`contract_id`:** **`evidence_export_v1`**
 | **`GET /api/v1/exports/situation-room/summary`** | `situation_room` | Same bounded assembly as **`GET /api/v1/evidence-pack/situation`**; optional **`sync_runs_limit`** (same bounds as that route). |
 | **`GET /api/v1/exports/investigation-workspace/summary`** | `investigation_workspace` | Same bounded assembly as **`GET /api/v1/investigation-workspace/context`**; optional **`sync_runs_limit`**. |
 
-Shared query parameter: **`format`** — `json` (default) or `markdown`.
+**Multi-member briefing archive (different envelope):** **`GET /api/v1/exports/operator-briefing`** returns **`briefing_export_bundle_v1`** — **not** **`evidence_export_v1`** at the root. It wraps **zero or more** embedded **`evidence_export_v1`** members plus bundle metadata; query alignment matches **`GET /api/v1/operator-briefing`**. See [`briefing-export-bundle-contract.md`](./briefing-export-bundle-contract.md).
+
+Shared query parameter: **`format`** — `json` (default) or `markdown` (applies to **`evidence_export_v1`** routes and the briefing bundle route).
 
 ---
 
@@ -112,6 +114,7 @@ Conforming exporters **SHOULD** prepend or append a short **framing** paragraph 
 
 | Topic | Document |
 | --- | --- |
+| Briefing export bundle (multi-member archive) | [`briefing-export-bundle-contract.md`](./briefing-export-bundle-contract.md) |
 | Policy dossier | [`policy-dossier-contract.md`](./policy-dossier-contract.md) |
 | Topology object dossier | [`topology-object-dossier-contract.md`](./topology-object-dossier-contract.md) |
 | Situation / evidence pack | [`evidence-pack-contract.md`](./evidence-pack-contract.md) |

@@ -7,11 +7,16 @@ import * as urlAppState from "../src/lib/url-app-state";
 import * as investigationNav from "../src/lib/investigation-navigation";
 import * as situationNav from "../src/lib/situation-room-navigation";
 import * as readinessNav from "../src/lib/readiness-navigation";
+import * as deltaDigestNav from "../src/lib/delta-digest-navigation";
+import * as obNav from "../src/lib/operator-briefing-navigation";
 import {
   describeOperatorSearchAction,
   familyLabel,
   navigateFromOperatorSearchPivot,
+  navigateToDeltaDigestFromGlobalSearch,
+  navigateToEvidenceReplayFromGlobalSearch,
   navigateToInvestigationFromOperatorSearchHit,
+  navigateToOperatorBriefingFromGlobalSearch,
   navigateToReadinessFromOperatorCapabilityHit,
   navigateToSituationRoomFromGlobalSearch,
 } from "../src/lib/operator-search-navigation";
@@ -131,5 +136,47 @@ describe("operator search navigation", () => {
     const spy = vi.spyOn(situationNav, "navigateToSituationRoomView").mockImplementation(() => {});
     navigateToSituationRoomFromGlobalSearch("sitq");
     expect(spy).toHaveBeenCalledWith(20, "sitq");
+  });
+
+  it("navigateToOperatorBriefingFromGlobalSearch opens hub with echo and clearPinnedScope", () => {
+    const spy = vi.spyOn(obNav, "navigateToOperatorBriefingView").mockImplementation(() => {});
+    navigateToOperatorBriefingFromGlobalSearch("q1");
+    expect(spy).toHaveBeenCalledWith(20, {
+      invFrom: "global_search",
+      echoSearchQuery: "q1",
+      clearPinnedScope: true,
+    });
+  });
+
+  it("navigateToOperatorBriefingFromGlobalSearch passes scoped policy without clearPinnedScope", () => {
+    const spy = vi.spyOn(obNav, "navigateToOperatorBriefingView").mockImplementation(() => {});
+    navigateToOperatorBriefingFromGlobalSearch("q2", { policyId: "P1" });
+    expect(spy).toHaveBeenCalledWith(20, {
+      invFrom: "global_search",
+      echoSearchQuery: "q2",
+      clearPinnedScope: false,
+      policyId: "P1",
+    });
+  });
+
+  it("navigateToDeltaDigestFromGlobalSearch delegates to navigateToDeltaDigestView with echo", () => {
+    const spy = vi.spyOn(deltaDigestNav, "navigateToDeltaDigestView").mockImplementation(() => {});
+    navigateToDeltaDigestFromGlobalSearch("digest q");
+    expect(spy).toHaveBeenCalledWith(20, "digest q");
+  });
+
+  it("navigateToEvidenceReplayFromGlobalSearch sets evidence-replay view and global_search_q", () => {
+    const spy = vi.spyOn(urlAppState, "replaceUrlSearchParams").mockImplementation(() => {});
+    const prev = window.location;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...prev, search: "?view=overview" },
+      writable: true,
+    });
+    navigateToEvidenceReplayFromGlobalSearch("replay echo");
+    const sp = spy.mock.calls[0][0] as URLSearchParams;
+    expect(sp.get("view")).toBe("evidence-replay");
+    expect(sp.get(GLOBAL_SEARCH_QUERY_PARAM)).toBe("replay echo");
+    Object.defineProperty(window, "location", { configurable: true, value: prev });
   });
 });

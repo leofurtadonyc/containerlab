@@ -10,6 +10,7 @@ import {
   readSyncRunsLimitFromSearch,
   DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
 } from "../../lib/investigation-navigation";
+import { navigateToOperatorBriefingView } from "../../lib/operator-briefing-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 import {
   navigateToPoliciesPolicyEvidenceDeltaFocus,
@@ -112,6 +113,18 @@ export function PolicyDossierWorkspace({ policyId }: PolicyDossierWorkspaceProps
           </p>
         </div>
         <div className="policy-dossier-workspace__header-aside">
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
+              navigateToOperatorBriefingView(syncRuns, {
+                policyId: pr.policy_id,
+                invFrom: "policies",
+              })
+            }
+          >
+            Open operator briefing
+          </button>
           <EvidenceExportActions variant="dossier" target={{ kind: "policy_dossier", policyId: pr.policy_id }} />
           {isRefreshing ? (
             <p className="table-note" role="status">

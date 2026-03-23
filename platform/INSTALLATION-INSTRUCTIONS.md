@@ -348,6 +348,8 @@ To confirm the platform is actually seeing the Nokia nodes after both topologies
 curl -s http://localhost:8000/api/v1/devices | python -m json.tool
 curl -s http://localhost:8000/api/v1/topology | python -m json.tool
 curl -s http://localhost:8000/api/v1/platform/status | python -m json.tool
+# Optional: Phase 2 briefing-aligned multi-member export archive (`briefing_export_bundle_v1`)
+curl -s "http://localhost:8000/api/v1/exports/operator-briefing?sync_runs_limit=10" | python -m json.tool
 ```
 
 What to look for:

@@ -1,9 +1,15 @@
+import type { ApiClientError } from "../../api/client";
 import type {
+  CrossDomainDeltaDigestResponse,
   PoliciesListResponse,
   RecentChangeSummaryResponse,
   TopologyRiskSummaryResponse,
 } from "../../api/contracts";
+import { DeltaDigestOverviewEntry } from "./delta-digest-overview-entry";
+import { EvidenceReplayOverviewEntry } from "./evidence-replay-overview-entry";
 import { InvestigationOverviewEntry } from "./investigation-entry";
+import { NocCockpitStrategicPivots } from "./noc-cockpit-strategic-pivots";
+import { OperatorBriefingOverviewEntry } from "./operator-briefing-entry";
 import { OperatorWorkspaceEntry } from "./operator-workspace-entry";
 import { SituationRoomOverviewEntry } from "./situation-room-entry";
 import { RecentChangeIntelligencePanel } from "./recent-change";
@@ -28,6 +34,12 @@ export interface NocCockpitSectionProps {
     isRefreshing: boolean;
     reload: () => void | Promise<void>;
   };
+  deltaDigest: {
+    data: CrossDomainDeltaDigestResponse | null;
+    error: ApiClientError | null;
+    isLoading: boolean;
+    reload: () => void | Promise<void>;
+  };
 }
 
 /**
@@ -40,6 +52,7 @@ export function NocCockpitSection({
   policiesData,
   recentChange,
   riskSummary,
+  deltaDigest,
 }: NocCockpitSectionProps) {
   return (
     <div className="noc-cockpit" data-testid="noc-cockpit-section">
@@ -47,9 +60,10 @@ export function NocCockpitSection({
         <p className="eyebrow">noc_cockpit_v1 · Phase 2 read-only</p>
         <h3 id="noc-cockpit-heading">NOC cockpit</h3>
         <p className="body-copy noc-cockpit__lede">
-          Bounded situational awareness from the same inventory, risk summary, change intelligence, and workspace
-          assemblies already exposed by app-api — <strong>not</strong> incident command, unified health scoring, or
-          substitute for full Policies / Topology / Investigation / Situation room views.
+          Strategic launch surface: cross-domain digest, composed briefing (with bundle exports), frozen evidence replay,
+          bounded packs and investigation, then attention rows — all from existing Phase 2 assemblies.{" "}
+          <strong>Not</strong> incident command, unified health scoring, or substitute for full Policies / Topology /
+          Investigation / Situation room views.
         </p>
       </header>
 
@@ -59,9 +73,14 @@ export function NocCockpitSection({
       </p>
 
       <div className="noc-cockpit__quick-grid">
+        <DeltaDigestOverviewEntry syncRunsLimit={syncRunsLimit} deltaDigest={deltaDigest} />
+        <OperatorBriefingOverviewEntry syncRunsLimit={syncRunsLimit} cockpitVariant />
+        <EvidenceReplayOverviewEntry syncRunsLimit={syncRunsLimit} />
         <SituationRoomOverviewEntry syncRunsLimit={syncRunsLimit} />
         <InvestigationOverviewEntry syncRunsLimit={syncRunsLimit} />
       </div>
+
+      <NocCockpitStrategicPivots riskSummary={riskSummary.data} policiesData={policiesData} />
 
       <RecentChangeIntelligencePanel
         data={recentChange.data}

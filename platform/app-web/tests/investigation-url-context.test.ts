@@ -39,6 +39,12 @@ describe("parseInvestigationNavContext", () => {
     expect(labelForInvestigationNavSource("global_search")).toBe("Global search");
   });
 
+  it("accepts evidence-replay as a source", () => {
+    const p = parseInvestigationNavContext(`?${INV_FROM_PARAM}=evidence-replay`);
+    expect(p.invFrom).toBe("evidence-replay");
+    expect(labelForInvestigationNavSource("evidence-replay")).toBe("Evidence replay");
+  });
+
   it("parses failure_impact_entry=v1", () => {
     const p = parseInvestigationNavContext(
       `?view=investigation&${INV_FROM_PARAM}=topology&${FAILURE_IMPACT_ENTRY_PARAM}=v1`,

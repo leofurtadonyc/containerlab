@@ -1,6 +1,8 @@
 import type { OperatorSearchHit, OperatorSearchPivotTarget } from "../api/contracts";
+import { navigateToDeltaDigestView } from "./delta-digest-navigation";
 import { applyGlobalSearchQueryEcho } from "./global-search-deeplink";
 import { navigateToInvestigationView } from "./investigation-navigation";
+import { navigateToOperatorBriefingView } from "./operator-briefing-navigation";
 import { navigateToPolicyDossierWorkspace } from "./policy-dossier-navigation";
 import {
   READINESS_CAPABILITY_FEATURE_PARAM,
@@ -9,6 +11,21 @@ import {
 import { navigateToSituationRoomView } from "./situation-room-navigation";
 import { navigateToTopologyDossier } from "./topology-dossier-navigation";
 import { mergeViewIntoSearch, navigateToEvidenceView, replaceUrlSearchParams } from "./url-app-state";
+
+/** Cross-domain delta digest with the same bounded window as other global-search pivots. */
+export function navigateToDeltaDigestFromGlobalSearch(echoSearchQuery: string, syncRunsLimit = 20): void {
+  navigateToDeltaDigestView(syncRunsLimit, echoSearchQuery);
+}
+
+/**
+ * Evidence replay (frozen file import only). Preserves `global_search_q` for breadcrumb-style context only —
+ * not a claim that search results match an imported export.
+ */
+export function navigateToEvidenceReplayFromGlobalSearch(echoSearchQuery: string): void {
+  const sp = mergeViewIntoSearch(window.location.search, "evidence-replay");
+  applyGlobalSearchQueryEcho(sp, echoSearchQuery);
+  replaceUrlSearchParams(sp);
+}
 
 export interface OperatorSearchNavigateOptions {
   /** Effective query echo (`global_search_q`) for shareable deep links. */
@@ -131,6 +148,28 @@ export function navigateToReadinessFromOperatorCapabilityHit(
 /** Situation room (evidence pack) preserving search echo. */
 export function navigateToSituationRoomFromGlobalSearch(echoSearchQuery: string): void {
   navigateToSituationRoomView(20, echoSearchQuery);
+}
+
+/**
+ * Operator briefing workspace with optional policy/topology scope and `global_search_q` echo.
+ * When `scoped` is omitted, opens the default hub (clears stale dossier pins).
+ */
+export function navigateToOperatorBriefingFromGlobalSearch(
+  echoSearchQuery: string,
+  scoped?: {
+    policyId?: string;
+    topologyObject?: { id: string; kind: "node" | "link" };
+  },
+  syncRunsLimit = 20,
+): void {
+  const bounded = Math.min(100, Math.max(1, Math.floor(syncRunsLimit)));
+  navigateToOperatorBriefingView(bounded, {
+    invFrom: "global_search",
+    echoSearchQuery,
+    clearPinnedScope: !scoped?.policyId && !scoped?.topologyObject,
+    policyId: scoped?.policyId,
+    topologyObject: scoped?.topologyObject,
+  });
 }
 
 export function supportsInvestigationShortcut(objectKind: string): boolean {
