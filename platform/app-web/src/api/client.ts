@@ -7,6 +7,7 @@ import type {
   PlatformStatusResponse,
   PoliciesListResponse,
   PolicyTopologyImpactResponse,
+  PolicyEvidenceDeltaResponse,
   PolicyEvidenceTimelineResponse,
   InvestigationContextAssemblyResponse,
   RecentChangeSummaryResponse,
@@ -101,6 +102,11 @@ export class ApiClient {
   async getPolicyEvidenceTimeline(policyId: string): Promise<PolicyEvidenceTimelineResponse> {
     const encoded = encodeURIComponent(policyId);
     return this.request<PolicyEvidenceTimelineResponse>(`/api/v1/policies/${encoded}/evidence-timeline`);
+  }
+
+  async getPolicyEvidenceDelta(policyId: string): Promise<PolicyEvidenceDeltaResponse> {
+    const encoded = encodeURIComponent(policyId);
+    return this.request<PolicyEvidenceDeltaResponse>(`/api/v1/policies/${encoded}/evidence-delta`);
   }
 
   async getWorkflowHistory(query?: WorkflowHistoryReadSideQuery): Promise<WorkflowHistoryResponse> {

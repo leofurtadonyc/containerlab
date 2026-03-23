@@ -679,6 +679,72 @@ export interface PolicyEvidenceTimelineResponse {
   missing_evidence_notes: string[];
 }
 
+/** `GET /api/v1/policies/{policy_id}/evidence-delta` (bounded read-side difference hints; not drift truth). */
+export type PolicyEvidenceDeltaCategory =
+  | "posture_or_state_field_change"
+  | "degraded_policy_v1_change"
+  | "candidate_path_shape_change"
+  | "path_analysis_availability_change"
+  | "serving_mode_or_freshness_change"
+  | "no_comparable_fields"
+  | "gap_note";
+
+export type PolicyEvidenceDeltaExplicitNonClaim =
+  | "not_drift_truth"
+  | "not_config_diff_truth"
+  | "not_policy_correctness_verdict"
+  | "not_workflow_validation"
+  | "not_dataplane_or_te_verdict"
+  | "not_replacement_for_timeline"
+  | "not_cross_policy_ranking";
+
+export interface PolicyEvidenceDeltaSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: PolicyEvidenceDeltaExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface PolicyEvidenceDeltaAnchorCurrent {
+  anchor_role: "current_inventory";
+  observed_at: string | null;
+  row_posture: "current" | "stale";
+  serving_mode: "live" | "partial_live" | "persisted_fallback" | "unknown";
+}
+
+export interface PolicyEvidenceDeltaAnchorPrevious {
+  anchor_role: "previous_persisted_snapshot";
+  snapshot_id: string;
+  persisted_at: string;
+  observed_at: string | null;
+}
+
+export type PolicyEvidenceDeltaComparisonStatus =
+  | "delta_ready"
+  | "no_comparable_anchor"
+  | "anchor_policy_absent"
+  | "insufficient_evidence";
+
+export interface PolicyEvidenceDeltaItem {
+  category: PolicyEvidenceDeltaCategory;
+  summary: string;
+  detail: string | null;
+}
+
+export interface PolicyEvidenceDeltaResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: PolicyEvidenceDeltaSafetyFraming;
+  policy_id: string;
+  comparison_status: PolicyEvidenceDeltaComparisonStatus;
+  scope_summary: string;
+  current_anchor: PolicyEvidenceDeltaAnchorCurrent;
+  previous_anchor: PolicyEvidenceDeltaAnchorPrevious | null;
+  delta_items: PolicyEvidenceDeltaItem[];
+  caveats: string[];
+}
+
 export interface PolicyTargetFootprintRecord {
   target_name: string;
   target_role: string | null;

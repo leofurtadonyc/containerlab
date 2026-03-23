@@ -109,7 +109,7 @@ Stable keys (align with schema literals when implemented):
 ### Future (optional follow-ons)
 
 - **Implemented (read API):** **`GET /api/v1/policies/{policy_id}/evidence-delta`** — **`PolicyEvidenceDeltaResponse`** in **`platform/app-api/src/app_api/schemas/policy_evidence_delta.py`**, assembly in **`platform/app-api/src/app_api/services/policy_evidence_delta.py`**, route on **`platform/app-api/src/app_api/routers/policies.py`**; repository **`pytest`** in **`platform/app-api/tests/test_policy_evidence_delta.py`**. Compares current inventory to the **previous** persisted snapshot row when **`GET /api/v1/policies`** history is **`comparison_ready`**; honest **`comparison_status`** and caveats when anchors are missing or not comparable.
-- **WebUI** panel on **Policies** or **Investigation** — **not** required for the backend slice above.
+- **Implemented (WebUI):** **`PolicyEvidenceDeltaPanel`** — **`platform/app-web/src/features/policies/policy-evidence-delta-panel.tsx`**, **`usePolicyEvidenceDeltaQuery`**, **`apiClient.getPolicyEvidenceDelta`**, types in **`contracts.ts`**; **`vitest`** in **`policy-evidence-delta-panel.test.tsx`**. Optional **Investigation**-scoped panel remains a follow-on if product wants the same contract there.
 
 ---
 
