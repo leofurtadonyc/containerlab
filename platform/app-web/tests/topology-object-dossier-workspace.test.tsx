@@ -173,5 +173,7 @@ describe("TopologyObjectDossierWorkspace", () => {
     expect(html).toContain("topology_object_dossier_v1");
     expect(html).toContain("Merged caveat line.");
     expect(html).toContain("Failure impact (nested)");
+    expect(html).toContain("data-testid=\"evidence-export-actions\"");
+    expect(html).toContain("Export JSON");
   });
 });

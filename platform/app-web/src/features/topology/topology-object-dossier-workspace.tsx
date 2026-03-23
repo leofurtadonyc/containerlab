@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 
+import { EvidenceExportActions } from "../../components/evidence-export-actions";
 import { ErrorState, LoadingState } from "../../components/query-states";
 import { ApiClientError } from "../../api/client";
 import type { TopologyObjectKind } from "../../api/contracts";
@@ -97,7 +98,7 @@ export function TopologyObjectDossierWorkspace({ objectId, objectKind }: Topolog
 
   return (
     <div className="topology-dossier-workspace" role="region" aria-labelledby="topology-dossier-heading">
-      <header className="topology-dossier-workspace__header">
+      <header className="topology-dossier-workspace__header topology-dossier-workspace__header--split">
         <div>
           <p className="eyebrow">Topology object dossier · {data.contract_id}</p>
           <h3 id="topology-dossier-heading">{data.object_identity.display_label}</h3>
@@ -106,11 +107,17 @@ export function TopologyObjectDossierWorkspace({ objectId, objectKind }: Topolog
             <code>{data.object_identity.object_id}</code>
           </p>
         </div>
-        {isRefreshing ? (
-          <p className="table-note" role="status">
-            Refreshing dossier…
-          </p>
-        ) : null}
+        <div className="topology-dossier-workspace__header-aside">
+          <EvidenceExportActions
+            variant="dossier"
+            target={{ kind: "topology_object_dossier", objectId: data.object_identity.object_id }}
+          />
+          {isRefreshing ? (
+            <p className="table-note" role="status">
+              Refreshing dossier…
+            </p>
+          ) : null}
+        </div>
       </header>
 
       <p className="table-note">

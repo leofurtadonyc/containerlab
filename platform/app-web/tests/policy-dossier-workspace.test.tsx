@@ -225,5 +225,8 @@ describe("PolicyDossierWorkspace", () => {
     expect(html).toContain("policy_dossier_v1");
     expect(html).toContain("Merged line.");
     expect(html).toContain("Path analysis (nested)");
+    expect(html).toContain("data-testid=\"evidence-export-actions\"");
+    expect(html).toContain("Export JSON");
+    expect(html).toContain("Export Markdown");
   });
 });

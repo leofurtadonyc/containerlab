@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 
+import { EvidenceExportActions } from "../../components/evidence-export-actions";
 import { ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { ApiClientError } from "../../api/client";
@@ -102,7 +103,7 @@ export function PolicyDossierWorkspace({ policyId }: PolicyDossierWorkspaceProps
 
   return (
     <div className="policy-dossier-workspace" role="region" aria-labelledby="policy-dossier-heading">
-      <header className="policy-dossier-workspace__header">
+      <header className="policy-dossier-workspace__header policy-dossier-workspace__header--split">
         <div>
           <p className="eyebrow">Policy dossier · {data.contract_id}</p>
           <h3 id="policy-dossier-heading">{pr.policy_name}</h3>
@@ -110,11 +111,14 @@ export function PolicyDossierWorkspace({ policyId }: PolicyDossierWorkspaceProps
             <code>{pr.policy_id}</code>
           </p>
         </div>
-        {isRefreshing ? (
-          <p className="table-note" role="status">
-            Refreshing dossier…
-          </p>
-        ) : null}
+        <div className="policy-dossier-workspace__header-aside">
+          <EvidenceExportActions variant="dossier" target={{ kind: "policy_dossier", policyId: pr.policy_id }} />
+          {isRefreshing ? (
+            <p className="table-note" role="status">
+              Refreshing dossier…
+            </p>
+          ) : null}
+        </div>
       </header>
 
       <p className="table-note">

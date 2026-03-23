@@ -1,4 +1,5 @@
 import type { SituationPackAssemblyResponse } from "../../api/contracts";
+import { EvidenceExportActions } from "../../components/evidence-export-actions";
 import { StatusPill } from "../../components/status-pill";
 import { CHANGE_INTELLIGENCE_DOMAIN_LABELS } from "../../lib/change-intelligence-domain-labels";
 import { formatDateTime } from "../../lib/presentation";
@@ -44,6 +45,7 @@ export function SituationRoomProduct({ data, syncRunsLimit, onReload }: Situatio
           </p>
         </div>
         <div className="situation-room-hero__actions">
+          <EvidenceExportActions variant="situation" target={{ kind: "situation_room", syncRunsLimit }} />
           <button type="button" className="situation-room-toolbar-reload" onClick={() => void onReload()}>
             Reload assembly
           </button>
