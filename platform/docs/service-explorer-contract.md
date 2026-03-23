@@ -22,7 +22,7 @@ Stable product vocabulary (for implementation and tests when the surface ships):
 | [**Investigation**](./investigation-workspace-contract.md) | Cross-domain **workspace** assembly | **Not** a dedicated “service grouping” index |
 | **Service Explorer** | **Grouping & pivot** lens over the same inventory | **Read-only**; **derived** views only |
 
-**Implementation posture (v1):** May ship as **`GET /api/v1/services`** and **`GET /api/v1/services/{service_id}`** (see week **31** Monday task **02**) and/or as **client-side** composition of the same inputs. This file defines **what a service is**, **`service_id`** semantics, **honesty limits**, and **navigation**—not a mandatory backend shape before UI exists.
+**Implementation posture (v1):** **`GET /api/v1/services`** and **`GET /api/v1/services/{service_id}`** are implemented in **app-api** (week **31** Monday task **02**); clients may also compose the same inputs locally. This file defines **what a service is**, **`service_id`** semantics, **honesty limits**, and **navigation**—not a mandatory UI shape.
 
 ---
 
@@ -189,6 +189,20 @@ Additionally:
 ## Contract id
 
 - **`contract_id`:** **`service_explorer_v1`** on any **dedicated** assembly response (e.g. `ServicesListResponse` / `ServiceDetailResponse`) when implemented.
+
+---
+
+## Backend API (app-api, shipped)
+
+**Routes:** **`GET /api/v1/services`** (grouped index) and **`GET /api/v1/services/{service_id}`** (detail).
+
+**Path encoding:** `{service_id}` uses a **catch-all path segment** so **`policy:`** rows whose **`policy_id`** contains colons round-trip without ambiguity. Clients should still **percent-encode** reserved characters when forming URLs; the server decodes the path parameter before parsing.
+
+**List rows:** One row per **`policy:{policy_id}`** for each inventory policy, plus one row per distinct **`color:`**, **`headend:`**, and **`endpoint:`** value observed in the current **`GET /api/v1/policies`** slice. Rows are sorted lexicographically by **`service_id`**. Optional **`limit`** (same bounded **`read_side_query`** pattern as policies/devices) truncates the **flat list of service rows** without shrinking policy inventory truth.
+
+**Detail:** Members are **`PolicyRecord`** rows matching the **`service_id`** grouping; stable order is lexicographic **`policy_id`**. **Zero members** yields **HTTP 404** (unknown **`service_id`** form, or grouping key not present in the current inventory). **`degraded_service`** applies the **worst** roll-up from **`degraded_policy_v1`** on members.
+
+**Topology:** Best-effort links match **`headend`**, **`source_target`**, and **`endpoint`** strings to **`GET /api/v1/topology`** nodes using **exact** equality on **`node_id`**, **`display_name`**, or **`device_id`** (when present). **`topology_evidence_status`** is **`unavailable`** if topology assembly failed, **`partial`** when the graph is empty or no node matched, otherwise **`present`** when at least one match exists (coverage-axis caveats may still apply).
 
 ---
 
