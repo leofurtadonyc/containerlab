@@ -15,6 +15,7 @@ import {
   navigateToSituationRoomFromGlobalSearch,
   supportsInvestigationShortcut,
 } from "../../lib/operator-search-navigation";
+import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 
 const DEBOUNCE_MS = 400;
 
@@ -242,6 +243,20 @@ export function GlobalOperatorSearch() {
                                   }}
                                 >
                                   Readiness
+                                </button>
+                              ) : null}
+                              {hit.pivot.policy_id ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  onClick={() => {
+                                    navigateToServiceExplorerForPolicy(hit.pivot.policy_id!, {
+                                      echoSearchQuery: data.q,
+                                    });
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Service Explorer
                                 </button>
                               ) : null}
                             </div>

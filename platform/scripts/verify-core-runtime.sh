@@ -379,6 +379,12 @@ assert_contains "policies response (read_side query ergonomics)" "$policies_resp
 assert_contains "policies response (read_side query ergonomics)" "$policies_response" '"history_recent_snapshots_returned":'
 assert_contains "policies response (degraded_policy_v1)" "$policies_response" '"degraded_policy_v1"'
 
+# Week 31: Service Explorer v1 (grouped policy inventory lens; structural contract check).
+services_response=$(fetch_compact_json "$APP_API_URL/api/v1/services")
+assert_contains "services response (service_explorer_v1)" "$services_response" '"contract_id":"service_explorer_v1"'
+assert_contains "services response (policy_inventory)" "$services_response" '"policy_inventory":{'
+assert_contains "services response (read_side_query)" "$services_response" '"read_side_query":{'
+
 # Week 28: topology risk summary (structural contract sampling; no python3 required).
 topology_risk_summary_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/risk-summary")
 assert_contains "topology risk summary response (contract id)" "$topology_risk_summary_response" '"contract_id":"topology_risk_summary_v1"'

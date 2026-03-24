@@ -1,6 +1,7 @@
 import type { PoliciesListResponse } from "../../api/contracts";
 import { StatusPill } from "../../components/status-pill";
 import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
+import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 
 const MAX_ROWS = 8;
 
@@ -66,6 +67,7 @@ export function DegradedPoliciesAttention({ data }: DegradedPoliciesAttentionPro
             <th>Policy</th>
             <th>Posture (v1)</th>
             <th>Dossier</th>
+            <th>Service Explorer</th>
           </tr>
         </thead>
         <tbody>
@@ -87,6 +89,15 @@ export function DegradedPoliciesAttention({ data }: DegradedPoliciesAttentionPro
                   onClick={() => navigateToPolicyDossierWorkspace(row.policy_id, "overview_noc_cockpit")}
                 >
                   Open policy dossier
+                </button>
+              </td>
+              <td>
+                <button
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() => navigateToServiceExplorerForPolicy(row.policy_id)}
+                >
+                  Open service view
                 </button>
               </td>
             </tr>

@@ -228,5 +228,6 @@ describe("PolicyDossierWorkspace", () => {
     expect(html).toContain("data-testid=\"evidence-export-actions\"");
     expect(html).toContain("Export JSON");
     expect(html).toContain("Export Markdown");
+    expect(html).toContain("Service Explorer");
   });
 });

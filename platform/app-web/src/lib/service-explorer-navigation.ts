@@ -2,6 +2,7 @@
  * URL helpers for the Service Explorer view (`view=service-explorer`).
  */
 
+import { applyGlobalSearchQueryEcho } from "./global-search-deeplink";
 import { mergeViewIntoSearch, replaceUrlSearchParams } from "./url-app-state";
 
 /** When set, Service Explorer shows detail for this `service_id` (e.g. `policy:…`, `color:100`). */
@@ -36,6 +37,11 @@ export interface NavigateToServiceExplorerOptions {
    * Pass `null` to clear `limit` (full list on next load).
    */
   limit?: number | null;
+  /**
+   * When this key is present, sets or clears `global_search_q` (operator search echo). When **omitted**, existing
+   * `global_search_q` in the URL is preserved.
+   */
+  echoSearchQuery?: string | null;
 }
 
 export function navigateToServiceExplorer(options?: NavigateToServiceExplorerOptions): void {
@@ -52,5 +58,19 @@ export function navigateToServiceExplorer(options?: NavigateToServiceExplorerOpt
       sp.delete("limit");
     }
   }
+  if (options && "echoSearchQuery" in options) {
+    applyGlobalSearchQueryEcho(sp, options.echoSearchQuery);
+  }
   replaceUrlSearchParams(sp);
+}
+
+/** Open Service Explorer detail for a single policy row (`service_id=policy:{policy_id}`). */
+export function navigateToServiceExplorerForPolicy(
+  policyId: string,
+  options?: { echoSearchQuery?: string | null },
+): void {
+  navigateToServiceExplorer({
+    serviceId: `policy:${policyId}`,
+    ...(options && "echoSearchQuery" in options ? { echoSearchQuery: options.echoSearchQuery } : {}),
+  });
 }

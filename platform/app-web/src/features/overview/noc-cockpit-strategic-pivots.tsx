@@ -6,6 +6,7 @@ import {
 } from "../../lib/investigation-navigation";
 import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
+import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 
 const POSTURE_RANK: Record<string, number> = {
   degraded: 0,
@@ -111,6 +112,13 @@ export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCock
                 onClick={() => navigateToPolicyDossierWorkspace(topDegraded.policy_id, "overview_noc_cockpit")}
               >
                 Policy dossier (worst degraded)
+              </button>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToServiceExplorerForPolicy(topDegraded.policy_id)}
+              >
+                Service Explorer (same policy)
               </button>
             </div>
           </div>

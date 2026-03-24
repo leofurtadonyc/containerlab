@@ -44,6 +44,7 @@ import {
   readPolicyWorkspaceFromSearch,
   readPolicyWorkspaceFromUrl,
 } from "../../lib/policy-dossier-navigation";
+import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { InvestigationSurfaceEntry } from "../investigation/investigation-surface-entry";
 import { useTopologyQuery } from "../topology/api";
@@ -2301,6 +2302,13 @@ export function PoliciesView() {
                         >
                           Open dossier
                         </button>
+                        <button
+                          type="button"
+                          className="nav-drilldown-button"
+                          onClick={() => navigateToServiceExplorerForPolicy(policy.policy_id)}
+                        >
+                          Service Explorer
+                        </button>
                         <div className="table-note">Composed briefing for this policy.</div>
                       </td>
                     </tr>
@@ -2325,6 +2333,13 @@ export function PoliciesView() {
                       onClick={() => navigateToPolicyDossierWorkspace(selectedPolicy.policy_id, "policy_detail")}
                     >
                       Open policy dossier
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-action"
+                      onClick={() => navigateToServiceExplorerForPolicy(selectedPolicy.policy_id)}
+                    >
+                      Service Explorer
                     </button>
                   </span>
                 </div>

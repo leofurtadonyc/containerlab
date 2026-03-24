@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   SERVICE_EXPLORER_SERVICE_ID_PARAM,
   navigateToServiceExplorer,
+  navigateToServiceExplorerForPolicy,
   readServiceExplorerLimitFromSearch,
   readServiceExplorerServiceIdFromSearch,
 } from "../src/lib/service-explorer-navigation";
@@ -62,6 +63,28 @@ describe("navigateToServiceExplorer", () => {
     replaceState.mockRestore();
   });
 
+  it("sets global_search_q when echoSearchQuery is provided", () => {
+    const replaceState = vi.spyOn(window.history, "replaceState").mockImplementation(() => undefined);
+    vi.stubGlobal("location", {
+      ...window.location,
+      href: "http://localhost/?view=overview",
+      search: "?view=overview",
+    });
+
+    navigateToServiceExplorer({
+      serviceId: "policy:PE1:a:1",
+      echoSearchQuery: "static",
+    });
+
+    const urlArg = replaceState.mock.calls[0][2] as string;
+    const next = new URL(urlArg);
+    expect(next.searchParams.get("view")).toBe("service-explorer");
+    expect(next.searchParams.get("service_id")).toBe("policy:PE1:a:1");
+    expect(next.searchParams.get("global_search_q")).toBe("static");
+
+    replaceState.mockRestore();
+  });
+
   it("updates limit without clearing service_id when only limit is provided", () => {
     const replaceState = vi.spyOn(window.history, "replaceState").mockImplementation(() => undefined);
     vi.stubGlobal("location", {
@@ -76,6 +99,22 @@ describe("navigateToServiceExplorer", () => {
     const next = new URL(urlArg);
     expect(next.searchParams.get(SERVICE_EXPLORER_SERVICE_ID_PARAM)).toBe("headend:PE1");
     expect(next.searchParams.get("limit")).toBe("10");
+
+    replaceState.mockRestore();
+  });
+
+  it("navigateToServiceExplorerForPolicy prefixes policy: service_id", () => {
+    const replaceState = vi.spyOn(window.history, "replaceState").mockImplementation(() => undefined);
+    vi.stubGlobal("location", {
+      ...window.location,
+      href: "http://localhost/",
+      search: "",
+    });
+
+    navigateToServiceExplorerForPolicy("PE1:static:1:100");
+
+    const urlArg = replaceState.mock.calls[0][2] as string;
+    expect(new URL(urlArg).searchParams.get("service_id")).toBe("policy:PE1:static:1:100");
 
     replaceState.mockRestore();
   });
