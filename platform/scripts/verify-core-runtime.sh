@@ -423,13 +423,18 @@ if [ -n "$first_policy_id" ]; then
   assert_contains "policy dossier response (nested path_analysis)" "$policy_dossier_response" '"path_analysis":{'
   assert_contains "policy dossier response (nested evidence_delta)" "$policy_dossier_response" '"evidence_delta":{'
   assert_contains "policy dossier response (merged_caveats)" "$policy_dossier_response" '"merged_caveats":'
+  policy_explainability_response=$(fetch_compact_json "$APP_API_URL/api/v1/policies/${first_policy_id}/explainability")
+  assert_contains "policy explainability response (contract id)" "$policy_explainability_response" '"contract_id":"policy_explainability_workspace_v1"'
+  assert_contains "policy explainability response (nested path_analysis)" "$policy_explainability_response" '"path_analysis":{'
+  assert_contains "policy explainability response (candidate_path_rollups)" "$policy_explainability_response" '"candidate_path_rollups":'
+  assert_contains "policy explainability response (merged_caveats)" "$policy_explainability_response" '"merged_caveats":'
   policy_export_response=$(fetch_compact_json "$APP_API_URL/api/v1/exports/policies/${first_policy_id}/dossier?format=json")
   assert_contains "policy evidence export response (envelope contract id)" "$policy_export_response" '"contract_id":"evidence_export_v1"'
   assert_contains "policy evidence export response (export_kind)" "$policy_export_response" '"export_kind":"policy_dossier"'
   assert_contains "policy evidence export response (nested policy dossier)" "$policy_export_response" '"contract_id":"policy_dossier_v1"'
   assert_contains "policy evidence export response (source_contract_ids)" "$policy_export_response" '"source_contract_ids":'
 else
-  notice "Policies items list empty; skipping path-analysis, degraded_policy_v1 contract_id, policy evidence timeline, policy evidence delta, and policy dossier structural checks."
+  notice "Policies items list empty; skipping path-analysis, degraded_policy_v1 contract_id, policy evidence timeline, policy evidence delta, policy dossier, and policy explainability structural checks."
 fi
 
 if [ -n "$first_node_id" ]; then

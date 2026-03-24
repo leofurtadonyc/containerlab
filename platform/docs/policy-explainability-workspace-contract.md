@@ -140,6 +140,18 @@ Additionally:
 
 ---
 
+## Backend API (app-api)
+
+**Route:** **`GET /api/v1/policies/{policy_id}/explainability`**
+
+**Response shape:** Pydantic model **`PolicyExplainabilityResponse`** (`platform/app-api/src/app_api/schemas/policy_explainability.py`) with **`contract_id`** **`policy_explainability_workspace_v1`**. The body embeds the same nested contracts as the standalone APIs—**path analysis**, **topology impact**, **evidence timeline**, **evidence delta**—plus **`policy_record`**, **`path_explanation_summary`** (bounded echo of path-analysis **`truth_alignment.summary`**), **`candidate_path_rollups`** (from **`candidate_path_summaries`** when present, otherwise inventory **`candidate_paths`**), **`unknown_candidate_posture`**, **`sparse_signals`** (honest flags when topology naming is unknown, timeline is sparse, or delta is not ready), **`navigation_targets`** (including **`inv_from=policy_explainability`**, Service Explorer, and delta-digest hints), **`freshness`**, and **`merged_caveats`**.
+
+**404:** Returned when no normalized inventory row exists for **`policy_id`**, or when the same assembly preconditions as **policy dossier** fail (missing nested contract assembly).
+
+**Semantics:** Read-only composition of existing Phase **2** contracts only; no fabricated rejection narratives, no dataplane proof beyond source evidence, no workflow authority.
+
+---
+
 ## Contract id
 
 - **`contract_id`:** **`policy_explainability_workspace_v1`** on any **dedicated** assembly response when implemented (parallel naming to other `*_v1` product assemblies).
