@@ -15,6 +15,7 @@ import {
   navigateToSituationRoomFromGlobalSearch,
   supportsInvestigationShortcut,
 } from "../../lib/operator-search-navigation";
+import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 
 const DEBOUNCE_MS = 400;
@@ -243,6 +244,22 @@ export function GlobalOperatorSearch() {
                                   }}
                                 >
                                   Readiness
+                                </button>
+                              ) : null}
+                              {hit.pivot.policy_id ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  onClick={() => {
+                                    navigateToPolicyExplainabilityWorkspace(
+                                      hit.pivot.policy_id!,
+                                      data.q,
+                                      "candidates",
+                                    );
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Explainability
                                 </button>
                               ) : null}
                               {hit.pivot.policy_id ? (

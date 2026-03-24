@@ -248,4 +248,40 @@ describe("PolicyExplainabilityWorkspace", () => {
     expect(html).toContain("Active / preferred signal");
     expect(html).toContain("From inventory notes.");
   });
+
+  it("labels inactive vs unknown candidate signals distinctly (hints are not authoritative rejections)", () => {
+    const payload = {
+      ...explainabilityPayload,
+      candidate_path_rollups: [
+        {
+          name: "alt",
+          signal: "inactive_signal" as const,
+          path_state: "inactive",
+          preference: 2,
+          hint_lines: ["Inventory posture suggests not preferred in this slice."],
+        },
+        {
+          name: "fallback",
+          signal: "unknown_signal" as const,
+          path_state: "unknown",
+          preference: null,
+          hint_lines: [],
+        },
+      ],
+      unknown_candidate_posture: "partial" as const,
+    };
+    usePolicyExplainabilityQuery.mockReturnValue({
+      data: payload,
+      error: null,
+      isLoading: false,
+      isRefreshing: false,
+      reload: vi.fn(async () => undefined),
+    });
+
+    const html = renderToStaticMarkup(<PolicyExplainabilityWorkspace policyId="p1" />);
+
+    expect(html).toContain("Inactive / alternate signal");
+    expect(html).toContain("Unknown signal");
+    expect(html).toContain("partial");
+  });
 });

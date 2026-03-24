@@ -428,6 +428,7 @@ if [ -n "$first_policy_id" ]; then
   assert_contains "policy explainability response (nested path_analysis)" "$policy_explainability_response" '"path_analysis":{'
   assert_contains "policy explainability response (candidate_path_rollups)" "$policy_explainability_response" '"candidate_path_rollups":'
   assert_contains "policy explainability response (merged_caveats)" "$policy_explainability_response" '"merged_caveats":'
+  assert_contains "policy explainability response (unknown_candidate_posture)" "$policy_explainability_response" '"unknown_candidate_posture"'
   policy_export_response=$(fetch_compact_json "$APP_API_URL/api/v1/exports/policies/${first_policy_id}/dossier?format=json")
   assert_contains "policy evidence export response (envelope contract id)" "$policy_export_response" '"contract_id":"evidence_export_v1"'
   assert_contains "policy evidence export response (export_kind)" "$policy_export_response" '"export_kind":"policy_dossier"'

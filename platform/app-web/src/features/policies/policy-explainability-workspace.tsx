@@ -1,9 +1,13 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { ApiClientError } from "../../api/client";
 import { formatLabel } from "../../lib/presentation";
+import {
+  POLICY_EXPLAINABILITY_FOCUS_PARAM,
+  readPolicyExplainabilityFocusFromSearch,
+} from "../../lib/policy-dossier-navigation";
 import {
   navigateToInvestigationView,
   readSyncRunsLimitFromSearch,
@@ -18,7 +22,7 @@ import {
   navigateToTopologyObject,
 } from "../../lib/topology-policy-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
-import { useUrlSearchParamsKey } from "../../lib/use-url-search-params";
+import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { usePolicyExplainabilityQuery } from "./api";
 
 export interface PolicyExplainabilityWorkspaceProps {
@@ -41,10 +45,44 @@ function signalLabel(signal: string): string {
 export function PolicyExplainabilityWorkspace({ policyId }: PolicyExplainabilityWorkspaceProps) {
   const { data, error, isLoading, isRefreshing, reload } = usePolicyExplainabilityQuery(policyId);
   const searchKey = useUrlSearchParamsKey();
+  const replaceUrlSearchParams = useReplaceUrlSearchParams();
+  const [focusHighlightId, setFocusHighlightId] = useState<string | null>(null);
   const explainabilityFromUrl = useMemo(
     () => new URLSearchParams(searchKey).get("policy_workspace") === "explainability",
     [searchKey],
   );
+  const explainabilityFocusPending = useMemo(
+    () => readPolicyExplainabilityFocusFromSearch(searchKey) !== null,
+    [searchKey],
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !policyId || !data) {
+      return;
+    }
+    const focus = readPolicyExplainabilityFocusFromSearch(searchKey);
+    if (!focus) {
+      return;
+    }
+    const id =
+      focus === "candidates"
+        ? "policy-explainability-candidates"
+        : focus === "path_story"
+          ? "policy-explainability-path-story"
+          : "policy-explainability-caveats";
+    const timer = window.setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setFocusHighlightId(id);
+      window.setTimeout(() => setFocusHighlightId(null), 3500);
+      const next = new URLSearchParams(searchKey);
+      next.delete(POLICY_EXPLAINABILITY_FOCUS_PARAM);
+      replaceUrlSearchParams(next);
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [policyId, data?.policy_id, searchKey, replaceUrlSearchParams]);
+
+  const focusRing = (sectionId: string) =>
+    focusHighlightId === sectionId ? " policy-explainability-workspace__focus-ring" : "";
 
   if (policyId === null || policyId.length === 0) {
     return (
@@ -174,10 +212,21 @@ export function PolicyExplainabilityWorkspace({ policyId }: PolicyExplainability
       {explainabilityFromUrl ? (
         <p className="table-note" role="status">
           Opened with <code>policy_workspace=explainability</code>
+          {explainabilityFocusPending ? (
+            <>
+              {" "}
+              and <code>policy_explainability_focus</code> (scroll hint; cleared after focus)
+            </>
+          ) : null}
         </p>
       ) : null}
 
-      <div className="policy-explainability-workspace__caveats callout" role="region" aria-label="Merged caveats">
+      <div
+        id="policy-explainability-caveats"
+        className={`policy-explainability-workspace__caveats callout${focusRing("policy-explainability-caveats")}`}
+        role="region"
+        aria-label="Merged caveats"
+      >
         <strong>Merged caveats (read first)</strong>
         <ul className="notes-list">
           {data.merged_caveats.map((c) => (
@@ -197,7 +246,11 @@ export function PolicyExplainabilityWorkspace({ policyId }: PolicyExplainability
         </div>
       ) : null}
 
-      <section className="policy-explainability-workspace__hero" aria-labelledby="pex-path-story-heading">
+      <section
+        id="policy-explainability-path-story"
+        className={`policy-explainability-workspace__hero${focusRing("policy-explainability-path-story")}`}
+        aria-labelledby="pex-path-story-heading"
+      >
         <h4 id="pex-path-story-heading">Current path explanation</h4>
         <p className="policy-explainability-workspace__hero-summary">{data.path_explanation_summary}</p>
         <div className="key-value-list">
@@ -238,7 +291,11 @@ export function PolicyExplainabilityWorkspace({ policyId }: PolicyExplainability
         </span>
       </div>
 
-      <section className="policy-explainability-workspace__section" aria-labelledby="pex-candidates-heading">
+      <section
+        id="policy-explainability-candidates"
+        className={`policy-explainability-workspace__section${focusRing("policy-explainability-candidates")}`}
+        aria-labelledby="pex-candidates-heading"
+      >
         <h4 id="pex-candidates-heading">Candidate paths (signals &amp; hints)</h4>
         {data.candidate_path_rollups.length === 0 ? (
           <p className="table-note">

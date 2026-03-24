@@ -158,6 +158,8 @@ Additionally:
 
 **Component:** **`PolicyExplainabilityWorkspace`** (`platform/app-web/src/features/policies/policy-explainability-workspace.tsx`) consumes **`GET /api/v1/policies/{policy_id}/explainability`**. Layout is explainability-first: **merged caveats** surfaced early, **path explanation** hero, **sparse-signal** badges, **candidate path rollups** (hints from API only), then topology / timeline / delta excerpts and pivots (Investigation with **`inv_from=policy_explainability`**, Service Explorer, situation room, delta digest, Overview). Distinct styling from the policy dossier workspace; no evidence-export dossier bundle on this surface.
 
+**Focus routing (client-only):** Optional query **`policy_explainability_focus`** with values **`candidates`**, **`path_story`**, or **`caveats`** scrolls to the matching section and clears the param (same pattern as timeline/delta focus hints). Pivots from dossier, path-analysis panel, delta digest, Service Explorer, and global search may set **`candidates`** when opening explainability—**not** an API filter and **not** implied proof.
+
 ---
 
 ## Contract id

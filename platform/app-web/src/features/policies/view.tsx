@@ -41,6 +41,7 @@ import {
   navigateToPolicyDossierWorkspace,
   navigateToPolicyExplainabilityWorkspace,
   POLICY_DOSSIER_ENTRY_PARAM,
+  POLICY_EXPLAINABILITY_FOCUS_PARAM,
   POLICY_WORKSPACE_PARAM,
   readPolicyWorkspaceFromSearch,
   readPolicyWorkspaceFromUrl,
@@ -693,6 +694,7 @@ export function PoliciesView() {
     let changed = false;
     if (workspaceMode === "dossier" && wsCurrent !== "dossier") {
       sp.set(POLICY_WORKSPACE_PARAM, "dossier");
+      sp.delete(POLICY_EXPLAINABILITY_FOCUS_PARAM);
       changed = true;
     } else if (workspaceMode === "explainability" && wsCurrent !== "explainability") {
       sp.set(POLICY_WORKSPACE_PARAM, "explainability");
@@ -704,6 +706,7 @@ export function PoliciesView() {
     } else if (workspaceMode === "standard" && (wsCurrent !== null || sp.get(POLICY_DOSSIER_ENTRY_PARAM))) {
       sp.delete(POLICY_WORKSPACE_PARAM);
       sp.delete(POLICY_DOSSIER_ENTRY_PARAM);
+      sp.delete(POLICY_EXPLAINABILITY_FOCUS_PARAM);
       changed = true;
     }
     if (changed) {

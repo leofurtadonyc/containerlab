@@ -2,7 +2,10 @@ import { ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { ApiClientError } from "../../api/client";
 import type { PathAnalysisViewResponse } from "../../api/contracts";
-import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
+import {
+  navigateToPolicyDossierWorkspace,
+  navigateToPolicyExplainabilityWorkspace,
+} from "../../lib/policy-dossier-navigation";
 import { buildRowPostureStatusDisplay, formatDateTime, formatLabel } from "../../lib/presentation";
 import { usePolicyPathAnalysisQuery } from "./api";
 
@@ -85,7 +88,14 @@ export function PolicyPathAnalysisPanel({ policyId }: PolicyPathAnalysisPanelPro
         >
           Open policy dossier
         </button>
-        <span className="table-note"> — composed briefing for this policy (read-only).</span>
+        <button
+          type="button"
+          className="inline-action"
+          onClick={() => navigateToPolicyExplainabilityWorkspace(policyId, undefined, "candidates")}
+        >
+          Open explainability (candidates)
+        </button>
+        <span className="table-note"> — composed dossier vs path-story explainability; hints are not proof.</span>
       </p>
       <p className="footnote">{safety_framing.summary_disclaimer}</p>
       <p className="summary-label">Authority and scope</p>

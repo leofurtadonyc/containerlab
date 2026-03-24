@@ -100,5 +100,6 @@ describe("PolicyPathAnalysisPanel", () => {
     expect(html).toContain("Pol (p1)");
     expect(html).toContain("Not enough cross-signals.");
     expect(html).toContain("A test caveat.");
+    expect(html).toContain("Open explainability (candidates)");
   });
 });

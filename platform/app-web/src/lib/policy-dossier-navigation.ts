@@ -8,6 +8,21 @@ import {
 /** When `dossier` or `explainability`, Policies shows the composed workspace for that contract. */
 export const POLICY_WORKSPACE_PARAM = "policy_workspace";
 
+/** Client-only scroll hint into the explainability workspace (`policy_explainability_workspace_v1` WebUI). */
+export const POLICY_EXPLAINABILITY_FOCUS_PARAM = "policy_explainability_focus";
+
+const POLICY_EXPLAINABILITY_FOCUS_SET = new Set(["candidates", "path_story", "caveats"]);
+
+export type PolicyExplainabilityFocus = "candidates" | "path_story" | "caveats";
+
+export function readPolicyExplainabilityFocusFromSearch(search: string): PolicyExplainabilityFocus | null {
+  const raw = new URLSearchParams(search).get(POLICY_EXPLAINABILITY_FOCUS_PARAM);
+  if (!raw || !POLICY_EXPLAINABILITY_FOCUS_SET.has(raw)) {
+    return null;
+  }
+  return raw as PolicyExplainabilityFocus;
+}
+
 export type PolicyWorkspaceMode = "standard" | "dossier" | "explainability";
 
 /** Client-only breadcrumb: where the operator opened the policy dossier (not sent to app-api). */
@@ -61,6 +76,7 @@ export function navigateToPolicyDossierWorkspace(
   sp.set(POLICY_WORKSPACE_PARAM, "dossier");
   sp.delete(POLICY_EVIDENCE_TIMELINE_FOCUS_PARAM);
   sp.delete(POLICY_EVIDENCE_DELTA_FOCUS_PARAM);
+  sp.delete(POLICY_EXPLAINABILITY_FOCUS_PARAM);
   if (entryHint) {
     sp.set(POLICY_DOSSIER_ENTRY_PARAM, entryHint);
   } else {
@@ -74,6 +90,7 @@ export function navigateToPolicyDossierWorkspace(
 export function navigateToPolicyExplainabilityWorkspace(
   policyId: string,
   echoSearchQuery?: string,
+  focus?: PolicyExplainabilityFocus,
 ): void {
   const sp = mergeViewIntoSearch(window.location.search, "policies");
   sp.set("policy_id", policyId);
@@ -81,6 +98,11 @@ export function navigateToPolicyExplainabilityWorkspace(
   sp.delete(POLICY_DOSSIER_ENTRY_PARAM);
   sp.delete(POLICY_EVIDENCE_TIMELINE_FOCUS_PARAM);
   sp.delete(POLICY_EVIDENCE_DELTA_FOCUS_PARAM);
+  if (focus) {
+    sp.set(POLICY_EXPLAINABILITY_FOCUS_PARAM, focus);
+  } else {
+    sp.delete(POLICY_EXPLAINABILITY_FOCUS_PARAM);
+  }
   applyGlobalSearchQueryEcho(sp, echoSearchQuery);
   replaceUrlSearchParams(sp);
 }
@@ -99,5 +121,6 @@ export function navigateToPoliciesStandardPanels(): void {
   const sp = new URLSearchParams(window.location.search);
   sp.delete(POLICY_WORKSPACE_PARAM);
   sp.delete(POLICY_DOSSIER_ENTRY_PARAM);
+  sp.delete(POLICY_EXPLAINABILITY_FOCUS_PARAM);
   replaceUrlSearchParams(sp);
 }

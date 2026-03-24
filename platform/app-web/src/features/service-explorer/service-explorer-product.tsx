@@ -11,7 +11,10 @@ import {
 } from "../../lib/investigation-navigation";
 import { navigateToInvestigationView } from "../../lib/investigation-navigation";
 import { navigateToOperatorBriefingView } from "../../lib/operator-briefing-navigation";
-import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
+import {
+  navigateToPolicyDossierWorkspace,
+  navigateToPolicyExplainabilityWorkspace,
+} from "../../lib/policy-dossier-navigation";
 import { navigateToSituationRoomView } from "../../lib/situation-room-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
@@ -328,12 +331,13 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
                 <th scope="col">Headend</th>
                 <th scope="col">Endpoint</th>
                 <th scope="col">degraded_policy_v1</th>
-                <th scope="col">Dossier</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.members.map((m) => (
-                <tr key={m.policy_id}>
+                  <th scope="col">Dossier</th>
+                  <th scope="col">Explainability</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.members.map((m) => (
+                  <tr key={m.policy_id}>
                   <td>
                     <code>{m.policy_id}</code>
                   </td>
@@ -352,6 +356,15 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
                       onClick={() => navigateToPolicyDossierWorkspace(m.policy_id, "service_explorer")}
                     >
                       Open dossier
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="inline-action"
+                      onClick={() => navigateToPolicyExplainabilityWorkspace(m.policy_id, undefined, "candidates")}
+                    >
+                      Open explainability
                     </button>
                   </td>
                 </tr>
@@ -376,7 +389,8 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
                   <th scope="col">Node</th>
                   <th scope="col">Matched on</th>
                   <th scope="col">From field</th>
-                  <th scope="col">Dossier</th>
+                  <th scope="col">Policy dossier</th>
+                  <th scope="col">Explainability</th>
                 </tr>
               </thead>
               <tbody>
@@ -397,6 +411,17 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
                         onClick={() => navigateToTopologyDossier(link.node_id, "node", "service_explorer")}
                       >
                         Open node dossier
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="inline-action"
+                        onClick={() =>
+                          navigateToPolicyExplainabilityWorkspace(link.policy_id, undefined, "candidates")
+                        }
+                      >
+                        Policy explainability
                       </button>
                     </td>
                   </tr>
