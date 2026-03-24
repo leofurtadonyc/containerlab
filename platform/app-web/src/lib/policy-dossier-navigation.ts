@@ -5,8 +5,10 @@ import {
   POLICY_EVIDENCE_TIMELINE_FOCUS_PARAM,
 } from "./topology-policy-navigation";
 
-/** When `dossier`, Policies shows the composed policy dossier workspace (`policy_dossier_v1`). */
+/** When `dossier` or `explainability`, Policies shows the composed workspace for that contract. */
 export const POLICY_WORKSPACE_PARAM = "policy_workspace";
+
+export type PolicyWorkspaceMode = "standard" | "dossier" | "explainability";
 
 /** Client-only breadcrumb: where the operator opened the policy dossier (not sent to app-api). */
 export const POLICY_DOSSIER_ENTRY_PARAM = "policy_dossier_entry";
@@ -30,11 +32,18 @@ const KNOWN_POLICY_DOSSIER_ENTRY_VALUES = new Set([
   "service_explorer",
 ]);
 
-export function readPolicyWorkspaceFromSearch(search: string): "standard" | "dossier" {
-  return new URLSearchParams(search).get(POLICY_WORKSPACE_PARAM) === "dossier" ? "dossier" : "standard";
+export function readPolicyWorkspaceFromSearch(search: string): PolicyWorkspaceMode {
+  const raw = new URLSearchParams(search).get(POLICY_WORKSPACE_PARAM);
+  if (raw === "dossier") {
+    return "dossier";
+  }
+  if (raw === "explainability") {
+    return "explainability";
+  }
+  return "standard";
 }
 
-export function readPolicyWorkspaceFromUrl(): "standard" | "dossier" {
+export function readPolicyWorkspaceFromUrl(): PolicyWorkspaceMode {
   if (typeof window === "undefined") {
     return "standard";
   }
@@ -57,6 +66,21 @@ export function navigateToPolicyDossierWorkspace(
   } else {
     sp.delete(POLICY_DOSSIER_ENTRY_PARAM);
   }
+  applyGlobalSearchQueryEcho(sp, echoSearchQuery);
+  replaceUrlSearchParams(sp);
+}
+
+/** Navigate to Policies with `policy_id` and explainability workspace (`policy_explainability_workspace_v1`). */
+export function navigateToPolicyExplainabilityWorkspace(
+  policyId: string,
+  echoSearchQuery?: string,
+): void {
+  const sp = mergeViewIntoSearch(window.location.search, "policies");
+  sp.set("policy_id", policyId);
+  sp.set(POLICY_WORKSPACE_PARAM, "explainability");
+  sp.delete(POLICY_DOSSIER_ENTRY_PARAM);
+  sp.delete(POLICY_EVIDENCE_TIMELINE_FOCUS_PARAM);
+  sp.delete(POLICY_EVIDENCE_DELTA_FOCUS_PARAM);
   applyGlobalSearchQueryEcho(sp, echoSearchQuery);
   replaceUrlSearchParams(sp);
 }

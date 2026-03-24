@@ -39,6 +39,7 @@ import {
 } from "../../lib/topology-policy-navigation";
 import {
   navigateToPolicyDossierWorkspace,
+  navigateToPolicyExplainabilityWorkspace,
   POLICY_DOSSIER_ENTRY_PARAM,
   POLICY_WORKSPACE_PARAM,
   readPolicyWorkspaceFromSearch,
@@ -50,6 +51,7 @@ import { InvestigationSurfaceEntry } from "../investigation/investigation-surfac
 import { useTopologyQuery } from "../topology/api";
 import { usePoliciesQuery } from "./api";
 import { PolicyDossierWorkspace } from "./policy-dossier-workspace";
+import { PolicyExplainabilityWorkspace } from "./policy-explainability-workspace";
 import { PolicyEvidenceDeltaPanel } from "./policy-evidence-delta-panel";
 import { PolicyEvidenceTimelinePanel } from "./policy-evidence-timeline-panel";
 import { PolicyPathAnalysisPanel } from "./policy-path-analysis-panel";
@@ -523,7 +525,9 @@ export function PoliciesView() {
   const [sortBy, setSortBy] = useState("health_then_name");
   const [searchValue, setSearchValue] = useState("");
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
-  const [workspaceMode, setWorkspaceMode] = useState<"standard" | "dossier">(readPolicyWorkspaceFromUrl);
+  const [workspaceMode, setWorkspaceMode] = useState<ReturnType<typeof readPolicyWorkspaceFromUrl>>(
+    readPolicyWorkspaceFromUrl,
+  );
   const [evidenceTimelineEmphasize, setEvidenceTimelineEmphasize] = useState(false);
   const [evidenceDeltaEmphasize, setEvidenceDeltaEmphasize] = useState(false);
   const items = data?.items ?? [];
@@ -689,6 +693,13 @@ export function PoliciesView() {
     let changed = false;
     if (workspaceMode === "dossier" && wsCurrent !== "dossier") {
       sp.set(POLICY_WORKSPACE_PARAM, "dossier");
+      changed = true;
+    } else if (workspaceMode === "explainability" && wsCurrent !== "explainability") {
+      sp.set(POLICY_WORKSPACE_PARAM, "explainability");
+      sp.delete(POLICY_DOSSIER_ENTRY_PARAM);
+      changed = true;
+    } else if (workspaceMode === "explainability" && sp.get(POLICY_DOSSIER_ENTRY_PARAM)) {
+      sp.delete(POLICY_DOSSIER_ENTRY_PARAM);
       changed = true;
     } else if (workspaceMode === "standard" && (wsCurrent !== null || sp.get(POLICY_DOSSIER_ENTRY_PARAM))) {
       sp.delete(POLICY_WORKSPACE_PARAM);
@@ -2163,11 +2174,12 @@ export function PoliciesView() {
           <div className="page-header topology-workspace-switch">
             <div>
               <p className="eyebrow">Policy workspace</p>
-              <h3 className="topology-workspace-switch__title">Standard detail panels vs policy dossier</h3>
+              <h3 className="topology-workspace-switch__title">Standard panels · dossier · explainability</h3>
               <p className="meta-copy">
-                Week 27–28 panels stay available in <strong>Standard</strong> view. <strong>Policy dossier</strong>{" "}
-                loads one composed <code>policy_dossier_v1</code> response—interpretation support only; not a
-                replacement for full path-analysis, timeline, or delta panels.
+                <strong>Standard</strong> keeps week 27–28 detail panels. <strong>Policy dossier</strong> is a
+                breadth-first composed <code>policy_dossier_v1</code> briefing. <strong>Explainability</strong> is a
+                path-story-first <code>policy_explainability_workspace_v1</code> lens—same evidence contracts,
+                different narrative order; not dataplane proof or workflow authority.
               </p>
             </div>
             <div className="topology-workspace-switch__toggle" role="group" aria-label="Policy workspace mode">
@@ -2185,10 +2197,20 @@ export function PoliciesView() {
               >
                 Policy dossier
               </button>
+              <button
+                type="button"
+                className={workspaceMode === "explainability" ? "nav-item active" : "nav-item"}
+                onClick={() => setWorkspaceMode("explainability")}
+              >
+                Explainability
+              </button>
             </div>
           </div>
           {workspaceMode === "dossier" ? (
             <PolicyDossierWorkspace policyId={selectedPolicy?.policy_id ?? null} />
+          ) : null}
+          {workspaceMode === "explainability" ? (
+            <PolicyExplainabilityWorkspace policyId={selectedPolicy?.policy_id ?? null} />
           ) : null}
         </>
       ) : null}
@@ -2227,7 +2249,7 @@ export function PoliciesView() {
                   <th>Support</th>
                   <th>Health</th>
                   <th>Degraded (v1)</th>
-                  <th>Dossier</th>
+                  <th>Dossier / Explainability</th>
                 </tr>
               </thead>
               <tbody>
@@ -2305,11 +2327,18 @@ export function PoliciesView() {
                         <button
                           type="button"
                           className="nav-drilldown-button"
+                          onClick={() => navigateToPolicyExplainabilityWorkspace(policy.policy_id)}
+                        >
+                          Open explainability
+                        </button>
+                        <button
+                          type="button"
+                          className="nav-drilldown-button"
                           onClick={() => navigateToServiceExplorerForPolicy(policy.policy_id)}
                         >
                           Service Explorer
                         </button>
-                        <div className="table-note">Composed briefing for this policy.</div>
+                        <div className="table-note">Composed dossier vs path-story explainability workspace.</div>
                       </td>
                     </tr>
                   );
@@ -2333,6 +2362,13 @@ export function PoliciesView() {
                       onClick={() => navigateToPolicyDossierWorkspace(selectedPolicy.policy_id, "policy_detail")}
                     >
                       Open policy dossier
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-action"
+                      onClick={() => navigateToPolicyExplainabilityWorkspace(selectedPolicy.policy_id)}
+                    >
+                      Open explainability workspace
                     </button>
                     <button
                       type="button"

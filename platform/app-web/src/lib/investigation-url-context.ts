@@ -21,6 +21,7 @@ export const INVESTIGATION_NAV_SOURCE_IDS = [
   "topology",
   "devices",
   "policies",
+  "policy_explainability",
   "global_search",
   "service-explorer",
 ] as const;
@@ -51,6 +52,8 @@ export function labelForInvestigationNavSource(id: InvestigationNavSourceId): st
       return "Devices";
     case "policies":
       return "Policies";
+    case "policy_explainability":
+      return "Policy explainability";
     case "global_search":
       return "Global search";
     case "service-explorer":

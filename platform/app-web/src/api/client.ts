@@ -18,6 +18,7 @@ import type {
   FailureImpactViewResponse,
   TopologyObjectDossierResponse,
   PolicyDossierResponse,
+  PolicyExplainabilityResponse,
   OperatorSearchResponse,
   WorkflowHistoryResponse,
   CrossDomainDeltaDigestResponse,
@@ -149,6 +150,11 @@ export class ApiClient {
   async getPolicyDossier(policyId: string): Promise<PolicyDossierResponse> {
     const encoded = encodeURIComponent(policyId);
     return this.request<PolicyDossierResponse>(`/api/v1/policies/${encoded}/dossier`);
+  }
+
+  async getPolicyExplainability(policyId: string): Promise<PolicyExplainabilityResponse> {
+    const encoded = encodeURIComponent(policyId);
+    return this.request<PolicyExplainabilityResponse>(`/api/v1/policies/${encoded}/explainability`);
   }
 
   async getWorkflowHistory(query?: WorkflowHistoryReadSideQuery): Promise<WorkflowHistoryResponse> {

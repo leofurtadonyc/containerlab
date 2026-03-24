@@ -152,6 +152,14 @@ Additionally:
 
 ---
 
+## WebUI (app-web)
+
+**Shell entry:** **Policies** view with **`policy_workspace=explainability`** (toggle **Explainability** alongside **Standard panels** and **Policy dossier**). Deep links may use **`navigateToPolicyExplainabilityWorkspace(policy_id)`**, which sets **`view=policies`**, **`policy_id`**, and **`policy_workspace=explainability`**.
+
+**Component:** **`PolicyExplainabilityWorkspace`** (`platform/app-web/src/features/policies/policy-explainability-workspace.tsx`) consumes **`GET /api/v1/policies/{policy_id}/explainability`**. Layout is explainability-first: **merged caveats** surfaced early, **path explanation** hero, **sparse-signal** badges, **candidate path rollups** (hints from API only), then topology / timeline / delta excerpts and pivots (Investigation with **`inv_from=policy_explainability`**, Service Explorer, situation room, delta digest, Overview). Distinct styling from the policy dossier workspace; no evidence-export dossier bundle on this surface.
+
+---
+
 ## Contract id
 
 - **`contract_id`:** **`policy_explainability_workspace_v1`** on any **dedicated** assembly response when implemented (parallel naming to other `*_v1` product assemblies).

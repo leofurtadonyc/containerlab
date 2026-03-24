@@ -336,6 +336,19 @@ describe("ApiClient week 28 bounded paths", () => {
     expect(url).toContain("/api/v1/policies/PE1%3Astatic%3A1%3A100/dossier");
   });
 
+  it("getPolicyExplainability encodes policy id in the URL path", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => "{}",
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getPolicyExplainability("PE1:static:1:100");
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("/api/v1/policies/PE1%3Astatic%3A1%3A100/explainability");
+  });
+
   it("getDeltaDigest uses the delta-digest route and bounds sync_runs_limit", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

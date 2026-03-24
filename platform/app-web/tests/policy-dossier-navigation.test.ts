@@ -5,7 +5,9 @@ import {
   POLICY_DOSSIER_ENTRY_PARAM,
   POLICY_WORKSPACE_PARAM,
   navigateToPolicyDossierWorkspace,
+  navigateToPolicyExplainabilityWorkspace,
   readPolicyDossierEntryFromSearch,
+  readPolicyWorkspaceFromSearch,
 } from "../src/lib/policy-dossier-navigation";
 import {
   POLICY_EVIDENCE_DELTA_FOCUS_PARAM,
@@ -15,6 +17,12 @@ import {
 describe("policy dossier navigation", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("readPolicyWorkspaceFromSearch returns standard, dossier, or explainability", () => {
+    expect(readPolicyWorkspaceFromSearch("")).toBe("standard");
+    expect(readPolicyWorkspaceFromSearch(`?${POLICY_WORKSPACE_PARAM}=dossier`)).toBe("dossier");
+    expect(readPolicyWorkspaceFromSearch(`?${POLICY_WORKSPACE_PARAM}=explainability`)).toBe("explainability");
   });
 
   it("readPolicyDossierEntryFromSearch returns known hints only", () => {
@@ -55,6 +63,29 @@ describe("policy dossier navigation", () => {
     expect(sp.get(POLICY_DOSSIER_ENTRY_PARAM)).toBe("path_analysis_panel");
     expect(sp.get(POLICY_EVIDENCE_TIMELINE_FOCUS_PARAM)).toBeNull();
     expect(sp.get(POLICY_EVIDENCE_DELTA_FOCUS_PARAM)).toBeNull();
+
+    Object.defineProperty(window, "location", { configurable: true, value: prev });
+  });
+
+  it("navigateToPolicyExplainabilityWorkspace sets explainability workspace and clears dossier entry", () => {
+    const spy = vi.spyOn(urlAppState, "replaceUrlSearchParams").mockImplementation(() => {});
+    const prev = window.location;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: {
+        ...prev,
+        search: `?view=policies&${POLICY_DOSSIER_ENTRY_PARAM}=policy_table`,
+      },
+      writable: true,
+    });
+
+    navigateToPolicyExplainabilityWorkspace("PE1:pol:2");
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    const sp = spy.mock.calls[0][0] as URLSearchParams;
+    expect(sp.get("policy_id")).toBe("PE1:pol:2");
+    expect(sp.get(POLICY_WORKSPACE_PARAM)).toBe("explainability");
+    expect(sp.get(POLICY_DOSSIER_ENTRY_PARAM)).toBeNull();
 
     Object.defineProperty(window, "location", { configurable: true, value: prev });
   });

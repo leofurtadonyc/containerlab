@@ -53,6 +53,13 @@ describe("parseInvestigationNavContext", () => {
     expect(labelForInvestigationNavSource(id)).toBe("Service Explorer");
   });
 
+  it("accepts policy_explainability as a source", () => {
+    const id: InvestigationNavSourceId = "policy_explainability";
+    const p = parseInvestigationNavContext(`?${INV_FROM_PARAM}=${id}`);
+    expect(p.invFrom).toBe("policy_explainability");
+    expect(labelForInvestigationNavSource(id)).toBe("Policy explainability");
+  });
+
   it("parses failure_impact_entry=v1", () => {
     const p = parseInvestigationNavContext(
       `?view=investigation&${INV_FROM_PARAM}=topology&${FAILURE_IMPACT_ENTRY_PARAM}=v1`,

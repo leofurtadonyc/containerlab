@@ -284,6 +284,118 @@ section p {
   margin-top: 0;
 }
 
+.policy-explainability-workspace {
+  margin-bottom: 24px;
+  padding: 24px;
+  border: 1px solid #2a6b6e;
+  border-radius: 12px;
+  background: linear-gradient(155deg, rgba(18, 72, 78, 0.45) 0%, rgba(16, 28, 42, 0.96) 62%);
+}
+
+.policy-explainability-workspace__header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2d4a52;
+}
+
+.policy-explainability-workspace__header--split {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px 16px;
+}
+
+.policy-explainability-workspace__header-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: min(100%, 280px);
+}
+
+.policy-explainability-workspace__intro {
+  border-left: 3px solid #3db8bf;
+  padding-left: 12px;
+}
+
+.policy-explainability-workspace__caveats {
+  border-color: #c9a227;
+  background: rgba(80, 64, 18, 0.35);
+}
+
+.policy-explainability-workspace__unknown-banner {
+  border-color: #d3a13f;
+  background: rgba(90, 70, 24, 0.35);
+}
+
+.policy-explainability-workspace__hero {
+  margin: 16px 0;
+  padding: 16px 18px;
+  border-radius: 10px;
+  border: 1px solid #357a80;
+  background: rgba(12, 48, 52, 0.55);
+}
+
+.policy-explainability-workspace__hero-summary {
+  font-size: 1.05rem;
+  line-height: 1.45;
+  margin: 0 0 12px;
+  color: #e8f7f8;
+}
+
+.policy-explainability-workspace__sparse {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 20px;
+}
+
+.policy-explainability-workspace__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.policy-explainability-workspace__section {
+  margin-top: 16px;
+}
+
+.policy-explainability-workspace__section h4 {
+  margin-top: 0;
+}
+
+.policy-explainability-workspace__rollup-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.policy-explainability-workspace__rollup {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #2d4a52;
+  background: rgba(10, 22, 36, 0.65);
+}
+
+.policy-explainability-workspace__rollup-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.policy-explainability-workspace__signal {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7dd3d8;
+}
+
 .eyebrow {
   margin: 0 0 8px;
   color: #8fb3ff;

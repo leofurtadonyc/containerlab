@@ -697,6 +697,52 @@ export interface PolicyDossierResponse {
   merged_caveats: string[];
 }
 
+export type ExplainabilityCandidateSignal = "active_signal" | "inactive_signal" | "unknown_signal";
+
+export type ExplainabilityUnknownCandidatePosture = "none" | "partial" | "full";
+
+export interface ExplainabilityCandidatePathRollup {
+  name: string;
+  signal: ExplainabilityCandidateSignal;
+  path_state: string;
+  preference?: number | null;
+  hint_lines: string[];
+}
+
+export interface PolicyExplainabilityNavigationTargets {
+  investigation_shell_params: Record<string, string>;
+  situation_room_shell_params: Record<string, string>;
+  policies_view_params: Record<string, string>;
+  topology_object_hints: PolicyDossierTopologyObjectHint[];
+  service_explorer_shell_params: Record<string, string>;
+  delta_digest_shell_params: Record<string, string>;
+}
+
+export interface PolicyExplainabilitySparseSignals {
+  topology_naming_alignment_unknown: boolean;
+  evidence_timeline_sparse: boolean;
+  evidence_delta_not_ready: boolean;
+}
+
+/** `GET /api/v1/policies/{policy_id}/explainability` (explainability narrative; not dataplane proof or workflow authority). */
+export interface PolicyExplainabilityResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "policy_explainability_workspace_v1";
+  policy_id: string;
+  policy_record: PolicyRecord;
+  path_analysis: PathAnalysisViewResponse;
+  topology_impact: PolicyTopologyImpactResponse;
+  evidence_timeline: PolicyEvidenceTimelineResponse;
+  evidence_delta: PolicyEvidenceDeltaResponse;
+  path_explanation_summary: string;
+  candidate_path_rollups: ExplainabilityCandidatePathRollup[];
+  unknown_candidate_posture: ExplainabilityUnknownCandidatePosture;
+  sparse_signals: PolicyExplainabilitySparseSignals;
+  navigation_targets: PolicyExplainabilityNavigationTargets;
+  freshness: PolicyDossierFreshnessBlock;
+  merged_caveats: string[];
+}
+
 /** `GET /api/v1/policies/{policy_id}/topology-impact` (inverse pivot; naming alignment only). */
 export interface PolicyTopologyImpactRow {
   topology_object_kind: TopologyObjectKind;
