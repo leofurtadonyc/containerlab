@@ -474,4 +474,89 @@ describe("ApiClient week 28 bounded paths", () => {
     expect(url).toContain("/api/v1/operator-search?q=");
     expect(url).toContain("PE1%3Astatic");
   });
+
+  it("getServices uses optional limit query", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          service: "app-api",
+          version: "0.1.0",
+          phase: "phase_2_read_only_foundation",
+          generated_at: "2025-01-01T00:00:00Z",
+          contract_id: "service_explorer_v1",
+          policy_inventory: {
+            data_status: "live",
+            serving_mode: "live_collector",
+            empty_reason: "none",
+            summary: "s",
+            observed_policy_count: 0,
+            policy_items_total: 0,
+          },
+          items: [],
+          read_side_query: {
+            limit_requested: 10,
+            items_total: 0,
+            items_returned: 0,
+            history_recent_limit_requested: null,
+            history_recent_limit_effective: null,
+            history_recent_snapshots_returned: null,
+            sync_runs_limit_requested: null,
+            sync_runs_limit_effective: null,
+            readiness_snapshot_history_limit_requested: null,
+            readiness_snapshot_history_limit_effective: null,
+            readiness_blocker_filter_requested: null,
+          },
+          caveats: [],
+          recommended_pivots: [],
+        }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getServices(10);
+    expect(fetchMock.mock.calls[0][0] as string).toBe("http://api/api/v1/services?limit=10");
+  });
+
+  it("getService encodes service_id in the path", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          service: "app-api",
+          version: "0.1.0",
+          phase: "phase_2_read_only_foundation",
+          generated_at: "2025-01-01T00:00:00Z",
+          contract_id: "service_explorer_v1",
+          service_id: "policy:a:b",
+          kind: "policy",
+          policy_inventory: {
+            data_status: "live",
+            serving_mode: "live_collector",
+            empty_reason: "none",
+            summary: "s",
+            observed_policy_count: 1,
+            policy_items_total: 1,
+          },
+          members: [],
+          members_total: 0,
+          degraded_service: {
+            posture: "ok",
+            reason_codes: [],
+            reason_codes_truncated: false,
+          },
+          topology_evidence_status: "partial",
+          topology_links: [],
+          topology_caveats: [],
+          caveats: [],
+          recommended_pivots: [],
+        }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getService("policy:a:b");
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("/api/v1/services/policy%3Aa%3Ab");
+  });
 });

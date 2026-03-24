@@ -22,6 +22,7 @@ export const INVESTIGATION_NAV_SOURCE_IDS = [
   "devices",
   "policies",
   "global_search",
+  "service-explorer",
 ] as const;
 
 export type InvestigationNavSourceId = (typeof INVESTIGATION_NAV_SOURCE_IDS)[number];
@@ -52,6 +53,8 @@ export function labelForInvestigationNavSource(id: InvestigationNavSourceId): st
       return "Policies";
     case "global_search":
       return "Global search";
+    case "service-explorer":
+      return "Service Explorer";
     default: {
       const _exhaustive: never = id;
       return _exhaustive;

@@ -27,6 +27,7 @@ const KNOWN_POLICY_DOSSIER_ENTRY_VALUES = new Set([
   "delta_digest_workspace",
   "operator_briefing_workspace",
   "evidence_replay_viewer",
+  "service_explorer",
 ]);
 
 export function readPolicyWorkspaceFromSearch(search: string): "standard" | "dossier" {

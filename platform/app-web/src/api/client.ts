@@ -22,6 +22,8 @@ import type {
   WorkflowHistoryResponse,
   CrossDomainDeltaDigestResponse,
   OperatorBriefingWorkspaceResponse,
+  ServiceDetailResponse,
+  ServicesListResponse,
 } from "./contracts";
 import {
   buildAuditHistoryQueryString,
@@ -109,6 +111,19 @@ export class ApiClient {
   async getPolicies(query?: DevicesPoliciesReadSideQuery): Promise<PoliciesListResponse> {
     const qs = query ? buildDevicesPoliciesQueryString(query) : "";
     return this.request<PoliciesListResponse>(`/api/v1/policies${qs}`);
+  }
+
+  async getServices(limit?: number): Promise<ServicesListResponse> {
+    if (limit != null) {
+      const bounded = Math.min(500, Math.max(1, Math.floor(limit)));
+      return this.request<ServicesListResponse>(`/api/v1/services?limit=${bounded}`);
+    }
+    return this.request<ServicesListResponse>("/api/v1/services");
+  }
+
+  async getService(serviceId: string): Promise<ServiceDetailResponse> {
+    const encoded = encodeURIComponent(serviceId);
+    return this.request<ServiceDetailResponse>(`/api/v1/services/${encoded}`);
   }
 
   async getPolicyPathAnalysis(policyId: string): Promise<PathAnalysisViewResponse> {

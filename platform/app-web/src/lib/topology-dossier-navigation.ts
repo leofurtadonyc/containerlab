@@ -24,7 +24,8 @@ export type TopologyDossierNavigationSource =
   | "global_search"
   | "delta_digest_workspace"
   | "operator_briefing_workspace"
-  | "evidence_replay_viewer";
+  | "evidence_replay_viewer"
+  | "service_explorer";
 
 /** Read `dossier_source` from the shell query string. */
 export function readDossierSourceFromSearch(search: string): TopologyDossierNavigationSource | null {
@@ -37,7 +38,8 @@ export function readDossierSourceFromSearch(search: string): TopologyDossierNavi
     raw === "global_search" ||
     raw === "delta_digest_workspace" ||
     raw === "operator_briefing_workspace" ||
-    raw === "evidence_replay_viewer"
+    raw === "evidence_replay_viewer" ||
+    raw === "service_explorer"
   ) {
     return raw;
   }

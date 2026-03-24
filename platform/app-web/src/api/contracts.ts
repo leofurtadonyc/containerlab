@@ -1737,3 +1737,75 @@ export interface OperatorBriefingWorkspaceResponse {
   merged_caveats: string[];
   recommended_pivots: string[];
 }
+
+/** `GET /api/v1/services` / `GET /api/v1/services/{service_id}` — service_explorer_v1. */
+export interface ServiceExplorerPolicyInventoryEcho {
+  data_status: "live" | "degraded";
+  serving_mode: "live_collector" | "persisted_fallback" | "empty_scaffold";
+  empty_reason:
+    | "none"
+    | "no_policies_observed"
+    | "per_policy_details_unavailable"
+    | "collector_unavailable";
+  summary: string;
+  observed_policy_count: number;
+  policy_items_total: number;
+}
+
+export interface DegradedServiceRollup {
+  posture: "ok" | "degraded" | "unknown";
+  reason_codes: DegradedPolicyV1Classification["reason_codes"];
+  reason_codes_truncated: boolean;
+}
+
+export interface ServiceListRow {
+  service_id: string;
+  kind: "policy" | "color" | "headend" | "endpoint";
+  member_count: number;
+  degraded_group_posture: "ok" | "degraded" | "unknown";
+}
+
+export interface ServiceTopologyLinkRecord {
+  policy_id: string;
+  node_id: string;
+  display_name: string;
+  matched_on: "node_id" | "display_name" | "device_id";
+  matched_from_policy_field: "headend" | "source_target" | "endpoint";
+}
+
+export interface ServiceMemberSummary {
+  policy_id: string;
+  policy_name: string;
+  policy_type: "static_local" | "static_non_local" | "unknown";
+  headend: string;
+  endpoint: string;
+  color: number;
+  source_target: string;
+  degraded_policy_v1: DegradedPolicyV1Classification;
+}
+
+export interface ServicesListResponse extends ApiResponseMetadata {
+  contract_id: "service_explorer_v1";
+  policy_inventory: ServiceExplorerPolicyInventoryEcho;
+  items: ServiceListRow[];
+  read_side_query: ReadSideQueryEcho;
+  caveats: string[];
+  recommended_pivots: string[];
+}
+
+export type ServiceExplorerTopologyEvidenceStatus = "present" | "partial" | "unavailable";
+
+export interface ServiceDetailResponse extends ApiResponseMetadata {
+  contract_id: "service_explorer_v1";
+  service_id: string;
+  kind: "policy" | "color" | "headend" | "endpoint";
+  policy_inventory: ServiceExplorerPolicyInventoryEcho;
+  members: ServiceMemberSummary[];
+  members_total: number;
+  degraded_service: DegradedServiceRollup;
+  topology_evidence_status: ServiceExplorerTopologyEvidenceStatus;
+  topology_links: ServiceTopologyLinkRecord[];
+  topology_caveats: string[];
+  caveats: string[];
+  recommended_pivots: string[];
+}
