@@ -125,7 +125,9 @@ If implementation uses structured fields (e.g. **`suggested_followups`**), each 
 | **JSON (if shipped)** | SHOULD include **`contract_id`** **`change_safety_case_v1`**, **`subject`**, **`assembled_at`**, **`source_contract_ids`**, **`merged_caveats`**, **`evidence_gaps`**, **`next_review_guidance`**, and nested **pointers** or **embedded** faithful copies per product choice. |
 | **Markdown / PDF (optional)** | **Companion** formats only—**verbatim** non-claims; **no** implied scoring. |
 
-**Evidence replay** (**`evidence_export_v1`**) **must** reject root **`change_safety_case_v1`** JSON unless/until replay contract explicitly supports it—parallel rule to Impact Report in [**evidence-replay-viewer-contract.md**](./evidence-replay-viewer-contract.md).
+**Evidence replay** (**`evidence_export_v1`**) **must** reject root **`change_safety_case_v1`** JSON unless/until replay contract explicitly supports it—parallel rule to Impact Report in [**evidence-replay-viewer-contract.md**](./evidence-replay-viewer-contract.md). **app-web** implements this rejection in **`parseEvidenceExportJson`** with error code **`change_safety_case_not_evidence_export`**.
+
+**WebUI download:** Operators may download the same JSON/Markdown as **`GET /api/v1/reports/change-safety-case/...`** from the **Change safety case** view—this is **report-route** retrieval (like Impact Report), **not** **`GET /api/v1/exports/...`** and **not** **`evidence_export_v1`**.
 
 ---
 

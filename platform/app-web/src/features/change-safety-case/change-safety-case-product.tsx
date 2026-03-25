@@ -1,5 +1,7 @@
 import type { ChangeSafetyCaseResponse } from "../../api/contracts";
+import { ChangeSafetyCaseActions } from "../../components/change-safety-case-actions";
 import { formatDateTime } from "../../lib/presentation";
+import type { ChangeSafetyCaseDownloadTarget } from "../../lib/change-safety-case-download";
 import {
   navigateToImpactReportForMaintenance,
   navigateToImpactReportForPolicy,
@@ -12,10 +14,11 @@ import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation
 
 export interface ChangeSafetyCaseProductProps {
   data: ChangeSafetyCaseResponse;
+  downloadTarget: ChangeSafetyCaseDownloadTarget;
   onReload: () => void | Promise<void>;
 }
 
-export function ChangeSafetyCaseProduct({ data, onReload }: ChangeSafetyCaseProductProps) {
+export function ChangeSafetyCaseProduct({ data, downloadTarget, onReload }: ChangeSafetyCaseProductProps) {
   return (
     <div className="change-safety-case-product" data-testid="change-safety-case-product">
       <header className="change-safety-case-hero">
@@ -60,6 +63,11 @@ export function ChangeSafetyCaseProduct({ data, onReload }: ChangeSafetyCaseProd
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="change-safety-case-download" aria-labelledby="csc-dl-heading">
+        <h3 id="csc-dl-heading">Retrieve case</h3>
+        <ChangeSafetyCaseActions target={downloadTarget} />
       </section>
 
       <section className="change-safety-case-understanding" aria-labelledby="csc-understanding-heading">

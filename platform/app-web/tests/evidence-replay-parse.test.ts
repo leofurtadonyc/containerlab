@@ -145,6 +145,20 @@ describe("parseEvidenceExportJson", () => {
     }
   });
 
+  it("rejects change_safety_case_v1 root (Change Safety Case JSON is not evidence_export_v1)", () => {
+    const raw = JSON.stringify({
+      contract_id: "change_safety_case_v1",
+      safety_case_context: "policy_change_safety",
+      metadata: { generated_at: "2025-01-01T00:00:00Z", service: "app-api", version: "0.1.0", phase: "phase_2_read_only_foundation" },
+    });
+    const r = parseEvidenceExportJson(raw);
+    expect(r.status).toBe("error");
+    if (r.status === "error") {
+      expect(r.error.code).toBe("change_safety_case_not_evidence_export");
+      expect(r.error.message).toContain("change-safety-case");
+    }
+  });
+
   it("assertExportKindMatches errors on mismatch", () => {
     const r = parseEvidenceExportJson(minimalSituationRoomExport());
     expect(r.status).toBe("ok");

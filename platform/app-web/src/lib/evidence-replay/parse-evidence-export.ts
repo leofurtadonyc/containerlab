@@ -78,6 +78,16 @@ export function parseEvidenceExportJson(raw: string): EvidenceReplayJsonResult {
     };
   }
 
+  if (o.contract_id === "change_safety_case_v1") {
+    return {
+      status: "error",
+      error: err(
+        "change_safety_case_not_evidence_export",
+        "This file is change_safety_case_v1 (Change Safety Case from GET /api/v1/reports/change-safety-case/...), not evidence_export_v1. Evidence replay only accepts exports from GET /api/v1/exports/.... Use the Change safety case view for review, or export a dossier / situation / investigation snapshot for replay.",
+      ),
+    };
+  }
+
   if (o.contract_id !== EVIDENCE_EXPORT_ENVELOPE_CONTRACT_ID) {
     return {
       status: "error",

@@ -3545,3 +3545,30 @@ ol.notes-list.evidence-timeline-ordered {
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+
+.change-safety-case-actions__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.change-safety-case-actions__btn {
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #3a6a7a;
+  background: #152238;
+  color: #c8e8f0;
+  cursor: pointer;
+}
+
+.change-safety-case-actions__hint,
+.change-safety-case-actions__error {
+  font-size: 0.82rem;
+  margin: 0.5rem 0 0;
+  max-width: 44rem;
+  color: #8a9bb8;
+}
+
+.change-safety-case-actions__error {
+  color: #f0a8a8;
+}

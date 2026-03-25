@@ -3,16 +3,31 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ApiClientError } from "../../api/client";
 import { ErrorState, LoadingState } from "../../components/query-states";
 import { APP_URL_SEARCH_CHANGED } from "../../lib/url-app-state";
+import type { ChangeSafetyCaseDownloadTarget } from "../../lib/change-safety-case-download";
 import {
   navigateToChangeSafetyCaseForPolicy,
   navigateToChangeSafetyCaseForService,
   readChangeSafetyCaseRouteFromSearch,
+  type ChangeSafetyCaseRoute,
 } from "../../lib/change-safety-case-navigation";
 import { ChangeSafetyCaseProduct } from "./change-safety-case-product";
 import { useChangeSafetyCaseQuery } from "./api";
 
 function readSearch(): string {
   return typeof window !== "undefined" ? window.location.search : "";
+}
+
+function routeToDownloadTarget(route: ChangeSafetyCaseRoute): ChangeSafetyCaseDownloadTarget | null {
+  if (route.kind === "policy_change_safety") {
+    return { kind: "policy_change_safety", policyId: route.policyId };
+  }
+  if (route.kind === "service_change_safety") {
+    return { kind: "service_change_safety", serviceId: route.serviceId };
+  }
+  if (route.kind === "topology_change_safety") {
+    return { kind: "topology_change_safety", query: route.query };
+  }
+  return null;
 }
 
 export function ChangeSafetyCaseView() {
@@ -34,6 +49,8 @@ export function ChangeSafetyCaseView() {
     route.kind === "topology_change_safety";
   const q = useChangeSafetyCaseQuery(route, enabled);
   const reload = q.reload;
+
+  const downloadTarget = useMemo(() => (enabled ? routeToDownloadTarget(route) : null), [enabled, route]);
 
   if (route.kind === "setup") {
     return (
@@ -77,13 +94,13 @@ export function ChangeSafetyCaseView() {
     );
   }
 
-  if (!q.data) {
+  if (!q.data || !downloadTarget) {
     return null;
   }
 
   return (
     <section className="change-safety-case-route">
-      <ChangeSafetyCaseProduct data={q.data} onReload={reload} />
+      <ChangeSafetyCaseProduct data={q.data} downloadTarget={downloadTarget} onReload={reload} />
     </section>
   );
 }
