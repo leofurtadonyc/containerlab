@@ -74,6 +74,20 @@ Use week **32** evidence to choose **one** of these **only when justified**—no
 
 If **no** new evidence appears, the default next step is **not** a new feature slice: run the **ADR-0001 / topology / policy** reassessment cycle and keep the stack on **rebuild → redeploy → verify** ([`deployment-runbook.md`](./deployment-runbook.md)).
 
+## Forward note for week 33 planning
+
+The preferred immediate next lane after week **32** is **not** another large composed workspace. The stronger bounded move is a **Phase 2 integrity-and-evidence lane** focused on:
+
+1. verifier parity for week-32 shipped surfaces
+2. completed-task archive closure
+3. one evidence-backed reassessment memo for the next narrow slice
+
+This does **not** reopen Service Dossier or Change Safety Case semantics by default. It means:
+- preserve week **32** product meaning as closed
+- strengthen runtime-proof honesty where docs currently imply more than scripts prove
+- restore audit traceability so future anti-reopen rules remain credible
+- keep `01-CURRENT-PHASE.md` unchanged unless explicit evidence supports a separate phase-boundary review
+
 ## Explicit anti-recommendations (do not default here)
 
 - **Reopening week 32 themes by momentum:** [`service-dossier-contract.md`](./service-dossier-contract.md), **`GET /api/v1/services/{service_id}/dossier`**, **`view=service-dossier`**, **`navigateToServiceDossierForPolicy`** / related pivots; [`change-safety-case-contract.md`](./change-safety-case-contract.md), **`GET /api/v1/reports/change-safety-case/...`**, **`view=change-safety-case`**, **`navigateToChangeSafetyCaseForPolicy`** / **`navigateToChangeSafetyCaseForMaintenance`** / **`navigateToChangeSafetyCaseHub`**; [`evidence-replay-viewer-contract.md`](./evidence-replay-viewer-contract.md), **`change_safety_case_not_evidence_export`**; **`verify-core-runtime.sh`** **`service_dossier_v1`** / **`change_safety_case_v1`** bundle markers; NOC cockpit **`noc-cockpit-launch-change-safety-case`** and strategic pivots; **`GlobalOperatorSearch`** dossier/CSC pivots; repository **`pytest`** / **`vitest`** week **32** regressions—**closed** unless **new evidence** shows a concrete bug or contract drift.

@@ -273,6 +273,24 @@ Posture preserved:
 
 This lane reduced operator fragmentation for service-centric and pre-change interpretation surfaces while staying honest about topology/policy limits and non-workflow Phase **2** semantics.
 
+## Planned Week 33 integrity-and-evidence lane
+
+The next planned bounded Phase 2 lane should **not** default to another large composed workspace. After week **32**, the stronger evidence-backed priority is to ensure that shipped delivery posture is operationally auditable and documentation-verifier parity is honest.
+
+Planned focus:
+
+1. **week-32 runtime-verifier parity** — make live structural checks match what roadmap/post-week notes imply for Service Dossier and Change Safety Case
+2. **week-32 completed-task archive closure** — ensure delivered artifacts are traceable in `agent/sdn-tasks/completed/`
+3. **one evidence-backed reassessment memo** — identify the single strongest next narrow slice without reopening closed week **30–32** semantics by momentum
+
+Planned posture:
+
+- remain in **`Phase 2 — read-only product foundation`**
+- preserve explicit non-claims
+- treat week **30–32** product semantics as **closed** unless new evidence requires a narrow overlap
+- prefer verifier/docs/archive parity and audit truth over semantic expansion
+- use week **33** to strengthen delivery credibility before opening another large innovation lane
+
 ## Boundary Reminder
 
 Phase transitions should not happen just because files exist.
