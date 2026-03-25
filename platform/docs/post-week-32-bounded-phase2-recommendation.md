@@ -76,15 +76,15 @@ Use week **32** evidence to choose **one** of these **only when justified**—no
 
 If **no** new evidence appears, the default next step is **not** a new feature slice: run the **ADR-0001 / topology / policy** reassessment cycle and keep the stack on **rebuild → redeploy → verify** ([`deployment-runbook.md`](./deployment-runbook.md)).
 
-## Week 33 integrity lane (status)
+## Week 33 integrity lane (closed)
 
-The bounded **Phase 2 integrity-and-evidence** follow-on after week **32** is **largely executed** in documentation and verification—**not** new Service Dossier or Change Safety Case **product** semantics:
+The bounded **Phase 2 integrity-and-evidence** follow-on after week **32** is **closed** as of the **Week 33 Friday rollup** ([`../../agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md) **Week 33 closure (Friday rollup)**)—documentation and verification alignment—**not** new Service Dossier or Change Safety Case **product** semantics:
 
 - **Verifier parity:** [`week-32-verifier-parity-contract.md`](./week-32-verifier-parity-contract.md) is the audit contract; **`verify-core-runtime.sh`** performs **app-web** bundle markers for **`service_dossier_v1`** / **`change_safety_case_v1`** and **optional** structural **`GET`** sampling when **`python3`** and list gates pass (honest skip when gates fail)—see contract **Evidence layers → A — Live `verify-core-runtime.sh`**.
 - **Completed-task archive:** [`../../agent/sdn-tasks/completed/week-32-archive-index.md`](../../agent/sdn-tasks/completed/week-32-archive-index.md) lists all ten Week **32** task artifacts; **[`week-32-schedule-overview.md`](../../agent/sdn-tasks/completed/week-32-schedule-overview.md)** is planning context only.
 - **Cross-doc alignment:** [`roadmap.md`](./roadmap.md) **Week 32 closure** and [`../../agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md) **Week 32 closure** describe the same verified story as this note.
 
-**Default next scheduling move** remains **unchanged:** evidence-gated **at most one** narrow slice via ADR / truth-depth reviews (below)—**not** semantic churn on week **32** surfaces because parity or archive work “found something to tweak.”
+**Default next scheduling move** remains **unchanged:** evidence-gated **at most one** narrow slice via ADR / truth-depth reviews and [`week-33-bounded-next-slice-recommendation.md`](./week-33-bounded-next-slice-recommendation.md) (primary: **operator contract labeling**)—**not** semantic churn on week **32** surfaces because parity or archive work “found something to tweak.”
 
 **Phase:** [`01-CURRENT-PHASE.md`](../../agent/sdn/01-CURRENT-PHASE.md) stays **Phase 2 — read-only product foundation** unless explicit evidence supports a separate phase-boundary review.
 
