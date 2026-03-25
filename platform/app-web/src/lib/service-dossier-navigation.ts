@@ -28,3 +28,14 @@ export function navigateToServiceDossier(options: NavigateToServiceDossierOption
   }
   replaceUrlSearchParams(sp);
 }
+
+/** Open Service Dossier for a single policy row (`service_id=policy:{policy_id}`) — same anchor as Service Explorer for policy. */
+export function navigateToServiceDossierForPolicy(
+  policyId: string,
+  options?: { echoSearchQuery?: string | null },
+): void {
+  navigateToServiceDossier({
+    serviceId: `policy:${policyId}`,
+    ...(options && "echoSearchQuery" in options ? { echoSearchQuery: options.echoSearchQuery } : {}),
+  });
+}

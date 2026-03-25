@@ -12,6 +12,8 @@ Stable **`contract_id`:** **`service_dossier_v1`**
 
 **WebUI (app-web):** Shell **`view=service-dossier`** with **`service_id`** (same query name as Service Explorer) consumes **`GET /api/v1/services/{service_id}/dossier`** and renders bounded sections plus pivots; Service Explorer detail offers a **Service dossier** navigation control. A client-only composition **without** this API remains valid **only** if it mirrors the same fields and does not invent evidence.
 
+**WebUI entry pivots (same anchors as Service Explorer):** Operators can open **Service dossier** from Policies (including policy dossier / explainability), topology related policies, NOC cockpit and degraded-policy overview rows, global operator search policy hits, maintenance preview related services, and the Service Explorer list—each using the same **`service_id`** / **`policy:`** URL discipline as **Service Explorer**. Those surfaces do **not** add search ranking or new backend scoring; **Service Explorer** remains inventory/detail authority, and **Policy dossier** / **Policy explainability** remain policy-primary deep panels.
+
 ---
 
 ## Overlap review: why this is an extension, not duplicate work

@@ -20,5 +20,7 @@ describe("global operator search week 31 deeplinks (source contract)", () => {
     expect(src).toContain("navigateToImpactReportForPolicy");
     expect(src).toContain("navigateToImpactReportHub");
     expect(src).toContain("topology_drilldown");
+    expect(src).toContain("Service dossier");
+    expect(src).toContain("navigateToServiceDossierForPolicy");
   });
 });

@@ -185,6 +185,7 @@ export function ServiceExplorerListProduct({ data, limitApplied, onReload }: Ser
                   <th scope="col">Kind</th>
                   <th scope="col">Members</th>
                   <th scope="col">Group degraded (v1 roll-up)</th>
+                  <th scope="col">Service dossier</th>
                 </tr>
               </thead>
               <tbody>
@@ -205,6 +206,16 @@ export function ServiceExplorerListProduct({ data, limitApplied, onReload }: Ser
                       <span className={posturePillClass(row.degraded_group_posture)}>
                         {row.degraded_group_posture}
                       </span>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="inline-action"
+                        onClick={() => navigateToServiceDossier({ serviceId: row.service_id })}
+                        title="service_dossier_v1 composed workspace for this service_id"
+                      >
+                        Open dossier
+                      </button>
                     </td>
                   </tr>
                 ))}

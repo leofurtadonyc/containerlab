@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { SERVICE_EXPLORER_SERVICE_ID_PARAM } from "../src/lib/service-explorer-navigation";
 import {
   navigateToServiceDossier,
+  navigateToServiceDossierForPolicy,
   readServiceDossierServiceIdFromSearch,
 } from "../src/lib/service-dossier-navigation";
 
@@ -46,6 +47,24 @@ describe("navigateToServiceDossier", () => {
     const next = new URL(urlArg);
     expect(next.searchParams.get("view")).toBe("service-dossier");
     expect(next.searchParams.get(SERVICE_EXPLORER_SERVICE_ID_PARAM)).toBeNull();
+
+    replaceState.mockRestore();
+  });
+
+  it("navigateToServiceDossierForPolicy sets policy-prefixed service_id", () => {
+    const replaceState = vi.spyOn(window.history, "replaceState").mockImplementation(() => undefined);
+    vi.stubGlobal("location", {
+      ...window.location,
+      href: "http://localhost/?view=policies",
+      search: "?view=policies",
+    });
+
+    navigateToServiceDossierForPolicy("PE1:static:1:100");
+
+    const urlArg = replaceState.mock.calls[0][2] as string;
+    const next = new URL(urlArg);
+    expect(next.searchParams.get("view")).toBe("service-dossier");
+    expect(next.searchParams.get(SERVICE_EXPLORER_SERVICE_ID_PARAM)).toBe("policy:PE1:static:1:100");
 
     replaceState.mockRestore();
   });

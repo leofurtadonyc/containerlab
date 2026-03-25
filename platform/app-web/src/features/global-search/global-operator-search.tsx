@@ -23,6 +23,7 @@ import {
 } from "../../lib/impact-report-navigation";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
+import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 
 const DEBOUNCE_MS = 400;
 
@@ -299,6 +300,21 @@ export function GlobalOperatorSearch() {
                                   }}
                                 >
                                   Service Explorer
+                                </button>
+                              ) : null}
+                              {hit.pivot.policy_id ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  title="service_dossier_v1 — composed workspace for policy:…; not a search hit inside the dossier JSON"
+                                  onClick={() => {
+                                    navigateToServiceDossierForPolicy(hit.pivot.policy_id!, {
+                                      echoSearchQuery: data.q,
+                                    });
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Service dossier
                                 </button>
                               ) : null}
                               {hit.pivot.policy_id ? (

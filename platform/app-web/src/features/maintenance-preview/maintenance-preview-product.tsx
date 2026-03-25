@@ -8,6 +8,7 @@ import {
 import { navigateToInvestigationView } from "../../lib/investigation-navigation";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
+import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
 import { navigateToImpactReportForMaintenance } from "../../lib/impact-report-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 
@@ -236,6 +237,14 @@ export function MaintenancePreviewProduct({ data, onReload }: MaintenancePreview
                       onClick={() => navigateToServiceExplorer({ serviceId: row.service_id })}
                     >
                       Open in Service Explorer
+                    </button>{" "}
+                    <button
+                      type="button"
+                      className="table-link-button"
+                      onClick={() => navigateToServiceDossier({ serviceId: row.service_id })}
+                      title="service_dossier_v1 — composed assembly for this service_id"
+                    >
+                      Service dossier
                     </button>
                   </td>
                 </tr>

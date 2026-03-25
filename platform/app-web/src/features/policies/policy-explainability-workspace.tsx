@@ -24,6 +24,7 @@ import {
 import { navigateToImpactReportForPolicy } from "../../lib/impact-report-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
+import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { usePolicyExplainabilityQuery } from "./api";
 
@@ -196,6 +197,14 @@ export function PolicyExplainabilityWorkspace({ policyId }: PolicyExplainability
             title={data.navigation_targets.service_explorer_shell_params.service_id}
           >
             Service Explorer
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToServiceDossierForPolicy(pr.policy_id)}
+            title="service_dossier_v1 — composed service workspace; not a substitute for this explainability panel"
+          >
+            Service dossier
           </button>
           <button
             type="button"

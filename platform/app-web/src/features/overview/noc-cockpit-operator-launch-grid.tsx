@@ -8,6 +8,7 @@ import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/mainten
 import { pickStrongestPolicyId } from "../../lib/noc-cockpit-priority";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceExplorer, navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
+import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 
 export interface NocCockpitOperatorLaunchGridProps {
   firstNodeId: string | null;
@@ -72,6 +73,16 @@ export function NocCockpitOperatorLaunchGrid({
             ) : (
               <span className="table-note">No policy id yet for a service lens shortcut.</span>
             )}
+            {strongPolicyId ? (
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToServiceDossierForPolicy(strongPolicyId)}
+                title="service_dossier_v1 — composed workspace; same policy: anchor as Service Explorer"
+              >
+                Service dossier (strongest policy row)
+              </button>
+            ) : null}
           </div>
         </article>
 
