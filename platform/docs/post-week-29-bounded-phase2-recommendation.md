@@ -76,6 +76,16 @@ Use week **29** evidence to choose **one** of these **only when justified**—no
 
 If **no** new evidence appears, the default next step is **not** a new feature slice: run the **ADR-0001 / topology / policy** reassessment cycle and keep the stack on **rebuild → redeploy → verify** ([`deployment-runbook.md`](./deployment-runbook.md)).
 
+## Forward note for week 32 planning
+
+If planning proceeds beyond week **31**, the preferred innovation lane is **not** to churn week **29** dossier, search, export, or cockpit semantics directly. The cleaner Phase **2** extension is to compose those closed week **29** surfaces into a stronger **Service Dossier** lane and a bounded **Change Safety Case** lane, with explicit overlap notes and non-claims.
+
+That means week **29** remains **closed as delivered**; any week **32** touch should be framed as:
+- composition over replacement
+- operator-facing workspace gain over local polish
+- explicit citation of closed week **29** task artifacts when overlap exists
+- no implied phase transition, workflow authority, or new truth engine
+
 ## Narrow follow-ons that remain *plausible* when evidence appears
 
 1. **Documentation-only alignment** when code, verifier, and operator docs drift.

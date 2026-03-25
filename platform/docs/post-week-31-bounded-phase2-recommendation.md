@@ -79,6 +79,19 @@ Use week **31** evidence to choose **one** of these **only when justified**—no
 
 If **no** new evidence appears, the default next step is **not** a new feature slice: run the **ADR-0001 / topology / policy** reassessment cycle and keep the stack on **rebuild → redeploy → verify** ([`deployment-runbook.md`](./deployment-runbook.md)).
 
+## Forward note for week 32 planning
+
+If the project continues with a new innovation lane, the preferred bounded Phase **2** extension is:
+
+1. **Service Dossier v1** — a service-centric composed workspace above week **31** Service Explorer and adjacent dossier / explainability / maintenance / impact surfaces
+2. **Change Safety Case v1** — a bounded pre-change decision-support workspace that assembles existing evidence and explicit gaps without claiming dry-run, validation, approval, or execution authority
+
+This note does **not** reopen week **31** by default. It means:
+- week **31** Service Explorer, explainability, Maintenance Preview, Impact Report, cockpit **3.0**, and search pivots remain **closed**
+- any overlap in week **32** must be justified as composition rather than replacement
+- the new lane should target a larger operator-visible vertical slice, not another round of local polish
+- `01-CURRENT-PHASE.md` remains unchanged unless explicit evidence supports a separate phase-boundary review
+
 ## Narrow follow-ons that remain *plausible* when evidence appears
 
 1. **One** bounded UX fix on **Service Explorer**, **explainability**, **Maintenance Preview**, **Impact Report**, **cockpit**, or **Global search** if a **proven** navigation, labeling, or focus-scroll bug remains after week **31**—**not** reopening API contracts by default.

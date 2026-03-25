@@ -79,6 +79,16 @@ Use week **30** evidence to choose **one** of these **only when justified**—no
 
 If **no** new evidence appears, the default next step is **not** a new feature slice: run the **ADR-0001 / topology / policy** reassessment cycle and keep the stack on **rebuild → redeploy → verify** ([`deployment-runbook.md`](./deployment-runbook.md)).
 
+## Forward note for week 32 planning
+
+If planning proceeds beyond week **31**, do **not** treat week **30** digest, briefing, replay, briefing bundle, or cockpit **2.0** as the direct churn lane. The preferred Phase **2** extension is to reuse them as bounded supporting evidence and pivots inside larger operator workspaces such as a **Service Dossier** and a **Change Safety Case**.
+
+Week **30** therefore remains **closed as delivered**. Any week **32** overlap should preserve these rules:
+- compose existing week **30** assemblies rather than redefining them
+- keep replay/export and live-view boundaries explicit
+- do not treat digest or briefing as safety authority
+- cite closed week **30** task artifacts when overlap exists
+
 ## Narrow follow-ons that remain *plausible* when evidence appears
 
 1. **Documentation-only alignment** when code, verifier, and operator docs drift.

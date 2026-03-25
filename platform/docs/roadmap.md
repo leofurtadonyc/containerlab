@@ -254,6 +254,25 @@ Based on the current repo state after the week **16–19** checkpoints, the next
 4. keep the accepted week 13 identity outcome closed by default; only reopen deterministic or snapshot-scoped readiness/capability item IDs if a concrete later consumer proves the existing anchors insufficient
 5. record a **narrow next-slice decision** (see **`platform/docs/decisions/ADR-0001-next-bounded-truth-depth-slice.md`**) before large implementation churn; continue bounded Phase 2 product deepening only where a concrete gain justifies code changes
 
+## Planned Week 32 innovation lane
+
+The next planned bounded Phase 2 innovation lane should avoid reopening week **29–31** surfaces by momentum while still making a larger product jump.
+
+Planned focus:
+
+1. **Service Dossier v1** — a first-class service-centric composed workspace that builds on, but does not replace, week **31** Service Explorer and existing dossier / explainability / maintenance / impact surfaces.
+2. **Change Safety Case v1** — a bounded pre-change decision-support workspace that assembles existing evidence, caveats, and evidence gaps without claiming dry-run, approval, simulation, or actuation authority.
+
+Planned posture:
+
+- remain in **`Phase 2 — read-only product foundation`**
+- preserve explicit non-claims
+- prefer composition over reopening
+- treat week **29** dossiers / search / exports / cockpit, week **30** digest / briefing / replay / bundle / cockpit 2.0, and week **31** Service Explorer / explainability / maintenance preview / impact report / cockpit 3.0 as **closed** unless new evidence requires a narrow overlap
+- keep backend-owned assembly semantics and WebUI as the operator-facing product
+
+This planned lane is intended to reduce operator fragmentation by creating stronger service-centric and pre-change evidence-centric workspaces, while staying honest about the limits of current topology truth, policy truth, and non-workflow Phase 2 semantics.
+
 ## Boundary Reminder
 
 Phase transitions should not happen just because files exist.
