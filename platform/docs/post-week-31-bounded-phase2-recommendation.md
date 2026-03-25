@@ -28,7 +28,7 @@ It does **not** authorize:
 
 ## Relationship to prior guidance
 
-Week **21** posture remains in [`post-week-21-bounded-phase2-recommendation.md`](./post-week-21-bounded-phase2-recommendation.md). Week **22**–**30** post notes remain in [`post-week-22-bounded-phase2-recommendation.md`](./post-week-22-bounded-phase2-recommendation.md) through [`post-week-30-bounded-phase2-recommendation.md`](./post-week-30-bounded-phase2-recommendation.md). Week **31** **adds** explicit closure of the bounded **service explorer / explainability / maintenance preview / impact report / cockpit 3.0 / global search week 31** workstream; it does **not** replace ADR-0001, topology or policy truth-depth reviews, or weeks **22–30** closures. It does **not** subsume **delta digest**, **operator briefing**, **evidence replay**, or **briefing bundle** (week **30**) as superseded—those remain **closed** under [`post-week-30-bounded-phase2-recommendation.md`](./post-week-30-bounded-phase2-recommendation.md). Week **31** surfaces are **adjacent** communication and lens layers—**not** new operational brains.
+Week **21** posture remains in [`post-week-21-bounded-phase2-recommendation.md`](./post-week-21-bounded-phase2-recommendation.md). Week **22**–**30** post notes remain in [`post-week-22-bounded-phase2-recommendation.md`](./post-week-22-bounded-phase2-recommendation.md) through [`post-week-30-bounded-phase2-recommendation.md`](./post-week-30-bounded-phase2-recommendation.md). Week **31** **adds** explicit closure of the bounded **service explorer / explainability / maintenance preview / impact report / cockpit 3.0 / global search week 31** workstream; it does **not** replace ADR-0001, topology or policy truth-depth reviews, or weeks **22–30** closures. It does **not** subsume **delta digest**, **operator briefing**, **evidence replay**, or **briefing bundle** (week **30**) as superseded—those remain **closed** under [`post-week-30-bounded-phase2-recommendation.md`](./post-week-30-bounded-phase2-recommendation.md). Week **31** surfaces are **adjacent** communication and lens layers—**not** new operational brains. After week **32** ships, **Service Dossier** and **Change Safety Case** closure and anti-reopen guardrails live in [`post-week-32-bounded-phase2-recommendation.md`](./post-week-32-bounded-phase2-recommendation.md)—**not** a replacement for week **31** closure.
 
 ## What week 31 actually closed
 
@@ -80,6 +80,8 @@ Use week **31** evidence to choose **one** of these **only when justified**—no
 If **no** new evidence appears, the default next step is **not** a new feature slice: run the **ADR-0001 / topology / policy** reassessment cycle and keep the stack on **rebuild → redeploy → verify** ([`deployment-runbook.md`](./deployment-runbook.md)).
 
 ## Forward note for week 32 planning
+
+**Update:** Week **32** executed the bounded lane below (Service Dossier v1 + Change Safety Case v1 + integration); post–week **32** scheduling posture is [`post-week-32-bounded-phase2-recommendation.md`](./post-week-32-bounded-phase2-recommendation.md).
 
 If the project continues with a new innovation lane, the preferred bounded Phase **2** extension is:
 
