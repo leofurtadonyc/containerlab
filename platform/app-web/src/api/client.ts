@@ -18,10 +18,16 @@ import type {
   FailureImpactViewResponse,
   TopologyObjectDossierResponse,
   PolicyDossierResponse,
+  PolicyExplainabilityResponse,
   OperatorSearchResponse,
   WorkflowHistoryResponse,
   CrossDomainDeltaDigestResponse,
   OperatorBriefingWorkspaceResponse,
+  ServiceDetailResponse,
+  ServicesListResponse,
+  MaintenancePreviewResponse,
+  MaintenancePreviewContext,
+  ImpactReportResponse,
 } from "./contracts";
 import {
   buildAuditHistoryQueryString,
@@ -37,6 +43,15 @@ export interface ApiClientConfig {
 }
 
 /** Bounded query for `GET /api/v1/operator-briefing`. */
+/** Bounded query for `GET /api/v1/maintenance-preview` (mirrors backend query params). */
+export interface MaintenancePreviewQuery {
+  nodeId?: string | null;
+  linkId?: string | null;
+  objectId?: string | null;
+  objectKind?: "node" | "link" | null;
+  previewContext?: MaintenancePreviewContext;
+}
+
 export interface OperatorBriefingQuery {
   syncRunsLimit?: number;
   policyId?: string | null;
@@ -95,6 +110,56 @@ export class ApiClient {
     );
   }
 
+  async getMaintenancePreview(query: MaintenancePreviewQuery): Promise<MaintenancePreviewResponse> {
+    const params = new URLSearchParams();
+    const nid = query.nodeId?.trim();
+    const lid = query.linkId?.trim();
+    const oid = query.objectId?.trim();
+    const ok = query.objectKind ?? null;
+    const ctx = query.previewContext ?? "explicit_subject";
+    params.set("preview_context", ctx);
+    if (nid) {
+      params.set("node_id", nid);
+    } else if (lid) {
+      params.set("link_id", lid);
+    } else if (oid && ok) {
+      params.set("object_id", oid);
+      params.set("object_kind", ok);
+    }
+    return this.request<MaintenancePreviewResponse>(`/api/v1/maintenance-preview?${params.toString()}`);
+  }
+
+  async getServiceImpactReport(serviceId: string): Promise<ImpactReportResponse> {
+    const params = new URLSearchParams();
+    params.set("service_id", serviceId.trim());
+    return this.request<ImpactReportResponse>(`/api/v1/reports/service-impact?${params.toString()}`);
+  }
+
+  async getPolicyImpactReport(policyId: string): Promise<ImpactReportResponse> {
+    const params = new URLSearchParams();
+    params.set("policy_id", policyId.trim());
+    return this.request<ImpactReportResponse>(`/api/v1/reports/policy-impact?${params.toString()}`);
+  }
+
+  async getMaintenanceImpactReport(query: MaintenancePreviewQuery): Promise<ImpactReportResponse> {
+    const params = new URLSearchParams();
+    const nid = query.nodeId?.trim();
+    const lid = query.linkId?.trim();
+    const oid = query.objectId?.trim();
+    const ok = query.objectKind ?? null;
+    const ctx = query.previewContext ?? "explicit_subject";
+    params.set("preview_context", ctx);
+    if (nid) {
+      params.set("node_id", nid);
+    } else if (lid) {
+      params.set("link_id", lid);
+    } else if (oid && ok) {
+      params.set("object_id", oid);
+      params.set("object_kind", ok);
+    }
+    return this.request<ImpactReportResponse>(`/api/v1/reports/maintenance-impact?${params.toString()}`);
+  }
+
   async getTopologyRiskSummary(): Promise<TopologyRiskSummaryResponse> {
     return this.request<TopologyRiskSummaryResponse>("/api/v1/topology/risk-summary");
   }
@@ -109,6 +174,19 @@ export class ApiClient {
   async getPolicies(query?: DevicesPoliciesReadSideQuery): Promise<PoliciesListResponse> {
     const qs = query ? buildDevicesPoliciesQueryString(query) : "";
     return this.request<PoliciesListResponse>(`/api/v1/policies${qs}`);
+  }
+
+  async getServices(limit?: number): Promise<ServicesListResponse> {
+    if (limit != null) {
+      const bounded = Math.min(500, Math.max(1, Math.floor(limit)));
+      return this.request<ServicesListResponse>(`/api/v1/services?limit=${bounded}`);
+    }
+    return this.request<ServicesListResponse>("/api/v1/services");
+  }
+
+  async getService(serviceId: string): Promise<ServiceDetailResponse> {
+    const encoded = encodeURIComponent(serviceId);
+    return this.request<ServiceDetailResponse>(`/api/v1/services/${encoded}`);
   }
 
   async getPolicyPathAnalysis(policyId: string): Promise<PathAnalysisViewResponse> {
@@ -134,6 +212,11 @@ export class ApiClient {
   async getPolicyDossier(policyId: string): Promise<PolicyDossierResponse> {
     const encoded = encodeURIComponent(policyId);
     return this.request<PolicyDossierResponse>(`/api/v1/policies/${encoded}/dossier`);
+  }
+
+  async getPolicyExplainability(policyId: string): Promise<PolicyExplainabilityResponse> {
+    const encoded = encodeURIComponent(policyId);
+    return this.request<PolicyExplainabilityResponse>(`/api/v1/policies/${encoded}/explainability`);
   }
 
   async getWorkflowHistory(query?: WorkflowHistoryReadSideQuery): Promise<WorkflowHistoryResponse> {

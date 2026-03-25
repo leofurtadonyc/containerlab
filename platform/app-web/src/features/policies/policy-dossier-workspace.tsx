@@ -18,7 +18,11 @@ import {
   navigateToPoliciesPolicyPathAnalysis,
   navigateToTopologyObject,
 } from "../../lib/topology-policy-navigation";
-import { readPolicyDossierEntryFromSearch } from "../../lib/policy-dossier-navigation";
+import {
+  navigateToPolicyExplainabilityWorkspace,
+  readPolicyDossierEntryFromSearch,
+} from "../../lib/policy-dossier-navigation";
+import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { usePolicyDossierQuery } from "./api";
 
@@ -124,6 +128,22 @@ export function PolicyDossierWorkspace({ policyId }: PolicyDossierWorkspaceProps
             }
           >
             Open operator briefing
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToServiceExplorerForPolicy(pr.policy_id)}
+            title="service_explorer_v1 grouping for this policy_id (same inventory slice as Policies)"
+          >
+            Service Explorer
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToPolicyExplainabilityWorkspace(pr.policy_id, undefined, "candidates")}
+            title="Path-story explainability workspace (policy_explainability_workspace_v1); hints are not dataplane proof"
+          >
+            Explainability
           </button>
           <EvidenceExportActions variant="dossier" target={{ kind: "policy_dossier", policyId: pr.policy_id }} />
           {isRefreshing ? (

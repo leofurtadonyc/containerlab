@@ -558,6 +558,73 @@ export interface FailureImpactViewResponse {
   missing_evidence_notes: string[];
 }
 
+export type MaintenancePreviewContext =
+  | "planning_window"
+  | "topology_drilldown"
+  | "change_adjacent"
+  | "explicit_subject";
+
+export type MaintenancePreviewExplicitNonClaim =
+  | "not_simulation_or_what_if_traffic_engine"
+  | "not_blast_radius_or_dependency_completeness"
+  | "not_safe_to_change_risk_scoring_or_approval"
+  | "not_maintenance_approval_or_change_control_authority"
+  | "not_traffic_or_protection_guarantee"
+  | "not_sla_or_availability_entitlement"
+  | "not_dataplane_forwarding_or_te_path_proof"
+  | "not_substitute_for_full_failure_impact_service_explorer_or_explainability_panels"
+  | "not_grafana_or_prometheus_business_truth"
+  | "not_operator_sign_off_or_audit_readiness";
+
+export interface MaintenancePreviewSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only";
+  explicit_non_claims: MaintenancePreviewExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface MaintenanceSubjectSummary {
+  object_kind: TopologyObjectKind;
+  object_id: string;
+  display_name: string;
+  source_node_id: string | null;
+  target_node_id: string | null;
+}
+
+export interface MaintenanceExplainabilityPointer {
+  policy_id: string;
+  policies_explainability_path: string;
+  policies_path_analysis_path: string;
+}
+
+export interface MaintenanceTopologyImpactSection {
+  coverage_summary: TopologyCoverageSummaryRecord;
+  topology_snapshot_observed_at: string | null;
+  dossier_path: string;
+}
+
+/** `GET /api/v1/maintenance-preview` — reuse-only assembly; not approval or simulation. */
+export interface MaintenancePreviewResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "maintenance_preview_v1";
+  safety_framing: MaintenancePreviewSafetyFraming;
+  preview_context: MaintenancePreviewContext;
+  source_contract_ids: string[];
+  subject: MaintenanceSubjectSummary;
+  sparse_preview: boolean;
+  sparse_reasons: string[];
+  related_policies: TopologyObjectRelatedPoliciesResponse;
+  failure_impact: FailureImpactViewResponse;
+  related_services: ServiceListRow[];
+  related_services_total: number;
+  related_services_truncated: boolean;
+  topology_impact: MaintenanceTopologyImpactSection;
+  explainability_pointers: MaintenanceExplainabilityPointer[];
+  recommended_pivots: string[];
+  assembly_caveats: string[];
+}
+
 export type TopologyRiskSummaryExplicitNonClaim =
   | "not_sla_or_service_risk_truth"
   | "not_traffic_or_dataplane_risk_truth"
@@ -693,6 +760,52 @@ export interface PolicyDossierResponse {
   evidence_timeline: PolicyEvidenceTimelineResponse;
   evidence_delta: PolicyEvidenceDeltaResponse;
   navigation_targets: PolicyDossierNavigationTargets;
+  freshness: PolicyDossierFreshnessBlock;
+  merged_caveats: string[];
+}
+
+export type ExplainabilityCandidateSignal = "active_signal" | "inactive_signal" | "unknown_signal";
+
+export type ExplainabilityUnknownCandidatePosture = "none" | "partial" | "full";
+
+export interface ExplainabilityCandidatePathRollup {
+  name: string;
+  signal: ExplainabilityCandidateSignal;
+  path_state: string;
+  preference?: number | null;
+  hint_lines: string[];
+}
+
+export interface PolicyExplainabilityNavigationTargets {
+  investigation_shell_params: Record<string, string>;
+  situation_room_shell_params: Record<string, string>;
+  policies_view_params: Record<string, string>;
+  topology_object_hints: PolicyDossierTopologyObjectHint[];
+  service_explorer_shell_params: Record<string, string>;
+  delta_digest_shell_params: Record<string, string>;
+}
+
+export interface PolicyExplainabilitySparseSignals {
+  topology_naming_alignment_unknown: boolean;
+  evidence_timeline_sparse: boolean;
+  evidence_delta_not_ready: boolean;
+}
+
+/** `GET /api/v1/policies/{policy_id}/explainability` (explainability narrative; not dataplane proof or workflow authority). */
+export interface PolicyExplainabilityResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "policy_explainability_workspace_v1";
+  policy_id: string;
+  policy_record: PolicyRecord;
+  path_analysis: PathAnalysisViewResponse;
+  topology_impact: PolicyTopologyImpactResponse;
+  evidence_timeline: PolicyEvidenceTimelineResponse;
+  evidence_delta: PolicyEvidenceDeltaResponse;
+  path_explanation_summary: string;
+  candidate_path_rollups: ExplainabilityCandidatePathRollup[];
+  unknown_candidate_posture: ExplainabilityUnknownCandidatePosture;
+  sparse_signals: PolicyExplainabilitySparseSignals;
+  navigation_targets: PolicyExplainabilityNavigationTargets;
   freshness: PolicyDossierFreshnessBlock;
   merged_caveats: string[];
 }
@@ -1736,4 +1849,115 @@ export interface OperatorBriefingWorkspaceResponse {
   section_meta: OperatorBriefingSectionMeta[];
   merged_caveats: string[];
   recommended_pivots: string[];
+}
+
+/** `GET /api/v1/services` / `GET /api/v1/services/{service_id}` — service_explorer_v1. */
+export interface ServiceExplorerPolicyInventoryEcho {
+  data_status: "live" | "degraded";
+  serving_mode: "live_collector" | "persisted_fallback" | "empty_scaffold";
+  empty_reason:
+    | "none"
+    | "no_policies_observed"
+    | "per_policy_details_unavailable"
+    | "collector_unavailable";
+  summary: string;
+  observed_policy_count: number;
+  policy_items_total: number;
+}
+
+export interface DegradedServiceRollup {
+  posture: "ok" | "degraded" | "unknown";
+  reason_codes: DegradedPolicyV1Classification["reason_codes"];
+  reason_codes_truncated: boolean;
+}
+
+export interface ServiceListRow {
+  service_id: string;
+  kind: "policy" | "color" | "headend" | "endpoint";
+  member_count: number;
+  degraded_group_posture: "ok" | "degraded" | "unknown";
+}
+
+export interface ServiceTopologyLinkRecord {
+  policy_id: string;
+  node_id: string;
+  display_name: string;
+  matched_on: "node_id" | "display_name" | "device_id";
+  matched_from_policy_field: "headend" | "source_target" | "endpoint";
+}
+
+export interface ServiceMemberSummary {
+  policy_id: string;
+  policy_name: string;
+  policy_type: "static_local" | "static_non_local" | "unknown";
+  headend: string;
+  endpoint: string;
+  color: number;
+  source_target: string;
+  degraded_policy_v1: DegradedPolicyV1Classification;
+}
+
+export interface ServicesListResponse extends ApiResponseMetadata {
+  contract_id: "service_explorer_v1";
+  policy_inventory: ServiceExplorerPolicyInventoryEcho;
+  items: ServiceListRow[];
+  read_side_query: ReadSideQueryEcho;
+  caveats: string[];
+  recommended_pivots: string[];
+}
+
+export type ServiceExplorerTopologyEvidenceStatus = "present" | "partial" | "unavailable";
+
+export interface ServiceDetailResponse extends ApiResponseMetadata {
+  contract_id: "service_explorer_v1";
+  service_id: string;
+  kind: "policy" | "color" | "headend" | "endpoint";
+  policy_inventory: ServiceExplorerPolicyInventoryEcho;
+  members: ServiceMemberSummary[];
+  members_total: number;
+  degraded_service: DegradedServiceRollup;
+  topology_evidence_status: ServiceExplorerTopologyEvidenceStatus;
+  topology_links: ServiceTopologyLinkRecord[];
+  topology_caveats: string[];
+  caveats: string[];
+  recommended_pivots: string[];
+}
+
+export type ImpactReportContext = "service_impact" | "policy_impact" | "maintenance_impact";
+
+export type ImpactReportExplicitNonClaim =
+  | "not_compliance_or_legal_artifact"
+  | "not_validation_record_or_test_sign_off"
+  | "not_incident_command_authority_or_operational_authorization"
+  | "not_safe_to_change_approval_or_maintenance_approval"
+  | "not_guaranteed_complete_dependency_or_underlay_proof"
+  | "not_tamper_evident_immutable_or_non_repudiation_evidence"
+  | "not_substitute_for_live_authoritative_read_apis_when_freshness_matters";
+
+export interface ImpactReportSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only";
+  explicit_non_claims: ImpactReportExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+/** `GET /api/v1/reports/*` — composed packaging for operator communication; not evidence_export_v1 or briefing bundles. */
+export interface ImpactReportResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "impact_report_v1";
+  report_context: ImpactReportContext;
+  safety_framing: ImpactReportSafetyFraming;
+  source_contract_ids: string[];
+  scope_summary: string;
+  explicit_excluded_concerns: string[];
+  sparse_report: boolean;
+  sparse_reasons: string[];
+  recommended_api_pivots: string[];
+  anchor_service_id?: string | null;
+  anchor_policy_id?: string | null;
+  anchor_maintenance?: MaintenanceSubjectSummary | null;
+  service_detail?: ServiceDetailResponse | null;
+  policy_dossier?: PolicyDossierResponse | null;
+  maintenance_preview?: MaintenancePreviewResponse | null;
 }

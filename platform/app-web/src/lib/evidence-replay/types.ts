@@ -20,7 +20,9 @@ export type EvidenceReplayParseErrorCode =
   | "missing_contract_id"
   | "unsupported_envelope_contract"
   | "unsupported_export_kind"
-  | "export_kind_mismatch";
+  | "export_kind_mismatch"
+  /** Root JSON is `impact_report_v1` from `/api/v1/reports/...` — not an `evidence_export_v1` envelope. */
+  | "impact_report_not_evidence_export";
 
 export interface EvidenceReplayParseError {
   code: EvidenceReplayParseErrorCode;

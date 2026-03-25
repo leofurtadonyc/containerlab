@@ -6,6 +6,7 @@ import type {
   PolicyDossierResponse,
   PolicyEvidenceDeltaResponse,
   PolicyEvidenceTimelineResponse,
+  PolicyExplainabilityResponse,
   PolicyTopologyImpactResponse,
 } from "../../api/contracts";
 import { apiClient } from "../../api/client";
@@ -68,6 +69,15 @@ export function usePolicyDossierQuery(policyId: string | null) {
   const enabled = policyId !== null && policyId.length > 0;
   const queryFn = useCallback<() => Promise<PolicyDossierResponse>>(
     () => apiClient.getPolicyDossier(policyId as string),
+    [policyId],
+  );
+  return useApiQuery(queryFn, { enabled });
+}
+
+export function usePolicyExplainabilityQuery(policyId: string | null) {
+  const enabled = policyId !== null && policyId.length > 0;
+  const queryFn = useCallback<() => Promise<PolicyExplainabilityResponse>>(
+    () => apiClient.getPolicyExplainability(policyId as string),
     [policyId],
   );
   return useApiQuery(queryFn, { enabled });

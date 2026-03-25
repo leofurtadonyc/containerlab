@@ -175,5 +175,6 @@ describe("TopologyObjectDossierWorkspace", () => {
     expect(html).toContain("Failure impact (nested)");
     expect(html).toContain("data-testid=\"evidence-export-actions\"");
     expect(html).toContain("Export JSON");
+    expect(html).toContain("Maintenance preview");
   });
 });

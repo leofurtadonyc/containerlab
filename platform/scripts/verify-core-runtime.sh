@@ -1,5 +1,11 @@
 #!/bin/sh
 set -eu
+#
+# Optional tuning (environment):
+#   VERIFY_ATTEMPTS (default 45) × VERIFY_SLEEP_SECONDS (default 2) ≈ max wall time per
+#     wait_for_postgres / wait_for_http_ok / wait_for_container_healthy loop when the target stays down.
+#   CURL_MAX_TIME (default 25) — per-request total time limit for curl (avoids indefinite hangs on stuck TCP).
+#   CURL_CONNECT_TIMEOUT (default 10) — connection phase limit for curl.
 
 POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-clab-platform-postgres}"
 POSTGRES_USER="${POSTGRES_USER:-platform}"
@@ -18,7 +24,15 @@ GRAFANA_USER="${GRAFANA_USER:-admin}"
 GRAFANA_PASSWORD="${GRAFANA_PASSWORD:-change_me}"
 VERIFY_ATTEMPTS="${VERIFY_ATTEMPTS:-45}"
 VERIFY_SLEEP_SECONDS="${VERIFY_SLEEP_SECONDS:-2}"
+CURL_MAX_TIME="${CURL_MAX_TIME:-25}"
+CURL_CONNECT_TIMEOUT="${CURL_CONNECT_TIMEOUT:-10}"
 warning_count=0
+
+# All HTTP checks use bounded curl so a single bad endpoint cannot block the whole script (common when
+# app-api is down but the port is half-open, or a proxy wedges).
+curl_http() {
+  curl -fsS --connect-timeout "$CURL_CONNECT_TIMEOUT" --max-time "$CURL_MAX_TIME" "$@"
+}
 
 require_command() {
   command_name=$1
@@ -41,7 +55,7 @@ notice() {
 }
 
 fetch_compact_json() {
-  curl -fsS "$1" | tr -d '\n\r\t '
+  curl_http "$1" | tr -d '\n\r\t '
 }
 
 assert_contains() {
@@ -111,7 +125,7 @@ wait_for_http_ok() {
   attempts=$VERIFY_ATTEMPTS
 
   while [ "$attempts" -gt 0 ]; do
-    if curl -fsS "$url" >/dev/null 2>&1; then
+    if curl_http "$url" >/dev/null 2>&1; then
       return 0
     fi
 
@@ -182,7 +196,7 @@ wait_for_http_ok "app-web root" "$APP_WEB_URL/"
 wait_for_http_ok "app-web API proxy health" "$APP_WEB_URL/api/v1/health"
 
 # Week 29–30 NOC cockpit / handoff WebUI: shipped /assets/*.js must retain stable composition markers (repository vitest covers UI behavior).
-app_web_index_html=$(curl -fsS "$APP_WEB_URL/")
+app_web_index_html=$(curl_http "$APP_WEB_URL/")
 app_web_noc_cockpit_marker=0
 app_web_overview_mode_marker=0
 app_web_delta_digest_marker=0
@@ -191,8 +205,13 @@ app_web_briefing_bundle_export_marker=0
 app_web_evidence_replay_marker=0
 app_web_noc_cockpit_strategic_pivots_marker=0
 app_web_global_search_week30_marker=0
+app_web_global_search_impact_hub_marker=0
+app_web_maintenance_preview_marker=0
+app_web_impact_report_marker=0
+app_web_service_explorer_marker=0
+app_web_policy_explainability_marker=0
 for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n' | grep -E '^/assets/.*\.js$' || true); do
-  app_web_chunk=$(curl -fsS "$APP_WEB_URL$asset_path")
+  app_web_chunk=$(curl_http "$APP_WEB_URL$asset_path")
   if printf '%s' "$app_web_chunk" | grep -qF 'noc_cockpit_v1'; then
     app_web_noc_cockpit_marker=1
   fi
@@ -217,15 +236,30 @@ for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n
   if printf '%s' "$app_web_chunk" | grep -qF 'Evidence replay (frozen file)'; then
     app_web_global_search_week30_marker=1
   fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'Impact report hub'; then
+    app_web_global_search_impact_hub_marker=1
+  fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'maintenance_preview_v1'; then
+    app_web_maintenance_preview_marker=1
+  fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'impact_report_v1'; then
+    app_web_impact_report_marker=1
+  fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'service_explorer_v1'; then
+    app_web_service_explorer_marker=1
+  fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'policy_explainability_workspace_v1'; then
+    app_web_policy_explainability_marker=1
+  fi
 done
-if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ] || [ "$app_web_noc_cockpit_strategic_pivots_marker" != "1" ] || [ "$app_web_global_search_week30_marker" != "1" ]; then
-  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, evidence_replay_viewer_v1, noc-cockpit-strategic-pivots, and Evidence replay (frozen file) substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing + bundle export + evidence replay + cockpit 2.0 pivots + global search week 30 footer)" >&2
+if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ] || [ "$app_web_noc_cockpit_strategic_pivots_marker" != "1" ] || [ "$app_web_global_search_week30_marker" != "1" ] || [ "$app_web_global_search_impact_hub_marker" != "1" ] || [ "$app_web_maintenance_preview_marker" != "1" ] || [ "$app_web_impact_report_marker" != "1" ] || [ "$app_web_service_explorer_marker" != "1" ] || [ "$app_web_policy_explainability_marker" != "1" ]; then
+  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, evidence_replay_viewer_v1, noc-cockpit-strategic-pivots, Evidence replay (frozen file), Impact report hub, maintenance_preview_v1, impact_report_v1, service_explorer_v1, and policy_explainability_workspace_v1 substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing + bundle export + evidence replay + cockpit 2.0 pivots + global search week 30 footer + impact hub + maintenance preview + impact report + week 31 service/explainability)" >&2
   exit 1
 fi
 
 wait_for_http_ok "Prometheus readiness" "$PROMETHEUS_URL/-/ready"
 
-prometheus_targets=$(curl -fsS "$PROMETHEUS_URL/api/v1/targets" | tr -d '\n')
+prometheus_targets=$(curl_http "$PROMETHEUS_URL/api/v1/targets" | tr -d '\n')
 echo "$prometheus_targets" | grep '"job":"prometheus".*"health":"up"' >/dev/null
 echo "$prometheus_targets" | grep '"job":"app-api".*"health":"up"' >/dev/null
 echo "$prometheus_targets" | grep '"job":"gnmi-collector".*"health":"up"' >/dev/null
@@ -237,10 +271,10 @@ fi
 
 wait_for_http_ok "Grafana health" "$GRAFANA_URL/api/health"
 
-grafana_datasources=$(curl -fsS -u "$GRAFANA_USER:$GRAFANA_PASSWORD" "$GRAFANA_URL/api/datasources")
+grafana_datasources=$(curl_http -u "$GRAFANA_USER:$GRAFANA_PASSWORD" "$GRAFANA_URL/api/datasources")
 echo "$grafana_datasources" | grep '"uid":"prometheus"' >/dev/null
 
-grafana_dashboards=$(curl -fsS -u "$GRAFANA_USER:$GRAFANA_PASSWORD" "$GRAFANA_URL/api/search?query=overview")
+grafana_dashboards=$(curl_http -u "$GRAFANA_USER:$GRAFANA_PASSWORD" "$GRAFANA_URL/api/search?query=overview")
 echo "$grafana_dashboards" | grep 'platform-overview' >/dev/null
 echo "$grafana_dashboards" | grep 'topology-overview' >/dev/null
 echo "$grafana_dashboards" | grep 'sr-policy-overview' >/dev/null
@@ -264,8 +298,8 @@ workflow_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-his
 audit_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/audit-history")
 change_intelligence_response=$(fetch_compact_json "$APP_API_URL/api/v1/change-intelligence/recent-summary")
 investigation_workspace_response=$(fetch_compact_json "$APP_API_URL/api/v1/investigation-workspace/context")
-app_api_metrics=$(curl -fsS "$APP_API_URL/metrics")
-collector_metrics=$(curl -fsS "$GNMI_COLLECTOR_URL/metrics")
+app_api_metrics=$(curl_http "$APP_API_URL/metrics")
+collector_metrics=$(curl_http "$GNMI_COLLECTOR_URL/metrics")
 
 sync_runs_count=$(query_postgres_scalar "SELECT count(*) FROM platform_app.sync_runs;")
 inventory_snapshots_count=$(query_postgres_scalar "SELECT count(*) FROM platform_app.inventory_snapshots;")
@@ -365,6 +399,12 @@ assert_contains "policies response (read_side query ergonomics)" "$policies_resp
 assert_contains "policies response (read_side query ergonomics)" "$policies_response" '"history_recent_snapshots_returned":'
 assert_contains "policies response (degraded_policy_v1)" "$policies_response" '"degraded_policy_v1"'
 
+# Week 31: Service Explorer v1 (grouped policy inventory lens; structural contract check).
+services_response=$(fetch_compact_json "$APP_API_URL/api/v1/services")
+assert_contains "services response (service_explorer_v1)" "$services_response" '"contract_id":"service_explorer_v1"'
+assert_contains "services response (policy_inventory)" "$services_response" '"policy_inventory":{'
+assert_contains "services response (read_side_query)" "$services_response" '"read_side_query":{'
+
 # Week 28: topology risk summary (structural contract sampling; no python3 required).
 topology_risk_summary_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/risk-summary")
 assert_contains "topology risk summary response (contract id)" "$topology_risk_summary_response" '"contract_id":"topology_risk_summary_v1"'
@@ -403,13 +443,23 @@ if [ -n "$first_policy_id" ]; then
   assert_contains "policy dossier response (nested path_analysis)" "$policy_dossier_response" '"path_analysis":{'
   assert_contains "policy dossier response (nested evidence_delta)" "$policy_dossier_response" '"evidence_delta":{'
   assert_contains "policy dossier response (merged_caveats)" "$policy_dossier_response" '"merged_caveats":'
+  policy_explainability_response=$(fetch_compact_json "$APP_API_URL/api/v1/policies/${first_policy_id}/explainability")
+  assert_contains "policy explainability response (contract id)" "$policy_explainability_response" '"contract_id":"policy_explainability_workspace_v1"'
+  assert_contains "policy explainability response (nested path_analysis)" "$policy_explainability_response" '"path_analysis":{'
+  assert_contains "policy explainability response (candidate_path_rollups)" "$policy_explainability_response" '"candidate_path_rollups":'
+  assert_contains "policy explainability response (merged_caveats)" "$policy_explainability_response" '"merged_caveats":'
+  assert_contains "policy explainability response (unknown_candidate_posture)" "$policy_explainability_response" '"unknown_candidate_posture"'
   policy_export_response=$(fetch_compact_json "$APP_API_URL/api/v1/exports/policies/${first_policy_id}/dossier?format=json")
   assert_contains "policy evidence export response (envelope contract id)" "$policy_export_response" '"contract_id":"evidence_export_v1"'
   assert_contains "policy evidence export response (export_kind)" "$policy_export_response" '"export_kind":"policy_dossier"'
   assert_contains "policy evidence export response (nested policy dossier)" "$policy_export_response" '"contract_id":"policy_dossier_v1"'
   assert_contains "policy evidence export response (source_contract_ids)" "$policy_export_response" '"source_contract_ids":'
+  enc_policy_q=$(printf '%s' "$first_policy_id" | python3 -c "import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read().strip(), safe=''))")
+  policy_impact_report_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/policy-impact?policy_id=${enc_policy_q}&format=json")
+  assert_contains "policy impact report response (contract id)" "$policy_impact_report_response" '"contract_id":"impact_report_v1"'
+  assert_contains "policy impact report response (report_context)" "$policy_impact_report_response" '"report_context":"policy_impact"'
 else
-  notice "Policies items list empty; skipping path-analysis, degraded_policy_v1 contract_id, policy evidence timeline, policy evidence delta, and policy dossier structural checks."
+  notice "Policies items list empty; skipping path-analysis, degraded_policy_v1 contract_id, policy evidence timeline, policy evidence delta, policy dossier, and policy explainability structural checks."
 fi
 
 if [ -n "$first_node_id" ]; then
@@ -429,8 +479,15 @@ if [ -n "$first_node_id" ]; then
   assert_contains "topology evidence export response (envelope contract id)" "$topology_export_response" '"contract_id":"evidence_export_v1"'
   assert_contains "topology evidence export response (export_kind)" "$topology_export_response" '"export_kind":"topology_object_dossier"'
   assert_contains "topology evidence export response (nested topology dossier)" "$topology_export_response" '"contract_id":"topology_object_dossier_v1"'
+  enc_node_q=$(printf '%s' "$first_node_id" | python3 -c "import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read().strip(), safe=''))")
+  maintenance_preview_response=$(fetch_compact_json "$APP_API_URL/api/v1/maintenance-preview?node_id=${enc_node_q}&preview_context=topology_drilldown")
+  assert_contains "maintenance preview response (contract id)" "$maintenance_preview_response" '"contract_id":"maintenance_preview_v1"'
+  assert_contains "maintenance preview response (preview_context)" "$maintenance_preview_response" '"preview_context":"topology_drilldown"'
+  maintenance_impact_report_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/maintenance-impact?node_id=${enc_node_q}&format=json")
+  assert_contains "maintenance impact report response (contract id)" "$maintenance_impact_report_response" '"contract_id":"impact_report_v1"'
+  assert_contains "maintenance impact report response (report_context)" "$maintenance_impact_report_response" '"report_context":"maintenance_impact"'
 else
-  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, and topology-object-dossier structural checks."
+  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, topology-object-dossier, maintenance-preview assembly, and maintenance-impact report structural checks."
 fi
 
 # Cross-slice list/history metadata and evidence shape (contract posture, not business truth).

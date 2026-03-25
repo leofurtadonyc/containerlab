@@ -4,25 +4,12 @@ import {
   navigateToInvestigationView,
   readSyncRunsLimitFromSearch,
 } from "../../lib/investigation-navigation";
-import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
+import { navigateToImpactReportForMaintenance, navigateToImpactReportForPolicy } from "../../lib/impact-report-navigation";
+import { worstDegradedPolicyFirst } from "../../lib/noc-cockpit-priority";
+import { navigateToPolicyDossierWorkspace, navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
+import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
-
-const POSTURE_RANK: Record<string, number> = {
-  degraded: 0,
-  unknown: 1,
-  ok: 2,
-};
-
-function worstPolicyFirst(items: PoliciesListResponse["items"]) {
-  return [...items].sort((a, b) => {
-    const pa = POSTURE_RANK[a.degraded_policy_v1.posture] ?? 99;
-    const pb = POSTURE_RANK[b.degraded_policy_v1.posture] ?? 99;
-    if (pa !== pb) {
-      return pa - pb;
-    }
-    return a.policy_id.localeCompare(b.policy_id);
-  });
-}
+import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 
 export interface NocCockpitStrategicPivotsProps {
   riskSummary: TopologyRiskSummaryResponse | null;
@@ -36,7 +23,7 @@ export interface NocCockpitStrategicPivotsProps {
 export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCockpitStrategicPivotsProps) {
   const topRisk = riskSummary?.ranked_objects?.[0] ?? null;
   const sortedPolicies =
-    policiesData && policiesData.items.length > 0 ? worstPolicyFirst(policiesData.items) : [];
+    policiesData && policiesData.items.length > 0 ? worstDegradedPolicyFirst(policiesData.items) : [];
   const topDegraded = sortedPolicies[0] ?? null;
 
   const syncRuns =
@@ -85,6 +72,17 @@ export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCock
                 type="button"
                 className="nav-drilldown-button"
                 onClick={() =>
+                  navigateToMaintenancePreviewForTopologyObject(topRisk.object_id, topRisk.object_kind, {
+                    previewContext: "planning_window",
+                  })
+                }
+              >
+                Maintenance preview (top risk)
+              </button>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() =>
                   navigateToInvestigationView(syncRuns, {
                     invFrom: "overview",
                     topologyObject: { id: topRisk.object_id, kind: topRisk.object_kind },
@@ -93,6 +91,23 @@ export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCock
                 }
               >
                 Investigation (top risk)
+              </button>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() =>
+                  topRisk.object_kind === "node"
+                    ? navigateToImpactReportForMaintenance({
+                        nodeId: topRisk.object_id,
+                        previewContext: "planning_window",
+                      })
+                    : navigateToImpactReportForMaintenance({
+                        linkId: topRisk.object_id,
+                        previewContext: "planning_window",
+                      })
+                }
+              >
+                Impact report (maintenance, top risk)
               </button>
             </div>
           </div>
@@ -111,6 +126,27 @@ export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCock
                 onClick={() => navigateToPolicyDossierWorkspace(topDegraded.policy_id, "overview_noc_cockpit")}
               >
                 Policy dossier (worst degraded)
+              </button>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToServiceExplorerForPolicy(topDegraded.policy_id)}
+              >
+                Service Explorer (same policy)
+              </button>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToPolicyExplainabilityWorkspace(topDegraded.policy_id)}
+              >
+                Policy explainability (worst degraded)
+              </button>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToImpactReportForPolicy(topDegraded.policy_id)}
+              >
+                Impact report (policy, worst degraded)
               </button>
             </div>
           </div>

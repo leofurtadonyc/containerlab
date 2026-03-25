@@ -6,6 +6,7 @@ import {
   RISK_SUMMARY_ENTRY_PARAM,
   labelForInvestigationNavSource,
   parseInvestigationNavContext,
+  type InvestigationNavSourceId,
 } from "../src/lib/investigation-url-context";
 
 describe("parseInvestigationNavContext", () => {
@@ -43,6 +44,27 @@ describe("parseInvestigationNavContext", () => {
     const p = parseInvestigationNavContext(`?${INV_FROM_PARAM}=evidence-replay`);
     expect(p.invFrom).toBe("evidence-replay");
     expect(labelForInvestigationNavSource("evidence-replay")).toBe("Evidence replay");
+  });
+
+  it("accepts service-explorer as a source", () => {
+    const id: InvestigationNavSourceId = "service-explorer";
+    const p = parseInvestigationNavContext(`?${INV_FROM_PARAM}=${id}`);
+    expect(p.invFrom).toBe("service-explorer");
+    expect(labelForInvestigationNavSource(id)).toBe("Service Explorer");
+  });
+
+  it("accepts maintenance-preview as a source", () => {
+    const id: InvestigationNavSourceId = "maintenance-preview";
+    const p = parseInvestigationNavContext(`?${INV_FROM_PARAM}=${id}`);
+    expect(p.invFrom).toBe("maintenance-preview");
+    expect(labelForInvestigationNavSource(id)).toBe("Maintenance Preview");
+  });
+
+  it("accepts policy_explainability as a source", () => {
+    const id: InvestigationNavSourceId = "policy_explainability";
+    const p = parseInvestigationNavContext(`?${INV_FROM_PARAM}=${id}`);
+    expect(p.invFrom).toBe("policy_explainability");
+    expect(labelForInvestigationNavSource(id)).toBe("Policy explainability");
   });
 
   it("parses failure_impact_entry=v1", () => {

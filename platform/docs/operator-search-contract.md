@@ -78,6 +78,10 @@ Pivots **must** use **existing** shell patterns already defined for Phase **2**:
 | **Delta digest** | `view=delta-digest`, `sync_runs_limit`, optional **`global_search_q`** echo ([`cross-domain-delta-digest-contract.md`](./cross-domain-delta-digest-contract.md)) |
 | **Operator briefing** | `view=operator-briefing`, `sync_runs_limit`, optional **`inv_from=global_search`**, scoped **`policy_id`** / topology hints, **`global_search_q`** ([`operator-briefing-workspace-contract.md`](./operator-briefing-workspace-contract.md)) |
 | **Evidence replay** | `view=evidence-replay`, optional **`global_search_q`** echo only — **file import** workspace ([`evidence-replay-viewer-contract.md`](./evidence-replay-viewer-contract.md)); **not** live inventory truth |
+| **Service Explorer** | `view=service-explorer`, optional **`service_id`**, **`global_search_q`** ([`service-explorer-contract.md`](./service-explorer-contract.md)) — from **policy** hits, typically `service_id=policy:{policy_id}` |
+| **Policy explainability** | `view=policies`, **`policy_workspace=explainability`**, **`policy_id`**, optional **`policy_explainability_focus`**, **`global_search_q`** ([`policy-explainability-workspace-contract.md`](./policy-explainability-workspace-contract.md)) |
+| **Maintenance preview** | `view=maintenance-preview` with existing maintenance subject params + **`global_search_q`** ([`maintenance-preview-contract.md`](./maintenance-preview-contract.md)) — from **topology** hits |
+| **Impact report** | `view=impact-report`, **`impact_report_context`** + anchors (`service` / `policy` / `maintenance_impact` subject params), optional **`global_search_q`** ([`impact-report-contract.md`](./impact-report-contract.md)) — **not** a claim that the query text appears inside the report body; **Impact report hub** opens setup when no anchor is chosen |
 
 **Non-substitution:** Search **suggests** pivots; each destination page remains **authoritative** for its contract.
 

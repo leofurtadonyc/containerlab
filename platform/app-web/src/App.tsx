@@ -20,6 +20,9 @@ import { OperatorBriefingView } from "./features/operator-briefing/view";
 import { SituationRoomView } from "./features/situation-room/view";
 import { PlatformHealthView } from "./features/platform-health/view";
 import { PoliciesView } from "./features/policies/view";
+import { ServiceExplorerView } from "./features/service-explorer/view";
+import { MaintenancePreviewView } from "./features/maintenance-preview/view";
+import { ImpactReportView } from "./features/impact-report/view";
 import { ReadinessView } from "./features/readiness/view";
 import { TopologyView } from "./features/topology/view";
 import { WorkflowsView } from "./features/workflows/view";
@@ -33,6 +36,9 @@ const NAV_ITEMS = [
   { id: "devices", label: "Devices" },
   { id: "topology", label: "Topology" },
   { id: "policies", label: "Policies" },
+  { id: "service-explorer", label: "Service Explorer" },
+  { id: "maintenance-preview", label: "Maintenance Preview" },
+  { id: "impact-report", label: "Impact Report" },
   { id: "workflows", label: "Workflows" },
   { id: "audit", label: "Audit" },
   { id: "capabilities", label: "Capabilities" },
@@ -62,6 +68,12 @@ function renderView(viewId: string) {
       return <TopologyView />;
     case "policies":
       return <PoliciesView />;
+    case "service-explorer":
+      return <ServiceExplorerView />;
+    case "maintenance-preview":
+      return <MaintenancePreviewView />;
+    case "impact-report":
+      return <ImpactReportView />;
     case "workflows":
       return <WorkflowsView />;
     case "audit":
@@ -116,7 +128,7 @@ export function App() {
         <p className="eyebrow">Phase 2 Read-Only Foundation</p>
         <p className="body-copy">
           This WebUI now consumes the current read-only backend contracts for
-          overview, platform status, devices, topology, policies, workflow
+          overview, platform status, devices, topology, policies, service explorer, maintenance preview, workflow
           history, audit history, capabilities, readiness, bounded situation room
           evidence-pack assembly, operator briefing workspace, bounded investigation workspace assembly, and evidence export
           replay (not live). Grafana remains

@@ -7,7 +7,10 @@ import {
 } from "../../lib/delta-digest-pivots";
 import { navigateToInvestigationView } from "../../lib/investigation-navigation";
 import { navigateToOperatorBriefingView } from "../../lib/operator-briefing-navigation";
-import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
+import {
+  navigateToPolicyDossierWorkspace,
+  navigateToPolicyExplainabilityWorkspace,
+} from "../../lib/policy-dossier-navigation";
 import { navigateToSituationRoomView } from "../../lib/situation-room-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { navigateOverviewLayoutMode } from "../../lib/overview-mode";
@@ -123,13 +126,22 @@ export function DeltaDigestProduct({ data, syncRunsLimit, onReload }: DeltaDiges
             Audit history
           </button>
           {examplePolicyId ? (
-            <button
-              type="button"
-              className="nav-drilldown-button"
-              onClick={() => navigateToPolicyDossierWorkspace(examplePolicyId, "delta_digest_workspace")}
-            >
-              Example policy dossier
-            </button>
+            <>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToPolicyDossierWorkspace(examplePolicyId, "delta_digest_workspace")}
+              >
+                Example policy dossier
+              </button>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToPolicyExplainabilityWorkspace(examplePolicyId, undefined, "candidates")}
+              >
+                Example policy explainability
+              </button>
+            </>
           ) : null}
           {exampleNodeId ? (
             <button
