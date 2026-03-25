@@ -9,7 +9,7 @@ Week **32** delivered **service-centric composed dossier** and **pre-change inte
 - **Contracts / APIs:** **`service_dossier_v1`** ([`service-dossier-contract.md`](./service-dossier-contract.md)); **`GET /api/v1/services/{service_id}/dossier`**; **`change_safety_case_v1`** ([`change-safety-case-contract.md`](./change-safety-case-contract.md)); **`GET /api/v1/reports/change-safety-case/policy`**, **`…/service`**, **`…/maintenance`**; report downloads and live fetch share the same routes—**not** **`evidence_export_v1`**; evidence replay **rejects** root **`change_safety_case_v1`** JSON as non-export ([`evidence-replay-viewer-contract.md`](./evidence-replay-viewer-contract.md))
 - **WebUI:** **`view=service-dossier`**, **`view=change-safety-case`** with bounded URL context; **Overview** **`NocCockpitOperatorLaunchGrid`** / **`NocCockpitStrategicPivots`** and **`GlobalOperatorSearch`** — **Service dossier** (policy-shaped) and **Change safety case** (policy, maintenance, **Change safety case hub**) alongside week **31** surfaces—still **`operator_search_pivot_v1`** / **`GET /api/v1/operator-search`** inventory search only; **no** new corpora or ranking engines
 - **Verifier / tests:** **`verify-core-runtime.sh`** — shipped **`/assets/*.js`** must include **`service_dossier_v1`** and **`change_safety_case_v1`** alongside existing NOC / digest / briefing / replay / week **31** markers; when **`python3`** and sampling gates match, structural compact **`GET`**s to **`/api/v1/services/{service_id}/dossier`** and **`/api/v1/reports/change-safety-case/...`** (policy / service / maintenance)—[`week-32-verifier-parity-contract.md`](./week-32-verifier-parity-contract.md); repository **`pytest`** / **`vitest`** (service dossier, change safety case navigation, global search, overview NOC, evidence replay parse, downloads)
-- **Docs:** [`deployment-runbook.md`](./deployment-runbook.md), [`data-flows.md`](./data-flows.md), [`roadmap.md`](./roadmap.md) aligned with shipped week **32** story; detailed task rows in [`../../agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md) **Week 32** sections and **Week 32 closure**
+- **Docs / audit trail:** [`deployment-runbook.md`](./deployment-runbook.md), [`data-flows.md`](./data-flows.md), [`roadmap.md`](./roadmap.md) aligned with shipped week **32** story; detailed task rows in [`../../agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md) **Week 32** sections and **Week 32 closure**; completed-task inventory [`../../agent/sdn-tasks/completed/week-32-archive-index.md`](../../agent/sdn-tasks/completed/week-32-archive-index.md) (anti-reopen traceability—does not replace **`03-CURRENT-STATUS.md`** operational truth)
 
 It is a **recommendation and anti-drift guardrail** only.
 
@@ -74,22 +74,21 @@ Use week **32** evidence to choose **one** of these **only when justified**—no
 
 If **no** new evidence appears, the default next step is **not** a new feature slice: run the **ADR-0001 / topology / policy** reassessment cycle and keep the stack on **rebuild → redeploy → verify** ([`deployment-runbook.md`](./deployment-runbook.md)).
 
-## Forward note for week 33 planning
+## Week 33 integrity lane (status)
 
-The preferred immediate next lane after week **32** is **not** another large composed workspace. The stronger bounded move is a **Phase 2 integrity-and-evidence lane** focused on:
+The bounded **Phase 2 integrity-and-evidence** follow-on after week **32** is **largely executed** in documentation and verification—**not** new Service Dossier or Change Safety Case **product** semantics:
 
-1. verifier parity for week-32 shipped surfaces
-2. completed-task archive closure
-3. one evidence-backed reassessment memo for the next narrow slice
+- **Verifier parity:** [`week-32-verifier-parity-contract.md`](./week-32-verifier-parity-contract.md) is the audit contract; **`verify-core-runtime.sh`** performs **app-web** bundle markers for **`service_dossier_v1`** / **`change_safety_case_v1`** and **optional** structural **`GET`** sampling when **`python3`** and list gates pass (honest skip when gates fail)—see contract **Evidence layers → A — Live `verify-core-runtime.sh`**.
+- **Completed-task archive:** [`../../agent/sdn-tasks/completed/week-32-archive-index.md`](../../agent/sdn-tasks/completed/week-32-archive-index.md) lists all ten Week **32** task artifacts; **[`week-32-schedule-overview.md`](../../agent/sdn-tasks/completed/week-32-schedule-overview.md)** is planning context only.
+- **Cross-doc alignment:** [`roadmap.md`](./roadmap.md) **Week 32 closure** and [`../../agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md) **Week 32 closure** describe the same verified story as this note.
 
-This does **not** reopen Service Dossier or Change Safety Case semantics by default. It means:
-- preserve week **32** product meaning as closed
-- strengthen runtime-proof honesty where docs currently imply more than scripts prove
-- restore audit traceability so future anti-reopen rules remain credible
-- keep `01-CURRENT-PHASE.md` unchanged unless explicit evidence supports a separate phase-boundary review
+**Default next scheduling move** remains **unchanged:** evidence-gated **at most one** narrow slice via ADR / truth-depth reviews (below)—**not** semantic churn on week **32** surfaces because parity or archive work “found something to tweak.”
+
+**Phase:** [`01-CURRENT-PHASE.md`](../../agent/sdn/01-CURRENT-PHASE.md) stays **Phase 2 — read-only product foundation** unless explicit evidence supports a separate phase-boundary review.
 
 ## Explicit anti-recommendations (do not default here)
 
+- **Misusing integrity work as product backlog:** verifier parity, **`week-32-verifier-parity-contract.md`**, archive restoration ([`week-32-archive-index.md`](../../agent/sdn-tasks/completed/week-32-archive-index.md)), roadmap/status wording fixes, or **Week 33** doc tasks **do not** constitute grounds to “finish” or **expand** Service Dossier / Change Safety Case **meaning**—those tracks were **verification and traceability**, and week **32** product closure remains **valid** ([`week-32-friday-task-02-week32-docs-roadmap-rollup-and-posture.md`](../../agent/sdn-tasks/completed/week-32-friday-task-02-week32-docs-roadmap-rollup-and-posture.md)).
 - **Reopening week 32 themes by momentum:** [`service-dossier-contract.md`](./service-dossier-contract.md), **`GET /api/v1/services/{service_id}/dossier`**, **`view=service-dossier`**, **`navigateToServiceDossierForPolicy`** / related pivots; [`change-safety-case-contract.md`](./change-safety-case-contract.md), **`GET /api/v1/reports/change-safety-case/...`**, **`view=change-safety-case`**, **`navigateToChangeSafetyCaseForPolicy`** / **`navigateToChangeSafetyCaseForMaintenance`** / **`navigateToChangeSafetyCaseHub`**; [`evidence-replay-viewer-contract.md`](./evidence-replay-viewer-contract.md), **`change_safety_case_not_evidence_export`**; **`verify-core-runtime.sh`** **`service_dossier_v1`** / **`change_safety_case_v1`** bundle markers and bounded **Service Dossier** + **Change Safety Case** report-route **`GET`** sampling (when gates match); NOC cockpit **`noc-cockpit-launch-change-safety-case`** and strategic pivots; **`GlobalOperatorSearch`** dossier/CSC pivots; repository **`pytest`** / **`vitest`** week **32** regressions—**closed** unless **new evidence** shows a concrete bug or contract drift.
 - **Reopening week 31 or earlier bounded work by momentum** (unchanged): see [`post-week-31-bounded-phase2-recommendation.md`](./post-week-31-bounded-phase2-recommendation.md) and prior post notes.
 - **Workflow, dry-run, validation**, or treating Grafana as the product surface for week **32** semantics.
@@ -118,3 +117,4 @@ The project remains **`Phase 2 — read-only product foundation`** until workflo
 | Policy: proven vs deferred | [`policy-truth-depth-review.md`](./policy-truth-depth-review.md) |
 | Roadmap | [`roadmap.md`](./roadmap.md) |
 | Week 32 verifier parity (audit contract) | [`week-32-verifier-parity-contract.md`](./week-32-verifier-parity-contract.md) |
+| Week 32 completed-task archive (inventory) | [`../../agent/sdn-tasks/completed/week-32-archive-index.md`](../../agent/sdn-tasks/completed/week-32-archive-index.md) |
