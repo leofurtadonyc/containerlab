@@ -108,6 +108,17 @@ export function readChangeSafetyCaseRouteFromSearch(search: string): ChangeSafet
   return { kind: "invalid", reason: `Unknown ${CHANGE_SAFETY_CONTEXT_PARAM}=${ctx}.` };
 }
 
+/** Opens Change Safety Case setup (quick form) with optional `global_search_q` echo — not an anchored case by itself. */
+export function navigateToChangeSafetyCaseHub(echoSearchQuery?: string | null): void {
+  const sp = mergeViewIntoSearch(window.location.search, "change-safety-case");
+  sp.delete(CHANGE_SAFETY_CONTEXT_PARAM);
+  clearChangeSafetyAnchors(sp);
+  clearMaintenanceParams(sp);
+  clearImpactParams(sp);
+  applyGlobalSearchQueryEcho(sp, echoSearchQuery);
+  replaceUrlSearchParams(sp);
+}
+
 export function navigateToChangeSafetyCaseForPolicy(
   policyId: string,
   options?: { echoSearchQuery?: string | null },

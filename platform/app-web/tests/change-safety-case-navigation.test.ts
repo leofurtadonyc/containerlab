@@ -6,6 +6,7 @@ import {
   CHANGE_SAFETY_SERVICE_ID_PARAM,
   navigateToChangeSafetyCaseForPolicy,
   navigateToChangeSafetyCaseForService,
+  navigateToChangeSafetyCaseHub,
   readChangeSafetyCaseRouteFromSearch,
 } from "../src/lib/change-safety-case-navigation";
 import { MAINTENANCE_NODE_ID_PARAM } from "../src/lib/maintenance-preview-navigation";
@@ -53,6 +54,27 @@ describe("navigateToChangeSafetyCaseForPolicy", () => {
     expect(next.searchParams.get("view")).toBe("change-safety-case");
     expect(next.searchParams.get(CHANGE_SAFETY_CONTEXT_PARAM)).toBe("policy_change_safety");
     expect(next.searchParams.get(CHANGE_SAFETY_POLICY_ID_PARAM)).toBe("PE1:static:1:100");
+
+    replaceState.mockRestore();
+  });
+});
+
+describe("navigateToChangeSafetyCaseHub", () => {
+  it("clears change_safety_context for setup view", () => {
+    const replaceState = vi.spyOn(window.history, "replaceState").mockImplementation(() => undefined);
+    vi.stubGlobal("location", {
+      ...window.location,
+      href: "http://localhost/?view=change-safety-case&change_safety_context=policy_change_safety&csc_policy_id=x",
+      search: "?view=change-safety-case&change_safety_context=policy_change_safety&csc_policy_id=x",
+    });
+
+    navigateToChangeSafetyCaseHub();
+
+    const urlArg = replaceState.mock.calls[0][2] as string;
+    const next = new URL(urlArg);
+    expect(next.searchParams.get("view")).toBe("change-safety-case");
+    expect(next.searchParams.get(CHANGE_SAFETY_CONTEXT_PARAM)).toBeNull();
+    expect(next.searchParams.get(CHANGE_SAFETY_POLICY_ID_PARAM)).toBeNull();
 
     replaceState.mockRestore();
   });

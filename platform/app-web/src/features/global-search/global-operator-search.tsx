@@ -24,6 +24,11 @@ import {
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
+import {
+  navigateToChangeSafetyCaseForMaintenance,
+  navigateToChangeSafetyCaseForPolicy,
+  navigateToChangeSafetyCaseHub,
+} from "../../lib/change-safety-case-navigation";
 
 const DEBOUNCE_MS = 400;
 
@@ -332,6 +337,21 @@ export function GlobalOperatorSearch() {
                                   Impact report (policy)
                                 </button>
                               ) : null}
+                              {hit.pivot.policy_id ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  title="change_safety_case_v1 — pre-change evidence posture; same policy anchor as Service Explorer, not a search hit inside the case JSON."
+                                  onClick={() => {
+                                    navigateToChangeSafetyCaseForPolicy(hit.pivot.policy_id!, {
+                                      echoSearchQuery: data.q,
+                                    });
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Change safety case (policy)
+                                </button>
+                              ) : null}
                               {hit.pivot.topology_object && hit.pivot.topology_object_kind ? (
                                 <button
                                   type="button"
@@ -357,6 +377,33 @@ export function GlobalOperatorSearch() {
                                   }}
                                 >
                                   Impact report (maintenance)
+                                </button>
+                              ) : null}
+                              {hit.pivot.topology_object && hit.pivot.topology_object_kind ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  title="Opens topology-shaped change_safety_case_v1 — navigation only, not graph proof."
+                                  onClick={() => {
+                                    const id = hit.pivot.topology_object!;
+                                    const kind = hit.pivot.topology_object_kind!;
+                                    if (kind === "node") {
+                                      navigateToChangeSafetyCaseForMaintenance({
+                                        nodeId: id,
+                                        previewContext: "topology_drilldown",
+                                        echoSearchQuery: data.q,
+                                      });
+                                    } else {
+                                      navigateToChangeSafetyCaseForMaintenance({
+                                        linkId: id,
+                                        previewContext: "topology_drilldown",
+                                        echoSearchQuery: data.q,
+                                      });
+                                    }
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Change safety case (maintenance)
                                 </button>
                               ) : null}
                             </div>
@@ -420,6 +467,17 @@ export function GlobalOperatorSearch() {
                   }}
                 >
                   Impact report hub
+                </button>
+                <button
+                  type="button"
+                  className="inline-action"
+                  title="Change Safety Case setup — choose service or policy anchor; not a case generated from the query text alone."
+                  onClick={() => {
+                    navigateToChangeSafetyCaseHub(data.q);
+                    clearSearchUi();
+                  }}
+                >
+                  Change safety case hub
                 </button>
               </div>
             </>

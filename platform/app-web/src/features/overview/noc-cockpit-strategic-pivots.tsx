@@ -5,6 +5,7 @@ import {
   readSyncRunsLimitFromSearch,
 } from "../../lib/investigation-navigation";
 import { navigateToImpactReportForMaintenance, navigateToImpactReportForPolicy } from "../../lib/impact-report-navigation";
+import { navigateToChangeSafetyCaseForMaintenance, navigateToChangeSafetyCaseForPolicy } from "../../lib/change-safety-case-navigation";
 import { worstDegradedPolicyFirst } from "../../lib/noc-cockpit-priority";
 import { navigateToPolicyDossierWorkspace, navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
@@ -110,6 +111,23 @@ export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCock
               >
                 Impact report (maintenance, top risk)
               </button>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() =>
+                  topRisk.object_kind === "node"
+                    ? navigateToChangeSafetyCaseForMaintenance({
+                        nodeId: topRisk.object_id,
+                        previewContext: "planning_window",
+                      })
+                    : navigateToChangeSafetyCaseForMaintenance({
+                        linkId: topRisk.object_id,
+                        previewContext: "planning_window",
+                      })
+                }
+              >
+                Change safety case (maintenance, top risk)
+              </button>
             </div>
           </div>
         ) : null}
@@ -156,6 +174,13 @@ export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCock
                 onClick={() => navigateToImpactReportForPolicy(topDegraded.policy_id)}
               >
                 Impact report (policy, worst degraded)
+              </button>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToChangeSafetyCaseForPolicy(topDegraded.policy_id)}
+              >
+                Change safety case (policy, worst degraded)
               </button>
             </div>
           </div>
