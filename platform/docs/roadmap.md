@@ -273,23 +273,18 @@ Posture preserved:
 
 This lane reduced operator fragmentation for service-centric and pre-change interpretation surfaces while staying honest about topology/policy limits and non-workflow Phase **2** semantics.
 
-## Planned Week 33 integrity-and-evidence lane
+## Week 33 integrity lane (closed)
 
-The next planned bounded Phase 2 lane should **not** default to another large composed workspace. After week **32**, the stronger evidence-backed priority is to ensure that shipped delivery posture is operationally auditable and documentation-verifier parity is honest.
+Week **33** executed the bounded **integrity-and-evidence** lane: **week-32** runtime-verifier parity ([`week-32-verifier-parity-contract.md`](./week-32-verifier-parity-contract.md)), completed-task archive ([`../../agent/sdn-tasks/completed/week-32-archive-index.md`](../../agent/sdn-tasks/completed/week-32-archive-index.md)), roadmap / **`03-CURRENT-STATUS.md`** alignment, post-week guidance hardening, and [`week-33-evidence-backed-reassessment-memo.md`](./week-33-evidence-backed-reassessment-memo.md). It did **not** reopen **Service Dossier** or **Change Safety Case** product semantics.
 
-Planned focus:
+**Explicit next bounded slice (week 34+ planning):** [`week-33-bounded-next-slice-recommendation.md`](./week-33-bounded-next-slice-recommendation.md) — default recommendation is **operator contract labeling** (no new assemblies); **one** alternative is documented if topology-partiality doc work is evidence-prioritized.
 
-1. **week-32 runtime-verifier parity** — make live structural checks match what roadmap/post-week notes imply for Service Dossier and Change Safety Case
-2. **week-32 completed-task archive closure** — ensure delivered artifacts are traceable in `agent/sdn-tasks/completed/`
-3. **one evidence-backed reassessment memo** — identify the single strongest next narrow slice without reopening closed week **30–32** semantics by momentum
-
-Planned posture:
+Posture preserved:
 
 - remain in **`Phase 2 — read-only product foundation`**
 - preserve explicit non-claims
 - treat week **30–32** product semantics as **closed** unless new evidence requires a narrow overlap
-- prefer verifier/docs/archive parity and audit truth over semantic expansion
-- use week **33** to strengthen delivery credibility before opening another large innovation lane
+- prefer **one** narrow slice per cycle over parallel churn—see **`post-week-32`** and the memos above
 
 ## Boundary Reminder
 

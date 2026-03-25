@@ -46,6 +46,8 @@ Choose **at most one** category only after **live lab or repository evidence** i
 
 **Default when no new evidence:** run the **ADR-0001 / topology / policy** reassessment **read** cycle and operate the stack on **rebuild → redeploy → verify** ([`deployment-runbook.md`](./deployment-runbook.md))—**not** a new feature lane.
 
+**Week 33 closure pick (single explicit default for the next implementation cycle):** see [`week-33-bounded-next-slice-recommendation.md`](./week-33-bounded-next-slice-recommendation.md) — **operator contract labeling** (primary), with one **conditional** documentation-first topology alternative if live evidence prioritizes partiality confusion over dossier/report/export confusion.
+
 ## 4. Why not another large composed workspace by default
 
 - **Week 31** and **Week 32** already delivered major vertical slices (**Service Explorer**, **Impact Report**, **Maintenance Preview**, **Service Dossier**, **Change Safety Case**, cockpit/search integration). Those are **closed** under [`post-week-31-bounded-phase2-recommendation.md`](./post-week-31-bounded-phase2-recommendation.md) and [`post-week-32-bounded-phase2-recommendation.md`](./post-week-32-bounded-phase2-recommendation.md).
