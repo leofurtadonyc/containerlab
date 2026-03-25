@@ -17,6 +17,7 @@ import {
 } from "../../lib/policy-dossier-navigation";
 import { navigateToSituationRoomView } from "../../lib/situation-room-navigation";
 import { navigateToImpactReportForService } from "../../lib/impact-report-navigation";
+import { navigateToChangeSafetyCaseForService } from "../../lib/change-safety-case-navigation";
 import { navigateToMaintenancePreview } from "../../lib/maintenance-preview-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
@@ -335,6 +336,14 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
             title="impact_report_v1 — communication packaging; not evidence export or briefing bundle"
           >
             Impact report
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button"
+            onClick={() => navigateToChangeSafetyCaseForService(data.service_id)}
+            title="change_safety_case_v1 — pre-change evidence posture and gaps; not approval or safe-to-change"
+          >
+            Change safety case
           </button>
         </div>
       </section>

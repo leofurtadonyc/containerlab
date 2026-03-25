@@ -10,6 +10,7 @@ import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossie
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
 import { navigateToImpactReportForMaintenance } from "../../lib/impact-report-navigation";
+import { navigateToChangeSafetyCaseForMaintenance } from "../../lib/change-safety-case-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 
 export interface MaintenancePreviewProductProps {
@@ -48,6 +49,20 @@ export function MaintenancePreviewProduct({ data, onReload }: MaintenancePreview
             title="Open impact_report_v1 workspace for this subject (not evidence export)"
           >
             Impact report
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
+              navigateToChangeSafetyCaseForMaintenance(
+                subj.object_kind === "node"
+                  ? { nodeId: subj.object_id, previewContext: data.preview_context }
+                  : { linkId: subj.object_id, previewContext: data.preview_context },
+              )
+            }
+            title="change_safety_case_v1 — pre-change posture; not blast-radius or approval"
+          >
+            Change safety case
           </button>
           <button type="button" className="maintenance-preview-toolbar-reload" onClick={() => void onReload()}>
             Reload

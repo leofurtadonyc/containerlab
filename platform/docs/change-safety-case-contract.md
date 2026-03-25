@@ -180,6 +180,8 @@ The phrase **“safety case”** here means **bounded read-side evidence suffici
 
 **Relationship to Impact Report:** parallel **`GET /api/v1/reports/*-impact`** routes package **communication**; these routes package **pre-change evidence posture and gaps**—nested bodies may overlap but **primary narrative** differs.
 
+**WebUI (app-web):** Shell **`view=change-safety-case`** with **`change_safety_context`** (**`policy_change_safety`** \| **`service_change_safety`** \| **`topology_change_safety`**) and anchors **`csc_policy_id`**, **`csc_service_id`**, or the same **maintenance** query parameters as Maintenance Preview—consumes the JSON routes above via **`ChangeSafetyCaseView`** / **`ChangeSafetyCaseProduct`**; navigation pivots from Service Explorer, Policy explainability, and Maintenance Preview.
+
 ---
 
 ## Document history

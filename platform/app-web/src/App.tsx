@@ -24,6 +24,7 @@ import { ServiceExplorerView } from "./features/service-explorer/view";
 import { ServiceDossierView } from "./features/service-dossier/view";
 import { MaintenancePreviewView } from "./features/maintenance-preview/view";
 import { ImpactReportView } from "./features/impact-report/view";
+import { ChangeSafetyCaseView } from "./features/change-safety-case/view";
 import { ReadinessView } from "./features/readiness/view";
 import { TopologyView } from "./features/topology/view";
 import { WorkflowsView } from "./features/workflows/view";
@@ -41,6 +42,7 @@ const NAV_ITEMS = [
   { id: "service-dossier", label: "Service dossier" },
   { id: "maintenance-preview", label: "Maintenance Preview" },
   { id: "impact-report", label: "Impact Report" },
+  { id: "change-safety-case", label: "Change safety case" },
   { id: "workflows", label: "Workflows" },
   { id: "audit", label: "Audit" },
   { id: "capabilities", label: "Capabilities" },
@@ -78,6 +80,8 @@ function renderView(viewId: string) {
       return <MaintenancePreviewView />;
     case "impact-report":
       return <ImpactReportView />;
+    case "change-safety-case":
+      return <ChangeSafetyCaseView />;
     case "workflows":
       return <WorkflowsView />;
     case "audit":
