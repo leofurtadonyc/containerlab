@@ -22,8 +22,10 @@ import {
   navigateToTopologyObject,
 } from "../../lib/topology-policy-navigation";
 import { navigateToImpactReportForPolicy } from "../../lib/impact-report-navigation";
+import { navigateToChangeSafetyCaseForPolicy } from "../../lib/change-safety-case-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
+import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { usePolicyExplainabilityQuery } from "./api";
 
@@ -200,10 +202,26 @@ export function PolicyExplainabilityWorkspace({ policyId }: PolicyExplainability
           <button
             type="button"
             className="inline-action"
+            onClick={() => navigateToServiceDossierForPolicy(pr.policy_id)}
+            title="service_dossier_v1 — composed service workspace; not a substitute for this explainability panel"
+          >
+            Service dossier
+          </button>
+          <button
+            type="button"
+            className="inline-action"
             onClick={() => navigateToImpactReportForPolicy(pr.policy_id)}
             title="impact_report_v1 — not evidence export or validation sign-off"
           >
             Impact report
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToChangeSafetyCaseForPolicy(pr.policy_id)}
+            title="change_safety_case_v1 — pre-change evidence posture; not validation or approval"
+          >
+            Change safety case
           </button>
           {data.navigation_targets.topology_object_hints[0] ? (
             <button

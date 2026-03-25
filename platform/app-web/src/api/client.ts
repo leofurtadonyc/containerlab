@@ -24,10 +24,12 @@ import type {
   CrossDomainDeltaDigestResponse,
   OperatorBriefingWorkspaceResponse,
   ServiceDetailResponse,
+  ServiceDossierResponse,
   ServicesListResponse,
   MaintenancePreviewResponse,
   MaintenancePreviewContext,
   ImpactReportResponse,
+  ChangeSafetyCaseResponse,
 } from "./contracts";
 import {
   buildAuditHistoryQueryString,
@@ -160,6 +162,43 @@ export class ApiClient {
     return this.request<ImpactReportResponse>(`/api/v1/reports/maintenance-impact?${params.toString()}`);
   }
 
+  async getPolicyChangeSafetyCase(policyId: string): Promise<ChangeSafetyCaseResponse> {
+    const params = new URLSearchParams();
+    params.set("policy_id", policyId.trim());
+    return this.request<ChangeSafetyCaseResponse>(
+      `/api/v1/reports/change-safety-case/policy?${params.toString()}`,
+    );
+  }
+
+  async getServiceChangeSafetyCase(serviceId: string): Promise<ChangeSafetyCaseResponse> {
+    const params = new URLSearchParams();
+    params.set("service_id", serviceId.trim());
+    return this.request<ChangeSafetyCaseResponse>(
+      `/api/v1/reports/change-safety-case/service?${params.toString()}`,
+    );
+  }
+
+  async getTopologyChangeSafetyCase(query: MaintenancePreviewQuery): Promise<ChangeSafetyCaseResponse> {
+    const params = new URLSearchParams();
+    const nid = query.nodeId?.trim();
+    const lid = query.linkId?.trim();
+    const oid = query.objectId?.trim();
+    const ok = query.objectKind ?? null;
+    const ctx = query.previewContext ?? "explicit_subject";
+    params.set("preview_context", ctx);
+    if (nid) {
+      params.set("node_id", nid);
+    } else if (lid) {
+      params.set("link_id", lid);
+    } else if (oid && ok) {
+      params.set("object_id", oid);
+      params.set("object_kind", ok);
+    }
+    return this.request<ChangeSafetyCaseResponse>(
+      `/api/v1/reports/change-safety-case/maintenance?${params.toString()}`,
+    );
+  }
+
   async getTopologyRiskSummary(): Promise<TopologyRiskSummaryResponse> {
     return this.request<TopologyRiskSummaryResponse>("/api/v1/topology/risk-summary");
   }
@@ -187,6 +226,11 @@ export class ApiClient {
   async getService(serviceId: string): Promise<ServiceDetailResponse> {
     const encoded = encodeURIComponent(serviceId);
     return this.request<ServiceDetailResponse>(`/api/v1/services/${encoded}`);
+  }
+
+  async getServiceDossier(serviceId: string): Promise<ServiceDossierResponse> {
+    const encoded = encodeURIComponent(serviceId);
+    return this.request<ServiceDossierResponse>(`/api/v1/services/${encoded}/dossier`);
   }
 
   async getPolicyPathAnalysis(policyId: string): Promise<PathAnalysisViewResponse> {

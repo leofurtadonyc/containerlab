@@ -17,9 +17,11 @@ import {
 } from "../../lib/policy-dossier-navigation";
 import { navigateToSituationRoomView } from "../../lib/situation-room-navigation";
 import { navigateToImpactReportForService } from "../../lib/impact-report-navigation";
+import { navigateToChangeSafetyCaseForService } from "../../lib/change-safety-case-navigation";
 import { navigateToMaintenancePreview } from "../../lib/maintenance-preview-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
+import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 
 function posturePillClass(posture: string): string {
@@ -184,6 +186,7 @@ export function ServiceExplorerListProduct({ data, limitApplied, onReload }: Ser
                   <th scope="col">Kind</th>
                   <th scope="col">Members</th>
                   <th scope="col">Group degraded (v1 roll-up)</th>
+                  <th scope="col">Service dossier</th>
                 </tr>
               </thead>
               <tbody>
@@ -204,6 +207,16 @@ export function ServiceExplorerListProduct({ data, limitApplied, onReload }: Ser
                       <span className={posturePillClass(row.degraded_group_posture)}>
                         {row.degraded_group_posture}
                       </span>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="inline-action"
+                        onClick={() => navigateToServiceDossier({ serviceId: row.service_id })}
+                        title="service_dossier_v1 composed workspace for this service_id"
+                      >
+                        Open dossier
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -241,6 +254,14 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
         <div className="service-explorer-hero__actions">
           <button type="button" className="inline-action" onClick={() => navigateToServiceExplorer({ serviceId: null })}>
             Back to list
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToServiceDossier({ serviceId: data.service_id })}
+            title="service_dossier_v1 — composed workspace (explainability + optional maintenance); not a replacement for this Explorer detail"
+          >
+            Service dossier
           </button>
           <button type="button" className="service-explorer-toolbar-reload" onClick={() => void onReload()}>
             Reload
@@ -315,6 +336,14 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
             title="impact_report_v1 — communication packaging; not evidence export or briefing bundle"
           >
             Impact report
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button"
+            onClick={() => navigateToChangeSafetyCaseForService(data.service_id)}
+            title="change_safety_case_v1 — pre-change evidence posture and gaps; not approval or safe-to-change"
+          >
+            Change safety case
           </button>
         </div>
       </section>

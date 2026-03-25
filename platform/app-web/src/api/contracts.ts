@@ -1923,6 +1923,35 @@ export interface ServiceDetailResponse extends ApiResponseMetadata {
   recommended_pivots: string[];
 }
 
+/** `GET /api/v1/services/{service_id}/dossier` — service_dossier_v1 (composed assemblies). */
+export interface ServiceDossierSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only";
+  explicit_non_claims: string[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface ServiceDossierResponse extends ApiResponseMetadata {
+  contract_id: "service_dossier_v1";
+  safety_framing: ServiceDossierSafetyFraming;
+  service_explorer_detail: ServiceDetailResponse;
+  default_member_policy_id: string;
+  member_posture_counts: Record<string, number>;
+  policy_explainability: PolicyExplainabilityResponse | null;
+  explainability_unavailable_note: string | null;
+  maintenance_preview: MaintenancePreviewResponse | null;
+  maintenance_preview_subject_node_id: string | null;
+  maintenance_unavailable_note: string | null;
+  merged_caveats: string[];
+  missing_evidence_notes: string[];
+  source_contract_ids: string[];
+  recommended_api_pivots: string[];
+  investigation_pivot_hint: string;
+  sparse_dossier: boolean;
+  sparse_reasons: string[];
+}
+
 export type ImpactReportContext = "service_impact" | "policy_impact" | "maintenance_impact";
 
 export type ImpactReportExplicitNonClaim =
@@ -1959,5 +1988,52 @@ export interface ImpactReportResponse {
   anchor_maintenance?: MaintenanceSubjectSummary | null;
   service_detail?: ServiceDetailResponse | null;
   policy_dossier?: PolicyDossierResponse | null;
+  maintenance_preview?: MaintenancePreviewResponse | null;
+}
+
+export type ChangeSafetyCaseContext =
+  | "policy_change_safety"
+  | "service_change_safety"
+  | "topology_change_safety";
+
+export type ChangeSafetyCaseExplicitNonClaim =
+  | "not_dry_run_or_simulation"
+  | "not_validation_authority"
+  | "not_approval_or_authorization"
+  | "not_safe_to_change_truth"
+  | "not_rollback_or_execution_planning"
+  | "not_guaranteed_complete_dependency_or_underlay_proof"
+  | "not_substitute_for_live_authoritative_read_apis_when_freshness_matters";
+
+/** `GET /api/v1/reports/change-safety-case/*` — pre-change evidence posture; not validation or approval. */
+export interface ChangeSafetyCaseSafetyFraming {
+  contract_id: string;
+  authority_posture: "pre_change_interpretation_only";
+  explicit_non_claims: ChangeSafetyCaseExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface ChangeSafetyCaseResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "change_safety_case_v1";
+  safety_case_context: ChangeSafetyCaseContext;
+  safety_framing: ChangeSafetyCaseSafetyFraming;
+  source_contract_ids: string[];
+  understanding_posture_summary: string;
+  evidence_inventory: string[];
+  merged_caveats: string[];
+  evidence_gaps: string[];
+  next_review_guidance: string[];
+  recommended_api_pivots: string[];
+  investigation_situation_briefing_pivot_hints: string[];
+  sparse_case: boolean;
+  sparse_reasons: string[];
+  anchor_policy_id?: string | null;
+  anchor_service_id?: string | null;
+  anchor_maintenance?: MaintenanceSubjectSummary | null;
+  policy_dossier?: PolicyDossierResponse | null;
+  policy_explainability?: PolicyExplainabilityResponse | null;
+  service_dossier?: ServiceDossierResponse | null;
   maintenance_preview?: MaintenancePreviewResponse | null;
 }

@@ -47,6 +47,7 @@ import {
   readPolicyWorkspaceFromUrl,
 } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
+import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { InvestigationSurfaceEntry } from "../investigation/investigation-surface-entry";
 import { useTopologyQuery } from "../topology/api";
@@ -2341,6 +2342,14 @@ export function PoliciesView() {
                         >
                           Service Explorer
                         </button>
+                        <button
+                          type="button"
+                          className="nav-drilldown-button"
+                          onClick={() => navigateToServiceDossierForPolicy(policy.policy_id)}
+                          title="service_dossier_v1 — composed workspace for policy:…; not a substitute for full Explorer or policy dossier panels"
+                        >
+                          Service dossier
+                        </button>
                         <div className="table-note">Composed dossier vs path-story explainability workspace.</div>
                       </td>
                     </tr>
@@ -2379,6 +2388,14 @@ export function PoliciesView() {
                       onClick={() => navigateToServiceExplorerForPolicy(selectedPolicy.policy_id)}
                     >
                       Service Explorer
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-action"
+                      onClick={() => navigateToServiceDossierForPolicy(selectedPolicy.policy_id)}
+                      title="service_dossier_v1 composed assembly for this policy: service_id"
+                    >
+                      Service dossier
                     </button>
                   </span>
                 </div>

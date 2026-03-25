@@ -23,6 +23,7 @@ import {
   readPolicyDossierEntryFromSearch,
 } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
+import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 import { useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { usePolicyDossierQuery } from "./api";
 
@@ -136,6 +137,14 @@ export function PolicyDossierWorkspace({ policyId }: PolicyDossierWorkspaceProps
             title="service_explorer_v1 grouping for this policy_id (same inventory slice as Policies)"
           >
             Service Explorer
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToServiceDossierForPolicy(pr.policy_id)}
+            title="service_dossier_v1 composed workspace for policy:… (same anchor as Explorer)"
+          >
+            Service dossier
           </button>
           <button
             type="button"

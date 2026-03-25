@@ -24,6 +24,7 @@ export const INVESTIGATION_NAV_SOURCE_IDS = [
   "policy_explainability",
   "global_search",
   "service-explorer",
+  "service-dossier",
   "maintenance-preview",
 ] as const;
 
@@ -59,6 +60,8 @@ export function labelForInvestigationNavSource(id: InvestigationNavSourceId): st
       return "Global search";
     case "service-explorer":
       return "Service Explorer";
+    case "service-dossier":
+      return "Service dossier";
     case "maintenance-preview":
       return "Maintenance Preview";
     default: {

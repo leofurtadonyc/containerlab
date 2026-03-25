@@ -4,10 +4,12 @@ import type {
   TopologyRiskSummaryRow,
 } from "../../api/contracts";
 import { navigateToImpactReportForMaintenance, navigateToImpactReportForPolicy } from "../../lib/impact-report-navigation";
+import { navigateToChangeSafetyCaseForMaintenance, navigateToChangeSafetyCaseForPolicy } from "../../lib/change-safety-case-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import { pickStrongestPolicyId } from "../../lib/noc-cockpit-priority";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceExplorer, navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
+import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 
 export interface NocCockpitOperatorLaunchGridProps {
   firstNodeId: string | null;
@@ -30,9 +32,23 @@ function openImpactReportForTopRisk(row: TopologyRiskSummaryRow): void {
   }
 }
 
+function openChangeSafetyCaseForTopRisk(row: TopologyRiskSummaryRow): void {
+  if (row.object_kind === "node") {
+    navigateToChangeSafetyCaseForMaintenance({
+      nodeId: row.object_id,
+      previewContext: "planning_window",
+    });
+  } else {
+    navigateToChangeSafetyCaseForMaintenance({
+      linkId: row.object_id,
+      previewContext: "planning_window",
+    });
+  }
+}
+
 /**
- * Cockpit 3.0 — primary launch surfaces into Service Explorer, explainability, maintenance preview, and impact
- * reports using the same strongest-row selection as priority navigation (composition-only; no new assemblies).
+ * Cockpit 3.0 — primary launch surfaces into Service Explorer, explainability, maintenance preview, impact reports,
+ * and change safety cases using the same strongest-row selection as priority navigation (composition-only; no new assemblies).
  */
 export function NocCockpitOperatorLaunchGrid({
   firstNodeId,
@@ -72,6 +88,16 @@ export function NocCockpitOperatorLaunchGrid({
             ) : (
               <span className="table-note">No policy id yet for a service lens shortcut.</span>
             )}
+            {strongPolicyId ? (
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToServiceDossierForPolicy(strongPolicyId)}
+                title="service_dossier_v1 — composed workspace; same policy: anchor as Service Explorer"
+              >
+                Service dossier (strongest policy row)
+              </button>
+            ) : null}
           </div>
         </article>
 
@@ -156,6 +182,33 @@ export function NocCockpitOperatorLaunchGrid({
             ) : null}
             {!strongPolicyId && !topRisk ? (
               <span className="table-note">No policy or ranked topology row to anchor an impact report yet.</span>
+            ) : null}
+          </div>
+        </article>
+
+        <article className="detail-card noc-cockpit-launch-card" data-testid="noc-cockpit-launch-change-safety-case">
+          <h3>Change safety case</h3>
+          <p className="table-note">
+            Composed <code>change_safety_case_v1</code> pre-change posture — evidence gaps and advisory follow-ups,{" "}
+            <strong>not</strong> approval or safe-to-change truth.
+          </p>
+          <div className="noc-cockpit-launch-card__actions">
+            {strongPolicyId ? (
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToChangeSafetyCaseForPolicy(strongPolicyId)}
+              >
+                Policy change safety case (strongest row)
+              </button>
+            ) : null}
+            {topRisk ? (
+              <button type="button" className="nav-drilldown-button" onClick={() => openChangeSafetyCaseForTopRisk(topRisk)}>
+                Topology change safety case (top risk row)
+              </button>
+            ) : null}
+            {!strongPolicyId && !topRisk ? (
+              <span className="table-note">No policy or ranked topology row to anchor a change safety case yet.</span>
             ) : null}
           </div>
         </article>

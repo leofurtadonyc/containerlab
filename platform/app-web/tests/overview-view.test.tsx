@@ -646,6 +646,7 @@ describe("overview view", () => {
     expect(html).toContain('data-testid="noc-cockpit-launch-explainability"');
     expect(html).toContain('data-testid="noc-cockpit-launch-maintenance-preview"');
     expect(html).toContain('data-testid="noc-cockpit-launch-impact-report"');
+    expect(html).toContain('data-testid="noc-cockpit-launch-change-safety-case"');
     expect(html).toContain("Delta digest");
     expect(html).toContain("operator briefing");
     expect(html).toContain("delta-digest-overview-entry");
@@ -659,9 +660,11 @@ describe("overview view", () => {
     expect(html).toContain("Maintenance preview (top risk)");
     expect(html).toContain("Investigation (top risk)");
     expect(html).toContain("Impact report (maintenance, top risk)");
+    expect(html).toContain("Change safety case (maintenance, top risk)");
     expect(html).toContain("Policy dossier (worst degraded)");
     expect(html).toContain("Policy explainability (worst degraded)");
     expect(html).toContain("Impact report (policy, worst degraded)");
+    expect(html).toContain("Change safety case (policy, worst degraded)");
     expect(html).not.toContain("Routine-use trust cues stay explicit here");
     expect(html).not.toContain("Declared platform components");
     expect(html).toContain("Full overview");

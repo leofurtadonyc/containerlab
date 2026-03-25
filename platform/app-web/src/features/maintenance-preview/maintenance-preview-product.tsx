@@ -8,7 +8,9 @@ import {
 import { navigateToInvestigationView } from "../../lib/investigation-navigation";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
+import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
 import { navigateToImpactReportForMaintenance } from "../../lib/impact-report-navigation";
+import { navigateToChangeSafetyCaseForMaintenance } from "../../lib/change-safety-case-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 
 export interface MaintenancePreviewProductProps {
@@ -47,6 +49,20 @@ export function MaintenancePreviewProduct({ data, onReload }: MaintenancePreview
             title="Open impact_report_v1 workspace for this subject (not evidence export)"
           >
             Impact report
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
+              navigateToChangeSafetyCaseForMaintenance(
+                subj.object_kind === "node"
+                  ? { nodeId: subj.object_id, previewContext: data.preview_context }
+                  : { linkId: subj.object_id, previewContext: data.preview_context },
+              )
+            }
+            title="change_safety_case_v1 — pre-change posture; not blast-radius or approval"
+          >
+            Change safety case
           </button>
           <button type="button" className="maintenance-preview-toolbar-reload" onClick={() => void onReload()}>
             Reload
@@ -236,6 +252,14 @@ export function MaintenancePreviewProduct({ data, onReload }: MaintenancePreview
                       onClick={() => navigateToServiceExplorer({ serviceId: row.service_id })}
                     >
                       Open in Service Explorer
+                    </button>{" "}
+                    <button
+                      type="button"
+                      className="table-link-button"
+                      onClick={() => navigateToServiceDossier({ serviceId: row.service_id })}
+                      title="service_dossier_v1 — composed assembly for this service_id"
+                    >
+                      Service dossier
                     </button>
                   </td>
                 </tr>

@@ -53,6 +53,13 @@ describe("parseInvestigationNavContext", () => {
     expect(labelForInvestigationNavSource(id)).toBe("Service Explorer");
   });
 
+  it("accepts service-dossier as a source", () => {
+    const id: InvestigationNavSourceId = "service-dossier";
+    const p = parseInvestigationNavContext(`?${INV_FROM_PARAM}=${id}`);
+    expect(p.invFrom).toBe("service-dossier");
+    expect(labelForInvestigationNavSource(id)).toBe("Service dossier");
+  });
+
   it("accepts maintenance-preview as a source", () => {
     const id: InvestigationNavSourceId = "maintenance-preview";
     const p = parseInvestigationNavContext(`?${INV_FROM_PARAM}=${id}`);

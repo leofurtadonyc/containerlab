@@ -9,6 +9,7 @@ import type { PoliciesListResponse, TopologyObjectKind, TopologyRelatedPolicyRef
 import { buildDegradedPolicyV1ListRowHint, formatLabel } from "../../lib/presentation";
 import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
+import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 import { navigateToPoliciesPolicy, navigateToPoliciesPolicyPathAnalysis } from "../../lib/topology-policy-navigation";
 import { useTopologyRelatedPoliciesQuery } from "./api";
 
@@ -201,6 +202,14 @@ export function TopologyRelatedPoliciesPanel({
                     onClick={() => navigateToServiceExplorerForPolicy(item.policy_id)}
                   >
                     Service Explorer
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-action"
+                    onClick={() => navigateToServiceDossierForPolicy(item.policy_id)}
+                    title="service_dossier_v1 for policy:… — same service_id anchor as Service Explorer"
+                  >
+                    Service dossier
                   </button>
                 </p>
               </li>
