@@ -6,6 +6,10 @@ set -eu
 #     wait_for_postgres / wait_for_http_ok / wait_for_container_healthy loop when the target stays down.
 #   CURL_MAX_TIME (default 25) — per-request total time limit for curl (avoids indefinite hangs on stuck TCP).
 #   CURL_CONNECT_TIMEOUT (default 10) — connection phase limit for curl.
+#   CURL_PROBE_MAX_TIME (default 12) / CURL_PROBE_CONNECT_TIMEOUT (default 5) — shorter limits used only
+#     inside wait_for_http_ok so polling does not burn CURL_MAX_TIME on every retry (same-workspace restart drills).
+#   CURL_MAX_TIME_STATIC (default 120) — max time for large app-web /assets/*.js fetches (cold start can exceed CURL_MAX_TIME).
+#   STATIC_FETCH_ATTEMPTS (default 5) — retries per JS chunk when a fetch fails or returns empty.
 
 POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-clab-platform-postgres}"
 POSTGRES_USER="${POSTGRES_USER:-platform}"
@@ -26,12 +30,26 @@ VERIFY_ATTEMPTS="${VERIFY_ATTEMPTS:-45}"
 VERIFY_SLEEP_SECONDS="${VERIFY_SLEEP_SECONDS:-2}"
 CURL_MAX_TIME="${CURL_MAX_TIME:-25}"
 CURL_CONNECT_TIMEOUT="${CURL_CONNECT_TIMEOUT:-10}"
+CURL_PROBE_MAX_TIME="${CURL_PROBE_MAX_TIME:-12}"
+CURL_PROBE_CONNECT_TIMEOUT="${CURL_PROBE_CONNECT_TIMEOUT:-5}"
+CURL_MAX_TIME_STATIC="${CURL_MAX_TIME_STATIC:-120}"
+STATIC_FETCH_ATTEMPTS="${STATIC_FETCH_ATTEMPTS:-5}"
 warning_count=0
 
 # All HTTP checks use bounded curl so a single bad endpoint cannot block the whole script (common when
 # app-api is down but the port is half-open, or a proxy wedges).
 curl_http() {
   curl -fsS --connect-timeout "$CURL_CONNECT_TIMEOUT" --max-time "$CURL_MAX_TIME" "$@"
+}
+
+# Short timeouts for wait_for_http_ok polling only — avoids ~25s per retry when services are still starting.
+curl_http_probe() {
+  curl -fsS --connect-timeout "$CURL_PROBE_CONNECT_TIMEOUT" --max-time "$CURL_PROBE_MAX_TIME" "$@"
+}
+
+# Large Vite bundles after a cold deploy can take longer than CURL_MAX_TIME to deliver first bytes.
+curl_http_static() {
+  curl -fsS --connect-timeout "$CURL_CONNECT_TIMEOUT" --max-time "$CURL_MAX_TIME_STATIC" "$@"
 }
 
 require_command() {
@@ -125,7 +143,7 @@ wait_for_http_ok() {
   attempts=$VERIFY_ATTEMPTS
 
   while [ "$attempts" -gt 0 ]; do
-    if curl_http "$url" >/dev/null 2>&1; then
+    if curl_http_probe "$url" >/dev/null 2>&1; then
       return 0
     fi
 
@@ -137,6 +155,27 @@ wait_for_http_ok() {
 
   echo "$name did not become ready at $url" >&2
   exit 1
+}
+
+# Fetch one app-web /assets/*.js chunk with retries (cold start / same-workspace restart drills).
+fetch_app_web_asset_chunk() {
+  url=$1
+  attempts=$STATIC_FETCH_ATTEMPTS
+
+  while [ "$attempts" -gt 0 ]; do
+    chunk=$(curl_http_static "$url" 2>/dev/null) || chunk=""
+    if [ -n "$chunk" ]; then
+      printf '%s' "$chunk"
+      return 0
+    fi
+    attempts=$((attempts - 1))
+    if [ "$attempts" -gt 0 ]; then
+      sleep "$VERIFY_SLEEP_SECONDS"
+    fi
+  done
+
+  echo "app-web: failed to fetch static asset after $STATIC_FETCH_ATTEMPTS attempts: $url" >&2
+  curl_http_static "$url" || exit 1
 }
 
 wait_for_container_healthy() {
@@ -213,7 +252,7 @@ app_web_service_dossier_marker=0
 app_web_policy_explainability_marker=0
 app_web_change_safety_case_marker=0
 for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n' | grep -E '^/assets/.*\.js$' || true); do
-  app_web_chunk=$(curl_http "$APP_WEB_URL$asset_path")
+  app_web_chunk=$(fetch_app_web_asset_chunk "$APP_WEB_URL$asset_path")
   if printf '%s' "$app_web_chunk" | grep -qF 'noc_cockpit_v1'; then
     app_web_noc_cockpit_marker=1
   fi
