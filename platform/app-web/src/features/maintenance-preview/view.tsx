@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { MaintenancePreviewContext } from "../../api/contracts";
-import type { MaintenancePreviewQuery } from "../../api/client";
+import { ApiClientError, type MaintenancePreviewQuery } from "../../api/client";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { APP_URL_SEARCH_CHANGED } from "../../lib/url-app-state";
 import {
@@ -11,6 +11,12 @@ import {
 } from "../../lib/maintenance-preview-navigation";
 import { MaintenancePreviewProduct } from "./maintenance-preview-product";
 import { useMaintenancePreviewQuery } from "./api";
+
+const INVALID_MAINTENANCE_SUBJECT_ERROR = new ApiClientError(
+  "Invalid subject parameters: use only one of maintenance_node_id, maintenance_link_id, or maintenance_object_id with maintenance_object_kind.",
+  422,
+  "shell_validation",
+);
 
 function readSearch(): string {
   return typeof window !== "undefined" ? window.location.search : "";
@@ -56,14 +62,7 @@ export function MaintenancePreviewView() {
     return (
       <section className="maintenance-preview-route maintenance-preview-route--error">
         <h2>Maintenance Preview</h2>
-        <ErrorState
-          error={
-            new Error(
-              "Invalid subject parameters: use only one of maintenance_node_id, maintenance_link_id, or maintenance_object_id with maintenance_object_kind.",
-            )
-          }
-          onRetry={syncFromUrl}
-        />
+        <ErrorState error={INVALID_MAINTENANCE_SUBJECT_ERROR} onRetry={syncFromUrl} />
         <p className="table-note">
           <button type="button" className="inline-action" onClick={() => navigateToMaintenancePreview()}>
             Clear subject params
