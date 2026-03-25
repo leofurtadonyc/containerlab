@@ -57,6 +57,7 @@ The **primary gate** remains an **evidence-gated reassessment** using:
 - [`topology-truth-depth-review.md`](./topology-truth-depth-review.md)
 - [`policy-truth-depth-review.md`](./policy-truth-depth-review.md)
 - [`post-week-21-bounded-phase2-recommendation.md`](./post-week-21-bounded-phase2-recommendation.md) through this note (**`post-week-32`**)—week **32** closure and anti-reopen guardrails **without** replacing prior post notes
+- [`week-33-evidence-backed-reassessment-memo.md`](./week-33-evidence-backed-reassessment-memo.md)—synthesized **Week 33** categories (parity outcome, truth-depth vs labeling vs verifier vs docs-only, why not another large workspace by default); **not** a second ADR
 
 **Meaning:** choose **at most one** narrow read-only slice only after **live lab or repository evidence** identifies a concrete, bounded gap. Week **32** surfaces are **not** the default churn lane—they are **closed** unless new evidence shows contract drift, verifier false positives/negatives, or a **proven** operator-facing bug.
 
@@ -118,3 +119,4 @@ The project remains **`Phase 2 — read-only product foundation`** until workflo
 | Roadmap | [`roadmap.md`](./roadmap.md) |
 | Week 32 verifier parity (audit contract) | [`week-32-verifier-parity-contract.md`](./week-32-verifier-parity-contract.md) |
 | Week 32 completed-task archive (inventory) | [`../../agent/sdn-tasks/completed/week-32-archive-index.md`](../../agent/sdn-tasks/completed/week-32-archive-index.md) |
+| Week 33 evidence-backed reassessment (memo) | [`week-33-evidence-backed-reassessment-memo.md`](./week-33-evidence-backed-reassessment-memo.md) |
