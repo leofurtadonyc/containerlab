@@ -129,6 +129,8 @@ If implementation uses structured fields (e.g. **`suggested_followups`**), each 
 
 **WebUI download:** Operators may download the same JSON/Markdown as **`GET /api/v1/reports/change-safety-case/...`** from the **Change safety case** view—this is **report-route** retrieval (like Impact Report), **not** **`GET /api/v1/exports/...`** and **not** **`evidence_export_v1`**.
 
+**Repository regression:** **`app-web`** **`vitest`** — **`evidence-replay-parse.test.ts`** (reject root **`change_safety_case_v1`** for policy/service/topology contexts; parallel checks for **`impact_report_v1`**), **`replay-report-export-route-honesty.test.ts`** ( **`buildChangeSafetyCaseRequestPath`** / **`buildImpactReportRequestPath`** never use **`/api/v1/exports/`**; **`buildEvidenceExportRequestPath`** never uses **`/api/v1/reports/`**).
+
 ---
 
 ## Partial / empty behavior

@@ -142,6 +142,7 @@ describe("parseEvidenceExportJson", () => {
     if (r.status === "error") {
       expect(r.error.code).toBe("impact_report_not_evidence_export");
       expect(r.error.message).toContain("GET /api/v1/reports/");
+      expect(r.error.message).toContain("GET /api/v1/exports/");
     }
   });
 
@@ -156,6 +157,35 @@ describe("parseEvidenceExportJson", () => {
     if (r.status === "error") {
       expect(r.error.code).toBe("change_safety_case_not_evidence_export");
       expect(r.error.message).toContain("change-safety-case");
+      expect(r.error.message).toContain("GET /api/v1/exports/");
+    }
+  });
+
+  it("rejects change_safety_case_v1 root for service_change_safety (same envelope rule as policy anchor)", () => {
+    const raw = JSON.stringify({
+      contract_id: "change_safety_case_v1",
+      safety_case_context: "service_change_safety",
+      metadata: { generated_at: "2025-01-01T00:00:00Z", service: "app-api", version: "0.1.0", phase: "phase_2_read_only_foundation" },
+    });
+    const r = parseEvidenceExportJson(raw);
+    expect(r.status).toBe("error");
+    if (r.status === "error") {
+      expect(r.error.code).toBe("change_safety_case_not_evidence_export");
+      expect(r.error.message).toContain("/api/v1/reports/change-safety-case/");
+    }
+  });
+
+  it("rejects change_safety_case_v1 root for topology_change_safety (same envelope rule as maintenance anchor)", () => {
+    const raw = JSON.stringify({
+      contract_id: "change_safety_case_v1",
+      safety_case_context: "topology_change_safety",
+      metadata: { generated_at: "2025-01-01T00:00:00Z", service: "app-api", version: "0.1.0", phase: "phase_2_read_only_foundation" },
+    });
+    const r = parseEvidenceExportJson(raw);
+    expect(r.status).toBe("error");
+    if (r.status === "error") {
+      expect(r.error.code).toBe("change_safety_case_not_evidence_export");
+      expect(r.error.message).toContain("evidence_export_v1");
     }
   });
 
