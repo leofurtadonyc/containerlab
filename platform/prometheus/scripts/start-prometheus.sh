@@ -55,5 +55,6 @@ promtool check config "$PROMETHEUS_CONFIG_FILE"
 exec su -s /bin/sh nobody -c "/bin/prometheus \
   --config.file="$PROMETHEUS_CONFIG_FILE" \
   --storage.tsdb.path="$PROMETHEUS_STORAGE_PATH" \
+  --web.enable-lifecycle \
   --web.console.libraries=/usr/share/prometheus/console_libraries \
   --web.console.templates=/usr/share/prometheus/consoles"

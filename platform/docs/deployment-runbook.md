@@ -265,15 +265,21 @@ What healthy means here:
 
 ### verify-core-runtime.sh: slow runs, hangs, or tuning
 
-The script waits for **Docker health** and **HTTP readiness** on several services. **Worst-case** wall time per wait is approximately **`VERIFY_ATTEMPTS` × `VERIFY_SLEEP_SECONDS`** (defaults **45 × 2 s ≈ 90 s**) for each loop that never succeeds—so a **missing or unhealthy container** can make the script feel “stuck” for minutes before it exits.
+The script waits for **Docker health** and **HTTP readiness** on several services. **Worst-case** wall time per wait is approximately **`VERIFY_ATTEMPTS` × `VERIFY_SLEEP_SECONDS`** (defaults **45 × 1 s** between attempts) for each loop that never succeeds—so a **missing or unhealthy container** can still make the script feel “stuck” for minutes before it exits.
 
-**Every HTTP fetch** uses bounded **`curl`** with **`CURL_CONNECT_TIMEOUT`** (default **10 s**) and **`CURL_MAX_TIME`** (default **25 s**) so a single wedged endpoint cannot hang the script indefinitely.
+**HTTP readiness polling** uses short **`curl`** probes (defaults **`CURL_PROBE_MAX_TIME` = 12 s**, **`CURL_PROBE_CONNECT_TIMEOUT` = 5 s**) so retries do not burn the full **`CURL_MAX_TIME`**. URLs ending in **`/metrics`** use **`METRICS_PROBE_MAX_TIME`** (default **90 s**) and **`METRICS_PROBE_CONNECT_TIMEOUT`** (default **8 s**) because the first **Prometheus exposition** after a cold deploy can exceed the generic probe window—this addresses intermittent **`app-api metrics did not become ready`** failures when **`/api/v1/health`** already returns.
+
+**app-api JSON** responses use **`CURL_HTTP_MAX_TIME`** (default **90 s**) via **`fetch_compact_json`**. The full **app-api `/metrics`** body for assertions uses **`METRICS_FULL_MAX_TIME`** (default **90 s**), aligned with **`prometheus/prometheus.yml`** **`scrape_timeout: 90s`** for the **`app-api`** job ( **`scrape_interval: 120s`** must exceed **`scrape_timeout`** ). The file is **bind-mounted** into the **prometheus** container (`topology.clab.yml`); **restart** that container or **`clab deploy`** to pick up edits—no **prometheus** image rebuild required for **`prometheus.yml`** alone.
+
+**Most other non-probe HTTP fetches** use **`CURL_MAX_TIME`** (default **25 s**) with **`CURL_CONNECT_TIMEOUT`** (default **10 s**) so a single wedged endpoint cannot hang the script indefinitely.
 
 **To fail faster while debugging**, run from `platform/` for example:
 
 ```bash
 VERIFY_ATTEMPTS=15 VERIFY_SLEEP_SECONDS=1 ./scripts/verify-core-runtime.sh
 ```
+
+**If `/metrics` is still slow** on very constrained hosts, increase **`METRICS_PROBE_MAX_TIME`**, **`METRICS_FULL_MAX_TIME`**, and the **`app-api`** **`scrape_timeout`** in **`prometheus.yml`** together.
 
 **Common hard failures** (see sections below this chapter): **container not found** (stack not deployed or wrong `*_CONTAINER` names), **container never reaches `healthy`** (image or dependency issue), **app-web bundle substring** mismatch (rebuild **app-web** after UI changes), **Prometheus scrape target `down`**, **Grafana duplicate dashboard `uid`**.
 
