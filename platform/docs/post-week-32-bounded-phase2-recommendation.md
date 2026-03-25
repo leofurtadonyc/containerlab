@@ -29,7 +29,7 @@ Week **21** posture remains in [`post-week-21-bounded-phase2-recommendation.md`]
 
 ## What week 32 actually closed
 
-Week **32** is **closed** as bounded Phase **2** Service Dossier v1, Change Safety Case v1 (API + WebUI + report/export/replay boundaries), NOC cockpit and global search entry integration for **Service dossier** and **Change safety case**, and verifier/test/doc alignment (see [`../../agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md) **Week 32 closure** and `agent/sdn-tasks/completed/week-32-*.md`).
+Week **32** is **closed** as bounded Phase **2** Service Dossier v1, Change Safety Case v1 (API + WebUI + report/export/replay boundaries), NOC cockpit and global search entry integration for **Service dossier** and **Change safety case**, and verifier/test/doc alignment (see [`../../agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md) **Week 32 closure**; completed-task inventory [`../../agent/sdn-tasks/completed/week-32-archive-index.md`](../../agent/sdn-tasks/completed/week-32-archive-index.md); per-task artifacts `agent/sdn-tasks/completed/week-32-*.md`).
 
 Week **32** did **not**:
 
