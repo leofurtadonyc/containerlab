@@ -7,8 +7,9 @@ This document is an **audit contract** for **verification honesty**: it defines 
 It is **documentation and scheduling discipline only**. It does **not**:
 
 - change **Service Dossier v1** or **Change Safety Case v1** product contracts, APIs, or WebUI semantics
-- modify `verify-core-runtime.sh` (follow-on tasks may; this file precedes those changes)
 - reopen [`week-32-friday-task-02-week32-docs-roadmap-rollup-and-posture.md`](../../agent/sdn-tasks/completed/week-32-friday-task-02-week32-docs-roadmap-rollup-and-posture.md) **Week 32 closure** as incomplete product work—closure remains valid; this file clarifies **verification** wording vs **live shell** behavior
+
+**Live script alignment (week 33):** `verify-core-runtime.sh` now performs bounded structural **`GET`** sampling for **`GET /api/v1/services/{service_id}/dossier`** when **`python3`** exists and **`GET /api/v1/services`** returns **`items`**—see § **A**. **Change Safety Case** report **`GET`**s remain **out** of the live shell until a follow-on task adds them (bundle marker only today).
 
 **Integrity framing:** parity work is about **alignment between docs and scripts**, not about second-guessing shipped read-side assemblies.
 
@@ -35,7 +36,7 @@ Parity is **not** “the verifier must `GET` every week 32 route on every deploy
 
 | Week 32 topic | What the script proves today | What it does *not* prove today |
 | --- | --- | --- |
-| **Service Dossier v1** | **app-web only:** the downloaded **`/assets/*.js`** chunk contains the literal substring **`service_dossier_v1`** (same structural marker family as other shipped contract-id strings). | **Does not** call **`GET /api/v1/services/{service_id}/dossier`** on the live stack. **Does not** prove a particular **`service_id`** returns a non-error body. |
+| **Service Dossier v1** | **app-web:** substring **`service_dossier_v1`** in shipped **`/assets/*.js`**. **app-api (when `python3` + non-empty Service Explorer `items`):** structural compact JSON **`GET`** to **`/api/v1/services/{service_id}/dossier`** (first sampled **`service_id`** from **`GET /api/v1/services`**) asserts **`contract_id`**, **`service_explorer_detail`**, **`merged_caveats`**, **`source_contract_ids`** substrings—**not** assembly correctness. | **Does not** run when **`python3`** is missing or **`items`** is empty (honest skip). **Does not** prove every **`service_id`** or non-sparse payloads. |
 | **Change Safety Case v1** | **app-web only:** the downloaded **`/assets/*.js`** chunk contains the literal substring **`change_safety_case_v1`**. | **Does not** call **`GET /api/v1/reports/change-safety-case/...`** on the live stack. **Does not** prove policy/service/maintenance report JSON shape at runtime. |
 
 **Contrast (same script, different strength):** for **Impact Report v1** (week **31**), when **`python3`** and sampled **`policy_id`** / **`node_id`** exist, the script performs **compact JSON `GET`s** to **`/api/v1/reports/policy-impact`** and **`/api/v1/reports/maintenance-impact`** and asserts **`impact_report_v1`** (and related substrings). That pattern is **stronger** than the week **32** dossier/CSC **app-web marker-only** checks.
@@ -64,8 +65,9 @@ These prove **client** wiring and **strings** used in navigation—not that **`a
 
 ## What docs must not overstate
 
-- **Do not** imply that **`verify-core-runtime.sh` “proves”** **`GET /api/v1/services/{service_id}/dossier`** or **`GET /api/v1/reports/change-safety-case/...`** on the **live** deployment **unless** the script contains explicit **`fetch_compact_json`** (or equivalent) branches for those URLs and documented assertions—**currently it does not** for those routes.
-- **Do** state clearly that **`service_dossier_v1`** / **`change_safety_case_v1`** checks in the verifier are **shipped frontend bundle markers** unless/until parity follow-on adds live **`app-api`** branches.
+- **Do not** imply that **`verify-core-runtime.sh` “proves”** **`GET /api/v1/services/{service_id}/dossier`** on every deploy **unless** the documented sampling gates pass (**`python3`**, non-empty Service Explorer **`items`**)—when gates fail, the script **skips** with an honest **notice**; it still does **not** prove assembly logic.
+- **Do not** imply live verification for **`GET /api/v1/reports/change-safety-case/...`** **unless** a **`fetch_compact_json`** branch exists for those routes—**currently it does not** (bundle marker **`change_safety_case_v1`** only; follow-on may add report `GET`s).
+- **Do** state clearly that **`change_safety_case_v1`** in the verifier includes **shipped frontend bundle markers**; **`service_dossier_v1`** is both **bundle marker** and **`app-api`** structural sampling when gates match.
 - **Do not** conflate **bundle substring** checks with **Grafana** or **Prometheus** proof—product semantics remain **app-api** + **app-web** per contracts.
 - **Do not** use parity gaps to **reopen** week **32** product design; use them only to **tighten verification language** or to **schedule** optional script/doc follow-on.
 

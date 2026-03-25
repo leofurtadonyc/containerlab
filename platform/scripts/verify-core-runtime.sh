@@ -425,14 +425,30 @@ assert_contains "operator search response (result_state)" "$operator_search_resp
 assert_contains "operator search response (groups array)" "$operator_search_response" '"groups":'
 
 # Week 27–28: path-analysis, topology-related-policies, failure-impact, policy evidence timeline+delta
-# (uses python3 when available to sample first policy id and first topology node id).
+# (uses python3 when available to sample first policy id, first topology node id, and first Service Explorer service_id).
 if command -v python3 >/dev/null 2>&1; then
   first_policy_id=$(printf '%s' "$policies_response" | python3 -c "import sys,json; d=json.load(sys.stdin); items=d.get('items') or []; print(items[0]['policy_id'] if items else '')")
   first_node_id=$(printf '%s' "$topology_response" | python3 -c "import sys,json; d=json.load(sys.stdin); t=d.get('topology'); nodes=t.get('nodes') if t else None; print(nodes[0]['node_id'] if nodes else '')")
+  first_service_id=$(printf '%s' "$services_response" | python3 -c "import sys,json; d=json.load(sys.stdin); items=d.get('items') or []; print(items[0]['service_id'] if items else '')")
 else
-  notice "python3 not found; skipping week 27–28 path-analysis, related-policies, failure-impact, and policy evidence timeline/delta structural sampling in verify-core-runtime.sh."
+  notice "python3 not found; skipping week 27–28 path-analysis, related-policies, failure-impact, policy evidence timeline/delta structural sampling, and week 32 service dossier GET sampling in verify-core-runtime.sh."
   first_policy_id=""
   first_node_id=""
+  first_service_id=""
+fi
+
+# Week 32 / week 33: Service Dossier v1 (structural GET; uses first service_id from GET /api/v1/services when python3 + items exist).
+if [ -n "$first_service_id" ]; then
+  enc_service_id=$(printf '%s' "$first_service_id" | python3 -c "import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read().strip(), safe=''))")
+  service_dossier_response=$(fetch_compact_json "$APP_API_URL/api/v1/services/${enc_service_id}/dossier")
+  assert_contains "service dossier response (contract id)" "$service_dossier_response" '"contract_id":"service_dossier_v1"'
+  assert_contains "service dossier response (service_explorer_detail)" "$service_dossier_response" '"service_explorer_detail":{'
+  assert_contains "service dossier response (merged_caveats)" "$service_dossier_response" '"merged_caveats":'
+  assert_contains "service dossier response (source_contract_ids)" "$service_dossier_response" '"source_contract_ids":'
+else
+  if command -v python3 >/dev/null 2>&1; then
+    notice "Services Explorer items list empty; skipping service dossier structural checks."
+  fi
 fi
 
 if [ -n "$first_policy_id" ]; then
