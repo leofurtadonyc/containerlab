@@ -1922,3 +1922,42 @@ export interface ServiceDetailResponse extends ApiResponseMetadata {
   caveats: string[];
   recommended_pivots: string[];
 }
+
+export type ImpactReportContext = "service_impact" | "policy_impact" | "maintenance_impact";
+
+export type ImpactReportExplicitNonClaim =
+  | "not_compliance_or_legal_artifact"
+  | "not_validation_record_or_test_sign_off"
+  | "not_incident_command_authority_or_operational_authorization"
+  | "not_safe_to_change_approval_or_maintenance_approval"
+  | "not_guaranteed_complete_dependency_or_underlay_proof"
+  | "not_tamper_evident_immutable_or_non_repudiation_evidence"
+  | "not_substitute_for_live_authoritative_read_apis_when_freshness_matters";
+
+export interface ImpactReportSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only";
+  explicit_non_claims: ImpactReportExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+/** `GET /api/v1/reports/*` — composed packaging for operator communication; not evidence_export_v1 or briefing bundles. */
+export interface ImpactReportResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "impact_report_v1";
+  report_context: ImpactReportContext;
+  safety_framing: ImpactReportSafetyFraming;
+  source_contract_ids: string[];
+  scope_summary: string;
+  explicit_excluded_concerns: string[];
+  sparse_report: boolean;
+  sparse_reasons: string[];
+  recommended_api_pivots: string[];
+  anchor_service_id?: string | null;
+  anchor_policy_id?: string | null;
+  anchor_maintenance?: MaintenanceSubjectSummary | null;
+  service_detail?: ServiceDetailResponse | null;
+  policy_dossier?: PolicyDossierResponse | null;
+  maintenance_preview?: MaintenancePreviewResponse | null;
+}

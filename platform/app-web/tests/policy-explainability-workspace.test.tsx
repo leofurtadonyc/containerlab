@@ -247,6 +247,7 @@ describe("PolicyExplainabilityWorkspace", () => {
     expect(html).toContain("primary");
     expect(html).toContain("Active / preferred signal");
     expect(html).toContain("From inventory notes.");
+    expect(html).toContain("Impact report");
   });
 
   it("offers maintenance preview when a topology object hint exists", () => {

@@ -3156,3 +3156,132 @@ ol.notes-list.evidence-timeline-ordered {
 .maintenance-preview-table .table-link-button:hover {
   text-decoration: underline;
 }
+
+/* Impact Report (impact_report_v1) */
+.impact-report-route h2 {
+  margin-top: 0;
+}
+
+.impact-report-route--setup .body-copy {
+  max-width: 44rem;
+}
+
+.impact-report-setup {
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid #2a3f63;
+  border-radius: 8px;
+  background: rgba(15, 28, 48, 0.35);
+  max-width: 40rem;
+}
+
+.impact-report-setup__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.impact-report-setup__input {
+  flex: 1 1 12rem;
+  min-width: 10rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 4px;
+  border: 1px solid #3a4f66;
+  background: #0f1624;
+  color: #e8eef8;
+}
+
+.impact-report-product {
+  margin-top: 0.5rem;
+}
+
+.impact-report-hero {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px 24px;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #2a3f63;
+}
+
+.impact-report-hero__title {
+  margin: 0.25rem 0 0;
+  font-size: 1.35rem;
+}
+
+.impact-report-hero__lede {
+  max-width: 46rem;
+  margin: 0.5rem 0 0;
+}
+
+.impact-report-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.impact-report-toolbar-reload {
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #3a5f8a;
+  background: #152238;
+  color: #c8d8f0;
+  cursor: pointer;
+}
+
+.impact-report-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  font-size: 0.88rem;
+  color: #8a9bb8;
+  margin-bottom: 1rem;
+}
+
+.impact-report-subheading {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.95rem;
+  color: #a8b8d0;
+}
+
+.impact-report-non-claims,
+.impact-report-contract-ids {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+}
+
+.impact-report-sparse-callout {
+  margin: 1rem 0;
+}
+
+.impact-report-actions__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.impact-report-actions__btn {
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #3a6a7a;
+  background: #152238;
+  color: #c8e8f0;
+  cursor: pointer;
+}
+
+.impact-report-actions__hint,
+.impact-report-actions__error {
+  font-size: 0.82rem;
+  margin: 0.5rem 0 0;
+  max-width: 44rem;
+  color: #8a9bb8;
+}
+
+.impact-report-actions__error {
+  color: #f0a8a8;
+}

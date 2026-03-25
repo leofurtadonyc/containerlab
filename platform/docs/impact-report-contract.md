@@ -127,8 +127,14 @@ Bounded read-only **`GET`** endpoints assemble **existing** contracts only; opti
 
 **404** / **422** follow the same identity rules as the underlying Service Explorer, policy dossier, and maintenance-preview routes.
 
+### WebUI (Phase 2)
+
+- Shell view **`view=impact-report`** with **`impact_report_context`** = **`service_impact`** \| **`policy_impact`** \| **`maintenance_impact`**, plus anchors **`impact_service_id`**, **`impact_policy_id`**, or the same **`maintenance_*`** query parameters as Maintenance Preview for **`maintenance_impact`**.
+- **`ImpactReportActions`** on the report page: browser download of JSON/Markdown from the routes above—**not** **`evidence_export_v1`**, **not** briefing bundle, **not** Evidence replay.
+- Pivots: **Service Explorer** (detail), **Policy explainability** (header), **Maintenance Preview** (hero)—each opens the Impact Report workspace with a matching anchor.
+
 ---
 
 ## Document history
 
-- **v1:** Defines **Impact Report v1** semantics; **API** ships as the routes above (**`impact_report_v1`** envelope + nested contract bodies).
+- **v1:** Defines **Impact Report v1** semantics; **API** and **WebUI** ship as above (**`impact_report_v1`** envelope + nested contract bodies; dedicated view + download actions).

@@ -22,6 +22,7 @@ import { PlatformHealthView } from "./features/platform-health/view";
 import { PoliciesView } from "./features/policies/view";
 import { ServiceExplorerView } from "./features/service-explorer/view";
 import { MaintenancePreviewView } from "./features/maintenance-preview/view";
+import { ImpactReportView } from "./features/impact-report/view";
 import { ReadinessView } from "./features/readiness/view";
 import { TopologyView } from "./features/topology/view";
 import { WorkflowsView } from "./features/workflows/view";
@@ -37,6 +38,7 @@ const NAV_ITEMS = [
   { id: "policies", label: "Policies" },
   { id: "service-explorer", label: "Service Explorer" },
   { id: "maintenance-preview", label: "Maintenance Preview" },
+  { id: "impact-report", label: "Impact Report" },
   { id: "workflows", label: "Workflows" },
   { id: "audit", label: "Audit" },
   { id: "capabilities", label: "Capabilities" },
@@ -70,6 +72,8 @@ function renderView(viewId: string) {
       return <ServiceExplorerView />;
     case "maintenance-preview":
       return <MaintenancePreviewView />;
+    case "impact-report":
+      return <ImpactReportView />;
     case "workflows":
       return <WorkflowsView />;
     case "audit":

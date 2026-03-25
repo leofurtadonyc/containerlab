@@ -8,6 +8,7 @@ import {
 import { navigateToInvestigationView } from "../../lib/investigation-navigation";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
+import { navigateToImpactReportForMaintenance } from "../../lib/impact-report-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 
 export interface MaintenancePreviewProductProps {
@@ -33,6 +34,20 @@ export function MaintenancePreviewProduct({ data, onReload }: MaintenancePreview
           </p>
         </div>
         <div className="maintenance-preview-hero__actions">
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
+              navigateToImpactReportForMaintenance(
+                subj.object_kind === "node"
+                  ? { nodeId: subj.object_id, previewContext: data.preview_context }
+                  : { linkId: subj.object_id, previewContext: data.preview_context },
+              )
+            }
+            title="Open impact_report_v1 workspace for this subject (not evidence export)"
+          >
+            Impact report
+          </button>
           <button type="button" className="maintenance-preview-toolbar-reload" onClick={() => void onReload()}>
             Reload
           </button>

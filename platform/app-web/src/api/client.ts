@@ -27,6 +27,7 @@ import type {
   ServicesListResponse,
   MaintenancePreviewResponse,
   MaintenancePreviewContext,
+  ImpactReportResponse,
 } from "./contracts";
 import {
   buildAuditHistoryQueryString,
@@ -126,6 +127,37 @@ export class ApiClient {
       params.set("object_kind", ok);
     }
     return this.request<MaintenancePreviewResponse>(`/api/v1/maintenance-preview?${params.toString()}`);
+  }
+
+  async getServiceImpactReport(serviceId: string): Promise<ImpactReportResponse> {
+    const params = new URLSearchParams();
+    params.set("service_id", serviceId.trim());
+    return this.request<ImpactReportResponse>(`/api/v1/reports/service-impact?${params.toString()}`);
+  }
+
+  async getPolicyImpactReport(policyId: string): Promise<ImpactReportResponse> {
+    const params = new URLSearchParams();
+    params.set("policy_id", policyId.trim());
+    return this.request<ImpactReportResponse>(`/api/v1/reports/policy-impact?${params.toString()}`);
+  }
+
+  async getMaintenanceImpactReport(query: MaintenancePreviewQuery): Promise<ImpactReportResponse> {
+    const params = new URLSearchParams();
+    const nid = query.nodeId?.trim();
+    const lid = query.linkId?.trim();
+    const oid = query.objectId?.trim();
+    const ok = query.objectKind ?? null;
+    const ctx = query.previewContext ?? "explicit_subject";
+    params.set("preview_context", ctx);
+    if (nid) {
+      params.set("node_id", nid);
+    } else if (lid) {
+      params.set("link_id", lid);
+    } else if (oid && ok) {
+      params.set("object_id", oid);
+      params.set("object_kind", ok);
+    }
+    return this.request<ImpactReportResponse>(`/api/v1/reports/maintenance-impact?${params.toString()}`);
   }
 
   async getTopologyRiskSummary(): Promise<TopologyRiskSummaryResponse> {

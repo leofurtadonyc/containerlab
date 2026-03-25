@@ -21,6 +21,7 @@ import {
   navigateToPoliciesPolicyPathAnalysis,
   navigateToTopologyObject,
 } from "../../lib/topology-policy-navigation";
+import { navigateToImpactReportForPolicy } from "../../lib/impact-report-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
@@ -195,6 +196,14 @@ export function PolicyExplainabilityWorkspace({ policyId }: PolicyExplainability
             title={data.navigation_targets.service_explorer_shell_params.service_id}
           >
             Service Explorer
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToImpactReportForPolicy(pr.policy_id)}
+            title="impact_report_v1 — not evidence export or validation sign-off"
+          >
+            Impact report
           </button>
           {data.navigation_targets.topology_object_hints[0] ? (
             <button
