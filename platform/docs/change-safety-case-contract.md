@@ -166,6 +166,23 @@ The phrase **“safety case”** here means **bounded read-side evidence suffici
 
 ---
 
+## Shipped API (Phase 2)
+
+**app-api** exposes **`change_safety_case_v1`** as JSON (canonical) or optional Markdown companion (`format=markdown`), composed **only** from existing read assemblies—**no** new scoring or validation.
+
+| Route | Anchor | Nested composition (reuse) |
+| --- | --- | --- |
+| **`GET /api/v1/reports/change-safety-case/policy?policy_id=`** | **`policy_id`** | **`policy_dossier_v1`** + optional **`policy_explainability_workspace_v1`** |
+| **`GET /api/v1/reports/change-safety-case/service?service_id=`** | **`service_id`** | **`service_dossier_v1`** (Service Explorer + optional explainability + optional maintenance preview) |
+| **`GET /api/v1/reports/change-safety-case/maintenance?…`** | Topology **`node`** \| **`link`** (same selectors as maintenance-preview / impact-report maintenance) | **`maintenance_preview_v1`** |
+
+**404** follows the same identity rules as the underlying dossiers (unknown **`policy_id`**, unsupported **`service_id`**, unknown topology **`object_id`**). **`422`** when maintenance selectors are missing or **`object_kind`** does not match snapshot identity.
+
+**Relationship to Impact Report:** parallel **`GET /api/v1/reports/*-impact`** routes package **communication**; these routes package **pre-change evidence posture and gaps**—nested bodies may overlap but **primary narrative** differs.
+
+---
+
 ## Document history
 
-- **Week 32 Wednesday task 01:** Product contract authored—**documentation only**; no API/WebUI implementation required by this task.
+- **Week 32 Wednesday task 01:** Product contract authored—**documentation only**; no API/WebUI implementation required by that task.
+- **Week 32 Wednesday task 02:** **`GET /api/v1/reports/change-safety-case/{policy,service,maintenance}`** implemented in **app-api** with **`ChangeSafetyCaseResponse`** schema and **`pytest`** **`tests/test_change_safety_case.py`**.
