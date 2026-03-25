@@ -21,6 +21,7 @@ import {
   navigateToPoliciesPolicyPathAnalysis,
   navigateToTopologyObject,
 } from "../../lib/topology-policy-navigation";
+import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { usePolicyExplainabilityQuery } from "./api";
@@ -195,6 +196,21 @@ export function PolicyExplainabilityWorkspace({ policyId }: PolicyExplainability
           >
             Service Explorer
           </button>
+          {data.navigation_targets.topology_object_hints[0] ? (
+            <button
+              type="button"
+              className="inline-action"
+              onClick={() => {
+                const h = data.navigation_targets.topology_object_hints[0];
+                navigateToMaintenancePreviewForTopologyObject(h.topology_object_id, h.topology_object_kind, {
+                  previewContext: "change_adjacent",
+                });
+              }}
+              title="Read-only maintenance planning assembly from first topology hint (not approval or safe-to-change)"
+            >
+              Maintenance preview (topology hint)
+            </button>
+          ) : null}
           {isRefreshing ? (
             <p className="table-note" role="status">
               Refreshing explainability…

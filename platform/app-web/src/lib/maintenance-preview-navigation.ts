@@ -105,3 +105,23 @@ export function navigateToMaintenancePreview(options?: NavigateToMaintenancePrev
   }
   replaceUrlSearchParams(sp);
 }
+
+/**
+ * Open Maintenance Preview for a topology node or link using `maintenance_object_id` + `maintenance_object_kind`
+ * (stable subject encoding; optional `maintenance_preview_context` and search echo).
+ */
+export function navigateToMaintenancePreviewForTopologyObject(
+  objectId: string,
+  objectKind: "node" | "link",
+  options?: {
+    previewContext?: MaintenancePreviewContext;
+    echoSearchQuery?: string | null;
+  },
+): void {
+  navigateToMaintenancePreview({
+    objectId,
+    objectKind,
+    previewContext: options?.previewContext ?? "topology_drilldown",
+    ...(options?.echoSearchQuery !== undefined ? { echoSearchQuery: options.echoSearchQuery } : {}),
+  });
+}

@@ -12,6 +12,7 @@ import {
 } from "../../lib/investigation-navigation";
 import { navigateToOperatorBriefingView } from "../../lib/operator-briefing-navigation";
 import { navigateToEvidenceView, navigateToPoliciesWithDegradedPolicyV1Posture } from "../../lib/url-app-state";
+import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import { readDossierSourceFromSearch } from "../../lib/topology-dossier-navigation";
 import { navigateToPoliciesPolicy } from "../../lib/topology-policy-navigation";
 import { useUrlSearchParamsKey } from "../../lib/use-url-search-params";
@@ -123,6 +124,20 @@ export function TopologyObjectDossierWorkspace({ objectId, objectKind }: Topolog
             }
           >
             Open operator briefing
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
+              navigateToMaintenancePreviewForTopologyObject(
+                data.object_identity.object_id,
+                data.object_identity.object_kind,
+                { previewContext: "topology_drilldown" },
+              )
+            }
+            title="Read-only maintenance planning assembly (not approval or safe-to-change)"
+          >
+            Maintenance preview
           </button>
           <EvidenceExportActions
             variant="dossier"

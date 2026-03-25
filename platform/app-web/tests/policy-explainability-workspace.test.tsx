@@ -249,6 +249,26 @@ describe("PolicyExplainabilityWorkspace", () => {
     expect(html).toContain("From inventory notes.");
   });
 
+  it("offers maintenance preview when a topology object hint exists", () => {
+    usePolicyExplainabilityQuery.mockReturnValue({
+      data: {
+        ...explainabilityPayload,
+        navigation_targets: {
+          ...explainabilityPayload.navigation_targets,
+          topology_object_hints: [{ topology_object_id: "PE1", topology_object_kind: "node" as const }],
+        },
+      },
+      error: null,
+      isLoading: false,
+      isRefreshing: false,
+      reload: vi.fn(async () => undefined),
+    });
+
+    const html = renderToStaticMarkup(<PolicyExplainabilityWorkspace policyId="p1" />);
+
+    expect(html).toContain("Maintenance preview (topology hint)");
+  });
+
   it("labels inactive vs unknown candidate signals distinctly (hints are not authoritative rejections)", () => {
     const payload = {
       ...explainabilityPayload,

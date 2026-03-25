@@ -648,6 +648,7 @@ describe("overview view", () => {
     expect(html).toContain('data-testid="noc-cockpit-strategic-pivots"');
     expect(html).toContain("Priority navigation (cockpit)");
     expect(html).toContain("Topology dossier (top risk)");
+    expect(html).toContain("Maintenance preview (top risk)");
     expect(html).toContain("Investigation (top risk)");
     expect(html).toContain("Policy dossier (worst degraded)");
     expect(html).not.toContain("Routine-use trust cues stay explicit here");

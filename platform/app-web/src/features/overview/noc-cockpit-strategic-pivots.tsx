@@ -5,6 +5,7 @@ import {
   readSyncRunsLimitFromSearch,
 } from "../../lib/investigation-navigation";
 import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
+import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 
@@ -81,6 +82,17 @@ export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCock
                 }
               >
                 Topology dossier (top risk)
+              </button>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() =>
+                  navigateToMaintenancePreviewForTopologyObject(topRisk.object_id, topRisk.object_kind, {
+                    previewContext: "planning_window",
+                  })
+                }
+              >
+                Maintenance preview (top risk)
               </button>
               <button
                 type="button"

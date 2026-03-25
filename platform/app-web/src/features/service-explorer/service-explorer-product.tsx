@@ -16,6 +16,7 @@ import {
   navigateToPolicyExplainabilityWorkspace,
 } from "../../lib/policy-dossier-navigation";
 import { navigateToSituationRoomView } from "../../lib/situation-room-navigation";
+import { navigateToMaintenancePreview } from "../../lib/maintenance-preview-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
@@ -381,6 +382,22 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
             No node matches for this detail view, or topology was unavailable. Open Topology for the full graph.
           </p>
         ) : (
+          <>
+            <p className="table-note">
+              <button
+                type="button"
+                className="inline-action"
+                onClick={() =>
+                  navigateToMaintenancePreview({
+                    nodeId: data.topology_links[0].node_id,
+                    previewContext: "change_adjacent",
+                  })
+                }
+                title="Uses the first matched node in this table (read-only planning assembly; not approval)"
+              >
+                Maintenance preview (first matched node)
+              </button>
+            </p>
           <div className="table-scroll">
             <table className="data-table service-explorer-table">
               <thead>
@@ -429,6 +446,7 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
               </tbody>
             </table>
           </div>
+          </>
         )}
       </section>
 

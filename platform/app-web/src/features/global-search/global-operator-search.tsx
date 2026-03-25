@@ -15,6 +15,7 @@ import {
   navigateToSituationRoomFromGlobalSearch,
   supportsInvestigationShortcut,
 } from "../../lib/operator-search-navigation";
+import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 
@@ -208,6 +209,25 @@ export function GlobalOperatorSearch() {
                                   }}
                                 >
                                   Briefing
+                                </button>
+                              ) : null}
+                              {hit.pivot.topology_object && hit.pivot.topology_object_kind ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  onClick={() => {
+                                    navigateToMaintenancePreviewForTopologyObject(
+                                      hit.pivot.topology_object!,
+                                      hit.pivot.topology_object_kind!,
+                                      {
+                                        previewContext: "topology_drilldown",
+                                        echoSearchQuery: data.q,
+                                      },
+                                    );
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Maintenance preview
                                 </button>
                               ) : null}
                               {supportsInvestigationShortcut(hit.object_kind) ? (
