@@ -19,6 +19,7 @@ Stable product vocabulary (for implementation and tests when the surface ships):
 | [**Policies**](./policy-truth-depth-review.md) inventory | **Authoritative** per-row policy truth (bounded) | Flat table; **not** grouped “service” narrative |
 | [**Topology object dossier**](./topology-object-dossier-contract.md) | Object-centric composed workspace | **Not** policy-color–first |
 | [**Policy dossier**](./policy-dossier-contract.md) | Single **`policy_id`** deep view | **Not** multi-policy grouping |
+| [**Service Dossier v1**](./service-dossier-contract.md) | **One** **`service_id`** composed briefing | **Not** Explorer list/detail—**assembled** section order + merged caveats |
 | [**Investigation**](./investigation-workspace-contract.md) | Cross-domain **workspace** assembly | **Not** a dedicated “service grouping” index |
 | **Service Explorer** | **Grouping & pivot** lens over the same inventory | **Read-only**; **derived** views only |
 
@@ -214,6 +215,7 @@ Additionally:
 | Degraded policy classification | [`degraded-policy-v1-contract.md`](./degraded-policy-v1-contract.md) |
 | Topology object dossier | [`topology-object-dossier-contract.md`](./topology-object-dossier-contract.md) |
 | Policy dossier | [`policy-dossier-contract.md`](./policy-dossier-contract.md) |
+| Service dossier | [`service-dossier-contract.md`](./service-dossier-contract.md) |
 | Investigation workspace | [`investigation-workspace-contract.md`](./investigation-workspace-contract.md) |
 | Evidence pack / situation room | [`evidence-pack-contract.md`](./evidence-pack-contract.md) |
 | Operator briefing | [`operator-briefing-workspace-contract.md`](./operator-briefing-workspace-contract.md) |
