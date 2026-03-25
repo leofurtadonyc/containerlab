@@ -195,6 +195,17 @@ def _load_topology_or_none() -> tuple[TopologyResponse | None, list[str]]:
         return None, [f"Topology assembly failed ({type(exc).__name__}); linkage unavailable for this response."]
 
 
+def build_service_list_rows_for_policy_subset(items: list[PolicyRecord]) -> list[ServiceListRow]:
+    """Derive Service Explorer–style grouping rows over a **filtered** policy subset.
+
+    Uses the same grouping rules as ``GET /api/v1/services`` (policy / color / headend /
+    endpoint), but only among policies in ``items``. Empty input yields an empty list.
+    """
+    if not items:
+        return []
+    return _build_list_rows(items)
+
+
 def _build_list_rows(items: list[PolicyRecord]) -> list[ServiceListRow]:
     rows: list[ServiceListRow] = []
     for p in items:
