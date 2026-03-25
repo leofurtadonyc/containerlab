@@ -16,6 +16,11 @@ import {
   supportsInvestigationShortcut,
 } from "../../lib/operator-search-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
+import {
+  navigateToImpactReportForMaintenance,
+  navigateToImpactReportForPolicy,
+  navigateToImpactReportHub,
+} from "../../lib/impact-report-navigation";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 
@@ -296,6 +301,48 @@ export function GlobalOperatorSearch() {
                                   Service Explorer
                                 </button>
                               ) : null}
+                              {hit.pivot.policy_id ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  title="Opens policy-shaped impact_report_v1 — same inventory anchor as dossier, not a search hit inside the report body."
+                                  onClick={() => {
+                                    navigateToImpactReportForPolicy(hit.pivot.policy_id!, {
+                                      echoSearchQuery: data.q,
+                                    });
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Impact report (policy)
+                                </button>
+                              ) : null}
+                              {hit.pivot.topology_object && hit.pivot.topology_object_kind ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  title="Opens maintenance-shaped impact_report_v1 for this topology object — navigation only, not graph proof."
+                                  onClick={() => {
+                                    const id = hit.pivot.topology_object!;
+                                    const kind = hit.pivot.topology_object_kind!;
+                                    if (kind === "node") {
+                                      navigateToImpactReportForMaintenance({
+                                        nodeId: id,
+                                        previewContext: "topology_drilldown",
+                                        echoSearchQuery: data.q,
+                                      });
+                                    } else {
+                                      navigateToImpactReportForMaintenance({
+                                        linkId: id,
+                                        previewContext: "topology_drilldown",
+                                        echoSearchQuery: data.q,
+                                      });
+                                    }
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Impact report (maintenance)
+                                </button>
+                              ) : null}
                             </div>
                           </div>
                         </li>
@@ -346,6 +393,17 @@ export function GlobalOperatorSearch() {
                   }}
                 >
                   Evidence replay (frozen file)
+                </button>
+                <button
+                  type="button"
+                  className="inline-action"
+                  title="Impact Report setup — choose service, policy, or maintenance anchor; not a report generated from the query text."
+                  onClick={() => {
+                    navigateToImpactReportHub(data.q);
+                    clearSearchUi();
+                  }}
+                >
+                  Impact report hub
                 </button>
               </div>
             </>

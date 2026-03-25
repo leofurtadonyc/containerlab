@@ -97,21 +97,43 @@ export function readImpactReportRouteFromSearch(search: string): ImpactReportRou
   return { kind: "invalid", reason: `Unknown ${IMPACT_REPORT_CONTEXT_PARAM}=${ctx}.` };
 }
 
-export function navigateToImpactReportForService(serviceId: string): void {
+export function navigateToImpactReportForService(
+  serviceId: string,
+  options?: { echoSearchQuery?: string | null },
+): void {
   const sp = mergeViewIntoSearch(window.location.search, "impact-report");
   sp.set(IMPACT_REPORT_CONTEXT_PARAM, "service_impact");
   clearImpactAnchors(sp);
   clearMaintenanceParams(sp);
   sp.set(IMPACT_SERVICE_ID_PARAM, serviceId.trim());
+  if (options && "echoSearchQuery" in options) {
+    applyGlobalSearchQueryEcho(sp, options.echoSearchQuery);
+  }
   replaceUrlSearchParams(sp);
 }
 
-export function navigateToImpactReportForPolicy(policyId: string): void {
+export function navigateToImpactReportForPolicy(
+  policyId: string,
+  options?: { echoSearchQuery?: string | null },
+): void {
   const sp = mergeViewIntoSearch(window.location.search, "impact-report");
   sp.set(IMPACT_REPORT_CONTEXT_PARAM, "policy_impact");
   clearImpactAnchors(sp);
   clearMaintenanceParams(sp);
   sp.set(IMPACT_POLICY_ID_PARAM, policyId.trim());
+  if (options && "echoSearchQuery" in options) {
+    applyGlobalSearchQueryEcho(sp, options.echoSearchQuery);
+  }
+  replaceUrlSearchParams(sp);
+}
+
+/** Opens Impact Report setup (choose anchor) with optional `global_search_q` echo — not an anchored report by itself. */
+export function navigateToImpactReportHub(echoSearchQuery?: string | null): void {
+  const sp = mergeViewIntoSearch(window.location.search, "impact-report");
+  sp.delete(IMPACT_REPORT_CONTEXT_PARAM);
+  clearImpactAnchors(sp);
+  clearMaintenanceParams(sp);
+  applyGlobalSearchQueryEcho(sp, echoSearchQuery);
   replaceUrlSearchParams(sp);
 }
 

@@ -7,9 +7,11 @@ import {
   navigateToImpactReportForPolicy,
   navigateToImpactReportForService,
   navigateToImpactReportForMaintenance,
+  navigateToImpactReportHub,
   readImpactReportRouteFromSearch,
 } from "../src/lib/impact-report-navigation";
 import { MAINTENANCE_NODE_ID_PARAM } from "../src/lib/maintenance-preview-navigation";
+import { GLOBAL_SEARCH_QUERY_PARAM } from "../src/lib/global-search-deeplink";
 
 describe("readImpactReportRouteFromSearch", () => {
   it("returns setup when no impact_report_context", () => {
@@ -62,6 +64,28 @@ describe("navigateToImpactReportForService", () => {
   });
 });
 
+describe("navigateToImpactReportHub", () => {
+  it("opens impact-report without anchors and sets global_search_q", () => {
+    const replaceState = vi.spyOn(window.history, "replaceState").mockImplementation(() => undefined);
+    vi.stubGlobal("location", {
+      ...window.location,
+      href: "http://localhost/",
+      search: `?view=impact-report&${IMPACT_REPORT_CONTEXT_PARAM}=policy_impact&${IMPACT_POLICY_ID_PARAM}=old`,
+    });
+
+    navigateToImpactReportHub("hub echo");
+
+    const urlArg = replaceState.mock.calls[0][2] as string;
+    const next = new URL(urlArg);
+    expect(next.searchParams.get("view")).toBe("impact-report");
+    expect(next.searchParams.get(IMPACT_REPORT_CONTEXT_PARAM)).toBeNull();
+    expect(next.searchParams.get(IMPACT_POLICY_ID_PARAM)).toBeNull();
+    expect(next.searchParams.get(GLOBAL_SEARCH_QUERY_PARAM)).toBe("hub echo");
+
+    replaceState.mockRestore();
+  });
+});
+
 describe("navigateToImpactReportForPolicy", () => {
   it("sets policy anchor", () => {
     const replaceState = vi.spyOn(window.history, "replaceState").mockImplementation(() => undefined);
@@ -78,6 +102,23 @@ describe("navigateToImpactReportForPolicy", () => {
     expect(next.searchParams.get("view")).toBe("impact-report");
     expect(next.searchParams.get(IMPACT_REPORT_CONTEXT_PARAM)).toBe("policy_impact");
     expect(next.searchParams.get(IMPACT_POLICY_ID_PARAM)).toBe("PE1:static:1:100");
+
+    replaceState.mockRestore();
+  });
+
+  it("sets global_search_q when echoSearchQuery is passed", () => {
+    const replaceState = vi.spyOn(window.history, "replaceState").mockImplementation(() => undefined);
+    vi.stubGlobal("location", {
+      ...window.location,
+      href: "http://localhost/",
+      search: "",
+    });
+
+    navigateToImpactReportForPolicy("p1", { echoSearchQuery: "  q1  " });
+
+    const urlArg = replaceState.mock.calls[0][2] as string;
+    const next = new URL(urlArg);
+    expect(next.searchParams.get(GLOBAL_SEARCH_QUERY_PARAM)).toBe("q1");
 
     replaceState.mockRestore();
   });
