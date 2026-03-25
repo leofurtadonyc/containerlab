@@ -208,6 +208,8 @@ app_web_global_search_week30_marker=0
 app_web_global_search_impact_hub_marker=0
 app_web_maintenance_preview_marker=0
 app_web_impact_report_marker=0
+app_web_service_explorer_marker=0
+app_web_policy_explainability_marker=0
 for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n' | grep -E '^/assets/.*\.js$' || true); do
   app_web_chunk=$(curl_http "$APP_WEB_URL$asset_path")
   if printf '%s' "$app_web_chunk" | grep -qF 'noc_cockpit_v1'; then
@@ -243,9 +245,15 @@ for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n
   if printf '%s' "$app_web_chunk" | grep -qF 'impact_report_v1'; then
     app_web_impact_report_marker=1
   fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'service_explorer_v1'; then
+    app_web_service_explorer_marker=1
+  fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'policy_explainability_workspace_v1'; then
+    app_web_policy_explainability_marker=1
+  fi
 done
-if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ] || [ "$app_web_noc_cockpit_strategic_pivots_marker" != "1" ] || [ "$app_web_global_search_week30_marker" != "1" ] || [ "$app_web_global_search_impact_hub_marker" != "1" ] || [ "$app_web_maintenance_preview_marker" != "1" ] || [ "$app_web_impact_report_marker" != "1" ]; then
-  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, evidence_replay_viewer_v1, noc-cockpit-strategic-pivots, Evidence replay (frozen file), Impact report hub, maintenance_preview_v1, and impact_report_v1 substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing + bundle export + evidence replay + cockpit 2.0 pivots + global search week 30 footer + impact hub + maintenance preview + impact report)" >&2
+if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ] || [ "$app_web_noc_cockpit_strategic_pivots_marker" != "1" ] || [ "$app_web_global_search_week30_marker" != "1" ] || [ "$app_web_global_search_impact_hub_marker" != "1" ] || [ "$app_web_maintenance_preview_marker" != "1" ] || [ "$app_web_impact_report_marker" != "1" ] || [ "$app_web_service_explorer_marker" != "1" ] || [ "$app_web_policy_explainability_marker" != "1" ]; then
+  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, evidence_replay_viewer_v1, noc-cockpit-strategic-pivots, Evidence replay (frozen file), Impact report hub, maintenance_preview_v1, impact_report_v1, service_explorer_v1, and policy_explainability_workspace_v1 substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing + bundle export + evidence replay + cockpit 2.0 pivots + global search week 30 footer + impact hub + maintenance preview + impact report + week 31 service/explainability)" >&2
   exit 1
 fi
 
@@ -472,11 +480,14 @@ if [ -n "$first_node_id" ]; then
   assert_contains "topology evidence export response (export_kind)" "$topology_export_response" '"export_kind":"topology_object_dossier"'
   assert_contains "topology evidence export response (nested topology dossier)" "$topology_export_response" '"contract_id":"topology_object_dossier_v1"'
   enc_node_q=$(printf '%s' "$first_node_id" | python3 -c "import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read().strip(), safe=''))")
+  maintenance_preview_response=$(fetch_compact_json "$APP_API_URL/api/v1/maintenance-preview?node_id=${enc_node_q}&preview_context=topology_drilldown")
+  assert_contains "maintenance preview response (contract id)" "$maintenance_preview_response" '"contract_id":"maintenance_preview_v1"'
+  assert_contains "maintenance preview response (preview_context)" "$maintenance_preview_response" '"preview_context":"topology_drilldown"'
   maintenance_impact_report_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/maintenance-impact?node_id=${enc_node_q}&format=json")
   assert_contains "maintenance impact report response (contract id)" "$maintenance_impact_report_response" '"contract_id":"impact_report_v1"'
   assert_contains "maintenance impact report response (report_context)" "$maintenance_impact_report_response" '"report_context":"maintenance_impact"'
 else
-  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, and topology-object-dossier structural checks."
+  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, topology-object-dossier, maintenance-preview assembly, and maintenance-impact report structural checks."
 fi
 
 # Cross-slice list/history metadata and evidence shape (contract posture, not business truth).
