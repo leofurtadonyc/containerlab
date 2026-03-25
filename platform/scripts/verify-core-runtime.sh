@@ -2,10 +2,18 @@
 set -eu
 #
 # Optional tuning (environment):
-#   VERIFY_ATTEMPTS (default 45) × VERIFY_SLEEP_SECONDS (default 2) ≈ max wall time per
+#   VERIFY_ATTEMPTS (default 45) × VERIFY_SLEEP_SECONDS (default 1) ≈ max wall time per
 #     wait_for_postgres / wait_for_http_ok / wait_for_container_healthy loop when the target stays down.
 #   CURL_MAX_TIME (default 25) — per-request total time limit for curl (avoids indefinite hangs on stuck TCP).
 #   CURL_CONNECT_TIMEOUT (default 10) — connection phase limit for curl.
+#   CURL_PROBE_MAX_TIME (default 12) / CURL_PROBE_CONNECT_TIMEOUT (default 5) — shorter limits used only
+#     inside wait_for_http_ok for most URLs so polling does not burn CURL_MAX_TIME on every retry.
+#   METRICS_PROBE_MAX_TIME (default 90) / METRICS_PROBE_CONNECT_TIMEOUT (default 8) — used only for URLs
+#     ending in /metrics (app-api and gNMI); first Prometheus exposition after cold start can exceed 12s.
+#   METRICS_FULL_MAX_TIME (default 90) — full GET body for app-api /metrics (assertions); must align with Prometheus scrape_timeout.
+#   CURL_HTTP_MAX_TIME (default 90) — app-api JSON APIs via fetch_compact_json (large payloads + cold start).
+#   CURL_MAX_TIME_STATIC (default 120) — max time for large app-web /assets/*.js fetches (cold start can exceed CURL_MAX_TIME).
+#   STATIC_FETCH_ATTEMPTS (default 5) — retries per JS chunk when a fetch fails or returns empty.
 
 POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-clab-platform-postgres}"
 POSTGRES_USER="${POSTGRES_USER:-platform}"
@@ -23,15 +31,51 @@ GRAFANA_URL="${GRAFANA_URL:-http://127.0.0.1:3000}"
 GRAFANA_USER="${GRAFANA_USER:-admin}"
 GRAFANA_PASSWORD="${GRAFANA_PASSWORD:-change_me}"
 VERIFY_ATTEMPTS="${VERIFY_ATTEMPTS:-45}"
-VERIFY_SLEEP_SECONDS="${VERIFY_SLEEP_SECONDS:-2}"
+VERIFY_SLEEP_SECONDS="${VERIFY_SLEEP_SECONDS:-1}"
 CURL_MAX_TIME="${CURL_MAX_TIME:-25}"
 CURL_CONNECT_TIMEOUT="${CURL_CONNECT_TIMEOUT:-10}"
+CURL_PROBE_MAX_TIME="${CURL_PROBE_MAX_TIME:-12}"
+CURL_PROBE_CONNECT_TIMEOUT="${CURL_PROBE_CONNECT_TIMEOUT:-5}"
+METRICS_PROBE_MAX_TIME="${METRICS_PROBE_MAX_TIME:-90}"
+METRICS_PROBE_CONNECT_TIMEOUT="${METRICS_PROBE_CONNECT_TIMEOUT:-8}"
+METRICS_FULL_MAX_TIME="${METRICS_FULL_MAX_TIME:-90}"
+CURL_HTTP_MAX_TIME="${CURL_HTTP_MAX_TIME:-90}"
+CURL_MAX_TIME_STATIC="${CURL_MAX_TIME_STATIC:-120}"
+STATIC_FETCH_ATTEMPTS="${STATIC_FETCH_ATTEMPTS:-5}"
 warning_count=0
 
 # All HTTP checks use bounded curl so a single bad endpoint cannot block the whole script (common when
 # app-api is down but the port is half-open, or a proxy wedges).
 curl_http() {
   curl -fsS --connect-timeout "$CURL_CONNECT_TIMEOUT" --max-time "$CURL_MAX_TIME" "$@"
+}
+
+# Short timeouts for wait_for_http_ok polling only — avoids ~25s per retry when services are still starting.
+curl_http_probe() {
+  curl -fsS --connect-timeout "$CURL_PROBE_CONNECT_TIMEOUT" --max-time "$CURL_PROBE_MAX_TIME" "$@"
+}
+
+# Probe with explicit connect/max time (used for /metrics — cold scrape can exceed CURL_PROBE_MAX_TIME).
+curl_http_probe_max() {
+  max_time=$1
+  connect_timeout=$2
+  shift 2
+  curl -fsS --connect-timeout "$connect_timeout" --max-time "$max_time" "$@"
+}
+
+# Large Vite bundles after a cold deploy can take longer than CURL_MAX_TIME to deliver first bytes.
+curl_http_static() {
+  curl -fsS --connect-timeout "$CURL_CONNECT_TIMEOUT" --max-time "$CURL_MAX_TIME_STATIC" "$@"
+}
+
+# Full app-api /metrics body (same path Prometheus scrapes; can exceed CURL_MAX_TIME).
+curl_http_metrics_full() {
+  curl -fsS --connect-timeout "$CURL_CONNECT_TIMEOUT" --max-time "$METRICS_FULL_MAX_TIME" "$@"
+}
+
+# app-api JSON endpoints (large compact responses; cold start can exceed 25s).
+curl_http_json() {
+  curl -fsS --connect-timeout "$CURL_CONNECT_TIMEOUT" --max-time "$CURL_HTTP_MAX_TIME" "$@"
 }
 
 require_command() {
@@ -55,7 +99,7 @@ notice() {
 }
 
 fetch_compact_json() {
-  curl_http "$1" | tr -d '\n\r\t '
+  curl_http_json "$1" | tr -d '\n\r\t '
 }
 
 assert_contains() {
@@ -123,9 +167,19 @@ wait_for_http_ok() {
   name=$1
   url=$2
   attempts=$VERIFY_ATTEMPTS
+  probe_max=$CURL_PROBE_MAX_TIME
+  conn=$CURL_PROBE_CONNECT_TIMEOUT
+
+  # Prometheus /metrics can block longer than JSON health on first request after deploy.
+  case "$url" in
+    */metrics)
+      probe_max=$METRICS_PROBE_MAX_TIME
+      conn=$METRICS_PROBE_CONNECT_TIMEOUT
+      ;;
+  esac
 
   while [ "$attempts" -gt 0 ]; do
-    if curl_http "$url" >/dev/null 2>&1; then
+    if curl_http_probe_max "$probe_max" "$conn" "$url" >/dev/null 2>&1; then
       return 0
     fi
 
@@ -137,6 +191,27 @@ wait_for_http_ok() {
 
   echo "$name did not become ready at $url" >&2
   exit 1
+}
+
+# Fetch one app-web /assets/*.js chunk with retries (cold start / same-workspace restart drills).
+fetch_app_web_asset_chunk() {
+  url=$1
+  attempts=$STATIC_FETCH_ATTEMPTS
+
+  while [ "$attempts" -gt 0 ]; do
+    chunk=$(curl_http_static "$url" 2>/dev/null) || chunk=""
+    if [ -n "$chunk" ]; then
+      printf '%s' "$chunk"
+      return 0
+    fi
+    attempts=$((attempts - 1))
+    if [ "$attempts" -gt 0 ]; then
+      sleep "$VERIFY_SLEEP_SECONDS"
+    fi
+  done
+
+  echo "app-web: failed to fetch static asset after $STATIC_FETCH_ATTEMPTS attempts: $url" >&2
+  curl_http_static "$url" || exit 1
 }
 
 wait_for_container_healthy() {
@@ -196,7 +271,7 @@ wait_for_http_ok "app-web root" "$APP_WEB_URL/"
 wait_for_http_ok "app-web API proxy health" "$APP_WEB_URL/api/v1/health"
 
 # Week 29–30 NOC cockpit / handoff WebUI: shipped /assets/*.js must retain stable composition markers (repository vitest covers UI behavior).
-app_web_index_html=$(curl_http "$APP_WEB_URL/")
+app_web_index_html=$(curl_http_json "$APP_WEB_URL/")
 app_web_noc_cockpit_marker=0
 app_web_overview_mode_marker=0
 app_web_delta_digest_marker=0
@@ -213,7 +288,7 @@ app_web_service_dossier_marker=0
 app_web_policy_explainability_marker=0
 app_web_change_safety_case_marker=0
 for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n' | grep -E '^/assets/.*\.js$' || true); do
-  app_web_chunk=$(curl_http "$APP_WEB_URL$asset_path")
+  app_web_chunk=$(fetch_app_web_asset_chunk "$APP_WEB_URL$asset_path")
   if printf '%s' "$app_web_chunk" | grep -qF 'noc_cockpit_v1'; then
     app_web_noc_cockpit_marker=1
   fi
@@ -267,12 +342,38 @@ fi
 
 wait_for_http_ok "Prometheus readiness" "$PROMETHEUS_URL/-/ready"
 
-prometheus_targets=$(curl_http "$PROMETHEUS_URL/api/v1/targets" | tr -d '\n')
-echo "$prometheus_targets" | grep '"job":"prometheus".*"health":"up"' >/dev/null
-echo "$prometheus_targets" | grep '"job":"app-api".*"health":"up"' >/dev/null
-echo "$prometheus_targets" | grep '"job":"gnmi-collector".*"health":"up"' >/dev/null
-if echo "$prometheus_targets" | grep '"health":"down"' >/dev/null 2>&1; then
-  echo "Prometheus still reports at least one active scrape target as down." >&2
+# Prometheus does not reload bind-mounted prometheus.yml automatically; the process keeps the
+# previous config until reload/restart. Without reload, scrape_timeout (e.g. app-api 90s) may stay
+# at an old value (e.g. 25s) and the app-api target stays down even though the file on disk is
+# correct. Prefer HTTP reload; fall back to SIGHUP when the image predates --web.enable-lifecycle.
+if ! curl -fsS -X POST "$PROMETHEUS_URL/-/reload" >/dev/null 2>&1; then
+  docker exec "$PROMETHEUS_CONTAINER" /bin/sh -c '
+    pid=$(pgrep -f "^/bin/prometheus" 2>/dev/null | head -1)
+    [ -n "$pid" ] && kill -HUP "$pid"
+  ' 2>/dev/null || true
+fi
+sleep 3
+
+# After deploy, app-api /metrics may exceed Prometheus's scrape_timeout on the first attempt; the next
+# successful scrape marks the target up. Poll until all expected jobs are up (or attempts exhausted).
+prometheus_targets=""
+attempts=$VERIFY_ATTEMPTS
+while [ "$attempts" -gt 0 ]; do
+  prometheus_targets=$(curl_http "$PROMETHEUS_URL/api/v1/targets" | tr -d '\n')
+  if echo "$prometheus_targets" | grep '"job":"prometheus".*"health":"up"' >/dev/null 2>&1 \
+    && echo "$prometheus_targets" | grep '"job":"app-api".*"health":"up"' >/dev/null 2>&1 \
+    && echo "$prometheus_targets" | grep '"job":"gnmi-collector".*"health":"up"' >/dev/null 2>&1 \
+    && ! echo "$prometheus_targets" | grep '"health":"down"' >/dev/null 2>&1; then
+    break
+  fi
+  attempts=$((attempts - 1))
+  if [ "$attempts" -gt 0 ]; then
+    sleep "$VERIFY_SLEEP_SECONDS"
+  fi
+done
+
+if [ "$attempts" -eq 0 ]; then
+  echo "Prometheus still reports at least one active scrape target as down (app-api /metrics may need a successful scrape after cold start; see prometheus.yml scrape_timeout)." >&2
   printf '%s\n' "$prometheus_targets" >&2
   exit 1
 fi
@@ -306,7 +407,7 @@ workflow_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-his
 audit_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/audit-history")
 change_intelligence_response=$(fetch_compact_json "$APP_API_URL/api/v1/change-intelligence/recent-summary")
 investigation_workspace_response=$(fetch_compact_json "$APP_API_URL/api/v1/investigation-workspace/context")
-app_api_metrics=$(curl_http "$APP_API_URL/metrics")
+app_api_metrics=$(curl_http_metrics_full "$APP_API_URL/metrics")
 collector_metrics=$(curl_http "$GNMI_COLLECTOR_URL/metrics")
 
 sync_runs_count=$(query_postgres_scalar "SELECT count(*) FROM platform_app.sync_runs;")
@@ -425,14 +526,33 @@ assert_contains "operator search response (result_state)" "$operator_search_resp
 assert_contains "operator search response (groups array)" "$operator_search_response" '"groups":'
 
 # Week 27–28: path-analysis, topology-related-policies, failure-impact, policy evidence timeline+delta
-# (uses python3 when available to sample first policy id and first topology node id).
+# (uses python3 when available to sample first policy id, first topology node id, and first Service Explorer service_id).
 if command -v python3 >/dev/null 2>&1; then
   first_policy_id=$(printf '%s' "$policies_response" | python3 -c "import sys,json; d=json.load(sys.stdin); items=d.get('items') or []; print(items[0]['policy_id'] if items else '')")
   first_node_id=$(printf '%s' "$topology_response" | python3 -c "import sys,json; d=json.load(sys.stdin); t=d.get('topology'); nodes=t.get('nodes') if t else None; print(nodes[0]['node_id'] if nodes else '')")
+  first_service_id=$(printf '%s' "$services_response" | python3 -c "import sys,json; d=json.load(sys.stdin); items=d.get('items') or []; print(items[0]['service_id'] if items else '')")
 else
-  notice "python3 not found; skipping week 27–28 path-analysis, related-policies, failure-impact, and policy evidence timeline/delta structural sampling in verify-core-runtime.sh."
+  notice "python3 not found; skipping week 27–28 path-analysis, related-policies, failure-impact, policy evidence timeline/delta structural sampling, week 32 service dossier GET sampling, and week 33 change safety case report GET sampling in verify-core-runtime.sh."
   first_policy_id=""
   first_node_id=""
+  first_service_id=""
+fi
+
+# Week 32 / week 33: Service Dossier v1 + Change Safety Case /service report (structural GET; uses first service_id from GET /api/v1/services when python3 + items exist).
+if [ -n "$first_service_id" ]; then
+  enc_service_id=$(printf '%s' "$first_service_id" | python3 -c "import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read().strip(), safe=''))")
+  service_dossier_response=$(fetch_compact_json "$APP_API_URL/api/v1/services/${enc_service_id}/dossier")
+  assert_contains "service dossier response (contract id)" "$service_dossier_response" '"contract_id":"service_dossier_v1"'
+  assert_contains "service dossier response (service_explorer_detail)" "$service_dossier_response" '"service_explorer_detail":{'
+  assert_contains "service dossier response (merged_caveats)" "$service_dossier_response" '"merged_caveats":'
+  assert_contains "service dossier response (source_contract_ids)" "$service_dossier_response" '"source_contract_ids":'
+  service_change_safety_case_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/change-safety-case/service?service_id=${enc_service_id}&format=json")
+  assert_contains "service change safety case response (contract id)" "$service_change_safety_case_response" '"contract_id":"change_safety_case_v1"'
+  assert_contains "service change safety case response (safety_case_context)" "$service_change_safety_case_response" '"safety_case_context":"service_change_safety"'
+else
+  if command -v python3 >/dev/null 2>&1; then
+    notice "Services Explorer items list empty; skipping service dossier and service change safety case structural checks."
+  fi
 fi
 
 if [ -n "$first_policy_id" ]; then
@@ -466,8 +586,11 @@ if [ -n "$first_policy_id" ]; then
   policy_impact_report_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/policy-impact?policy_id=${enc_policy_q}&format=json")
   assert_contains "policy impact report response (contract id)" "$policy_impact_report_response" '"contract_id":"impact_report_v1"'
   assert_contains "policy impact report response (report_context)" "$policy_impact_report_response" '"report_context":"policy_impact"'
+  policy_change_safety_case_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/change-safety-case/policy?policy_id=${enc_policy_q}&format=json")
+  assert_contains "policy change safety case response (contract id)" "$policy_change_safety_case_response" '"contract_id":"change_safety_case_v1"'
+  assert_contains "policy change safety case response (safety_case_context)" "$policy_change_safety_case_response" '"safety_case_context":"policy_change_safety"'
 else
-  notice "Policies items list empty; skipping path-analysis, degraded_policy_v1 contract_id, policy evidence timeline, policy evidence delta, policy dossier, and policy explainability structural checks."
+  notice "Policies items list empty; skipping path-analysis, degraded_policy_v1 contract_id, policy evidence timeline, policy evidence delta, policy dossier, policy explainability, policy impact report, and policy change safety case structural checks."
 fi
 
 if [ -n "$first_node_id" ]; then
@@ -494,8 +617,11 @@ if [ -n "$first_node_id" ]; then
   maintenance_impact_report_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/maintenance-impact?node_id=${enc_node_q}&format=json")
   assert_contains "maintenance impact report response (contract id)" "$maintenance_impact_report_response" '"contract_id":"impact_report_v1"'
   assert_contains "maintenance impact report response (report_context)" "$maintenance_impact_report_response" '"report_context":"maintenance_impact"'
+  topology_change_safety_case_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/change-safety-case/maintenance?node_id=${enc_node_q}&format=json")
+  assert_contains "topology change safety case response (contract id)" "$topology_change_safety_case_response" '"contract_id":"change_safety_case_v1"'
+  assert_contains "topology change safety case response (safety_case_context)" "$topology_change_safety_case_response" '"safety_case_context":"topology_change_safety"'
 else
-  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, topology-object-dossier, maintenance-preview assembly, and maintenance-impact report structural checks."
+  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, topology-object-dossier, maintenance-preview assembly, maintenance-impact report, and topology change safety case structural checks."
 fi
 
 # Cross-slice list/history metadata and evidence shape (contract posture, not business truth).

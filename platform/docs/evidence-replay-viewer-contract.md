@@ -30,6 +30,8 @@ Replay **must** support exactly the same **`export_kind`** values and subject se
 
 **Out of scope for v1 replay:** unified interactive replay of a full **[`briefing_export_bundle_v1`](./briefing-export-bundle-contract.md)** file as **one** viewer session (operators replay **individual** embedded **`evidence_export_v1`** members per [`briefing-export-bundle-contract.md`](./briefing-export-bundle-contract.md) §Live vs replay); **[`impact_report_v1`](./impact-report-contract.md)** JSON from **`GET /api/v1/reports/...`** and **[`change_safety_case_v1`](./change-safety-case-contract.md)** JSON from **`GET /api/v1/reports/change-safety-case/...`** (different envelopes and routes from **`GET /api/v1/exports/...`**—use the **Impact Report** or **Change safety case** views, or export dossier/situation/investigation snapshots for frozen evidence instead); ad-hoc file types; encrypted or opaque blobs without a parseable **`evidence_export_v1`** envelope; exports generated outside **`GET /api/v1/exports/...`**; or replay of **non-export** JSON (e.g. raw `curl` dumps of arbitrary APIs).
 
+**Repository regression (app-web vitest):** **`evidence-replay-parse.test.ts`** pins **`parseEvidenceExportJson`** rejection of root **`impact_report_v1`** and **`change_safety_case_v1`** (including **`safety_case_context`** variants); **`replay-report-export-route-honesty.test.ts`** pins **report** download builders to **`/api/v1/reports/...`** and **export** builders to **`/api/v1/exports/...`** with no cross-family URLs.
+
 ---
 
 ## Accepted formats for replay (v1)

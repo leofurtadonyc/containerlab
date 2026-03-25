@@ -13,6 +13,12 @@
 # Environment:
 #   TOPOLOGY_FILE  Optional path to the Containerlab topology file
 #                  (default: topology.clab.yml in the platform directory).
+#   DRILL_POST_DEPLOY_SLEEP_SECONDS  Optional pause after clab deploy before verifiers
+#                  (default: 20). Cold redeploys often need a few seconds before app-web
+#                  can stream large /assets/*.js bundles; verify-core-runtime.sh also uses
+#                  longer static fetch timeouts and retries (see CURL_MAX_TIME_STATIC there).
+#   CURL_MAX_TIME_STATIC, STATIC_FETCH_ATTEMPTS, VERIFY_*  Passed through to
+#                  ./scripts/verify-core-runtime.sh if set.
 #
 # Use this drill to validate that the platform recovers correctly after
 # container replacement when persisted data survives in the same workspace.
@@ -62,7 +68,14 @@ echo "Step 2: Deploy the topology again"
 clab deploy -t "$TOPOLOGY_FILE"
 
 echo ""
+echo "Step 2b: Post-deploy warm-up (containers report healthy before HTTP is fully warm)"
+DRILL_POST_DEPLOY_SLEEP_SECONDS="${DRILL_POST_DEPLOY_SLEEP_SECONDS:-20}"
+sleep "$DRILL_POST_DEPLOY_SLEEP_SECONDS"
+
+echo ""
 echo "Step 3: Run core runtime verification"
+# Defaults tuned for same-workspace restart: large JS bundles may need >25s first-byte after cold start.
+export CURL_MAX_TIME_STATIC="${CURL_MAX_TIME_STATIC:-120}"
 ./scripts/verify-core-runtime.sh
 
 echo ""
