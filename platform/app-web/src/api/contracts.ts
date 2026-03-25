@@ -558,6 +558,73 @@ export interface FailureImpactViewResponse {
   missing_evidence_notes: string[];
 }
 
+export type MaintenancePreviewContext =
+  | "planning_window"
+  | "topology_drilldown"
+  | "change_adjacent"
+  | "explicit_subject";
+
+export type MaintenancePreviewExplicitNonClaim =
+  | "not_simulation_or_what_if_traffic_engine"
+  | "not_blast_radius_or_dependency_completeness"
+  | "not_safe_to_change_risk_scoring_or_approval"
+  | "not_maintenance_approval_or_change_control_authority"
+  | "not_traffic_or_protection_guarantee"
+  | "not_sla_or_availability_entitlement"
+  | "not_dataplane_forwarding_or_te_path_proof"
+  | "not_substitute_for_full_failure_impact_service_explorer_or_explainability_panels"
+  | "not_grafana_or_prometheus_business_truth"
+  | "not_operator_sign_off_or_audit_readiness";
+
+export interface MaintenancePreviewSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only";
+  explicit_non_claims: MaintenancePreviewExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface MaintenanceSubjectSummary {
+  object_kind: TopologyObjectKind;
+  object_id: string;
+  display_name: string;
+  source_node_id: string | null;
+  target_node_id: string | null;
+}
+
+export interface MaintenanceExplainabilityPointer {
+  policy_id: string;
+  policies_explainability_path: string;
+  policies_path_analysis_path: string;
+}
+
+export interface MaintenanceTopologyImpactSection {
+  coverage_summary: TopologyCoverageSummaryRecord;
+  topology_snapshot_observed_at: string | null;
+  dossier_path: string;
+}
+
+/** `GET /api/v1/maintenance-preview` — reuse-only assembly; not approval or simulation. */
+export interface MaintenancePreviewResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "maintenance_preview_v1";
+  safety_framing: MaintenancePreviewSafetyFraming;
+  preview_context: MaintenancePreviewContext;
+  source_contract_ids: string[];
+  subject: MaintenanceSubjectSummary;
+  sparse_preview: boolean;
+  sparse_reasons: string[];
+  related_policies: TopologyObjectRelatedPoliciesResponse;
+  failure_impact: FailureImpactViewResponse;
+  related_services: ServiceListRow[];
+  related_services_total: number;
+  related_services_truncated: boolean;
+  topology_impact: MaintenanceTopologyImpactSection;
+  explainability_pointers: MaintenanceExplainabilityPointer[];
+  recommended_pivots: string[];
+  assembly_caveats: string[];
+}
+
 export type TopologyRiskSummaryExplicitNonClaim =
   | "not_sla_or_service_risk_truth"
   | "not_traffic_or_dataplane_risk_truth"

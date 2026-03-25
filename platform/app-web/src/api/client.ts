@@ -25,6 +25,8 @@ import type {
   OperatorBriefingWorkspaceResponse,
   ServiceDetailResponse,
   ServicesListResponse,
+  MaintenancePreviewResponse,
+  MaintenancePreviewContext,
 } from "./contracts";
 import {
   buildAuditHistoryQueryString,
@@ -40,6 +42,15 @@ export interface ApiClientConfig {
 }
 
 /** Bounded query for `GET /api/v1/operator-briefing`. */
+/** Bounded query for `GET /api/v1/maintenance-preview` (mirrors backend query params). */
+export interface MaintenancePreviewQuery {
+  nodeId?: string | null;
+  linkId?: string | null;
+  objectId?: string | null;
+  objectKind?: "node" | "link" | null;
+  previewContext?: MaintenancePreviewContext;
+}
+
 export interface OperatorBriefingQuery {
   syncRunsLimit?: number;
   policyId?: string | null;
@@ -96,6 +107,25 @@ export class ApiClient {
     return this.request<FailureImpactViewResponse>(
       `/api/v1/topology/objects/${encoded}/failure-impact`,
     );
+  }
+
+  async getMaintenancePreview(query: MaintenancePreviewQuery): Promise<MaintenancePreviewResponse> {
+    const params = new URLSearchParams();
+    const nid = query.nodeId?.trim();
+    const lid = query.linkId?.trim();
+    const oid = query.objectId?.trim();
+    const ok = query.objectKind ?? null;
+    const ctx = query.previewContext ?? "explicit_subject";
+    params.set("preview_context", ctx);
+    if (nid) {
+      params.set("node_id", nid);
+    } else if (lid) {
+      params.set("link_id", lid);
+    } else if (oid && ok) {
+      params.set("object_id", oid);
+      params.set("object_kind", ok);
+    }
+    return this.request<MaintenancePreviewResponse>(`/api/v1/maintenance-preview?${params.toString()}`);
   }
 
   async getTopologyRiskSummary(): Promise<TopologyRiskSummaryResponse> {

@@ -572,4 +572,19 @@ describe("ApiClient week 28 bounded paths", () => {
     const url = fetchMock.mock.calls[0][0] as string;
     expect(url).toContain("/api/v1/services/policy%3Aa%3Ab");
   });
+
+  it("getMaintenancePreview builds query for node_id and preview_context", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ contract_id: "maintenance_preview_v1" }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getMaintenancePreview({ nodeId: "PE1", previewContext: "planning_window" });
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("/api/v1/maintenance-preview?");
+    expect(url).toContain("node_id=PE1");
+    expect(url).toContain("preview_context=planning_window");
+  });
 });

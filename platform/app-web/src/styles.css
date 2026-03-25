@@ -2959,3 +2959,200 @@ ol.notes-list.evidence-timeline-ordered {
 .service-explorer-table .table-link-button:hover {
   text-decoration: underline;
 }
+
+/* Maintenance Preview (maintenance_preview_v1) */
+.maintenance-preview-route h2 {
+  margin-top: 0;
+}
+
+.maintenance-preview-route--setup .body-copy {
+  max-width: 44rem;
+}
+
+.maintenance-preview-subject-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.maintenance-preview-setup {
+  margin-top: 0.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid #2a3f63;
+  border-radius: 8px;
+  background: rgba(15, 28, 48, 0.35);
+  max-width: 36rem;
+}
+
+.maintenance-preview-setup__row {
+  margin-bottom: 0.75rem;
+}
+
+.maintenance-preview-setup__label {
+  display: block;
+  font-size: 0.85rem;
+  color: #8a9bb8;
+  margin-bottom: 0.35rem;
+}
+
+.maintenance-preview-setup__radios {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.35rem;
+}
+
+.maintenance-preview-setup__input,
+.maintenance-preview-setup__select {
+  width: 100%;
+  max-width: 24rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 4px;
+  border: 1px solid #3a4f66;
+  background: #0f1624;
+  color: #e8eef8;
+}
+
+.maintenance-preview-setup__submit {
+  margin-top: 0.5rem;
+  padding: 0.4rem 1rem;
+  border-radius: 4px;
+  border: 1px solid #3a6a8a;
+  background: #152238;
+  color: #c8d8f0;
+  cursor: pointer;
+}
+
+.maintenance-preview-setup__submit:hover {
+  border-color: #5a8fd0;
+}
+
+.maintenance-preview-product {
+  margin-top: 0.5rem;
+}
+
+.maintenance-preview-hero {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px 24px;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #2a3f63;
+}
+
+.maintenance-preview-hero__title {
+  margin: 0.25rem 0 0;
+  font-size: 1.35rem;
+}
+
+.maintenance-preview-hero__lede {
+  max-width: 46rem;
+  margin: 0.5rem 0 0;
+}
+
+.maintenance-preview-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.maintenance-preview-toolbar-reload {
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #3a5f8a;
+  background: #152238;
+  color: #c8d8f0;
+  cursor: pointer;
+}
+
+.maintenance-preview-toolbar-reload:hover {
+  border-color: #5a8fd0;
+}
+
+.maintenance-preview-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.84rem;
+  color: #9eb4cc;
+  margin-bottom: 1rem;
+}
+
+.maintenance-preview-safety h3,
+.maintenance-preview-export h3,
+.maintenance-preview-failure-impact h3,
+.maintenance-preview-topology-impact h3,
+.maintenance-preview-related-policies h3,
+.maintenance-preview-related-services h3,
+.maintenance-preview-explainability h3,
+.maintenance-preview-pivots h3,
+.maintenance-preview-assembly-caveats h3 {
+  margin: 1rem 0 0.35rem;
+  font-size: 1rem;
+}
+
+.maintenance-preview-non-claims {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.78rem;
+  color: #b8a898;
+}
+
+.maintenance-preview-sparse-callout {
+  margin: 0.75rem 0 1rem;
+  border-left: 3px solid #8a6a3a;
+  padding-left: 12px;
+}
+
+.maintenance-preview-sparse-reasons {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+}
+
+.maintenance-preview-dl {
+  display: grid;
+  grid-template-columns: minmax(10rem, 14rem) 1fr;
+  gap: 0.35rem 1rem;
+  font-size: 0.88rem;
+  margin: 0.5rem 0 0;
+}
+
+.maintenance-preview-dl dt {
+  color: #8a9bb8;
+}
+
+.maintenance-preview-caveats,
+.maintenance-preview-pointer-list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.88rem;
+  color: #d4c4a8;
+}
+
+.maintenance-preview-pivot-notes {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  color: #8a9bb8;
+}
+
+.maintenance-preview-pivot-notes code {
+  font-size: 0.78rem;
+}
+
+.maintenance-preview-table .table-link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  color: #7eb8ff;
+}
+
+.maintenance-preview-table .table-link-button:hover {
+  text-decoration: underline;
+}

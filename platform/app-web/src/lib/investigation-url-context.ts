@@ -24,6 +24,7 @@ export const INVESTIGATION_NAV_SOURCE_IDS = [
   "policy_explainability",
   "global_search",
   "service-explorer",
+  "maintenance-preview",
 ] as const;
 
 export type InvestigationNavSourceId = (typeof INVESTIGATION_NAV_SOURCE_IDS)[number];
@@ -58,6 +59,8 @@ export function labelForInvestigationNavSource(id: InvestigationNavSourceId): st
       return "Global search";
     case "service-explorer":
       return "Service Explorer";
+    case "maintenance-preview":
+      return "Maintenance Preview";
     default: {
       const _exhaustive: never = id;
       return _exhaustive;

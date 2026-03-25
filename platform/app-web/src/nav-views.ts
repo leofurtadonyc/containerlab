@@ -9,6 +9,7 @@ export const PLATFORM_NAV_VIEW_IDS = new Set<string>([
   "topology",
   "policies",
   "service-explorer",
+  "maintenance-preview",
   "workflows",
   "audit",
   "capabilities",
