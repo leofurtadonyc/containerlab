@@ -45,6 +45,7 @@ const KNOWN_POLICY_DOSSIER_ENTRY_VALUES = new Set([
   "operator_briefing_workspace",
   "evidence_replay_viewer",
   "service_explorer",
+  "service_dossier",
 ]);
 
 export function readPolicyWorkspaceFromSearch(search: string): PolicyWorkspaceMode {

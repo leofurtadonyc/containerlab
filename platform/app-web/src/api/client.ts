@@ -24,6 +24,7 @@ import type {
   CrossDomainDeltaDigestResponse,
   OperatorBriefingWorkspaceResponse,
   ServiceDetailResponse,
+  ServiceDossierResponse,
   ServicesListResponse,
   MaintenancePreviewResponse,
   MaintenancePreviewContext,
@@ -187,6 +188,11 @@ export class ApiClient {
   async getService(serviceId: string): Promise<ServiceDetailResponse> {
     const encoded = encodeURIComponent(serviceId);
     return this.request<ServiceDetailResponse>(`/api/v1/services/${encoded}`);
+  }
+
+  async getServiceDossier(serviceId: string): Promise<ServiceDossierResponse> {
+    const encoded = encodeURIComponent(serviceId);
+    return this.request<ServiceDossierResponse>(`/api/v1/services/${encoded}/dossier`);
   }
 
   async getPolicyPathAnalysis(policyId: string): Promise<PathAnalysisViewResponse> {

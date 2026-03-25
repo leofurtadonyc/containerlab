@@ -1923,6 +1923,35 @@ export interface ServiceDetailResponse extends ApiResponseMetadata {
   recommended_pivots: string[];
 }
 
+/** `GET /api/v1/services/{service_id}/dossier` — service_dossier_v1 (composed assemblies). */
+export interface ServiceDossierSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only";
+  explicit_non_claims: string[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface ServiceDossierResponse extends ApiResponseMetadata {
+  contract_id: "service_dossier_v1";
+  safety_framing: ServiceDossierSafetyFraming;
+  service_explorer_detail: ServiceDetailResponse;
+  default_member_policy_id: string;
+  member_posture_counts: Record<string, number>;
+  policy_explainability: PolicyExplainabilityResponse | null;
+  explainability_unavailable_note: string | null;
+  maintenance_preview: MaintenancePreviewResponse | null;
+  maintenance_preview_subject_node_id: string | null;
+  maintenance_unavailable_note: string | null;
+  merged_caveats: string[];
+  missing_evidence_notes: string[];
+  source_contract_ids: string[];
+  recommended_api_pivots: string[];
+  investigation_pivot_hint: string;
+  sparse_dossier: boolean;
+  sparse_reasons: string[];
+}
+
 export type ImpactReportContext = "service_impact" | "policy_impact" | "maintenance_impact";
 
 export type ImpactReportExplicitNonClaim =

@@ -26,6 +26,7 @@ export type TopologyDossierNavigationSource =
   | "operator_briefing_workspace"
   | "evidence_replay_viewer"
   | "service_explorer"
+  | "service_dossier"
   | "maintenance_preview";
 
 /** Read `dossier_source` from the shell query string. */
@@ -41,6 +42,7 @@ export function readDossierSourceFromSearch(search: string): TopologyDossierNavi
     raw === "operator_briefing_workspace" ||
     raw === "evidence_replay_viewer" ||
     raw === "service_explorer" ||
+    raw === "service_dossier" ||
     raw === "maintenance_preview"
   ) {
     return raw;

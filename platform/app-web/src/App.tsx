@@ -21,6 +21,7 @@ import { SituationRoomView } from "./features/situation-room/view";
 import { PlatformHealthView } from "./features/platform-health/view";
 import { PoliciesView } from "./features/policies/view";
 import { ServiceExplorerView } from "./features/service-explorer/view";
+import { ServiceDossierView } from "./features/service-dossier/view";
 import { MaintenancePreviewView } from "./features/maintenance-preview/view";
 import { ImpactReportView } from "./features/impact-report/view";
 import { ReadinessView } from "./features/readiness/view";
@@ -37,6 +38,7 @@ const NAV_ITEMS = [
   { id: "topology", label: "Topology" },
   { id: "policies", label: "Policies" },
   { id: "service-explorer", label: "Service Explorer" },
+  { id: "service-dossier", label: "Service dossier" },
   { id: "maintenance-preview", label: "Maintenance Preview" },
   { id: "impact-report", label: "Impact Report" },
   { id: "workflows", label: "Workflows" },
@@ -70,6 +72,8 @@ function renderView(viewId: string) {
       return <PoliciesView />;
     case "service-explorer":
       return <ServiceExplorerView />;
+    case "service-dossier":
+      return <ServiceDossierView />;
     case "maintenance-preview":
       return <MaintenancePreviewView />;
     case "impact-report":
@@ -128,7 +132,7 @@ export function App() {
         <p className="eyebrow">Phase 2 Read-Only Foundation</p>
         <p className="body-copy">
           This WebUI now consumes the current read-only backend contracts for
-          overview, platform status, devices, topology, policies, service explorer, maintenance preview, workflow
+          overview, platform status, devices, topology, policies, service explorer, service dossier, maintenance preview, workflow
           history, audit history, capabilities, readiness, bounded situation room
           evidence-pack assembly, operator briefing workspace, bounded investigation workspace assembly, and evidence export
           replay (not live). Grafana remains

@@ -20,6 +20,7 @@ import { navigateToImpactReportForService } from "../../lib/impact-report-naviga
 import { navigateToMaintenancePreview } from "../../lib/maintenance-preview-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
+import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 
 function posturePillClass(posture: string): string {
@@ -241,6 +242,14 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
         <div className="service-explorer-hero__actions">
           <button type="button" className="inline-action" onClick={() => navigateToServiceExplorer({ serviceId: null })}>
             Back to list
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToServiceDossier({ serviceId: data.service_id })}
+            title="service_dossier_v1 — composed workspace (explainability + optional maintenance); not a replacement for this Explorer detail"
+          >
+            Service dossier
           </button>
           <button type="button" className="service-explorer-toolbar-reload" onClick={() => void onReload()}>
             Reload

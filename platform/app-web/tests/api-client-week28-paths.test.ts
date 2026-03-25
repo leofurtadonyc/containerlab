@@ -573,6 +573,72 @@ describe("ApiClient week 28 bounded paths", () => {
     expect(url).toContain("/api/v1/services/policy%3Aa%3Ab");
   });
 
+  it("getServiceDossier encodes service_id and uses dossier path", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          service: "app-api",
+          version: "0.1.0",
+          phase: "phase_2_read_only_foundation",
+          generated_at: "2025-01-01T00:00:00Z",
+          contract_id: "service_dossier_v1",
+          safety_framing: {
+            contract_id: "service_dossier_v1",
+            authority_posture: "interpretation_support_only",
+            explicit_non_claims: [],
+            phase: "phase_2_read_only_foundation",
+            summary_disclaimer: "s",
+          },
+          service_explorer_detail: {
+            service: "app-api",
+            version: "0.1.0",
+            phase: "phase_2_read_only_foundation",
+            generated_at: "2025-01-01T00:00:00Z",
+            contract_id: "service_explorer_v1",
+            service_id: "policy:a:b",
+            kind: "policy",
+            policy_inventory: {
+              data_status: "live",
+              serving_mode: "live_collector",
+              empty_reason: "none",
+              summary: "s",
+              observed_policy_count: 0,
+              policy_items_total: 0,
+            },
+            members: [],
+            members_total: 0,
+            degraded_service: { posture: "ok", reason_codes: [], reason_codes_truncated: false },
+            topology_evidence_status: "partial",
+            topology_links: [],
+            topology_caveats: [],
+            caveats: [],
+            recommended_pivots: [],
+          },
+          default_member_policy_id: "",
+          member_posture_counts: {},
+          policy_explainability: null,
+          explainability_unavailable_note: null,
+          maintenance_preview: null,
+          maintenance_preview_subject_node_id: null,
+          maintenance_unavailable_note: null,
+          merged_caveats: [],
+          missing_evidence_notes: [],
+          source_contract_ids: ["service_dossier_v1"],
+          recommended_api_pivots: [],
+          investigation_pivot_hint: "hint",
+          sparse_dossier: false,
+          sparse_reasons: [],
+        }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getServiceDossier("policy:a:b");
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("/api/v1/services/policy%3Aa%3Ab/dossier");
+  });
+
   it("getMaintenancePreview builds query for node_id and preview_context", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
