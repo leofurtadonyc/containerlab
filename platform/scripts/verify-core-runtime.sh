@@ -431,13 +431,13 @@ if command -v python3 >/dev/null 2>&1; then
   first_node_id=$(printf '%s' "$topology_response" | python3 -c "import sys,json; d=json.load(sys.stdin); t=d.get('topology'); nodes=t.get('nodes') if t else None; print(nodes[0]['node_id'] if nodes else '')")
   first_service_id=$(printf '%s' "$services_response" | python3 -c "import sys,json; d=json.load(sys.stdin); items=d.get('items') or []; print(items[0]['service_id'] if items else '')")
 else
-  notice "python3 not found; skipping week 27–28 path-analysis, related-policies, failure-impact, policy evidence timeline/delta structural sampling, and week 32 service dossier GET sampling in verify-core-runtime.sh."
+  notice "python3 not found; skipping week 27–28 path-analysis, related-policies, failure-impact, policy evidence timeline/delta structural sampling, week 32 service dossier GET sampling, and week 33 change safety case report GET sampling in verify-core-runtime.sh."
   first_policy_id=""
   first_node_id=""
   first_service_id=""
 fi
 
-# Week 32 / week 33: Service Dossier v1 (structural GET; uses first service_id from GET /api/v1/services when python3 + items exist).
+# Week 32 / week 33: Service Dossier v1 + Change Safety Case /service report (structural GET; uses first service_id from GET /api/v1/services when python3 + items exist).
 if [ -n "$first_service_id" ]; then
   enc_service_id=$(printf '%s' "$first_service_id" | python3 -c "import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read().strip(), safe=''))")
   service_dossier_response=$(fetch_compact_json "$APP_API_URL/api/v1/services/${enc_service_id}/dossier")
@@ -445,9 +445,12 @@ if [ -n "$first_service_id" ]; then
   assert_contains "service dossier response (service_explorer_detail)" "$service_dossier_response" '"service_explorer_detail":{'
   assert_contains "service dossier response (merged_caveats)" "$service_dossier_response" '"merged_caveats":'
   assert_contains "service dossier response (source_contract_ids)" "$service_dossier_response" '"source_contract_ids":'
+  service_change_safety_case_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/change-safety-case/service?service_id=${enc_service_id}&format=json")
+  assert_contains "service change safety case response (contract id)" "$service_change_safety_case_response" '"contract_id":"change_safety_case_v1"'
+  assert_contains "service change safety case response (safety_case_context)" "$service_change_safety_case_response" '"safety_case_context":"service_change_safety"'
 else
   if command -v python3 >/dev/null 2>&1; then
-    notice "Services Explorer items list empty; skipping service dossier structural checks."
+    notice "Services Explorer items list empty; skipping service dossier and service change safety case structural checks."
   fi
 fi
 
@@ -482,8 +485,11 @@ if [ -n "$first_policy_id" ]; then
   policy_impact_report_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/policy-impact?policy_id=${enc_policy_q}&format=json")
   assert_contains "policy impact report response (contract id)" "$policy_impact_report_response" '"contract_id":"impact_report_v1"'
   assert_contains "policy impact report response (report_context)" "$policy_impact_report_response" '"report_context":"policy_impact"'
+  policy_change_safety_case_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/change-safety-case/policy?policy_id=${enc_policy_q}&format=json")
+  assert_contains "policy change safety case response (contract id)" "$policy_change_safety_case_response" '"contract_id":"change_safety_case_v1"'
+  assert_contains "policy change safety case response (safety_case_context)" "$policy_change_safety_case_response" '"safety_case_context":"policy_change_safety"'
 else
-  notice "Policies items list empty; skipping path-analysis, degraded_policy_v1 contract_id, policy evidence timeline, policy evidence delta, policy dossier, and policy explainability structural checks."
+  notice "Policies items list empty; skipping path-analysis, degraded_policy_v1 contract_id, policy evidence timeline, policy evidence delta, policy dossier, policy explainability, policy impact report, and policy change safety case structural checks."
 fi
 
 if [ -n "$first_node_id" ]; then
@@ -510,8 +516,11 @@ if [ -n "$first_node_id" ]; then
   maintenance_impact_report_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/maintenance-impact?node_id=${enc_node_q}&format=json")
   assert_contains "maintenance impact report response (contract id)" "$maintenance_impact_report_response" '"contract_id":"impact_report_v1"'
   assert_contains "maintenance impact report response (report_context)" "$maintenance_impact_report_response" '"report_context":"maintenance_impact"'
+  topology_change_safety_case_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/change-safety-case/maintenance?node_id=${enc_node_q}&format=json")
+  assert_contains "topology change safety case response (contract id)" "$topology_change_safety_case_response" '"contract_id":"change_safety_case_v1"'
+  assert_contains "topology change safety case response (safety_case_context)" "$topology_change_safety_case_response" '"safety_case_context":"topology_change_safety"'
 else
-  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, topology-object-dossier, maintenance-preview assembly, and maintenance-impact report structural checks."
+  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, topology-object-dossier, maintenance-preview assembly, maintenance-impact report, and topology change safety case structural checks."
 fi
 
 # Cross-slice list/history metadata and evidence shape (contract posture, not business truth).
