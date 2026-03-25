@@ -115,6 +115,20 @@ The word **“impact”** here means **bounded, read-side co-visibility of norma
 
 ---
 
+## Shipped API (Phase 2)
+
+Bounded read-only **`GET`** endpoints assemble **existing** contracts only; optional **`format=json`** (default) or **`format=markdown`** (human-readable companion with embedded JSON body).
+
+| Route | Anchor | Nested body |
+| --- | --- | --- |
+| **`GET /api/v1/reports/service-impact?service_id=…`** | Service Explorer **`service_id`** | **`service_explorer_v1`** detail |
+| **`GET /api/v1/reports/policy-impact?policy_id=…`** | Inventory **`policy_id`** | **`policy_dossier_v1`** |
+| **`GET /api/v1/reports/maintenance-impact`** | Same query params as **`GET /api/v1/maintenance-preview`** | **`maintenance_preview_v1`** |
+
+**404** / **422** follow the same identity rules as the underlying Service Explorer, policy dossier, and maintenance-preview routes.
+
+---
+
 ## Document history
 
-- **v1 (contract-only):** Defines **Impact Report v1** semantics for Phase **2** read-only product—**no** mandatory API until implementation tasks add **`impact_report_v1`** to code and tests.
+- **v1:** Defines **Impact Report v1** semantics; **API** ships as the routes above (**`impact_report_v1`** envelope + nested contract bodies).

@@ -18,6 +18,7 @@ from app_api.routers.platform import router as platform_router
 from app_api.routers.readiness_snapshot_history import (
     router as readiness_snapshot_history_router,
 )
+from app_api.routers.reports import router as reports_router
 from app_api.routers.policies import router as policies_router
 from app_api.routers.services import router as services_router
 from app_api.routers.topology import router as topology_router
@@ -41,5 +42,6 @@ router.include_router(policies_router)
 router.include_router(services_router)
 router.include_router(capabilities_router)
 router.include_router(readiness_snapshot_history_router)
+router.include_router(reports_router)
 router.include_router(health_router)
 router.include_router(platform_router)

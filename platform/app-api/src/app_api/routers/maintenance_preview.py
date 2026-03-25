@@ -16,7 +16,7 @@ from app_api.services.topology_related_policies import build_topology_object_rel
 router = APIRouter(tags=["maintenance-preview"])
 
 
-def _resolve_subject_params(
+def resolve_maintenance_subject_params(
     *,
     node_id: str | None,
     link_id: str | None,
@@ -81,7 +81,7 @@ def get_maintenance_preview(
     ),
 ) -> MaintenancePreviewResponse:
     """Return Maintenance Preview v1: reuse-only assembly over existing Phase 2 read contracts."""
-    oid, kind = _resolve_subject_params(
+    oid, kind = resolve_maintenance_subject_params(
         node_id=node_id,
         link_id=link_id,
         object_id=object_id,
