@@ -61,6 +61,7 @@ Adding sections that imply **compliance sign-off**, **validation verdict**, **in
 1. **Impact Report v1** is **not** a substitute for opening **live** product views or calling **authoritative** read APIs when freshness matters.
 2. If implementation offers **download**, **JSON** SHOULD remain **inspectable** and **nested-contract-faithful** where it embeds dossiers or maintenance preview payloads; **Markdown** MAY be a **companion** for email/wiki—same pattern as evidence export.
 3. **`impact_report_v1`** is **not** an **`export_kind`** in [**evidence-export-contract.md**](./evidence-export-contract.md) until that document and **`GET /api/v1/exports/...`** are explicitly extended—future work.
+4. **Evidence replay** (**`evidence_replay_viewer_v1`** / **`parseEvidenceExportJson`**) **must** reject root **`impact_report_v1`** JSON with a clear error—Impact Report files are **not** **`evidence_export_v1`** replay inputs (see [**evidence-replay-viewer-contract.md**](./evidence-replay-viewer-contract.md)).
 
 ---
 

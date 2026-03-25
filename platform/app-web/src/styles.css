@@ -479,6 +479,28 @@ section h2 {
   font-size: 0.85em;
 }
 
+.noc-cockpit__launch-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.noc-cockpit__launch-grid-preface {
+  margin: 0;
+}
+
+.noc-cockpit__digest-briefing-hint {
+  margin: 0;
+}
+
+.noc-cockpit-launch-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+
 .noc-cockpit__quick-grid {
   display: grid;
   gap: 12px;

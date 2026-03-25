@@ -8,6 +8,7 @@ import type {
 import { DeltaDigestOverviewEntry } from "./delta-digest-overview-entry";
 import { EvidenceReplayOverviewEntry } from "./evidence-replay-overview-entry";
 import { InvestigationOverviewEntry } from "./investigation-entry";
+import { NocCockpitOperatorLaunchGrid } from "./noc-cockpit-operator-launch-grid";
 import { NocCockpitStrategicPivots } from "./noc-cockpit-strategic-pivots";
 import { OperatorBriefingOverviewEntry } from "./operator-briefing-entry";
 import { OperatorWorkspaceEntry } from "./operator-workspace-entry";
@@ -60,16 +61,30 @@ export function NocCockpitSection({
         <p className="eyebrow">noc_cockpit_v1 · Phase 2 read-only</p>
         <h3 id="noc-cockpit-heading">NOC cockpit</h3>
         <p className="body-copy noc-cockpit__lede">
-          Strategic launch surface: cross-domain digest, composed briefing (with bundle exports), frozen evidence replay,
-          bounded packs and investigation, then attention rows — all from existing Phase 2 assemblies.{" "}
-          <strong>Not</strong> incident command, unified health scoring, or substitute for full Policies / Topology /
-          Investigation / Situation room views.
+          Cockpit composition: <strong>Service Explorer</strong>, <strong>policy explainability</strong>,{" "}
+          <strong>maintenance preview</strong>, and <strong>impact reports</strong> first — then cross-domain digest,
+          composed briefing (bundle + per-surface exports), frozen evidence replay, bounded packs and investigation, then
+          attention rows. All from existing Phase 2 assemblies. <strong>Not</strong> incident command, unified health
+          scoring, or substitute for full Policies / Topology / Investigation / Situation room views.
         </p>
       </header>
 
       <p className="callout noc-cockpit__search-hint">
         <strong>Global search</strong> stays in the shell header above — same{" "}
         <code>operator_search_pivot_v1</code> contract; not log or metrics search.
+      </p>
+
+      <NocCockpitOperatorLaunchGrid
+        firstNodeId={firstNodeId}
+        firstPolicyId={firstPolicyId}
+        policiesData={policiesData}
+        riskSummary={riskSummary.data}
+      />
+
+      <p className="callout noc-cockpit__digest-briefing-hint">
+        <strong>Delta digest</strong> and <strong>operator briefing</strong> in the next row share the same bounded{" "}
+        sync window as <strong>Recent change</strong> when you open them from Overview — interpretation and handoff, not
+        validation or incident command.
       </p>
 
       <div className="noc-cockpit__quick-grid">

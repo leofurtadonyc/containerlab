@@ -639,7 +639,15 @@ describe("overview view", () => {
 
     expect(html).toContain('data-testid="noc-cockpit-section"');
     expect(html).toContain("noc_cockpit_v1");
-    expect(html).toContain("Strategic launch surface");
+    expect(html).toContain("Cockpit composition");
+    expect(html).toContain('data-testid="noc-cockpit-operator-launch"');
+    expect(html).toContain("Primary launch surfaces");
+    expect(html).toContain('data-testid="noc-cockpit-launch-service-explorer"');
+    expect(html).toContain('data-testid="noc-cockpit-launch-explainability"');
+    expect(html).toContain('data-testid="noc-cockpit-launch-maintenance-preview"');
+    expect(html).toContain('data-testid="noc-cockpit-launch-impact-report"');
+    expect(html).toContain("Delta digest");
+    expect(html).toContain("operator briefing");
     expect(html).toContain("delta-digest-overview-entry");
     expect(html).toContain("cross_domain_delta_digest_v1");
     expect(html).toContain('data-testid="evidence-replay-overview-entry"');
@@ -650,7 +658,10 @@ describe("overview view", () => {
     expect(html).toContain("Topology dossier (top risk)");
     expect(html).toContain("Maintenance preview (top risk)");
     expect(html).toContain("Investigation (top risk)");
+    expect(html).toContain("Impact report (maintenance, top risk)");
     expect(html).toContain("Policy dossier (worst degraded)");
+    expect(html).toContain("Policy explainability (worst degraded)");
+    expect(html).toContain("Impact report (policy, worst degraded)");
     expect(html).not.toContain("Routine-use trust cues stay explicit here");
     expect(html).not.toContain("Declared platform components");
     expect(html).toContain("Full overview");

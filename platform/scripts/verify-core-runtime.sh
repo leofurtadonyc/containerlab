@@ -442,6 +442,10 @@ if [ -n "$first_policy_id" ]; then
   assert_contains "policy evidence export response (export_kind)" "$policy_export_response" '"export_kind":"policy_dossier"'
   assert_contains "policy evidence export response (nested policy dossier)" "$policy_export_response" '"contract_id":"policy_dossier_v1"'
   assert_contains "policy evidence export response (source_contract_ids)" "$policy_export_response" '"source_contract_ids":'
+  enc_policy_q=$(printf '%s' "$first_policy_id" | python3 -c "import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read().strip(), safe=''))")
+  policy_impact_report_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/policy-impact?policy_id=${enc_policy_q}&format=json")
+  assert_contains "policy impact report response (contract id)" "$policy_impact_report_response" '"contract_id":"impact_report_v1"'
+  assert_contains "policy impact report response (report_context)" "$policy_impact_report_response" '"report_context":"policy_impact"'
 else
   notice "Policies items list empty; skipping path-analysis, degraded_policy_v1 contract_id, policy evidence timeline, policy evidence delta, policy dossier, and policy explainability structural checks."
 fi
@@ -463,6 +467,10 @@ if [ -n "$first_node_id" ]; then
   assert_contains "topology evidence export response (envelope contract id)" "$topology_export_response" '"contract_id":"evidence_export_v1"'
   assert_contains "topology evidence export response (export_kind)" "$topology_export_response" '"export_kind":"topology_object_dossier"'
   assert_contains "topology evidence export response (nested topology dossier)" "$topology_export_response" '"contract_id":"topology_object_dossier_v1"'
+  enc_node_q=$(printf '%s' "$first_node_id" | python3 -c "import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read().strip(), safe=''))")
+  maintenance_impact_report_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/maintenance-impact?node_id=${enc_node_q}&format=json")
+  assert_contains "maintenance impact report response (contract id)" "$maintenance_impact_report_response" '"contract_id":"impact_report_v1"'
+  assert_contains "maintenance impact report response (report_context)" "$maintenance_impact_report_response" '"report_context":"maintenance_impact"'
 else
   notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, and topology-object-dossier structural checks."
 fi

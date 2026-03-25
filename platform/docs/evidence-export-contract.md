@@ -19,6 +19,8 @@ Stable **`contract_id`:** **`evidence_export_v1`**
 
 **Multi-member briefing archive (different envelope):** **`GET /api/v1/exports/operator-briefing`** returns **`briefing_export_bundle_v1`** — **not** **`evidence_export_v1`** at the root. It wraps **zero or more** embedded **`evidence_export_v1`** members plus bundle metadata; query alignment matches **`GET /api/v1/operator-briefing`**. See [`briefing-export-bundle-contract.md`](./briefing-export-bundle-contract.md).
 
+**Related reporting (not `evidence_export_v1`):** **`GET /api/v1/reports/...`** serves **[`impact_report_v1`](./impact-report-contract.md)**—a distinct envelope and route from **`GET /api/v1/exports/...`**; **`impact_report_v1`** is **not** an **`export_kind`** here.
+
 Shared query parameter: **`format`** — `json` (default) or `markdown` (applies to **`evidence_export_v1`** routes and the briefing bundle route).
 
 ---

@@ -68,6 +68,16 @@ export function parseEvidenceExportJson(raw: string): EvidenceReplayJsonResult {
     return { status: "error", error: err("missing_contract_id", "Missing contract_id on export envelope.") };
   }
 
+  if (o.contract_id === "impact_report_v1") {
+    return {
+      status: "error",
+      error: err(
+        "impact_report_not_evidence_export",
+        "This file is impact_report_v1 (Impact Report from GET /api/v1/reports/...), not evidence_export_v1. Evidence replay only accepts exports from GET /api/v1/exports/.... Use the Impact Report view for report review, or export a dossier / situation / investigation snapshot for replay.",
+      ),
+    };
+  }
+
   if (o.contract_id !== EVIDENCE_EXPORT_ENVELOPE_CONTRACT_ID) {
     return {
       status: "error",
