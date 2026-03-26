@@ -17,6 +17,8 @@ import { readDossierSourceFromSearch } from "../../lib/topology-dossier-navigati
 import { navigateToPoliciesPolicy } from "../../lib/topology-policy-navigation";
 import { useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { useTopologyObjectDossierQuery } from "./api";
+import { TopologyObjectEvidenceDeltaPanel } from "./topology-object-evidence-delta-panel";
+import { TopologyObjectEvidenceTimelinePanel } from "./topology-object-evidence-timeline-panel";
 
 export interface TopologyObjectDossierWorkspaceProps {
   objectId: string | null;
@@ -179,6 +181,25 @@ export function TopologyObjectDossierWorkspace({ objectId, objectKind }: Topolog
             <li key={line}>{line}</li>
           ))}
         </ul>
+      </section>
+
+      <section className="topology-dossier-workspace__section" aria-labelledby="dossier-timeline-heading">
+        <h4 id="dossier-timeline-heading">Evidence chronology (topology object)</h4>
+        <p className="table-note">
+          <code>topology_object_evidence_timeline_v1</code> via a dedicated read GET — composition differs from this
+          dossier JSON; not forensic chronology or pairing proof.
+        </p>
+        <TopologyObjectEvidenceTimelinePanel objectId={objectId} objectKind={objectKind} />
+      </section>
+
+      <section className="topology-dossier-workspace__section" aria-labelledby="dossier-delta-heading">
+        <h4 id="dossier-delta-heading">Evidence delta (topology object)</h4>
+        <p className="table-note">
+          <code>topology_object_evidence_delta_v1</code> compares current read-side assemblies to a previous
+          persisted topology and policy snapshot pair when available—not topology drift truth or blast-radius
+          simulation.
+        </p>
+        <TopologyObjectEvidenceDeltaPanel objectId={objectId} objectKind={objectKind} />
       </section>
 
       <div className="topology-dossier-workspace__grid">

@@ -625,6 +625,12 @@ if [ -n "$first_node_id" ]; then
   assert_contains "topology object dossier response (contract id)" "$topology_object_dossier_response" '"contract_id":"topology_object_dossier_v1"'
   assert_contains "topology object dossier response (nested failure_impact)" "$topology_object_dossier_response" '"failure_impact":{'
   assert_contains "topology object dossier response (risk_attention)" "$topology_object_dossier_response" '"risk_attention":{'
+  topology_object_evidence_timeline_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/objects/${first_node_id}/evidence-timeline")
+  assert_contains "topology object evidence timeline response (contract id)" "$topology_object_evidence_timeline_response" '"contract_id":"topology_object_evidence_timeline_v1"'
+  assert_contains "topology object evidence timeline response (object_id echo)" "$topology_object_evidence_timeline_response" "\"object_id\":\"${first_node_id}\""
+  topology_object_evidence_delta_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/objects/${first_node_id}/evidence-delta")
+  assert_contains "topology object evidence delta response (contract id)" "$topology_object_evidence_delta_response" '"contract_id":"topology_object_evidence_delta_v1"'
+  assert_contains "topology object evidence delta response (object_id echo)" "$topology_object_evidence_delta_response" "\"object_id\":\"${first_node_id}\""
   topology_export_response=$(fetch_compact_json "$APP_API_URL/api/v1/exports/topology-objects/${first_node_id}/dossier?format=json")
   assert_contains "topology evidence export response (envelope contract id)" "$topology_export_response" '"contract_id":"evidence_export_v1"'
   assert_contains "topology evidence export response (export_kind)" "$topology_export_response" '"export_kind":"topology_object_dossier"'

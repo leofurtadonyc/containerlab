@@ -51,6 +51,8 @@ import { TopologyRiskAttentionPanel } from "./topology-risk-attention-panel";
 import { TopologyFailureImpactPanel } from "./topology-failure-impact-panel";
 import { TopologyRelatedPoliciesPanel } from "./topology-related-policies-panel";
 import { TopologyObjectDossierWorkspace } from "./topology-object-dossier-workspace";
+import { TopologyObjectEvidenceDeltaPanel } from "./topology-object-evidence-delta-panel";
+import { TopologyObjectEvidenceTimelinePanel } from "./topology-object-evidence-timeline-panel";
 
 function readTopologyWorkspaceFromUrl(): "standard" | "dossier" {
   if (typeof window === "undefined") {
@@ -1645,6 +1647,7 @@ export function TopologyView() {
                 policiesList={policyData}
               />
               <TopologyFailureImpactPanel objectId={selectedNode.node_id} objectKind="node" />
+              <TopologyObjectEvidenceTimelinePanel objectId={selectedNode.node_id} objectKind="node" />
             </div>
           ) : null}
         </>
@@ -1876,6 +1879,8 @@ export function TopologyView() {
                 policiesList={policyData}
               />
               <TopologyFailureImpactPanel objectId={selectedLink.link_id} objectKind="link" />
+              <TopologyObjectEvidenceTimelinePanel objectId={selectedLink.link_id} objectKind="link" />
+              <TopologyObjectEvidenceDeltaPanel objectId={selectedLink.link_id} objectKind="link" />
             </div>
           ) : null}
         </>

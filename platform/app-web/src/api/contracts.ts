@@ -730,6 +730,136 @@ export interface TopologyObjectDossierResponse {
   merged_caveats: string[];
 }
 
+/** `GET /api/v1/topology/objects/{object_id}/evidence-timeline` (topology-object chronology; not forensic log or pairing proof). */
+export type TopologyObjectEvidenceTimelineEntryKind =
+  | "topology_object_snapshot_anchor"
+  | "failure_impact_assembly_anchor"
+  | "topology_risk_summary_row_anchor"
+  | "related_policies_list_anchor"
+  | "related_policy_timeline_entry"
+  | "related_policy_history_checkpoint"
+  | "related_path_analysis_assembly_anchor"
+  | "degraded_policy_signal_for_related_policy"
+  | "sync_activity_touch"
+  | "gap_note";
+
+export type TopologyObjectEvidenceTimelineExplicitNonClaim =
+  | "not_unified_forensic_chronology"
+  | "not_dataplane_or_forwarding_proof"
+  | "not_topology_pairing_or_coverage_truth"
+  | "not_workflow_execution_order"
+  | "not_validation_truth"
+  | "not_blast_radius_or_dependency_simulation"
+  | "not_cross_object_ranking"
+  | "not_substitute_for_policy_timeline"
+  | "not_substitute_for_service_timeline"
+  | "not_substitute_for_topology_dossier"
+  | "not_grafana_timeline";
+
+export interface TopologyObjectEvidenceTimelineSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: TopologyObjectEvidenceTimelineExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface TopologyObjectEvidenceTimelineEntry {
+  entry_kind: TopologyObjectEvidenceTimelineEntryKind;
+  sort_key: string;
+  tie_break: number;
+  summary: string;
+  provenance: string;
+  reference: string;
+  policy_id?: string | null;
+  source_policy_entry_kind?: string | null;
+}
+
+export interface TopologyObjectEvidenceTimelineResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: TopologyObjectEvidenceTimelineSafetyFraming;
+  object_kind: TopologyObjectKind;
+  object_id: string;
+  scope_summary: string;
+  entries: TopologyObjectEvidenceTimelineEntry[];
+  missing_evidence_notes: string[];
+}
+
+/** `GET /api/v1/topology/objects/{object_id}/evidence-delta` (object-scoped read-side difference hints; not drift truth). */
+export type TopologyObjectEvidenceDeltaCategory =
+  | "related_policy_set_change"
+  | "failure_impact_rollup_change"
+  | "related_member_degraded_policy_change"
+  | "topology_row_observation_change"
+  | "risk_summary_ranking_inputs_change"
+  | "topology_snapshot_caveat_echo_change"
+  | "no_comparable_fields"
+  | "gap_note";
+
+export type TopologyObjectEvidenceDeltaExplicitNonClaim =
+  | "not_topology_drift_truth"
+  | "not_pairing_or_coverage_truth"
+  | "not_blast_radius_or_dependency_simulation"
+  | "not_outage_or_sla_impact"
+  | "not_cross_object_ranking"
+  | "not_policy_correctness_verdict"
+  | "not_workflow_validation"
+  | "not_dataplane_or_forwarding_verdict"
+  | "not_substitute_for_policy_delta"
+  | "not_substitute_for_service_delta"
+  | "not_replacement_for_topology_object_timeline"
+  | "not_grafana_delta";
+
+export interface TopologyObjectEvidenceDeltaSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: TopologyObjectEvidenceDeltaExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface TopologyObjectEvidenceDeltaAnchorCurrent {
+  anchor_role: "current_topology_object_assembly";
+  generated_at: string;
+  reference: string;
+}
+
+export interface TopologyObjectEvidenceDeltaAnchorPrevious {
+  anchor_role: "previous_persisted_topology_and_policy_snapshots";
+  topology_snapshot_id: string;
+  topology_persisted_at: string;
+  policy_snapshot_id: string;
+  policy_persisted_at: string;
+  policy_observed_at: string | null;
+}
+
+export type TopologyObjectEvidenceDeltaComparisonStatus =
+  | "delta_ready"
+  | "no_comparable_anchor"
+  | "insufficient_evidence";
+
+export interface TopologyObjectEvidenceDeltaItem {
+  category: TopologyObjectEvidenceDeltaCategory;
+  summary: string;
+  detail: string | null;
+}
+
+export interface TopologyObjectEvidenceDeltaResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: TopologyObjectEvidenceDeltaSafetyFraming;
+  object_kind: TopologyObjectKind;
+  object_id: string;
+  comparison_status: TopologyObjectEvidenceDeltaComparisonStatus;
+  scope_summary: string;
+  current_anchor: TopologyObjectEvidenceDeltaAnchorCurrent;
+  previous_anchor: TopologyObjectEvidenceDeltaAnchorPrevious | null;
+  delta_items: TopologyObjectEvidenceDeltaItem[];
+  member_policy_delta_pointers: MemberPolicyEvidenceDeltaPointer[];
+  caveats: string[];
+}
+
 export interface PolicyDossierTopologyObjectHint {
   topology_object_kind: TopologyObjectKind;
   topology_object_id: string;

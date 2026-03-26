@@ -19,6 +19,8 @@ import type {
   TopologyRiskSummaryResponse,
   FailureImpactViewResponse,
   TopologyObjectDossierResponse,
+  TopologyObjectEvidenceDeltaResponse,
+  TopologyObjectEvidenceTimelineResponse,
   PolicyDossierResponse,
   PolicyExplainabilityResponse,
   PathExplorerWorkspaceResponse,
@@ -212,6 +214,20 @@ export class ApiClient {
     const encoded = encodeURIComponent(objectId);
     return this.request<TopologyObjectDossierResponse>(
       `/api/v1/topology/objects/${encoded}/dossier`,
+    );
+  }
+
+  async getTopologyObjectEvidenceTimeline(objectId: string): Promise<TopologyObjectEvidenceTimelineResponse> {
+    const encoded = encodeURIComponent(objectId);
+    return this.request<TopologyObjectEvidenceTimelineResponse>(
+      `/api/v1/topology/objects/${encoded}/evidence-timeline`,
+    );
+  }
+
+  async getTopologyObjectEvidenceDelta(objectId: string): Promise<TopologyObjectEvidenceDeltaResponse> {
+    const encoded = encodeURIComponent(objectId);
+    return this.request<TopologyObjectEvidenceDeltaResponse>(
+      `/api/v1/topology/objects/${encoded}/evidence-delta`,
     );
   }
 
