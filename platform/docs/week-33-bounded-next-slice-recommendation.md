@@ -4,6 +4,8 @@
 
 This note gives **one** explicit, phase-safe recommendation for the **next** narrow bounded slice after **Week 33** integrity work (verifier parity, archive, reassessment memo). It **does not** replace [`week-33-evidence-backed-reassessment-memo.md`](./week-33-evidence-backed-reassessment-memo.md) (categories and evidence gates) or [`decisions/ADR-0001-next-bounded-truth-depth-slice.md`](./decisions/ADR-0001-next-bounded-truth-depth-slice.md) (historical decision pattern).
 
+**Relationship to Week 34:** **Week 34** implemented **composed** **Path Explorer v1** and **Service Impact Workspace v1** (new bounded **`GET`** assemblies + WebUI + cockpit/search/overview pivots)—**not** this note’s **labeling-only** default. The **labeling** checklist below remains a **valid next** narrow slice when operator-visible wording alignment is the evidence-prioritized theme; default **next** scheduling after **week 34** closure is documented in [`post-week-34-bounded-phase2-recommendation.md`](./post-week-34-bounded-phase2-recommendation.md).
+
 **Phase:** [`Phase 2 — read-only product foundation`](../../agent/sdn/01-CURRENT-PHASE.md) — unchanged.
 
 ## Recommended next slice (single choice)
@@ -49,4 +51,5 @@ If **live lab evidence** shows operator confusion is primarily about **topology 
 | --- | --- |
 | Week 33 category scan | [`week-33-evidence-backed-reassessment-memo.md`](./week-33-evidence-backed-reassessment-memo.md) |
 | Anti-reopen posture | [`post-week-32-bounded-phase2-recommendation.md`](./post-week-32-bounded-phase2-recommendation.md) |
+| Post–week 34 scheduling | [`post-week-34-bounded-phase2-recommendation.md`](./post-week-34-bounded-phase2-recommendation.md) |
 | Operational truth | [`../../agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md) |

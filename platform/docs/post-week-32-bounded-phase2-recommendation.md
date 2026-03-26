@@ -122,3 +122,4 @@ The project remains **`Phase 2 — read-only product foundation`** until workflo
 | Week 32 completed-task archive (inventory) | [`../../agent/sdn-tasks/completed/week-32-archive-index.md`](../../agent/sdn-tasks/completed/week-32-archive-index.md) |
 | Week 33 evidence-backed reassessment (memo) | [`week-33-evidence-backed-reassessment-memo.md`](./week-33-evidence-backed-reassessment-memo.md) |
 | Week 33 bounded next-slice recommendation | [`week-33-bounded-next-slice-recommendation.md`](./week-33-bounded-next-slice-recommendation.md) |
+| Week 34 bounded Phase 2 posture | [`post-week-34-bounded-phase2-recommendation.md`](./post-week-34-bounded-phase2-recommendation.md) |
