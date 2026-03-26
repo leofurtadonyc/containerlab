@@ -1,4 +1,8 @@
 import type { MaintenanceEvidenceWorkspaceResponse } from "../../api/contracts";
+import {
+  DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
+  readSyncRunsLimitFromSearch,
+} from "../../lib/investigation-navigation";
 import { formatDateTime } from "../../lib/presentation";
 import { navigateToChangeSafetyCaseForMaintenance } from "../../lib/change-safety-case-navigation";
 import { navigateToImpactReportForMaintenance } from "../../lib/impact-report-navigation";
@@ -13,6 +17,10 @@ export interface MaintenanceEvidenceWorkspaceProductProps {
 export function MaintenanceEvidenceWorkspaceProduct({ data, onReload }: MaintenanceEvidenceWorkspaceProductProps) {
   const subj = data.maintenance_preview.subject;
   const ctx = data.preview_context;
+  const syncLim =
+    typeof window !== "undefined"
+      ? readSyncRunsLimitFromSearch(window.location.search, DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT)
+      : DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT;
 
   return (
     <div
@@ -77,6 +85,19 @@ export function MaintenanceEvidenceWorkspaceProduct({ data, onReload }: Maintena
             title="Topology object dossier workspace (separate composed GET)"
           >
             Topology dossier
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
+              navigateToStabilityWorkspace({
+                syncRunsLimit: syncLim,
+                topologyObject: { id: subj.object_id, kind: subj.object_kind },
+              })
+            }
+            title="Stability workspace — same topology subject; not maintenance evidence JSON assembly"
+          >
+            Stability workspace
           </button>
           <button type="button" className="maintenance-preview-toolbar-reload" onClick={() => void onReload()}>
             Reload

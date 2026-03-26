@@ -43,10 +43,12 @@ import { useDeltaDigestQuery } from "../delta-digest/api";
 import {
   OVERVIEW_RECENT_CHANGE_SYNC_LIMIT,
   useEvidenceConsistencySummaryQuery,
+  useOperationalStabilitySummaryQuery,
   useRecentChangeSummaryQuery,
 } from "./api";
 import { DeltaDigestOverviewEntry } from "./delta-digest-overview-entry";
 import { EvidenceConsistencyOverviewEntry } from "./evidence-consistency-overview-entry";
+import { StabilityOverviewEntry } from "./stability-overview-entry";
 import { InvestigationOverviewEntry } from "./investigation-entry";
 import { OperatorBriefingOverviewEntry } from "./operator-briefing-entry";
 import { OperatorWorkspaceEntry } from "./operator-workspace-entry";
@@ -145,6 +147,7 @@ export function OverviewView() {
   const riskSummaryQuery = useTopologyRiskSummaryQuery(topologySettled);
   const deltaDigestQuery = useDeltaDigestQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
   const evidenceConsistencyQuery = useEvidenceConsistencySummaryQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
+  const operationalStabilityQuery = useOperationalStabilitySummaryQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
   const searchKey = useUrlSearchParamsKey();
   const overviewMode = useMemo(() => readOverviewModeFromSearch(searchKey), [searchKey]);
 
@@ -166,6 +169,7 @@ export function OverviewView() {
         riskSummaryQuery,
         deltaDigestQuery,
         evidenceConsistencyQuery,
+        operationalStabilityQuery,
       ]);
     } finally {
       refreshInFlightRef.current = false;
@@ -180,6 +184,7 @@ export function OverviewView() {
     topologyQuery.reload,
     deltaDigestQuery.reload,
     evidenceConsistencyQuery.reload,
+    operationalStabilityQuery.reload,
   ]);
 
   const overviewSlices = [
@@ -490,6 +495,12 @@ export function OverviewView() {
               isLoading: evidenceConsistencyQuery.isLoading,
               reload: evidenceConsistencyQuery.reload,
             }}
+            operationalStability={{
+              data: operationalStabilityQuery.data,
+              error: operationalStabilityQuery.error,
+              isLoading: operationalStabilityQuery.isLoading,
+              reload: operationalStabilityQuery.reload,
+            }}
           />
         </>
       ) : (
@@ -537,6 +548,16 @@ export function OverviewView() {
               error: evidenceConsistencyQuery.error,
               isLoading: evidenceConsistencyQuery.isLoading,
               reload: evidenceConsistencyQuery.reload,
+            }}
+          />
+
+          <StabilityOverviewEntry
+            syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT}
+            operationalStability={{
+              data: operationalStabilityQuery.data,
+              error: operationalStabilityQuery.error,
+              isLoading: operationalStabilityQuery.isLoading,
+              reload: operationalStabilityQuery.reload,
             }}
           />
 

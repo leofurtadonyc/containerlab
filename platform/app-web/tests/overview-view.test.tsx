@@ -15,6 +15,7 @@ const {
   useTopologyRiskSummaryQuery,
   useDeltaDigestQuery,
   useEvidenceConsistencySummaryQuery,
+  useOperationalStabilitySummaryQuery,
   useUrlSearchParamsKey,
 } = vi.hoisted(() => ({
   usePlatformStatusQuery: vi.fn(),
@@ -26,6 +27,7 @@ const {
   useTopologyRiskSummaryQuery: vi.fn(),
   useDeltaDigestQuery: vi.fn(),
   useEvidenceConsistencySummaryQuery: vi.fn(),
+  useOperationalStabilitySummaryQuery: vi.fn(),
   useUrlSearchParamsKey: vi.fn(),
 }));
 
@@ -70,6 +72,7 @@ vi.mock("../src/features/overview/api", async (importOriginal) => {
     ...actual,
     useRecentChangeSummaryQuery,
     useEvidenceConsistencySummaryQuery,
+    useOperationalStabilitySummaryQuery,
   };
 });
 
@@ -585,6 +588,40 @@ function createDeltaDigestOverviewData(): CrossDomainDeltaDigestResponse {
   };
 }
 
+function createOperationalStabilitySummaryData() {
+  return {
+    metadata: {
+      service: "app-api",
+      version: "test",
+      phase: "phase_2_read_only_foundation",
+      generated_at: "2025-01-01T00:00:00Z",
+    },
+    contract_id: "operational_stability_summary_v1",
+    safety_framing: {
+      contract_id: "operational_stability_summary_v1",
+      authority_posture: "interpretation_support_only",
+      explicit_non_claims: ["not_prediction_truth"],
+      phase: "phase_2_read_only_foundation",
+      summary_disclaimer: "Disclaimer",
+    },
+    operational_stability_posture: "quiet_or_stable_evidence",
+    scope_summary: "Test stability scope",
+    sync_runs_limit_applied: 20,
+    rows: [
+      {
+        subject_family: "global_window",
+        row_type: "window",
+        stability_posture_hint: "quiet_or_stable_evidence",
+        summary: "Bounded window read.",
+        detail: null,
+        source_citations: [],
+      },
+    ],
+    caveats: [],
+    assembly_notes: [],
+  };
+}
+
 function createEvidenceConsistencySummaryData() {
   return {
     metadata: {
@@ -625,6 +662,7 @@ beforeEach(() => {
   useTopologyRiskSummaryQuery.mockReturnValue(createQueryState(createTopologyRiskSummaryData()));
   useDeltaDigestQuery.mockReturnValue(createQueryState(createDeltaDigestOverviewData()));
   useEvidenceConsistencySummaryQuery.mockReturnValue(createQueryState(createEvidenceConsistencySummaryData()));
+  useOperationalStabilitySummaryQuery.mockReturnValue(createQueryState(createOperationalStabilitySummaryData()));
 });
 
 describe("overview view", () => {
@@ -676,6 +714,9 @@ describe("overview view", () => {
 
     expect(html).toContain('data-testid="noc-cockpit-section"');
     expect(html).toContain('data-testid="evidence-consistency-overview-entry"');
+    expect(html).toContain('data-testid="stability-overview-entry"');
+    expect(html).toContain("Operational stability (cross-surface)");
+    expect(html).toContain("operational_stability_summary_v1");
     expect(html).toContain("Evidence consistency (cross-domain)");
     expect(html).toContain("noc_cockpit_v1");
     expect(html).toContain("maintenance evidence workspace");
@@ -742,6 +783,8 @@ describe("overview view", () => {
     expect(html).toContain("Open delta digest");
     expect(html).toContain("Open evidence consistency workspace");
     expect(html).toContain("delta-digest-overview-entry");
+    expect(html).toContain("Open stability workspace");
+    expect(html).toContain("stability-overview-entry");
     expect(html).toContain("Evidence consistency (cross-domain)");
     expect(html).toContain("evidence_consistency_summary_v1");
     expect(html).toContain("evidence-consistency-overview-entry");

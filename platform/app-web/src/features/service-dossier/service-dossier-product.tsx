@@ -1,5 +1,6 @@
 import type { ServiceDossierResponse, ServiceDetailResponse, ServiceTopologyLinkRecord } from "../../api/contracts";
 import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 import { navigateToDeltaDigestView } from "../../lib/delta-digest-navigation";
 import { formatDateTime, formatLabel } from "../../lib/presentation";
 import {
@@ -192,6 +193,15 @@ export function ServiceDossierProduct({ data, onReload }: ServiceDossierProductP
             onClick={() => navigateToEvidenceConsistencyWorkspace(syncLim)}
           >
             Evidence consistency workspace
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button"
+            onClick={() =>
+              navigateToStabilityWorkspace({ syncRunsLimit: syncLim, serviceId: d.service_id })
+            }
+          >
+            Stability workspace
           </button>
           <button type="button" className="nav-drilldown-button" onClick={() => navigateToEvidenceView("policies")}>
             Policies table

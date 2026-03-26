@@ -1,6 +1,7 @@
 import type { ChangeSafetyCaseResponse } from "../../api/contracts";
 import { ChangeSafetyCaseActions } from "../../components/change-safety-case-actions";
 import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 import {
   DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
   readSyncRunsLimitFromSearch,
@@ -189,6 +190,13 @@ export function ChangeSafetyCaseProduct({ data, downloadTarget, onReload }: Chan
             onClick={() => navigateToEvidenceConsistencyWorkspace(syncLim)}
           >
             Evidence consistency workspace
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button"
+            onClick={() => navigateToStabilityWorkspaceFromCase(data, syncLim)}
+          >
+            Stability workspace
           </button>
         </div>
         <DeeperPivots data={data} />

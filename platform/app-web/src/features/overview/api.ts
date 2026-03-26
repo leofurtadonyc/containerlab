@@ -23,3 +23,12 @@ export function useEvidenceConsistencySummaryQuery(syncRunsLimit: number, enable
 
   return useApiQuery(queryFn, { enabled });
 }
+
+export function useOperationalStabilitySummaryQuery(syncRunsLimit: number, enabled = true) {
+  const queryFn = useCallback(
+    () => apiClient.getOperationalStabilitySummary(syncRunsLimit),
+    [syncRunsLimit],
+  );
+
+  return useApiQuery(queryFn, { enabled });
+}

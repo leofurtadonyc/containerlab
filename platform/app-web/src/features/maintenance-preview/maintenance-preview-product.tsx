@@ -13,6 +13,7 @@ import { navigateToImpactReportForMaintenance } from "../../lib/impact-report-na
 import { navigateToChangeSafetyCaseForMaintenance } from "../../lib/change-safety-case-navigation";
 import { navigateToMaintenanceEvidenceWorkspace } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
+import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 
 export interface MaintenancePreviewProductProps {
   data: MaintenancePreviewResponse;
@@ -78,6 +79,19 @@ export function MaintenancePreviewProduct({ data, onReload }: MaintenancePreview
             title="maintenance_evidence_workspace_v1 — composed read assembly; not evidence_export_v1"
           >
             Maintenance evidence workspace
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
+              navigateToStabilityWorkspace({
+                syncRunsLimit: syncLim,
+                topologyObject: { id: subj.object_id, kind: subj.object_kind },
+              })
+            }
+            title="Stability workspace — same topology subject anchor; not maintenance_evidence_workspace_v1"
+          >
+            Stability workspace
           </button>
           <button type="button" className="maintenance-preview-toolbar-reload" onClick={() => void onReload()}>
             Reload

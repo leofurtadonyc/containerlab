@@ -32,6 +32,7 @@ import {
   navigateToChangeSafetyCaseForPolicy,
   navigateToChangeSafetyCaseHub,
 } from "../../lib/change-safety-case-navigation";
+import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 
 const DEBOUNCE_MS = 400;
 
@@ -401,6 +402,23 @@ export function GlobalOperatorSearch() {
                                   }}
                                 >
                                   Change safety case (policy)
+                                </button>
+                              ) : null}
+                              {hit.pivot.policy_id ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  title="Same policy-shaped service_id anchor as Service dossier (policy:…); not a search hit inside stability JSON."
+                                  onClick={() => {
+                                    navigateToStabilityWorkspace({
+                                      syncRunsLimit: 20,
+                                      serviceId: `policy:${hit.pivot.policy_id!}`,
+                                      echoSearchQuery: data.q,
+                                    });
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Stability workspace (policy service)
                                 </button>
                               ) : null}
                               {hit.pivot.topology_object && hit.pivot.topology_object_kind ? (

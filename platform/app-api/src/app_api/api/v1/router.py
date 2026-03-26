@@ -28,8 +28,12 @@ from app_api.routers.readiness_snapshot_history import (
 )
 from app_api.routers.reports import router as reports_router
 from app_api.routers.policies import router as policies_router
+from app_api.routers.service_stability_profile import router as service_stability_profile_router
 from app_api.routers.services import router as services_router
 from app_api.routers.topology import router as topology_router
+from app_api.routers.topology_object_stability_profile import (
+    router as topology_object_stability_profile_router,
+)
 from app_api.routers.workflow_history import router as workflow_history_router
 
 
@@ -50,9 +54,13 @@ router.include_router(workflow_history_router)
 router.include_router(audit_history_router)
 router.include_router(devices_router)
 router.include_router(topology_router)
+router.include_router(topology_object_stability_profile_router)
 router.include_router(policies_router)
 router.include_router(path_explorer_router)
 router.include_router(service_impact_workspace_router)
+# Register before ``services_router`` so ``/services/{service_id:path}/stability-profile`` is not
+# swallowed by the catch-all ``GET /services/{service_id:path}`` detail route.
+router.include_router(service_stability_profile_router)
 router.include_router(services_router)
 router.include_router(capabilities_router)
 router.include_router(readiness_snapshot_history_router)

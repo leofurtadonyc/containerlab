@@ -2304,6 +2304,85 @@ ol.notes-list.evidence-timeline-ordered {
   margin-top: 10px;
 }
 
+/* Stability workspace (operational_stability_summary_v1 + optional profiles) */
+.stability-workspace-route {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.stability-workspace-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #24324a;
+}
+
+.stability-workspace-hero__title {
+  margin: 0 0 8px;
+}
+
+.stability-workspace-setup__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.stability-workspace-setup__row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.stability-workspace-setup__service-input {
+  min-width: 280px;
+}
+
+.stability-workspace-hero__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stability-workspace-subheading {
+  margin: 16px 0 8px;
+  font-size: 0.95rem;
+}
+
+.stability-workspace-posture {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+
+.stability-workspace-nonclaims {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.stability-workspace-rows {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.stability-workspace-row {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #24324a;
+}
+
+.stability-workspace-profile {
+  margin-top: 4px;
+}
+
 /* Delta digest workspace (cross_domain_delta_digest_v1) */
 .delta-digest-route {
   max-width: 1180px;

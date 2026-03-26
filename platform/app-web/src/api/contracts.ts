@@ -2396,3 +2396,89 @@ export interface ChangeSafetyCaseResponse {
   service_dossier?: ServiceDossierResponse | null;
   maintenance_preview?: MaintenancePreviewResponse | null;
 }
+
+/** Shared posture labels — `operational_stability_summary_v1`, topology/service stability profiles. */
+export type StabilityPosture =
+  | "quiet_or_stable_evidence"
+  | "elevated_churn"
+  | "recurrence_suspected"
+  | "degraded_recurrence"
+  | "insufficient_evidence_for_stability_view";
+
+/** `GET /api/v1/stability/summary` — `operational_stability_summary_v1`. */
+export interface OperationalStabilityRow {
+  subject_family: "global_window" | "service" | "topology_object";
+  row_type: string;
+  stability_posture_hint: StabilityPosture | null;
+  summary: string;
+  detail: string | null;
+  source_citations: string[];
+}
+
+export interface OperationalStabilitySummaryResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: {
+    contract_id: string;
+    authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+    explicit_non_claims: string[];
+    phase: "phase_2_read_only_foundation";
+    summary_disclaimer: string;
+  };
+  operational_stability_posture: StabilityPosture;
+  scope_summary: string;
+  sync_runs_limit_applied: number;
+  rows: OperationalStabilityRow[];
+  caveats: string[];
+  assembly_notes: string[];
+}
+
+export interface StabilityProfilePivotHint {
+  label: string;
+  route_family: string;
+}
+
+/** `GET /api/v1/topology/objects/{object_id}/stability-profile` — `topology_object_stability_profile_v1`. */
+export interface TopologyObjectStabilityProfileResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: {
+    contract_id: string;
+    authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+    explicit_non_claims: string[];
+    phase: "phase_2_read_only_foundation";
+    summary_disclaimer: string;
+  };
+  object_kind: "node" | "link";
+  object_id: string;
+  profile_scope_summary: string;
+  primary_stability_posture: StabilityPosture;
+  volatility_churn_cues: string[];
+  recurrence_and_degraded_cues: string[];
+  evidence_weakness_cues: string[];
+  canonical_pivots: StabilityProfilePivotHint[];
+  merged_caveats: string[];
+  assembly_notes: string[];
+}
+
+/** `GET /api/v1/services/{service_id}/stability-profile` — `service_stability_profile_v1`. */
+export interface ServiceStabilityProfileResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: {
+    contract_id: string;
+    authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+    explicit_non_claims: string[];
+    phase: "phase_2_read_only_foundation";
+    summary_disclaimer: string;
+  };
+  service_id: string;
+  profile_scope_summary: string;
+  primary_stability_posture: StabilityPosture;
+  volatility_churn_cues: string[];
+  recurrence_and_degraded_cues: string[];
+  evidence_weakness_cues: string[];
+  canonical_pivots: StabilityProfilePivotHint[];
+  merged_caveats: string[];
+  assembly_notes: string[];
+}

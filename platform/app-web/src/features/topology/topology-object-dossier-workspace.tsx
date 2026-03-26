@@ -14,6 +14,7 @@ import { navigateToOperatorBriefingView } from "../../lib/operator-briefing-navi
 import { navigateToEvidenceView, navigateToPoliciesWithDegradedPolicyV1Posture } from "../../lib/url-app-state";
 import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
+import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 import { readDossierSourceFromSearch } from "../../lib/topology-dossier-navigation";
 import { navigateToPoliciesPolicy } from "../../lib/topology-policy-navigation";
 import { useUrlSearchParamsKey } from "../../lib/use-url-search-params";
@@ -155,6 +156,22 @@ export function TopologyObjectDossierWorkspace({ objectId, objectKind }: Topolog
             title="Read-only maintenance planning assembly (not approval or safe-to-change)"
           >
             Maintenance preview
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
+              navigateToStabilityWorkspace({
+                syncRunsLimit: syncRuns,
+                topologyObject: {
+                  id: data.object_identity.object_id,
+                  kind: data.object_identity.object_kind,
+                },
+              })
+            }
+            title="operational_stability_summary_v1 lane — same topology anchor as dossier; not evidence consistency"
+          >
+            Stability workspace
           </button>
           <EvidenceExportActions
             variant="dossier"

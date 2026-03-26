@@ -38,6 +38,9 @@ import type {
   MaintenancePreviewContext,
   ImpactReportResponse,
   ChangeSafetyCaseResponse,
+  OperationalStabilitySummaryResponse,
+  ServiceStabilityProfileResponse,
+  TopologyObjectStabilityProfileResponse,
 } from "./contracts";
 import {
   buildAuditHistoryQueryString,
@@ -353,6 +356,25 @@ export class ApiClient {
     return this.request<EvidenceConsistencySummaryResponse>(
       `/api/v1/evidence-consistency/summary?sync_runs_limit=${limit}`,
     );
+  }
+
+  async getOperationalStabilitySummary(syncRunsLimit = 20): Promise<OperationalStabilitySummaryResponse> {
+    const limit = Math.min(100, Math.max(1, syncRunsLimit));
+    return this.request<OperationalStabilitySummaryResponse>(
+      `/api/v1/stability/summary?sync_runs_limit=${limit}`,
+    );
+  }
+
+  async getTopologyObjectStabilityProfile(objectId: string): Promise<TopologyObjectStabilityProfileResponse> {
+    const encoded = encodeURIComponent(objectId.trim());
+    return this.request<TopologyObjectStabilityProfileResponse>(
+      `/api/v1/topology/objects/${encoded}/stability-profile`,
+    );
+  }
+
+  async getServiceStabilityProfile(serviceId: string): Promise<ServiceStabilityProfileResponse> {
+    const encoded = encodeURIComponent(serviceId.trim());
+    return this.request<ServiceStabilityProfileResponse>(`/api/v1/services/${encoded}/stability-profile`);
   }
 
   async getInvestigationWorkspaceContext(

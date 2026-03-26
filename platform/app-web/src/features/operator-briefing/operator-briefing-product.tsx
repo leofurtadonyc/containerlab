@@ -8,6 +8,7 @@ import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../l
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { formatDateTime } from "../../lib/presentation";
 import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 
 export interface OperatorBriefingProductProps {
@@ -148,6 +149,23 @@ export function OperatorBriefingProduct({ data, syncRunsLimit, onReload }: Opera
             onClick={() => navigateToEvidenceConsistencyWorkspace(syncRunsLimit)}
           >
             Evidence consistency workspace
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button operator-briefing-live-pivots__primary"
+            onClick={() =>
+              topo?.object_identity
+                ? navigateToStabilityWorkspace({
+                    syncRunsLimit: syncRunsLimit,
+                    topologyObject: {
+                      id: topo.object_identity.object_id,
+                      kind: topo.object_identity.object_kind,
+                    },
+                  })
+                : navigateToStabilityWorkspace({ syncRunsLimit: syncRunsLimit })
+            }
+          >
+            Stability workspace
           </button>
           <button
             type="button"
