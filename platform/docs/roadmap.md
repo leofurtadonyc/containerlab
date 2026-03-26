@@ -372,6 +372,37 @@ This lane made **topology objects** and **maintenance subjects** first-class evi
 
 There is **no** automatic next implementation lane. Prefer **one** evidence-first slice per cycle—see [`post-week-36-bounded-phase2-recommendation.md`](./post-week-36-bounded-phase2-recommendation.md).
 
+## Planned Week 37 bounded lane
+
+Week **37** is planned as a single bounded Phase **2** innovation lane: **operational stability intelligence**.
+
+Planned focus (scheduled, not yet shipped):
+
+1. **Operational stability summary v1** — a new backend-owned summary over existing read-side evidence so operators can see quiet vs churn-heavy vs evidence-weak posture without prediction or approval semantics.
+2. **Topology object stability profile v1** — a topology-subject stability surface reusing dossier, failure-impact, timeline, delta, and maintenance-adjacent evidence without reopening week **36** semantics.
+3. **Service stability profile v1** — a service-subject stability surface reusing Service Explorer, Service Dossier, and service timeline/delta without reopening week **35** semantics.
+4. **Stability workspace and pivots** — a WebUI operator surface that connects the summary and profiles to Overview / NOC, topology, service, maintenance, and change-support surfaces.
+
+Planning posture preserved:
+
+- **`Phase 2 — read-only product foundation`** unchanged
+- weeks **35–36** remain **closed** unless new evidence justifies narrow overlap
+- no workflow, dry-run, validation, approval, prediction authority, or Grafana-owned product semantics
+
+Primary planning artifacts:
+
+- [`../../agent/sdn/week-37-schedule-overview.md`](../../agent/sdn/week-37-schedule-overview.md)
+- [`../../agent/sdn/week-37-monday-task-01-operational-stability-summary-contract.md`](../../agent/sdn/week-37-monday-task-01-operational-stability-summary-contract.md)
+- [`../../agent/sdn/week-37-monday-task-02-operational-stability-summary-api-and-tests.md`](../../agent/sdn/week-37-monday-task-02-operational-stability-summary-api-and-tests.md)
+- [`../../agent/sdn/week-37-tuesday-task-01-topology-object-stability-profile-contract.md`](../../agent/sdn/week-37-tuesday-task-01-topology-object-stability-profile-contract.md)
+- [`../../agent/sdn/week-37-tuesday-task-02-topology-object-stability-profile-api-and-tests.md`](../../agent/sdn/week-37-tuesday-task-02-topology-object-stability-profile-api-and-tests.md)
+- [`../../agent/sdn/week-37-wednesday-task-01-service-stability-profile-contract.md`](../../agent/sdn/week-37-wednesday-task-01-service-stability-profile-contract.md)
+- [`../../agent/sdn/week-37-wednesday-task-02-service-stability-profile-api-and-tests.md`](../../agent/sdn/week-37-wednesday-task-02-service-stability-profile-api-and-tests.md)
+- [`../../agent/sdn/week-37-thursday-task-01-stability-workspace-webui-and-typed-client-consumption.md`](../../agent/sdn/week-37-thursday-task-01-stability-workspace-webui-and-typed-client-consumption.md)
+- [`../../agent/sdn/week-37-thursday-task-02-stability-workspace-cross-surface-pivots.md`](../../agent/sdn/week-37-thursday-task-02-stability-workspace-cross-surface-pivots.md)
+- [`../../agent/sdn/week-37-friday-task-01-week37-verifier-regression-and-docs-alignment.md`](../../agent/sdn/week-37-friday-task-01-week37-verifier-regression-and-docs-alignment.md)
+- [`../../agent/sdn/week-37-friday-task-02-week37-rollup-roadmap-and-next-posture.md`](../../agent/sdn/week-37-friday-task-02-week37-rollup-roadmap-and-next-posture.md)
+
 ## Boundary Reminder
 
 Phase transitions should not happen just because files exist.
