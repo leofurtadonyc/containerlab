@@ -206,3 +206,96 @@ def build_topology_object_related_policies_response(
         global_caveats=global_caveats,
         items=items,
     )
+
+
+def build_topology_object_related_policies_response_from_snapshot(
+    object_id: str,
+    *,
+    topo_snapshot: TopologySnapshot,
+    policies: list[PolicyInventoryRecord],
+) -> TopologyObjectRelatedPoliciesResponse | None:
+    """Related policies for ``object_id`` using an explicit topology snapshot and policy rows.
+
+    Used for bounded anchor-B assemblies (e.g. topology object evidence delta) so the previous
+    persisted snapshot intersects the same string-equality rules as the live related-policies API.
+    """
+    settings = get_settings()
+    resolved = _resolve_object(object_id, topo_snapshot)
+    if resolved is None:
+        return None
+
+    kind, node, link = resolved
+    global_caveats: list[str] = [
+        "Related policies are derived from exact string equality between normalized policy "
+        "headend/endpoint/source_target fields and topology node_id/display_name/device_id. "
+        "This does not prove dataplane forwarding dependency, operational impact, or that "
+        "the policy is bound to a specific interface or adjacency beyond naming alignment.",
+    ]
+    if topo_snapshot.completeness != "complete":
+        global_caveats.append(
+            "Topology snapshot completeness is not 'complete'; the object set may omit "
+            "nodes or links that exist outside this normalized slice."
+        )
+
+    items: list[TopologyRelatedPolicyReference] = []
+    derivation = (
+        "Matches policies whose headend, endpoint, or source_target string equals one of the "
+        "selected topology node's identifiers (node_id, display_name, or device_id)."
+    )
+
+    if kind == "node" and node is not None:
+        items.extend(
+            _emit_matches_for_node(
+                policies=policies,
+                node=node,
+                context="node",
+            )
+        )
+    elif kind == "link" and link is not None:
+        derivation = (
+            "Union of policies matching either endpoint node of this link using the same "
+            "string-equality rules as for a single node. Link adjacency is not treated as "
+            "policy path verification."
+        )
+        source_n = _find_node(topo_snapshot, link.source_node_id)
+        target_n = _find_node(topo_snapshot, link.target_node_id)
+        if source_n is not None:
+            items.extend(
+                _emit_matches_for_node(
+                    policies=policies,
+                    node=source_n,
+                    context="link",
+                )
+            )
+        if target_n is not None:
+            items.extend(
+                _emit_matches_for_node(
+                    policies=policies,
+                    node=target_n,
+                    context="link",
+                )
+            )
+        if link.endpoint_pairing_state == "single_sided":
+            global_caveats.append(
+                "This link has single-sided endpoint pairing; endpoint identity alignment may be weaker."
+            )
+
+    field_order = {"headend": 0, "endpoint": 1, "source_target": 2}
+    items.sort(
+        key=lambda r: (r.policy_id, field_order.get(r.matched_field, 9), r.anchor_topology_node_id),
+    )
+
+    now = datetime.now(tz=UTC)
+    return TopologyObjectRelatedPoliciesResponse(
+        metadata=ApiResponseMetadata(
+            service="app-api",
+            version=settings.app_version,
+            phase="phase_2_read_only_foundation",
+            generated_at=now,
+        ),
+        object_kind=kind,
+        object_id=object_id,
+        derivation_summary=derivation,
+        global_caveats=global_caveats,
+        items=items,
+    )

@@ -3,6 +3,7 @@ import type {
   ServicesListResponse,
   ServiceTopologyLinkRecord,
 } from "../../api/contracts";
+import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
 import { navigateToDeltaDigestView } from "../../lib/delta-digest-navigation";
 import { formatDateTime, formatLabel } from "../../lib/presentation";
 import {
@@ -21,8 +22,11 @@ import { navigateToChangeSafetyCaseForService } from "../../lib/change-safety-ca
 import { navigateToMaintenancePreview } from "../../lib/maintenance-preview-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
+import { navigateToServiceImpactWorkspace } from "../../lib/service-impact-workspace-navigation";
 import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
+import { ServiceEvidenceDeltaPanel } from "./service-evidence-delta-panel";
+import { ServiceEvidenceTimelinePanel } from "./service-evidence-timeline-panel";
 
 function posturePillClass(posture: string): string {
   if (posture === "degraded") {
@@ -59,9 +63,11 @@ export function ServiceExplorerListProduct({ data, limitApplied, onReload }: Ser
           <p className="eyebrow">Phase 2 · service_explorer_v1</p>
           <h2 className="service-explorer-hero__title">Service Explorer</h2>
           <p className="body-copy service-explorer-hero__lede">
-            Grouped read lens over the <strong>same</strong> policy inventory as Policies—not a second catalog.
-            Rows are discoverable groupings (policy, color, headend, endpoint); membership is bounded to the current
-            inventory slice.
+            Grouped read lens over the <strong>same</strong> policy inventory as Policies—not a second catalog.{" "}
+            <strong>List/index only</strong>: composed <strong>Service dossier</strong> and{" "}
+            <strong>Service Impact workspace</strong> are separate shell views (they nest Explorer detail with other
+            contracts). Rows are discoverable groupings (policy, color, headend, endpoint); membership is bounded to the
+            current inventory slice.
           </p>
         </div>
         <div className="service-explorer-hero__actions">
@@ -248,7 +254,9 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
           </h2>
           <p className="body-copy service-explorer-hero__lede">
             Members are normalized policy rows from the current inventory only. Topology links are best-effort string
-            matches—not adjacency or dataplane proof.
+            matches—not adjacency or dataplane proof. This route is Explorer <strong>membership detail</strong>—
+            <strong>not</strong> Service dossier (composed briefing) or Service Impact workspace (Explorer + failure-impact
+            assembly).
           </p>
         </div>
         <div className="service-explorer-hero__actions">
@@ -262,6 +270,14 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
             title="service_dossier_v1 — composed workspace (explainability + optional maintenance); not a replacement for this Explorer detail"
           >
             Service dossier
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToServiceImpactWorkspace(data.service_id)}
+            title="service_impact_workspace_v1 — composed Explorer + optional failure-impact; distinct from this detail GET"
+          >
+            Service Impact workspace
           </button>
           <button type="button" className="service-explorer-toolbar-reload" onClick={() => void onReload()}>
             Reload
@@ -285,6 +301,10 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
           </span>
         </span>
       </div>
+
+      <ServiceEvidenceTimelinePanel serviceId={data.service_id} />
+
+      <ServiceEvidenceDeltaPanel serviceId={data.service_id} />
 
       {data.degraded_service.reason_codes.length > 0 ? (
         <p className="table-note">
@@ -325,6 +345,13 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
           </button>
           <button type="button" className="nav-drilldown-button" onClick={() => navigateToDeltaDigestView(syncLim)}>
             Delta digest
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button"
+            onClick={() => navigateToEvidenceConsistencyWorkspace(syncLim)}
+          >
+            Evidence consistency workspace
           </button>
           <button type="button" className="nav-drilldown-button" onClick={() => navigateToEvidenceView("policies")}>
             Policies table

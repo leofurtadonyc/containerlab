@@ -625,6 +625,26 @@ export interface MaintenancePreviewResponse {
   assembly_caveats: string[];
 }
 
+/** `GET /api/v1/maintenance-evidence-workspace` — composed maintenance read assembly; not approval, simulation, or evidence_export_v1. */
+export interface MaintenanceEvidenceWorkspaceResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "maintenance_evidence_workspace_v1";
+  object_kind: "node" | "link";
+  object_id: string;
+  preview_context: MaintenancePreviewContext;
+  maintenance_framing_summary: string;
+  maintenance_preview: MaintenancePreviewResponse;
+  topology_object_dossier: TopologyObjectDossierResponse | null;
+  topology_object_evidence_timeline: TopologyObjectEvidenceTimelineResponse | null;
+  topology_object_evidence_delta: TopologyObjectEvidenceDeltaResponse | null;
+  change_safety_case: ChangeSafetyCaseResponse;
+  merged_caveats: string[];
+  merged_evidence_gap_notes: string[];
+  explicit_non_claims: string[];
+  source_contract_ids: string[];
+  recommended_api_pivots: string[];
+}
+
 export type TopologyRiskSummaryExplicitNonClaim =
   | "not_sla_or_service_risk_truth"
   | "not_traffic_or_dataplane_risk_truth"
@@ -730,6 +750,136 @@ export interface TopologyObjectDossierResponse {
   merged_caveats: string[];
 }
 
+/** `GET /api/v1/topology/objects/{object_id}/evidence-timeline` (topology-object chronology; not forensic log or pairing proof). */
+export type TopologyObjectEvidenceTimelineEntryKind =
+  | "topology_object_snapshot_anchor"
+  | "failure_impact_assembly_anchor"
+  | "topology_risk_summary_row_anchor"
+  | "related_policies_list_anchor"
+  | "related_policy_timeline_entry"
+  | "related_policy_history_checkpoint"
+  | "related_path_analysis_assembly_anchor"
+  | "degraded_policy_signal_for_related_policy"
+  | "sync_activity_touch"
+  | "gap_note";
+
+export type TopologyObjectEvidenceTimelineExplicitNonClaim =
+  | "not_unified_forensic_chronology"
+  | "not_dataplane_or_forwarding_proof"
+  | "not_topology_pairing_or_coverage_truth"
+  | "not_workflow_execution_order"
+  | "not_validation_truth"
+  | "not_blast_radius_or_dependency_simulation"
+  | "not_cross_object_ranking"
+  | "not_substitute_for_policy_timeline"
+  | "not_substitute_for_service_timeline"
+  | "not_substitute_for_topology_dossier"
+  | "not_grafana_timeline";
+
+export interface TopologyObjectEvidenceTimelineSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: TopologyObjectEvidenceTimelineExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface TopologyObjectEvidenceTimelineEntry {
+  entry_kind: TopologyObjectEvidenceTimelineEntryKind;
+  sort_key: string;
+  tie_break: number;
+  summary: string;
+  provenance: string;
+  reference: string;
+  policy_id?: string | null;
+  source_policy_entry_kind?: string | null;
+}
+
+export interface TopologyObjectEvidenceTimelineResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "topology_object_evidence_timeline_v1";
+  safety_framing: TopologyObjectEvidenceTimelineSafetyFraming;
+  object_kind: TopologyObjectKind;
+  object_id: string;
+  scope_summary: string;
+  entries: TopologyObjectEvidenceTimelineEntry[];
+  missing_evidence_notes: string[];
+}
+
+/** `GET /api/v1/topology/objects/{object_id}/evidence-delta` (object-scoped read-side difference hints; not drift truth). */
+export type TopologyObjectEvidenceDeltaCategory =
+  | "related_policy_set_change"
+  | "failure_impact_rollup_change"
+  | "related_member_degraded_policy_change"
+  | "topology_row_observation_change"
+  | "risk_summary_ranking_inputs_change"
+  | "topology_snapshot_caveat_echo_change"
+  | "no_comparable_fields"
+  | "gap_note";
+
+export type TopologyObjectEvidenceDeltaExplicitNonClaim =
+  | "not_topology_drift_truth"
+  | "not_pairing_or_coverage_truth"
+  | "not_blast_radius_or_dependency_simulation"
+  | "not_outage_or_sla_impact"
+  | "not_cross_object_ranking"
+  | "not_policy_correctness_verdict"
+  | "not_workflow_validation"
+  | "not_dataplane_or_forwarding_verdict"
+  | "not_substitute_for_policy_delta"
+  | "not_substitute_for_service_delta"
+  | "not_replacement_for_topology_object_timeline"
+  | "not_grafana_delta";
+
+export interface TopologyObjectEvidenceDeltaSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: TopologyObjectEvidenceDeltaExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface TopologyObjectEvidenceDeltaAnchorCurrent {
+  anchor_role: "current_topology_object_assembly";
+  generated_at: string;
+  reference: string;
+}
+
+export interface TopologyObjectEvidenceDeltaAnchorPrevious {
+  anchor_role: "previous_persisted_topology_and_policy_snapshots";
+  topology_snapshot_id: string;
+  topology_persisted_at: string;
+  policy_snapshot_id: string;
+  policy_persisted_at: string;
+  policy_observed_at: string | null;
+}
+
+export type TopologyObjectEvidenceDeltaComparisonStatus =
+  | "delta_ready"
+  | "no_comparable_anchor"
+  | "insufficient_evidence";
+
+export interface TopologyObjectEvidenceDeltaItem {
+  category: TopologyObjectEvidenceDeltaCategory;
+  summary: string;
+  detail: string | null;
+}
+
+export interface TopologyObjectEvidenceDeltaResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "topology_object_evidence_delta_v1";
+  safety_framing: TopologyObjectEvidenceDeltaSafetyFraming;
+  object_kind: TopologyObjectKind;
+  object_id: string;
+  comparison_status: TopologyObjectEvidenceDeltaComparisonStatus;
+  scope_summary: string;
+  current_anchor: TopologyObjectEvidenceDeltaAnchorCurrent;
+  previous_anchor: TopologyObjectEvidenceDeltaAnchorPrevious | null;
+  delta_items: TopologyObjectEvidenceDeltaItem[];
+  member_policy_delta_pointers: MemberPolicyEvidenceDeltaPointer[];
+  caveats: string[];
+}
+
 export interface PolicyDossierTopologyObjectHint {
   topology_object_kind: TopologyObjectKind;
   topology_object_id: string;
@@ -810,6 +960,35 @@ export interface PolicyExplainabilityResponse {
   merged_caveats: string[];
 }
 
+/** `GET /api/v1/path-explorer?policy_id=…` — composed path-analysis + explainability [+ optional dossier]. */
+export interface PathExplorerWorkspaceResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "path_explorer_v1";
+  policy_id: string;
+  path_analysis: PathAnalysisViewResponse;
+  explainability: PolicyExplainabilityResponse;
+  policy_dossier: PolicyDossierResponse | null;
+  merged_caveats: string[];
+  explicit_non_claims: string[];
+  source_contract_ids: string[];
+}
+
+/** `GET /api/v1/service-impact-workspace?service_id=…` — composed Service Explorer + optional failure-impact. */
+export interface ServiceImpactWorkspaceResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "service_impact_workspace_v1";
+  service_id: string;
+  service_explorer: ServiceDetailResponse;
+  failure_impact: FailureImpactViewResponse | null;
+  failure_impact_topology_anchor: string | null;
+  failure_impact_assembly_note: string | null;
+  merged_caveats: string[];
+  merged_evidence_gap_notes: string[];
+  explicit_non_claims: string[];
+  source_contract_ids: string[];
+  recommended_api_pivots: string[];
+}
+
 /** `GET /api/v1/policies/{policy_id}/topology-impact` (inverse pivot; naming alignment only). */
 export interface PolicyTopologyImpactRow {
   topology_object_kind: TopologyObjectKind;
@@ -874,6 +1053,130 @@ export interface PolicyEvidenceTimelineResponse {
   scope_summary: string;
   entries: PolicyEvidenceTimelineEntry[];
   missing_evidence_notes: string[];
+}
+
+/** `GET /api/v1/services/{service_id}/evidence-timeline` (service-scoped chronology; not incident SLA or workflow order). */
+export type ServiceEvidenceTimelineEntryKind =
+  | "service_membership_snapshot_anchor"
+  | "member_policy_timeline_entry"
+  | "member_policy_history_checkpoint"
+  | "member_path_analysis_assembly_anchor"
+  | "degraded_posture_shift_for_member"
+  | "service_degraded_roll_up_context"
+  | "sync_activity_touch"
+  | "gap_note";
+
+export type ServiceEvidenceTimelineExplicitNonClaim =
+  | "not_unified_incident_chronology"
+  | "not_workflow_execution_order"
+  | "not_validation_truth"
+  | "not_sla_or_customer_impact"
+  | "not_packet_path_proof"
+  | "not_service_catalog_authority"
+  | "not_cross_service_ranking"
+  | "not_grafana_timeline"
+  | "not_substitute_for_policy_timeline";
+
+export interface ServiceEvidenceTimelineSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: ServiceEvidenceTimelineExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface ServiceEvidenceTimelineEntry {
+  entry_kind: ServiceEvidenceTimelineEntryKind;
+  sort_key: string;
+  tie_break: number;
+  summary: string;
+  provenance: string;
+  reference: string;
+  policy_id?: string | null;
+  source_policy_entry_kind?: string | null;
+}
+
+export interface ServiceEvidenceTimelineResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: ServiceEvidenceTimelineSafetyFraming;
+  service_id: string;
+  scope_summary: string;
+  entries: ServiceEvidenceTimelineEntry[];
+  missing_evidence_notes: string[];
+}
+
+/** `GET /api/v1/services/{service_id}/evidence-delta` (grouped read-side difference hints; not service drift truth). */
+export type ServiceEvidenceDeltaCategory =
+  | "service_membership_change"
+  | "degraded_service_roll_up_change"
+  | "member_degraded_policy_change"
+  | "topology_linkage_change"
+  | "policy_inventory_echo_change"
+  | "no_comparable_fields"
+  | "gap_note";
+
+export type ServiceEvidenceDeltaExplicitNonClaim =
+  | "not_service_drift_truth"
+  | "not_sla_or_customer_impact"
+  | "not_cross_service_ranking"
+  | "not_policy_correctness_verdict"
+  | "not_workflow_validation"
+  | "not_dataplane_or_te_verdict"
+  | "not_substitute_for_policy_delta"
+  | "not_replacement_for_service_timeline"
+  | "not_grafana_delta";
+
+export interface ServiceEvidenceDeltaSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: ServiceEvidenceDeltaExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface ServiceEvidenceDeltaAnchorCurrent {
+  anchor_role: "current_explorer_detail";
+  generated_at: string;
+  reference: string;
+}
+
+export interface ServiceEvidenceDeltaAnchorPrevious {
+  anchor_role: "previous_persisted_policy_snapshot";
+  snapshot_id: string;
+  persisted_at: string;
+  observed_at: string | null;
+}
+
+export type ServiceEvidenceDeltaComparisonStatus =
+  | "delta_ready"
+  | "no_comparable_anchor"
+  | "insufficient_evidence";
+
+export interface ServiceEvidenceDeltaItem {
+  category: ServiceEvidenceDeltaCategory;
+  summary: string;
+  detail: string | null;
+}
+
+export interface MemberPolicyEvidenceDeltaPointer {
+  policy_id: string;
+  comparison_status: string;
+  route: string;
+}
+
+export interface ServiceEvidenceDeltaResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: ServiceEvidenceDeltaSafetyFraming;
+  service_id: string;
+  comparison_status: ServiceEvidenceDeltaComparisonStatus;
+  scope_summary: string;
+  current_anchor: ServiceEvidenceDeltaAnchorCurrent;
+  previous_anchor: ServiceEvidenceDeltaAnchorPrevious | null;
+  delta_items: ServiceEvidenceDeltaItem[];
+  member_policy_delta_pointers: MemberPolicyEvidenceDeltaPointer[];
+  caveats: string[];
 }
 
 /** `GET /api/v1/policies/{policy_id}/evidence-delta` (bounded read-side difference hints; not drift truth). */
@@ -1637,6 +1940,62 @@ export interface CrossDomainDeltaDigestResponse {
   digest_framing_notes: string[];
 }
 
+/** `GET /api/v1/evidence-consistency/summary` — evidence_consistency_summary_v1 assembly. */
+export type EvidenceConsistencyContradictionCategory =
+  | "identity_or_reference_tension"
+  | "freshness_or_serving_mismatch"
+  | "posture_tension"
+  | "activity_vs_static_tension"
+  | "history_gate_mismatch"
+  | "scope_mismatch"
+  | "gap_note";
+
+export type EvidenceConsistencySignal =
+  | "appears_aligned"
+  | "weak_alignment"
+  | "appears_in_tension"
+  | "not_comparable"
+  | "gap_note";
+
+export interface EvidenceConsistencyPivotHint {
+  label: string;
+  route_family: string;
+}
+
+export interface EvidenceConsistencyItemRow {
+  category: EvidenceConsistencyContradictionCategory;
+  consistency_signal: EvidenceConsistencySignal;
+  summary: string;
+  detail: string | null;
+  pivot_hints: EvidenceConsistencyPivotHint[];
+}
+
+export interface DomainFreshnessEcho {
+  domain: "policies" | "devices" | "topology";
+  data_status?: string | null;
+  serving_mode?: string | null;
+}
+
+export interface EvidenceConsistencySafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: string[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface EvidenceConsistencySummaryResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: EvidenceConsistencySafetyFraming;
+  scope_summary: string;
+  sync_runs_limit_applied: number;
+  domain_freshness_echo: DomainFreshnessEcho[];
+  items: EvidenceConsistencyItemRow[];
+  caveats: string[];
+  assembly_notes: string[];
+}
+
 /** Backend-owned investigation workspace assembly (`GET /api/v1/investigation-workspace/context`). */
 export interface InvestigationWorkspaceSafetyFraming {
   contract_id: string;
@@ -2036,4 +2395,90 @@ export interface ChangeSafetyCaseResponse {
   policy_explainability?: PolicyExplainabilityResponse | null;
   service_dossier?: ServiceDossierResponse | null;
   maintenance_preview?: MaintenancePreviewResponse | null;
+}
+
+/** Shared posture labels — `operational_stability_summary_v1`, topology/service stability profiles. */
+export type StabilityPosture =
+  | "quiet_or_stable_evidence"
+  | "elevated_churn"
+  | "recurrence_suspected"
+  | "degraded_recurrence"
+  | "insufficient_evidence_for_stability_view";
+
+/** `GET /api/v1/stability/summary` — `operational_stability_summary_v1`. */
+export interface OperationalStabilityRow {
+  subject_family: "global_window" | "service" | "topology_object";
+  row_type: string;
+  stability_posture_hint: StabilityPosture | null;
+  summary: string;
+  detail: string | null;
+  source_citations: string[];
+}
+
+export interface OperationalStabilitySummaryResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: {
+    contract_id: string;
+    authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+    explicit_non_claims: string[];
+    phase: "phase_2_read_only_foundation";
+    summary_disclaimer: string;
+  };
+  operational_stability_posture: StabilityPosture;
+  scope_summary: string;
+  sync_runs_limit_applied: number;
+  rows: OperationalStabilityRow[];
+  caveats: string[];
+  assembly_notes: string[];
+}
+
+export interface StabilityProfilePivotHint {
+  label: string;
+  route_family: string;
+}
+
+/** `GET /api/v1/topology/objects/{object_id}/stability-profile` — `topology_object_stability_profile_v1`. */
+export interface TopologyObjectStabilityProfileResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: {
+    contract_id: string;
+    authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+    explicit_non_claims: string[];
+    phase: "phase_2_read_only_foundation";
+    summary_disclaimer: string;
+  };
+  object_kind: "node" | "link";
+  object_id: string;
+  profile_scope_summary: string;
+  primary_stability_posture: StabilityPosture;
+  volatility_churn_cues: string[];
+  recurrence_and_degraded_cues: string[];
+  evidence_weakness_cues: string[];
+  canonical_pivots: StabilityProfilePivotHint[];
+  merged_caveats: string[];
+  assembly_notes: string[];
+}
+
+/** `GET /api/v1/services/{service_id}/stability-profile` — `service_stability_profile_v1`. */
+export interface ServiceStabilityProfileResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: {
+    contract_id: string;
+    authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+    explicit_non_claims: string[];
+    phase: "phase_2_read_only_foundation";
+    summary_disclaimer: string;
+  };
+  service_id: string;
+  profile_scope_summary: string;
+  primary_stability_posture: StabilityPosture;
+  volatility_churn_cues: string[];
+  recurrence_and_degraded_cues: string[];
+  evidence_weakness_cues: string[];
+  canonical_pivots: StabilityProfilePivotHint[];
+  merged_caveats: string[];
+  assembly_notes: string[];
 }

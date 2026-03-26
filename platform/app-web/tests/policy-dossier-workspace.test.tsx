@@ -230,5 +230,6 @@ describe("PolicyDossierWorkspace", () => {
     expect(html).toContain("Export Markdown");
     expect(html).toContain("Service Explorer");
     expect(html).toContain("Explainability");
+    expect(html).toContain("Path Explorer");
   });
 });

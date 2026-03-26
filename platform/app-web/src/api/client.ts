@@ -9,6 +9,8 @@ import type {
   PolicyTopologyImpactResponse,
   PolicyEvidenceDeltaResponse,
   PolicyEvidenceTimelineResponse,
+  ServiceEvidenceDeltaResponse,
+  ServiceEvidenceTimelineResponse,
   InvestigationContextAssemblyResponse,
   RecentChangeSummaryResponse,
   SituationPackAssemblyResponse,
@@ -17,19 +19,28 @@ import type {
   TopologyRiskSummaryResponse,
   FailureImpactViewResponse,
   TopologyObjectDossierResponse,
+  TopologyObjectEvidenceDeltaResponse,
+  TopologyObjectEvidenceTimelineResponse,
   PolicyDossierResponse,
   PolicyExplainabilityResponse,
+  PathExplorerWorkspaceResponse,
+  ServiceImpactWorkspaceResponse,
   OperatorSearchResponse,
   WorkflowHistoryResponse,
   CrossDomainDeltaDigestResponse,
+  EvidenceConsistencySummaryResponse,
   OperatorBriefingWorkspaceResponse,
   ServiceDetailResponse,
   ServiceDossierResponse,
   ServicesListResponse,
   MaintenancePreviewResponse,
+  MaintenanceEvidenceWorkspaceResponse,
   MaintenancePreviewContext,
   ImpactReportResponse,
   ChangeSafetyCaseResponse,
+  OperationalStabilitySummaryResponse,
+  ServiceStabilityProfileResponse,
+  TopologyObjectStabilityProfileResponse,
 } from "./contracts";
 import {
   buildAuditHistoryQueryString,
@@ -52,6 +63,26 @@ export interface MaintenancePreviewQuery {
   objectId?: string | null;
   objectKind?: "node" | "link" | null;
   previewContext?: MaintenancePreviewContext;
+}
+
+/** Same query string as `GET /api/v1/maintenance-preview` / `GET /api/v1/maintenance-evidence-workspace`. */
+export function buildMaintenancePreviewUrlSearchParams(query: MaintenancePreviewQuery): URLSearchParams {
+  const params = new URLSearchParams();
+  const nid = query.nodeId?.trim();
+  const lid = query.linkId?.trim();
+  const oid = query.objectId?.trim();
+  const ok = query.objectKind ?? null;
+  const ctx = query.previewContext ?? "explicit_subject";
+  params.set("preview_context", ctx);
+  if (nid) {
+    params.set("node_id", nid);
+  } else if (lid) {
+    params.set("link_id", lid);
+  } else if (oid && ok) {
+    params.set("object_id", oid);
+    params.set("object_kind", ok);
+  }
+  return params;
 }
 
 export interface OperatorBriefingQuery {
@@ -113,22 +144,15 @@ export class ApiClient {
   }
 
   async getMaintenancePreview(query: MaintenancePreviewQuery): Promise<MaintenancePreviewResponse> {
-    const params = new URLSearchParams();
-    const nid = query.nodeId?.trim();
-    const lid = query.linkId?.trim();
-    const oid = query.objectId?.trim();
-    const ok = query.objectKind ?? null;
-    const ctx = query.previewContext ?? "explicit_subject";
-    params.set("preview_context", ctx);
-    if (nid) {
-      params.set("node_id", nid);
-    } else if (lid) {
-      params.set("link_id", lid);
-    } else if (oid && ok) {
-      params.set("object_id", oid);
-      params.set("object_kind", ok);
-    }
-    return this.request<MaintenancePreviewResponse>(`/api/v1/maintenance-preview?${params.toString()}`);
+    const qs = buildMaintenancePreviewUrlSearchParams(query).toString();
+    return this.request<MaintenancePreviewResponse>(`/api/v1/maintenance-preview?${qs}`);
+  }
+
+  async getMaintenanceEvidenceWorkspace(
+    query: MaintenancePreviewQuery,
+  ): Promise<MaintenanceEvidenceWorkspaceResponse> {
+    const qs = buildMaintenancePreviewUrlSearchParams(query).toString();
+    return this.request<MaintenanceEvidenceWorkspaceResponse>(`/api/v1/maintenance-evidence-workspace?${qs}`);
   }
 
   async getServiceImpactReport(serviceId: string): Promise<ImpactReportResponse> {
@@ -210,6 +234,20 @@ export class ApiClient {
     );
   }
 
+  async getTopologyObjectEvidenceTimeline(objectId: string): Promise<TopologyObjectEvidenceTimelineResponse> {
+    const encoded = encodeURIComponent(objectId);
+    return this.request<TopologyObjectEvidenceTimelineResponse>(
+      `/api/v1/topology/objects/${encoded}/evidence-timeline`,
+    );
+  }
+
+  async getTopologyObjectEvidenceDelta(objectId: string): Promise<TopologyObjectEvidenceDeltaResponse> {
+    const encoded = encodeURIComponent(objectId);
+    return this.request<TopologyObjectEvidenceDeltaResponse>(
+      `/api/v1/topology/objects/${encoded}/evidence-delta`,
+    );
+  }
+
   async getPolicies(query?: DevicesPoliciesReadSideQuery): Promise<PoliciesListResponse> {
     const qs = query ? buildDevicesPoliciesQueryString(query) : "";
     return this.request<PoliciesListResponse>(`/api/v1/policies${qs}`);
@@ -231,6 +269,16 @@ export class ApiClient {
   async getServiceDossier(serviceId: string): Promise<ServiceDossierResponse> {
     const encoded = encodeURIComponent(serviceId);
     return this.request<ServiceDossierResponse>(`/api/v1/services/${encoded}/dossier`);
+  }
+
+  async getServiceEvidenceTimeline(serviceId: string): Promise<ServiceEvidenceTimelineResponse> {
+    const encoded = encodeURIComponent(serviceId);
+    return this.request<ServiceEvidenceTimelineResponse>(`/api/v1/services/${encoded}/evidence-timeline`);
+  }
+
+  async getServiceEvidenceDelta(serviceId: string): Promise<ServiceEvidenceDeltaResponse> {
+    const encoded = encodeURIComponent(serviceId);
+    return this.request<ServiceEvidenceDeltaResponse>(`/api/v1/services/${encoded}/evidence-delta`);
   }
 
   async getPolicyPathAnalysis(policyId: string): Promise<PathAnalysisViewResponse> {
@@ -263,6 +311,18 @@ export class ApiClient {
     return this.request<PolicyExplainabilityResponse>(`/api/v1/policies/${encoded}/explainability`);
   }
 
+  async getPathExplorerWorkspace(policyId: string): Promise<PathExplorerWorkspaceResponse> {
+    const params = new URLSearchParams();
+    params.set("policy_id", policyId.trim());
+    return this.request<PathExplorerWorkspaceResponse>(`/api/v1/path-explorer?${params.toString()}`);
+  }
+
+  async getServiceImpactWorkspace(serviceId: string): Promise<ServiceImpactWorkspaceResponse> {
+    const params = new URLSearchParams();
+    params.set("service_id", serviceId.trim());
+    return this.request<ServiceImpactWorkspaceResponse>(`/api/v1/service-impact-workspace?${params.toString()}`);
+  }
+
   async getWorkflowHistory(query?: WorkflowHistoryReadSideQuery): Promise<WorkflowHistoryResponse> {
     const qs = query ? buildWorkflowHistoryQueryString(query) : "";
     return this.request<WorkflowHistoryResponse>(`/api/v1/workflow-history${qs}`);
@@ -289,6 +349,32 @@ export class ApiClient {
     return this.request<CrossDomainDeltaDigestResponse>(
       `/api/v1/delta-digest?sync_runs_limit=${limit}`,
     );
+  }
+
+  async getEvidenceConsistencySummary(syncRunsLimit = 20): Promise<EvidenceConsistencySummaryResponse> {
+    const limit = Math.min(100, Math.max(1, syncRunsLimit));
+    return this.request<EvidenceConsistencySummaryResponse>(
+      `/api/v1/evidence-consistency/summary?sync_runs_limit=${limit}`,
+    );
+  }
+
+  async getOperationalStabilitySummary(syncRunsLimit = 20): Promise<OperationalStabilitySummaryResponse> {
+    const limit = Math.min(100, Math.max(1, syncRunsLimit));
+    return this.request<OperationalStabilitySummaryResponse>(
+      `/api/v1/stability/summary?sync_runs_limit=${limit}`,
+    );
+  }
+
+  async getTopologyObjectStabilityProfile(objectId: string): Promise<TopologyObjectStabilityProfileResponse> {
+    const encoded = encodeURIComponent(objectId.trim());
+    return this.request<TopologyObjectStabilityProfileResponse>(
+      `/api/v1/topology/objects/${encoded}/stability-profile`,
+    );
+  }
+
+  async getServiceStabilityProfile(serviceId: string): Promise<ServiceStabilityProfileResponse> {
+    const encoded = encodeURIComponent(serviceId.trim());
+    return this.request<ServiceStabilityProfileResponse>(`/api/v1/services/${encoded}/stability-profile`);
   }
 
   async getInvestigationWorkspaceContext(

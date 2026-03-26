@@ -24,6 +24,7 @@ import {
 } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
+import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
 import { useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { usePolicyDossierQuery } from "./api";
 
@@ -48,7 +49,9 @@ export function PolicyDossierWorkspace({ policyId }: PolicyDossierWorkspaceProps
         <p className="table-note">
           Select a <strong>policy</strong> row in the table above to load a composed, read-only briefing. This workspace
           unifies path analysis, degraded-policy (v1), topology impact, evidence timeline, and evidence delta—it does{" "}
-          <strong>not</strong> replace the specialized panels in standard view.
+          <strong>not</strong> replace the specialized panels in standard view. <strong>Path Explorer</strong> (
+          <code>path_explorer_v1</code>) is a separate shell for the same policy anchor with path-analysis + explainability
+          emphasis—not the same layout as this dossier tab.
         </p>
       </div>
     );
@@ -153,6 +156,14 @@ export function PolicyDossierWorkspace({ policyId }: PolicyDossierWorkspaceProps
             title="Path-story explainability workspace (policy_explainability_workspace_v1); hints are not dataplane proof"
           >
             Explainability
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToPathExplorer(pr.policy_id)}
+            title="path_explorer_v1 — composed workspace; not a substitute for this dossier JSON"
+          >
+            Path Explorer
           </button>
           <EvidenceExportActions variant="dossier" target={{ kind: "policy_dossier", policyId: pr.policy_id }} />
           {isRefreshing ? (

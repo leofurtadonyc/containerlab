@@ -12,6 +12,8 @@ import { PLATFORM_NAV_VIEW_IDS } from "./nav-views";
 import { AuditView } from "./features/audit/view";
 import { CapabilitiesView } from "./features/capabilities/view";
 import { DeltaDigestView } from "./features/delta-digest/view";
+import { EvidenceConsistencyView } from "./features/evidence-consistency/view";
+import { StabilityWorkspaceView } from "./features/stability-workspace/view";
 import { EvidenceReplayView } from "./features/evidence-replay/view";
 import { DevicesView } from "./features/devices/view";
 import { InvestigationView } from "./features/investigation/view";
@@ -20,9 +22,12 @@ import { OperatorBriefingView } from "./features/operator-briefing/view";
 import { SituationRoomView } from "./features/situation-room/view";
 import { PlatformHealthView } from "./features/platform-health/view";
 import { PoliciesView } from "./features/policies/view";
+import { PathExplorerView } from "./features/path-explorer/view";
+import { ServiceImpactWorkspaceView } from "./features/service-impact-workspace/view";
 import { ServiceExplorerView } from "./features/service-explorer/view";
 import { ServiceDossierView } from "./features/service-dossier/view";
 import { MaintenancePreviewView } from "./features/maintenance-preview/view";
+import { MaintenanceEvidenceWorkspaceView } from "./features/maintenance-evidence-workspace/view";
 import { ImpactReportView } from "./features/impact-report/view";
 import { ChangeSafetyCaseView } from "./features/change-safety-case/view";
 import { ReadinessView } from "./features/readiness/view";
@@ -33,14 +38,19 @@ import { GlobalOperatorSearch } from "./features/global-search/global-operator-s
 const NAV_ITEMS = [
   { id: "overview", label: "Overview" },
   { id: "delta-digest", label: "Delta digest" },
+  { id: "evidence-consistency", label: "Evidence consistency" },
+  { id: "stability-workspace", label: "Stability" },
   { id: "situation-room", label: "Situation room" },
   { id: "investigation", label: "Investigation" },
   { id: "devices", label: "Devices" },
   { id: "topology", label: "Topology" },
   { id: "policies", label: "Policies" },
+  { id: "path-explorer", label: "Path Explorer" },
+  { id: "service-impact-workspace", label: "Service Impact" },
   { id: "service-explorer", label: "Service Explorer" },
   { id: "service-dossier", label: "Service dossier" },
   { id: "maintenance-preview", label: "Maintenance Preview" },
+  { id: "maintenance-evidence-workspace", label: "Maintenance evidence" },
   { id: "impact-report", label: "Impact Report" },
   { id: "change-safety-case", label: "Change safety case" },
   { id: "workflows", label: "Workflows" },
@@ -60,6 +70,10 @@ function renderView(viewId: string) {
   switch (viewId) {
     case "delta-digest":
       return <DeltaDigestView />;
+    case "evidence-consistency":
+      return <EvidenceConsistencyView />;
+    case "stability-workspace":
+      return <StabilityWorkspaceView />;
     case "situation-room":
       return <SituationRoomView />;
     case "operator-briefing":
@@ -72,12 +86,18 @@ function renderView(viewId: string) {
       return <TopologyView />;
     case "policies":
       return <PoliciesView />;
+    case "path-explorer":
+      return <PathExplorerView />;
+    case "service-impact-workspace":
+      return <ServiceImpactWorkspaceView />;
     case "service-explorer":
       return <ServiceExplorerView />;
     case "service-dossier":
       return <ServiceDossierView />;
     case "maintenance-preview":
       return <MaintenancePreviewView />;
+    case "maintenance-evidence-workspace":
+      return <MaintenanceEvidenceWorkspaceView />;
     case "impact-report":
       return <ImpactReportView />;
     case "change-safety-case":

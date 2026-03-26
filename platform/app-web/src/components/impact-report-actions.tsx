@@ -58,8 +58,9 @@ export function ImpactReportActions({ target }: ImpactReportActionsProps) {
       </div>
       <p className="impact-report-actions__hint">
         <strong>impact_report_v1</strong> — reuses existing Phase 2 assemblies for handoff.{" "}
-        <strong>Not</strong> <code>evidence_export_v1</code>, <strong>not</strong> briefing bundle,{" "}
-        <strong>not</strong> Evidence replay. JSON is canonical; Markdown embeds the same payload.
+        <strong>Not</strong> <code>change_safety_case_v1</code> (pre-change understanding narrative). <strong>Not</strong>{" "}
+        <code>evidence_export_v1</code>, <strong>not</strong> briefing bundle, <strong>not</strong> Evidence replay. JSON
+        is canonical; Markdown embeds the same payload.
       </p>
       {error ? (
         <p className="impact-report-actions__error" role="alert">

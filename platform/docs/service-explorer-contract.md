@@ -20,6 +20,7 @@ Stable product vocabulary (for implementation and tests when the surface ships):
 | [**Topology object dossier**](./topology-object-dossier-contract.md) | Object-centric composed workspace | **Not** policy-color–first |
 | [**Policy dossier**](./policy-dossier-contract.md) | Single **`policy_id`** deep view | **Not** multi-policy grouping |
 | [**Service Dossier v1**](./service-dossier-contract.md) | **One** **`service_id`** composed briefing | **Not** Explorer list/detail—**assembled** section order + merged caveats |
+| [**Service evidence timeline**](./service-evidence-timeline-contract.md) (planned **`service_evidence_timeline_v1`**) | **Chronology** over **existing** evidence for one **`service_id`** | **Not** list/detail—**time-ordered**; **same** **`service_id`** rules; **not** implemented until API ships |
 | [**Investigation**](./investigation-workspace-contract.md) | Cross-domain **workspace** assembly | **Not** a dedicated “service grouping” index |
 | **Service Explorer** | **Grouping & pivot** lens over the same inventory | **Read-only**; **derived** views only |
 

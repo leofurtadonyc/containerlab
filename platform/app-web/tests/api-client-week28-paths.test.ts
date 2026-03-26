@@ -179,6 +179,82 @@ describe("ApiClient week 28 bounded paths", () => {
     expect(url).toContain("/api/v1/topology/objects/A%3AB/dossier");
   });
 
+  it("getTopologyObjectEvidenceTimeline encodes object id in the URL path", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          metadata: {
+            service: "app-api",
+            version: "0.1.0",
+            phase: "phase_2_read_only_foundation",
+            generated_at: "2025-01-01T00:00:00Z",
+          },
+          contract_id: "topology_object_evidence_timeline_v1",
+          safety_framing: {
+            contract_id: "topology_object_evidence_timeline_v1",
+            authority_posture: "interpretation_support_only",
+            explicit_non_claims: ["not_unified_forensic_chronology"],
+            phase: "phase_2_read_only_foundation",
+            summary_disclaimer: "d",
+          },
+          object_kind: "node",
+          object_id: "A:B",
+          scope_summary: "s",
+          entries: [],
+          missing_evidence_notes: [],
+        }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getTopologyObjectEvidenceTimeline("A:B");
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("/api/v1/topology/objects/A%3AB/evidence-timeline");
+  });
+
+  it("getTopologyObjectEvidenceDelta encodes object id in the URL path", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          metadata: {
+            service: "app-api",
+            version: "0.1.0",
+            phase: "phase_2_read_only_foundation",
+            generated_at: "2025-01-01T00:00:00Z",
+          },
+          contract_id: "topology_object_evidence_delta_v1",
+          safety_framing: {
+            contract_id: "topology_object_evidence_delta_v1",
+            authority_posture: "interpretation_support_only",
+            explicit_non_claims: ["not_topology_drift_truth"],
+            phase: "phase_2_read_only_foundation",
+            summary_disclaimer: "d",
+          },
+          object_kind: "node",
+          object_id: "A:B",
+          comparison_status: "no_comparable_anchor",
+          scope_summary: "s",
+          current_anchor: {
+            anchor_role: "current_topology_object_assembly",
+            generated_at: "2025-01-01T00:00:00Z",
+            reference: "GET /api/v1/topology/objects/{object_id}/related-policies",
+          },
+          previous_anchor: null,
+          delta_items: [],
+          member_policy_delta_pointers: [],
+          caveats: [],
+        }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getTopologyObjectEvidenceDelta("A:B");
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("/api/v1/topology/objects/A%3AB/evidence-delta");
+  });
+
   it("getPolicyDossier encodes policy id in the URL path", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -402,6 +478,41 @@ describe("ApiClient week 28 bounded paths", () => {
     await client.getDeltaDigest(500);
     const url = fetchMock.mock.calls[0][0] as string;
     expect(url).toBe("http://api/api/v1/delta-digest?sync_runs_limit=100");
+  });
+
+  it("getEvidenceConsistencySummary uses evidence-consistency/summary and bounds sync_runs_limit", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          metadata: {
+            service: "app-api",
+            version: "0.1.0",
+            phase: "phase_2_read_only_foundation",
+            generated_at: "2025-01-01T00:00:00Z",
+          },
+          contract_id: "evidence_consistency_summary_v1",
+          safety_framing: {
+            contract_id: "evidence_consistency_summary_v1",
+            authority_posture: "interpretation_support_only",
+            explicit_non_claims: [],
+            phase: "phase_2_read_only_foundation",
+            summary_disclaimer: "x",
+          },
+          scope_summary: "s",
+          sync_runs_limit_applied: 100,
+          domain_freshness_echo: [],
+          items: [],
+          caveats: [],
+          assembly_notes: [],
+        }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getEvidenceConsistencySummary(500);
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toBe("http://api/api/v1/evidence-consistency/summary?sync_runs_limit=100");
   });
 
   it("getOperatorBriefing builds operator-briefing query string", async () => {
@@ -650,6 +761,21 @@ describe("ApiClient week 28 bounded paths", () => {
     await client.getMaintenancePreview({ nodeId: "PE1", previewContext: "planning_window" });
     const url = fetchMock.mock.calls[0][0] as string;
     expect(url).toContain("/api/v1/maintenance-preview?");
+    expect(url).toContain("node_id=PE1");
+    expect(url).toContain("preview_context=planning_window");
+  });
+
+  it("getMaintenanceEvidenceWorkspace uses the same query string as maintenance preview", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ contract_id: "maintenance_evidence_workspace_v1" }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getMaintenanceEvidenceWorkspace({ nodeId: "PE1", previewContext: "planning_window" });
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("/api/v1/maintenance-evidence-workspace?");
     expect(url).toContain("node_id=PE1");
     expect(url).toContain("preview_context=planning_window");
   });

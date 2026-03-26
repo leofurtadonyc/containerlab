@@ -5,9 +5,12 @@ import type {
 } from "../../api/contracts";
 import { navigateToImpactReportForMaintenance, navigateToImpactReportForPolicy } from "../../lib/impact-report-navigation";
 import { navigateToChangeSafetyCaseForMaintenance, navigateToChangeSafetyCaseForPolicy } from "../../lib/change-safety-case-navigation";
+import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import { pickStrongestPolicyId } from "../../lib/noc-cockpit-priority";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
+import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
+import { navigateToServiceImpactWorkspace } from "../../lib/service-impact-workspace-navigation";
 import { navigateToServiceExplorer, navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 
@@ -47,7 +50,7 @@ function openChangeSafetyCaseForTopRisk(row: TopologyRiskSummaryRow): void {
 }
 
 /**
- * Cockpit 3.0 — primary launch surfaces into Service Explorer, explainability, maintenance preview, impact reports,
+ * Cockpit 3.0 — primary launch surfaces into Service Explorer, explainability, maintenance preview / evidence workspace, impact reports,
  * and change safety cases using the same strongest-row selection as priority navigation (composition-only; no new assemblies).
  */
 export function NocCockpitOperatorLaunchGrid({
@@ -98,6 +101,16 @@ export function NocCockpitOperatorLaunchGrid({
                 Service dossier (strongest policy row)
               </button>
             ) : null}
+            {strongPolicyId ? (
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToServiceImpactWorkspace(`policy:${strongPolicyId}`)}
+                title="service_impact_workspace_v1 — composed Explorer + optional failure-impact; same policy: anchor as Service lens"
+              >
+                Service Impact workspace (strongest policy row)
+              </button>
+            ) : null}
           </div>
         </article>
 
@@ -119,40 +132,79 @@ export function NocCockpitOperatorLaunchGrid({
             ) : (
               <span className="table-note">No policy row to anchor explainability yet.</span>
             )}
+            {strongPolicyId ? (
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToPathExplorer(strongPolicyId)}
+                title="path_explorer_v1 — composed path workspace; same policy anchor as explainability"
+              >
+                Open Path Explorer (strongest policy row)
+              </button>
+            ) : null}
           </div>
         </article>
 
         <article className="detail-card noc-cockpit-launch-card" data-testid="noc-cockpit-launch-maintenance-preview">
-          <h3>Maintenance preview</h3>
+          <h3>Maintenance preview &amp; evidence</h3>
           <p className="table-note">
-            Bounded co-occurring relationships around a topology subject — planning context, <strong>not</strong>{" "}
-            scheduling authority.
+            <strong>Preview</strong> is the narrow maintenance assembly; <strong>evidence workspace</strong> adds dossier,
+            timeline, delta, and change-safety nesting — both are read-only planning context, <strong>not</strong>{" "}
+            scheduling authority, <code>evidence_export_v1</code>, or impact / CSC substitutes.
           </p>
           <div className="noc-cockpit-launch-card__actions">
             {topRisk ? (
-              <button
-                type="button"
-                className="nav-drilldown-button"
-                onClick={() =>
-                  navigateToMaintenancePreviewForTopologyObject(topRisk.object_id, topRisk.object_kind, {
-                    previewContext: "planning_window",
-                  })
-                }
-              >
-                Maintenance preview (top risk row)
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() =>
+                    navigateToMaintenancePreviewForTopologyObject(topRisk.object_id, topRisk.object_kind, {
+                      previewContext: "planning_window",
+                    })
+                  }
+                >
+                  Maintenance preview (top risk row)
+                </button>
+                <button
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() =>
+                    navigateToMaintenanceEvidenceWorkspaceForTopologyObject(topRisk.object_id, topRisk.object_kind, {
+                      previewContext: "planning_window",
+                    })
+                  }
+                  title="maintenance_evidence_workspace_v1 — not evidence_export_v1"
+                >
+                  Maintenance evidence workspace (top risk row)
+                </button>
+              </>
             ) : firstNodeId ? (
-              <button
-                type="button"
-                className="nav-drilldown-button"
-                onClick={() =>
-                  navigateToMaintenancePreviewForTopologyObject(firstNodeId, "node", {
-                    previewContext: "explicit_subject",
-                  })
-                }
-              >
-                Maintenance preview (first topology node)
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() =>
+                    navigateToMaintenancePreviewForTopologyObject(firstNodeId, "node", {
+                      previewContext: "explicit_subject",
+                    })
+                  }
+                >
+                  Maintenance preview (first topology node)
+                </button>
+                <button
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() =>
+                    navigateToMaintenanceEvidenceWorkspaceForTopologyObject(firstNodeId, "node", {
+                      previewContext: "explicit_subject",
+                    })
+                  }
+                  title="maintenance_evidence_workspace_v1 — not evidence_export_v1"
+                >
+                  Maintenance evidence workspace (first topology node)
+                </button>
+              </>
             ) : (
               <span className="table-note">No topology anchor for maintenance preview yet.</span>
             )}

@@ -76,6 +76,7 @@ Summaries use **`bounded_partial`** / **`best_effort_visible_signals_only`** com
 
 ## Related documents
 
+- [`evidence-consistency-summary-contract.md`](./evidence-consistency-summary-contract.md) — planned **cross-domain alignment / tension** summary (`evidence_consistency_summary_v1`); **may cite** change intelligence as one signal—**not** duplicate semantics
 - `readiness-capability-decision-support-contract.md`
 - `investigation-workspace-contract.md` — week **25** bounded **investigation workspace** assembly (read-only interpretation; may **reference** change intelligence as one context source)
 - `topology-truth-depth-review.md`, `policy-truth-depth-review.md`

@@ -4,6 +4,8 @@ import type {
   FailureImpactViewResponse,
   TopologyLinkRecord,
   TopologyObjectDossierResponse,
+  TopologyObjectEvidenceDeltaResponse,
+  TopologyObjectEvidenceTimelineResponse,
   TopologyObjectRelatedPoliciesResponse,
   TopologyResponse,
   TopologyRiskSummaryResponse,
@@ -63,6 +65,34 @@ export function useTopologyObjectDossierQuery(objectId: string | null) {
   );
 
   return useApiQuery(queryFn, { enabled });
+}
+
+export function useTopologyObjectEvidenceTimelineQuery(objectId: string | null, enabled: boolean) {
+  const queryFn = useCallback<() => Promise<TopologyObjectEvidenceTimelineResponse>>(
+    () => {
+      if (!objectId) {
+        throw new Error("objectId is required");
+      }
+      return apiClient.getTopologyObjectEvidenceTimeline(objectId);
+    },
+    [objectId],
+  );
+
+  return useApiQuery(queryFn, { enabled: enabled && !!objectId });
+}
+
+export function useTopologyObjectEvidenceDeltaQuery(objectId: string | null, enabled: boolean) {
+  const queryFn = useCallback<() => Promise<TopologyObjectEvidenceDeltaResponse>>(
+    () => {
+      if (!objectId) {
+        throw new Error("objectId is required");
+      }
+      return apiClient.getTopologyObjectEvidenceDelta(objectId);
+    },
+    [objectId],
+  );
+
+  return useApiQuery(queryFn, { enabled: enabled && !!objectId });
 }
 
 export function getTopologyCoverageSummary(topologyResponse: TopologyResponse) {

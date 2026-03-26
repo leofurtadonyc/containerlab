@@ -8,10 +8,13 @@ import { navigateToImpactReportForMaintenance, navigateToImpactReportForPolicy }
 import { navigateToChangeSafetyCaseForMaintenance, navigateToChangeSafetyCaseForPolicy } from "../../lib/change-safety-case-navigation";
 import { worstDegradedPolicyFirst } from "../../lib/noc-cockpit-priority";
 import { navigateToPolicyDossierWorkspace, navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
+import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
+import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
+import { navigateToServiceImpactWorkspace } from "../../lib/service-impact-workspace-navigation";
 
 export interface NocCockpitStrategicPivotsProps {
   riskSummary: TopologyRiskSummaryResponse | null;
@@ -80,6 +83,18 @@ export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCock
                 }
               >
                 Maintenance preview (top risk)
+              </button>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() =>
+                  navigateToMaintenanceEvidenceWorkspaceForTopologyObject(topRisk.object_id, topRisk.object_kind, {
+                    previewContext: "planning_window",
+                  })
+                }
+                title="maintenance_evidence_workspace_v1 — composed GET; not evidence_export_v1 or approval"
+              >
+                Maintenance evidence workspace (top risk)
               </button>
               <button
                 type="button"
@@ -167,6 +182,22 @@ export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCock
                 onClick={() => navigateToPolicyExplainabilityWorkspace(topDegraded.policy_id)}
               >
                 Policy explainability (worst degraded)
+              </button>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToPathExplorer(topDegraded.policy_id)}
+                title="path_explorer_v1 composed workspace — same policy_id anchor as explainability; navigation only"
+              >
+                Path Explorer (worst degraded)
+              </button>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToServiceImpactWorkspace(`policy:${topDegraded.policy_id}`)}
+                title="service_impact_workspace_v1 — same policy: anchor as Service Explorer; composed read-only GET"
+              >
+                Service Impact workspace (worst degraded)
               </button>
               <button
                 type="button"

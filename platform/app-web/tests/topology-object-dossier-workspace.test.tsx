@@ -1,15 +1,20 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiClientError } from "../src/api/client";
 import { TopologyObjectDossierWorkspace } from "../src/features/topology/topology-object-dossier-workspace";
 
-const { useTopologyObjectDossierQuery } = vi.hoisted(() => ({
-  useTopologyObjectDossierQuery: vi.fn(),
-}));
+const { useTopologyObjectDossierQuery, useTopologyObjectEvidenceTimelineQuery, useTopologyObjectEvidenceDeltaQuery } =
+  vi.hoisted(() => ({
+    useTopologyObjectDossierQuery: vi.fn(),
+    useTopologyObjectEvidenceTimelineQuery: vi.fn(),
+    useTopologyObjectEvidenceDeltaQuery: vi.fn(),
+  }));
 
 vi.mock("../src/features/topology/api", () => ({
   useTopologyObjectDossierQuery,
+  useTopologyObjectEvidenceTimelineQuery,
+  useTopologyObjectEvidenceDeltaQuery,
 }));
 
 const dossierPayload = {
@@ -107,7 +112,76 @@ const dossierPayload = {
   merged_caveats: ["Merged caveat line."],
 };
 
+const deltaStub = {
+  metadata: {
+    service: "app-api" as const,
+    version: "test",
+    phase: "phase_2_read_only_foundation" as const,
+    generated_at: "2025-01-01T00:00:00Z",
+  },
+  contract_id: "topology_object_evidence_delta_v1",
+  safety_framing: {
+    contract_id: "topology_object_evidence_delta_v1",
+    authority_posture: "interpretation_support_only" as const,
+    explicit_non_claims: ["not_topology_drift_truth"] as const,
+    phase: "phase_2_read_only_foundation" as const,
+    summary_disclaimer: "Stub delta disclaimer.",
+  },
+  object_kind: "node" as const,
+  object_id: "PE1",
+  comparison_status: "delta_ready" as const,
+  scope_summary: "Stub delta scope.",
+  current_anchor: {
+    anchor_role: "current_topology_object_assembly" as const,
+    generated_at: "2025-01-01T00:00:00Z",
+    reference: "GET /api/v1/topology/objects/{object_id}/related-policies",
+  },
+  previous_anchor: null,
+  delta_items: [],
+  member_policy_delta_pointers: [],
+  caveats: [],
+};
+
+const timelineStub = {
+  metadata: {
+    service: "app-api" as const,
+    version: "test",
+    phase: "phase_2_read_only_foundation" as const,
+    generated_at: "2025-01-01T00:00:00Z",
+  },
+  contract_id: "topology_object_evidence_timeline_v1",
+  safety_framing: {
+    contract_id: "topology_object_evidence_timeline_v1",
+    authority_posture: "interpretation_support_only" as const,
+    explicit_non_claims: ["not_unified_forensic_chronology"] as const,
+    phase: "phase_2_read_only_foundation" as const,
+    summary_disclaimer: "Stub timeline disclaimer.",
+  },
+  object_kind: "node" as const,
+  object_id: "PE1",
+  scope_summary: "Stub scope.",
+  entries: [],
+  missing_evidence_notes: [],
+};
+
 describe("TopologyObjectDossierWorkspace", () => {
+  beforeEach(() => {
+    useTopologyObjectEvidenceTimelineQuery.mockReturnValue({
+      data: timelineStub,
+      error: null,
+      isLoading: false,
+      isRefreshing: false,
+      reload: vi.fn(async () => undefined),
+    });
+    useTopologyObjectEvidenceDeltaQuery.mockReturnValue({
+      data: deltaStub,
+      error: null,
+      isLoading: false,
+      isRefreshing: false,
+      reload: vi.fn(async () => undefined),
+    });
+  });
+
   it("prompts when no topology object is selected", () => {
     useTopologyObjectDossierQuery.mockReturnValue({
       data: null,
@@ -175,6 +249,9 @@ describe("TopologyObjectDossierWorkspace", () => {
     expect(html).toContain("Failure impact (nested)");
     expect(html).toContain("data-testid=\"evidence-export-actions\"");
     expect(html).toContain("Export JSON");
+    expect(html).toContain("Maintenance evidence workspace");
     expect(html).toContain("Maintenance preview");
+    expect(html).toContain("Evidence delta (topology object)");
+    expect(html).toContain("topology_object_evidence_delta_v1");
   });
 });

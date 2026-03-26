@@ -40,8 +40,15 @@ import {
   type OverviewSliceState,
 } from "./model";
 import { useDeltaDigestQuery } from "../delta-digest/api";
-import { OVERVIEW_RECENT_CHANGE_SYNC_LIMIT, useRecentChangeSummaryQuery } from "./api";
+import {
+  OVERVIEW_RECENT_CHANGE_SYNC_LIMIT,
+  useEvidenceConsistencySummaryQuery,
+  useOperationalStabilitySummaryQuery,
+  useRecentChangeSummaryQuery,
+} from "./api";
 import { DeltaDigestOverviewEntry } from "./delta-digest-overview-entry";
+import { EvidenceConsistencyOverviewEntry } from "./evidence-consistency-overview-entry";
+import { StabilityOverviewEntry } from "./stability-overview-entry";
 import { InvestigationOverviewEntry } from "./investigation-entry";
 import { OperatorBriefingOverviewEntry } from "./operator-briefing-entry";
 import { OperatorWorkspaceEntry } from "./operator-workspace-entry";
@@ -139,6 +146,8 @@ export function OverviewView() {
   const recentChangeQuery = useRecentChangeSummaryQuery();
   const riskSummaryQuery = useTopologyRiskSummaryQuery(topologySettled);
   const deltaDigestQuery = useDeltaDigestQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
+  const evidenceConsistencyQuery = useEvidenceConsistencySummaryQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
+  const operationalStabilityQuery = useOperationalStabilitySummaryQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
   const searchKey = useUrlSearchParamsKey();
   const overviewMode = useMemo(() => readOverviewModeFromSearch(searchKey), [searchKey]);
 
@@ -159,6 +168,8 @@ export function OverviewView() {
         recentChangeQuery,
         riskSummaryQuery,
         deltaDigestQuery,
+        evidenceConsistencyQuery,
+        operationalStabilityQuery,
       ]);
     } finally {
       refreshInFlightRef.current = false;
@@ -172,6 +183,8 @@ export function OverviewView() {
     riskSummaryQuery.reload,
     topologyQuery.reload,
     deltaDigestQuery.reload,
+    evidenceConsistencyQuery.reload,
+    operationalStabilityQuery.reload,
   ]);
 
   const overviewSlices = [
@@ -476,6 +489,18 @@ export function OverviewView() {
               isLoading: deltaDigestQuery.isLoading,
               reload: deltaDigestQuery.reload,
             }}
+            evidenceConsistency={{
+              data: evidenceConsistencyQuery.data,
+              error: evidenceConsistencyQuery.error,
+              isLoading: evidenceConsistencyQuery.isLoading,
+              reload: evidenceConsistencyQuery.reload,
+            }}
+            operationalStability={{
+              data: operationalStabilityQuery.data,
+              error: operationalStabilityQuery.error,
+              isLoading: operationalStabilityQuery.isLoading,
+              reload: operationalStabilityQuery.reload,
+            }}
           />
         </>
       ) : (
@@ -513,6 +538,26 @@ export function OverviewView() {
               error: deltaDigestQuery.error,
               isLoading: deltaDigestQuery.isLoading,
               reload: deltaDigestQuery.reload,
+            }}
+          />
+
+          <EvidenceConsistencyOverviewEntry
+            syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT}
+            evidenceConsistency={{
+              data: evidenceConsistencyQuery.data,
+              error: evidenceConsistencyQuery.error,
+              isLoading: evidenceConsistencyQuery.isLoading,
+              reload: evidenceConsistencyQuery.reload,
+            }}
+          />
+
+          <StabilityOverviewEntry
+            syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT}
+            operationalStability={{
+              data: operationalStabilityQuery.data,
+              error: operationalStabilityQuery.error,
+              isLoading: operationalStabilityQuery.isLoading,
+              reload: operationalStabilityQuery.reload,
             }}
           />
 

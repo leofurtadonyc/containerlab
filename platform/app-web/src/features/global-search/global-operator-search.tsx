@@ -15,6 +15,7 @@ import {
   navigateToSituationRoomFromGlobalSearch,
   supportsInvestigationShortcut,
 } from "../../lib/operator-search-navigation";
+import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import {
   navigateToImpactReportForMaintenance,
@@ -22,6 +23,8 @@ import {
   navigateToImpactReportHub,
 } from "../../lib/impact-report-navigation";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
+import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
+import { navigateToServiceImpactWorkspace } from "../../lib/service-impact-workspace-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 import {
@@ -29,6 +32,7 @@ import {
   navigateToChangeSafetyCaseForPolicy,
   navigateToChangeSafetyCaseHub,
 } from "../../lib/change-safety-case-navigation";
+import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 
 const DEBOUNCE_MS = 400;
 
@@ -241,6 +245,26 @@ export function GlobalOperatorSearch() {
                                   Maintenance preview
                                 </button>
                               ) : null}
+                              {hit.pivot.topology_object && hit.pivot.topology_object_kind ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  title="maintenance_evidence_workspace_v1 — composed read GET; not impact_report_v1, change_safety_case download, or evidence_export_v1"
+                                  onClick={() => {
+                                    navigateToMaintenanceEvidenceWorkspaceForTopologyObject(
+                                      hit.pivot.topology_object!,
+                                      hit.pivot.topology_object_kind!,
+                                      {
+                                        previewContext: "topology_drilldown",
+                                        echoSearchQuery: data.q,
+                                      },
+                                    );
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Maintenance evidence workspace
+                                </button>
+                              ) : null}
                               {supportsInvestigationShortcut(hit.object_kind) ? (
                                 <button
                                   type="button"
@@ -291,6 +315,34 @@ export function GlobalOperatorSearch() {
                                   }}
                                 >
                                   Explainability
+                                </button>
+                              ) : null}
+                              {hit.pivot.policy_id ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  title="path_explorer_v1 — composed path workspace; same policy anchor as explainability"
+                                  onClick={() => {
+                                    navigateToPathExplorer(hit.pivot.policy_id!);
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Path Explorer
+                                </button>
+                              ) : null}
+                              {hit.pivot.policy_id ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  title="service_impact_workspace_v1 — composed service-impact workspace; policy:… anchor matches Service Explorer"
+                                  onClick={() => {
+                                    navigateToServiceImpactWorkspace(`policy:${hit.pivot.policy_id!}`, {
+                                      echoSearchQuery: data.q,
+                                    });
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Service Impact
                                 </button>
                               ) : null}
                               {hit.pivot.policy_id ? (
@@ -350,6 +402,23 @@ export function GlobalOperatorSearch() {
                                   }}
                                 >
                                   Change safety case (policy)
+                                </button>
+                              ) : null}
+                              {hit.pivot.policy_id ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  title="Same policy-shaped service_id anchor as Service dossier (policy:…); not a search hit inside stability JSON."
+                                  onClick={() => {
+                                    navigateToStabilityWorkspace({
+                                      syncRunsLimit: 20,
+                                      serviceId: `policy:${hit.pivot.policy_id!}`,
+                                      echoSearchQuery: data.q,
+                                    });
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Stability workspace (policy service)
                                 </button>
                               ) : null}
                               {hit.pivot.topology_object && hit.pivot.topology_object_kind ? (

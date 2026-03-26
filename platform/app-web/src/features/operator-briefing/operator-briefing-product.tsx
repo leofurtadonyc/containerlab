@@ -4,8 +4,11 @@ import { evidenceStatusPillClass } from "../../lib/change-intelligence-domain-la
 import { navigateToInvestigationView } from "../../lib/investigation-navigation";
 import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToSituationRoomView } from "../../lib/situation-room-navigation";
+import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { formatDateTime } from "../../lib/presentation";
+import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 
 export interface OperatorBriefingProductProps {
@@ -143,6 +146,30 @@ export function OperatorBriefingProduct({ data, syncRunsLimit, onReload }: Opera
           <button
             type="button"
             className="nav-drilldown-button operator-briefing-live-pivots__primary"
+            onClick={() => navigateToEvidenceConsistencyWorkspace(syncRunsLimit)}
+          >
+            Evidence consistency workspace
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button operator-briefing-live-pivots__primary"
+            onClick={() =>
+              topo?.object_identity
+                ? navigateToStabilityWorkspace({
+                    syncRunsLimit: syncRunsLimit,
+                    topologyObject: {
+                      id: topo.object_identity.object_id,
+                      kind: topo.object_identity.object_kind,
+                    },
+                  })
+                : navigateToStabilityWorkspace({ syncRunsLimit: syncRunsLimit })
+            }
+          >
+            Stability workspace
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button operator-briefing-live-pivots__primary"
             onClick={() => navigateToInvestigationView(syncRunsLimit, { invFrom: "operator-briefing" })}
           >
             Investigation workspace
@@ -178,6 +205,22 @@ export function OperatorBriefingProduct({ data, syncRunsLimit, onReload }: Opera
               Topology dossier ({topo.object_identity.object_kind} {topo.object_identity.object_id})
             </button>
           ) : null}
+          {topo?.object_identity ? (
+            <button
+              type="button"
+              className="nav-drilldown-button"
+              title="maintenance_evidence_workspace_v1 live GET — not bundled in briefing_export_bundle_v1"
+              onClick={() =>
+                navigateToMaintenanceEvidenceWorkspaceForTopologyObject(
+                  topo.object_identity.object_id,
+                  topo.object_identity.object_kind,
+                  { previewContext: "topology_drilldown" },
+                )
+              }
+            >
+              Maintenance evidence workspace ({topo.object_identity.object_kind} {topo.object_identity.object_id})
+            </button>
+          ) : null}
           <button type="button" className="nav-drilldown-button" onClick={() => navigateToEvidenceView("devices")}>
             Devices
           </button>
@@ -196,6 +239,11 @@ export function OperatorBriefingProduct({ data, syncRunsLimit, onReload }: Opera
           <strong>This page is live briefing</strong> (<code>operator_briefing_workspace_v1</code>) — it can change on
           reload. <strong>Downloads</strong> are point-in-time files. <strong>Evidence replay</strong> is for reviewing a
           frozen <code>evidence_export_v1</code> artifact you already saved — not a substitute for this live workspace.
+          The composed <code>maintenance_evidence_workspace_v1</code> surface (<strong>Maintenance evidence</strong> in
+          the shell) is a <strong>separate live GET</strong> — it is <strong>not</strong> an export root here,{" "}
+          <strong>not</strong> a substitute for <code>impact_report_v1</code> or <code>change_safety_case_v1</code>{" "}
+          report downloads, and <strong>not</strong> included in briefing bundle members; use{" "}
+          <strong>Live pivots</strong> when a topology subject is in scope.
         </p>
 
         <div className="operator-briefing-exports__bundle" aria-labelledby="ob-export-bundle-heading">

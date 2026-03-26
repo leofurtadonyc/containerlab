@@ -1,11 +1,15 @@
 import type { ApiClientError } from "../../api/client";
 import type {
   CrossDomainDeltaDigestResponse,
+  EvidenceConsistencySummaryResponse,
+  OperationalStabilitySummaryResponse,
   PoliciesListResponse,
   RecentChangeSummaryResponse,
   TopologyRiskSummaryResponse,
 } from "../../api/contracts";
 import { DeltaDigestOverviewEntry } from "./delta-digest-overview-entry";
+import { EvidenceConsistencyOverviewEntry } from "./evidence-consistency-overview-entry";
+import { StabilityOverviewEntry } from "./stability-overview-entry";
 import { EvidenceReplayOverviewEntry } from "./evidence-replay-overview-entry";
 import { InvestigationOverviewEntry } from "./investigation-entry";
 import { NocCockpitOperatorLaunchGrid } from "./noc-cockpit-operator-launch-grid";
@@ -41,6 +45,18 @@ export interface NocCockpitSectionProps {
     isLoading: boolean;
     reload: () => void | Promise<void>;
   };
+  evidenceConsistency: {
+    data: EvidenceConsistencySummaryResponse | null;
+    error: ApiClientError | null;
+    isLoading: boolean;
+    reload: () => void | Promise<void>;
+  };
+  operationalStability: {
+    data: OperationalStabilitySummaryResponse | null;
+    error: ApiClientError | null;
+    isLoading: boolean;
+    reload: () => void | Promise<void>;
+  };
 }
 
 /**
@@ -54,6 +70,8 @@ export function NocCockpitSection({
   recentChange,
   riskSummary,
   deltaDigest,
+  evidenceConsistency,
+  operationalStability,
 }: NocCockpitSectionProps) {
   return (
     <div className="noc-cockpit" data-testid="noc-cockpit-section">
@@ -62,7 +80,8 @@ export function NocCockpitSection({
         <h3 id="noc-cockpit-heading">NOC cockpit</h3>
         <p className="body-copy noc-cockpit__lede">
           Cockpit composition: <strong>Service Explorer</strong>, <strong>policy explainability</strong>,{" "}
-          <strong>maintenance preview</strong>, and <strong>impact reports</strong> first — then cross-domain digest,
+          <strong>maintenance preview</strong> / <strong>maintenance evidence workspace</strong>, and{" "}
+          <strong>impact reports</strong> first — then cross-domain digest,
           composed briefing (bundle + per-surface exports), frozen evidence replay, bounded packs and investigation, then
           attention rows. All from existing Phase 2 assemblies. <strong>Not</strong> incident command, unified health
           scoring, or substitute for full Policies / Topology / Investigation / Situation room views.
@@ -89,6 +108,11 @@ export function NocCockpitSection({
 
       <div className="noc-cockpit__quick-grid">
         <DeltaDigestOverviewEntry syncRunsLimit={syncRunsLimit} deltaDigest={deltaDigest} />
+        <EvidenceConsistencyOverviewEntry
+          syncRunsLimit={syncRunsLimit}
+          evidenceConsistency={evidenceConsistency}
+        />
+        <StabilityOverviewEntry syncRunsLimit={syncRunsLimit} operationalStability={operationalStability} />
         <OperatorBriefingOverviewEntry syncRunsLimit={syncRunsLimit} cockpitVariant />
         <EvidenceReplayOverviewEntry syncRunsLimit={syncRunsLimit} />
         <SituationRoomOverviewEntry syncRunsLimit={syncRunsLimit} />

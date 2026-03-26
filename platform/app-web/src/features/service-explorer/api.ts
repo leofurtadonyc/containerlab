@@ -20,3 +20,23 @@ export function useServiceDetailQuery(serviceId: string | null, enabled: boolean
   }, [serviceId]);
   return useApiQuery(queryFn, { enabled: enabled && !!serviceId });
 }
+
+export function useServiceEvidenceTimelineQuery(serviceId: string | null, enabled: boolean) {
+  const queryFn = useCallback(() => {
+    if (!serviceId) {
+      throw new Error("serviceId is required");
+    }
+    return apiClient.getServiceEvidenceTimeline(serviceId);
+  }, [serviceId]);
+  return useApiQuery(queryFn, { enabled: enabled && !!serviceId });
+}
+
+export function useServiceEvidenceDeltaQuery(serviceId: string | null, enabled: boolean) {
+  const queryFn = useCallback(() => {
+    if (!serviceId) {
+      throw new Error("serviceId is required");
+    }
+    return apiClient.getServiceEvidenceDelta(serviceId);
+  }, [serviceId]);
+  return useApiQuery(queryFn, { enabled: enabled && !!serviceId });
+}

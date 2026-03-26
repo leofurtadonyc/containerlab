@@ -92,6 +92,7 @@ Stable keys (align with schema literals when implemented):
 
 | Contract | Role |
 | --- | --- |
+| [`service-evidence-delta-contract.md`](./service-evidence-delta-contract.md) | **Service-primary** `service_evidence_delta_v1` — grouped membership / roll-up / topology linkage deltas; **may cite** this contract per **member** `policy_id`—**not** the same route or **`service_id`** scope. |
 | **`policy-evidence-timeline-contract.md`** | Per-policy **time ordering** of anchors; delta is **orthogonal** (difference across two anchors). |
 | **`degraded-policy-v1-contract.md`** | Per-row classification; delta may **report** classification **changes** between anchors. |
 | **`path-analysis-contract.md`** | Path interpretation; delta may cite **availability** or **shape** changes, not path proof. |

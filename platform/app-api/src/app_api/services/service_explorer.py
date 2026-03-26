@@ -48,6 +48,12 @@ def parse_service_id(raw: str) -> tuple[ServiceIdKind, str] | None:
     return None
 
 
+def degraded_service_rollup_for_members(members: list[PolicyRecord]) -> DegradedServiceRollup:
+    """Aggregate ``degraded_policy_v1`` across member policies (Explorer detail roll-up)."""
+    _, rollup = _roll_up_degraded(members)
+    return rollup
+
+
 def _roll_up_degraded(members: list[PolicyRecord]) -> tuple[Literal["ok", "degraded", "unknown"], DegradedServiceRollup]:
     postures = [m.degraded_policy_v1.posture for m in members]
     if "degraded" in postures:
@@ -73,6 +79,29 @@ def _roll_up_degraded(members: list[PolicyRecord]) -> tuple[Literal["ok", "degra
 
 def _sorted_members(items: list[PolicyRecord]) -> list[PolicyRecord]:
     return sorted(items, key=lambda p: p.policy_id)
+
+
+def list_policy_records_for_service_id(
+    service_id: str, policy_records: list[PolicyRecord]
+) -> list[PolicyRecord] | None:
+    """Return Explorer membership policy rows for ``service_id`` over ``policy_records``, or ``None`` if id invalid.
+
+    May return an empty list when the snapshot has no policies matching this grouping.
+    """
+    parsed = parse_service_id(service_id)
+    if parsed is None:
+        return None
+    kind, key = parsed
+    return _sorted_members(_members_for_kind(kind, key, policy_records))
+
+
+def topology_links_for_member_policies(
+    members: list[PolicyRecord],
+) -> tuple[list[ServiceTopologyLinkRecord], TopologyEvidenceStatus, list[str]]:
+    """Topology linkage for a fixed member list (same matching rules as Service Explorer detail)."""
+    topology, topo_errs = _load_topology_or_none()
+    links, status, caveats = _match_topology_links(members, topology)
+    return links, status, list(topo_errs) + list(caveats)
 
 
 def _members_for_kind(
@@ -309,18 +338,19 @@ def build_services_list_response(*, limit: int | None = None) -> ServicesListRes
     )
 
 
-def build_service_detail_response(service_id: str) -> ServiceDetailResponse | None:
-    """Return detail for ``service_id``, or ``None`` when unknown id form or zero members."""
-    parsed = parse_service_id(service_id)
-    if parsed is None:
-        return None
-    kind, key = parsed
-    settings = get_settings()
-    policies = build_policies_list_response(limit=None, history_recent_limit=1)
-    items = policies.items
-    members = _sorted_members(_members_for_kind(kind, key, items))
+def _assemble_service_detail(
+    service_id: str,
+    kind: ServiceIdKind,
+    key: str,
+    source_items: list[PolicyRecord],
+    policy_inventory: ServiceExplorerPolicyInventoryEcho,
+    generated_at: datetime,
+) -> ServiceDetailResponse | None:
+    """Shared Explorer detail assembly for a fixed policy record list."""
+    members = _sorted_members(_members_for_kind(kind, key, source_items))
     if not members:
         return None
+    settings = get_settings()
     _, degraded = _roll_up_degraded(members)
     topology, topo_errs = _load_topology_or_none()
     topo_errs = list(topo_errs)
@@ -332,10 +362,10 @@ def build_service_detail_response(service_id: str) -> ServiceDetailResponse | No
         service="app-api",
         version=settings.app_version,
         phase="phase_2_read_only_foundation",
-        generated_at=datetime.now(UTC),
+        generated_at=generated_at,
         service_id=service_id,
         kind=kind,
-        policy_inventory=_policy_inventory_echo(policies),
+        policy_inventory=policy_inventory,
         members=[_to_member_summary(p) for p in members],
         members_total=len(members),
         degraded_service=degraded,
@@ -344,4 +374,43 @@ def build_service_detail_response(service_id: str) -> ServiceDetailResponse | No
         topology_caveats=topo_caveats,
         caveats=caveats,
         recommended_pivots=_default_pivots(policy_id=pivot_policy, topology_node_id=first_node),
+    )
+
+
+def build_service_detail_response(service_id: str) -> ServiceDetailResponse | None:
+    """Return detail for ``service_id``, or ``None`` when unknown id form or zero members."""
+    parsed = parse_service_id(service_id)
+    if parsed is None:
+        return None
+    kind, key = parsed
+    policies = build_policies_list_response(limit=None, history_recent_limit=1)
+    return _assemble_service_detail(
+        service_id,
+        kind,
+        key,
+        policies.items,
+        _policy_inventory_echo(policies),
+        policies.generated_at,
+    )
+
+
+def build_service_detail_for_policy_records(
+    *,
+    service_id: str,
+    policy_records: list[PolicyRecord],
+    policy_inventory: ServiceExplorerPolicyInventoryEcho,
+    generated_at: datetime,
+) -> ServiceDetailResponse | None:
+    """Return Explorer detail using a fixed policy record list (e.g. previous persisted snapshot)."""
+    parsed = parse_service_id(service_id)
+    if parsed is None:
+        return None
+    kind, key = parsed
+    return _assemble_service_detail(
+        service_id,
+        kind,
+        key,
+        policy_records,
+        policy_inventory,
+        generated_at,
     )

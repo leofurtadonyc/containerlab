@@ -323,8 +323,9 @@ export function EvidenceReplayProduct() {
         <p className="eyebrow">{EVIDENCE_REPLAY_VIEWER_CONTRACT_ID}</p>
         <h2>Evidence replay</h2>
         <p className="body-copy evidence-replay-hero__lede">
-          Replay of exported evidence (not live product data). Imports are bounded client-side text only — nothing here
-          refreshes from the platform unless you use a live pivot.
+          Replay of frozen <code>evidence_export_v1</code> (and related) files—<strong>not</strong> live GETs and{" "}
+          <strong>not</strong> Change Safety Case or Impact Report downloads. Imports are bounded client-side text only —
+          nothing here refreshes from the platform unless you use a live pivot.
         </p>
       </header>
 
@@ -333,7 +334,8 @@ export function EvidenceReplayProduct() {
         <span>
           {" "}
           — This surface shows frozen bytes from a file. It is <em>not</em> a live situation room, dossier, or
-          investigation feed.
+          investigation feed, and <em>not</em> <code>impact_report_v1</code> or <code>change_safety_case_v1</code>{" "}
+          downloads (different envelopes; use those routes when you need report contracts).
         </span>
       </div>
 

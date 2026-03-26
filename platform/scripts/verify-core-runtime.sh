@@ -11,7 +11,8 @@ set -eu
 #   METRICS_PROBE_MAX_TIME (default 90) / METRICS_PROBE_CONNECT_TIMEOUT (default 8) — used only for URLs
 #     ending in /metrics (app-api and gNMI); first Prometheus exposition after cold start can exceed 12s.
 #   METRICS_FULL_MAX_TIME (default 90) — full GET body for app-api /metrics (assertions); must align with Prometheus scrape_timeout.
-#   CURL_HTTP_MAX_TIME (default 90) — app-api JSON APIs via fetch_compact_json (large payloads + cold start).
+#   CURL_HTTP_MAX_TIME (default 120) — app-api JSON APIs via fetch_compact_json (large payloads + cold start;
+#     operator-briefing and similar assemblies can exceed 90s after cold deploy with persisted Postgres).
 #   CURL_MAX_TIME_STATIC (default 120) — max time for large app-web /assets/*.js fetches (cold start can exceed CURL_MAX_TIME).
 #   STATIC_FETCH_ATTEMPTS (default 5) — retries per JS chunk when a fetch fails or returns empty.
 
@@ -39,7 +40,7 @@ CURL_PROBE_CONNECT_TIMEOUT="${CURL_PROBE_CONNECT_TIMEOUT:-5}"
 METRICS_PROBE_MAX_TIME="${METRICS_PROBE_MAX_TIME:-90}"
 METRICS_PROBE_CONNECT_TIMEOUT="${METRICS_PROBE_CONNECT_TIMEOUT:-8}"
 METRICS_FULL_MAX_TIME="${METRICS_FULL_MAX_TIME:-90}"
-CURL_HTTP_MAX_TIME="${CURL_HTTP_MAX_TIME:-90}"
+CURL_HTTP_MAX_TIME="${CURL_HTTP_MAX_TIME:-120}"
 CURL_MAX_TIME_STATIC="${CURL_MAX_TIME_STATIC:-120}"
 STATIC_FETCH_ATTEMPTS="${STATIC_FETCH_ATTEMPTS:-5}"
 warning_count=0
@@ -282,11 +283,16 @@ app_web_noc_cockpit_strategic_pivots_marker=0
 app_web_global_search_week30_marker=0
 app_web_global_search_impact_hub_marker=0
 app_web_maintenance_preview_marker=0
+app_web_maintenance_evidence_workspace_marker=0
 app_web_impact_report_marker=0
 app_web_service_explorer_marker=0
 app_web_service_dossier_marker=0
 app_web_policy_explainability_marker=0
+app_web_path_explorer_marker=0
+app_web_service_impact_workspace_marker=0
 app_web_change_safety_case_marker=0
+app_web_evidence_consistency_marker=0
+app_web_stability_workspace_marker=0
 for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n' | grep -E '^/assets/.*\.js$' || true); do
   app_web_chunk=$(fetch_app_web_asset_chunk "$APP_WEB_URL$asset_path")
   if printf '%s' "$app_web_chunk" | grep -qF 'noc_cockpit_v1'; then
@@ -319,6 +325,9 @@ for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n
   if printf '%s' "$app_web_chunk" | grep -qF 'maintenance_preview_v1'; then
     app_web_maintenance_preview_marker=1
   fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'maintenance_evidence_workspace_v1'; then
+    app_web_maintenance_evidence_workspace_marker=1
+  fi
   if printf '%s' "$app_web_chunk" | grep -qF 'impact_report_v1'; then
     app_web_impact_report_marker=1
   fi
@@ -331,12 +340,24 @@ for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n
   if printf '%s' "$app_web_chunk" | grep -qF 'policy_explainability_workspace_v1'; then
     app_web_policy_explainability_marker=1
   fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'path_explorer_v1'; then
+    app_web_path_explorer_marker=1
+  fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'service_impact_workspace_v1'; then
+    app_web_service_impact_workspace_marker=1
+  fi
   if printf '%s' "$app_web_chunk" | grep -qF 'change_safety_case_v1'; then
     app_web_change_safety_case_marker=1
   fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'evidence_consistency_summary_v1'; then
+    app_web_evidence_consistency_marker=1
+  fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'operational_stability_summary_v1'; then
+    app_web_stability_workspace_marker=1
+  fi
 done
-if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ] || [ "$app_web_noc_cockpit_strategic_pivots_marker" != "1" ] || [ "$app_web_global_search_week30_marker" != "1" ] || [ "$app_web_global_search_impact_hub_marker" != "1" ] || [ "$app_web_maintenance_preview_marker" != "1" ] || [ "$app_web_impact_report_marker" != "1" ] || [ "$app_web_service_explorer_marker" != "1" ] || [ "$app_web_service_dossier_marker" != "1" ] || [ "$app_web_policy_explainability_marker" != "1" ] || [ "$app_web_change_safety_case_marker" != "1" ]; then
-  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, evidence_replay_viewer_v1, noc-cockpit-strategic-pivots, Evidence replay (frozen file), Impact report hub, maintenance_preview_v1, impact_report_v1, service_explorer_v1, service_dossier_v1, policy_explainability_workspace_v1, and change_safety_case_v1 substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing + bundle export + evidence replay + cockpit 2.0 pivots + global search week 30 footer + impact hub + maintenance preview + impact report + week 31 service/explainability + week 32 service dossier + change safety case)" >&2
+if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ] || [ "$app_web_noc_cockpit_strategic_pivots_marker" != "1" ] || [ "$app_web_global_search_week30_marker" != "1" ] || [ "$app_web_global_search_impact_hub_marker" != "1" ] || [ "$app_web_maintenance_preview_marker" != "1" ] || [ "$app_web_maintenance_evidence_workspace_marker" != "1" ] || [ "$app_web_impact_report_marker" != "1" ] || [ "$app_web_service_explorer_marker" != "1" ] || [ "$app_web_service_dossier_marker" != "1" ] || [ "$app_web_policy_explainability_marker" != "1" ] || [ "$app_web_path_explorer_marker" != "1" ] || [ "$app_web_service_impact_workspace_marker" != "1" ] || [ "$app_web_change_safety_case_marker" != "1" ] || [ "$app_web_evidence_consistency_marker" != "1" ] || [ "$app_web_stability_workspace_marker" != "1" ]; then
+  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, evidence_replay_viewer_v1, noc-cockpit-strategic-pivots, Evidence replay (frozen file), Impact report hub, maintenance_preview_v1, maintenance_evidence_workspace_v1, impact_report_v1, service_explorer_v1, service_dossier_v1, policy_explainability_workspace_v1, path_explorer_v1, service_impact_workspace_v1, change_safety_case_v1, evidence_consistency_summary_v1, and operational_stability_summary_v1 substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing + bundle export + evidence replay + cockpit 2.0 pivots + global search week 30 footer + impact hub + maintenance preview + maintenance evidence workspace + impact report + week 31 service/explainability + week 34 path explorer + week 34 service impact workspace + week 32 service dossier + change safety case + week 35 evidence consistency workspace + week 37 stability workspace)" >&2
   exit 1
 fi
 
@@ -532,7 +553,7 @@ if command -v python3 >/dev/null 2>&1; then
   first_node_id=$(printf '%s' "$topology_response" | python3 -c "import sys,json; d=json.load(sys.stdin); t=d.get('topology'); nodes=t.get('nodes') if t else None; print(nodes[0]['node_id'] if nodes else '')")
   first_service_id=$(printf '%s' "$services_response" | python3 -c "import sys,json; d=json.load(sys.stdin); items=d.get('items') or []; print(items[0]['service_id'] if items else '')")
 else
-  notice "python3 not found; skipping week 27–28 path-analysis, related-policies, failure-impact, policy evidence timeline/delta structural sampling, week 32 service dossier GET sampling, and week 33 change safety case report GET sampling in verify-core-runtime.sh."
+  notice "python3 not found; skipping week 27–28 path-analysis, related-policies, failure-impact, policy evidence timeline/delta structural sampling, week 32 service dossier GET sampling, week 33 change safety case report GET sampling, and week 37 topology/service stability-profile GET sampling in verify-core-runtime.sh."
   first_policy_id=""
   first_node_id=""
   first_service_id=""
@@ -546,12 +567,22 @@ if [ -n "$first_service_id" ]; then
   assert_contains "service dossier response (service_explorer_detail)" "$service_dossier_response" '"service_explorer_detail":{'
   assert_contains "service dossier response (merged_caveats)" "$service_dossier_response" '"merged_caveats":'
   assert_contains "service dossier response (source_contract_ids)" "$service_dossier_response" '"source_contract_ids":'
+  service_evidence_timeline_response=$(fetch_compact_json "$APP_API_URL/api/v1/services/${enc_service_id}/evidence-timeline")
+  assert_contains "service evidence timeline response (contract id)" "$service_evidence_timeline_response" '"contract_id":"service_evidence_timeline_v1"'
+  assert_contains "service evidence timeline response (service_id echo)" "$service_evidence_timeline_response" '"service_id":"'
+  service_evidence_delta_response=$(fetch_compact_json "$APP_API_URL/api/v1/services/${enc_service_id}/evidence-delta")
+  assert_contains "service evidence delta response (contract id)" "$service_evidence_delta_response" '"contract_id":"service_evidence_delta_v1"'
+  assert_contains "service evidence delta response (service_id echo)" "$service_evidence_delta_response" '"service_id":"'
+  service_stability_profile_response=$(fetch_compact_json "$APP_API_URL/api/v1/services/${enc_service_id}/stability-profile")
+  assert_contains "service stability profile response (contract id)" "$service_stability_profile_response" '"contract_id":"service_stability_profile_v1"'
+  assert_contains "service stability profile response (service_id echo)" "$service_stability_profile_response" '"service_id":"'
+  assert_contains "service stability profile response (primary_stability_posture)" "$service_stability_profile_response" '"primary_stability_posture":"'
   service_change_safety_case_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/change-safety-case/service?service_id=${enc_service_id}&format=json")
   assert_contains "service change safety case response (contract id)" "$service_change_safety_case_response" '"contract_id":"change_safety_case_v1"'
   assert_contains "service change safety case response (safety_case_context)" "$service_change_safety_case_response" '"safety_case_context":"service_change_safety"'
 else
   if command -v python3 >/dev/null 2>&1; then
-    notice "Services Explorer items list empty; skipping service dossier and service change safety case structural checks."
+    notice "Services Explorer items list empty; skipping service dossier, service stability-profile GET, and service change safety case structural checks."
   fi
 fi
 
@@ -606,6 +637,16 @@ if [ -n "$first_node_id" ]; then
   assert_contains "topology object dossier response (contract id)" "$topology_object_dossier_response" '"contract_id":"topology_object_dossier_v1"'
   assert_contains "topology object dossier response (nested failure_impact)" "$topology_object_dossier_response" '"failure_impact":{'
   assert_contains "topology object dossier response (risk_attention)" "$topology_object_dossier_response" '"risk_attention":{'
+  topology_object_evidence_timeline_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/objects/${first_node_id}/evidence-timeline")
+  assert_contains "topology object evidence timeline response (contract id)" "$topology_object_evidence_timeline_response" '"contract_id":"topology_object_evidence_timeline_v1"'
+  assert_contains "topology object evidence timeline response (object_id echo)" "$topology_object_evidence_timeline_response" "\"object_id\":\"${first_node_id}\""
+  topology_object_evidence_delta_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/objects/${first_node_id}/evidence-delta")
+  assert_contains "topology object evidence delta response (contract id)" "$topology_object_evidence_delta_response" '"contract_id":"topology_object_evidence_delta_v1"'
+  assert_contains "topology object evidence delta response (object_id echo)" "$topology_object_evidence_delta_response" "\"object_id\":\"${first_node_id}\""
+  topology_object_stability_profile_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/objects/${first_node_id}/stability-profile")
+  assert_contains "topology object stability profile response (contract id)" "$topology_object_stability_profile_response" '"contract_id":"topology_object_stability_profile_v1"'
+  assert_contains "topology object stability profile response (object_id echo)" "$topology_object_stability_profile_response" "\"object_id\":\"${first_node_id}\""
+  assert_contains "topology object stability profile response (primary_stability_posture)" "$topology_object_stability_profile_response" '"primary_stability_posture":"'
   topology_export_response=$(fetch_compact_json "$APP_API_URL/api/v1/exports/topology-objects/${first_node_id}/dossier?format=json")
   assert_contains "topology evidence export response (envelope contract id)" "$topology_export_response" '"contract_id":"evidence_export_v1"'
   assert_contains "topology evidence export response (export_kind)" "$topology_export_response" '"export_kind":"topology_object_dossier"'
@@ -614,6 +655,10 @@ if [ -n "$first_node_id" ]; then
   maintenance_preview_response=$(fetch_compact_json "$APP_API_URL/api/v1/maintenance-preview?node_id=${enc_node_q}&preview_context=topology_drilldown")
   assert_contains "maintenance preview response (contract id)" "$maintenance_preview_response" '"contract_id":"maintenance_preview_v1"'
   assert_contains "maintenance preview response (preview_context)" "$maintenance_preview_response" '"preview_context":"topology_drilldown"'
+  maintenance_evidence_workspace_response=$(fetch_compact_json "$APP_API_URL/api/v1/maintenance-evidence-workspace?node_id=${enc_node_q}&preview_context=topology_drilldown")
+  assert_contains "maintenance evidence workspace response (contract id)" "$maintenance_evidence_workspace_response" '"contract_id":"maintenance_evidence_workspace_v1"'
+  assert_contains "maintenance evidence workspace response (nested maintenance_preview)" "$maintenance_evidence_workspace_response" '"contract_id":"maintenance_preview_v1"'
+  assert_contains "maintenance evidence workspace response (topology_change_safety)" "$maintenance_evidence_workspace_response" '"safety_case_context":"topology_change_safety"'
   maintenance_impact_report_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/maintenance-impact?node_id=${enc_node_q}&format=json")
   assert_contains "maintenance impact report response (contract id)" "$maintenance_impact_report_response" '"contract_id":"impact_report_v1"'
   assert_contains "maintenance impact report response (report_context)" "$maintenance_impact_report_response" '"report_context":"maintenance_impact"'
@@ -621,7 +666,7 @@ if [ -n "$first_node_id" ]; then
   assert_contains "topology change safety case response (contract id)" "$topology_change_safety_case_response" '"contract_id":"change_safety_case_v1"'
   assert_contains "topology change safety case response (safety_case_context)" "$topology_change_safety_case_response" '"safety_case_context":"topology_change_safety"'
 else
-  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, topology-object-dossier, maintenance-preview assembly, maintenance-impact report, and topology change safety case structural checks."
+  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, topology-object-dossier, topology-object evidence timeline/delta, topology-object stability-profile GET, maintenance-preview assembly, maintenance-evidence-workspace assembly, maintenance-impact report, and topology change safety case structural checks."
 fi
 
 # Cross-slice list/history metadata and evidence shape (contract posture, not business truth).
@@ -800,6 +845,19 @@ assert_contains "briefing export bundle (briefing_subject)" "$export_operator_br
 delta_digest_runtime_response=$(fetch_compact_json "$APP_API_URL/api/v1/delta-digest?sync_runs_limit=10")
 assert_contains "delta digest response (contract id)" "$delta_digest_runtime_response" '"contract_id":"cross_domain_delta_digest_v1"'
 assert_contains "delta digest response (sections)" "$delta_digest_runtime_response" '"sections":['
+
+evidence_consistency_runtime_response=$(fetch_compact_json "$APP_API_URL/api/v1/evidence-consistency/summary?sync_runs_limit=10")
+assert_contains "evidence consistency summary (contract id)" "$evidence_consistency_runtime_response" '"contract_id":"evidence_consistency_summary_v1"'
+assert_contains "evidence consistency summary (items array)" "$evidence_consistency_runtime_response" '"items":['
+assert_contains "evidence consistency summary (sync_runs_limit_applied echo)" "$evidence_consistency_runtime_response" '"sync_runs_limit_applied":10'
+assert_contains "evidence consistency summary (safety_framing)" "$evidence_consistency_runtime_response" '"safety_framing":{'
+
+operational_stability_runtime_response=$(fetch_compact_json "$APP_API_URL/api/v1/stability/summary?sync_runs_limit=10")
+assert_contains "operational stability summary (contract id)" "$operational_stability_runtime_response" '"contract_id":"operational_stability_summary_v1"'
+assert_contains "operational stability summary (rows array)" "$operational_stability_runtime_response" '"rows":['
+assert_contains "operational stability summary (sync_runs_limit_applied echo)" "$operational_stability_runtime_response" '"sync_runs_limit_applied":10'
+assert_contains "operational stability summary (operational_stability_posture)" "$operational_stability_runtime_response" '"operational_stability_posture":"'
+assert_contains "operational stability summary (safety_framing)" "$operational_stability_runtime_response" '"safety_framing":{'
 
 operator_briefing_runtime_response=$(fetch_compact_json "$APP_API_URL/api/v1/operator-briefing?sync_runs_limit=10")
 assert_contains "operator briefing response (contract id)" "$operator_briefing_runtime_response" '"contract_id":"operator_briefing_workspace_v1"'

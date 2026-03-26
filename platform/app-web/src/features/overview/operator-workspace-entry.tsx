@@ -1,4 +1,6 @@
 import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
+import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
+import { navigateToServiceImpactWorkspace } from "../../lib/service-impact-workspace-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 import {
   navigateToPoliciesPolicyEvidenceDeltaFocus,
@@ -94,6 +96,22 @@ export function OperatorWorkspaceEntry({ firstNodeId, firstPolicyId }: OperatorW
                 }
               >
                 Policy dossier (first policy)
+              </button>
+              <button
+                type="button"
+                className="inline-action"
+                onClick={() => navigateToPathExplorer(firstPolicyId)}
+                title="path_explorer_v1 — composed path workspace; same policy anchor as Policies panels"
+              >
+                Path Explorer (first policy)
+              </button>
+              <button
+                type="button"
+                className="inline-action"
+                onClick={() => navigateToServiceImpactWorkspace(`policy:${firstPolicyId}`)}
+                title="service_impact_workspace_v1 — composed service-impact; policy: anchor matches Service Explorer"
+              >
+                Service Impact workspace (first policy)
               </button>
             </>
           ) : (

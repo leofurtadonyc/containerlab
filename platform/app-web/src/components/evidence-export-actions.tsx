@@ -111,7 +111,8 @@ export function EvidenceExportActions({ target, variant = "dossier" }: EvidenceE
         ) : (
           <>
             Snapshot for communication or records only—<strong>not</strong> compliance hold, tamper evidence, backup, or
-            substitute for live views.
+            substitute for live views. <strong>Distinct from</strong> report-route downloads (<code>impact_report_v1</code>,{" "}
+            <code>change_safety_case_v1</code>) and from <strong>Evidence replay</strong> (offline review of saved files).
           </>
         )}
       </p>

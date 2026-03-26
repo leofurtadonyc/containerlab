@@ -13,6 +13,8 @@ describe("EvidenceExportActions", () => {
     expect(html).toContain("Export Markdown");
     expect(html).toContain("compliance hold");
     expect(html).toContain("tamper evidence");
+    expect(html).toContain("impact_report_v1");
+    expect(html).toContain("Evidence replay");
   });
 
   it("renders for situation room and investigation targets", () => {

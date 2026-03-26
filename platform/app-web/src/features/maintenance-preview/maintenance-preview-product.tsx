@@ -11,7 +11,9 @@ import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation
 import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
 import { navigateToImpactReportForMaintenance } from "../../lib/impact-report-navigation";
 import { navigateToChangeSafetyCaseForMaintenance } from "../../lib/change-safety-case-navigation";
+import { navigateToMaintenanceEvidenceWorkspace } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
+import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 
 export interface MaintenancePreviewProductProps {
   data: MaintenancePreviewResponse;
@@ -63,6 +65,33 @@ export function MaintenancePreviewProduct({ data, onReload }: MaintenancePreview
             title="change_safety_case_v1 — pre-change posture; not blast-radius or approval"
           >
             Change safety case
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
+              navigateToMaintenanceEvidenceWorkspace(
+                subj.object_kind === "node"
+                  ? { nodeId: subj.object_id, previewContext: data.preview_context }
+                  : { linkId: subj.object_id, previewContext: data.preview_context },
+              )
+            }
+            title="maintenance_evidence_workspace_v1 — composed read assembly; not evidence_export_v1"
+          >
+            Maintenance evidence workspace
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
+              navigateToStabilityWorkspace({
+                syncRunsLimit: syncLim,
+                topologyObject: { id: subj.object_id, kind: subj.object_kind },
+              })
+            }
+            title="Stability workspace — same topology subject anchor; not maintenance_evidence_workspace_v1"
+          >
+            Stability workspace
           </button>
           <button type="button" className="maintenance-preview-toolbar-reload" onClick={() => void onReload()}>
             Reload

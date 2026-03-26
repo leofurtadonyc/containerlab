@@ -12,11 +12,15 @@ import {
 } from "../../lib/investigation-navigation";
 import { navigateToOperatorBriefingView } from "../../lib/operator-briefing-navigation";
 import { navigateToEvidenceView, navigateToPoliciesWithDegradedPolicyV1Posture } from "../../lib/url-app-state";
+import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
+import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 import { readDossierSourceFromSearch } from "../../lib/topology-dossier-navigation";
 import { navigateToPoliciesPolicy } from "../../lib/topology-policy-navigation";
 import { useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { useTopologyObjectDossierQuery } from "./api";
+import { TopologyObjectEvidenceDeltaPanel } from "./topology-object-evidence-delta-panel";
+import { TopologyObjectEvidenceTimelinePanel } from "./topology-object-evidence-timeline-panel";
 
 export interface TopologyObjectDossierWorkspaceProps {
   objectId: string | null;
@@ -129,6 +133,20 @@ export function TopologyObjectDossierWorkspace({ objectId, objectKind }: Topolog
             type="button"
             className="inline-action"
             onClick={() =>
+              navigateToMaintenanceEvidenceWorkspaceForTopologyObject(
+                data.object_identity.object_id,
+                data.object_identity.object_kind,
+                { previewContext: "topology_drilldown" },
+              )
+            }
+            title="Composed maintenance evidence workspace (preview + dossier/timeline/delta + change safety case)"
+          >
+            Maintenance evidence workspace
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
               navigateToMaintenancePreviewForTopologyObject(
                 data.object_identity.object_id,
                 data.object_identity.object_kind,
@@ -138,6 +156,22 @@ export function TopologyObjectDossierWorkspace({ objectId, objectKind }: Topolog
             title="Read-only maintenance planning assembly (not approval or safe-to-change)"
           >
             Maintenance preview
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
+              navigateToStabilityWorkspace({
+                syncRunsLimit: syncRuns,
+                topologyObject: {
+                  id: data.object_identity.object_id,
+                  kind: data.object_identity.object_kind,
+                },
+              })
+            }
+            title="operational_stability_summary_v1 lane — same topology anchor as dossier; not evidence consistency"
+          >
+            Stability workspace
           </button>
           <EvidenceExportActions
             variant="dossier"
@@ -179,6 +213,25 @@ export function TopologyObjectDossierWorkspace({ objectId, objectKind }: Topolog
             <li key={line}>{line}</li>
           ))}
         </ul>
+      </section>
+
+      <section className="topology-dossier-workspace__section" aria-labelledby="dossier-timeline-heading">
+        <h4 id="dossier-timeline-heading">Evidence chronology (topology object)</h4>
+        <p className="table-note">
+          <code>topology_object_evidence_timeline_v1</code> via a dedicated read GET — composition differs from this
+          dossier JSON; not forensic chronology or pairing proof.
+        </p>
+        <TopologyObjectEvidenceTimelinePanel objectId={objectId} objectKind={objectKind} />
+      </section>
+
+      <section className="topology-dossier-workspace__section" aria-labelledby="dossier-delta-heading">
+        <h4 id="dossier-delta-heading">Evidence delta (topology object)</h4>
+        <p className="table-note">
+          <code>topology_object_evidence_delta_v1</code> compares current read-side assemblies to a previous
+          persisted topology and policy snapshot pair when available—not topology drift truth or blast-radius
+          simulation.
+        </p>
+        <TopologyObjectEvidenceDeltaPanel objectId={objectId} objectKind={objectKind} />
       </section>
 
       <div className="topology-dossier-workspace__grid">

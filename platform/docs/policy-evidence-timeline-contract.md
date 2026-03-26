@@ -106,6 +106,7 @@ Stable keys (align with schema literals when implemented):
 | **`degraded-policy-v1-contract.md`** | Per-row classification; may supply **degraded_policy_v1_signal_anchor** (point-in-time). |
 | **`failure-impact-contract.md`** | Topology-object rollups; **orthogonal** unless cross-linked as navigation only. |
 | **`investigation-workspace-contract.md`** | Cross-domain assembly; **InvestigationEvidenceTimeline** is **not** duplicated—policy timeline is **narrower** and **policy-first**. |
+| [`service-evidence-timeline-contract.md`](./service-evidence-timeline-contract.md) | **Service-primary** chronology for one **`service_id`**; **may project** policy timeline entries for **member** policies with provenance—**not** the same route or **`policy_id`** scope as this contract. |
 | **Policy list / history APIs** | **Source** data; this contract defines the **product shape** for ordering and typing. |
 
 ---

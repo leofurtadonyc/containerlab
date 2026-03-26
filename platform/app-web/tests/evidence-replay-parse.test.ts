@@ -146,6 +146,21 @@ describe("parseEvidenceExportJson", () => {
     }
   });
 
+  it("rejects service_impact_workspace_v1 root (live composed workspace JSON is not evidence_export_v1)", () => {
+    const raw = JSON.stringify({
+      contract_id: "service_impact_workspace_v1",
+      service_id: "color:100",
+      metadata: { generated_at: "2025-01-01T00:00:00Z", service: "app-api", version: "0.1.0", phase: "phase_2_read_only_foundation" },
+    });
+    const r = parseEvidenceExportJson(raw);
+    expect(r.status).toBe("error");
+    if (r.status === "error") {
+      expect(r.error.code).toBe("service_impact_workspace_not_evidence_export");
+      expect(r.error.message).toContain("/api/v1/service-impact-workspace");
+      expect(r.error.message).toContain("GET /api/v1/exports/");
+    }
+  });
+
   it("rejects change_safety_case_v1 root (Change Safety Case JSON is not evidence_export_v1)", () => {
     const raw = JSON.stringify({
       contract_id: "change_safety_case_v1",
