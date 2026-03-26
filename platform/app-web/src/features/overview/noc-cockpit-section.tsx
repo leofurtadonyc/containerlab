@@ -1,11 +1,13 @@
 import type { ApiClientError } from "../../api/client";
 import type {
   CrossDomainDeltaDigestResponse,
+  EvidenceConsistencySummaryResponse,
   PoliciesListResponse,
   RecentChangeSummaryResponse,
   TopologyRiskSummaryResponse,
 } from "../../api/contracts";
 import { DeltaDigestOverviewEntry } from "./delta-digest-overview-entry";
+import { EvidenceConsistencyOverviewEntry } from "./evidence-consistency-overview-entry";
 import { EvidenceReplayOverviewEntry } from "./evidence-replay-overview-entry";
 import { InvestigationOverviewEntry } from "./investigation-entry";
 import { NocCockpitOperatorLaunchGrid } from "./noc-cockpit-operator-launch-grid";
@@ -41,6 +43,12 @@ export interface NocCockpitSectionProps {
     isLoading: boolean;
     reload: () => void | Promise<void>;
   };
+  evidenceConsistency: {
+    data: EvidenceConsistencySummaryResponse | null;
+    error: ApiClientError | null;
+    isLoading: boolean;
+    reload: () => void | Promise<void>;
+  };
 }
 
 /**
@@ -54,6 +62,7 @@ export function NocCockpitSection({
   recentChange,
   riskSummary,
   deltaDigest,
+  evidenceConsistency,
 }: NocCockpitSectionProps) {
   return (
     <div className="noc-cockpit" data-testid="noc-cockpit-section">
@@ -89,6 +98,10 @@ export function NocCockpitSection({
 
       <div className="noc-cockpit__quick-grid">
         <DeltaDigestOverviewEntry syncRunsLimit={syncRunsLimit} deltaDigest={deltaDigest} />
+        <EvidenceConsistencyOverviewEntry
+          syncRunsLimit={syncRunsLimit}
+          evidenceConsistency={evidenceConsistency}
+        />
         <OperatorBriefingOverviewEntry syncRunsLimit={syncRunsLimit} cockpitVariant />
         <EvidenceReplayOverviewEntry syncRunsLimit={syncRunsLimit} />
         <SituationRoomOverviewEntry syncRunsLimit={syncRunsLimit} />

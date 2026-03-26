@@ -258,7 +258,9 @@ export function PolicyExplainabilityWorkspace({ policyId }: PolicyExplainability
       <p className="table-note policy-explainability-workspace__intro">
         <strong>Explainability-first layout.</strong> Same underlying APIs as path analysis, topology impact, timeline,
         and delta—reordered for path/candidate narrative. <strong>Not</strong> forwarding proof, TE authority, workflow
-        execution, or validation. <strong>Not</strong> the policy dossier workspace (breadth-first briefing).
+        execution, or validation. <strong>Not</strong> the policy dossier workspace (breadth-first briefing).{" "}
+        <strong>Path Explorer</strong> (<code>path_explorer_v1</code>) is the dedicated shell that bundles path analysis +
+        explainability for the same policy—still <strong>not</strong> dataplane proof.
       </p>
 
       {explainabilityFromUrl ? (

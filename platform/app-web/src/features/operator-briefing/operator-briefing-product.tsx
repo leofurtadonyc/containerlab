@@ -6,6 +6,7 @@ import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navig
 import { navigateToSituationRoomView } from "../../lib/situation-room-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { formatDateTime } from "../../lib/presentation";
+import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 
 export interface OperatorBriefingProductProps {
@@ -139,6 +140,13 @@ export function OperatorBriefingProduct({ data, syncRunsLimit, onReload }: Opera
             onClick={() => navigateToEvidenceView("delta-digest")}
           >
             Delta digest
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button operator-briefing-live-pivots__primary"
+            onClick={() => navigateToEvidenceConsistencyWorkspace(syncRunsLimit)}
+          >
+            Evidence consistency workspace
           </button>
           <button
             type="button"

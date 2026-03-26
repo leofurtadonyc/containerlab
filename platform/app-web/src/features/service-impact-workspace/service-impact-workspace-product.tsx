@@ -14,7 +14,9 @@ import { navigateToChangeSafetyCaseForPolicy, navigateToChangeSafetyCaseForServi
 import { navigateToMaintenancePreview } from "../../lib/maintenance-preview-navigation";
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
-import { navigateToEvidenceView, mergeViewIntoSearch, replaceUrlSearchParams } from "../../lib/url-app-state";
+import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToDeltaDigestView } from "../../lib/delta-digest-navigation";
+import { navigateToEvidenceView } from "../../lib/url-app-state";
 import { useServiceImpactWorkspaceQuery } from "./api";
 
 export interface ServiceImpactWorkspaceProductProps {
@@ -113,7 +115,9 @@ function ServiceImpactWorkspaceBody({
           <h2>Service Impact Workspace</h2>
           <p className="table-note">
             Composed workspace over Service Explorer and optional failure-impact — <strong>not</strong> blast-radius
-            truth, incident command, or safe-to-change authority. Nested JSON remains authoritative per contract.
+            truth, incident command, or safe-to-change authority. Nested JSON remains authoritative per contract.{" "}
+            <strong>Not</strong> Service dossier (no dossier explainability/maintenance assembly here) and{" "}
+            <strong>not</strong> Impact Report (<code>impact_report_v1</code> communication envelope).
           </p>
         </div>
       </header>
@@ -341,15 +345,11 @@ function ServiceImpactWorkspaceBody({
           <button type="button" className="inline-action" onClick={() => navigateToEvidenceView("topology")}>
             Topology
           </button>
-          <button
-            type="button"
-            className="inline-action"
-            onClick={() => {
-              const sp = mergeViewIntoSearch(window.location.search, "delta-digest");
-              replaceUrlSearchParams(sp);
-            }}
-          >
+          <button type="button" className="inline-action" onClick={() => navigateToDeltaDigestView(syncLim)}>
             Delta digest
+          </button>
+          <button type="button" className="inline-action" onClick={() => navigateToEvidenceConsistencyWorkspace(syncLim)}>
+            Evidence consistency workspace
           </button>
         </p>
       </section>

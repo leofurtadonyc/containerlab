@@ -58,8 +58,9 @@ export function ChangeSafetyCaseActions({ target }: ChangeSafetyCaseActionsProps
       </div>
       <p className="change-safety-case-actions__hint">
         <strong>change_safety_case_v1</strong> — pre-change evidence posture from existing read assemblies.{" "}
-        <strong>Not</strong> <code>evidence_export_v1</code>, <strong>not</strong> briefing bundle,{" "}
-        <strong>not</strong> Evidence replay. JSON is canonical; Markdown embeds the same payload.
+        <strong>Not</strong> <code>impact_report_v1</code> (communication packaging). <strong>Not</strong>{" "}
+        <code>evidence_export_v1</code>, <strong>not</strong> briefing bundle, <strong>not</strong> Evidence replay. JSON
+        is canonical; Markdown embeds the same payload.
       </p>
       {error ? (
         <p className="change-safety-case-actions__error" role="alert">

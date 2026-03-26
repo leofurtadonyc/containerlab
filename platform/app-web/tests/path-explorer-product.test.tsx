@@ -193,6 +193,8 @@ describe("PathExplorerProduct", () => {
 
     const html = renderToStaticMarkup(<PathExplorerProduct policyId="p1" />);
     expect(html).toContain("path_explorer_v1");
+    expect(html).toContain("Policy dossier");
+    expect(html).toContain("Explainability");
     expect(html).toContain("Topology naming alignment unknown");
     expect(html).toContain("Unknown-candidate posture");
   });

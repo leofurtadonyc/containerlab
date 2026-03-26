@@ -1,4 +1,5 @@
 import type { ServiceDossierResponse, ServiceDetailResponse, ServiceTopologyLinkRecord } from "../../api/contracts";
+import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
 import { navigateToDeltaDigestView } from "../../lib/delta-digest-navigation";
 import { formatDateTime, formatLabel } from "../../lib/presentation";
 import {
@@ -18,6 +19,8 @@ import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
+import { ServiceEvidenceDeltaPanel } from "../service-explorer/service-evidence-delta-panel";
+import { ServiceEvidenceTimelinePanel } from "../service-explorer/service-evidence-timeline-panel";
 
 function posturePillClass(posture: string): string {
   if (posture === "degraded") {
@@ -60,9 +63,10 @@ export function ServiceDossierProduct({ data, onReload }: ServiceDossierProductP
             <code>{d.service_id}</code>
           </h2>
           <p className="body-copy service-dossier-hero__lede">
-            Composed read-side workspace over Service Explorer detail, optional explainability for one default member,
-            and optional maintenance preview when topology linkage resolves—<strong>not</strong> SLA proof, workflow
-            authority, or a substitute for full Policies / topology panels.
+            Composed read-side workspace over <strong>one</strong> Service Explorer detail for <code>service_id</code>,
+            optional explainability for one default member, and optional maintenance preview when topology linkage
+            resolves—<strong>not</strong> the Explorer list/index, <strong>not</strong> Impact Report packaging,{" "}
+            <strong>not</strong> SLA proof, workflow authority, or a substitute for full Policies / topology panels.
           </p>
         </div>
         <div className="service-dossier-hero__actions">
@@ -98,6 +102,10 @@ export function ServiceDossierProduct({ data, onReload }: ServiceDossierProductP
           </span>
         </span>
       </div>
+
+      <ServiceEvidenceTimelinePanel serviceId={d.service_id} />
+
+      <ServiceEvidenceDeltaPanel serviceId={d.service_id} />
 
       <section className="service-dossier-framing" aria-labelledby="sd-nonclaims-heading">
         <h3 id="sd-nonclaims-heading">Explicit non-claims (safety framing)</h3>
@@ -177,6 +185,13 @@ export function ServiceDossierProduct({ data, onReload }: ServiceDossierProductP
           </button>
           <button type="button" className="nav-drilldown-button" onClick={() => navigateToDeltaDigestView(syncLim)}>
             Delta digest
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button"
+            onClick={() => navigateToEvidenceConsistencyWorkspace(syncLim)}
+          >
+            Evidence consistency workspace
           </button>
           <button type="button" className="nav-drilldown-button" onClick={() => navigateToEvidenceView("policies")}>
             Policies table

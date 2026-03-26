@@ -103,6 +103,7 @@ Additional denials (aligned with change intelligence and investigation assemblie
 ## Related documents
 
 - [`change-intelligence-contract.md`](./change-intelligence-contract.md) — recent-summary aggregation  
+- [`evidence-consistency-summary-contract.md`](./evidence-consistency-summary-contract.md) — cross-domain **alignment / tension** (`evidence_consistency_summary_v1`); complementary to digest **deltas**, not a second digest  
 - [`investigation-workspace-contract.md`](./investigation-workspace-contract.md) — nested assembly context  
 - [`evidence-pack-contract.md`](./evidence-pack-contract.md) — situation room assembly  
 - [`noc-cockpit-contract.md`](./noc-cockpit-contract.md) — Overview composition without new truth engines  

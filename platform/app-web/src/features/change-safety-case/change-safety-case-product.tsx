@@ -1,5 +1,10 @@
 import type { ChangeSafetyCaseResponse } from "../../api/contracts";
 import { ChangeSafetyCaseActions } from "../../components/change-safety-case-actions";
+import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import {
+  DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
+  readSyncRunsLimitFromSearch,
+} from "../../lib/investigation-navigation";
 import { formatDateTime } from "../../lib/presentation";
 import type { ChangeSafetyCaseDownloadTarget } from "../../lib/change-safety-case-download";
 import {
@@ -19,6 +24,8 @@ export interface ChangeSafetyCaseProductProps {
 }
 
 export function ChangeSafetyCaseProduct({ data, downloadTarget, onReload }: ChangeSafetyCaseProductProps) {
+  const syncLim = readSyncRunsLimitFromSearch(window.location.search, DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT);
+
   return (
     <div className="change-safety-case-product" data-testid="change-safety-case-product">
       <header className="change-safety-case-hero">
@@ -27,7 +34,9 @@ export function ChangeSafetyCaseProduct({ data, downloadTarget, onReload }: Chan
           <h2 className="change-safety-case-hero__title">Change Safety Case</h2>
           <p className="body-copy change-safety-case-hero__lede">
             Pre-change <strong>read-side</strong> understanding posture—evidence inventory, gaps, and advisory follow-ups
-            only. <strong>Not</strong> validation, approval, safe-to-change truth, dry-run, or execution planning.
+            only. <strong>Not</strong> validation, approval, safe-to-change truth, dry-run, or execution planning.{" "}
+            <strong>Not</strong> <code>impact_report_v1</code> (communication packaging) or <code>evidence_export_v1</code>{" "}
+            snapshots—subject-centric <code>change_safety_case_v1</code> narrative and report-route downloads only.
           </p>
         </div>
         <div className="change-safety-case-hero__actions">
@@ -172,6 +181,15 @@ export function ChangeSafetyCaseProduct({ data, downloadTarget, onReload }: Chan
       <section className="change-safety-case-deeper" aria-labelledby="csc-deeper-heading">
         <h3 id="csc-deeper-heading">Open related product surfaces</h3>
         <p className="table-note">Same anchors as this case—deeper panels remain authoritative for full payloads.</p>
+        <div className="change-safety-case-deeper__grid">
+          <button
+            type="button"
+            className="nav-drilldown-button"
+            onClick={() => navigateToEvidenceConsistencyWorkspace(syncLim)}
+          >
+            Evidence consistency workspace
+          </button>
+        </div>
         <DeeperPivots data={data} />
       </section>
     </div>

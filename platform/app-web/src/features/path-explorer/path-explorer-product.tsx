@@ -2,7 +2,9 @@ import { ErrorState, LoadingState } from "../../components/query-states";
 import { ApiClientError } from "../../api/client";
 import type { PathExplorerWorkspaceResponse } from "../../api/contracts";
 import { formatLabel } from "../../lib/presentation";
-import { navigateToEvidenceView, mergeViewIntoSearch, replaceUrlSearchParams } from "../../lib/url-app-state";
+import { navigateToDeltaDigestView } from "../../lib/delta-digest-navigation";
+import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToEvidenceView } from "../../lib/url-app-state";
 import { navigateToOperatorBriefingView } from "../../lib/operator-briefing-navigation";
 import { DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT, navigateToInvestigationView } from "../../lib/investigation-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
@@ -102,7 +104,9 @@ function PathExplorerWorkspaceBody({
           <h2>Path Explorer</h2>
           <p className="table-note">
             Composed workspace over existing path-analysis and explainability assemblies — <strong>not</strong>{" "}
-            dataplane proof, TE solving, or workflow authority. Nested JSON remains authoritative per contract.
+            dataplane proof, TE solving, or workflow authority. Nested JSON remains authoritative per contract. On{" "}
+            <strong>Policies</strong>, <strong>Policy dossier</strong> is breadth-first composed briefing;{" "}
+            <strong>Explainability</strong> is path-story-first—this shell bundles both for the same policy anchor.
           </p>
         </div>
       </header>
@@ -235,12 +239,16 @@ function PathExplorerWorkspaceBody({
           <button
             type="button"
             className="inline-action"
-            onClick={() => {
-              const sp = mergeViewIntoSearch(window.location.search, "delta-digest");
-              replaceUrlSearchParams(sp);
-            }}
+            onClick={() => navigateToDeltaDigestView(DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT)}
           >
             Delta digest
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToEvidenceConsistencyWorkspace(DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT)}
+          >
+            Evidence consistency workspace
           </button>
           <button
             type="button"

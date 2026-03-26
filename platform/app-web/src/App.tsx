@@ -12,6 +12,7 @@ import { PLATFORM_NAV_VIEW_IDS } from "./nav-views";
 import { AuditView } from "./features/audit/view";
 import { CapabilitiesView } from "./features/capabilities/view";
 import { DeltaDigestView } from "./features/delta-digest/view";
+import { EvidenceConsistencyView } from "./features/evidence-consistency/view";
 import { EvidenceReplayView } from "./features/evidence-replay/view";
 import { DevicesView } from "./features/devices/view";
 import { InvestigationView } from "./features/investigation/view";
@@ -35,6 +36,7 @@ import { GlobalOperatorSearch } from "./features/global-search/global-operator-s
 const NAV_ITEMS = [
   { id: "overview", label: "Overview" },
   { id: "delta-digest", label: "Delta digest" },
+  { id: "evidence-consistency", label: "Evidence consistency" },
   { id: "situation-room", label: "Situation room" },
   { id: "investigation", label: "Investigation" },
   { id: "devices", label: "Devices" },
@@ -64,6 +66,8 @@ function renderView(viewId: string) {
   switch (viewId) {
     case "delta-digest":
       return <DeltaDigestView />;
+    case "evidence-consistency":
+      return <EvidenceConsistencyView />;
     case "situation-room":
       return <SituationRoomView />;
     case "operator-briefing":

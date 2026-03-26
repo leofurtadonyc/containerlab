@@ -404,6 +404,41 @@ describe("ApiClient week 28 bounded paths", () => {
     expect(url).toBe("http://api/api/v1/delta-digest?sync_runs_limit=100");
   });
 
+  it("getEvidenceConsistencySummary uses evidence-consistency/summary and bounds sync_runs_limit", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          metadata: {
+            service: "app-api",
+            version: "0.1.0",
+            phase: "phase_2_read_only_foundation",
+            generated_at: "2025-01-01T00:00:00Z",
+          },
+          contract_id: "evidence_consistency_summary_v1",
+          safety_framing: {
+            contract_id: "evidence_consistency_summary_v1",
+            authority_posture: "interpretation_support_only",
+            explicit_non_claims: [],
+            phase: "phase_2_read_only_foundation",
+            summary_disclaimer: "x",
+          },
+          scope_summary: "s",
+          sync_runs_limit_applied: 100,
+          domain_freshness_echo: [],
+          items: [],
+          caveats: [],
+          assembly_notes: [],
+        }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getEvidenceConsistencySummary(500);
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toBe("http://api/api/v1/evidence-consistency/summary?sync_runs_limit=100");
+  });
+
   it("getOperatorBriefing builds operator-briefing query string", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

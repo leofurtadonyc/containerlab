@@ -14,3 +14,12 @@ export function useRecentChangeSummaryQuery(enabled = true) {
 
   return useApiQuery(queryFn, { enabled });
 }
+
+export function useEvidenceConsistencySummaryQuery(syncRunsLimit: number, enabled = true) {
+  const queryFn = useCallback(
+    () => apiClient.getEvidenceConsistencySummary(syncRunsLimit),
+    [syncRunsLimit],
+  );
+
+  return useApiQuery(queryFn, { enabled });
+}

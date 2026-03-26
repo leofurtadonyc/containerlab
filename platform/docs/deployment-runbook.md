@@ -42,6 +42,17 @@ Use this runbook for day-0 and day-1 style platform bring-up, rebuild, and first
 - troubleshooting common startup and verification failures
 - stating what the platform is and is not safe to rely on right now
 
+## Operator-visible contract boundaries (week 35 labeling)
+
+The packaged WebUI distinguishes **read-side product surfaces** that reuse similar assemblies but ship under **different contracts** (no new verifier business logic beyond existing structural checks):
+
+- **Service Explorer** (`service_explorer_v1`) is a **list/index + membership detail** lens over the policy inventory—not the composed **Service dossier** (`service_dossier_v1`) or **Service Impact workspace** (`service_impact_workspace_v1`) shells.
+- **Change Safety Case** (`change_safety_case_v1`) is **pre-change understanding** text and gaps—not **`impact_report_v1`** communication packaging, not offline **`evidence_export_v1`** replay.
+- **Impact Report** (`impact_report_v1`) is **stakeholder communication packaging**—not **`change_safety_case_v1`**, not **`evidence_export_v1`** export snapshots.
+- **Evidence export** (`evidence_export_v1` via **`GET /api/v1/exports/...`**) is a **downloadable snapshot** envelope—not **Evidence replay** (client-side review of saved files) and not report-route JSON without the export envelope.
+
+Authoritative contract clauses remain in **`change-safety-case-contract.md`**, **`impact-report-contract.md`**, **`evidence-export-contract.md`**, **`evidence-replay-viewer-contract.md`**, **`service-explorer-contract.md`**, **`service-dossier-contract.md`**, **`path-explorer-contract.md`**, and **`service-impact-workspace-contract.md`**. Scheduling context: [`week-33-bounded-next-slice-recommendation.md`](./week-33-bounded-next-slice-recommendation.md).
+
 ## What This Runbook Does Not Cover
 
 - architecture redesign

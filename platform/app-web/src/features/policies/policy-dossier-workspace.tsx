@@ -49,7 +49,9 @@ export function PolicyDossierWorkspace({ policyId }: PolicyDossierWorkspaceProps
         <p className="table-note">
           Select a <strong>policy</strong> row in the table above to load a composed, read-only briefing. This workspace
           unifies path analysis, degraded-policy (v1), topology impact, evidence timeline, and evidence delta—it does{" "}
-          <strong>not</strong> replace the specialized panels in standard view.
+          <strong>not</strong> replace the specialized panels in standard view. <strong>Path Explorer</strong> (
+          <code>path_explorer_v1</code>) is a separate shell for the same policy anchor with path-analysis + explainability
+          emphasis—not the same layout as this dossier tab.
         </p>
       </div>
     );

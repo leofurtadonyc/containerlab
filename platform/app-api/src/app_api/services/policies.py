@@ -1095,3 +1095,49 @@ def build_policies_list_response(
             history_recent_snapshots_returned=len(history.recent_snapshots),
         ),
     )
+
+
+def build_policy_records_from_inventory_records(records: list[PolicyInventoryRecord]) -> list[PolicyRecord]:
+    """Map persisted ``PolicyInventoryRecord`` rows to API ``PolicyRecord`` for anchor-side assembly.
+
+    Uses ``row_posture="current"`` for ``degraded_policy_v1`` classification (historical snapshot anchor),
+    matching policy evidence delta anchor semantics.
+    """
+    row_posture: Literal["current", "stale"] = "current"
+    return [
+        PolicyRecord(
+            policy_id=policy.policy_id,
+            policy_name=policy.policy_name,
+            policy_type=policy.policy_type,
+            headend=policy.headend,
+            endpoint=policy.endpoint,
+            color=policy.color,
+            source_target=policy.source_target,
+            source_target_role=policy.source_target_role,
+            candidate_paths=[
+                CandidatePathRecord(
+                    name=path.name,
+                    current_posture=row_posture,
+                    path_state=path.path_state,
+                    last_recorded_path_state=path.path_state,
+                    preference=path.preference,
+                    notes=path.notes,
+                )
+                for path in policy.candidate_paths
+            ],
+            current_posture=row_posture,
+            intent_state=policy.intent_state,
+            observed_state=policy.observed_state,
+            last_recorded_observed_state=policy.observed_state,
+            support_state=policy.support_state,
+            health_state=policy.health_state,
+            last_recorded_health_state=policy.health_state,
+            source=policy.source,
+            notes=policy.notes,
+            degraded_policy_v1=build_degraded_policy_v1_classification(
+                policy=policy,
+                row_current_posture=row_posture,
+            ),
+        )
+        for policy in records
+    ]

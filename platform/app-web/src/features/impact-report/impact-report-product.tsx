@@ -17,8 +17,11 @@ export function ImpactReportProduct({ data, downloadTarget, onReload }: ImpactRe
           <p className="eyebrow">Phase 2 · impact_report_v1</p>
           <h2 className="impact-report-hero__title">Impact Report</h2>
           <p className="body-copy impact-report-hero__lede">
-            Operator communication packaging over existing read-side contracts.{" "}
-            <strong>Not</strong> compliance, validation sign-off, incident command, or safe-to-change approval.
+            Stakeholder <strong>communication packaging</strong> over existing read-side contracts—same Phase 2 assemblies
+            as other routes, different envelope than Change Safety Case or export snapshots.{" "}
+            <strong>Not</strong> compliance, validation sign-off, incident command, or safe-to-change approval.{" "}
+            <strong>Not</strong> <code>change_safety_case_v1</code> (pre-change gaps narrative) or offline{" "}
+            <code>evidence_export_v1</code> replay—use those surfaces when you need that contract.
           </p>
         </div>
         <div className="impact-report-hero__actions">

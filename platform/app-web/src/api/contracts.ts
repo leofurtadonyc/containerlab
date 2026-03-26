@@ -905,6 +905,130 @@ export interface PolicyEvidenceTimelineResponse {
   missing_evidence_notes: string[];
 }
 
+/** `GET /api/v1/services/{service_id}/evidence-timeline` (service-scoped chronology; not incident SLA or workflow order). */
+export type ServiceEvidenceTimelineEntryKind =
+  | "service_membership_snapshot_anchor"
+  | "member_policy_timeline_entry"
+  | "member_policy_history_checkpoint"
+  | "member_path_analysis_assembly_anchor"
+  | "degraded_posture_shift_for_member"
+  | "service_degraded_roll_up_context"
+  | "sync_activity_touch"
+  | "gap_note";
+
+export type ServiceEvidenceTimelineExplicitNonClaim =
+  | "not_unified_incident_chronology"
+  | "not_workflow_execution_order"
+  | "not_validation_truth"
+  | "not_sla_or_customer_impact"
+  | "not_packet_path_proof"
+  | "not_service_catalog_authority"
+  | "not_cross_service_ranking"
+  | "not_grafana_timeline"
+  | "not_substitute_for_policy_timeline";
+
+export interface ServiceEvidenceTimelineSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: ServiceEvidenceTimelineExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface ServiceEvidenceTimelineEntry {
+  entry_kind: ServiceEvidenceTimelineEntryKind;
+  sort_key: string;
+  tie_break: number;
+  summary: string;
+  provenance: string;
+  reference: string;
+  policy_id?: string | null;
+  source_policy_entry_kind?: string | null;
+}
+
+export interface ServiceEvidenceTimelineResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: ServiceEvidenceTimelineSafetyFraming;
+  service_id: string;
+  scope_summary: string;
+  entries: ServiceEvidenceTimelineEntry[];
+  missing_evidence_notes: string[];
+}
+
+/** `GET /api/v1/services/{service_id}/evidence-delta` (grouped read-side difference hints; not service drift truth). */
+export type ServiceEvidenceDeltaCategory =
+  | "service_membership_change"
+  | "degraded_service_roll_up_change"
+  | "member_degraded_policy_change"
+  | "topology_linkage_change"
+  | "policy_inventory_echo_change"
+  | "no_comparable_fields"
+  | "gap_note";
+
+export type ServiceEvidenceDeltaExplicitNonClaim =
+  | "not_service_drift_truth"
+  | "not_sla_or_customer_impact"
+  | "not_cross_service_ranking"
+  | "not_policy_correctness_verdict"
+  | "not_workflow_validation"
+  | "not_dataplane_or_te_verdict"
+  | "not_substitute_for_policy_delta"
+  | "not_replacement_for_service_timeline"
+  | "not_grafana_delta";
+
+export interface ServiceEvidenceDeltaSafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: ServiceEvidenceDeltaExplicitNonClaim[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface ServiceEvidenceDeltaAnchorCurrent {
+  anchor_role: "current_explorer_detail";
+  generated_at: string;
+  reference: string;
+}
+
+export interface ServiceEvidenceDeltaAnchorPrevious {
+  anchor_role: "previous_persisted_policy_snapshot";
+  snapshot_id: string;
+  persisted_at: string;
+  observed_at: string | null;
+}
+
+export type ServiceEvidenceDeltaComparisonStatus =
+  | "delta_ready"
+  | "no_comparable_anchor"
+  | "insufficient_evidence";
+
+export interface ServiceEvidenceDeltaItem {
+  category: ServiceEvidenceDeltaCategory;
+  summary: string;
+  detail: string | null;
+}
+
+export interface MemberPolicyEvidenceDeltaPointer {
+  policy_id: string;
+  comparison_status: string;
+  route: string;
+}
+
+export interface ServiceEvidenceDeltaResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: ServiceEvidenceDeltaSafetyFraming;
+  service_id: string;
+  comparison_status: ServiceEvidenceDeltaComparisonStatus;
+  scope_summary: string;
+  current_anchor: ServiceEvidenceDeltaAnchorCurrent;
+  previous_anchor: ServiceEvidenceDeltaAnchorPrevious | null;
+  delta_items: ServiceEvidenceDeltaItem[];
+  member_policy_delta_pointers: MemberPolicyEvidenceDeltaPointer[];
+  caveats: string[];
+}
+
 /** `GET /api/v1/policies/{policy_id}/evidence-delta` (bounded read-side difference hints; not drift truth). */
 export type PolicyEvidenceDeltaCategory =
   | "posture_or_state_field_change"
@@ -1664,6 +1788,62 @@ export interface CrossDomainDeltaDigestResponse {
   source_provenance: DeltaDigestSourceProvenance[];
   sections: DeltaDigestSection[];
   digest_framing_notes: string[];
+}
+
+/** `GET /api/v1/evidence-consistency/summary` — evidence_consistency_summary_v1 assembly. */
+export type EvidenceConsistencyContradictionCategory =
+  | "identity_or_reference_tension"
+  | "freshness_or_serving_mismatch"
+  | "posture_tension"
+  | "activity_vs_static_tension"
+  | "history_gate_mismatch"
+  | "scope_mismatch"
+  | "gap_note";
+
+export type EvidenceConsistencySignal =
+  | "appears_aligned"
+  | "weak_alignment"
+  | "appears_in_tension"
+  | "not_comparable"
+  | "gap_note";
+
+export interface EvidenceConsistencyPivotHint {
+  label: string;
+  route_family: string;
+}
+
+export interface EvidenceConsistencyItemRow {
+  category: EvidenceConsistencyContradictionCategory;
+  consistency_signal: EvidenceConsistencySignal;
+  summary: string;
+  detail: string | null;
+  pivot_hints: EvidenceConsistencyPivotHint[];
+}
+
+export interface DomainFreshnessEcho {
+  domain: "policies" | "devices" | "topology";
+  data_status?: string | null;
+  serving_mode?: string | null;
+}
+
+export interface EvidenceConsistencySafetyFraming {
+  contract_id: string;
+  authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+  explicit_non_claims: string[];
+  phase: "phase_2_read_only_foundation";
+  summary_disclaimer: string;
+}
+
+export interface EvidenceConsistencySummaryResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: EvidenceConsistencySafetyFraming;
+  scope_summary: string;
+  sync_runs_limit_applied: number;
+  domain_freshness_echo: DomainFreshnessEcho[];
+  items: EvidenceConsistencyItemRow[];
+  caveats: string[];
+  assembly_notes: string[];
 }
 
 /** Backend-owned investigation workspace assembly (`GET /api/v1/investigation-workspace/context`). */

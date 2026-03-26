@@ -4,8 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app_api.dependencies.read_side_query import read_side_primary_list_limit
 from app_api.schemas.service_dossier import ServiceDossierResponse
+from app_api.schemas.service_evidence_delta import ServiceEvidenceDeltaResponse
+from app_api.schemas.service_evidence_timeline import ServiceEvidenceTimelineResponse
 from app_api.schemas.service_explorer import ServiceDetailResponse, ServicesListResponse
 from app_api.services.service_dossier import build_service_dossier_response
+from app_api.services.service_evidence_delta import build_service_evidence_delta_response
+from app_api.services.service_evidence_timeline import build_service_evidence_timeline_response
 from app_api.services.service_explorer import build_service_detail_response, build_services_list_response
 
 router = APIRouter(tags=["services"])
@@ -17,6 +21,42 @@ def list_services(
 ) -> ServicesListResponse:
     """Discoverable service groupings derived from the current policy inventory."""
     return build_services_list_response(limit=limit)
+
+
+@router.get(
+    "/services/{service_id:path}/evidence-timeline",
+    response_model=ServiceEvidenceTimelineResponse,
+)
+def get_service_evidence_timeline(service_id: str) -> ServiceEvidenceTimelineResponse:
+    """Service-primary evidence timeline (reuse-only projections over member policy timelines)."""
+    body = build_service_evidence_timeline_response(service_id)
+    if body is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                "No service matches the requested service_id for the current policy inventory, "
+                "or the service_id form is not supported."
+            ),
+        )
+    return body
+
+
+@router.get(
+    "/services/{service_id:path}/evidence-delta",
+    response_model=ServiceEvidenceDeltaResponse,
+)
+def get_service_evidence_delta(service_id: str) -> ServiceEvidenceDeltaResponse:
+    """Service-primary evidence delta (current Explorer detail vs previous persisted policy snapshot anchor)."""
+    body = build_service_evidence_delta_response(service_id)
+    if body is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                "No service matches the requested service_id for the current policy inventory, "
+                "or the service_id form is not supported."
+            ),
+        )
+    return body
 
 
 @router.get(

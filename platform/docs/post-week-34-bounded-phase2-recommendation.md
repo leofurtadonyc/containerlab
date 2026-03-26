@@ -39,6 +39,22 @@ Pick **one** narrow theme per cycle—**not** parallel defaults:
 
 **Do not** reopen **Path Explorer** or **Service Impact Workspace** for momentum; **do not** treat week **34** closure as a backlog invitation.
 
+## Planned week 35 bounded lane
+
+If the team proceeds immediately into a new bounded implementation week, the preferred **single coherent lane** is:
+
+1. **service-centric evidence chronology and delta**, plus
+2. **cross-domain evidence consistency as an embedded safety layer**, with
+3. **operator contract labeling hardening** as the supporting safety pass
+
+That means:
+
+- extend the product at the **service** level rather than reopening week **34** path/service-impact semantics directly
+- add a bounded safety surface that highlights contradiction or weak alignment across existing evidence rather than pretending we have validation truth
+- keep all work fully read-only and Phase **2** safe
+
+This planned lane should still obey the same anti-reopen discipline: it must **compose over** weeks **30–34** rather than redefining them.
+
 ## Explicit anti-recommendations
 
 - **Reopening week 34 surfaces for UX polish or scope creep** without new evidence

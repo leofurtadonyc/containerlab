@@ -555,6 +555,12 @@ if [ -n "$first_service_id" ]; then
   assert_contains "service dossier response (service_explorer_detail)" "$service_dossier_response" '"service_explorer_detail":{'
   assert_contains "service dossier response (merged_caveats)" "$service_dossier_response" '"merged_caveats":'
   assert_contains "service dossier response (source_contract_ids)" "$service_dossier_response" '"source_contract_ids":'
+  service_evidence_timeline_response=$(fetch_compact_json "$APP_API_URL/api/v1/services/${enc_service_id}/evidence-timeline")
+  assert_contains "service evidence timeline response (contract id)" "$service_evidence_timeline_response" '"contract_id":"service_evidence_timeline_v1"'
+  assert_contains "service evidence timeline response (service_id echo)" "$service_evidence_timeline_response" '"service_id":"'
+  service_evidence_delta_response=$(fetch_compact_json "$APP_API_URL/api/v1/services/${enc_service_id}/evidence-delta")
+  assert_contains "service evidence delta response (contract id)" "$service_evidence_delta_response" '"contract_id":"service_evidence_delta_v1"'
+  assert_contains "service evidence delta response (service_id echo)" "$service_evidence_delta_response" '"service_id":"'
   service_change_safety_case_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/change-safety-case/service?service_id=${enc_service_id}&format=json")
   assert_contains "service change safety case response (contract id)" "$service_change_safety_case_response" '"contract_id":"change_safety_case_v1"'
   assert_contains "service change safety case response (safety_case_context)" "$service_change_safety_case_response" '"safety_case_context":"service_change_safety"'
@@ -809,6 +815,10 @@ assert_contains "briefing export bundle (briefing_subject)" "$export_operator_br
 delta_digest_runtime_response=$(fetch_compact_json "$APP_API_URL/api/v1/delta-digest?sync_runs_limit=10")
 assert_contains "delta digest response (contract id)" "$delta_digest_runtime_response" '"contract_id":"cross_domain_delta_digest_v1"'
 assert_contains "delta digest response (sections)" "$delta_digest_runtime_response" '"sections":['
+
+evidence_consistency_runtime_response=$(fetch_compact_json "$APP_API_URL/api/v1/evidence-consistency/summary?sync_runs_limit=10")
+assert_contains "evidence consistency summary (contract id)" "$evidence_consistency_runtime_response" '"contract_id":"evidence_consistency_summary_v1"'
+assert_contains "evidence consistency summary (items array)" "$evidence_consistency_runtime_response" '"items":['
 
 operator_briefing_runtime_response=$(fetch_compact_json "$APP_API_URL/api/v1/operator-briefing?sync_runs_limit=10")
 assert_contains "operator briefing response (contract id)" "$operator_briefing_runtime_response" '"contract_id":"operator_briefing_workspace_v1"'

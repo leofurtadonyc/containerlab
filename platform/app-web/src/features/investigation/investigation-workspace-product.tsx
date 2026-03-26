@@ -21,6 +21,7 @@ import {
   readSyncRunsLimitFromSearch,
 } from "../../lib/investigation-navigation";
 import { parseInvestigationNavContext } from "../../lib/investigation-url-context";
+import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 import { InvestigationContextPanels } from "./investigation-context-panels";
 import { InvestigationEvidenceTimeline } from "./investigation-evidence-timeline";
@@ -119,6 +120,13 @@ export function InvestigationWorkspaceProduct({
             }}
           >
             Open operator briefing
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToEvidenceConsistencyWorkspace(syncRunsLimit)}
+          >
+            Evidence consistency workspace
           </button>
           <EvidenceExportActions
             variant="investigation"

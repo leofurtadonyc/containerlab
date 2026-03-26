@@ -134,6 +134,7 @@ describe("ServiceImpactWorkspaceProduct", () => {
 
     const html = renderToStaticMarkup(<ServiceImpactWorkspaceProduct serviceId="color:100" />);
     expect(html).toContain("service_impact_workspace_v1");
+    expect(html).toContain("no dossier explainability");
     expect(html).toContain("color:100");
     expect(html).toContain("Related policies (members)");
     expect(html).toContain("Failure-impact relationship");

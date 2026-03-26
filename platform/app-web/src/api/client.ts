@@ -9,6 +9,8 @@ import type {
   PolicyTopologyImpactResponse,
   PolicyEvidenceDeltaResponse,
   PolicyEvidenceTimelineResponse,
+  ServiceEvidenceDeltaResponse,
+  ServiceEvidenceTimelineResponse,
   InvestigationContextAssemblyResponse,
   RecentChangeSummaryResponse,
   SituationPackAssemblyResponse,
@@ -24,6 +26,7 @@ import type {
   OperatorSearchResponse,
   WorkflowHistoryResponse,
   CrossDomainDeltaDigestResponse,
+  EvidenceConsistencySummaryResponse,
   OperatorBriefingWorkspaceResponse,
   ServiceDetailResponse,
   ServiceDossierResponse,
@@ -235,6 +238,16 @@ export class ApiClient {
     return this.request<ServiceDossierResponse>(`/api/v1/services/${encoded}/dossier`);
   }
 
+  async getServiceEvidenceTimeline(serviceId: string): Promise<ServiceEvidenceTimelineResponse> {
+    const encoded = encodeURIComponent(serviceId);
+    return this.request<ServiceEvidenceTimelineResponse>(`/api/v1/services/${encoded}/evidence-timeline`);
+  }
+
+  async getServiceEvidenceDelta(serviceId: string): Promise<ServiceEvidenceDeltaResponse> {
+    const encoded = encodeURIComponent(serviceId);
+    return this.request<ServiceEvidenceDeltaResponse>(`/api/v1/services/${encoded}/evidence-delta`);
+  }
+
   async getPolicyPathAnalysis(policyId: string): Promise<PathAnalysisViewResponse> {
     const encoded = encodeURIComponent(policyId);
     return this.request<PathAnalysisViewResponse>(`/api/v1/policies/${encoded}/path-analysis`);
@@ -302,6 +315,13 @@ export class ApiClient {
     const limit = Math.min(100, Math.max(1, syncRunsLimit));
     return this.request<CrossDomainDeltaDigestResponse>(
       `/api/v1/delta-digest?sync_runs_limit=${limit}`,
+    );
+  }
+
+  async getEvidenceConsistencySummary(syncRunsLimit = 20): Promise<EvidenceConsistencySummaryResponse> {
+    const limit = Math.min(100, Math.max(1, syncRunsLimit));
+    return this.request<EvidenceConsistencySummaryResponse>(
+      `/api/v1/evidence-consistency/summary?sync_runs_limit=${limit}`,
     );
   }
 
