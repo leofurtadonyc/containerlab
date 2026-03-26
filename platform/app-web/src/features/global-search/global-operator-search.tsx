@@ -22,6 +22,7 @@ import {
   navigateToImpactReportHub,
 } from "../../lib/impact-report-navigation";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
+import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 import {
@@ -291,6 +292,19 @@ export function GlobalOperatorSearch() {
                                   }}
                                 >
                                   Explainability
+                                </button>
+                              ) : null}
+                              {hit.pivot.policy_id ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  title="path_explorer_v1 — composed path workspace; same policy anchor as explainability"
+                                  onClick={() => {
+                                    navigateToPathExplorer(hit.pivot.policy_id!);
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Path Explorer
                                 </button>
                               ) : null}
                               {hit.pivot.policy_id ? (

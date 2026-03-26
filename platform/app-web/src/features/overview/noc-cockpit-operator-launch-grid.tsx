@@ -8,6 +8,7 @@ import { navigateToChangeSafetyCaseForMaintenance, navigateToChangeSafetyCaseFor
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import { pickStrongestPolicyId } from "../../lib/noc-cockpit-priority";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
+import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
 import { navigateToServiceExplorer, navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 
@@ -119,6 +120,16 @@ export function NocCockpitOperatorLaunchGrid({
             ) : (
               <span className="table-note">No policy row to anchor explainability yet.</span>
             )}
+            {strongPolicyId ? (
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToPathExplorer(strongPolicyId)}
+                title="path_explorer_v1 — composed path workspace; same policy anchor as explainability"
+              >
+                Open Path Explorer (strongest policy row)
+              </button>
+            ) : null}
           </div>
         </article>
 

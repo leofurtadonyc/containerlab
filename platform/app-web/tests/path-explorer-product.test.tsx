@@ -2,14 +2,14 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import { ApiClientError } from "../src/api/client";
-import { PolicyDossierWorkspace } from "../src/features/policies/policy-dossier-workspace";
+import { PathExplorerProduct } from "../src/features/path-explorer/path-explorer-product";
 
-const { usePolicyDossierQuery } = vi.hoisted(() => ({
-  usePolicyDossierQuery: vi.fn(),
+const { usePathExplorerWorkspaceQuery } = vi.hoisted(() => ({
+  usePathExplorerWorkspaceQuery: vi.fn(),
 }));
 
-vi.mock("../src/features/policies/api", () => ({
-  usePolicyDossierQuery,
+vi.mock("../src/features/path-explorer/api", () => ({
+  usePathExplorerWorkspaceQuery,
 }));
 
 const pathAnalysisMinimal = {
@@ -80,14 +80,15 @@ const policyRecordMinimal = {
   },
 };
 
-const dossierPayload = {
+const explainabilityMinimal = {
   metadata: {
     service: "app-api" as const,
     version: "test",
     phase: "phase_2_read_only_foundation" as const,
     generated_at: "2025-01-01T00:00:00Z",
   },
-  contract_id: "policy_dossier_v1" as const,
+  contract_id: "policy_explainability_workspace_v1" as const,
+  policy_id: "p1",
   policy_record: policyRecordMinimal,
   path_analysis: pathAnalysisMinimal,
   topology_impact: {
@@ -99,7 +100,7 @@ const dossierPayload = {
     },
     policy_id: "p1",
     policy_name: "Pol",
-    derivation_summary: "Pivot rows.",
+    derivation_summary: "d",
     global_caveats: [],
     items: [],
   },
@@ -110,18 +111,17 @@ const dossierPayload = {
       phase: "phase_2_read_only_foundation" as const,
       generated_at: "2025-01-01T00:00:00Z",
     },
-    contract_id: "policy_evidence_timeline_v1",
+    policy_id: "p1",
+    policy_name: "Pol",
+    entries: [],
+    missing_evidence_notes: [],
     safety_framing: {
       contract_id: "policy_evidence_timeline_v1",
       authority_posture: "interpretation_support_only" as const,
       explicit_non_claims: [],
       phase: "phase_2_read_only_foundation" as const,
-      summary_disclaimer: "Ordering only.",
+      summary_disclaimer: "",
     },
-    policy_id: "p1",
-    scope_summary: "Current window.",
-    entries: [],
-    missing_evidence_notes: [],
   },
   evidence_delta: {
     metadata: {
@@ -130,106 +130,83 @@ const dossierPayload = {
       phase: "phase_2_read_only_foundation" as const,
       generated_at: "2025-01-01T00:00:00Z",
     },
-    contract_id: "policy_evidence_delta_v1",
-    safety_framing: {
-      contract_id: "policy_evidence_delta_v1",
-      authority_posture: "interpretation_support_only" as const,
-      explicit_non_claims: [],
-      phase: "phase_2_read_only_foundation" as const,
-      summary_disclaimer: "Delta hints.",
-    },
     policy_id: "p1",
-    comparison_status: "no_comparable_anchor" as const,
-    scope_summary: "No anchor.",
-    current_anchor: {
-      anchor_role: "current_inventory" as const,
-      observed_at: null,
-      row_posture: "current",
-      serving_mode: "live",
-    },
-    previous_anchor: null,
-    delta_items: [],
-    caveats: [],
+    policy_name: "Pol",
+    comparison_status: "delta_ready" as const,
+    summary: "",
+  },
+  path_explanation_summary: "Summary line.",
+  candidate_path_rollups: [],
+  unknown_candidate_posture: "full" as const,
+  sparse_signals: {
+    topology_naming_alignment_unknown: true,
+    evidence_timeline_sparse: true,
+    evidence_delta_not_ready: false,
   },
   navigation_targets: {
-    investigation_shell_params: { inv_from: "policies" },
-    situation_room_shell_params: { view: "situation-room" },
-    policies_view_params: { view: "policies" },
+    investigation_shell_params: {},
+    situation_room_shell_params: {},
+    policies_view_params: {},
     topology_object_hints: [],
+    service_explorer_shell_params: { service_id: "policy:p1" },
+    delta_digest_shell_params: {},
   },
   freshness: {
-    dossier_assembled_at: "2025-01-01T00:00:02Z",
     policy_inventory_observed_at: null,
     topology_snapshot_observed_at: null,
-    policy_inventory_empty_reason: null,
-    policy_serving_mode_echo: "live",
+    inventory_snapshot_observed_at: null,
+    assembly_generated_at: "2025-01-01T00:00:00Z",
+    row_current_posture: "current" as const,
   },
-  merged_caveats: ["Merged line."],
+  merged_caveats: ["Topology naming alignment unknown for this policy."],
 };
 
-describe("PolicyDossierWorkspace", () => {
-  it("prompts when no policy is selected", () => {
-    usePolicyDossierQuery.mockReturnValue({
-      data: null,
+const workspacePayload = {
+  metadata: {
+    service: "app-api" as const,
+    version: "test",
+    phase: "phase_2_read_only_foundation" as const,
+    generated_at: "2025-01-01T00:00:00Z",
+  },
+  contract_id: "path_explorer_v1" as const,
+  policy_id: "p1",
+  path_analysis: pathAnalysisMinimal,
+  explainability: explainabilityMinimal,
+  policy_dossier: null,
+  merged_caveats: ["Topology naming alignment unknown for this policy."],
+  explicit_non_claims: [
+    "not_dataplane_forwarding_truth",
+    "path_explorer_v1 is a composed read-only workspace; it is not dataplane proof or a TE solver.",
+  ],
+  source_contract_ids: ["path_analysis_phase2_v1", "policy_explainability_workspace_v1"],
+};
+
+describe("PathExplorerProduct", () => {
+  it("renders path_explorer_v1 marker and sparse cues when data is present", () => {
+    usePathExplorerWorkspaceQuery.mockReturnValue({
+      data: workspacePayload,
       error: null,
       isLoading: false,
       isRefreshing: false,
-      reload: vi.fn(async () => undefined),
+      reload: vi.fn(),
     });
 
-    const html = renderToStaticMarkup(<PolicyDossierWorkspace policyId={null} />);
-
-    expect(html).toContain("Policy dossier workspace");
-    expect(html).toContain("Select a");
+    const html = renderToStaticMarkup(<PathExplorerProduct policyId="p1" />);
+    expect(html).toContain("path_explorer_v1");
+    expect(html).toContain("Topology naming alignment unknown");
+    expect(html).toContain("Unknown-candidate posture");
   });
 
-  it("shows loading on first fetch", () => {
-    usePolicyDossierQuery.mockReturnValue({
+  it("renders 404-style copy when policy is missing", () => {
+    usePathExplorerWorkspaceQuery.mockReturnValue({
       data: null,
-      error: null,
-      isLoading: true,
-      isRefreshing: false,
-      reload: vi.fn(async () => undefined),
-    });
-
-    const html = renderToStaticMarkup(<PolicyDossierWorkspace policyId="p1" />);
-
-    expect(html).toContain("Loading policy dossier");
-  });
-
-  it("shows a safe 404 explanation", () => {
-    usePolicyDossierQuery.mockReturnValue({
-      data: null,
-      error: new ApiClientError("not found", 404, "http_error"),
+      error: new ApiClientError("missing", 404, "not_found"),
       isLoading: false,
       isRefreshing: false,
-      reload: vi.fn(async () => undefined),
+      reload: vi.fn(),
     });
 
-    const html = renderToStaticMarkup(<PolicyDossierWorkspace policyId="missing" />);
-
-    expect(html).toContain("No policy record for this selection");
-  });
-
-  it("renders contract id and merged caveats when loaded", () => {
-    usePolicyDossierQuery.mockReturnValue({
-      data: dossierPayload,
-      error: null,
-      isLoading: false,
-      isRefreshing: false,
-      reload: vi.fn(async () => undefined),
-    });
-
-    const html = renderToStaticMarkup(<PolicyDossierWorkspace policyId="p1" />);
-
-    expect(html).toContain("policy_dossier_v1");
-    expect(html).toContain("Merged line.");
-    expect(html).toContain("Path analysis (nested)");
-    expect(html).toContain("data-testid=\"evidence-export-actions\"");
-    expect(html).toContain("Export JSON");
-    expect(html).toContain("Export Markdown");
-    expect(html).toContain("Service Explorer");
-    expect(html).toContain("Explainability");
-    expect(html).toContain("Path Explorer");
+    const html = renderToStaticMarkup(<PathExplorerProduct policyId="nope" />);
+    expect(html).toContain("Path Explorer not available");
   });
 });

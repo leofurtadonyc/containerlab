@@ -19,6 +19,7 @@ import type {
   TopologyObjectDossierResponse,
   PolicyDossierResponse,
   PolicyExplainabilityResponse,
+  PathExplorerWorkspaceResponse,
   OperatorSearchResponse,
   WorkflowHistoryResponse,
   CrossDomainDeltaDigestResponse,
@@ -261,6 +262,12 @@ export class ApiClient {
   async getPolicyExplainability(policyId: string): Promise<PolicyExplainabilityResponse> {
     const encoded = encodeURIComponent(policyId);
     return this.request<PolicyExplainabilityResponse>(`/api/v1/policies/${encoded}/explainability`);
+  }
+
+  async getPathExplorerWorkspace(policyId: string): Promise<PathExplorerWorkspaceResponse> {
+    const params = new URLSearchParams();
+    params.set("policy_id", policyId.trim());
+    return this.request<PathExplorerWorkspaceResponse>(`/api/v1/path-explorer?${params.toString()}`);
   }
 
   async getWorkflowHistory(query?: WorkflowHistoryReadSideQuery): Promise<WorkflowHistoryResponse> {

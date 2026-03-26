@@ -34,4 +34,11 @@ describe("global operator search week 31 deeplinks (source contract)", () => {
     expect(src).toContain("navigateToChangeSafetyCaseForMaintenance");
     expect(src).toContain("navigateToChangeSafetyCaseHub");
   });
+
+  it("global-operator-search exposes Path Explorer pivot for policy hits (week 34)", () => {
+    const path = join(__dirname, "../src/features/global-search/global-operator-search.tsx");
+    const src = readFileSync(path, "utf8");
+    expect(src).toContain("Path Explorer");
+    expect(src).toContain("navigateToPathExplorer");
+  });
 });

@@ -810,6 +810,19 @@ export interface PolicyExplainabilityResponse {
   merged_caveats: string[];
 }
 
+/** `GET /api/v1/path-explorer?policy_id=…` — composed path-analysis + explainability [+ optional dossier]. */
+export interface PathExplorerWorkspaceResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "path_explorer_v1";
+  policy_id: string;
+  path_analysis: PathAnalysisViewResponse;
+  explainability: PolicyExplainabilityResponse;
+  policy_dossier: PolicyDossierResponse | null;
+  merged_caveats: string[];
+  explicit_non_claims: string[];
+  source_contract_ids: string[];
+}
+
 /** `GET /api/v1/policies/{policy_id}/topology-impact` (inverse pivot; naming alignment only). */
 export interface PolicyTopologyImpactRow {
   topology_object_kind: TopologyObjectKind;

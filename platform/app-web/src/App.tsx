@@ -20,6 +20,7 @@ import { OperatorBriefingView } from "./features/operator-briefing/view";
 import { SituationRoomView } from "./features/situation-room/view";
 import { PlatformHealthView } from "./features/platform-health/view";
 import { PoliciesView } from "./features/policies/view";
+import { PathExplorerView } from "./features/path-explorer/view";
 import { ServiceExplorerView } from "./features/service-explorer/view";
 import { ServiceDossierView } from "./features/service-dossier/view";
 import { MaintenancePreviewView } from "./features/maintenance-preview/view";
@@ -38,6 +39,7 @@ const NAV_ITEMS = [
   { id: "devices", label: "Devices" },
   { id: "topology", label: "Topology" },
   { id: "policies", label: "Policies" },
+  { id: "path-explorer", label: "Path Explorer" },
   { id: "service-explorer", label: "Service Explorer" },
   { id: "service-dossier", label: "Service dossier" },
   { id: "maintenance-preview", label: "Maintenance Preview" },
@@ -72,6 +74,8 @@ function renderView(viewId: string) {
       return <TopologyView />;
     case "policies":
       return <PoliciesView />;
+    case "path-explorer":
+      return <PathExplorerView />;
     case "service-explorer":
       return <ServiceExplorerView />;
     case "service-dossier":

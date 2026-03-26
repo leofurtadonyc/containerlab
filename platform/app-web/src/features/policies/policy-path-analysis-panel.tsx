@@ -6,6 +6,7 @@ import {
   navigateToPolicyDossierWorkspace,
   navigateToPolicyExplainabilityWorkspace,
 } from "../../lib/policy-dossier-navigation";
+import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
 import { buildRowPostureStatusDisplay, formatDateTime, formatLabel } from "../../lib/presentation";
 import { usePolicyPathAnalysisQuery } from "./api";
 
@@ -94,6 +95,9 @@ export function PolicyPathAnalysisPanel({ policyId }: PolicyPathAnalysisPanelPro
           onClick={() => navigateToPolicyExplainabilityWorkspace(policyId, undefined, "candidates")}
         >
           Open explainability (candidates)
+        </button>
+        <button type="button" className="inline-action" onClick={() => navigateToPathExplorer(policyId)}>
+          Open Path Explorer
         </button>
         <span className="table-note"> — composed dossier vs path-story explainability; hints are not proof.</span>
       </p>

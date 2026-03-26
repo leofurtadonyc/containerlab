@@ -24,6 +24,7 @@ import {
 } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
+import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
 import { useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import { usePolicyDossierQuery } from "./api";
 
@@ -153,6 +154,14 @@ export function PolicyDossierWorkspace({ policyId }: PolicyDossierWorkspaceProps
             title="Path-story explainability workspace (policy_explainability_workspace_v1); hints are not dataplane proof"
           >
             Explainability
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToPathExplorer(pr.policy_id)}
+            title="path_explorer_v1 — composed workspace; not a substitute for this dossier JSON"
+          >
+            Path Explorer
           </button>
           <EvidenceExportActions variant="dossier" target={{ kind: "policy_dossier", policyId: pr.policy_id }} />
           {isRefreshing ? (

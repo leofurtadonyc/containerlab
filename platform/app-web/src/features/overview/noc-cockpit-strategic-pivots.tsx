@@ -12,6 +12,7 @@ import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/mainten
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
+import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
 
 export interface NocCockpitStrategicPivotsProps {
   riskSummary: TopologyRiskSummaryResponse | null;
@@ -167,6 +168,14 @@ export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCock
                 onClick={() => navigateToPolicyExplainabilityWorkspace(topDegraded.policy_id)}
               >
                 Policy explainability (worst degraded)
+              </button>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToPathExplorer(topDegraded.policy_id)}
+                title="path_explorer_v1 composed workspace — same policy_id anchor as explainability; navigation only"
+              >
+                Path Explorer (worst degraded)
               </button>
               <button
                 type="button"
