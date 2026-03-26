@@ -8,6 +8,7 @@ import { navigateToChangeSafetyCaseForMaintenance } from "../../lib/change-safet
 import { navigateToImpactReportForMaintenance } from "../../lib/impact-report-navigation";
 import { navigateToMaintenancePreview } from "../../lib/maintenance-preview-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
+import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 
 export interface MaintenanceEvidenceWorkspaceProductProps {
   data: MaintenanceEvidenceWorkspaceResponse;

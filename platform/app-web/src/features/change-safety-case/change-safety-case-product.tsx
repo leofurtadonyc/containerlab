@@ -25,6 +25,22 @@ export interface ChangeSafetyCaseProductProps {
   onReload: () => void | Promise<void>;
 }
 
+function navigateToStabilityWorkspaceFromCase(data: ChangeSafetyCaseResponse, syncLim: number): void {
+  if (data.safety_case_context === "service_change_safety" && data.anchor_service_id) {
+    navigateToStabilityWorkspace({ syncRunsLimit: syncLim, serviceId: data.anchor_service_id });
+    return;
+  }
+  if (data.safety_case_context === "topology_change_safety" && data.anchor_maintenance) {
+    const m = data.anchor_maintenance;
+    navigateToStabilityWorkspace({
+      syncRunsLimit: syncLim,
+      topologyObject: { id: m.object_id, kind: m.object_kind },
+    });
+    return;
+  }
+  navigateToStabilityWorkspace({ syncRunsLimit: syncLim });
+}
+
 export function ChangeSafetyCaseProduct({ data, downloadTarget, onReload }: ChangeSafetyCaseProductProps) {
   const syncLim = readSyncRunsLimitFromSearch(window.location.search, DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT);
 
