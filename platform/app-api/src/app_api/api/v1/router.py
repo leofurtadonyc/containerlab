@@ -15,6 +15,9 @@ from app_api.routers.maintenance_evidence_workspace import router as maintenance
 from app_api.routers.maintenance_preview import router as maintenance_preview_router
 from app_api.routers.operator_briefing import router as operator_briefing_router
 from app_api.routers.operator_search import router as operator_search_router
+from app_api.routers.operational_stability_summary import (
+    router as operational_stability_summary_router,
+)
 from app_api.routers.path_explorer import router as path_explorer_router
 from app_api.routers.service_impact_workspace import router as service_impact_workspace_router
 from app_api.routers.devices import router as devices_router
@@ -42,6 +45,7 @@ router.include_router(maintenance_preview_router)
 router.include_router(maintenance_evidence_workspace_router)
 router.include_router(operator_briefing_router)
 router.include_router(operator_search_router)
+router.include_router(operational_stability_summary_router)
 router.include_router(workflow_history_router)
 router.include_router(audit_history_router)
 router.include_router(devices_router)
