@@ -17,6 +17,9 @@
 #                  (default: 20). Cold redeploys often need a few seconds before app-web
 #                  can stream large /assets/*.js bundles; verify-core-runtime.sh also uses
 #                  longer static fetch timeouts and retries (see CURL_MAX_TIME_STATIC there).
+#   CURL_HTTP_MAX_TIME  Optional cap for app-api JSON GETs (default in drill: 180).
+#                  Same-workspace restarts can exceed the verifier default (90s) on first
+#                  large responses (e.g. /api/v1/operator-briefing) when Postgres warms up.
 #   CURL_MAX_TIME_STATIC, STATIC_FETCH_ATTEMPTS, VERIFY_*  Passed through to
 #                  ./scripts/verify-core-runtime.sh if set.
 #
@@ -74,8 +77,11 @@ sleep "$DRILL_POST_DEPLOY_SLEEP_SECONDS"
 
 echo ""
 echo "Step 3: Run core runtime verification"
-# Defaults tuned for same-workspace restart: large JS bundles may need >25s first-byte after cold start.
+# Defaults tuned for same-workspace restart: large JS bundles may need >25s first-byte after cold start;
+# large JSON assemblies (operator briefing, evidence pack, etc.) can exceed the default 90s curl cap
+# on first request while app-api/Postgres finish warming (curl exits with empty body → false contract miss).
 export CURL_MAX_TIME_STATIC="${CURL_MAX_TIME_STATIC:-120}"
+export CURL_HTTP_MAX_TIME="${CURL_HTTP_MAX_TIME:-180}"
 ./scripts/verify-core-runtime.sh
 
 echo ""

@@ -11,7 +11,8 @@ set -eu
 #   METRICS_PROBE_MAX_TIME (default 90) / METRICS_PROBE_CONNECT_TIMEOUT (default 8) — used only for URLs
 #     ending in /metrics (app-api and gNMI); first Prometheus exposition after cold start can exceed 12s.
 #   METRICS_FULL_MAX_TIME (default 90) — full GET body for app-api /metrics (assertions); must align with Prometheus scrape_timeout.
-#   CURL_HTTP_MAX_TIME (default 90) — app-api JSON APIs via fetch_compact_json (large payloads + cold start).
+#   CURL_HTTP_MAX_TIME (default 120) — app-api JSON APIs via fetch_compact_json (large payloads + cold start;
+#     operator-briefing and similar assemblies can exceed 90s after cold deploy with persisted Postgres).
 #   CURL_MAX_TIME_STATIC (default 120) — max time for large app-web /assets/*.js fetches (cold start can exceed CURL_MAX_TIME).
 #   STATIC_FETCH_ATTEMPTS (default 5) — retries per JS chunk when a fetch fails or returns empty.
 
@@ -39,7 +40,7 @@ CURL_PROBE_CONNECT_TIMEOUT="${CURL_PROBE_CONNECT_TIMEOUT:-5}"
 METRICS_PROBE_MAX_TIME="${METRICS_PROBE_MAX_TIME:-90}"
 METRICS_PROBE_CONNECT_TIMEOUT="${METRICS_PROBE_CONNECT_TIMEOUT:-8}"
 METRICS_FULL_MAX_TIME="${METRICS_FULL_MAX_TIME:-90}"
-CURL_HTTP_MAX_TIME="${CURL_HTTP_MAX_TIME:-90}"
+CURL_HTTP_MAX_TIME="${CURL_HTTP_MAX_TIME:-120}"
 CURL_MAX_TIME_STATIC="${CURL_MAX_TIME_STATIC:-120}"
 STATIC_FETCH_ATTEMPTS="${STATIC_FETCH_ATTEMPTS:-5}"
 warning_count=0
