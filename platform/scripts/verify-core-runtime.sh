@@ -285,6 +285,7 @@ app_web_global_search_impact_hub_marker=0
 app_web_maintenance_preview_marker=0
 app_web_maintenance_evidence_workspace_marker=0
 app_web_maintenance_window_workspace_marker=0
+app_web_mww_subject_marker=0
 app_web_impact_report_marker=0
 app_web_service_explorer_marker=0
 app_web_service_dossier_marker=0
@@ -332,6 +333,9 @@ for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n
   if printf '%s' "$app_web_chunk" | grep -qF 'maintenance_window_workspace_v1'; then
     app_web_maintenance_window_workspace_marker=1
   fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'mww_subject'; then
+    app_web_mww_subject_marker=1
+  fi
   if printf '%s' "$app_web_chunk" | grep -qF 'impact_report_v1'; then
     app_web_impact_report_marker=1
   fi
@@ -360,8 +364,8 @@ for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n
     app_web_stability_workspace_marker=1
   fi
 done
-if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ] || [ "$app_web_noc_cockpit_strategic_pivots_marker" != "1" ] || [ "$app_web_global_search_week30_marker" != "1" ] || [ "$app_web_global_search_impact_hub_marker" != "1" ] || [ "$app_web_maintenance_preview_marker" != "1" ] || [ "$app_web_maintenance_evidence_workspace_marker" != "1" ] || [ "$app_web_maintenance_window_workspace_marker" != "1" ] || [ "$app_web_impact_report_marker" != "1" ] || [ "$app_web_service_explorer_marker" != "1" ] || [ "$app_web_service_dossier_marker" != "1" ] || [ "$app_web_policy_explainability_marker" != "1" ] || [ "$app_web_path_explorer_marker" != "1" ] || [ "$app_web_service_impact_workspace_marker" != "1" ] || [ "$app_web_change_safety_case_marker" != "1" ] || [ "$app_web_evidence_consistency_marker" != "1" ] || [ "$app_web_stability_workspace_marker" != "1" ]; then
-  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, evidence_replay_viewer_v1, noc-cockpit-strategic-pivots, Evidence replay (frozen file), Impact report hub, maintenance_preview_v1, maintenance_evidence_workspace_v1, maintenance_window_workspace_v1, impact_report_v1, service_explorer_v1, service_dossier_v1, policy_explainability_workspace_v1, path_explorer_v1, service_impact_workspace_v1, change_safety_case_v1, evidence_consistency_summary_v1, and operational_stability_summary_v1 substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing + bundle export + evidence replay + cockpit 2.0 pivots + global search week 30 footer + impact hub + maintenance preview + maintenance evidence workspace + maintenance window workspace + impact report + week 31 service/explainability + week 34 path explorer + week 34 service impact workspace + week 32 service dossier + change safety case + week 35 evidence consistency workspace + week 37 stability workspace)" >&2
+if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ] || [ "$app_web_noc_cockpit_strategic_pivots_marker" != "1" ] || [ "$app_web_global_search_week30_marker" != "1" ] || [ "$app_web_global_search_impact_hub_marker" != "1" ] || [ "$app_web_maintenance_preview_marker" != "1" ] || [ "$app_web_maintenance_evidence_workspace_marker" != "1" ] || [ "$app_web_maintenance_window_workspace_marker" != "1" ] || [ "$app_web_mww_subject_marker" != "1" ] || [ "$app_web_impact_report_marker" != "1" ] || [ "$app_web_service_explorer_marker" != "1" ] || [ "$app_web_service_dossier_marker" != "1" ] || [ "$app_web_policy_explainability_marker" != "1" ] || [ "$app_web_path_explorer_marker" != "1" ] || [ "$app_web_service_impact_workspace_marker" != "1" ] || [ "$app_web_change_safety_case_marker" != "1" ] || [ "$app_web_evidence_consistency_marker" != "1" ] || [ "$app_web_stability_workspace_marker" != "1" ]; then
+  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, evidence_replay_viewer_v1, noc-cockpit-strategic-pivots, Evidence replay (frozen file), Impact report hub, maintenance_preview_v1, maintenance_evidence_workspace_v1, maintenance_window_workspace_v1, mww_subject (maintenance window URL state), impact_report_v1, service_explorer_v1, service_dossier_v1, policy_explainability_workspace_v1, path_explorer_v1, service_impact_workspace_v1, change_safety_case_v1, evidence_consistency_summary_v1, and operational_stability_summary_v1 substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing + bundle export + evidence replay + cockpit 2.0 pivots + global search week 30 footer + impact hub + maintenance preview + maintenance evidence workspace + maintenance window workspace + impact report + week 31 service/explainability + week 34 path explorer + week 34 service impact workspace + week 32 service dossier + change safety case + week 35 evidence consistency workspace + week 37 stability workspace)" >&2
   exit 1
 fi
 
@@ -664,6 +668,9 @@ if [ -n "$first_node_id" ]; then
   assert_contains "maintenance evidence workspace response (nested maintenance_preview)" "$maintenance_evidence_workspace_response" '"contract_id":"maintenance_preview_v1"'
   assert_contains "maintenance evidence workspace response (topology_change_safety)" "$maintenance_evidence_workspace_response" '"safety_case_context":"topology_change_safety"'
   mww_handoff_subj=$(printf 'node:%s' "$first_node_id" | python3 -c "import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read().strip(), safe=''))")
+  maintenance_window_workspace_response=$(fetch_compact_json "$APP_API_URL/api/v1/maintenance-window-workspace?subject=${mww_handoff_subj}&sync_runs_limit=10&preview_context=planning_window")
+  assert_contains "maintenance window workspace response (contract id)" "$maintenance_window_workspace_response" '"contract_id":"maintenance_window_workspace_v1"'
+  assert_contains "maintenance window workspace response (rollup assembly)" "$maintenance_window_workspace_response" '"deduped_affected_services"'
   maintenance_window_handoff_export=$(fetch_compact_json "$APP_API_URL/api/v1/exports/maintenance-window-handoff?subject=${mww_handoff_subj}&sync_runs_limit=10")
   assert_contains "maintenance window handoff export (contract id)" "$maintenance_window_handoff_export" '"contract_id":"maintenance_window_handoff_v1"'
   assert_contains "maintenance window handoff export (workspace snapshot)" "$maintenance_window_handoff_export" '"workspace_snapshot":{'
@@ -675,7 +682,7 @@ if [ -n "$first_node_id" ]; then
   assert_contains "topology change safety case response (contract id)" "$topology_change_safety_case_response" '"contract_id":"change_safety_case_v1"'
   assert_contains "topology change safety case response (safety_case_context)" "$topology_change_safety_case_response" '"safety_case_context":"topology_change_safety"'
 else
-  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, topology-object-dossier, topology-object evidence timeline/delta, topology-object stability-profile GET, maintenance-preview assembly, maintenance-evidence-workspace assembly, maintenance-window-handoff export, maintenance-impact report, and topology change safety case structural checks."
+  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, topology-object-dossier, topology-object evidence timeline/delta, topology-object stability-profile GET, maintenance-preview assembly, maintenance-evidence-workspace assembly, maintenance-window-workspace GET, maintenance-window-handoff export, maintenance-impact report, and topology change safety case structural checks."
 fi
 
 # Cross-slice list/history metadata and evidence shape (contract posture, not business truth).
