@@ -663,6 +663,9 @@ describe("overview view", () => {
     expect(html).toContain("Change safety case (maintenance, top risk)");
     expect(html).toContain("Policy dossier (worst degraded)");
     expect(html).toContain("Policy explainability (worst degraded)");
+    expect(html).toContain("Path Explorer (worst degraded)");
+    expect(html).toContain("Service Impact workspace (worst degraded)");
+    expect(html).toContain("Service Impact workspace (strongest policy row)");
     expect(html).toContain("Impact report (policy, worst degraded)");
     expect(html).toContain("Change safety case (policy, worst degraded)");
     expect(html).not.toContain("Routine-use trust cues stay explicit here");
@@ -686,6 +689,8 @@ describe("overview view", () => {
     expect(html).toContain("Open failure impact (first node)");
     expect(html).toContain("Evidence timeline (first policy)");
     expect(html).toContain("Evidence delta (first policy)");
+    expect(html).toContain("Path Explorer (first policy)");
+    expect(html).toContain("Service Impact workspace (first policy)");
     expect(html).toContain("Situation room (bounded evidence pack)");
     expect(html).toContain("Open situation room");
     expect(html).toContain("Investigation workspace (bounded)");

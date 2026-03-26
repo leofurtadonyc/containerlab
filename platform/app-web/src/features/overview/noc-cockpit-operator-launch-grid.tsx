@@ -9,6 +9,7 @@ import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/mainten
 import { pickStrongestPolicyId } from "../../lib/noc-cockpit-priority";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
+import { navigateToServiceImpactWorkspace } from "../../lib/service-impact-workspace-navigation";
 import { navigateToServiceExplorer, navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 
@@ -97,6 +98,16 @@ export function NocCockpitOperatorLaunchGrid({
                 title="service_dossier_v1 — composed workspace; same policy: anchor as Service Explorer"
               >
                 Service dossier (strongest policy row)
+              </button>
+            ) : null}
+            {strongPolicyId ? (
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() => navigateToServiceImpactWorkspace(`policy:${strongPolicyId}`)}
+                title="service_impact_workspace_v1 — composed Explorer + optional failure-impact; same policy: anchor as Service lens"
+              >
+                Service Impact workspace (strongest policy row)
               </button>
             ) : null}
           </div>

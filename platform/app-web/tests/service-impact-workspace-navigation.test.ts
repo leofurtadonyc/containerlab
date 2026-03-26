@@ -42,4 +42,24 @@ describe("service-impact-workspace-navigation", () => {
 
     Object.defineProperty(window, "location", { configurable: true, value: prev });
   });
+
+  it("navigateToServiceImpactWorkspace can echo global_search_q when requested", () => {
+    const spy = vi.spyOn(urlAppState, "replaceUrlSearchParams").mockImplementation(() => {});
+    const prev = window.location;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...prev, search: "?view=overview" },
+      writable: true,
+    });
+
+    navigateToServiceImpactWorkspace("policy:p1", { echoSearchQuery: "color 100" });
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    const sp = spy.mock.calls[0][0] as URLSearchParams;
+    expect(sp.get("view")).toBe("service-impact-workspace");
+    expect(sp.get(SERVICE_IMPACT_WORKSPACE_SERVICE_ID_PARAM)).toBe("policy:p1");
+    expect(sp.get("global_search_q")).toBe("color 100");
+
+    Object.defineProperty(window, "location", { configurable: true, value: prev });
+  });
 });

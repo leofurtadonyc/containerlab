@@ -23,6 +23,7 @@ import {
 } from "../../lib/impact-report-navigation";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
+import { navigateToServiceImpactWorkspace } from "../../lib/service-impact-workspace-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 import {
@@ -305,6 +306,21 @@ export function GlobalOperatorSearch() {
                                   }}
                                 >
                                   Path Explorer
+                                </button>
+                              ) : null}
+                              {hit.pivot.policy_id ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  title="service_impact_workspace_v1 — composed service-impact workspace; policy:… anchor matches Service Explorer"
+                                  onClick={() => {
+                                    navigateToServiceImpactWorkspace(`policy:${hit.pivot.policy_id!}`, {
+                                      echoSearchQuery: data.q,
+                                    });
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Service Impact
                                 </button>
                               ) : null}
                               {hit.pivot.policy_id ? (
