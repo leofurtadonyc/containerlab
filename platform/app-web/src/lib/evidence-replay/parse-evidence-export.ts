@@ -88,6 +88,16 @@ export function parseEvidenceExportJson(raw: string): EvidenceReplayJsonResult {
     };
   }
 
+  if (o.contract_id === "service_impact_workspace_v1") {
+    return {
+      status: "error",
+      error: err(
+        "service_impact_workspace_not_evidence_export",
+        "This file is service_impact_workspace_v1 (live composed GET /api/v1/service-impact-workspace), not evidence_export_v1. Evidence replay only accepts exports from GET /api/v1/exports/.... Use the Service Impact workspace in the WebUI for live review, export dossier/situation/investigation snapshots for frozen evidence, or Impact Report / Change Safety Case report downloads where those contracts apply—not workspace JSON as replay input.",
+      ),
+    };
+  }
+
   if (o.contract_id !== EVIDENCE_EXPORT_ENVELOPE_CONTRACT_ID) {
     return {
       status: "error",

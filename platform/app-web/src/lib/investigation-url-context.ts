@@ -23,6 +23,7 @@ export const INVESTIGATION_NAV_SOURCE_IDS = [
   "policies",
   "policy_explainability",
   "path-explorer",
+  "service-impact-workspace",
   "global_search",
   "service-explorer",
   "service-dossier",
@@ -59,6 +60,8 @@ export function labelForInvestigationNavSource(id: InvestigationNavSourceId): st
       return "Policy explainability";
     case "path-explorer":
       return "Path Explorer";
+    case "service-impact-workspace":
+      return "Service Impact Workspace";
     case "global_search":
       return "Global search";
     case "service-explorer":

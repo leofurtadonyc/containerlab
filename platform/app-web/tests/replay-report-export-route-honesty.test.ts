@@ -47,6 +47,13 @@ describe("report-route vs evidence-export URL families (honesty regression)", ()
     }
   });
 
+  it("Service Impact Workspace live GET is neither exports nor report downloads (composed read-only)", () => {
+    const p = "/api/v1/service-impact-workspace?service_id=color%3A100";
+    expect(p).toMatch(/\/api\/v1\/service-impact-workspace/);
+    expect(p).not.toMatch(/\/api\/v1\/exports\//);
+    expect(p).not.toMatch(/\/api\/v1\/reports\//);
+  });
+
   it("Evidence export paths use /api/v1/exports/ only (never report routes)", () => {
     const paths = [
       buildEvidenceExportRequestPath({ kind: "policy_dossier", policyId: "p:1" }, "json"),

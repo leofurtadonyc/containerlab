@@ -51,6 +51,17 @@ It **aggregates and frames** already-delivered assemblies; it **does not** repla
 
 ---
 
+## HTTP surface (shipped backend, read-only)
+
+- **`GET /api/v1/service-impact-workspace?service_id=…`**
+  - **Contract id:** `service_impact_workspace_v1`
+  - **Composition:** nested **`service_explorer_v1`** body (same assembly as **`GET /api/v1/services/{service_id}`**), plus optional embedded **`failure_impact_v1`** when **`topology_links`** yields a **`node_id`** and failure-impact assembly succeeds for that topology object.
+  - **Does not replace:** **`GET /api/v1/services/{service_id}`**, **`GET /api/v1/topology/objects/{object_id}/failure-impact`**, maintenance preview, change safety case, service dossier, or impact reports — **`recommended_api_pivots`** lists those GETs for navigation only.
+  - **Sparse / 404:** unknown **`service_id`** form or zero members (**404**, aligned with Service Explorer detail); no topology links → failure-impact omitted with **`failure_impact_assembly_note`** and merged gap notes; topology anchor present but failure-impact returns no rollup → honest **`failure_impact_assembly_note`**.
+- **WebUI:** **`view=service-impact-workspace`** with query **`service_impact_workspace_service_id`** (distinct from Service Explorer **`service_id`** to avoid cross-view ambiguity). First-class nav item **Service Impact**; pivot from Service Explorer detail (**Service Impact workspace**).
+
+---
+
 ## Normative section order (service impact workspace)
 
 1. **Subject and scope** — `service_id`, kind, Phase 2 read-only reminder.  
@@ -73,7 +84,11 @@ It **aggregates and frames** already-delivered assemblies; it **does not** repla
 ## Navigation expectations and export / report relationship
 
 - **Navigation:** read-only **`view=`** shell hints to **Investigation**, **Operator briefing**, **Policies**, **Topology**, **Service Dossier**, **Maintenance Preview**, **Impact Report** hub, **Change Safety Case**—same discipline as other composed workspaces.
-- **Export / replay:** Service Impact Workspace is a **live composed `GET`** when implemented—not **`evidence_export_v1`**. **Impact Report** and **Change Safety Case** downloads remain **their** contracts.
+- **Export / replay (normative):**
+  - **Live API:** **`GET /api/v1/service-impact-workspace?service_id=…`** returns **`service_impact_workspace_v1`** — a **read-only composed** response, **not** an export envelope.
+  - **Not `evidence_export_v1`:** there is **no** dedicated “save workspace as export” contract in Phase **2**; frozen review uses **`GET /api/v1/exports/...`** (dossier, situation, investigation, operator briefing bundle per [`evidence-export-contract.md`](./evidence-export-contract.md)).
+  - **Evidence replay:** the WebUI **rejects** root JSON with **`contract_id":"service_impact_workspace_v1`** in **Evidence replay** (same class of honesty as **`impact_report_v1`** / **`change_safety_case_v1`** roots)—see [`evidence-replay-viewer-contract.md`](./evidence-replay-viewer-contract.md).
+  - **Reports:** **`impact_report_v1`** and **`change_safety_case_v1`** remain **separate** **`GET /api/v1/reports/...`** families; this workspace may **pivot** to them but does **not** merge their bodies into “impact proof.”
 - **Operator search / NOC:** may add **honest** pivots when **`service_id`** is known—**no** new search corpora.
 
 ---
@@ -108,10 +123,11 @@ Service Impact Workspace v1 **is**:
 - [`maintenance-preview-contract.md`](./maintenance-preview-contract.md)  
 - [`change-safety-case-contract.md`](./change-safety-case-contract.md)  
 - [`impact-report-contract.md`](./impact-report-contract.md)  
+- [`evidence-export-contract.md`](./evidence-export-contract.md) · [`evidence-replay-viewer-contract.md`](./evidence-replay-viewer-contract.md) (replay rejects non-export roots including **`service_impact_workspace_v1`**)  
 
 ---
 
 ## Task closure notes
 
-- **`01-CURRENT-PHASE.md`:** **unchanged** — this document is Phase **2** read-only contract definition only.  
-- **`03-CURRENT-STATUS.md`:** **no update** required until a shipped **`service_impact_workspace_v1`** API/WebUI reflects operational truth.
+- **`01-CURRENT-PHASE.md`:** **unchanged** — Phase **2** read-only.  
+- **`03-CURRENT-STATUS.md`:** update when **`service_impact_workspace_v1`** API (and optional WebUI) reflects operational truth in the running platform.

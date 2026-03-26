@@ -14,6 +14,7 @@ from app_api.routers.maintenance_preview import router as maintenance_preview_ro
 from app_api.routers.operator_briefing import router as operator_briefing_router
 from app_api.routers.operator_search import router as operator_search_router
 from app_api.routers.path_explorer import router as path_explorer_router
+from app_api.routers.service_impact_workspace import router as service_impact_workspace_router
 from app_api.routers.devices import router as devices_router
 from app_api.routers.health import router as health_router
 from app_api.routers.platform import router as platform_router
@@ -43,6 +44,7 @@ router.include_router(devices_router)
 router.include_router(topology_router)
 router.include_router(policies_router)
 router.include_router(path_explorer_router)
+router.include_router(service_impact_workspace_router)
 router.include_router(services_router)
 router.include_router(capabilities_router)
 router.include_router(readiness_snapshot_history_router)

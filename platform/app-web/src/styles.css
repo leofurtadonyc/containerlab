@@ -3215,6 +3215,44 @@ ol.notes-list.evidence-timeline-ordered {
   margin-bottom: 0.25rem;
 }
 
+.service-impact-workspace-route {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.service-impact-workspace-setup {
+  margin-top: 0.25rem;
+  max-width: 40rem;
+}
+
+.service-impact-workspace-setup__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  max-width: 32rem;
+}
+
+.service-impact-workspace-setup__input {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border-radius: 4px;
+  border: 1px solid #3a4f66;
+  background: #0f1624;
+  color: #e8eef8;
+}
+
+.service-impact-workspace-product {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.service-impact-workspace-product__header {
+  margin-bottom: 0.25rem;
+}
+
 .maintenance-preview-product {
   margin-top: 0.5rem;
 }

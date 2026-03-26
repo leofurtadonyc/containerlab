@@ -823,6 +823,22 @@ export interface PathExplorerWorkspaceResponse {
   source_contract_ids: string[];
 }
 
+/** `GET /api/v1/service-impact-workspace?service_id=…` — composed Service Explorer + optional failure-impact. */
+export interface ServiceImpactWorkspaceResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "service_impact_workspace_v1";
+  service_id: string;
+  service_explorer: ServiceDetailResponse;
+  failure_impact: FailureImpactViewResponse | null;
+  failure_impact_topology_anchor: string | null;
+  failure_impact_assembly_note: string | null;
+  merged_caveats: string[];
+  merged_evidence_gap_notes: string[];
+  explicit_non_claims: string[];
+  source_contract_ids: string[];
+  recommended_api_pivots: string[];
+}
+
 /** `GET /api/v1/policies/{policy_id}/topology-impact` (inverse pivot; naming alignment only). */
 export interface PolicyTopologyImpactRow {
   topology_object_kind: TopologyObjectKind;

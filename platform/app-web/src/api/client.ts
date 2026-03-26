@@ -20,6 +20,7 @@ import type {
   PolicyDossierResponse,
   PolicyExplainabilityResponse,
   PathExplorerWorkspaceResponse,
+  ServiceImpactWorkspaceResponse,
   OperatorSearchResponse,
   WorkflowHistoryResponse,
   CrossDomainDeltaDigestResponse,
@@ -268,6 +269,12 @@ export class ApiClient {
     const params = new URLSearchParams();
     params.set("policy_id", policyId.trim());
     return this.request<PathExplorerWorkspaceResponse>(`/api/v1/path-explorer?${params.toString()}`);
+  }
+
+  async getServiceImpactWorkspace(serviceId: string): Promise<ServiceImpactWorkspaceResponse> {
+    const params = new URLSearchParams();
+    params.set("service_id", serviceId.trim());
+    return this.request<ServiceImpactWorkspaceResponse>(`/api/v1/service-impact-workspace?${params.toString()}`);
   }
 
   async getWorkflowHistory(query?: WorkflowHistoryReadSideQuery): Promise<WorkflowHistoryResponse> {
