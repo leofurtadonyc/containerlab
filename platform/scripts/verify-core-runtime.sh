@@ -663,6 +663,11 @@ if [ -n "$first_node_id" ]; then
   assert_contains "maintenance evidence workspace response (contract id)" "$maintenance_evidence_workspace_response" '"contract_id":"maintenance_evidence_workspace_v1"'
   assert_contains "maintenance evidence workspace response (nested maintenance_preview)" "$maintenance_evidence_workspace_response" '"contract_id":"maintenance_preview_v1"'
   assert_contains "maintenance evidence workspace response (topology_change_safety)" "$maintenance_evidence_workspace_response" '"safety_case_context":"topology_change_safety"'
+  mww_handoff_subj=$(printf 'node:%s' "$first_node_id" | python3 -c "import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read().strip(), safe=''))")
+  maintenance_window_handoff_export=$(fetch_compact_json "$APP_API_URL/api/v1/exports/maintenance-window-handoff?subject=${mww_handoff_subj}&sync_runs_limit=10")
+  assert_contains "maintenance window handoff export (contract id)" "$maintenance_window_handoff_export" '"contract_id":"maintenance_window_handoff_v1"'
+  assert_contains "maintenance window handoff export (workspace snapshot)" "$maintenance_window_handoff_export" '"workspace_snapshot":{'
+  assert_contains "maintenance window handoff export (nested workspace contract)" "$maintenance_window_handoff_export" '"contract_id":"maintenance_window_workspace_v1"'
   maintenance_impact_report_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/maintenance-impact?node_id=${enc_node_q}&format=json")
   assert_contains "maintenance impact report response (contract id)" "$maintenance_impact_report_response" '"contract_id":"impact_report_v1"'
   assert_contains "maintenance impact report response (report_context)" "$maintenance_impact_report_response" '"report_context":"maintenance_impact"'
@@ -670,7 +675,7 @@ if [ -n "$first_node_id" ]; then
   assert_contains "topology change safety case response (contract id)" "$topology_change_safety_case_response" '"contract_id":"change_safety_case_v1"'
   assert_contains "topology change safety case response (safety_case_context)" "$topology_change_safety_case_response" '"safety_case_context":"topology_change_safety"'
 else
-  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, topology-object-dossier, topology-object evidence timeline/delta, topology-object stability-profile GET, maintenance-preview assembly, maintenance-evidence-workspace assembly, maintenance-impact report, and topology change safety case structural checks."
+  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, topology-object-dossier, topology-object evidence timeline/delta, topology-object stability-profile GET, maintenance-preview assembly, maintenance-evidence-workspace assembly, maintenance-window-handoff export, maintenance-impact report, and topology change safety case structural checks."
 fi
 
 # Cross-slice list/history metadata and evidence shape (contract posture, not business truth).

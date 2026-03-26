@@ -8,6 +8,7 @@ import {
   DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
 } from "../../lib/investigation-navigation";
 import { navigateToEvidenceView, navigateToPoliciesWithDegradedPolicyV1Posture } from "../../lib/url-app-state";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { useTopologyFailureImpactQuery } from "./api";
 
@@ -199,6 +200,18 @@ export function TopologyFailureImpactPanel({ objectId, objectKind }: TopologyFai
           onClick={() => navigateToTopologyDossier(objectId, objectKind, "failure_impact")}
         >
           Open dossier workspace
+        </button>{" "}
+        <button
+          type="button"
+          className="nav-drilldown-button"
+          onClick={() =>
+            navigateToMaintenanceWindowWorkspaceForTopologyObject(objectId, objectKind, {
+              previewContext: "topology_drilldown",
+              syncRunsLimit: syncRuns,
+            })
+          }
+        >
+          Maintenance window workspace
         </button>{" "}
         <button type="button" className="table-select" onClick={() => navigateToEvidenceView("policies")}>
           Open policy inventory

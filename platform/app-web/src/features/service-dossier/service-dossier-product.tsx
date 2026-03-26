@@ -10,6 +10,7 @@ import {
 import { navigateToInvestigationView } from "../../lib/investigation-navigation";
 import { navigateToImpactReportForService } from "../../lib/impact-report-navigation";
 import { navigateToMaintenancePreview } from "../../lib/maintenance-preview-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
 import {
   navigateToPolicyDossierWorkspace,
   navigateToPolicyExplainabilityWorkspace,
@@ -203,6 +204,39 @@ export function ServiceDossierProduct({ data, onReload }: ServiceDossierProductP
           >
             Stability workspace
           </button>
+          {data.maintenance_preview ? (
+            <button
+              type="button"
+              className="nav-drilldown-button"
+              onClick={() => {
+                const mp = data.maintenance_preview;
+                if (!mp) {
+                  return;
+                }
+                navigateToMaintenanceWindowWorkspaceForTopologyObject(mp.subject.object_id, mp.subject.object_kind, {
+                  previewContext: "explicit_subject",
+                  syncRunsLimit: syncLim,
+                });
+              }}
+              title="maintenance_window_workspace_v1 — seeded from embedded maintenance preview subject"
+            >
+              Maintenance window workspace
+            </button>
+          ) : firstTopoNode ? (
+            <button
+              type="button"
+              className="nav-drilldown-button"
+              onClick={() =>
+                navigateToMaintenanceWindowWorkspaceForTopologyObject(firstTopoNode, "node", {
+                  previewContext: "explicit_subject",
+                  syncRunsLimit: syncLim,
+                })
+              }
+              title="Uses first topology_links node only — bounded carry-over"
+            >
+              Maintenance window workspace (first topology node)
+            </button>
+          ) : null}
           <button type="button" className="nav-drilldown-button" onClick={() => navigateToEvidenceView("policies")}>
             Policies table
           </button>

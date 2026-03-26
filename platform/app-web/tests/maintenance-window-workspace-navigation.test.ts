@@ -4,6 +4,7 @@ import {
   MAINTENANCE_WINDOW_SUBJECT_PARAM,
   MAINTENANCE_WINDOW_WORKSPACE_MAX_SUBJECTS,
   navigateToMaintenanceWindowWorkspace,
+  navigateToMaintenanceWindowWorkspaceForTopologyObject,
   readMaintenanceWindowSubjectsFromSearch,
 } from "../src/lib/maintenance-window-workspace-navigation";
 import { MAINTENANCE_PREVIEW_CONTEXT_PARAM } from "../src/lib/maintenance-preview-navigation";
@@ -61,6 +62,50 @@ describe("maintenance window workspace navigation", () => {
     expect(next.searchParams.get(MAINTENANCE_PREVIEW_CONTEXT_PARAM)).toBe("planning_window");
     expect(next.searchParams.get("sync_runs_limit")).toBe("20");
     expect(next.searchParams.get("foo")).toBe("bar");
+
+    replaceState.mockRestore();
+  });
+
+  it("navigateToMaintenanceWindowWorkspaceForTopologyObject sets a single mww_subject", () => {
+    const replaceState = vi.spyOn(window.history, "replaceState").mockImplementation(() => undefined);
+    vi.stubGlobal("location", {
+      ...window.location,
+      href: "http://localhost/?view=topology",
+      search: "?view=topology",
+    });
+
+    navigateToMaintenanceWindowWorkspaceForTopologyObject("PE1", "node", {
+      previewContext: "topology_drilldown",
+      syncRunsLimit: 12,
+    });
+
+    const urlArg = replaceState.mock.calls[0][2] as string;
+    const next = new URL(urlArg);
+    expect(next.searchParams.getAll(MAINTENANCE_WINDOW_SUBJECT_PARAM)).toEqual(["node:PE1"]);
+    expect(next.searchParams.get(MAINTENANCE_PREVIEW_CONTEXT_PARAM)).toBe("topology_drilldown");
+    expect(next.searchParams.get("sync_runs_limit")).toBe("12");
+
+    replaceState.mockRestore();
+  });
+
+  it("navigateToMaintenanceWindowWorkspace applies optional global_search_q echo", () => {
+    const replaceState = vi.spyOn(window.history, "replaceState").mockImplementation(() => undefined);
+    vi.stubGlobal("location", {
+      ...window.location,
+      href: "http://localhost/?view=overview",
+      search: "?view=overview",
+    });
+
+    navigateToMaintenanceWindowWorkspace({
+      subjects: [{ objectKind: "node", objectId: "PE1" }],
+      previewContext: "planning_window",
+      syncRunsLimit: 10,
+      echoSearchQuery: "PE1 static",
+    });
+
+    const urlArg = replaceState.mock.calls[0][2] as string;
+    const next = new URL(urlArg);
+    expect(next.searchParams.get("global_search_q")).toBe("PE1 static");
 
     replaceState.mockRestore();
   });

@@ -7,6 +7,7 @@ import { formatDateTime } from "../../lib/presentation";
 import { navigateToChangeSafetyCaseForMaintenance } from "../../lib/change-safety-case-navigation";
 import { navigateToImpactReportForMaintenance } from "../../lib/impact-report-navigation";
 import { navigateToMaintenancePreview } from "../../lib/maintenance-preview-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 
@@ -86,6 +87,19 @@ export function MaintenanceEvidenceWorkspaceProduct({ data, onReload }: Maintena
             title="Topology object dossier workspace (separate composed GET)"
           >
             Topology dossier
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
+              navigateToMaintenanceWindowWorkspaceForTopologyObject(subj.object_id, subj.object_kind, {
+                previewContext: ctx,
+                syncRunsLimit: syncLim,
+              })
+            }
+            title="maintenance_window_workspace_v1 — multi-subject rollup; starts with this subject only"
+          >
+            Maintenance window workspace
           </button>
           <button
             type="button"

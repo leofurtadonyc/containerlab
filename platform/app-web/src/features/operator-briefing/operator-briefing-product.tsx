@@ -5,6 +5,7 @@ import { navigateToInvestigationView } from "../../lib/investigation-navigation"
 import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToSituationRoomView } from "../../lib/situation-room-navigation";
 import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { formatDateTime } from "../../lib/presentation";
 import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
@@ -221,6 +222,22 @@ export function OperatorBriefingProduct({ data, syncRunsLimit, onReload }: Opera
               Maintenance evidence workspace ({topo.object_identity.object_kind} {topo.object_identity.object_id})
             </button>
           ) : null}
+          {topo?.object_identity ? (
+            <button
+              type="button"
+              className="nav-drilldown-button"
+              title="maintenance_window_workspace_v1 — multi-subject rollup; starts with briefing topology subject only"
+              onClick={() =>
+                navigateToMaintenanceWindowWorkspaceForTopologyObject(
+                  topo.object_identity.object_id,
+                  topo.object_identity.object_kind,
+                  { previewContext: "topology_drilldown", syncRunsLimit: syncRunsLimit },
+                )
+              }
+            >
+              Maintenance window workspace ({topo.object_identity.object_kind} {topo.object_identity.object_id})
+            </button>
+          ) : null}
           <button type="button" className="nav-drilldown-button" onClick={() => navigateToEvidenceView("devices")}>
             Devices
           </button>
@@ -240,8 +257,9 @@ export function OperatorBriefingProduct({ data, syncRunsLimit, onReload }: Opera
           reload. <strong>Downloads</strong> are point-in-time files. <strong>Evidence replay</strong> is for reviewing a
           frozen <code>evidence_export_v1</code> artifact you already saved — not a substitute for this live workspace.
           The composed <code>maintenance_evidence_workspace_v1</code> surface (<strong>Maintenance evidence</strong> in
-          the shell) is a <strong>separate live GET</strong> — it is <strong>not</strong> an export root here,{" "}
-          <strong>not</strong> a substitute for <code>impact_report_v1</code> or <code>change_safety_case_v1</code>{" "}
+          the shell) and <code>maintenance_window_workspace_v1</code> (<strong>Maintenance window workspace</strong> for
+          multi-subject rollups) are <strong>separate live GET</strong> families — <strong>not</strong> export roots here,{" "}
+          <strong>not</strong> substitutes for <code>impact_report_v1</code> or <code>change_safety_case_v1</code>{" "}
           report downloads, and <strong>not</strong> included in briefing bundle members; use{" "}
           <strong>Live pivots</strong> when a topology subject is in scope.
         </p>

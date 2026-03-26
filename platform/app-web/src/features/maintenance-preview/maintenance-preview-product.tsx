@@ -12,6 +12,7 @@ import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
 import { navigateToImpactReportForMaintenance } from "../../lib/impact-report-navigation";
 import { navigateToChangeSafetyCaseForMaintenance } from "../../lib/change-safety-case-navigation";
 import { navigateToMaintenanceEvidenceWorkspace } from "../../lib/maintenance-evidence-workspace-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 
@@ -79,6 +80,19 @@ export function MaintenancePreviewProduct({ data, onReload }: MaintenancePreview
             title="maintenance_evidence_workspace_v1 — composed read assembly; not evidence_export_v1"
           >
             Maintenance evidence workspace
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
+              navigateToMaintenanceWindowWorkspaceForTopologyObject(subj.object_id, subj.object_kind, {
+                previewContext: data.preview_context,
+                syncRunsLimit: syncLim,
+              })
+            }
+            title="maintenance_window_workspace_v1 — multi-subject rollup; starts with this subject only"
+          >
+            Maintenance window workspace
           </button>
           <button
             type="button"

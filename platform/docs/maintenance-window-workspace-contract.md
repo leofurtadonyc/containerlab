@@ -129,8 +129,9 @@ When a **`maintenance_window_workspace_v1`** payload is implemented, sections **
 ## Export, report, replay, and handoff
 
 - **Live workspace `GET`:** returns **`maintenance_window_workspace_v1`** — read-only composition, **not** an export envelope by default.
-- **Not `evidence_export_v1`:** frozen handoff uses **`GET /api/v1/exports/...`** per [`evidence-export-contract.md`](./evidence-export-contract.md). Week **38** may add a dedicated **maintenance-window handoff** envelope in a **separate** contract—this workspace **does not** claim that envelope until documented there.
-- **Evidence replay:** WebUI should **reject** root JSON with **`contract_id":"maintenance_window_workspace_v1`** as **Evidence replay** input unless a future revision explicitly changes [`evidence-replay-viewer-contract.md`](./evidence-replay-viewer-contract.md) policy (same honesty class as other composed workspaces).
+- **Handoff snapshot (distinct envelope):** **`maintenance_window_handoff_v1`** — bounded serialization for operator communication; **not** **`evidence_export_v1`**, **not** briefing bundle, **not** impact or change-safety report JSON. See [`maintenance-window-handoff-contract.md`](./maintenance-window-handoff-contract.md). **Implemented:** **`GET /api/v1/exports/maintenance-window-handoff`** (same query dimensions as this workspace **`GET`**).
+- **Not `evidence_export_v1`:** use [`evidence-export-contract.md`](./evidence-export-contract.md) for dossier/situation/investigation **`export_kind`** exports; use **maintenance window handoff** only for **multi-subject window rollup** handoff semantics.
+- **Evidence replay:** WebUI should **reject** root JSON with **`contract_id":"maintenance_window_workspace_v1`** as **Evidence replay** input unless a future revision explicitly changes [`evidence-replay-viewer-contract.md`](./evidence-replay-viewer-contract.md) policy (same honesty class as other composed workspaces). **`maintenance_window_handoff_v1`** is also **not** a standard **`evidence_export_v1`** replay root—see handoff contract.
 
 ---
 
@@ -173,7 +174,7 @@ Maintenance window workspace v1 **is**:
 | **Contract document** | **Delivered:** this file (`maintenance-window-workspace-contract.md`). |
 | **Schema + route + assembly** | **Delivered:** **`GET /api/v1/maintenance-window-workspace`** — **`schemas/maintenance_window_workspace.py`**, **`services/maintenance_window_workspace.py`**, **`routers/maintenance_window_workspace.py`**; **`pytest`** **`test_maintenance_window_workspace.py`**. |
 | **WebUI** | **Shell + rollup sections** — **`view=maintenance-window-workspace`**, **`mww_subject`** URL state, deduped service/policy tables, gaps, stability/tension cues, pivots; handoff/export in later week **38** tasks. |
-| **Handoff / export** | **Future** — Week **38** Wednesday contract + API per schedule. |
+| **Handoff / export** | **Delivered:** [`maintenance-window-handoff-contract.md`](./maintenance-window-handoff-contract.md) — **`GET /api/v1/exports/maintenance-window-handoff`**. **WebUI download** — future week **38** follow-on. |
 
 ---
 
@@ -187,6 +188,7 @@ Maintenance window workspace v1 **is**:
 - [`operational-stability-summary-contract.md`](./operational-stability-summary-contract.md)
 - [`topology-object-dossier-contract.md`](./topology-object-dossier-contract.md)
 - [`evidence-export-contract.md`](./evidence-export-contract.md)
+- [`maintenance-window-handoff-contract.md`](./maintenance-window-handoff-contract.md)
 - [`evidence-replay-viewer-contract.md`](./evidence-replay-viewer-contract.md)
 - [`data-flows.md`](./data-flows.md)
 - [`agent/sdn/week-38-schedule-overview.md`](../../agent/sdn/week-38-schedule-overview.md)

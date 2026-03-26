@@ -10,6 +10,7 @@ import { worstDegradedPolicyFirst } from "../../lib/noc-cockpit-priority";
 import { navigateToPolicyDossierWorkspace, navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
@@ -95,6 +96,19 @@ export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCock
                 title="maintenance_evidence_workspace_v1 — composed GET; not evidence_export_v1 or approval"
               >
                 Maintenance evidence workspace (top risk)
+              </button>
+              <button
+                type="button"
+                className="nav-drilldown-button"
+                onClick={() =>
+                  navigateToMaintenanceWindowWorkspaceForTopologyObject(topRisk.object_id, topRisk.object_kind, {
+                    previewContext: "planning_window",
+                    syncRunsLimit: syncRuns,
+                  })
+                }
+                title="maintenance_window_workspace_v1 — multi-subject rollup; starts with top risk subject only"
+              >
+                Maintenance window workspace (top risk)
               </button>
               <button
                 type="button"

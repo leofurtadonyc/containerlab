@@ -7,6 +7,11 @@ import { navigateToImpactReportForMaintenance, navigateToImpactReportForPolicy }
 import { navigateToChangeSafetyCaseForMaintenance, navigateToChangeSafetyCaseForPolicy } from "../../lib/change-safety-case-navigation";
 import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
+import {
+  DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
+  readSyncRunsLimitFromSearch,
+} from "../../lib/investigation-navigation";
 import { pickStrongestPolicyId } from "../../lib/noc-cockpit-priority";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
@@ -61,6 +66,10 @@ export function NocCockpitOperatorLaunchGrid({
 }: NocCockpitOperatorLaunchGridProps) {
   const topRisk = riskSummary?.ranked_objects?.[0] ?? null;
   const strongPolicyId = pickStrongestPolicyId(policiesData, firstPolicyId);
+  const syncRuns =
+    typeof window !== "undefined"
+      ? readSyncRunsLimitFromSearch(window.location.search, DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT)
+      : DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT;
 
   return (
     <div className="noc-cockpit__launch-grid" data-testid="noc-cockpit-operator-launch">
@@ -178,6 +187,19 @@ export function NocCockpitOperatorLaunchGrid({
                 >
                   Maintenance evidence workspace (top risk row)
                 </button>
+                <button
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() =>
+                    navigateToMaintenanceWindowWorkspaceForTopologyObject(topRisk.object_id, topRisk.object_kind, {
+                      previewContext: "planning_window",
+                      syncRunsLimit: syncRuns,
+                    })
+                  }
+                  title="maintenance_window_workspace_v1 — multi-subject rollup; starts with top risk subject only"
+                >
+                  Maintenance window workspace (top risk row)
+                </button>
               </>
             ) : firstNodeId ? (
               <>
@@ -203,6 +225,19 @@ export function NocCockpitOperatorLaunchGrid({
                   title="maintenance_evidence_workspace_v1 — not evidence_export_v1"
                 >
                   Maintenance evidence workspace (first topology node)
+                </button>
+                <button
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() =>
+                    navigateToMaintenanceWindowWorkspaceForTopologyObject(firstNodeId, "node", {
+                      previewContext: "explicit_subject",
+                      syncRunsLimit: syncRuns,
+                    })
+                  }
+                  title="maintenance_window_workspace_v1 — multi-subject rollup; starts with first node only"
+                >
+                  Maintenance window workspace (first topology node)
                 </button>
               </>
             ) : (

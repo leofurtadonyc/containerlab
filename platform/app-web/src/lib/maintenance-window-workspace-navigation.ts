@@ -4,6 +4,7 @@
  */
 
 import type { MaintenancePreviewContext } from "../api/contracts";
+import { applyGlobalSearchQueryEcho } from "./global-search-deeplink";
 import { DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT, readSyncRunsLimitFromSearch } from "./investigation-navigation";
 import { MAINTENANCE_PREVIEW_CONTEXT_PARAM } from "./maintenance-preview-navigation";
 import { mergeViewIntoSearch, replaceUrlSearchParams } from "./url-app-state";
@@ -103,6 +104,8 @@ export interface NavigateToMaintenanceWindowWorkspaceOptions {
   subjects: MaintenanceWindowSubjectRef[];
   previewContext?: MaintenancePreviewContext | null;
   syncRunsLimit?: number | null;
+  /** Optional echo of the global search query on the shell (client-only). */
+  echoSearchQuery?: string | null;
 }
 
 export function navigateToMaintenanceWindowWorkspace(options: NavigateToMaintenanceWindowWorkspaceOptions): void {
@@ -116,7 +119,28 @@ export function navigateToMaintenanceWindowWorkspace(options: NavigateToMaintena
   sp.set(MAINTENANCE_PREVIEW_CONTEXT_PARAM, pctx);
   const lim = options.syncRunsLimit ?? DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT;
   sp.set("sync_runs_limit", String(Math.min(100, Math.max(1, Math.floor(lim)))));
+  if (options.echoSearchQuery !== undefined) {
+    applyGlobalSearchQueryEcho(sp, options.echoSearchQuery);
+  }
   replaceUrlSearchParams(sp);
+}
+
+/** Single-subject carry-over from maintenance-adjacent surfaces (honest topology anchor only). */
+export function navigateToMaintenanceWindowWorkspaceForTopologyObject(
+  objectId: string,
+  objectKind: "node" | "link",
+  options?: Pick<NavigateToMaintenanceWindowWorkspaceOptions, "previewContext" | "syncRunsLimit" | "echoSearchQuery">,
+): void {
+  const oid = objectId.trim();
+  if (!oid) {
+    return;
+  }
+  navigateToMaintenanceWindowWorkspace({
+    subjects: [{ objectKind: objectKind, objectId: oid }],
+    previewContext: options?.previewContext ?? "planning_window",
+    syncRunsLimit: options?.syncRunsLimit ?? null,
+    ...(options?.echoSearchQuery !== undefined ? { echoSearchQuery: options.echoSearchQuery } : {}),
+  });
 }
 
 /** Clear subject list; stay on maintenance window workspace setup. */

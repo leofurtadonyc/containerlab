@@ -15,8 +15,13 @@ import {
   navigateToSituationRoomFromGlobalSearch,
   supportsInvestigationShortcut,
 } from "../../lib/operator-search-navigation";
+import {
+  DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
+  readSyncRunsLimitFromSearch,
+} from "../../lib/investigation-navigation";
 import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
 import {
   navigateToImpactReportForMaintenance,
   navigateToImpactReportForPolicy,
@@ -263,6 +268,31 @@ export function GlobalOperatorSearch() {
                                   }}
                                 >
                                   Maintenance evidence workspace
+                                </button>
+                              ) : null}
+                              {hit.pivot.topology_object && hit.pivot.topology_object_kind ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  title="maintenance_window_workspace_v1 — multi-subject rollup; starts with this topology hit only"
+                                  onClick={() => {
+                                    const lim = readSyncRunsLimitFromSearch(
+                                      window.location.search,
+                                      DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
+                                    );
+                                    navigateToMaintenanceWindowWorkspaceForTopologyObject(
+                                      hit.pivot.topology_object!,
+                                      hit.pivot.topology_object_kind!,
+                                      {
+                                        previewContext: "topology_drilldown",
+                                        syncRunsLimit: lim,
+                                        echoSearchQuery: data.q,
+                                      },
+                                    );
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Maintenance window workspace
                                 </button>
                               ) : null}
                               {supportsInvestigationShortcut(hit.object_kind) ? (

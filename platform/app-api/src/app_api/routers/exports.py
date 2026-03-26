@@ -11,10 +11,19 @@ from app_api.schemas.evidence_export import (
     SituationRoomEvidenceExportResponse,
     TopologyObjectDossierEvidenceExportResponse,
 )
+from app_api.schemas.maintenance_preview import MaintenancePreviewContext
+from app_api.schemas.maintenance_window_workspace import (
+    MAINTENANCE_WINDOW_WORKSPACE_MAX_SUBJECTS,
+)
 from app_api.services.briefing_export_bundle import (
     briefing_export_bundle_to_markdown,
     build_briefing_export_bundle_response,
 )
+from app_api.services.maintenance_window_handoff import (
+    build_maintenance_window_handoff_response,
+    maintenance_window_handoff_to_markdown,
+)
+from app_api.services.maintenance_window_workspace import dedupe_subjects, parse_subject_tokens
 from app_api.services.change_intelligence import (
     RECENT_CHANGE_SYNC_RUNS_DEFAULT,
     RECENT_CHANGE_SYNC_RUNS_MAX,
@@ -245,6 +254,98 @@ def export_operator_briefing_bundle(
     if response_format == "json":
         return JSONResponse(content=out.model_dump(mode="json"))
     md = briefing_export_bundle_to_markdown(out)
+    return PlainTextResponse(
+        content=md,
+        media_type="text/markdown; charset=utf-8",
+    )
+
+
+@router.get(
+    "/exports/maintenance-window-handoff",
+    response_model=None,
+    responses={
+        200: {
+            "content": {
+                "application/json": {},
+                "text/markdown": {},
+            },
+        },
+        422: {"description": "Missing/invalid subjects or no subjects resolved to topology."},
+    },
+)
+def export_maintenance_window_handoff(
+    subject: list[str] = Query(
+        default=[],
+        description=(
+            "Same as GET /api/v1/maintenance-window-workspace: repeated `node:{id}` / `link:{id}` "
+            f"(distinct subjects capped at {MAINTENANCE_WINDOW_WORKSPACE_MAX_SUBJECTS})."
+        ),
+    ),
+    preview_context: MaintenancePreviewContext = Query(
+        default="planning_window",
+        description="Same semantics as GET /api/v1/maintenance-window-workspace.",
+    ),
+    sync_runs_limit: int = Query(
+        default=RECENT_CHANGE_SYNC_RUNS_DEFAULT,
+        ge=1,
+        le=RECENT_CHANGE_SYNC_RUNS_MAX,
+        description="Bounded window aligned with maintenance window workspace assembly.",
+    ),
+    handoff_label: str | None = Query(
+        default=None,
+        description="Optional communication label only (not approval or ticketing).",
+    ),
+    operator_note: str | None = Query(
+        default=None,
+        description="Optional free-text note (not approval or ticketing).",
+    ),
+    response_format: Annotated[
+        ExportFormat,
+        Query(
+            alias="format",
+            description="json (canonical) or markdown (human-readable companion).",
+        ),
+    ] = "json",
+) -> JSONResponse | PlainTextResponse:
+    """maintenance_window_handoff_v1 — frozen snapshot of maintenance window workspace assembly (not evidence_export_v1)."""
+    if not subject:
+        raise HTTPException(
+            status_code=422,
+            detail="Provide at least one `subject` query parameter (e.g. subject=node:PE1&subject=link:P1--PE1).",
+        )
+    try:
+        pairs = parse_subject_tokens(subject)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    distinct = dedupe_subjects(pairs)
+    if len(distinct) > MAINTENANCE_WINDOW_WORKSPACE_MAX_SUBJECTS:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Too many distinct subjects after dedupe ({len(distinct)}); "
+                f"maximum is {MAINTENANCE_WINDOW_WORKSPACE_MAX_SUBJECTS}."
+            ),
+        )
+
+    out = build_maintenance_window_handoff_response(
+        subject_pairs=distinct,
+        preview_context=preview_context,
+        sync_runs_limit=sync_runs_limit,
+        handoff_label=handoff_label,
+        operator_note=operator_note,
+    )
+    if out.workspace_snapshot.subjects_resolved == 0:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": "No subjects resolved to the current normalized topology snapshot.",
+                "failures": [f.model_dump() for f in out.workspace_snapshot.subject_resolution_failures],
+            },
+        )
+    if response_format == "json":
+        return JSONResponse(content=out.model_dump(mode="json"))
+    md = maintenance_window_handoff_to_markdown(out)
     return PlainTextResponse(
         content=md,
         media_type="text/markdown; charset=utf-8",
