@@ -41,7 +41,9 @@ Pick **one** narrow theme per cycle—**not** parallel defaults:
 
 ## Planned week 35 bounded lane
 
-If the team proceeds immediately into a new bounded implementation week, the preferred **single coherent lane** is:
+**Update:** Week **35** shipped this lane—see **Week 35 closure** in [`../../agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md) and [`post-week-35-bounded-phase2-recommendation.md`](./post-week-35-bounded-phase2-recommendation.md). The text below remains historical context for why that lane was chosen.
+
+If the team proceeds immediately into a new bounded implementation week, the preferred **single coherent lane** was:
 
 1. **service-centric evidence chronology and delta**, plus
 2. **cross-domain evidence consistency as an embedded safety layer**, with
@@ -74,3 +76,4 @@ This planned lane should still obey the same anti-reopen discipline: it must **c
 | Service Impact Workspace | [`service-impact-workspace-contract.md`](./service-impact-workspace-contract.md) |
 | NOC cockpit | [`noc-cockpit-contract.md`](./noc-cockpit-contract.md) |
 | Operator search | [`operator-search-contract.md`](./operator-search-contract.md) |
+| Post–week 35 (closure / next scheduling) | [`post-week-35-bounded-phase2-recommendation.md`](./post-week-35-bounded-phase2-recommendation.md) |
