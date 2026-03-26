@@ -39,7 +39,9 @@ Pick **one** narrow theme per cycle—**not** parallel defaults:
 
 **Do not** reopen **week 36** topology-object timeline, delta, maintenance evidence workspace, or maintenance-intelligence pivots for momentum; **do not** treat week **36** closure as a backlog invitation for new assemblies.
 
-A **future** bounded week may still choose **operator contract labeling** depth, **ADR-0001** truth-depth, or another single slice—each must be **evidence-justified** and Phase **2** safe. Nothing here prescribes week **37** product scope.
+A **future** bounded week may still choose **operator contract labeling** depth, **ADR-0001** truth-depth, or another single slice—each must be **evidence-justified** and Phase **2** safe.
+
+**Update (week 37 closure):** the **operational stability** lane (**`operational_stability_summary_v1`**, topology/service **stability profile** **GET**s, **`view=stability-workspace`**, cross-surface pivots, verifier/docs) **shipped** as documented in **03-CURRENT-STATUS** **Week 37 closure (Friday rollup)**. The **next** bounded scheduling posture after week **37** is [`post-week-37-bounded-phase2-recommendation.md`](./post-week-37-bounded-phase2-recommendation.md)—**not** a default week **38** product backlog.
 
 ## Explicit anti-recommendations
 
@@ -54,6 +56,7 @@ A **future** bounded week may still choose **operator contract labeling** depth,
 | --- | --- |
 | Operational truth | [`../../agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md) |
 | Roadmap | [`roadmap.md`](./roadmap.md) |
+| Post–week 37 (next posture after operational stability lane) | [`post-week-37-bounded-phase2-recommendation.md`](./post-week-37-bounded-phase2-recommendation.md) |
 | Post–week 35 (planned week 36 lane) | [`post-week-35-bounded-phase2-recommendation.md`](./post-week-35-bounded-phase2-recommendation.md) |
 | Week 33 next-slice (labeling) | [`week-33-bounded-next-slice-recommendation.md`](./week-33-bounded-next-slice-recommendation.md) |
 | Topology object evidence timeline | [`topology-object-evidence-timeline-contract.md`](./topology-object-evidence-timeline-contract.md) |

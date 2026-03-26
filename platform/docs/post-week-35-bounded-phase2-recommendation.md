@@ -56,7 +56,9 @@ Why this lane is preferred:
 
 This is still a **planning recommendation**, not a phase change or automatic implementation order override. If a different slice is chosen, it should still be justified by live evidence and remain Phase 2 safe.
 
-**Update (week 36 closure):** that lane **shipped** as documented in **03-CURRENT-STATUS** **Week 36 closure (Friday rollup)**. The **next** bounded scheduling posture after week **36** is [`post-week-36-bounded-phase2-recommendation.md`](./post-week-36-bounded-phase2-recommendation.md)—**not** a default week **37** product backlog.
+**Update (week 36 closure):** that lane **shipped** as documented in **03-CURRENT-STATUS** **Week 36 closure (Friday rollup)**.
+
+**Update (week 37 closure):** the **operational stability** lane then **shipped** as documented in **03-CURRENT-STATUS** **Week 37 closure (Friday rollup)**. The **current** bounded scheduling posture is [`post-week-37-bounded-phase2-recommendation.md`](./post-week-37-bounded-phase2-recommendation.md)—**not** a default week **38** product backlog.
 
 ## Explicit anti-recommendations
 
@@ -72,7 +74,8 @@ This is still a **planning recommendation**, not a phase change or automatic imp
 | Operational truth | [`../../agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md) |
 | Roadmap | [`roadmap.md`](./roadmap.md) |
 | Post–week 34 (planned week 35 lane) | [`post-week-34-bounded-phase2-recommendation.md`](./post-week-34-bounded-phase2-recommendation.md) |
-| Post–week 36 (next posture after topology/maintenance lane) | [`post-week-36-bounded-phase2-recommendation.md`](./post-week-36-bounded-phase2-recommendation.md) |
+| Post–week 36 (after topology/maintenance lane) | [`post-week-36-bounded-phase2-recommendation.md`](./post-week-36-bounded-phase2-recommendation.md) |
+| Post–week 37 (next posture after operational stability lane) | [`post-week-37-bounded-phase2-recommendation.md`](./post-week-37-bounded-phase2-recommendation.md) |
 | Week 33 next-slice (labeling) | [`week-33-bounded-next-slice-recommendation.md`](./week-33-bounded-next-slice-recommendation.md) |
 | Service evidence timeline | [`service-evidence-timeline-contract.md`](./service-evidence-timeline-contract.md) |
 | Service evidence delta | [`service-evidence-delta-contract.md`](./service-evidence-delta-contract.md) |
