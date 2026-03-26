@@ -625,6 +625,67 @@ export interface MaintenancePreviewResponse {
   assembly_caveats: string[];
 }
 
+/** `GET /api/v1/maintenance-window-workspace` — multi-subject maintenance planning rollups; not approval or blast-radius authority. */
+export interface MaintenanceWindowSubjectResolutionFailure {
+  object_kind: "node" | "link";
+  object_id: string;
+  reason: string;
+}
+
+export interface MaintenanceWindowSubjectStripRow {
+  object_kind: "node" | "link";
+  object_id: string;
+  display_name: string;
+  sparse_preview: boolean;
+  related_policy_count: number;
+  related_services_total: number;
+}
+
+export interface MaintenanceWindowAffectedServiceRollupRow {
+  service_id: string;
+  kind: "policy" | "color" | "headend" | "endpoint";
+  member_count: number;
+  degraded_group_posture: "ok" | "degraded" | "unknown";
+  touched_by_subjects: string[];
+}
+
+export interface MaintenanceWindowPolicyRollupRow {
+  policy_id: string;
+  policy_name: string;
+  touched_by_subjects: string[];
+}
+
+export interface MaintenanceWindowTensionCueRow {
+  summary: string;
+  detail: string | null;
+  category: string;
+}
+
+export interface MaintenanceWindowWorkspaceResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "maintenance_window_workspace_v1";
+  window_framing_summary: string;
+  preview_context: MaintenancePreviewContext;
+  subject_cap_applied: number;
+  subjects_requested: number;
+  subjects_resolved: number;
+  selected_subjects: string[];
+  subject_strip: MaintenanceWindowSubjectStripRow[];
+  subject_resolution_failures: MaintenanceWindowSubjectResolutionFailure[];
+  deduped_affected_services: MaintenanceWindowAffectedServiceRollupRow[];
+  deduped_related_policies: MaintenanceWindowPolicyRollupRow[];
+  merged_assembly_caveats: string[];
+  merged_evidence_gap_notes: string[];
+  stability_cue_summary: string | null;
+  stability_summary_unavailable_note: string | null;
+  tension_cue_rows: MaintenanceWindowTensionCueRow[];
+  evidence_consistency_unavailable_note: string | null;
+  explicit_non_claims: string[];
+  source_contract_ids: string[];
+  sync_runs_limit_applied: number;
+  recommended_api_pivots: string[];
+}
+
 /** `GET /api/v1/maintenance-evidence-workspace` — composed maintenance read assembly; not approval, simulation, or evidence_export_v1. */
 export interface MaintenanceEvidenceWorkspaceResponse {
   metadata: ApiResponseMetadata;

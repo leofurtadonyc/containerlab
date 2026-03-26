@@ -779,4 +779,28 @@ describe("ApiClient week 28 bounded paths", () => {
     expect(url).toContain("node_id=PE1");
     expect(url).toContain("preview_context=planning_window");
   });
+
+  it("getMaintenanceWindowWorkspace sends repeated subject= tokens for multi-subject assembly", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ contract_id: "maintenance_window_workspace_v1" }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getMaintenanceWindowWorkspace({
+      subjects: [
+        { objectKind: "node", objectId: "PE1" },
+        { objectKind: "link", objectId: "P1--PE1" },
+      ],
+      previewContext: "planning_window",
+      syncRunsLimit: 20,
+    });
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("/api/v1/maintenance-window-workspace?");
+    expect(url).toContain("subject=node%3APE1");
+    expect(url).toContain("subject=link%3AP1--PE1");
+    expect(url).toContain("preview_context=planning_window");
+    expect(url).toContain("sync_runs_limit=20");
+  });
 });

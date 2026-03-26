@@ -413,6 +413,34 @@ Canonical task references (rollup):
 
 There is **no** automatic next implementation lane. Prefer **one** evidence-first slice per cycle—see [`post-week-37-bounded-phase2-recommendation.md`](./post-week-37-bounded-phase2-recommendation.md).
 
+## Planned Week 38 innovation lane
+
+The selected next bounded Phase **2** planning lane is **multi-subject maintenance-window planning**.
+
+Planned focus:
+
+1. **Maintenance Window Workspace v1** — a bounded multi-subject planning workspace over selected topology nodes/links using existing maintenance, topology, service, stability, and safety evidence; **not** workflow, approval, simulation, or safe-to-change authority.
+2. **Deduped window rollups** — affected services, affected policies, evidence gaps, contradiction cues, and stability cues across the selected maintenance set; **not** a new truth engine.
+3. **Maintenance-window handoff/export framing** — a bounded operator handoff artifact distinct from **`evidence_export_v1`**, **`briefing_export_bundle_v1`**, **`impact_report_v1`**, and **`change_safety_case_v1`**.
+4. **Cross-surface planning pivots** — bounded entrypoints from topology, maintenance, stability, NOC, global search, and operator briefing into the new workspace.
+
+Why this lane was selected:
+
+- it creates a larger product jump than another wording-only or trust-cue-only cycle
+- it builds on **week 31** Maintenance Preview, **week 32** Change Safety Case, **week 34** Service Impact Workspace, **week 35** Evidence Consistency, **week 36** Maintenance Evidence Workspace, and **week 37** Stability without reopening those contracts
+- it moves the platform closer to a realistic carrier-grade pre-maintenance review experience while staying fully inside **Phase 2 — read-only product foundation**
+
+Planned artifacts:
+
+- `agent/sdn/week-38-schedule-overview.md`
+- week-38 Monday–Friday task files under `agent/sdn/`
+
+Boundary reminder:
+
+- **do not** interpret this planning lane as operational truth or shipped status yet
+- **do not** update `01-CURRENT-PHASE.md` for schedule planning
+- **do not** reopen weeks **31–37** closed slices except where overlap is explicitly justified as a new multi-subject composition layer
+
 ## Boundary Reminder
 
 Phase transitions should not happen just because files exist.

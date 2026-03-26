@@ -3431,6 +3431,85 @@ ol.notes-list.evidence-timeline-ordered {
   margin-bottom: 0.25rem;
 }
 
+.maintenance-window-workspace-product {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.35rem;
+}
+
+.maintenance-window-workspace-product__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.maintenance-window-workspace-product__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.maintenance-window-workspace-product__toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.maintenance-window-workspace-product__nonauthority {
+  max-width: 52rem;
+}
+
+.maintenance-window-workspace-product__section {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #2a3f63;
+}
+
+.maintenance-window-workspace-product__section:last-of-type {
+  border-bottom: none;
+}
+
+.maintenance-window-workspace-product__h {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+
+.maintenance-window-workspace-product__table-wrap {
+  overflow-x: auto;
+}
+
+.maintenance-window-workspace-product__table th {
+  white-space: nowrap;
+}
+
+.maintenance-window-workspace-product__pivots {
+  white-space: normal;
+}
+
+.maintenance-window-workspace-product__pivots .inline-action {
+  margin-right: 0.35rem;
+}
+
+.maintenance-window-workspace-product__list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.15rem;
+}
+
+.maintenance-window-workspace-product__mono-list {
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.maintenance-window-workspace-product__details {
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #2a3f63;
+  border-radius: 4px;
+  background: #0b111d;
+}
+
 .maintenance-preview-product {
   margin-top: 0.5rem;
 }

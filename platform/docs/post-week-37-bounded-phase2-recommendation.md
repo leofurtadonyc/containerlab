@@ -39,6 +39,29 @@ Pick **one** narrow theme per cycle—**not** parallel defaults:
 
 **Do not** reopen **week 37** stability summary, profiles, workspace, or pivots for momentum; **do not** treat week **37** closure as a backlog invitation for new assemblies.
 
+## Chosen next bounded slice
+
+The selected next planning lane is a **multi-subject maintenance-window planning** slice.
+
+Why this lane fits the current posture:
+
+- it is **not** another generic trust-language or evidence-honesty pass, which would overlap too much with closed work from weeks **14**, **18**, **21**, **23**, **35**, and **37**
+- it builds on already shipped single-subject maintenance and topology evidence surfaces from weeks **31**, **32**, **34**, **35**, **36**, and **37**
+- it creates a larger operator-visible jump by moving from **single-subject reasoning** to **bounded multi-subject maintenance-window review**
+- it remains fully **Phase 2** because it is still read-only composition, handoff, and navigation—not workflow, approval, dry-run, simulation, or actuation
+
+Planned direction:
+
+1. **Maintenance Window Workspace v1**
+2. **Deduped affected services / policies / evidence-gap / stability rollups** across selected topology subjects
+3. **Maintenance-window handoff/export framing** distinct from existing export/report families
+4. **Cross-surface pivots** from topology, maintenance, NOC, search, briefing, and stability into the new workspace
+
+Anti-reopen rule:
+
+- this chosen slice must be implemented as a **new multi-subject planning surface**
+- it must **not** silently reopen or rename closed work such as **Maintenance Preview**, **Maintenance Evidence Workspace**, **Evidence Consistency**, **Change Safety Case**, or **Stability Workspace**
+
 A **future** bounded week may still choose **operator contract labeling** depth, **ADR-0001** truth-depth, or another single slice—each must be **evidence-justified** and Phase **2** safe. Nothing here prescribes week **38** product scope.
 
 ## Explicit anti-recommendations

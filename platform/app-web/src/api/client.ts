@@ -35,6 +35,7 @@ import type {
   ServicesListResponse,
   MaintenancePreviewResponse,
   MaintenanceEvidenceWorkspaceResponse,
+  MaintenanceWindowWorkspaceResponse,
   MaintenancePreviewContext,
   ImpactReportResponse,
   ChangeSafetyCaseResponse,
@@ -50,6 +51,8 @@ import {
   type DevicesPoliciesReadSideQuery,
   type WorkflowHistoryReadSideQuery,
 } from "./read-side-query-params";
+import { dedupeSubjects } from "../lib/maintenance-window-workspace-navigation";
+import type { MaintenanceWindowSubjectRef } from "../lib/maintenance-window-workspace-navigation";
 
 export interface ApiClientConfig {
   baseUrl: string;
@@ -63,6 +66,27 @@ export interface MaintenancePreviewQuery {
   objectId?: string | null;
   objectKind?: "node" | "link" | null;
   previewContext?: MaintenancePreviewContext;
+}
+
+/** Query for `GET /api/v1/maintenance-window-workspace` (repeated `subject=` tokens; backend-owned dedupe). */
+export interface MaintenanceWindowWorkspaceQuery {
+  subjects: MaintenanceWindowSubjectRef[];
+  previewContext: MaintenancePreviewContext;
+  syncRunsLimit: number;
+}
+
+/** Maps WebUI-normalized subjects to API `subject=node:…` / `subject=link:…` query (preview_context, sync_runs_limit). */
+export function buildMaintenanceWindowWorkspaceUrlSearchParams(
+  query: MaintenanceWindowWorkspaceQuery,
+): URLSearchParams {
+  const params = new URLSearchParams();
+  const deduped = dedupeSubjects(query.subjects);
+  for (const s of deduped) {
+    params.append("subject", `${s.objectKind}:${s.objectId}`);
+  }
+  params.set("preview_context", query.previewContext);
+  params.set("sync_runs_limit", String(Math.min(100, Math.max(1, Math.floor(query.syncRunsLimit)))));
+  return params;
 }
 
 /** Same query string as `GET /api/v1/maintenance-preview` / `GET /api/v1/maintenance-evidence-workspace`. */
@@ -153,6 +177,13 @@ export class ApiClient {
   ): Promise<MaintenanceEvidenceWorkspaceResponse> {
     const qs = buildMaintenancePreviewUrlSearchParams(query).toString();
     return this.request<MaintenanceEvidenceWorkspaceResponse>(`/api/v1/maintenance-evidence-workspace?${qs}`);
+  }
+
+  async getMaintenanceWindowWorkspace(
+    query: MaintenanceWindowWorkspaceQuery,
+  ): Promise<MaintenanceWindowWorkspaceResponse> {
+    const qs = buildMaintenanceWindowWorkspaceUrlSearchParams(query).toString();
+    return this.request<MaintenanceWindowWorkspaceResponse>(`/api/v1/maintenance-window-workspace?${qs}`);
   }
 
   async getServiceImpactReport(serviceId: string): Promise<ImpactReportResponse> {
