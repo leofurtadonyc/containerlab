@@ -643,6 +643,10 @@ if [ -n "$first_node_id" ]; then
   maintenance_preview_response=$(fetch_compact_json "$APP_API_URL/api/v1/maintenance-preview?node_id=${enc_node_q}&preview_context=topology_drilldown")
   assert_contains "maintenance preview response (contract id)" "$maintenance_preview_response" '"contract_id":"maintenance_preview_v1"'
   assert_contains "maintenance preview response (preview_context)" "$maintenance_preview_response" '"preview_context":"topology_drilldown"'
+  maintenance_evidence_workspace_response=$(fetch_compact_json "$APP_API_URL/api/v1/maintenance-evidence-workspace?node_id=${enc_node_q}&preview_context=topology_drilldown")
+  assert_contains "maintenance evidence workspace response (contract id)" "$maintenance_evidence_workspace_response" '"contract_id":"maintenance_evidence_workspace_v1"'
+  assert_contains "maintenance evidence workspace response (nested maintenance_preview)" "$maintenance_evidence_workspace_response" '"contract_id":"maintenance_preview_v1"'
+  assert_contains "maintenance evidence workspace response (topology_change_safety)" "$maintenance_evidence_workspace_response" '"safety_case_context":"topology_change_safety"'
   maintenance_impact_report_response=$(fetch_compact_json "$APP_API_URL/api/v1/reports/maintenance-impact?node_id=${enc_node_q}&format=json")
   assert_contains "maintenance impact report response (contract id)" "$maintenance_impact_report_response" '"contract_id":"impact_report_v1"'
   assert_contains "maintenance impact report response (report_context)" "$maintenance_impact_report_response" '"report_context":"maintenance_impact"'
@@ -650,7 +654,7 @@ if [ -n "$first_node_id" ]; then
   assert_contains "topology change safety case response (contract id)" "$topology_change_safety_case_response" '"contract_id":"change_safety_case_v1"'
   assert_contains "topology change safety case response (safety_case_context)" "$topology_change_safety_case_response" '"safety_case_context":"topology_change_safety"'
 else
-  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, topology-object-dossier, maintenance-preview assembly, maintenance-impact report, and topology change safety case structural checks."
+  notice "Topology nodes list empty; skipping topology-related-policies, failure-impact, topology-object-dossier, topology-object evidence timeline/delta, maintenance-preview assembly, maintenance-evidence-workspace assembly, maintenance-impact report, and topology change safety case structural checks."
 fi
 
 # Cross-slice list/history metadata and evidence shape (contract posture, not business truth).

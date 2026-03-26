@@ -797,7 +797,7 @@ export interface TopologyObjectEvidenceTimelineEntry {
 
 export interface TopologyObjectEvidenceTimelineResponse {
   metadata: ApiResponseMetadata;
-  contract_id: string;
+  contract_id: "topology_object_evidence_timeline_v1";
   safety_framing: TopologyObjectEvidenceTimelineSafetyFraming;
   object_kind: TopologyObjectKind;
   object_id: string;
@@ -867,7 +867,7 @@ export interface TopologyObjectEvidenceDeltaItem {
 
 export interface TopologyObjectEvidenceDeltaResponse {
   metadata: ApiResponseMetadata;
-  contract_id: string;
+  contract_id: "topology_object_evidence_delta_v1";
   safety_framing: TopologyObjectEvidenceDeltaSafetyFraming;
   object_kind: TopologyObjectKind;
   object_id: string;
