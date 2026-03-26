@@ -336,6 +336,22 @@ Posture preserved:
 
 This lane advanced service-first time/delta storytelling and explicit contradiction surfacing without workflow, dry-run, or validation semantics.
 
+## Planned Week 36 bounded lane
+
+The preferred next bounded innovation lane is:
+
+1. **Topology object evidence timeline v1**
+2. **Topology object evidence delta v1**
+3. **Maintenance evidence workspace v1**
+
+Intent:
+
+- extend topology-object and maintenance subjects to the same chronology/delta/composed-workspace maturity that policy and service subjects now have
+- produce a larger operator-visible jump without crossing the Phase 2 read-only boundary
+- preserve explicit safety through bounded evidence composition, non-claims, and no workflow or simulation authority
+
+This is a planning target only until implementation evidence exists.
+
 ## Boundary Reminder
 
 Phase transitions should not happen just because files exist.

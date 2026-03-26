@@ -39,9 +39,22 @@ Pick **one** narrow theme per cycle—**not** parallel defaults:
 
 **Do not** reopen **week 35** service timeline, service delta, or evidence-consistency surfaces for momentum; **do not** treat week **35** closure as a backlog invitation for new assemblies.
 
-## Planned week 36+ (non-prescriptive)
+## Forward note for week 36 planning
 
-If the team schedules another bounded implementation week, it should be **chosen explicitly** from live evidence—**not** assumed from this note. Reasonable **classes** of next work (still Phase **2**–safe) include further **read-side** deepening where a **proven** gap exists, or **integrity / verifier / doc** alignment when drift is observed. **No** new default “product lane” is prescribed here.
+If the next bounded implementation week is scheduled, the preferred **single** innovation lane is:
+
+1. **topology-object evidence timeline**
+2. **topology-object evidence delta**
+3. **maintenance evidence workspace**
+
+Why this lane is preferred:
+
+- it creates a larger operator-visible jump than another copy-only pass
+- it extends closed weeks **27–35** without reopening them
+- it makes topology and maintenance subjects feel as operationally complete as policy and service subjects
+- it embeds safety through read-only chronology, delta, and evidence-composition rather than workflow or simulation authority
+
+This is still a **planning recommendation**, not a phase change or automatic implementation order override. If a different slice is chosen, it should still be justified by live evidence and remain Phase 2 safe.
 
 ## Explicit anti-recommendations
 
