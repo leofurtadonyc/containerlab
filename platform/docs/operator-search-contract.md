@@ -12,6 +12,8 @@ Stable **`contract_id`:** **`operator_search_pivot_v1`**
 
 **Week 34 composed-workspace pivots (policy hits only):** the WebUI may offer **`path_explorer_v1`** (**Path Explorer**, `view=path-explorer`, `path_explorer_policy_id`) and **`service_impact_workspace_v1`** (**Service Impact**, `view=service-impact-workspace`, `service_impact_workspace_service_id=policy:{policy_id}`) alongside explainability / Service Explorer — **reuse of the same `policy_id` anchor**, **not** new ranking or search corpora.
 
+**Week 36 maintenance evidence workspace (topology hits):** **`GlobalOperatorSearch`** may offer **`maintenance_evidence_workspace_v1`** (**Maintenance evidence**, `view=maintenance-evidence-workspace`) alongside **Maintenance preview** for the same topology pivot — **navigation-only**; distinct from **`impact_report_v1`**, **`change_safety_case_v1`**, and **`evidence_export_v1`**.
+
 ---
 
 ## Searchable object families (Phase 2)
@@ -83,6 +85,7 @@ Pivots **must** use **existing** shell patterns already defined for Phase **2**:
 | **Service Explorer** | `view=service-explorer`, optional **`service_id`**, **`global_search_q`** ([`service-explorer-contract.md`](./service-explorer-contract.md)) — from **policy** hits, typically `service_id=policy:{policy_id}` |
 | **Policy explainability** | `view=policies`, **`policy_workspace=explainability`**, **`policy_id`**, optional **`policy_explainability_focus`**, **`global_search_q`** ([`policy-explainability-workspace-contract.md`](./policy-explainability-workspace-contract.md)) |
 | **Maintenance preview** | `view=maintenance-preview` with existing maintenance subject params + **`global_search_q`** ([`maintenance-preview-contract.md`](./maintenance-preview-contract.md)) — from **topology** hits |
+| **Maintenance evidence workspace** | `view=maintenance-evidence-workspace` with the **same** maintenance subject shell params as Maintenance Preview + optional **`global_search_q`** ([`maintenance-evidence-workspace-contract.md`](./maintenance-evidence-workspace-contract.md)) — composed **`maintenance_evidence_workspace_v1`** live GET; **not** `evidence_export_v1`, **not** a substitute for **Impact report** or **Change safety case** report downloads |
 | **Impact report** | `view=impact-report`, **`impact_report_context`** + anchors (`service` / `policy` / `maintenance_impact` subject params), optional **`global_search_q`** ([`impact-report-contract.md`](./impact-report-contract.md)) — **not** a claim that the query text appears inside the report body; **Impact report hub** opens setup when no anchor is chosen |
 
 **Non-substitution:** Search **suggests** pivots; each destination page remains **authoritative** for its contract.

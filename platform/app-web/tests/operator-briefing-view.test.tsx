@@ -75,5 +75,7 @@ describe("OperatorBriefingView", () => {
     expect(html).toContain("briefing_export_bundle_v1");
     expect(html).toContain("Per-surface exports");
     expect(html).toContain("briefing-bundle-export-actions");
+    expect(html).toContain("maintenance_evidence_workspace_v1");
+    expect(html).toContain("included in briefing bundle members");
   });
 });

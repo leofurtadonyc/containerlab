@@ -15,6 +15,7 @@ import {
   navigateToSituationRoomFromGlobalSearch,
   supportsInvestigationShortcut,
 } from "../../lib/operator-search-navigation";
+import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import {
   navigateToImpactReportForMaintenance,
@@ -241,6 +242,26 @@ export function GlobalOperatorSearch() {
                                   }}
                                 >
                                   Maintenance preview
+                                </button>
+                              ) : null}
+                              {hit.pivot.topology_object && hit.pivot.topology_object_kind ? (
+                                <button
+                                  type="button"
+                                  className="inline-action global-operator-search__deeplink"
+                                  title="maintenance_evidence_workspace_v1 — composed read GET; not impact_report_v1, change_safety_case download, or evidence_export_v1"
+                                  onClick={() => {
+                                    navigateToMaintenanceEvidenceWorkspaceForTopologyObject(
+                                      hit.pivot.topology_object!,
+                                      hit.pivot.topology_object_kind!,
+                                      {
+                                        previewContext: "topology_drilldown",
+                                        echoSearchQuery: data.q,
+                                      },
+                                    );
+                                    clearSearchUi();
+                                  }}
+                                >
+                                  Maintenance evidence workspace
                                 </button>
                               ) : null}
                               {supportsInvestigationShortcut(hit.object_kind) ? (

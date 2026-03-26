@@ -249,6 +249,7 @@ describe("TopologyObjectDossierWorkspace", () => {
     expect(html).toContain("Failure impact (nested)");
     expect(html).toContain("data-testid=\"evidence-export-actions\"");
     expect(html).toContain("Export JSON");
+    expect(html).toContain("Maintenance evidence workspace");
     expect(html).toContain("Maintenance preview");
     expect(html).toContain("Evidence delta (topology object)");
     expect(html).toContain("topology_object_evidence_delta_v1");

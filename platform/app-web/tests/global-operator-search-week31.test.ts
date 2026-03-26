@@ -49,4 +49,12 @@ describe("global operator search week 31 deeplinks (source contract)", () => {
     expect(src).toContain("navigateToServiceImpactWorkspace");
     expect(src).toContain("service_impact_workspace_v1");
   });
+
+  it("global-operator-search exposes Maintenance evidence workspace for topology hits (week 36)", () => {
+    const path = join(__dirname, "../src/features/global-search/global-operator-search.tsx");
+    const src = readFileSync(path, "utf8");
+    expect(src).toContain("Maintenance evidence workspace");
+    expect(src).toContain("navigateToMaintenanceEvidenceWorkspaceForTopologyObject");
+    expect(src).toContain("maintenance_evidence_workspace_v1");
+  });
 });

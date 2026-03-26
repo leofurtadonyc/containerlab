@@ -12,6 +12,7 @@ import {
   navigateToImpactReportForPolicy,
   navigateToImpactReportForService,
 } from "../../lib/impact-report-navigation";
+import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
@@ -315,6 +316,17 @@ function DeeperPivots({ data }: { data: ChangeSafetyCaseResponse }) {
           }
         >
           Impact report (same subject)
+        </button>
+        <button
+          type="button"
+          className="nav-drilldown-button"
+          onClick={() =>
+            navigateToMaintenanceEvidenceWorkspaceForTopologyObject(subj.object_id, subj.object_kind, {
+              previewContext: ctx,
+            })
+          }
+        >
+          Maintenance evidence workspace
         </button>
         <button
           type="button"

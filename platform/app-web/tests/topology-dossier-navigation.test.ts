@@ -20,6 +20,9 @@ describe("topology dossier navigation", () => {
     expect(readDossierSourceFromSearch("?dossier_source=topology_table")).toBe("topology_table");
     expect(readDossierSourceFromSearch("?dossier_source=delta_digest_workspace")).toBe("delta_digest_workspace");
     expect(readDossierSourceFromSearch("?dossier_source=evidence_replay_viewer")).toBe("evidence_replay_viewer");
+    expect(readDossierSourceFromSearch("?dossier_source=maintenance_evidence_workspace")).toBe(
+      "maintenance_evidence_workspace",
+    );
     expect(readDossierSourceFromSearch("?dossier_source=invalid")).toBeNull();
     expect(readDossierSourceFromSearch("")).toBeNull();
   });

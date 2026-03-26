@@ -34,6 +34,7 @@ import type {
   ServiceDossierResponse,
   ServicesListResponse,
   MaintenancePreviewResponse,
+  MaintenanceEvidenceWorkspaceResponse,
   MaintenancePreviewContext,
   ImpactReportResponse,
   ChangeSafetyCaseResponse,
@@ -59,6 +60,26 @@ export interface MaintenancePreviewQuery {
   objectId?: string | null;
   objectKind?: "node" | "link" | null;
   previewContext?: MaintenancePreviewContext;
+}
+
+/** Same query string as `GET /api/v1/maintenance-preview` / `GET /api/v1/maintenance-evidence-workspace`. */
+export function buildMaintenancePreviewUrlSearchParams(query: MaintenancePreviewQuery): URLSearchParams {
+  const params = new URLSearchParams();
+  const nid = query.nodeId?.trim();
+  const lid = query.linkId?.trim();
+  const oid = query.objectId?.trim();
+  const ok = query.objectKind ?? null;
+  const ctx = query.previewContext ?? "explicit_subject";
+  params.set("preview_context", ctx);
+  if (nid) {
+    params.set("node_id", nid);
+  } else if (lid) {
+    params.set("link_id", lid);
+  } else if (oid && ok) {
+    params.set("object_id", oid);
+    params.set("object_kind", ok);
+  }
+  return params;
 }
 
 export interface OperatorBriefingQuery {
@@ -120,22 +141,15 @@ export class ApiClient {
   }
 
   async getMaintenancePreview(query: MaintenancePreviewQuery): Promise<MaintenancePreviewResponse> {
-    const params = new URLSearchParams();
-    const nid = query.nodeId?.trim();
-    const lid = query.linkId?.trim();
-    const oid = query.objectId?.trim();
-    const ok = query.objectKind ?? null;
-    const ctx = query.previewContext ?? "explicit_subject";
-    params.set("preview_context", ctx);
-    if (nid) {
-      params.set("node_id", nid);
-    } else if (lid) {
-      params.set("link_id", lid);
-    } else if (oid && ok) {
-      params.set("object_id", oid);
-      params.set("object_kind", ok);
-    }
-    return this.request<MaintenancePreviewResponse>(`/api/v1/maintenance-preview?${params.toString()}`);
+    const qs = buildMaintenancePreviewUrlSearchParams(query).toString();
+    return this.request<MaintenancePreviewResponse>(`/api/v1/maintenance-preview?${qs}`);
+  }
+
+  async getMaintenanceEvidenceWorkspace(
+    query: MaintenancePreviewQuery,
+  ): Promise<MaintenanceEvidenceWorkspaceResponse> {
+    const qs = buildMaintenancePreviewUrlSearchParams(query).toString();
+    return this.request<MaintenanceEvidenceWorkspaceResponse>(`/api/v1/maintenance-evidence-workspace?${qs}`);
   }
 
   async getServiceImpactReport(serviceId: string): Promise<ImpactReportResponse> {

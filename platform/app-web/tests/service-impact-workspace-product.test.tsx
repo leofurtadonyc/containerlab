@@ -139,6 +139,7 @@ describe("ServiceImpactWorkspaceProduct", () => {
     expect(html).toContain("Related policies (members)");
     expect(html).toContain("Failure-impact relationship");
     expect(html).toContain("GET /api/v1/maintenance-preview");
+    expect(html).toContain("Maintenance evidence workspace");
   });
 
   it("renders sparse copy when failure-impact is absent and a gap note is present", () => {

@@ -11,6 +11,7 @@ from app_api.routers.evidence_consistency import router as evidence_consistency_
 from app_api.routers.evidence_pack import router as evidence_pack_router
 from app_api.routers.exports import router as exports_router
 from app_api.routers.investigation_workspace import router as investigation_workspace_router
+from app_api.routers.maintenance_evidence_workspace import router as maintenance_evidence_workspace_router
 from app_api.routers.maintenance_preview import router as maintenance_preview_router
 from app_api.routers.operator_briefing import router as operator_briefing_router
 from app_api.routers.operator_search import router as operator_search_router
@@ -38,6 +39,7 @@ router.include_router(exports_router)
 router.include_router(evidence_pack_router)
 router.include_router(investigation_workspace_router)
 router.include_router(maintenance_preview_router)
+router.include_router(maintenance_evidence_workspace_router)
 router.include_router(operator_briefing_router)
 router.include_router(operator_search_router)
 router.include_router(workflow_history_router)

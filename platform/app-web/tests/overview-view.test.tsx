@@ -678,6 +678,7 @@ describe("overview view", () => {
     expect(html).toContain('data-testid="evidence-consistency-overview-entry"');
     expect(html).toContain("Evidence consistency (cross-domain)");
     expect(html).toContain("noc_cockpit_v1");
+    expect(html).toContain("maintenance evidence workspace");
     expect(html).toContain("Cockpit composition");
     expect(html).toContain('data-testid="noc-cockpit-operator-launch"');
     expect(html).toContain("Primary launch surfaces");
@@ -697,6 +698,8 @@ describe("overview view", () => {
     expect(html).toContain("Priority navigation (cockpit)");
     expect(html).toContain("Topology dossier (top risk)");
     expect(html).toContain("Maintenance preview (top risk)");
+    expect(html).toContain("Maintenance evidence workspace (top risk)");
+    expect(html).toContain("Maintenance evidence workspace (top risk row)");
     expect(html).toContain("Investigation (top risk)");
     expect(html).toContain("Impact report (maintenance, top risk)");
     expect(html).toContain("Change safety case (maintenance, top risk)");

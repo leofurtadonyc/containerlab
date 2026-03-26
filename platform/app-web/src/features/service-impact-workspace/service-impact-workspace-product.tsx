@@ -11,6 +11,7 @@ import { navigateToOperatorBriefingView } from "../../lib/operator-briefing-navi
 import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToImpactReportForService } from "../../lib/impact-report-navigation";
 import { navigateToChangeSafetyCaseForPolicy, navigateToChangeSafetyCaseForService } from "../../lib/change-safety-case-navigation";
+import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreview } from "../../lib/maintenance-preview-navigation";
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
@@ -284,6 +285,19 @@ function ServiceImpactWorkspaceBody({
           >
             Impact report (service)
           </button>
+          {firstNode ? (
+            <button
+              type="button"
+              className="inline-action"
+              onClick={() =>
+                navigateToMaintenanceEvidenceWorkspaceForTopologyObject(firstNode, "node", {
+                  previewContext: "topology_drilldown",
+                })
+              }
+            >
+              Maintenance evidence workspace (first topology node)
+            </button>
+          ) : null}
           {firstNode ? (
             <button
               type="button"

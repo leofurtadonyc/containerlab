@@ -71,7 +71,8 @@ export function NocCockpitSection({
         <h3 id="noc-cockpit-heading">NOC cockpit</h3>
         <p className="body-copy noc-cockpit__lede">
           Cockpit composition: <strong>Service Explorer</strong>, <strong>policy explainability</strong>,{" "}
-          <strong>maintenance preview</strong>, and <strong>impact reports</strong> first — then cross-domain digest,
+          <strong>maintenance preview</strong> / <strong>maintenance evidence workspace</strong>, and{" "}
+          <strong>impact reports</strong> first — then cross-domain digest,
           composed briefing (bundle + per-surface exports), frozen evidence replay, bounded packs and investigation, then
           attention rows. All from existing Phase 2 assemblies. <strong>Not</strong> incident command, unified health
           scoring, or substitute for full Policies / Topology / Investigation / Situation room views.

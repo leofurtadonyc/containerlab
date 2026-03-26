@@ -625,6 +625,26 @@ export interface MaintenancePreviewResponse {
   assembly_caveats: string[];
 }
 
+/** `GET /api/v1/maintenance-evidence-workspace` — composed maintenance read assembly; not approval, simulation, or evidence_export_v1. */
+export interface MaintenanceEvidenceWorkspaceResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "maintenance_evidence_workspace_v1";
+  object_kind: "node" | "link";
+  object_id: string;
+  preview_context: MaintenancePreviewContext;
+  maintenance_framing_summary: string;
+  maintenance_preview: MaintenancePreviewResponse;
+  topology_object_dossier: TopologyObjectDossierResponse | null;
+  topology_object_evidence_timeline: TopologyObjectEvidenceTimelineResponse | null;
+  topology_object_evidence_delta: TopologyObjectEvidenceDeltaResponse | null;
+  change_safety_case: ChangeSafetyCaseResponse;
+  merged_caveats: string[];
+  merged_evidence_gap_notes: string[];
+  explicit_non_claims: string[];
+  source_contract_ids: string[];
+  recommended_api_pivots: string[];
+}
+
 export type TopologyRiskSummaryExplicitNonClaim =
   | "not_sla_or_service_risk_truth"
   | "not_traffic_or_dataplane_risk_truth"
