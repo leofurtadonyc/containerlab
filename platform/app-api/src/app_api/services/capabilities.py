@@ -96,7 +96,8 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
                 "activity and policy snapshot comparison context."
             ),
             blocking_gaps=[
-                "No requested, planned, approved, or executed workflow lifecycle records exist yet.",
+                "Durable workflow lifecycle records exist, but adoption may be sparse; "
+                "audit-history remains sync-derived rather than a full operator-action log.",
             ],
         ),
         DryRunReadinessPrerequisite(
@@ -115,47 +116,6 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
         ),
     ]
     blockers = [
-        DryRunReadinessBlocker(
-            blocker="workflow_lifecycle_contract_missing",
-            category="contract",
-            severity="critical",
-            evidence_basis="design_review",
-            summary=(
-                "No backend-owned workflow lifecycle contract exists yet for requested, "
-                "planned, approved, dry-run, execution, or rollback states."
-            ),
-            blocked_readiness_scopes=[
-                "planning_depth",
-                "workflow_audit_relationships",
-                "phase_transition",
-            ],
-            related_prerequisites=["workflow_audit_visibility"],
-            notes=[
-                "Current workflow-history remains sync-derived rather than workflow-grade.",
-            ],
-        ),
-        DryRunReadinessBlocker(
-            blocker="dry_run_contract_missing",
-            category="contract",
-            severity="critical",
-            evidence_basis="design_review",
-            summary=(
-                "No dry-run API, preview payload, or diff contract exists yet in the backend."
-            ),
-            blocked_readiness_scopes=[
-                "preview_contracts",
-                "planning_depth",
-                "phase_transition",
-            ],
-            related_prerequisites=[
-                "topology_comparison_evidence",
-                "policy_comparison_evidence",
-                "capability_matrix_precision",
-            ],
-            notes=[
-                "Bounded comparison evidence is not the same thing as a preview or diff model.",
-            ],
-        ),
         DryRunReadinessBlocker(
             blocker="validation_result_contract_missing",
             category="contract",
@@ -236,14 +196,14 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
         ),
         DryRunReadinessAssessmentArea(
             area="history_maturity",
-            status="blocked",
+            status="mixed",
             summary=(
-                "History visibility is useful for sync-derived evidence, but it is not yet a "
-                "workflow lifecycle or operator-action history foundation."
+                "Durable workflow lifecycle records can exist, but audit-history remains "
+                "sync-derived and is not a full operator-action history foundation."
             ),
             strongest_gaps=[
-                "No requested, planned, dry-run-complete, approved, executing, succeeded, failed, or rollback workflow records exist yet.",
-                "Workflow-history and audit-history remain derived from persisted sync runs rather than a workflow-grade durable state model.",
+                "Workflow adoption may be sparse; workflow-history and audit-history remain "
+                "derived from persisted sync runs rather than a complete workflow-grade model.",
             ],
         ),
         DryRunReadinessAssessmentArea(
@@ -255,8 +215,10 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
                 "and explanatory rather than validation-grade."
             ),
             strongest_gaps=[
-                "Current comparisons are aggregate and normalized, not preview, diff, intent-reconciliation, or validation outputs.",
-                "Comparison support still depends on bounded persisted evidence and does not yet cover a workflow-grade change model.",
+                "A bounded backend-owned preview/diff exists for one narrow static_local intent "
+                "slice; it is not a full validation or multi-family change model.",
+                "Comparison support still depends on bounded persisted evidence and does not yet "
+                "cover workflow-grade execution or rollback semantics.",
             ],
         ),
         DryRunReadinessAssessmentArea(
@@ -268,7 +230,8 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
                 "and bounded workflow-readiness interpretation are all exposed clearly."
             ),
             strongest_gaps=[
-                "The matrix remains descriptive and does not yet drive dry-run eligibility, preview behavior, or validation outcomes.",
+                "The matrix is still descriptive for most features; preview eligibility is "
+                "enforced only for the narrow preview engine v1 scope.",
                 "Future-ready Juniper structure exists, but no Juniper adapter behavior is implemented.",
             ],
         ),
@@ -276,13 +239,13 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
             area="blocker_maturity",
             status="blocked",
             summary=(
-                "Blockers are now explicit enough to assess strictly, but the blocker set still "
-                "shows contract, truth, and history gaps that remain too severe for any future "
-                "dry-run-phase move beyond planning discussion."
+                "Blockers are explicit: workflow lifecycle and bounded preview contracts exist, "
+                "but validation schemas, truth depth, and history fidelity still block "
+                "dry-run-phase entry or phase transition."
             ),
             strongest_gaps=[
-                "Critical contract blockers still cover workflow lifecycle, preview or diff contracts, and validation-result schemas.",
-                "Truth and history blockers still overlap with phase-transition scope, so the blocker picture remains a hard stop for dry-run-phase readiness beyond planning.",
+                "Validation-result and execution contracts remain missing.",
+                "Truth and history blockers still overlap with phase-transition scope.",
             ],
         ),
     ]
@@ -291,9 +254,9 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
         planning_readiness="readiness_planning_supported",
         phase_recommendation="remain_phase_2_read_only_foundation",
         summary=(
-            "The Phase 2 foundation is now strong enough to support a stricter evidence-based "
-            "assessment of eventual dry-run-phase planning, but not strong enough to justify "
-            "dry-run implementation, dry-run-phase entry, or any phase transition."
+            "The Phase 2 foundation includes durable workflow lifecycle records and a bounded "
+            "backend-owned preview/diff for one narrow static_local intent slice. Validation "
+            "outputs, execution, and phase transition remain out of scope."
         ),
         readiness_scope=(
             "This readiness summary is descriptive only. It exists to show which bounded "
@@ -302,23 +265,21 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
             "platform must still remain fully inside Phase 2."
         ),
         notes=[
-            "Readiness support is not dry-run functionality.",
-            "The current platform still lacks requested or planned workflow records, dry-run outputs, approvals, rollback handling, and execution semantics.",
-            "Any future dry-run work must build on these bounded prerequisites without overstating policy or topology truth.",
-            "Planning readiness does not mean implementation readiness.",
-            "This stricter assessment is evidence-based, but it still evaluates planning support only rather than readiness to begin dry-run implementation work.",
+            "Readiness support is not execution authority.",
+            "Preview engine v1 is bounded, capability-gated, and does not perform validation verdicts or network changes.",
+            "Validation outputs, approvals, rollback execution, and broader dry-run families remain future work.",
+            "Planning readiness does not mean phase transition readiness.",
         ],
         strongest_blockers=[
-            "No durable workflow lifecycle model exists yet for requested, planned, dry-run, validation, approval, execution, or rollback stages.",
-            "No dry-run API contract, preview payload, diff model, or validation-result schema exists yet.",
-            "Topology and policy truth remain intentionally partial, which is still too weak for workflow-grade pre-change intelligence.",
-            "History remains sync-derived and snapshot-bounded rather than workflow-grade and user-action-aware.",
+            "No validation-result schema exists yet for pre-change or post-change verdicts.",
+            "Topology and policy truth remain intentionally partial for workflow-grade pre-change intelligence.",
+            "History remains sync-derived and snapshot-bounded rather than a full operator-action record.",
         ],
         bounded_next_steps=[
-            "Define the future workflow lifecycle model and stage vocabulary in docs and schemas before any API implementation.",
-            "Specify dry-run-oriented preview, diff, and validation-result contracts only after the bounded read-side evidence model is documented more strictly.",
-            "Deepen policy and topology truth only where live evidence and stable normalized models already justify it.",
-            "Preserve the current Phase 2 boundary until workflow records, dry-run contracts, and validation outputs are all real rather than descriptive.",
+            "Extend preview only along documented contracts; avoid silent broadening beyond proven normalized models.",
+            "Specify validation-result contracts before treating previews as execution prerequisites.",
+            "Deepen policy and topology truth only where live evidence and stable normalized models justify it.",
+            "Preserve Phase 2 read-only boundaries until phase transition is explicitly authorized.",
         ],
         evidence_coverage_counts=_count_values(
             prerequisite.evidence_coverage for prerequisite in prerequisites
@@ -623,7 +584,6 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "snapshot-based evidence rather than a workflow-ready diff or validation contract."
             ),
             related_readiness_blockers=[
-                "dry_run_contract_missing",
                 "validation_result_contract_missing",
                 "policy_truth_still_bounded",
             ],

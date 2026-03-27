@@ -21,6 +21,8 @@ For future context windows and normal operator use, keep this rule explicit:
 
 The current packaged platform treats that rebuild, redeploy, and verify flow as the primary documented validation boundary.
 
+**Alembic:** `./scripts/build-images.sh` does **not** apply database migrations; the **app-api** container runs `alembic upgrade head` on **startup**. After new files under `app-api/alembic/versions/`, rebuild the app-api image and restart/redeploy—see **Alembic database migrations (app-api)** below.
+
 ## Scope
 
 These instructions cover:
@@ -155,6 +157,8 @@ Current reproducibility protections in this build flow:
 - `app-web` builds with `npm ci` against the committed lock file
 - `app-api` and `gnmi-collector` build from committed `requirements.lock.txt` files with pinned `pip` and `setuptools`
 
+If the **`app-web`** image fails at **`npm run build`** (the Dockerfile runs `tsc -b && vite build`), the error is almost always **TypeScript** in `app-web/src/`. Use the optional **Vitest** or a one-off **`npm run build`** in the Node container below (same Node major as the image) to see the same errors locally before rebuilding.
+
 Operationally, this means a host without local `npm` can still rebuild `app-web`, because the Node toolchain runs inside the Docker build for that image.
 Likewise, routine recreate-time validation does not depend on host-installed `pytest`; the current bounded validation path is to rebuild the images, redeploy the topology, and rerun the verification scripts below.
 
@@ -199,6 +203,24 @@ clab deploy -t topology.clab.yml -c
 ```
 
 The platform topology is separate from the labs. Do not merge the platform services into a lab topology as part of installation.
+
+## Alembic database migrations (app-api)
+
+This is a common breakage point if it is confused with image build or host-side tooling.
+
+**Where migrations live:** `platform/app-api/alembic/versions/` (and `alembic.ini` / `alembic/env.py` beside them). They ship **inside** the `platform-app-api:0.1.0` image when you run `./scripts/build-images.sh`.
+
+**What `./scripts/build-images.sh` does *not* do:** it does **not** connect to Postgres and does **not** run `alembic upgrade`. Building only bakes migration **files** into the image.
+
+**When migrations actually run:** the **app-api** container entrypoint runs `app-api/scripts/start-app-api.sh`, which waits for Postgres, then runs `python3 -m alembic -c alembic.ini upgrade head`, then starts uvicorn. So migrations apply on **container startup** (first deploy, restart, or redeploy)—not during `docker build`.
+
+**After you add or change migration files in the repo:** you must **rebuild** `platform-app-api:0.1.0` and **restart or redeploy** app-api (e.g. `clab deploy -t topology.clab.yml -c` from `platform/`) so the running container uses an image that contains the new revision. If the API fails with missing tables or Alembic errors, check **`docker logs`** on the app-api container for migration output before debugging application code.
+
+**Same-workspace restarts:** `./scripts/drill-same-workspace-restart.sh` destroys and redeploys containers; app-api starts again and will run `upgrade head` against the **existing** `platform/postgres/data` volume. That is the normal path for “new image + old data.”
+
+**Host-side `./scripts/start-app-api.sh`:** supported for development only; requires a Python env with dependencies installed from `app-api/` (see `app-api/README.md`). It is **not** the Quick Validation Rule path—do not treat it as a substitute for rebuild → deploy → verify when validating platform changes.
+
+**Optional manual run** (debugging): from a shell in the **running** app-api container, `cd /app` and `python3 -m alembic -c alembic.ini current` / `upgrade head` uses the same files and `DATABASE_URL` as production startup.
 
 ## Verify The Deployment
 

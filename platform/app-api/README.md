@@ -25,6 +25,7 @@ The platform requires a single authoritative source of business logic. The backe
 ## Runtime details
 - image: `platform-app-api:0.1.0`, built from the local service Dockerfile
 - startup: the packaged runtime now validates required env, waits for Postgres readiness, applies Alembic migrations, starts `uvicorn app_api.main:app`, and then runs the bounded read-side warm-up best-effort in the background with visible failure logging
+- **Running on the host (not in Docker):** `scripts/start-app-api.sh` resolves the repo `app-api/` root and sets `PYTHONPATH` to `src/`. You still need the same Python dependencies as the image. From `app-api/`, install once: `python3 -m pip install -c requirements.lock.txt .` (prefer a virtual environment). Set `API_PORT` and `DATABASE_URL` (e.g. Postgres on `127.0.0.1:5432` when the lab publishes `5432:5432`). If `import psycopg` fails, run that install command before `./scripts/start-app-api.sh`.
 - ports: 8000 for the versioned API and `/metrics`
 - env vars: `API_PORT`, `DATABASE_URL`, `GNMI_COLLECTOR_TIMEOUT_SECONDS`, optional per-path overrides `GNMI_COLLECTOR_INVENTORY_TIMEOUT_SECONDS`, `GNMI_COLLECTOR_TOPOLOGY_TIMEOUT_SECONDS`, and `GNMI_COLLECTOR_POLICY_TIMEOUT_SECONDS`, `ODL_URL`, `ODL_USERNAME`, `ODL_PASSWORD`, `ODL_TIMEOUT_SECONDS`, and `PROMETHEUS_URL`
 - mounts: none required for the packaged runtime

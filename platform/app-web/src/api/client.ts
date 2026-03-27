@@ -30,6 +30,10 @@ import type {
   WorkflowLifecycleDetailResponse,
   WorkflowLifecycleListResponse,
   WorkflowLifecycleTimelineResponse,
+  PreviewDetailResponse,
+  PreviewDiffResponse,
+  PreviewListResponse,
+  PreviewTimelineResponse,
   WorkflowLifecycleStatus,
   CrossDomainDeltaDigestResponse,
   EvidenceConsistencySummaryResponse,
@@ -417,6 +421,46 @@ export class ApiClient {
       `/api/v1/workflow-lifecycle/${encoded}/transitions`,
       { body: JSON.stringify(body) },
     );
+  }
+
+  async getPreviewList(limit = 50): Promise<PreviewListResponse> {
+    const params = new URLSearchParams();
+    params.set("limit", String(Math.min(100, Math.max(1, Math.floor(limit)))));
+    return this.jsonRequest<PreviewListResponse>("GET", `/api/v1/previews?${params.toString()}`);
+  }
+
+  async getPreviewDetail(previewId: string): Promise<PreviewDetailResponse> {
+    const encoded = encodeURIComponent(previewId.trim());
+    return this.jsonRequest<PreviewDetailResponse>("GET", `/api/v1/previews/${encoded}`);
+  }
+
+  async getPreviewDiff(previewId: string): Promise<PreviewDiffResponse> {
+    const encoded = encodeURIComponent(previewId.trim());
+    return this.jsonRequest<PreviewDiffResponse>("GET", `/api/v1/previews/${encoded}/diff`);
+  }
+
+  async getPreviewTimeline(previewId: string): Promise<PreviewTimelineResponse> {
+    const encoded = encodeURIComponent(previewId.trim());
+    return this.jsonRequest<PreviewTimelineResponse>("GET", `/api/v1/previews/${encoded}/timeline`);
+  }
+
+  async createPreview(body: {
+    preview_type: string;
+    target_kind: "policy";
+    target_ids: string[];
+    target_scope?: Record<string, unknown> | null;
+    requested_action_type?: string;
+    requested_payload: Record<string, unknown>;
+    workflow_id?: string | null;
+    idempotency_key?: string | null;
+    actor_type?: "operator" | "system" | "api" | "unknown";
+    actor_id?: string;
+    actor_display_name?: string | null;
+    notes?: string | null;
+  }): Promise<PreviewDetailResponse> {
+    return this.jsonRequest<PreviewDetailResponse>("POST", "/api/v1/previews", {
+      body: JSON.stringify(body),
+    });
   }
 
   async getAuditHistory(query?: AuditHistoryReadSideQuery): Promise<AuditHistoryResponse> {

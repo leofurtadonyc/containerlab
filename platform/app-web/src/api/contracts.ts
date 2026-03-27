@@ -1759,6 +1759,131 @@ export interface WorkflowLifecycleTimelineResponse extends ApiResponseMetadata {
   safety_framing: WorkflowLifecycleSafetyFraming;
 }
 
+/** Dry-run / preview engine v1 — not execution, not evidence replay delta. */
+export type PreviewDecisionState = "allowed" | "blocked" | "unsupported" | "unknown";
+export type PreviewStatus =
+  | "received"
+  | "generated"
+  | "blocked"
+  | "unsupported"
+  | "unknown"
+  | "invalid"
+  | "expired";
+export type StalePosture = "current" | "truth_changed" | "unknown";
+
+export interface PreviewTruthScopeSummary {
+  policy_data_status: string;
+  policy_serving_mode: string;
+  policies_source_posture: string;
+  policies_confidence_posture: string;
+  policies_evidence_kind: string;
+  capability_feature_checked: string;
+  capability_support_status: string;
+  policy_truth_notes: string[];
+}
+
+export interface PreviewChangeItem {
+  field_name: string;
+  change_kind: "add" | "remove" | "modify" | "no_change" | "unknown";
+  before_value: string | null;
+  after_value: string | null;
+  confidence_state: "high" | "medium" | "low" | "unknown";
+  reason: string | null;
+  source: string;
+}
+
+export interface PreviewDiffModel {
+  diff_id: string;
+  diff_type: "policy_intent_state_v1";
+  change_items: PreviewChangeItem[];
+  before_summary: string;
+  after_summary: string;
+  change_scope: string;
+  risk_hints: string[];
+  unknown_items: string[];
+  unsupported_items: string[];
+  capability_notes: string[];
+  truth_notes: string[];
+}
+
+export interface PreviewSafetyFraming {
+  explicit_non_claims: string[];
+}
+
+export interface PreviewDetailPayload {
+  contract_id: string;
+  preview_id: string;
+  workflow_id: string | null;
+  preview_type: string;
+  target_kind: string;
+  target_ids: string[];
+  requested_action_type: string;
+  requested_payload: Record<string, unknown>;
+  created_at: string;
+  created_by_actor_type: string;
+  created_by_actor_id: string;
+  created_by_actor_display_name: string | null;
+  preview_status: PreviewStatus;
+  capability_decision_state: PreviewDecisionState;
+  capability_decision_reason: string | null;
+  capability_decision_source: string;
+  truth_scope_summary: PreviewTruthScopeSummary;
+  truth_fingerprint: string | null;
+  stale_posture: StalePosture;
+  notes: string | null;
+  diff: PreviewDiffModel | null;
+  safety_framing: PreviewSafetyFraming;
+}
+
+export interface PreviewDetailResponse extends ApiResponseMetadata {
+  preview: PreviewDetailPayload;
+}
+
+export interface PreviewListItem {
+  preview_id: string;
+  preview_type: string;
+  preview_status: PreviewStatus;
+  capability_decision_state: PreviewDecisionState;
+  capability_decision_reason: string | null;
+  workflow_id: string | null;
+  created_at: string;
+  target_kind: string;
+  target_ids: string[];
+}
+
+export interface PreviewListResponse extends ApiResponseMetadata {
+  contract_id: string;
+  items: PreviewListItem[];
+}
+
+export interface PreviewEventItem {
+  event_id: string;
+  preview_id: string;
+  event_type: string;
+  occurred_at: string;
+  actor: string;
+  reason: string | null;
+  metadata: Record<string, unknown>;
+  provenance: "system" | "operator" | "api";
+}
+
+export interface PreviewTimelineResponse extends ApiResponseMetadata {
+  contract_id: string;
+  preview_id: string;
+  events: PreviewEventItem[];
+}
+
+export interface PreviewDiffResponse extends ApiResponseMetadata {
+  preview_id: string;
+  stale_posture: StalePosture;
+  truth_fingerprint: string | null;
+  current_truth_fingerprint: string | null;
+  diff: PreviewDiffModel | null;
+  capability_decision_state: PreviewDecisionState;
+  capability_decision_reason: string | null;
+  safety_framing: PreviewSafetyFraming;
+}
+
 export interface AuditHistoryItem {
   event_id: string;
   event_type: "read_side_sync_recorded" | "readiness_snapshot_recorded";

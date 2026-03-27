@@ -5159,12 +5159,12 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
         assert payload["dry_run_readiness"]["status"] == "bounded_readiness_support"
         assert payload["dry_run_readiness"]["planning_readiness"] == "readiness_planning_supported"
         assert payload["dry_run_readiness"]["phase_recommendation"] == "remain_phase_2_read_only_foundation"
-        assert "eventual dry-run-phase planning" in payload["dry_run_readiness"]["summary"]
+        assert "Phase 2 foundation" in payload["dry_run_readiness"]["summary"]
         assert len(payload["dry_run_readiness"]["prerequisites"]) == 5
         assert len(payload["dry_run_readiness"]["assessment_areas"]) == 5
         assert payload["dry_run_readiness"]["assessment_areas"][0]["area"] == "model_maturity"
         assert payload["dry_run_readiness"]["assessment_areas"][0]["status"] == "mixed"
-        assert payload["dry_run_readiness"]["assessment_areas"][1]["status"] == "blocked"
+        assert payload["dry_run_readiness"]["assessment_areas"][1]["status"] == "mixed"
         assert payload["dry_run_readiness"]["assessment_areas"][4]["area"] == "blocker_maturity"
         assert payload["dry_run_readiness"]["assessment_areas"][4]["status"] == "blocked"
         assert payload["dry_run_readiness"]["prerequisites"][0]["prerequisite"] == "inventory_read_model"
@@ -5181,32 +5181,32 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
         assert payload["dry_run_readiness"]["evidence_coverage_counts"]["bounded"] == 2
         assert payload["dry_run_readiness"]["support_posture_counts"]["supported"] == 2
         assert payload["dry_run_readiness"]["support_posture_counts"]["partially_supported"] == 3
-        assert payload["dry_run_readiness"]["blocker_category_counts"]["contract"] == 3
+        assert payload["dry_run_readiness"]["blocker_category_counts"]["contract"] == 1
         assert payload["dry_run_readiness"]["blocker_category_counts"]["truth"] == 2
         assert payload["dry_run_readiness"]["blocker_category_counts"]["history"] == 1
-        assert payload["dry_run_readiness"]["blocker_severity_counts"]["critical"] == 3
+        assert payload["dry_run_readiness"]["blocker_severity_counts"]["critical"] == 1
         assert payload["dry_run_readiness"]["blocker_severity_counts"]["major"] == 3
-        assert payload["dry_run_readiness"]["blocked_scope_counts"]["phase_transition"] == 6
-        assert "Readiness support is not dry-run functionality." in payload["dry_run_readiness"]["notes"]
-        assert "No durable workflow lifecycle model exists yet" in payload["dry_run_readiness"]["strongest_blockers"][0]
-        assert payload["dry_run_readiness"]["bounded_next_steps"][0].startswith("Define the future workflow lifecycle model")
-        assert len(payload["dry_run_readiness"]["blockers"]) == 6
+        assert payload["dry_run_readiness"]["blocked_scope_counts"]["phase_transition"] == 4
+        assert "Readiness support is not execution authority." in payload["dry_run_readiness"]["notes"]
+        assert "validation-result schema" in payload["dry_run_readiness"]["strongest_blockers"][0]
+        assert payload["dry_run_readiness"]["bounded_next_steps"][0].startswith("Extend preview")
+        assert len(payload["dry_run_readiness"]["blockers"]) == 4
         assert (
             payload["dry_run_readiness"]["blockers"][0]["blocker"]
-            == "workflow_lifecycle_contract_missing"
+            == "validation_result_contract_missing"
         )
         assert payload["dry_run_readiness"]["blockers"][0]["severity"] == "critical"
         assert (
             payload["dry_run_readiness"]["blockers"][0]["blocked_readiness_scopes"][0]
-            == "planning_depth"
+            == "validation_contracts"
         )
         assert payload["dry_run_readiness"]["blockers"][0]["related_prerequisites"] == [
-            "workflow_audit_visibility"
-        ]
-        assert payload["dry_run_readiness"]["blockers"][1]["related_prerequisites"] == [
             "topology_comparison_evidence",
             "policy_comparison_evidence",
             "capability_matrix_precision",
+        ]
+        assert payload["dry_run_readiness"]["blockers"][1]["related_prerequisites"] == [
+            "topology_comparison_evidence",
         ]
         assert payload["items"][0]["related_readiness_blockers"] == []
         assert payload["items"][1]["related_readiness_blockers"] == [
@@ -5448,7 +5448,7 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     )
     assert (
         'platform_app_api_readiness_blockers_by_category_and_severity{category="contract",'
-        'severity="critical"} 3'
+        'severity="critical"} 1'
     ) in response.text
     assert (
         'platform_app_api_recovery_posture{baseline_posture="preserved_same_workspace_baseline",read_side_posture="live_recollection_ready"} 1'
@@ -5706,7 +5706,7 @@ def test_metrics_endpoint_exports_isolated_topology_node_participation(monkeypat
         'endpoint_pairing_posture="paired",collection_posture="ok",node_participation_posture="partially_isolated"} 1'
         in response.text
     )
-    assert 'platform_app_api_readiness_blocked_scopes{scope="phase_transition"} 6' in response.text
+    assert 'platform_app_api_readiness_blocked_scopes{scope="phase_transition"} 4' in response.text
     assert "platform_app_api_sync_runs_total 3" in response.text
     assert 'platform_app_api_sync_runs_by_family{model_family="inventory"} 1' in response.text
     assert 'platform_app_api_sync_runs_by_family{model_family="policy"} 1' in response.text

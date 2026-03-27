@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app_api.models.base import Base
@@ -348,3 +348,63 @@ class WorkflowLifecycleEventTable(Base):
     provenance: Mapped[str] = mapped_column(String(32), nullable=False)
 
     workflow: Mapped[WorkflowLifecycleTable] = relationship(back_populates="events")
+
+
+class PreviewRequestTable(Base):
+    """Durable preview request and outcome (not network actuation)."""
+
+    __tablename__ = "preview_requests"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    workflow_id: Mapped[str | None] = mapped_column(
+        ForeignKey("platform_app.workflow_lifecycles.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    preview_type: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    target_kind: Mapped[str] = mapped_column(String(64), nullable=False)
+    target_ids: Mapped[list[object]] = mapped_column(JSON, nullable=False)
+    target_scope: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    requested_action_type: Mapped[str] = mapped_column(String(96), nullable=False)
+    requested_payload: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    created_by_actor_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_by_actor_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_by_actor_display_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    preview_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    capability_decision_state: Mapped[str] = mapped_column(String(32), nullable=False)
+    capability_decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    capability_decision_source: Mapped[str] = mapped_column(String(64), nullable=False)
+    truth_scope_summary: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    truth_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    extension_hints: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    result_json: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    processing_duration_ms: Mapped[float | None] = mapped_column(Float(), nullable=True)
+
+    events: Mapped[list["PreviewEventTable"]] = relationship(
+        back_populates="preview",
+        cascade="all, delete-orphan",
+    )
+
+
+class PreviewEventTable(Base):
+    """One durable preview lifecycle event."""
+
+    __tablename__ = "preview_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    preview_id: Mapped[str] = mapped_column(
+        ForeignKey("platform_app.preview_requests.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    actor: Mapped[str] = mapped_column(String(255), nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    event_metadata: Mapped[dict[str, object]] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    provenance: Mapped[str] = mapped_column(String(32), nullable=False)
+
+    preview: Mapped[PreviewRequestTable] = relationship(back_populates="events")

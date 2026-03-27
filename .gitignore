@@ -21,6 +21,8 @@ Thumbs.db
 
 # Python local env/cache
 automation/.venv/
+# Local venvs anywhere (e.g. platform/app-api/.venv from run-app-api-local.sh) — never commit
+**/.venv/
 automation/src/**/__pycache__/
 **/__pycache__/
 *.pyc

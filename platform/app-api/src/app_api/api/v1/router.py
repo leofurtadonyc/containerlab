@@ -26,6 +26,7 @@ from app_api.routers.service_impact_workspace import router as service_impact_wo
 from app_api.routers.devices import router as devices_router
 from app_api.routers.health import router as health_router
 from app_api.routers.platform import router as platform_router
+from app_api.routers.preview_engine import router as preview_engine_router
 from app_api.routers.readiness_snapshot_history import (
     router as readiness_snapshot_history_router,
 )
@@ -59,6 +60,7 @@ router.include_router(operator_search_router)
 router.include_router(operational_stability_summary_router)
 router.include_router(workflow_history_router)
 router.include_router(workflow_lifecycle_router)
+router.include_router(preview_engine_router)
 router.include_router(audit_history_router)
 router.include_router(devices_router)
 router.include_router(topology_router)

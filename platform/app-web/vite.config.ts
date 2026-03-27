@@ -22,6 +22,10 @@ export default defineConfig({
       "/api": {
         target: process.env.VITE_DEV_API_PROXY_TARGET ?? "http://app-api:8000",
         changeOrigin: true,
+        // Match nginx proxy_read_timeout / verify-core CURL_HTTP_MAX_TIME for slow app-api
+        // responses so local dev does not fail with 504 while production is fixed.
+        timeout: 120_000,
+        proxyTimeout: 120_000,
       },
     },
   },

@@ -434,6 +434,7 @@ policies_response=$(fetch_compact_json "$APP_API_URL/api/v1/policies")
 capabilities_response=$(fetch_compact_json "$APP_API_URL/api/v1/capabilities")
 workflow_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-history")
 workflow_lifecycle_response=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-lifecycle")
+preview_list_response=$(fetch_compact_json "$APP_API_URL/api/v1/previews?limit=5")
 audit_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/audit-history")
 change_intelligence_response=$(fetch_compact_json "$APP_API_URL/api/v1/change-intelligence/recent-summary")
 investigation_workspace_response=$(fetch_compact_json "$APP_API_URL/api/v1/investigation-workspace/context")
@@ -791,6 +792,11 @@ assert_contains "workflow lifecycle response" "$workflow_lifecycle_response" '"i
 assert_contains "workflow lifecycle response (API metadata)" "$workflow_lifecycle_response" '"service":"app-api"'
 assert_contains "workflow lifecycle response (API metadata)" "$workflow_lifecycle_response" '"phase":"phase_2_read_only_foundation"'
 
+# Preview engine v1: bounded list contract (durable previews; not actuation).
+assert_contains "preview list response" "$preview_list_response" '"contract_id":"preview_engine_policy_static_local_intent_v1"'
+assert_contains "preview list response" "$preview_list_response" '"items":['
+assert_contains "preview list response (API metadata)" "$preview_list_response" '"service":"app-api"'
+
 # Optional bounded query strings: structural echo-only check (week 22 query ergonomics contract).
 workflow_history_bounded_query=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-history?limit=1&sync_runs_limit=3")
 audit_history_bounded_query=$(fetch_compact_json "$APP_API_URL/api/v1/audit-history?limit=2&sync_runs_limit=3&readiness_snapshot_history_limit=5")
@@ -1062,6 +1068,7 @@ assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_inventory
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_inventory_snapshot_latest_persisted_at_seconds'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshots_persisted_total'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshot_latest_persisted_at_seconds'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_preview_requests_total'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_inventory_newest_observed_timestamp_seconds'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_paired_links'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_single_sided_links'
