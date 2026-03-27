@@ -6,6 +6,10 @@ This note records the **next disciplined scheduling posture** after week **38** 
 
 **Phase:** [`Phase 2 — read-only product foundation`](../../agent/sdn/01-CURRENT-PHASE.md) — **unchanged** unless explicit new evidence supports a documented phase-boundary review.
 
+## Update (week 39 shipped)
+
+The **Evidence Quality Workspace / collection assurance** slice selected in **Chosen next bounded slice** below was delivered as the **Week 39** bounded Phase **2** innovation lane. **Forward scheduling posture** is now [`post-week-39-bounded-phase2-recommendation.md`](./post-week-39-bounded-phase2-recommendation.md)—see [`../../agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md) **Week 39 closure (Friday rollup)** for shipped detail and **anti-reopen** guardrails for **`evidence_quality_workspace_v1`**, **`evidence_weakness_explanation_v1`**, and week **39** pivots.
+
 ## What week 38 closed
 
 Week **38** is **closed** as a bounded Phase **2** **innovation** lane—documented in [`../../agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md) **Week 38 closure (Friday rollup)** and aligned with:
@@ -29,7 +33,7 @@ Week **38** is **closed** as a bounded Phase **2** **innovation** lane—documen
 
 ## Scheduling default (evidence-first, **one** slice)
 
-There is **still no automatic default implementation lane** after week **38**.
+There is **still no automatic default implementation lane** after week **39** (forward posture: [`post-week-39-bounded-phase2-recommendation.md`](./post-week-39-bounded-phase2-recommendation.md)).
 
 Pick **one** narrow theme per cycle—**not** parallel defaults:
 
@@ -39,29 +43,31 @@ Pick **one** narrow theme per cycle—**not** parallel defaults:
 
 **Do not** reopen **week 38** maintenance-window workspace, handoff export, **`mww_subject`**, or cross-surface pivots for momentum; **do not** treat week **38** closure as a backlog invitation for new assemblies.
 
+**Do not** reopen **week 39** evidence-quality workspace, weakness explanation, or cross-surface pivots for momentum—see [`post-week-39-bounded-phase2-recommendation.md`](./post-week-39-bounded-phase2-recommendation.md).
+
 **No** product scope is prescribed here for a future week—each candidate slice must be **evidence-justified** and Phase **2** safe.
 
-## Chosen next bounded slice
+## Chosen next bounded slice (historical — delivered as week 39)
 
-The selected next planning lane is **Evidence Quality Workspace / collection assurance**.
+The selected next planning lane was **Evidence Quality Workspace / collection assurance**; it shipped as **Week 39**—see [`post-week-39-bounded-phase2-recommendation.md`](./post-week-39-bounded-phase2-recommendation.md). The following was **pre-delivery** rationale:
 
-Why this lane fits the current posture:
+Why this lane fit the posture before week **39** shipped:
 
 - it does **not** reopen **week 38** maintenance-window planning, which is now explicitly closed
 - it is distinct from **week 35 evidence consistency**: agreement/tension is not the same as explaining **why evidence is weak**
 - it is distinct from **week 37 stability**: steadiness/churn is not the same as explaining **collection reliability, fallback posture, sparse anchors, or comparison limits**
 - it is distinct from **week 36 maintenance evidence**: maintenance composition is not a dedicated cross-domain evidence-quality workspace
 
-Planned direction:
+Historical planned direction (now shipped—do **not** treat as backlog):
 
 1. **Evidence Quality Workspace v1**
 2. **Collection assurance / read-path reliability summary**
 3. **Evidence weakness explanation and next-best pivots**
 4. **Cross-surface integration from topology, policies, services, maintenance, stability, NOC, search, and briefing**
 
-Anti-reopen rule:
+Anti-reopen rule (still applies to shipped week **39** surfaces):
 
-- this chosen slice must remain focused on **evidence weakness, collection assurance, fallback, sparse history, stale anchors, and comparison limits**
+- the delivered slice must remain focused on **evidence weakness, collection assurance, fallback, sparse history, stale anchors, and comparison limits**
 - it must **not** silently rename or reopen **evidence consistency**, **maintenance evidence**, **stability**, or **maintenance window** work under a new label
 
 ## Explicit anti-recommendations
@@ -78,6 +84,7 @@ Anti-reopen rule:
 | Operational truth | [`../../agent/sdn/03-CURRENT-STATUS.md`](../../agent/sdn/03-CURRENT-STATUS.md) |
 | Roadmap | [`roadmap.md`](./roadmap.md) |
 | Post–week 37 (pre–week 38 posture / chosen slice) | [`post-week-37-bounded-phase2-recommendation.md`](./post-week-37-bounded-phase2-recommendation.md) |
+| Post–week 39 (forward scheduling posture after week **39**) | [`post-week-39-bounded-phase2-recommendation.md`](./post-week-39-bounded-phase2-recommendation.md) |
 | Week 33 next-slice (labeling) | [`week-33-bounded-next-slice-recommendation.md`](./week-33-bounded-next-slice-recommendation.md) |
 | Maintenance window workspace | [`maintenance-window-workspace-contract.md`](./maintenance-window-workspace-contract.md) |
 | Maintenance window handoff | [`maintenance-window-handoff-contract.md`](./maintenance-window-handoff-contract.md) |
