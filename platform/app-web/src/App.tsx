@@ -37,6 +37,7 @@ import { TopologyView } from "./features/topology/view";
 import { WorkflowsView } from "./features/workflows/view";
 import { WorkflowLifecycleView } from "./features/workflow-lifecycle/view";
 import { PreviewWorkspaceView } from "./features/preview-workspace/view";
+import { ValidationWorkspaceView } from "./features/validation-workspace/view";
 import { GlobalOperatorSearch } from "./features/global-search/global-operator-search";
 
 const NAV_ITEMS = [
@@ -62,6 +63,7 @@ const NAV_ITEMS = [
   { id: "workflows", label: "Workflows" },
   { id: "workflow-lifecycle", label: "Workflow lifecycle" },
   { id: "preview-workspace", label: "Preview workspace" },
+  { id: "validation-workspace", label: "Validation workspace" },
   { id: "audit", label: "Audit" },
   { id: "capabilities", label: "Capabilities" },
   { id: "readiness", label: "Readiness" },
@@ -120,6 +122,8 @@ function renderView(viewId: string) {
       return <WorkflowLifecycleView />;
     case "preview-workspace":
       return <PreviewWorkspaceView />;
+    case "validation-workspace":
+      return <ValidationWorkspaceView />;
     case "audit":
       return <AuditView />;
     case "capabilities":

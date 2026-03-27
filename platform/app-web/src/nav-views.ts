@@ -23,6 +23,7 @@ export const PLATFORM_NAV_VIEW_IDS = new Set<string>([
   "workflows",
   "workflow-lifecycle",
   "preview-workspace",
+  "validation-workspace",
   "audit",
   "capabilities",
   "readiness",

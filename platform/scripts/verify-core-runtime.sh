@@ -435,6 +435,7 @@ capabilities_response=$(fetch_compact_json "$APP_API_URL/api/v1/capabilities")
 workflow_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-history")
 workflow_lifecycle_response=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-lifecycle")
 preview_list_response=$(fetch_compact_json "$APP_API_URL/api/v1/previews?limit=5")
+validation_list_response=$(fetch_compact_json "$APP_API_URL/api/v1/validations?limit=5")
 audit_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/audit-history")
 change_intelligence_response=$(fetch_compact_json "$APP_API_URL/api/v1/change-intelligence/recent-summary")
 investigation_workspace_response=$(fetch_compact_json "$APP_API_URL/api/v1/investigation-workspace/context")
@@ -796,6 +797,8 @@ assert_contains "workflow lifecycle response (API metadata)" "$workflow_lifecycl
 assert_contains "preview list response" "$preview_list_response" '"contract_id":"preview_engine_policy_static_local_intent_v1"'
 assert_contains "preview list response" "$preview_list_response" '"items":['
 assert_contains "preview list response (API metadata)" "$preview_list_response" '"service":"app-api"'
+assert_contains "validation list response" "$validation_list_response" '"items":['
+assert_contains "validation list response (API metadata)" "$validation_list_response" '"service":"app-api"'
 
 # Optional bounded query strings: structural echo-only check (week 22 query ergonomics contract).
 workflow_history_bounded_query=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-history?limit=1&sync_runs_limit=3")

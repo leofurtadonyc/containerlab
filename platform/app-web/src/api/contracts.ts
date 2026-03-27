@@ -1884,6 +1884,130 @@ export interface PreviewDiffResponse extends ApiResponseMetadata {
   safety_framing: PreviewSafetyFraming;
 }
 
+/** Validation engine v1 — not preview, not evidence delta, not execution. */
+export type ValidationContext = "pre_change" | "post_change";
+export type ValidationOverallVerdict = "pass" | "fail" | "unknown" | "not_applicable";
+export type ValidationCapabilityDecision = "allowed" | "blocked" | "unsupported" | "unknown";
+export type CheckVerdict = "pass" | "fail" | "unknown" | "not_applicable";
+
+export interface ValidationTruthScopeSummary {
+  policy_data_status: string;
+  policy_serving_mode: string;
+  policies_source_posture: string;
+  policies_confidence_posture: string;
+  policies_evidence_kind: string;
+  policy_truth_notes: string[];
+  validation_truth_notes: string[];
+}
+
+export interface ValidationCheckResult {
+  check_id: string;
+  check_name: string;
+  check_type: string;
+  check_context: ValidationContext;
+  verdict: CheckVerdict;
+  reason: string;
+  confidence_state: "high" | "medium" | "low" | "unknown";
+  source: string;
+  evidence_refs: string[];
+  before_summary: string | null;
+  after_summary: string | null;
+  target_scope: string | null;
+  unknown_reason: string | null;
+  not_applicable_reason: string | null;
+}
+
+export interface ValidationEvidenceItem {
+  evidence_id: string;
+  evidence_type: string;
+  evidence_source: string;
+  observed_at: string | null;
+  summary: string;
+  provenance: string;
+  confidence_notes: string[];
+}
+
+export interface ValidationSafetyFraming {
+  explicit_non_claims: string[];
+}
+
+export interface ValidationResultPayload {
+  contract_id: string;
+  validation_id: string;
+  validation_type: string;
+  validation_context: ValidationContext;
+  overall_verdict: ValidationOverallVerdict;
+  verdict_summary: string;
+  checks: ValidationCheckResult[];
+  evidence: ValidationEvidenceItem[];
+  aggregation_notes: string[];
+  stale_posture: StalePosture;
+  capability_decision_state: ValidationCapabilityDecision;
+  capability_decision_reason: string | null;
+  truth_scope_summary: ValidationTruthScopeSummary;
+  safety_framing: ValidationSafetyFraming;
+}
+
+export interface ValidationDetailResponse extends ApiResponseMetadata {
+  validation_id: string;
+  workflow_id: string | null;
+  preview_id: string | null;
+  validation_type: string;
+  validation_context: ValidationContext;
+  target_kind: string;
+  target_ids: string[];
+  target_scope: Record<string, unknown> | null;
+  requested_checkset: string[] | null;
+  created_at: string;
+  created_by_actor_type: string;
+  created_by_actor_id: string;
+  created_by_actor_display_name: string | null;
+  validation_status: string;
+  capability_decision_state: ValidationCapabilityDecision;
+  capability_decision_reason: string | null;
+  truth_scope_summary: ValidationTruthScopeSummary;
+  truth_fingerprint: string | null;
+  overall_verdict: ValidationOverallVerdict | null;
+  stale_posture: StalePosture;
+  expires_at: string | null;
+  notes: string | null;
+  extension_hints: Record<string, unknown> | null;
+  processing_duration_ms: number | null;
+  result: ValidationResultPayload;
+}
+
+export interface ValidationListItem {
+  validation_id: string;
+  validation_type: string;
+  validation_context: ValidationContext;
+  validation_status: string;
+  overall_verdict: ValidationOverallVerdict | null;
+  capability_decision_state: ValidationCapabilityDecision;
+  created_at: string;
+  workflow_id: string | null;
+  preview_id: string | null;
+}
+
+export interface ValidationListResponse extends ApiResponseMetadata {
+  items: ValidationListItem[];
+}
+
+export interface ValidationEventItem {
+  event_id: string;
+  validation_id: string;
+  event_type: string;
+  occurred_at: string;
+  actor: string;
+  reason: string | null;
+  metadata: Record<string, unknown>;
+  provenance: "system" | "operator" | "api";
+}
+
+export interface ValidationTimelineResponse extends ApiResponseMetadata {
+  validation_id: string;
+  events: ValidationEventItem[];
+}
+
 export interface AuditHistoryItem {
   event_id: string;
   event_type: "read_side_sync_recorded" | "readiness_snapshot_recorded";

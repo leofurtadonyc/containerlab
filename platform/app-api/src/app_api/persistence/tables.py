@@ -408,3 +408,70 @@ class PreviewEventTable(Base):
     provenance: Mapped[str] = mapped_column(String(32), nullable=False)
 
     preview: Mapped[PreviewRequestTable] = relationship(back_populates="events")
+
+
+class ValidationRequestTable(Base):
+    """Durable validation request and outcome (backend-owned verdicts; not actuation)."""
+
+    __tablename__ = "validation_requests"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    workflow_id: Mapped[str | None] = mapped_column(
+        ForeignKey("platform_app.workflow_lifecycles.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    preview_id: Mapped[str | None] = mapped_column(
+        ForeignKey("platform_app.preview_requests.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    validation_type: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    validation_context: Mapped[str] = mapped_column(String(32), nullable=False)
+    target_kind: Mapped[str] = mapped_column(String(64), nullable=False)
+    target_ids: Mapped[list[object]] = mapped_column(JSON, nullable=False)
+    target_scope: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    requested_checkset: Mapped[list[object] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    created_by_actor_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_by_actor_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_by_actor_display_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    validation_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    capability_decision_state: Mapped[str] = mapped_column(String(32), nullable=False)
+    capability_decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    truth_scope_summary: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    truth_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    overall_verdict: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    stale_posture: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    extension_hints: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    result_json: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    processing_duration_ms: Mapped[float | None] = mapped_column(Float(), nullable=True)
+
+    events: Mapped[list["ValidationEventTable"]] = relationship(
+        back_populates="validation",
+        cascade="all, delete-orphan",
+    )
+
+
+class ValidationEventTable(Base):
+    """One durable validation lifecycle event."""
+
+    __tablename__ = "validation_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    validation_id: Mapped[str] = mapped_column(
+        ForeignKey("platform_app.validation_requests.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    actor: Mapped[str] = mapped_column(String(255), nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    event_metadata: Mapped[dict[str, object]] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    provenance: Mapped[str] = mapped_column(String(32), nullable=False)
+
+    validation: Mapped[ValidationRequestTable] = relationship(back_populates="events")
