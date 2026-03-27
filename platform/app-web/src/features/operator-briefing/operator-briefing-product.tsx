@@ -9,6 +9,7 @@ import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { formatDateTime } from "../../lib/presentation";
 import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 
@@ -128,6 +129,13 @@ export function OperatorBriefingProduct({ data, syncRunsLimit, onReload }: Opera
             <dd>{ctx.global_search_q_client_hint ?? "—"}</dd>
           </div>
         </dl>
+        {ctx.inv_from_client_hint === "evidence-quality-workspace" ? (
+          <p className="table-note operator-briefing-context__continuity" data-testid="operator-briefing-from-evidence-quality">
+            Continuity: opened with <code>inv_from=evidence-quality-workspace</code> — this briefing is still a composed
+            handoff surface; it does <strong>not</strong> replay evidence-quality rows as authority and does{" "}
+            <strong>not</strong> substitute the evidence quality workspace assembly.
+          </p>
+        ) : null}
       </section>
 
       <section className="operator-briefing-live-pivots" aria-labelledby="ob-pivots-heading">
@@ -150,6 +158,13 @@ export function OperatorBriefingProduct({ data, syncRunsLimit, onReload }: Opera
             onClick={() => navigateToEvidenceConsistencyWorkspace(syncRunsLimit)}
           >
             Evidence consistency workspace
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button operator-briefing-live-pivots__primary"
+            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit })}
+          >
+            Evidence quality workspace
           </button>
           <button
             type="button"

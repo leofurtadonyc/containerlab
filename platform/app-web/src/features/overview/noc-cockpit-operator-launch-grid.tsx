@@ -18,6 +18,7 @@ import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
 import { navigateToServiceImpactWorkspace } from "../../lib/service-impact-workspace-navigation";
 import { navigateToServiceExplorer, navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 
 export interface NocCockpitOperatorLaunchGridProps {
   firstNodeId: string | null;
@@ -297,6 +298,24 @@ export function NocCockpitOperatorLaunchGrid({
             {!strongPolicyId && !topRisk ? (
               <span className="table-note">No policy or ranked topology row to anchor a change safety case yet.</span>
             ) : null}
+          </div>
+        </article>
+
+        <article className="detail-card noc-cockpit-launch-card" data-testid="noc-cockpit-launch-evidence-quality">
+          <h3>Evidence quality review</h3>
+          <p className="table-note">
+            Cross-domain <code>evidence_quality_workspace_v1</code> — collection assurance, fallback, and read-path limits
+            from existing assemblies. <strong>Not</strong> evidence-consistency tension, <strong>not</strong> stability
+            churn, <strong>not</strong> remediation.
+          </p>
+          <div className="noc-cockpit-launch-card__actions">
+            <button
+              type="button"
+              className="nav-drilldown-button"
+              onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit: syncRuns })}
+            >
+              Open evidence quality workspace
+            </button>
           </div>
         </article>
       </div>

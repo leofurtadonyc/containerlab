@@ -2494,6 +2494,54 @@ export interface OperationalStabilitySummaryResponse {
   assembly_notes: string[];
 }
 
+/** `GET /api/v1/evidence-quality-workspace` — `evidence_quality_workspace_v1`. */
+export type EvidenceQualityDimension =
+  | "collection_assurance"
+  | "read_path_fragility"
+  | "fallback_conditions"
+  | "sparse_history_anchors"
+  | "comparison_limits"
+  | "unsupported_partial_detail"
+  | "cross_domain_scope_note";
+
+export type EvidenceQualitySubjectDomain =
+  | "platform_read_paths"
+  | "platform_recovery"
+  | "devices"
+  | "policies"
+  | "topology"
+  | "capabilities"
+  | "global";
+
+export type ReadPathReliabilityPosture = "bounded_ok" | "mixed_degraded" | "heavily_limited";
+
+export interface EvidenceQualityRow {
+  evidence_quality_dimension: EvidenceQualityDimension;
+  evidence_subject_domain: EvidenceQualitySubjectDomain;
+  summary: string;
+  detail: string | null;
+  source_citations: string[];
+}
+
+export interface EvidenceQualitySummaryResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: {
+    contract_id: string;
+    authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+    explicit_non_claims: string[];
+    phase: "phase_2_read_only_foundation";
+    summary_disclaimer: string;
+  };
+  read_path_reliability_posture: ReadPathReliabilityPosture;
+  collection_assurance_summary: string;
+  scope_summary: string;
+  sync_runs_limit_applied: number;
+  rows: EvidenceQualityRow[];
+  caveats: string[];
+  assembly_notes: string[];
+}
+
 export interface StabilityProfilePivotHint {
   label: string;
   route_family: string;

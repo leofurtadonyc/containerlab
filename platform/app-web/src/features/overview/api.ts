@@ -32,3 +32,12 @@ export function useOperationalStabilitySummaryQuery(syncRunsLimit: number, enabl
 
   return useApiQuery(queryFn, { enabled });
 }
+
+export function useEvidenceQualityWorkspaceQuery(syncRunsLimit: number, enabled = true) {
+  const queryFn = useCallback(
+    () => apiClient.getEvidenceQualityWorkspace(syncRunsLimit),
+    [syncRunsLimit],
+  );
+
+  return useApiQuery(queryFn, { enabled });
+}

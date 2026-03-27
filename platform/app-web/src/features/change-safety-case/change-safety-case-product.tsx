@@ -1,6 +1,7 @@
 import type { ChangeSafetyCaseResponse } from "../../api/contracts";
 import { ChangeSafetyCaseActions } from "../../components/change-safety-case-actions";
 import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 import {
   DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
@@ -207,6 +208,13 @@ export function ChangeSafetyCaseProduct({ data, downloadTarget, onReload }: Chan
             onClick={() => navigateToEvidenceConsistencyWorkspace(syncLim)}
           >
             Evidence consistency workspace
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button"
+            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit: syncLim })}
+          >
+            Evidence quality workspace
           </button>
           <button
             type="button"

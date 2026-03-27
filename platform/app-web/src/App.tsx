@@ -13,6 +13,7 @@ import { AuditView } from "./features/audit/view";
 import { CapabilitiesView } from "./features/capabilities/view";
 import { DeltaDigestView } from "./features/delta-digest/view";
 import { EvidenceConsistencyView } from "./features/evidence-consistency/view";
+import { EvidenceQualityWorkspaceView } from "./features/evidence-quality-workspace/view";
 import { StabilityWorkspaceView } from "./features/stability-workspace/view";
 import { EvidenceReplayView } from "./features/evidence-replay/view";
 import { DevicesView } from "./features/devices/view";
@@ -40,6 +41,7 @@ const NAV_ITEMS = [
   { id: "overview", label: "Overview" },
   { id: "delta-digest", label: "Delta digest" },
   { id: "evidence-consistency", label: "Evidence consistency" },
+  { id: "evidence-quality-workspace", label: "Evidence quality" },
   { id: "stability-workspace", label: "Stability" },
   { id: "situation-room", label: "Situation room" },
   { id: "investigation", label: "Investigation" },
@@ -74,6 +76,8 @@ function renderView(viewId: string) {
       return <DeltaDigestView />;
     case "evidence-consistency":
       return <EvidenceConsistencyView />;
+    case "evidence-quality-workspace":
+      return <EvidenceQualityWorkspaceView />;
     case "stability-workspace":
       return <StabilityWorkspaceView />;
     case "situation-room":

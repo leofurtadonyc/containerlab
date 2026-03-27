@@ -16,6 +16,7 @@ import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-n
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
 import { navigateToServiceImpactWorkspace } from "../../lib/service-impact-workspace-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 
 export interface NocCockpitStrategicPivotsProps {
   riskSummary: TopologyRiskSummaryResponse | null;
@@ -45,6 +46,16 @@ export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCock
           No ranked topology attention or policy inventory rows yet — use the workspace cards and tables below when
           data loads.
         </p>
+        <p className="table-note noc-cockpit-strategic-pivots__global-eq">
+          <button
+            type="button"
+            className="nav-drilldown-button"
+            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit })}
+            title="evidence_quality_workspace_v1 — cross-domain read paths; not consistency or stability workspaces"
+          >
+            Evidence quality workspace (cross-domain)
+          </button>
+        </p>
       </article>
     );
   }
@@ -56,6 +67,16 @@ export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCock
         Derived from the <strong>top risk-summary row</strong> and <strong>worst degraded_policy_v1</strong> inventory
         row — read-only navigation suggestions, <strong>not</strong> incident priority or approval to change the
         network.
+      </p>
+      <p className="table-note noc-cockpit-strategic-pivots__global-eq">
+        <button
+          type="button"
+          className="nav-drilldown-button"
+          onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit })}
+          title="evidence_quality_workspace_v1 — cross-domain read paths; not consistency or stability workspaces"
+        >
+          Evidence quality workspace (cross-domain)
+        </button>
       </p>
       <div className="noc-cockpit-strategic-pivots__grid">
         {topRisk ? (

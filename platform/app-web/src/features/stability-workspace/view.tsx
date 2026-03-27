@@ -12,6 +12,7 @@ import {
   readStabilityWorkspaceTopologyFromSearch,
 } from "../../lib/stability-workspace-navigation";
 import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { APP_URL_SEARCH_CHANGED, navigateToEvidenceView } from "../../lib/url-app-state";
 import { useReplaceUrlSearchParams } from "../../lib/use-url-search-params";
 import {
@@ -163,6 +164,14 @@ export function StabilityWorkspaceView() {
         <div className="stability-workspace-hero__actions">
           <button type="button" className="inline-action" onClick={() => void summaryQuery.reload()}>
             Reload summary
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit })}
+            title="evidence_quality_workspace_v1 — read-path limits and collection assurance; not stability churn analysis"
+          >
+            Evidence quality workspace
           </button>
         </div>
       </header>

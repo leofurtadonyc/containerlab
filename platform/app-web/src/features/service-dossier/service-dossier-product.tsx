@@ -1,5 +1,6 @@
 import type { ServiceDossierResponse, ServiceDetailResponse, ServiceTopologyLinkRecord } from "../../api/contracts";
 import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 import { navigateToDeltaDigestView } from "../../lib/delta-digest-navigation";
 import { formatDateTime, formatLabel } from "../../lib/presentation";
@@ -203,6 +204,14 @@ export function ServiceDossierProduct({ data, onReload }: ServiceDossierProductP
             }
           >
             Stability workspace
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button"
+            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit: syncLim })}
+            title="evidence_quality_workspace_v1 — read-path limits across domains; not service dossier JSON"
+          >
+            Evidence quality workspace
           </button>
           {data.maintenance_preview ? (
             <button

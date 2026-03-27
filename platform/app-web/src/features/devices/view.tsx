@@ -22,6 +22,7 @@ import {
 } from "../../lib/evidence-confidence";
 import { recentSnapshotsEmptyFootnote } from "../../lib/read-side-query-product-copy";
 import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
+import { EvidenceQualitySurfaceEntry } from "../evidence-quality-workspace/surface-entry";
 import { InvestigationSurfaceEntry } from "../investigation/investigation-surface-entry";
 import { usePoliciesQuery } from "../policies/api";
 import { TopologyRelatedPoliciesPanel } from "../topology/topology-related-policies-panel";
@@ -300,6 +301,7 @@ export function DevicesView() {
       </div>
 
       <InvestigationSurfaceEntry invFrom="devices" />
+      <EvidenceQualitySurfaceEntry />
 
       <div className="metadata-row">
         <span>Count: {data.count}</span>

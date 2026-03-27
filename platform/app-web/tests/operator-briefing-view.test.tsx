@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { OperatorBriefingWorkspaceResponse } from "../src/api/contracts";
+import { OperatorBriefingProduct } from "../src/features/operator-briefing/operator-briefing-product";
 import { OperatorBriefingView } from "../src/features/operator-briefing/view";
 
 const { useOperatorBriefingQuery } = vi.hoisted(() => ({
@@ -77,5 +78,15 @@ describe("OperatorBriefingView", () => {
     expect(html).toContain("briefing-bundle-export-actions");
     expect(html).toContain("maintenance_evidence_workspace_v1");
     expect(html).toContain("included in briefing bundle members");
+  });
+
+  it("shows continuity copy when inv_from echoes evidence-quality-workspace", () => {
+    const data = minimalBriefing();
+    data.briefing_context.inv_from_client_hint = "evidence-quality-workspace";
+    const html = renderToStaticMarkup(
+      <OperatorBriefingProduct data={data} syncRunsLimit={20} onReload={() => {}} />,
+    );
+    expect(html).toContain('data-testid="operator-briefing-from-evidence-quality"');
+    expect(html).toContain("inv_from=evidence-quality-workspace");
   });
 });

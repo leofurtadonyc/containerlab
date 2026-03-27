@@ -3,6 +3,7 @@ export const PLATFORM_NAV_VIEW_IDS = new Set<string>([
   "overview",
   "delta-digest",
   "evidence-consistency",
+  "evidence-quality-workspace",
   "stability-workspace",
   "situation-room",
   "operator-briefing",

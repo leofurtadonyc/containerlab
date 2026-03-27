@@ -1,5 +1,6 @@
 import type { MaintenanceWindowWorkspaceResponse } from "../../api/contracts";
 import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
 import { navigateToServiceImpactWorkspace } from "../../lib/service-impact-workspace-navigation";
@@ -361,6 +362,9 @@ export function MaintenanceWindowWorkspaceProduct({ data, onReload, onChangeSubj
         <p>
           <button type="button" className="inline-action" onClick={() => navigateToEvidenceConsistencyWorkspace(syncLim)}>
             Open Evidence consistency workspace
+          </button>{" "}
+          <button type="button" className="inline-action" onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit: syncLim })}>
+            Evidence quality workspace
           </button>
         </p>
       </section>

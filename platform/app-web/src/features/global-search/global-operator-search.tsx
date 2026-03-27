@@ -38,6 +38,7 @@ import {
   navigateToChangeSafetyCaseHub,
 } from "../../lib/change-safety-case-navigation";
 import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 
 const DEBOUNCE_MS = 400;
 
@@ -524,6 +525,21 @@ export function GlobalOperatorSearch() {
                   }}
                 >
                   Delta digest
+                </button>
+                <button
+                  type="button"
+                  className="inline-action"
+                  title="evidence_quality_workspace_v1 — cross-domain read-path limits; echoes global_search_q; not search hit inside workspace JSON"
+                  onClick={() => {
+                    const lim = readSyncRunsLimitFromSearch(
+                      window.location.search,
+                      DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
+                    );
+                    navigateToEvidenceQualityWorkspace({ syncRunsLimit: lim, echoSearchQuery: data.q });
+                    clearSearchUi();
+                  }}
+                >
+                  Evidence quality workspace
                 </button>
                 <button
                   type="button"

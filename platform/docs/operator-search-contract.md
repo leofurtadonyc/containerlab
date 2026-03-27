@@ -16,6 +16,8 @@ Stable **`contract_id`:** **`operator_search_pivot_v1`**
 
 **Week 38 maintenance window workspace (topology hits):** **`GlobalOperatorSearch`** may offer **`maintenance_window_workspace_v1`** (**Maintenance window workspace**, `view=maintenance-window-workspace`, repeated **`mww_subject`** starting from the hit) alongside **Maintenance preview** / **Maintenance evidence** — **navigation-only**, **single-subject seed** from the search row (operators add subjects on the workspace shell); distinct from **`evidence_export_v1`** and briefing bundle roots.
 
+**Week 39 evidence quality workspace:** **`GlobalOperatorSearch`** may offer **`evidence_quality_workspace_v1`** (**Evidence quality workspace**, `view=evidence-quality-workspace`, **`sync_runs_limit`**, optional **`global_search_q`**) in the **Cross-surface** panel — **cross-domain** collection assurance / read-path limits; **not** evidence-consistency alignment/tension resolution, **not** operational-stability churn analysis, **not** remediation.
+
 ---
 
 ## Searchable object families (Phase 2)
@@ -89,6 +91,7 @@ Pivots **must** use **existing** shell patterns already defined for Phase **2**:
 | **Maintenance preview** | `view=maintenance-preview` with existing maintenance subject params + **`global_search_q`** ([`maintenance-preview-contract.md`](./maintenance-preview-contract.md)) — from **topology** hits |
 | **Maintenance evidence workspace** | `view=maintenance-evidence-workspace` with the **same** maintenance subject shell params as Maintenance Preview + optional **`global_search_q`** ([`maintenance-evidence-workspace-contract.md`](./maintenance-evidence-workspace-contract.md)) — composed **`maintenance_evidence_workspace_v1`** live GET; **not** `evidence_export_v1`, **not** a substitute for **Impact report** or **Change safety case** report downloads |
 | **Maintenance window workspace** | `view=maintenance-window-workspace`, repeated **`mww_subject`** (`node:` / `link:`) + **`maintenance_preview_context`** + **`sync_runs_limit`** + optional **`global_search_q`** ([`maintenance-window-workspace-contract.md`](./maintenance-window-workspace-contract.md)) — **`maintenance_window_workspace_v1`** multi-subject rollup; **not** `evidence_export_v1`, **not** automatic fleet discovery from the query text |
+| **Evidence quality workspace** | `view=evidence-quality-workspace`, **`sync_runs_limit`**, optional **`global_search_q`** ([`evidence-quality-workspace-contract.md`](./evidence-quality-workspace-contract.md)) — **`evidence_quality_workspace_v1`** cross-domain read-path / collection assurance summary; **not** `evidence_consistency_summary_v1`, **not** `operational_stability_summary_v1` |
 | **Impact report** | `view=impact-report`, **`impact_report_context`** + anchors (`service` / `policy` / `maintenance_impact` subject params), optional **`global_search_q`** ([`impact-report-contract.md`](./impact-report-contract.md)) — **not** a claim that the query text appears inside the report body; **Impact report hub** opens setup when no anchor is chosen |
 
 **Non-substitution:** Search **suggests** pivots; each destination page remains **authoritative** for its contract.

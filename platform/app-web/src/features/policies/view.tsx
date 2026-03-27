@@ -49,6 +49,7 @@ import {
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
+import { EvidenceQualitySurfaceEntry } from "../evidence-quality-workspace/surface-entry";
 import { InvestigationSurfaceEntry } from "../investigation/investigation-surface-entry";
 import { useTopologyQuery } from "../topology/api";
 import { usePoliciesQuery } from "./api";
@@ -940,6 +941,7 @@ export function PoliciesView() {
       </div>
 
       <InvestigationSurfaceEntry invFrom="policies" />
+      <EvidenceQualitySurfaceEntry />
 
       <div className="metadata-row">
         <span>Data status: {data.data_status}</span>

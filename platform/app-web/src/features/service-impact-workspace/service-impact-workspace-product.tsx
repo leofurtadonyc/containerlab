@@ -17,6 +17,7 @@ import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
 import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { navigateToDeltaDigestView } from "../../lib/delta-digest-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 import { useServiceImpactWorkspaceQuery } from "./api";
@@ -380,6 +381,9 @@ function ServiceImpactWorkspaceBody({
           </button>
           <button type="button" className="inline-action" onClick={() => navigateToEvidenceConsistencyWorkspace(syncLim)}>
             Evidence consistency workspace
+          </button>
+          <button type="button" className="inline-action" onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit: syncLim })}>
+            Evidence quality workspace
           </button>
         </p>
       </section>

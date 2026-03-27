@@ -40,6 +40,7 @@ import type {
   ImpactReportResponse,
   ChangeSafetyCaseResponse,
   OperationalStabilitySummaryResponse,
+  EvidenceQualitySummaryResponse,
   ServiceStabilityProfileResponse,
   TopologyObjectStabilityProfileResponse,
 } from "./contracts";
@@ -393,6 +394,13 @@ export class ApiClient {
     const limit = Math.min(100, Math.max(1, syncRunsLimit));
     return this.request<OperationalStabilitySummaryResponse>(
       `/api/v1/stability/summary?sync_runs_limit=${limit}`,
+    );
+  }
+
+  async getEvidenceQualityWorkspace(syncRunsLimit = 20): Promise<EvidenceQualitySummaryResponse> {
+    const limit = Math.min(100, Math.max(1, syncRunsLimit));
+    return this.request<EvidenceQualitySummaryResponse>(
+      `/api/v1/evidence-quality-workspace?sync_runs_limit=${limit}`,
     );
   }
 
