@@ -50,7 +50,7 @@ export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCock
           <button
             type="button"
             className="nav-drilldown-button"
-            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit })}
+            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit: syncRuns })}
             title="evidence_quality_workspace_v1 — cross-domain read paths; not consistency or stability workspaces"
           >
             Evidence quality workspace (cross-domain)
@@ -72,7 +72,7 @@ export function NocCockpitStrategicPivots({ riskSummary, policiesData }: NocCock
         <button
           type="button"
           className="nav-drilldown-button"
-          onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit })}
+          onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit: syncRuns })}
           title="evidence_quality_workspace_v1 — cross-domain read paths; not consistency or stability workspaces"
         >
           Evidence quality workspace (cross-domain)
