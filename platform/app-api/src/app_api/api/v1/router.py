@@ -40,6 +40,7 @@ from app_api.routers.topology_object_stability_profile import (
 )
 from app_api.routers.workflow_history import router as workflow_history_router
 from app_api.routers.workflow_lifecycle import router as workflow_lifecycle_router
+from app_api.routers.validation_engine import router as validation_engine_router
 
 
 router = APIRouter()
@@ -60,6 +61,7 @@ router.include_router(operator_search_router)
 router.include_router(operational_stability_summary_router)
 router.include_router(workflow_history_router)
 router.include_router(workflow_lifecycle_router)
+router.include_router(validation_engine_router)
 router.include_router(preview_engine_router)
 router.include_router(audit_history_router)
 router.include_router(devices_router)

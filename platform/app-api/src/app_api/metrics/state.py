@@ -10,6 +10,9 @@ _request_counts: Counter[tuple[str, str, str]] = Counter()
 _preview_decision_counts: Counter[tuple[str, str, str]] = Counter()
 _preview_generation_seconds_sum: float = 0.0
 _preview_generation_count: int = 0
+_validation_outcome_counts: Counter[tuple[str, str, str, str, str]] = Counter()
+_validation_generation_seconds_sum: float = 0.0
+_validation_generation_count: int = 0
 _request_duration_counts: Counter[tuple[str, str]] = Counter()
 _request_duration_sums: dict[tuple[str, str], float] = defaultdict(float)
 
@@ -132,6 +135,31 @@ def record_preview_outcome(
         _preview_decision_counts[(preview_type, decision, preview_status)] += 1
         _preview_generation_seconds_sum += max(0.0, duration_seconds)
         _preview_generation_count += 1
+
+
+def record_validation_outcome(
+    *,
+    validation_type: str,
+    validation_context: str,
+    capability_decision_state: str,
+    validation_status: str,
+    overall_verdict: str | None,
+    duration_seconds: float,
+) -> None:
+    """Record one completed validation evaluation (Phase 2 validation engine v1)."""
+    verdict_label = overall_verdict if overall_verdict else "none"
+    with _lock:
+        _validation_outcome_counts[
+            (
+                validation_type,
+                validation_context,
+                capability_decision_state,
+                validation_status,
+                verdict_label,
+            )
+        ] += 1
+        _validation_generation_seconds_sum += max(0.0, duration_seconds)
+        _validation_generation_count += 1
 
 
 def observe_http_request(
@@ -1089,6 +1117,42 @@ def render_prometheus_metrics(
         ]
     )
 
+    with _lock:
+        validation_counts = dict(_validation_outcome_counts)
+        validation_sec_sum = _validation_generation_seconds_sum
+        validation_sec_n = _validation_generation_count
+    lines.extend(
+        [
+            (
+                "# HELP platform_app_api_validation_requests_total "
+                "Completed validation evaluations by type, context, capability decision, "
+                "status, and overall verdict label."
+            ),
+            "# TYPE platform_app_api_validation_requests_total counter",
+            *[
+                (
+                    "platform_app_api_validation_requests_total"
+                    f'{{validation_type="{vt}",validation_context="{vc}",'
+                    f'capability_decision="{cd}",validation_status="{vs}",overall_verdict="{ov}"}} '
+                    f"{cnt}"
+                )
+                for (vt, vc, cd, vs, ov), cnt in sorted(validation_counts.items())
+            ],
+            (
+                "# HELP platform_app_api_validation_generation_seconds_sum "
+                "Sum of validation evaluation wall time in seconds."
+            ),
+            "# TYPE platform_app_api_validation_generation_seconds_sum counter",
+            f"platform_app_api_validation_generation_seconds_sum {validation_sec_sum:.9f}",
+            (
+                "# HELP platform_app_api_validation_generation_seconds_count "
+                "Count of validation evaluation duration observations."
+            ),
+            "# TYPE platform_app_api_validation_generation_seconds_count counter",
+            f"platform_app_api_validation_generation_seconds_count {validation_sec_n}",
+        ]
+    )
+
     lines.append("")
     return "\n".join(lines)
 
@@ -1099,6 +1163,7 @@ def reset_metrics_registry() -> None:
     global _cached_recovery_metrics
     global _cached_collector_boundary_fetch_metrics
     global _preview_generation_seconds_sum, _preview_generation_count
+    global _validation_generation_seconds_sum, _validation_generation_count
     with _lock:
         _request_counts.clear()
         _request_duration_counts.clear()
@@ -1106,6 +1171,9 @@ def reset_metrics_registry() -> None:
         _preview_decision_counts.clear()
         _preview_generation_seconds_sum = 0.0
         _preview_generation_count = 0
+        _validation_outcome_counts.clear()
+        _validation_generation_seconds_sum = 0.0
+        _validation_generation_count = 0
         _cached_topology_metrics = CachedTopologyMetrics()
         _cached_policy_metrics = CachedPolicyMetrics()
         _cached_readiness_metrics = CachedReadinessMetrics()

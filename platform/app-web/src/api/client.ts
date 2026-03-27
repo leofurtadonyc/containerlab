@@ -51,6 +51,9 @@ import type {
   EvidenceQualitySummaryResponse,
   ServiceStabilityProfileResponse,
   TopologyObjectStabilityProfileResponse,
+  ValidationDetailResponse,
+  ValidationListResponse,
+  ValidationTimelineResponse,
 } from "./contracts";
 import {
   buildAuditHistoryQueryString,
@@ -459,6 +462,42 @@ export class ApiClient {
     notes?: string | null;
   }): Promise<PreviewDetailResponse> {
     return this.jsonRequest<PreviewDetailResponse>("POST", "/api/v1/previews", {
+      body: JSON.stringify(body),
+    });
+  }
+
+  async getValidationList(limit = 50): Promise<ValidationListResponse> {
+    const params = new URLSearchParams();
+    params.set("limit", String(Math.min(100, Math.max(1, Math.floor(limit)))));
+    return this.jsonRequest<ValidationListResponse>("GET", `/api/v1/validations?${params.toString()}`);
+  }
+
+  async getValidationDetail(validationId: string): Promise<ValidationDetailResponse> {
+    const encoded = encodeURIComponent(validationId.trim());
+    return this.jsonRequest<ValidationDetailResponse>("GET", `/api/v1/validations/${encoded}`);
+  }
+
+  async getValidationTimeline(validationId: string): Promise<ValidationTimelineResponse> {
+    const encoded = encodeURIComponent(validationId.trim());
+    return this.jsonRequest<ValidationTimelineResponse>("GET", `/api/v1/validations/${encoded}/timeline`);
+  }
+
+  async createValidation(body: {
+    validation_type: string;
+    validation_context: "pre_change" | "post_change";
+    target_kind: string;
+    target_ids: string[];
+    target_scope?: Record<string, unknown> | null;
+    requested_checkset?: string[] | null;
+    workflow_id?: string | null;
+    preview_id?: string | null;
+    idempotency_key?: string | null;
+    notes?: string | null;
+    created_by_actor_type?: "operator" | "api" | "system";
+    created_by_actor_id?: string;
+    created_by_actor_display_name?: string | null;
+  }): Promise<ValidationDetailResponse> {
+    return this.jsonRequest<ValidationDetailResponse>("POST", "/api/v1/validations", {
       body: JSON.stringify(body),
     });
   }
