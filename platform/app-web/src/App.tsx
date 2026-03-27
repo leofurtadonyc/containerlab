@@ -35,6 +35,7 @@ import { ChangeSafetyCaseView } from "./features/change-safety-case/view";
 import { ReadinessView } from "./features/readiness/view";
 import { TopologyView } from "./features/topology/view";
 import { WorkflowsView } from "./features/workflows/view";
+import { WorkflowLifecycleView } from "./features/workflow-lifecycle/view";
 import { GlobalOperatorSearch } from "./features/global-search/global-operator-search";
 
 const NAV_ITEMS = [
@@ -58,6 +59,7 @@ const NAV_ITEMS = [
   { id: "impact-report", label: "Impact Report" },
   { id: "change-safety-case", label: "Change safety case" },
   { id: "workflows", label: "Workflows" },
+  { id: "workflow-lifecycle", label: "Workflow lifecycle" },
   { id: "audit", label: "Audit" },
   { id: "capabilities", label: "Capabilities" },
   { id: "readiness", label: "Readiness" },
@@ -112,6 +114,8 @@ function renderView(viewId: string) {
       return <ChangeSafetyCaseView />;
     case "workflows":
       return <WorkflowsView />;
+    case "workflow-lifecycle":
+      return <WorkflowLifecycleView />;
     case "audit":
       return <AuditView />;
     case "capabilities":

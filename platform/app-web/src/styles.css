@@ -4099,3 +4099,65 @@ ol.notes-list.evidence-timeline-ordered {
 .change-safety-case-actions__error {
   color: #f0a8a8;
 }
+
+/* Workflow lifecycle foundation (durable records; not sync history) */
+.workflow-lifecycle-create label,
+.workflow-lifecycle-form label {
+  display: block;
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.85rem;
+}
+
+.workflow-lifecycle-create input,
+.workflow-lifecycle-create select,
+.workflow-lifecycle-form input,
+.workflow-lifecycle-form select {
+  display: block;
+  width: 100%;
+  max-width: 32rem;
+  margin-top: 0.25rem;
+}
+
+.workflow-lifecycle-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .workflow-lifecycle-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.workflow-lifecycle-row-selected {
+  outline: 1px solid #4a7a8a;
+}
+
+.workflow-lifecycle-row-hit {
+  text-align: left;
+  width: 100%;
+}
+
+.workflow-lifecycle-detail dl.detail-grid {
+  display: grid;
+  grid-template-columns: 8rem 1fr;
+  gap: 0.35rem 1rem;
+  margin: 1rem 0;
+}
+
+.workflow-lifecycle-detail .timeline-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.workflow-lifecycle-detail .subsection-title {
+  margin: 1.25rem 0 0.35rem;
+  font-size: 1rem;
+}
+
+.workflow-lifecycle-error {
+  color: #f0a8a8;
+  margin: 0.5rem 0 0;
+}
