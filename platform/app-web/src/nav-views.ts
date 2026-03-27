@@ -21,6 +21,7 @@ export const PLATFORM_NAV_VIEW_IDS = new Set<string>([
   "impact-report",
   "change-safety-case",
   "workflows",
+  "workflow-lifecycle",
   "audit",
   "capabilities",
   "readiness",

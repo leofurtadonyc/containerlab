@@ -1693,6 +1693,72 @@ export interface WorkflowHistoryResponse extends ApiResponseMetadata {
   read_side_query: ReadSideQueryEcho;
 }
 
+/** Durable workflow lifecycle (not sync-run history). */
+export type WorkflowLifecycleStatus =
+  | "requested"
+  | "planned"
+  | "approved"
+  | "rejected"
+  | "dry_run_ready"
+  | "executing"
+  | "succeeded"
+  | "failed"
+  | "cancelled";
+
+export interface WorkflowLifecycleSafetyFraming {
+  contract_id: string;
+  explicit_non_claims: string[];
+}
+
+export interface WorkflowLifecycleRecord {
+  contract_id: string;
+  workflow_id: string;
+  workflow_type: string;
+  workflow_status: WorkflowLifecycleStatus;
+  title: string;
+  description: string | null;
+  target_scope: Record<string, unknown>;
+  capability_decision: Record<string, unknown>;
+  actor_created: string;
+  actor_updated: string | null;
+  audit_attachment_hint: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+  safety_framing: WorkflowLifecycleSafetyFraming;
+}
+
+export interface WorkflowLifecycleListResponse extends ApiResponseMetadata {
+  contract_id: string;
+  items: WorkflowLifecycleRecord[];
+  safety_framing: WorkflowLifecycleSafetyFraming;
+}
+
+export interface WorkflowLifecycleDetailResponse {
+  contract_id: string;
+  workflow: WorkflowLifecycleRecord;
+  safety_framing: WorkflowLifecycleSafetyFraming;
+}
+
+export interface WorkflowLifecycleEventItem {
+  event_id: string;
+  workflow_id: string;
+  prior_status: WorkflowLifecycleStatus | null;
+  next_status: WorkflowLifecycleStatus;
+  event_type: string;
+  occurred_at: string;
+  actor: string;
+  reason: string | null;
+  metadata: Record<string, unknown>;
+  provenance: "system" | "operator" | "api";
+}
+
+export interface WorkflowLifecycleTimelineResponse extends ApiResponseMetadata {
+  contract_id: string;
+  workflow_id: string;
+  events: WorkflowLifecycleEventItem[];
+  safety_framing: WorkflowLifecycleSafetyFraming;
+}
+
 export interface AuditHistoryItem {
   event_id: string;
   event_type: "read_side_sync_recorded" | "readiness_snapshot_recorded";

@@ -301,3 +301,50 @@ class ReadinessSnapshotTable(Base):
     blockers: Mapped[list[dict[str, object]]] = mapped_column(
         JSON, nullable=False, default=list
     )
+
+
+class WorkflowLifecycleTable(Base):
+    """Durable operator workflow lifecycle record (not sync-run history)."""
+
+    __tablename__ = "workflow_lifecycles"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    workflow_type: Mapped[str] = mapped_column(String(96), nullable=False, index=True)
+    workflow_status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    target_scope: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False, default=dict)
+    capability_decision: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False, default=dict)
+    actor_created: Mapped[str] = mapped_column(String(255), nullable=False)
+    actor_updated: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    audit_attachment_hint: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    events: Mapped[list["WorkflowLifecycleEventTable"]] = relationship(
+        back_populates="workflow",
+        cascade="all, delete-orphan",
+    )
+
+
+class WorkflowLifecycleEventTable(Base):
+    """One durable transition or lifecycle event on a workflow record."""
+
+    __tablename__ = "workflow_lifecycle_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    workflow_id: Mapped[str] = mapped_column(
+        ForeignKey("platform_app.workflow_lifecycles.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    prior_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    next_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    actor: Mapped[str] = mapped_column(String(255), nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    event_metadata: Mapped[dict[str, object]] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    provenance: Mapped[str] = mapped_column(String(32), nullable=False)
+
+    workflow: Mapped[WorkflowLifecycleTable] = relationship(back_populates="events")

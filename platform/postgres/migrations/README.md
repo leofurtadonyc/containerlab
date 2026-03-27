@@ -22,7 +22,7 @@ At this stage:
 - a minimal init SQL script exists under `platform/postgres/init/`
 - Alembic migrations exist under `platform/app-api/alembic/`
 - the first bounded production schema now exists for normalized inventory snapshots, normalized topology snapshots, and sync-run records
-- policy, workflow, audit, and broader intent-oriented persistence remain intentionally outside the current implemented slice
+- policy persistence is implemented; **workflow lifecycle** (`workflow_lifecycles`, `workflow_lifecycle_events`) is implemented under `platform/app-api/alembic/`; audit-event persistence beyond sync/readiness merge remains future work
 
 ## Expected schema domains
 

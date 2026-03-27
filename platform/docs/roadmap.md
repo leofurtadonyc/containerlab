@@ -19,6 +19,7 @@ Phase 2 to date has established:
 - core architecture documents
 - a useful read-only API, WebUI, and observability slice
 - bounded persistence for inventory, topology, and policy snapshots plus sync-run history
+- durable **workflow lifecycle** records and transitions (**`/api/v1/workflow-lifecycle`**, Postgres **`workflow_lifecycles`** / **`workflow_lifecycle_events`**) — **not** dry-run, validation, or execution; distinct from sync-derived **workflow-history**
 - bounded workflow-history and audit-history visibility derived from persisted sync activity
 - sharper capability semantics plus a stricter descriptive dry-run-planning-readiness assessment
 - stronger platform, topology, and SR policy dashboards with bounded freshness, agreement, and evidence-gap cues where real metrics exist

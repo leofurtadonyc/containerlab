@@ -446,9 +446,10 @@ Current state:
 - the backend now persists bounded normalized policy snapshots and candidate-path records alongside those existing inventory/topology snapshots
 - devices, topology, and policy can fall back to the latest persisted normalized snapshot if the live collector boundary is temporarily unavailable
 - devices, topology, and policy can also expose bounded current-versus-latest-persisted comparison summaries when both current live-backed state and an earlier persisted normalized snapshot exist
-- workflow-history and audit-history currently read persisted sync-run activity rather than separate durable workflow or audit tables
+- workflow-history and audit-history currently read persisted sync-run activity rather than separate durable **audit** tables
+- **Workflow lifecycle foundation:** **`workflow_lifecycles`** and **`workflow_lifecycle_events`** persist **operator workflow records** and **transitions**; **`GET` / `POST` `/api/v1/workflow-lifecycle`** — see **`workflow-lifecycle-contract.md`** — this is **not** sync-run history and **not** network actuation or dry-run
 - bounded persisted read-side state survives **normal container replacement in the same workspace** when host-backed directories (e.g. `platform/postgres/data`) remain in place; removing or replacing those directories starts a **new baseline**—same boundary as `deployment-runbook.md` and `production-readiness-assessment.md` (not backup, HA, or cross-host DR)
-- workflow history, audit history, and broader intent models remain read-only views over sync activity rather than workflow-owned durable records
+- audit history remains a read-only view over sync activity plus readiness snapshots; **workflow lifecycle** is a separate durable product domain (see above)
 - broader domain persistence logic is still pending
 
 ## Flow Summary By Consumer

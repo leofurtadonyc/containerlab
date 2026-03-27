@@ -27,6 +27,10 @@ import type {
   ServiceImpactWorkspaceResponse,
   OperatorSearchResponse,
   WorkflowHistoryResponse,
+  WorkflowLifecycleDetailResponse,
+  WorkflowLifecycleListResponse,
+  WorkflowLifecycleTimelineResponse,
+  WorkflowLifecycleStatus,
   CrossDomainDeltaDigestResponse,
   EvidenceConsistencySummaryResponse,
   OperatorBriefingWorkspaceResponse,
@@ -360,6 +364,61 @@ export class ApiClient {
     return this.request<WorkflowHistoryResponse>(`/api/v1/workflow-history${qs}`);
   }
 
+  async getWorkflowLifecycleList(limit = 50): Promise<WorkflowLifecycleListResponse> {
+    const params = new URLSearchParams();
+    params.set("limit", String(Math.min(100, Math.max(1, Math.floor(limit)))));
+    return this.jsonRequest<WorkflowLifecycleListResponse>(
+      "GET",
+      `/api/v1/workflow-lifecycle?${params.toString()}`,
+    );
+  }
+
+  async getWorkflowLifecycleDetail(workflowId: string): Promise<WorkflowLifecycleDetailResponse> {
+    const encoded = encodeURIComponent(workflowId.trim());
+    return this.jsonRequest<WorkflowLifecycleDetailResponse>("GET", `/api/v1/workflow-lifecycle/${encoded}`);
+  }
+
+  async getWorkflowLifecycleTimeline(workflowId: string): Promise<WorkflowLifecycleTimelineResponse> {
+    const encoded = encodeURIComponent(workflowId.trim());
+    return this.jsonRequest<WorkflowLifecycleTimelineResponse>(
+      "GET",
+      `/api/v1/workflow-lifecycle/${encoded}/timeline`,
+    );
+  }
+
+  async createWorkflowLifecycle(body: {
+    workflow_type: string;
+    title: string;
+    description?: string | null;
+    initial_status?: WorkflowLifecycleStatus;
+    target_scope?: Record<string, unknown>;
+    capability_decision?: Record<string, unknown>;
+    actor?: string;
+    provenance?: "operator" | "api";
+  }): Promise<WorkflowLifecycleDetailResponse> {
+    return this.jsonRequest<WorkflowLifecycleDetailResponse>("POST", "/api/v1/workflow-lifecycle", {
+      body: JSON.stringify(body),
+    });
+  }
+
+  async transitionWorkflowLifecycle(
+    workflowId: string,
+    body: {
+      next_status: WorkflowLifecycleStatus;
+      reason?: string | null;
+      actor?: string;
+      metadata?: Record<string, unknown>;
+      provenance?: "operator" | "api";
+    },
+  ): Promise<WorkflowLifecycleDetailResponse> {
+    const encoded = encodeURIComponent(workflowId.trim());
+    return this.jsonRequest<WorkflowLifecycleDetailResponse>(
+      "POST",
+      `/api/v1/workflow-lifecycle/${encoded}/transitions`,
+      { body: JSON.stringify(body) },
+    );
+  }
+
   async getAuditHistory(query?: AuditHistoryReadSideQuery): Promise<AuditHistoryResponse> {
     const qs = query ? buildAuditHistoryQueryString(query) : "";
     return this.request<AuditHistoryResponse>(`/api/v1/audit-history${qs}`);
@@ -462,12 +521,20 @@ export class ApiClient {
   }
 
   private async request<T>(path: string): Promise<T> {
+    return this.jsonRequest<T>("GET", path);
+  }
+
+  private async jsonRequest<T>(method: string, path: string, init: RequestInit = {}): Promise<T> {
     let response: Response;
 
     try {
       response = await fetch(`${this.baseUrl}${path}`, {
+        ...init,
+        method,
         headers: {
           Accept: "application/json",
+          ...(method !== "GET" && method !== "HEAD" ? { "Content-Type": "application/json" } : {}),
+          ...init.headers,
         },
       });
     } catch (error) {

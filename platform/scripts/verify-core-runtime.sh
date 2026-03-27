@@ -433,6 +433,7 @@ topology_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology")
 policies_response=$(fetch_compact_json "$APP_API_URL/api/v1/policies")
 capabilities_response=$(fetch_compact_json "$APP_API_URL/api/v1/capabilities")
 workflow_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-history")
+workflow_lifecycle_response=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-lifecycle")
 audit_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/audit-history")
 change_intelligence_response=$(fetch_compact_json "$APP_API_URL/api/v1/change-intelligence/recent-summary")
 investigation_workspace_response=$(fetch_compact_json "$APP_API_URL/api/v1/investigation-workspace/context")
@@ -783,6 +784,12 @@ assert_contains "workflow history response" "$workflow_history_response" '"read_
 assert_contains "workflow history response" "$workflow_history_response" '"sync_runs_limit_effective":'
 assert_contains "audit history response" "$audit_history_response" '"read_side_query":{'
 assert_contains "audit history response" "$audit_history_response" '"readiness_snapshot_history_limit_effective":'
+
+# Workflow lifecycle foundation: durable records (not sync-derived workflow-history).
+assert_contains "workflow lifecycle response" "$workflow_lifecycle_response" '"contract_id":"workflow_lifecycle_list_v1"'
+assert_contains "workflow lifecycle response" "$workflow_lifecycle_response" '"items":['
+assert_contains "workflow lifecycle response (API metadata)" "$workflow_lifecycle_response" '"service":"app-api"'
+assert_contains "workflow lifecycle response (API metadata)" "$workflow_lifecycle_response" '"phase":"phase_2_read_only_foundation"'
 
 # Optional bounded query strings: structural echo-only check (week 22 query ergonomics contract).
 workflow_history_bounded_query=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-history?limit=1&sync_runs_limit=3")
