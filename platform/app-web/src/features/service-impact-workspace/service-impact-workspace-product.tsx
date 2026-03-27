@@ -13,9 +13,11 @@ import { navigateToImpactReportForService } from "../../lib/impact-report-naviga
 import { navigateToChangeSafetyCaseForPolicy, navigateToChangeSafetyCaseForService } from "../../lib/change-safety-case-navigation";
 import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreview } from "../../lib/maintenance-preview-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
 import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { navigateToDeltaDigestView } from "../../lib/delta-digest-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 import { useServiceImpactWorkspaceQuery } from "./api";
@@ -312,6 +314,21 @@ function ServiceImpactWorkspaceBody({
               Maintenance preview (first topology node)
             </button>
           ) : null}
+          {firstNode ? (
+            <button
+              type="button"
+              className="inline-action"
+              onClick={() =>
+                navigateToMaintenanceWindowWorkspaceForTopologyObject(firstNode, "node", {
+                  previewContext: "topology_drilldown",
+                  syncRunsLimit: syncLim,
+                })
+              }
+              title="Uses first Explorer topology node only — not full member discovery"
+            >
+              Maintenance window workspace (first topology node)
+            </button>
+          ) : null}
           {firstPolicy ? (
             <button
               type="button"
@@ -364,6 +381,9 @@ function ServiceImpactWorkspaceBody({
           </button>
           <button type="button" className="inline-action" onClick={() => navigateToEvidenceConsistencyWorkspace(syncLim)}>
             Evidence consistency workspace
+          </button>
+          <button type="button" className="inline-action" onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit: syncLim })}>
+            Evidence quality workspace
           </button>
         </p>
       </section>

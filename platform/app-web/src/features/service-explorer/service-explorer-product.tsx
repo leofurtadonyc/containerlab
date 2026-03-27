@@ -4,6 +4,7 @@ import type {
   ServiceTopologyLinkRecord,
 } from "../../api/contracts";
 import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { navigateToDeltaDigestView } from "../../lib/delta-digest-navigation";
 import { formatDateTime, formatLabel } from "../../lib/presentation";
 import {
@@ -352,6 +353,13 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
             onClick={() => navigateToEvidenceConsistencyWorkspace(syncLim)}
           >
             Evidence consistency workspace
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button"
+            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit: syncLim })}
+          >
+            Evidence quality workspace
           </button>
           <button type="button" className="nav-drilldown-button" onClick={() => navigateToEvidenceView("policies")}>
             Policies table

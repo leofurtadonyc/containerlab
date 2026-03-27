@@ -12,7 +12,9 @@ import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
 import { navigateToImpactReportForMaintenance } from "../../lib/impact-report-navigation";
 import { navigateToChangeSafetyCaseForMaintenance } from "../../lib/change-safety-case-navigation";
 import { navigateToMaintenanceEvidenceWorkspace } from "../../lib/maintenance-evidence-workspace-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 
 export interface MaintenancePreviewProductProps {
@@ -84,6 +86,19 @@ export function MaintenancePreviewProduct({ data, onReload }: MaintenancePreview
             type="button"
             className="inline-action"
             onClick={() =>
+              navigateToMaintenanceWindowWorkspaceForTopologyObject(subj.object_id, subj.object_kind, {
+                previewContext: data.preview_context,
+                syncRunsLimit: syncLim,
+              })
+            }
+            title="maintenance_window_workspace_v1 — multi-subject rollup; starts with this subject only"
+          >
+            Maintenance window workspace
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
               navigateToStabilityWorkspace({
                 syncRunsLimit: syncLim,
                 topologyObject: { id: subj.object_id, kind: subj.object_kind },
@@ -92,6 +107,14 @@ export function MaintenancePreviewProduct({ data, onReload }: MaintenancePreview
             title="Stability workspace — same topology subject anchor; not maintenance_evidence_workspace_v1"
           >
             Stability workspace
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit: syncLim })}
+            title="evidence_quality_workspace_v1 — read-path limits; not maintenance preview assembly"
+          >
+            Evidence quality workspace
           </button>
           <button type="button" className="maintenance-preview-toolbar-reload" onClick={() => void onReload()}>
             Reload

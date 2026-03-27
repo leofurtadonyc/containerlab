@@ -22,6 +22,7 @@ import {
 } from "../../lib/investigation-navigation";
 import { parseInvestigationNavContext } from "../../lib/investigation-url-context";
 import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 import { InvestigationContextPanels } from "./investigation-context-panels";
 import { InvestigationEvidenceTimeline } from "./investigation-evidence-timeline";
@@ -127,6 +128,13 @@ export function InvestigationWorkspaceProduct({
             onClick={() => navigateToEvidenceConsistencyWorkspace(syncRunsLimit)}
           >
             Evidence consistency workspace
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit })}
+          >
+            Evidence quality workspace
           </button>
           <EvidenceExportActions
             variant="investigation"

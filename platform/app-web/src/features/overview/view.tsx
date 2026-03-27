@@ -43,11 +43,13 @@ import { useDeltaDigestQuery } from "../delta-digest/api";
 import {
   OVERVIEW_RECENT_CHANGE_SYNC_LIMIT,
   useEvidenceConsistencySummaryQuery,
+  useEvidenceQualityWorkspaceQuery,
   useOperationalStabilitySummaryQuery,
   useRecentChangeSummaryQuery,
 } from "./api";
 import { DeltaDigestOverviewEntry } from "./delta-digest-overview-entry";
 import { EvidenceConsistencyOverviewEntry } from "./evidence-consistency-overview-entry";
+import { EvidenceQualityOverviewEntry } from "./evidence-quality-overview-entry";
 import { StabilityOverviewEntry } from "./stability-overview-entry";
 import { InvestigationOverviewEntry } from "./investigation-entry";
 import { OperatorBriefingOverviewEntry } from "./operator-briefing-entry";
@@ -148,6 +150,7 @@ export function OverviewView() {
   const deltaDigestQuery = useDeltaDigestQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
   const evidenceConsistencyQuery = useEvidenceConsistencySummaryQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
   const operationalStabilityQuery = useOperationalStabilitySummaryQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
+  const evidenceQualityQuery = useEvidenceQualityWorkspaceQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
   const searchKey = useUrlSearchParamsKey();
   const overviewMode = useMemo(() => readOverviewModeFromSearch(searchKey), [searchKey]);
 
@@ -170,6 +173,7 @@ export function OverviewView() {
         deltaDigestQuery,
         evidenceConsistencyQuery,
         operationalStabilityQuery,
+        evidenceQualityQuery,
       ]);
     } finally {
       refreshInFlightRef.current = false;
@@ -185,6 +189,7 @@ export function OverviewView() {
     deltaDigestQuery.reload,
     evidenceConsistencyQuery.reload,
     operationalStabilityQuery.reload,
+    evidenceQualityQuery.reload,
   ]);
 
   const overviewSlices = [
@@ -501,6 +506,12 @@ export function OverviewView() {
               isLoading: operationalStabilityQuery.isLoading,
               reload: operationalStabilityQuery.reload,
             }}
+            evidenceQuality={{
+              data: evidenceQualityQuery.data,
+              error: evidenceQualityQuery.error,
+              isLoading: evidenceQualityQuery.isLoading,
+              reload: evidenceQualityQuery.reload,
+            }}
           />
         </>
       ) : (
@@ -558,6 +569,16 @@ export function OverviewView() {
               error: operationalStabilityQuery.error,
               isLoading: operationalStabilityQuery.isLoading,
               reload: operationalStabilityQuery.reload,
+            }}
+          />
+
+          <EvidenceQualityOverviewEntry
+            syncRunsLimit={OVERVIEW_RECENT_CHANGE_SYNC_LIMIT}
+            evidenceQuality={{
+              data: evidenceQualityQuery.data,
+              error: evidenceQualityQuery.error,
+              isLoading: evidenceQualityQuery.isLoading,
+              reload: evidenceQualityQuery.reload,
             }}
           />
 

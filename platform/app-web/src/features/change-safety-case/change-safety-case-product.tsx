@@ -1,6 +1,7 @@
 import type { ChangeSafetyCaseResponse } from "../../api/contracts";
 import { ChangeSafetyCaseActions } from "../../components/change-safety-case-actions";
 import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 import {
   DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
@@ -15,6 +16,7 @@ import {
 } from "../../lib/impact-report-navigation";
 import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
 import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation";
@@ -210,12 +212,19 @@ export function ChangeSafetyCaseProduct({ data, downloadTarget, onReload }: Chan
           <button
             type="button"
             className="nav-drilldown-button"
+            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit: syncLim })}
+          >
+            Evidence quality workspace
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button"
             onClick={() => navigateToStabilityWorkspaceFromCase(data, syncLim)}
           >
             Stability workspace
           </button>
         </div>
-        <DeeperPivots data={data} />
+        <DeeperPivots data={data} syncLim={syncLim} />
       </section>
     </div>
   );
@@ -289,7 +298,7 @@ function NestedSummary({ data }: { data: ChangeSafetyCaseResponse }) {
   return null;
 }
 
-function DeeperPivots({ data }: { data: ChangeSafetyCaseResponse }) {
+function DeeperPivots({ data, syncLim }: { data: ChangeSafetyCaseResponse; syncLim: number }) {
   if (data.safety_case_context === "policy_change_safety" && data.anchor_policy_id) {
     const pid = data.anchor_policy_id;
     return (
@@ -360,6 +369,18 @@ function DeeperPivots({ data }: { data: ChangeSafetyCaseResponse }) {
           }
         >
           Maintenance preview
+        </button>
+        <button
+          type="button"
+          className="nav-drilldown-button"
+          onClick={() =>
+            navigateToMaintenanceWindowWorkspaceForTopologyObject(subj.object_id, subj.object_kind, {
+              previewContext: ctx,
+              syncRunsLimit: syncLim,
+            })
+          }
+        >
+          Maintenance window workspace
         </button>
       </div>
     );

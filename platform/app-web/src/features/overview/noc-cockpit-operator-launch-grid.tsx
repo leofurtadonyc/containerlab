@@ -7,12 +7,18 @@ import { navigateToImpactReportForMaintenance, navigateToImpactReportForPolicy }
 import { navigateToChangeSafetyCaseForMaintenance, navigateToChangeSafetyCaseForPolicy } from "../../lib/change-safety-case-navigation";
 import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
+import {
+  DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
+  readSyncRunsLimitFromSearch,
+} from "../../lib/investigation-navigation";
 import { pickStrongestPolicyId } from "../../lib/noc-cockpit-priority";
 import { navigateToPolicyExplainabilityWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
 import { navigateToServiceImpactWorkspace } from "../../lib/service-impact-workspace-navigation";
 import { navigateToServiceExplorer, navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 
 export interface NocCockpitOperatorLaunchGridProps {
   firstNodeId: string | null;
@@ -61,6 +67,10 @@ export function NocCockpitOperatorLaunchGrid({
 }: NocCockpitOperatorLaunchGridProps) {
   const topRisk = riskSummary?.ranked_objects?.[0] ?? null;
   const strongPolicyId = pickStrongestPolicyId(policiesData, firstPolicyId);
+  const syncRuns =
+    typeof window !== "undefined"
+      ? readSyncRunsLimitFromSearch(window.location.search, DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT)
+      : DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT;
 
   return (
     <div className="noc-cockpit__launch-grid" data-testid="noc-cockpit-operator-launch">
@@ -178,6 +188,19 @@ export function NocCockpitOperatorLaunchGrid({
                 >
                   Maintenance evidence workspace (top risk row)
                 </button>
+                <button
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() =>
+                    navigateToMaintenanceWindowWorkspaceForTopologyObject(topRisk.object_id, topRisk.object_kind, {
+                      previewContext: "planning_window",
+                      syncRunsLimit: syncRuns,
+                    })
+                  }
+                  title="maintenance_window_workspace_v1 — multi-subject rollup; starts with top risk subject only"
+                >
+                  Maintenance window workspace (top risk row)
+                </button>
               </>
             ) : firstNodeId ? (
               <>
@@ -203,6 +226,19 @@ export function NocCockpitOperatorLaunchGrid({
                   title="maintenance_evidence_workspace_v1 — not evidence_export_v1"
                 >
                   Maintenance evidence workspace (first topology node)
+                </button>
+                <button
+                  type="button"
+                  className="nav-drilldown-button"
+                  onClick={() =>
+                    navigateToMaintenanceWindowWorkspaceForTopologyObject(firstNodeId, "node", {
+                      previewContext: "explicit_subject",
+                      syncRunsLimit: syncRuns,
+                    })
+                  }
+                  title="maintenance_window_workspace_v1 — multi-subject rollup; starts with first node only"
+                >
+                  Maintenance window workspace (first topology node)
                 </button>
               </>
             ) : (
@@ -262,6 +298,24 @@ export function NocCockpitOperatorLaunchGrid({
             {!strongPolicyId && !topRisk ? (
               <span className="table-note">No policy or ranked topology row to anchor a change safety case yet.</span>
             ) : null}
+          </div>
+        </article>
+
+        <article className="detail-card noc-cockpit-launch-card" data-testid="noc-cockpit-launch-evidence-quality">
+          <h3>Evidence quality review</h3>
+          <p className="table-note">
+            Cross-domain <code>evidence_quality_workspace_v1</code> — collection assurance, fallback, and read-path limits
+            from existing assemblies. <strong>Not</strong> evidence-consistency tension, <strong>not</strong> stability
+            churn, <strong>not</strong> remediation.
+          </p>
+          <div className="noc-cockpit-launch-card__actions">
+            <button
+              type="button"
+              className="nav-drilldown-button"
+              onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit: syncRuns })}
+            >
+              Open evidence quality workspace
+            </button>
           </div>
         </article>
       </div>

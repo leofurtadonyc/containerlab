@@ -15,6 +15,7 @@ const {
   useTopologyRiskSummaryQuery,
   useDeltaDigestQuery,
   useEvidenceConsistencySummaryQuery,
+  useEvidenceQualityWorkspaceQuery,
   useOperationalStabilitySummaryQuery,
   useUrlSearchParamsKey,
 } = vi.hoisted(() => ({
@@ -27,6 +28,7 @@ const {
   useTopologyRiskSummaryQuery: vi.fn(),
   useDeltaDigestQuery: vi.fn(),
   useEvidenceConsistencySummaryQuery: vi.fn(),
+  useEvidenceQualityWorkspaceQuery: vi.fn(),
   useOperationalStabilitySummaryQuery: vi.fn(),
   useUrlSearchParamsKey: vi.fn(),
 }));
@@ -72,6 +74,7 @@ vi.mock("../src/features/overview/api", async (importOriginal) => {
     ...actual,
     useRecentChangeSummaryQuery,
     useEvidenceConsistencySummaryQuery,
+    useEvidenceQualityWorkspaceQuery,
     useOperationalStabilitySummaryQuery,
   };
 });
@@ -622,6 +625,40 @@ function createOperationalStabilitySummaryData() {
   };
 }
 
+function createEvidenceQualityWorkspaceData() {
+  return {
+    metadata: {
+      service: "app-api",
+      version: "test",
+      phase: "phase_2_read_only_foundation",
+      generated_at: "2025-01-01T00:00:00Z",
+    },
+    contract_id: "evidence_quality_workspace_v1",
+    safety_framing: {
+      contract_id: "evidence_quality_workspace_v1",
+      authority_posture: "interpretation_support_only" as const,
+      explicit_non_claims: ["not_validation_or_approval"],
+      phase: "phase_2_read_only_foundation" as const,
+      summary_disclaimer: "Disclaimer",
+    },
+    read_path_reliability_posture: "bounded_ok" as const,
+    collection_assurance_summary: "Collector paths bounded.",
+    scope_summary: "Evidence quality scope",
+    sync_runs_limit_applied: 20,
+    rows: [
+      {
+        evidence_quality_dimension: "collection_assurance" as const,
+        evidence_subject_domain: "devices" as const,
+        summary: "Sample weakness row.",
+        detail: null,
+        source_citations: ["GET /api/v1/devices"],
+      },
+    ],
+    caveats: [],
+    assembly_notes: [],
+  };
+}
+
 function createEvidenceConsistencySummaryData() {
   return {
     metadata: {
@@ -662,6 +699,7 @@ beforeEach(() => {
   useTopologyRiskSummaryQuery.mockReturnValue(createQueryState(createTopologyRiskSummaryData()));
   useDeltaDigestQuery.mockReturnValue(createQueryState(createDeltaDigestOverviewData()));
   useEvidenceConsistencySummaryQuery.mockReturnValue(createQueryState(createEvidenceConsistencySummaryData()));
+  useEvidenceQualityWorkspaceQuery.mockReturnValue(createQueryState(createEvidenceQualityWorkspaceData()));
   useOperationalStabilitySummaryQuery.mockReturnValue(createQueryState(createOperationalStabilitySummaryData()));
 });
 
@@ -714,10 +752,13 @@ describe("overview view", () => {
 
     expect(html).toContain('data-testid="noc-cockpit-section"');
     expect(html).toContain('data-testid="evidence-consistency-overview-entry"');
+    expect(html).toContain('data-testid="evidence-quality-overview-entry"');
     expect(html).toContain('data-testid="stability-overview-entry"');
     expect(html).toContain("Operational stability (cross-surface)");
     expect(html).toContain("operational_stability_summary_v1");
     expect(html).toContain("Evidence consistency (cross-domain)");
+    expect(html).toContain("Evidence quality (read paths)");
+    expect(html).toContain("evidence_quality_workspace_v1");
     expect(html).toContain("noc_cockpit_v1");
     expect(html).toContain("maintenance evidence workspace");
     expect(html).toContain("Cockpit composition");
@@ -728,6 +769,8 @@ describe("overview view", () => {
     expect(html).toContain('data-testid="noc-cockpit-launch-maintenance-preview"');
     expect(html).toContain('data-testid="noc-cockpit-launch-impact-report"');
     expect(html).toContain('data-testid="noc-cockpit-launch-change-safety-case"');
+    expect(html).toContain('data-testid="noc-cockpit-launch-evidence-quality"');
+    expect(html).toContain("Evidence quality workspace (cross-domain)");
     expect(html).toContain("Delta digest");
     expect(html).toContain("operator briefing");
     expect(html).toContain("delta-digest-overview-entry");
@@ -785,6 +828,8 @@ describe("overview view", () => {
     expect(html).toContain("delta-digest-overview-entry");
     expect(html).toContain("Open stability workspace");
     expect(html).toContain("stability-overview-entry");
+    expect(html).toContain("Open evidence quality workspace");
+    expect(html).toContain("evidence-quality-overview-entry");
     expect(html).toContain("Evidence consistency (cross-domain)");
     expect(html).toContain("evidence_consistency_summary_v1");
     expect(html).toContain("evidence-consistency-overview-entry");

@@ -5,9 +5,11 @@ import { navigateToInvestigationView } from "../../lib/investigation-navigation"
 import { navigateToPolicyDossierWorkspace } from "../../lib/policy-dossier-navigation";
 import { navigateToSituationRoomView } from "../../lib/situation-room-navigation";
 import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
 import { formatDateTime } from "../../lib/presentation";
 import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 
@@ -127,6 +129,13 @@ export function OperatorBriefingProduct({ data, syncRunsLimit, onReload }: Opera
             <dd>{ctx.global_search_q_client_hint ?? "—"}</dd>
           </div>
         </dl>
+        {ctx.inv_from_client_hint === "evidence-quality-workspace" ? (
+          <p className="table-note operator-briefing-context__continuity" data-testid="operator-briefing-from-evidence-quality">
+            Continuity: opened with <code>inv_from=evidence-quality-workspace</code> — this briefing is still a composed
+            handoff surface; it does <strong>not</strong> replay evidence-quality rows as authority and does{" "}
+            <strong>not</strong> substitute the evidence quality workspace assembly.
+          </p>
+        ) : null}
       </section>
 
       <section className="operator-briefing-live-pivots" aria-labelledby="ob-pivots-heading">
@@ -149,6 +158,13 @@ export function OperatorBriefingProduct({ data, syncRunsLimit, onReload }: Opera
             onClick={() => navigateToEvidenceConsistencyWorkspace(syncRunsLimit)}
           >
             Evidence consistency workspace
+          </button>
+          <button
+            type="button"
+            className="nav-drilldown-button operator-briefing-live-pivots__primary"
+            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit })}
+          >
+            Evidence quality workspace
           </button>
           <button
             type="button"
@@ -221,6 +237,22 @@ export function OperatorBriefingProduct({ data, syncRunsLimit, onReload }: Opera
               Maintenance evidence workspace ({topo.object_identity.object_kind} {topo.object_identity.object_id})
             </button>
           ) : null}
+          {topo?.object_identity ? (
+            <button
+              type="button"
+              className="nav-drilldown-button"
+              title="maintenance_window_workspace_v1 — multi-subject rollup; starts with briefing topology subject only"
+              onClick={() =>
+                navigateToMaintenanceWindowWorkspaceForTopologyObject(
+                  topo.object_identity.object_id,
+                  topo.object_identity.object_kind,
+                  { previewContext: "topology_drilldown", syncRunsLimit: syncRunsLimit },
+                )
+              }
+            >
+              Maintenance window workspace ({topo.object_identity.object_kind} {topo.object_identity.object_id})
+            </button>
+          ) : null}
           <button type="button" className="nav-drilldown-button" onClick={() => navigateToEvidenceView("devices")}>
             Devices
           </button>
@@ -240,8 +272,9 @@ export function OperatorBriefingProduct({ data, syncRunsLimit, onReload }: Opera
           reload. <strong>Downloads</strong> are point-in-time files. <strong>Evidence replay</strong> is for reviewing a
           frozen <code>evidence_export_v1</code> artifact you already saved — not a substitute for this live workspace.
           The composed <code>maintenance_evidence_workspace_v1</code> surface (<strong>Maintenance evidence</strong> in
-          the shell) is a <strong>separate live GET</strong> — it is <strong>not</strong> an export root here,{" "}
-          <strong>not</strong> a substitute for <code>impact_report_v1</code> or <code>change_safety_case_v1</code>{" "}
+          the shell) and <code>maintenance_window_workspace_v1</code> (<strong>Maintenance window workspace</strong> for
+          multi-subject rollups) are <strong>separate live GET</strong> families — <strong>not</strong> export roots here,{" "}
+          <strong>not</strong> substitutes for <code>impact_report_v1</code> or <code>change_safety_case_v1</code>{" "}
           report downloads, and <strong>not</strong> included in briefing bundle members; use{" "}
           <strong>Live pivots</strong> when a topology subject is in scope.
         </p>

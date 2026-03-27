@@ -14,6 +14,8 @@ import { navigateToOperatorBriefingView } from "../../lib/operator-briefing-navi
 import { navigateToEvidenceView, navigateToPoliciesWithDegradedPolicyV1Posture } from "../../lib/url-app-state";
 import { navigateToMaintenanceEvidenceWorkspaceForTopologyObject } from "../../lib/maintenance-evidence-workspace-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 import { readDossierSourceFromSearch } from "../../lib/topology-dossier-navigation";
 import { navigateToPoliciesPolicy } from "../../lib/topology-policy-navigation";
@@ -161,6 +163,20 @@ export function TopologyObjectDossierWorkspace({ objectId, objectKind }: Topolog
             type="button"
             className="inline-action"
             onClick={() =>
+              navigateToMaintenanceWindowWorkspaceForTopologyObject(
+                data.object_identity.object_id,
+                data.object_identity.object_kind,
+                { previewContext: "topology_drilldown", syncRunsLimit: syncRuns },
+              )
+            }
+            title="maintenance_window_workspace_v1 — multi-subject rollup shell; starts with this subject only"
+          >
+            Maintenance window workspace
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
               navigateToStabilityWorkspace({
                 syncRunsLimit: syncRuns,
                 topologyObject: {
@@ -172,6 +188,14 @@ export function TopologyObjectDossierWorkspace({ objectId, objectKind }: Topolog
             title="operational_stability_summary_v1 lane — same topology anchor as dossier; not evidence consistency"
           >
             Stability workspace
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit: syncRuns })}
+            title="evidence_quality_workspace_v1 — cross-domain read-path limits; not dossier JSON assembly"
+          >
+            Evidence quality workspace
           </button>
           <EvidenceExportActions
             variant="dossier"

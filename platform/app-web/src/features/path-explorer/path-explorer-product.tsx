@@ -4,6 +4,7 @@ import type { PathExplorerWorkspaceResponse } from "../../api/contracts";
 import { formatLabel } from "../../lib/presentation";
 import { navigateToDeltaDigestView } from "../../lib/delta-digest-navigation";
 import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
 import { navigateToOperatorBriefingView } from "../../lib/operator-briefing-navigation";
 import { DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT, navigateToInvestigationView } from "../../lib/investigation-navigation";
@@ -249,6 +250,13 @@ function PathExplorerWorkspaceBody({
             onClick={() => navigateToEvidenceConsistencyWorkspace(DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT)}
           >
             Evidence consistency workspace
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit: DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT })}
+          >
+            Evidence quality workspace
           </button>
           <button
             type="button"

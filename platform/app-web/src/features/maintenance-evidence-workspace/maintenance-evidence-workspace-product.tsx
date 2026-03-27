@@ -7,7 +7,9 @@ import { formatDateTime } from "../../lib/presentation";
 import { navigateToChangeSafetyCaseForMaintenance } from "../../lib/change-safety-case-navigation";
 import { navigateToImpactReportForMaintenance } from "../../lib/impact-report-navigation";
 import { navigateToMaintenancePreview } from "../../lib/maintenance-preview-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
 import { navigateToTopologyDossier } from "../../lib/topology-dossier-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 
 export interface MaintenanceEvidenceWorkspaceProductProps {
@@ -91,6 +93,19 @@ export function MaintenanceEvidenceWorkspaceProduct({ data, onReload }: Maintena
             type="button"
             className="inline-action"
             onClick={() =>
+              navigateToMaintenanceWindowWorkspaceForTopologyObject(subj.object_id, subj.object_kind, {
+                previewContext: ctx,
+                syncRunsLimit: syncLim,
+              })
+            }
+            title="maintenance_window_workspace_v1 — multi-subject rollup; starts with this subject only"
+          >
+            Maintenance window workspace
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() =>
               navigateToStabilityWorkspace({
                 syncRunsLimit: syncLim,
                 topologyObject: { id: subj.object_id, kind: subj.object_kind },
@@ -99,6 +114,14 @@ export function MaintenanceEvidenceWorkspaceProduct({ data, onReload }: Maintena
             title="Stability workspace — same topology subject; not maintenance evidence JSON assembly"
           >
             Stability workspace
+          </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit: syncLim })}
+            title="evidence_quality_workspace_v1 — cross-domain read-path limits; not this maintenance assembly"
+          >
+            Evidence quality workspace
           </button>
           <button type="button" className="maintenance-preview-toolbar-reload" onClick={() => void onReload()}>
             Reload

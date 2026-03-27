@@ -13,6 +13,7 @@ import { AuditView } from "./features/audit/view";
 import { CapabilitiesView } from "./features/capabilities/view";
 import { DeltaDigestView } from "./features/delta-digest/view";
 import { EvidenceConsistencyView } from "./features/evidence-consistency/view";
+import { EvidenceQualityWorkspaceView } from "./features/evidence-quality-workspace/view";
 import { StabilityWorkspaceView } from "./features/stability-workspace/view";
 import { EvidenceReplayView } from "./features/evidence-replay/view";
 import { DevicesView } from "./features/devices/view";
@@ -28,6 +29,7 @@ import { ServiceExplorerView } from "./features/service-explorer/view";
 import { ServiceDossierView } from "./features/service-dossier/view";
 import { MaintenancePreviewView } from "./features/maintenance-preview/view";
 import { MaintenanceEvidenceWorkspaceView } from "./features/maintenance-evidence-workspace/view";
+import { MaintenanceWindowWorkspaceView } from "./features/maintenance-window-workspace/view";
 import { ImpactReportView } from "./features/impact-report/view";
 import { ChangeSafetyCaseView } from "./features/change-safety-case/view";
 import { ReadinessView } from "./features/readiness/view";
@@ -39,6 +41,7 @@ const NAV_ITEMS = [
   { id: "overview", label: "Overview" },
   { id: "delta-digest", label: "Delta digest" },
   { id: "evidence-consistency", label: "Evidence consistency" },
+  { id: "evidence-quality-workspace", label: "Evidence quality" },
   { id: "stability-workspace", label: "Stability" },
   { id: "situation-room", label: "Situation room" },
   { id: "investigation", label: "Investigation" },
@@ -51,6 +54,7 @@ const NAV_ITEMS = [
   { id: "service-dossier", label: "Service dossier" },
   { id: "maintenance-preview", label: "Maintenance Preview" },
   { id: "maintenance-evidence-workspace", label: "Maintenance evidence" },
+  { id: "maintenance-window-workspace", label: "Maintenance window" },
   { id: "impact-report", label: "Impact Report" },
   { id: "change-safety-case", label: "Change safety case" },
   { id: "workflows", label: "Workflows" },
@@ -72,6 +76,8 @@ function renderView(viewId: string) {
       return <DeltaDigestView />;
     case "evidence-consistency":
       return <EvidenceConsistencyView />;
+    case "evidence-quality-workspace":
+      return <EvidenceQualityWorkspaceView />;
     case "stability-workspace":
       return <StabilityWorkspaceView />;
     case "situation-room":
@@ -98,6 +104,8 @@ function renderView(viewId: string) {
       return <MaintenancePreviewView />;
     case "maintenance-evidence-workspace":
       return <MaintenanceEvidenceWorkspaceView />;
+    case "maintenance-window-workspace":
+      return <MaintenanceWindowWorkspaceView />;
     case "impact-report":
       return <ImpactReportView />;
     case "change-safety-case":

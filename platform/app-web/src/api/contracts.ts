@@ -625,6 +625,67 @@ export interface MaintenancePreviewResponse {
   assembly_caveats: string[];
 }
 
+/** `GET /api/v1/maintenance-window-workspace` — multi-subject maintenance planning rollups; not approval or blast-radius authority. */
+export interface MaintenanceWindowSubjectResolutionFailure {
+  object_kind: "node" | "link";
+  object_id: string;
+  reason: string;
+}
+
+export interface MaintenanceWindowSubjectStripRow {
+  object_kind: "node" | "link";
+  object_id: string;
+  display_name: string;
+  sparse_preview: boolean;
+  related_policy_count: number;
+  related_services_total: number;
+}
+
+export interface MaintenanceWindowAffectedServiceRollupRow {
+  service_id: string;
+  kind: "policy" | "color" | "headend" | "endpoint";
+  member_count: number;
+  degraded_group_posture: "ok" | "degraded" | "unknown";
+  touched_by_subjects: string[];
+}
+
+export interface MaintenanceWindowPolicyRollupRow {
+  policy_id: string;
+  policy_name: string;
+  touched_by_subjects: string[];
+}
+
+export interface MaintenanceWindowTensionCueRow {
+  summary: string;
+  detail: string | null;
+  category: string;
+}
+
+export interface MaintenanceWindowWorkspaceResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: "maintenance_window_workspace_v1";
+  window_framing_summary: string;
+  preview_context: MaintenancePreviewContext;
+  subject_cap_applied: number;
+  subjects_requested: number;
+  subjects_resolved: number;
+  selected_subjects: string[];
+  subject_strip: MaintenanceWindowSubjectStripRow[];
+  subject_resolution_failures: MaintenanceWindowSubjectResolutionFailure[];
+  deduped_affected_services: MaintenanceWindowAffectedServiceRollupRow[];
+  deduped_related_policies: MaintenanceWindowPolicyRollupRow[];
+  merged_assembly_caveats: string[];
+  merged_evidence_gap_notes: string[];
+  stability_cue_summary: string | null;
+  stability_summary_unavailable_note: string | null;
+  tension_cue_rows: MaintenanceWindowTensionCueRow[];
+  evidence_consistency_unavailable_note: string | null;
+  explicit_non_claims: string[];
+  source_contract_ids: string[];
+  sync_runs_limit_applied: number;
+  recommended_api_pivots: string[];
+}
+
 /** `GET /api/v1/maintenance-evidence-workspace` — composed maintenance read assembly; not approval, simulation, or evidence_export_v1. */
 export interface MaintenanceEvidenceWorkspaceResponse {
   metadata: ApiResponseMetadata;
@@ -2429,6 +2490,54 @@ export interface OperationalStabilitySummaryResponse {
   scope_summary: string;
   sync_runs_limit_applied: number;
   rows: OperationalStabilityRow[];
+  caveats: string[];
+  assembly_notes: string[];
+}
+
+/** `GET /api/v1/evidence-quality-workspace` — `evidence_quality_workspace_v1`. */
+export type EvidenceQualityDimension =
+  | "collection_assurance"
+  | "read_path_fragility"
+  | "fallback_conditions"
+  | "sparse_history_anchors"
+  | "comparison_limits"
+  | "unsupported_partial_detail"
+  | "cross_domain_scope_note";
+
+export type EvidenceQualitySubjectDomain =
+  | "platform_read_paths"
+  | "platform_recovery"
+  | "devices"
+  | "policies"
+  | "topology"
+  | "capabilities"
+  | "global";
+
+export type ReadPathReliabilityPosture = "bounded_ok" | "mixed_degraded" | "heavily_limited";
+
+export interface EvidenceQualityRow {
+  evidence_quality_dimension: EvidenceQualityDimension;
+  evidence_subject_domain: EvidenceQualitySubjectDomain;
+  summary: string;
+  detail: string | null;
+  source_citations: string[];
+}
+
+export interface EvidenceQualitySummaryResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: {
+    contract_id: string;
+    authority_posture: "interpretation_support_only" | "read_only_assembly_non_authoritative";
+    explicit_non_claims: string[];
+    phase: "phase_2_read_only_foundation";
+    summary_disclaimer: string;
+  };
+  read_path_reliability_posture: ReadPathReliabilityPosture;
+  collection_assurance_summary: string;
+  scope_summary: string;
+  sync_runs_limit_applied: number;
+  rows: EvidenceQualityRow[];
   caveats: string[];
   assembly_notes: string[];
 }

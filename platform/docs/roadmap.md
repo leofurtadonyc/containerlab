@@ -142,6 +142,20 @@ Phase 2 to date has established:
 - **Week 37 Friday task 01 (verifier, regression, docs alignment):** **`verify-core-runtime.sh`** structural **`GET`**s for **`/api/v1/stability/summary`**, **`/api/v1/topology/objects/{node_id}/stability-profile`**, **`/api/v1/services/{service_id}/stability-profile`** (when sampling gates match), **`operational_stability_summary_v1`** in shipped **`/assets/*.js`**; **`vitest`** **`week37-verifier-bundle-markers.test.ts`**; **`data-flows.md`**, **`deployment-runbook.md`**, **`roadmap.md`**, **`03-CURRENT-STATUS.md`**; **`conditionally_ready_with_explicit_limits`** unchanged; **`01-CURRENT-PHASE.md`** unchanged
 - **Week 37 Friday task 02 (rollup, roadmap update, next-posture recommendation):** **`03-CURRENT-STATUS.md`** **Week 37 closure (Friday rollup)**; **`roadmap.md`** **Week 37 innovation lane (closed)**; **`post-week-37-bounded-phase2-recommendation.md`**; **`01-CURRENT-PHASE.md`** unchanged
 - **Week 37 closure (Friday rollup):** **`03-CURRENT-STATUS.md`** records week **37** as closed bounded **innovation** lane—**operational stability summary v1**, **topology object stability profile v1**, **service stability profile v1**, **stability workspace** + cross-surface pivots, **`verify-core-runtime.sh`** / **`vitest`** week **37** evidence; **`conditionally_ready_with_explicit_limits`** unchanged; canonical rollup [`week-37-friday-task-02-week37-rollup-roadmap-and-next-posture.md`](../../agent/sdn-tasks/completed/week-37-friday-task-02-week37-rollup-roadmap-and-next-posture.md); post–week **37** scheduling posture [`post-week-37-bounded-phase2-recommendation.md`](./post-week-37-bounded-phase2-recommendation.md)
+- **Week 38 Friday task 01 (verifier, regression, docs alignment):** **`verify-core-runtime.sh`** structural **`GET`**s for **`/api/v1/maintenance-window-workspace`** and handoff export when topology samples exist; shipped **`/assets/*.js`** **`mww_subject`** and **`maintenance_window_workspace_v1`**; **`vitest`** **`week38-verifier-bundle-markers.test.ts`**; **`data-flows.md`**, **`deployment-runbook.md`**, **`roadmap.md`**, **`03-CURRENT-STATUS.md`**; **`conditionally_ready_with_explicit_limits`** unchanged; **`01-CURRENT-PHASE.md`** unchanged
+- **Week 38 Friday task 02 (rollup, roadmap update, next-posture recommendation):** **`03-CURRENT-STATUS.md`** **Week 38 closure (Friday rollup)**; **`roadmap.md`** **Week 38 innovation lane (closed)**; **`post-week-38-bounded-phase2-recommendation.md`**; **`01-CURRENT-PHASE.md`** unchanged
+- **Week 38 closure (Friday rollup):** **`03-CURRENT-STATUS.md`** records week **38** as closed bounded **innovation** lane—**maintenance window workspace v1**, **maintenance window handoff v1**, cross-surface pivots, **`verify-core-runtime.sh`** / **`vitest`** week **38** evidence; **`conditionally_ready_with_explicit_limits`** unchanged; canonical rollup [`week-38-friday-task-02-week38-rollup-roadmap-and-next-posture.md`](../../agent/sdn-tasks/completed/week-38-friday-task-02-week38-rollup-roadmap-and-next-posture.md); post–week **38** scheduling posture [`post-week-38-bounded-phase2-recommendation.md`](./post-week-38-bounded-phase2-recommendation.md)
+- **Week 39 Monday task 01 (contract):** [`evidence-quality-workspace-contract.md`](./evidence-quality-workspace-contract.md) defines **`evidence_quality_workspace_v1`** and overlap boundaries vs **evidence consistency**, **operational stability**, **maintenance evidence**, **maintenance window**; **`conditionally_ready_with_explicit_limits`** unchanged; schedule [`week-39-schedule-overview.md`](../../agent/sdn/week-39-schedule-overview.md)
+- **Week 39 Monday task 02 (API):** **`GET /api/v1/evidence-quality-workspace`** — **`collection_assurance_summary`**, **`read_path_reliability_posture`**, dimensioned **`rows[]`** from existing list **`GET`** assemblies only; **`pytest`** **`test_evidence_quality_workspace.py`**; **`conditionally_ready_with_explicit_limits`** unchanged; **WebUI** later week **39** tasks
+- **Week 39 Tuesday task 01 (WebUI shell + typed client):** **`view=evidence-quality-workspace`**, **`EvidenceQualityWorkspaceView`**, **`getEvidenceQualityWorkspace`**; **`vitest`** **`evidence-quality-workspace-view.test.tsx`**
+- **Week 39 Tuesday task 02 (domain weakness sections):** per-domain **`domain-sections.tsx`** / **`labels.ts`**; read-only pivots; **`vitest`** **`evidence-quality-domain-sections.test.tsx`**
+- **Week 39 Wednesday task 01 (explanation contract):** [`evidence-weakness-explanation-contract.md`](./evidence-weakness-explanation-contract.md) — **`evidence_weakness_explanation_v1`**; **`conditionally_ready_with_explicit_limits`** unchanged
+- **Week 39 Wednesday task 02 (explanation API):** **`GET /api/v1/evidence-weakness-explanation`** — maps workspace rows to explanation categories and **next-best** pivots; **`pytest`** **`test_evidence_weakness_explanation.py`**
+- **Week 39 Thursday task 01 (cross-surface pivots):** **`navigateToEvidenceQualityWorkspace`** from investigation, stability, dossiers, maintenance, briefing, CSC, path, devices/topology/policies; Overview + NOC **`EvidenceQualityOverviewEntry`**; **`vitest`** navigation/product tests
+- **Week 39 Thursday task 02 (NOC / search / briefing):** **`noc-cockpit-launch-evidence-quality`**; **global search** cross-surface evidence-quality workspace; **operator briefing** **`inv_from=evidence-quality-workspace`**; **`vitest`** **`global-operator-search-week31.test.ts`**, **`operator-briefing-view.test.tsx`**
+- **Week 39 Friday task 01 (verifier, regression, docs alignment):** **`verify-core-runtime.sh`** / **`data-flows.md`** / **`deployment-runbook.md`** / **`roadmap.md`** / **`03-CURRENT-STATUS.md`** alignment for week **39** evidence-quality lane where shipped; repository **`vitest`** / **`pytest`** as recorded in **03-CURRENT-STATUS**; **`conditionally_ready_with_explicit_limits`** unchanged; **`01-CURRENT-PHASE.md`** unchanged
+- **Week 39 Friday task 02 (rollup, roadmap update, next-posture recommendation):** **`03-CURRENT-STATUS.md`** **Week 39 closure (Friday rollup)**; **`roadmap.md`** **Week 39 innovation lane (closed)**; **`post-week-39-bounded-phase2-recommendation.md`**; **`01-CURRENT-PHASE.md`** unchanged
+- **Week 39 closure (Friday rollup):** **`03-CURRENT-STATUS.md`** records week **39** as closed bounded **innovation** lane—**evidence quality workspace v1**, **evidence weakness explanation v1**, cross-surface pivots, **NOC** / **search** / **briefing** integration, verifier / **`vitest`** / docs alignment; **`conditionally_ready_with_explicit_limits`** unchanged; canonical rollup [`week-39-friday-task-02-week39-rollup-roadmap-and-next-posture.md`](../../agent/sdn-tasks/completed/week-39-friday-task-02-week39-rollup-roadmap-and-next-posture.md); post–week **39** scheduling posture [`post-week-39-bounded-phase2-recommendation.md`](./post-week-39-bounded-phase2-recommendation.md)
 - **Week 24 closure (Friday rollup):** **`03-CURRENT-STATUS.md`** records week **24** as closed bounded **change intelligence** (contract + **`recent-summary`** aggregation, Overview **`RecentChangeIntelligencePanel`** and Platform Health cues, **read-only** **`view=`** drilldowns and history↔Overview links, **`pytest`** / **`vitest`** / structural **`verify-core-runtime`** change-intelligence JSON checks, cross-doc alignment); **`conditionally_ready_with_explicit_limits`** unchanged; observing the latest **`recent-summary`** and verifier branches at runtime still follows **rebuild → redeploy → verify** when images predate the change
 - **Week 24 closure (Friday task 02):** **`post-week-24-bounded-phase2-recommendation.md`** states the post–week **24** evidence-first default, narrowed plausible follow-ons (week **24** change intelligence closed unless proven gap), and **anti-recommendations** against momentum-driven reopen—**no** new default implementation lane, **no** phase transition
 - **Week 19 closure (Friday task 02):** **`topology-truth-depth-review.md`** adds a **Post–Week 19** note: topology **partiality contract** stays **closed** in shipped code; **default next scheduling** remains **`ADR-0001`** **Priority 2** evidence-first reassessment—**not** topology code by default after inventory work
@@ -203,6 +217,8 @@ Interpret that recommendation narrowly.
 - do not reopen week **35** bounded **service evidence timeline** (**`service_evidence_timeline_v1`**, **`GET /api/v1/services/{service_id}/evidence-timeline`**), **service evidence delta** (**`service_evidence_delta_v1`**, **`GET /api/v1/services/{service_id}/evidence-delta`**), **evidence consistency summary** (**`evidence_consistency_summary_v1`**, **`GET /api/v1/evidence-consistency/summary`**, **`EvidenceConsistencyView`**, **Overview** / **NOC** entry), **operator contract labeling** hardening, **`verify-core-runtime.sh`** week **35** bundle + summary **`GET`** structural checks, **`week35-verifier-bundle-markers.test.ts`**, or week **35** cross-doc alignment by default without new evidence—see [`post-week-35-bounded-phase2-recommendation.md`](./post-week-35-bounded-phase2-recommendation.md)
 - do not reopen week **36** bounded **topology object evidence timeline** (**`topology_object_evidence_timeline_v1`**), **topology object evidence delta** (**`topology_object_evidence_delta_v1`**), **maintenance evidence workspace** (**`maintenance_evidence_workspace_v1`**, **`GET /api/v1/maintenance-evidence-workspace`**, **`view=maintenance-evidence-workspace`**), **NOC** / **global search** / **operator briefing** maintenance pivots, **`verify-core-runtime.sh`** **`maintenance-evidence-workspace`** structural **`GET`** + **`maintenance_evidence_workspace_v1`** bundle marker, **`week36-verifier-bundle-markers.test.ts`**, or week **36** cross-doc alignment by default without new evidence—see [`post-week-36-bounded-phase2-recommendation.md`](./post-week-36-bounded-phase2-recommendation.md)
 - do not reopen week **37** bounded **operational stability summary** (**`operational_stability_summary_v1`**, **`GET /api/v1/stability/summary`**), **topology object stability profile** (**`topology_object_stability_profile_v1`**), **service stability profile** (**`service_stability_profile_v1`**), **stability workspace** (**`view=stability-workspace`**, cross-surface **`navigateToStabilityWorkspace`** pivots), **`verify-core-runtime.sh`** week **37** stability **`GET`**s + **`operational_stability_summary_v1`** bundle marker, **`week37-verifier-bundle-markers.test.ts`**, or week **37** cross-doc alignment by default without new evidence—see [`post-week-37-bounded-phase2-recommendation.md`](./post-week-37-bounded-phase2-recommendation.md)
+- do not reopen week **38** bounded **maintenance window workspace** (**`maintenance_window_workspace_v1`**, **`GET /api/v1/maintenance-window-workspace`**, **`view=maintenance-window-workspace`**, **`mww_subject`**), **maintenance window handoff** (**`maintenance_window_handoff_v1`**, **`GET /api/v1/exports/maintenance-window-handoff`**), cross-surface **week 38** pivots, **`verify-core-runtime.sh`** week **38** structural **`GET`**s + **`mww_subject`** / **`maintenance_window_workspace_v1`** bundle markers, **`week38-verifier-bundle-markers.test.ts`**, or week **38** cross-doc alignment by default without new evidence—see [`post-week-38-bounded-phase2-recommendation.md`](./post-week-38-bounded-phase2-recommendation.md)
+- do not reopen week **39** bounded **evidence quality workspace** (**`evidence_quality_workspace_v1`**, **`GET /api/v1/evidence-quality-workspace`**, **`view=evidence-quality-workspace`**), **evidence weakness explanation** (**`evidence_weakness_explanation_v1`**, **`GET /api/v1/evidence-weakness-explanation`**), cross-surface **week 39** pivots into evidence-quality review, **NOC** / **global search** / **operator briefing** evidence-quality integration, repository **`pytest`** / **`vitest`** week **39** regressions, **`verify-core-runtime.sh`** / **`data-flows.md`** / **`deployment-runbook.md`** week **39** alignment where shipped, or week **39** cross-doc alignment by default without new evidence—see [`post-week-39-bounded-phase2-recommendation.md`](./post-week-39-bounded-phase2-recommendation.md)
 - do not start workflow implementation, dry-run implementation, or any phase transition work
 - keep the backend as the brain, the WebUI as the product, Grafana as the observability layer, and ODL bounded
 
@@ -355,7 +371,7 @@ Delivered focus (read-only, composition-only):
 Posture preserved:
 
 - **`Phase 2 — read-only product foundation`** unchanged
-- week **29–37** surfaces remain **closed** unless new evidence requires a narrow overlap—see **`post-week-32`**, **`post-week-34`**, **`post-week-35`**, **`post-week-36`**, **`post-week-37`**
+- week **29–39** surfaces remain **closed** unless new evidence requires a narrow overlap—see **`post-week-32`**, **`post-week-34`**, **`post-week-35`**, **`post-week-36`**, **`post-week-37`**, **`post-week-38`**, **`post-week-39`**
 - backend-owned assembly semantics and WebUI as the operator-facing product
 
 This lane advanced service-first time/delta storytelling and explicit contradiction surfacing without workflow, dry-run, or validation semantics.
@@ -375,7 +391,7 @@ Delivered focus (read-only, composition-only):
 Posture preserved:
 
 - **`Phase 2 — read-only product foundation`** unchanged
-- week **29–37** product surfaces remain **closed** unless new evidence requires a narrow overlap—see **`post-week-32`**, **`post-week-34`**, **`post-week-35`**, **`post-week-36`**, **`post-week-37`**
+- week **29–39** product surfaces remain **closed** unless new evidence requires a narrow overlap—see **`post-week-32`**, **`post-week-34`**, **`post-week-35`**, **`post-week-36`**, **`post-week-37`**, **`post-week-38`**, **`post-week-39`**
 - backend-owned assembly semantics and WebUI as the operator-facing product
 
 This lane made **topology objects** and **maintenance subjects** first-class evidence surfaces over time and composition without workflow, dry-run, or validation semantics.
@@ -399,7 +415,7 @@ Delivered focus (read-only, composition-only):
 Posture preserved:
 
 - **`Phase 2 — read-only product foundation`** unchanged
-- week **29–37** surfaces remain **closed** unless new evidence requires a narrow overlap—see **`post-week-32`**, **`post-week-34`**, **`post-week-35`**, **`post-week-36`**, **`post-week-37`**
+- week **29–39** surfaces remain **closed** unless new evidence requires a narrow overlap—see **`post-week-32`**, **`post-week-34`**, **`post-week-35`**, **`post-week-36`**, **`post-week-37`**, **`post-week-38`**, **`post-week-39`**
 - backend-owned assembly semantics and WebUI as the operator-facing product
 
 This lane made **stability posture** a first-class operator question across existing evidence without safe-to-change authority.
@@ -409,9 +425,67 @@ Canonical task references (rollup):
 - [`../../agent/sdn/week-37-friday-task-02-week37-rollup-roadmap-and-next-posture.md`](../../agent/sdn/week-37-friday-task-02-week37-rollup-roadmap-and-next-posture.md)
 - Post–week **37** scheduling posture: [`post-week-37-bounded-phase2-recommendation.md`](./post-week-37-bounded-phase2-recommendation.md)
 
-## Post–week 37 scheduling posture (not a default lane)
+## Post–week 37 scheduling posture (historical forward pointer)
 
-There is **no** automatic next implementation lane. Prefer **one** evidence-first slice per cycle—see [`post-week-37-bounded-phase2-recommendation.md`](./post-week-37-bounded-phase2-recommendation.md).
+[`post-week-37-bounded-phase2-recommendation.md`](./post-week-37-bounded-phase2-recommendation.md) recorded the pre–week **38** default and selected **multi-subject maintenance-window planning** as the next slice. **Week 38** shipped that lane—forward scheduling posture is now [`post-week-38-bounded-phase2-recommendation.md`](./post-week-38-bounded-phase2-recommendation.md).
+
+## Week 38 innovation lane (closed)
+
+Week **38** shipped the planned bounded Phase **2** lane: **maintenance window workspace v1**, **maintenance window handoff v1**, **multi-subject** rollups and explicit non-claims, **cross-surface pivots**, and **verifier / repository / operator-doc** alignment—see **`03-CURRENT-STATUS.md`** **Week 38 closure (Friday rollup)** and [`post-week-38-bounded-phase2-recommendation.md`](./post-week-38-bounded-phase2-recommendation.md) for anti-reopen guardrails and evidence-first scheduling.
+
+Delivered focus (read-only, composition-only):
+
+1. **`maintenance_window_workspace_v1`** — **`GET /api/v1/maintenance-window-workspace`** with repeated **`subject=`** tokens; WebUI **`view=maintenance-window-workspace`** with **`mww_subject`** URL state.
+2. **Deduped rollups** — affected services, related policies, evidence gaps, stability/tension cues—**not** approval or blast-radius truth.
+3. **`maintenance_window_handoff_v1`** — **`GET /api/v1/exports/maintenance-window-handoff`** (distinct from **`evidence_export_v1`** and report families).
+4. **Cross-surface pivots** — topology, maintenance, service, stability, change-safety, NOC cockpit, global operator search, operator briefing.
+5. **Verifier / regression (Friday task 01)** — **`verify-core-runtime.sh`** structural **`GET`**s when topology samples exist; **`mww_subject`** / **`maintenance_window_workspace_v1`** in **`/assets/*.js`**; **`week38-verifier-bundle-markers.test.ts`** and related **`vitest`**.
+
+Posture preserved:
+
+- **`Phase 2 — read-only product foundation`** unchanged
+- week **29–39** surfaces remain **closed** unless new evidence requires a narrow overlap—see **`post-week-32`** through **`post-week-39`**
+- backend-owned assembly semantics and WebUI as the operator-facing product
+
+This lane made **multi-subject maintenance-window review** a first-class operator preparation surface without workflow execution, dry-run authority, or simulation truth.
+
+Canonical task references (rollup):
+
+- [`../../agent/sdn-tasks/completed/week-38-friday-task-02-week38-rollup-roadmap-and-next-posture.md`](../../agent/sdn-tasks/completed/week-38-friday-task-02-week38-rollup-roadmap-and-next-posture.md)
+- Post–week **38** scheduling posture: [`post-week-38-bounded-phase2-recommendation.md`](./post-week-38-bounded-phase2-recommendation.md)
+
+## Post–week 38 scheduling posture (historical forward pointer)
+
+[`post-week-38-bounded-phase2-recommendation.md`](./post-week-38-bounded-phase2-recommendation.md) recorded the pre–week **39** default and selected **Evidence Quality Workspace / collection assurance** as the next slice. **Week 39** shipped that lane—forward scheduling posture is now [`post-week-39-bounded-phase2-recommendation.md`](./post-week-39-bounded-phase2-recommendation.md).
+
+## Week 39 innovation lane (closed)
+
+Week **39** shipped the planned bounded Phase **2** lane: **evidence quality workspace v1**, **collection assurance** / **read-path reliability** summary, **evidence weakness explanation v1** with **next-best pivots**, **cross-surface pivots**, **NOC** / **global operator search** / **operator briefing** evidence-quality integration, and **verifier / repository / operator-doc** alignment—see **`03-CURRENT-STATUS.md`** **Week 39 closure (Friday rollup)** and [`post-week-39-bounded-phase2-recommendation.md`](./post-week-39-bounded-phase2-recommendation.md) for anti-reopen guardrails and evidence-first scheduling.
+
+Delivered focus (read-only, composition-only):
+
+1. **`evidence_quality_workspace_v1`** — **`GET /api/v1/evidence-quality-workspace`** — **`collection_assurance_summary`**, **`read_path_reliability_posture`**, dimensioned **`rows[]`**; WebUI **`view=evidence-quality-workspace`** — **not** evidence-consistency alignment scoring or stability churn as primary vocabulary.
+2. **Domain weakness sections** — per-domain read-path / collection cues with bounded pivots—**not** remediation authority.
+3. **`evidence_weakness_explanation_v1`** — **`GET /api/v1/evidence-weakness-explanation`** — explanation blocks and **next-best** pivot hints—**not** workflow routing.
+4. **Cross-surface pivots** — topology, policies, services, maintenance, stability, investigation, path, change safety, NOC cockpit, global operator search, operator briefing, Overview.
+5. **Verifier / regression (Friday task 01)** — **`verify-core-runtime.sh`**, **`data-flows.md`**, **`deployment-runbook.md`**, repository **`pytest`** / **`vitest`** as recorded in **03-CURRENT-STATUS** for week **39** surfaces where shipped.
+
+Posture preserved:
+
+- **`Phase 2 — read-only product foundation`** unchanged
+- week **29–39** surfaces remain **closed** unless new evidence requires a narrow overlap—see **`post-week-32`** through **`post-week-39`**
+- backend-owned assembly semantics and WebUI as the operator-facing product
+
+This lane made **collection assurance and evidence weakness** a first-class operator question across existing read-side assemblies without workflow execution, dry-run authority, or validation-engine semantics.
+
+Canonical task references (rollup):
+
+- [`../../agent/sdn-tasks/completed/week-39-friday-task-02-week39-rollup-roadmap-and-next-posture.md`](../../agent/sdn-tasks/completed/week-39-friday-task-02-week39-rollup-roadmap-and-next-posture.md)
+- Post–week **39** scheduling posture: [`post-week-39-bounded-phase2-recommendation.md`](./post-week-39-bounded-phase2-recommendation.md)
+
+## Post–week 39 scheduling posture (not a default lane)
+
+There is **no** automatic next implementation lane. Prefer **one** evidence-first slice per cycle—see [`post-week-39-bounded-phase2-recommendation.md`](./post-week-39-bounded-phase2-recommendation.md).
 
 ## Boundary Reminder
 

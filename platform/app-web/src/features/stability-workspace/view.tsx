@@ -11,6 +11,8 @@ import {
   readStabilityWorkspaceServiceIdFromSearch,
   readStabilityWorkspaceTopologyFromSearch,
 } from "../../lib/stability-workspace-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
+import { navigateToEvidenceQualityWorkspace } from "../../lib/evidence-quality-workspace-navigation";
 import { APP_URL_SEARCH_CHANGED, navigateToEvidenceView } from "../../lib/url-app-state";
 import { useReplaceUrlSearchParams } from "../../lib/use-url-search-params";
 import {
@@ -163,6 +165,14 @@ export function StabilityWorkspaceView() {
           <button type="button" className="inline-action" onClick={() => void summaryQuery.reload()}>
             Reload summary
           </button>
+          <button
+            type="button"
+            className="inline-action"
+            onClick={() => navigateToEvidenceQualityWorkspace({ syncRunsLimit })}
+            title="evidence_quality_workspace_v1 — read-path limits and collection assurance; not stability churn analysis"
+          >
+            Evidence quality workspace
+          </button>
         </div>
       </header>
 
@@ -247,6 +257,21 @@ export function StabilityWorkspaceView() {
           {topologyProfileQuery.data ? (
             <TopologyProfileBody data={topologyProfileQuery.data} />
           ) : null}
+          <p className="table-note">
+            <button
+              type="button"
+              className="inline-action"
+              onClick={() =>
+                navigateToMaintenanceWindowWorkspaceForTopologyObject(topologyAnchor.objectId, topologyAnchor.kind, {
+                  previewContext: "planning_window",
+                  syncRunsLimit: syncRunsLimit,
+                })
+              }
+            >
+              Maintenance window workspace (this topology subject)
+            </button>{" "}
+            — multi-subject maintenance preview rollup; not stability profile JSON.
+          </p>
         </section>
       ) : null}
 

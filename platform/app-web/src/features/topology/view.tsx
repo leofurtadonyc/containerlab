@@ -37,6 +37,7 @@ import {
   navigateToTopologyDossier,
 } from "../../lib/topology-dossier-navigation";
 import { useReplaceUrlSearchParams, useUrlSearchParamsKey } from "../../lib/use-url-search-params";
+import { EvidenceQualitySurfaceEntry } from "../evidence-quality-workspace/surface-entry";
 import { InvestigationSurfaceEntry } from "../investigation/investigation-surface-entry";
 import { usePoliciesQuery } from "../policies/api";
 import {
@@ -600,6 +601,7 @@ export function TopologyView() {
       </div>
 
       <InvestigationSurfaceEntry invFrom="topology" />
+      <EvidenceQualitySurfaceEntry />
 
       <div className="metadata-row">
         <span>Data status: {data.data_status}</span>

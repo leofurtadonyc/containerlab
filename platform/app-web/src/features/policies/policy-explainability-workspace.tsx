@@ -24,6 +24,7 @@ import {
 import { navigateToImpactReportForPolicy } from "../../lib/impact-report-navigation";
 import { navigateToChangeSafetyCaseForPolicy } from "../../lib/change-safety-case-navigation";
 import { navigateToMaintenancePreviewForTopologyObject } from "../../lib/maintenance-preview-navigation";
+import { navigateToMaintenanceWindowWorkspaceForTopologyObject } from "../../lib/maintenance-window-workspace-navigation";
 import { navigateToServiceExplorerForPolicy } from "../../lib/service-explorer-navigation";
 import { navigateToServiceDossierForPolicy } from "../../lib/service-dossier-navigation";
 import { navigateToPathExplorer } from "../../lib/path-explorer-navigation";
@@ -245,6 +246,22 @@ export function PolicyExplainabilityWorkspace({ policyId }: PolicyExplainability
               title="Read-only maintenance planning assembly from first topology hint (not approval or safe-to-change)"
             >
               Maintenance preview (topology hint)
+            </button>
+          ) : null}
+          {data.navigation_targets.topology_object_hints[0] ? (
+            <button
+              type="button"
+              className="inline-action"
+              onClick={() => {
+                const h = data.navigation_targets.topology_object_hints[0];
+                navigateToMaintenanceWindowWorkspaceForTopologyObject(h.topology_object_id, h.topology_object_kind, {
+                  previewContext: "change_adjacent",
+                  syncRunsLimit: syncRuns,
+                });
+              }}
+              title="maintenance_window_workspace_v1 from first topology hint only — not automatic multi-subject discovery"
+            >
+              Maintenance window workspace (topology hint)
             </button>
           ) : null}
           {isRefreshing ? (
