@@ -41,6 +41,29 @@ Pick **one** narrow theme per cycle—**not** parallel defaults:
 
 **No** product scope is prescribed here for a future week—each candidate slice must be **evidence-justified** and Phase **2** safe.
 
+## Chosen next bounded slice
+
+The selected next planning lane is **Evidence Quality Workspace / collection assurance**.
+
+Why this lane fits the current posture:
+
+- it does **not** reopen **week 38** maintenance-window planning, which is now explicitly closed
+- it is distinct from **week 35 evidence consistency**: agreement/tension is not the same as explaining **why evidence is weak**
+- it is distinct from **week 37 stability**: steadiness/churn is not the same as explaining **collection reliability, fallback posture, sparse anchors, or comparison limits**
+- it is distinct from **week 36 maintenance evidence**: maintenance composition is not a dedicated cross-domain evidence-quality workspace
+
+Planned direction:
+
+1. **Evidence Quality Workspace v1**
+2. **Collection assurance / read-path reliability summary**
+3. **Evidence weakness explanation and next-best pivots**
+4. **Cross-surface integration from topology, policies, services, maintenance, stability, NOC, search, and briefing**
+
+Anti-reopen rule:
+
+- this chosen slice must remain focused on **evidence weakness, collection assurance, fallback, sparse history, stale anchors, and comparison limits**
+- it must **not** silently rename or reopen **evidence consistency**, **maintenance evidence**, **stability**, or **maintenance window** work under a new label
+
 ## Explicit anti-recommendations
 
 - **Reopening week 38 surfaces for UX polish or scope creep** without new evidence

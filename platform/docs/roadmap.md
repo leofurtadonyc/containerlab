@@ -453,3 +453,31 @@ Phase transitions should not happen just because files exist.
 They should happen only when the foundational architecture is both present and honest enough to support the next class of work without drift.
 
 The project now supports stricter future dry-run planning assessment, but it should still remain fully in `Phase 2 — read-only product foundation` until actual workflow-model, dry-run API, preview or diff, validation-result, and workflow-audit relationship contracts become real.
+
+## Planned Week 39 innovation lane
+
+The selected next bounded Phase **2** planning lane is **Evidence Quality Workspace / collection assurance**.
+
+Planned focus:
+
+1. **Evidence Quality Workspace v1** — a dedicated operator surface for explaining evidence weakness, collection assurance posture, fallback reliance, stale anchors, sparse history, and comparison limits across existing domains.
+2. **Collection assurance summary** — a backend-owned read-path reliability and evidence-quality taxonomy distinct from **`evidence_consistency_summary_v1`**, **`operational_stability_summary_v1`**, and maintenance workspaces.
+3. **Explanation and next-best pivots** — bounded operator guidance for where to go next when evidence is too weak to trust a higher-level conclusion.
+4. **Cross-surface evidence-quality review pivots** — entrypoints from topology, policies, services, maintenance, stability, NOC, global search, and operator briefing.
+
+Why this lane was selected:
+
+- **week 38** maintenance-window planning is already closed and must not be reopened by momentum
+- **weeks 35–38** already closed evidence consistency, maintenance evidence, stability, and maintenance-window product lanes, but there is still no dedicated product workspace for **collection assurance / evidence quality**
+- this lane creates a larger safety-first product jump by helping operators understand **why** a view is weak before they over-trust it
+
+Planned artifacts:
+
+- `agent/sdn/week-39-schedule-overview.md`
+- week-39 Monday–Friday task files under `agent/sdn/`
+
+Boundary reminder:
+
+- this is planning direction only, not shipped operational truth
+- `01-CURRENT-PHASE.md` remains unchanged
+- `03-CURRENT-STATUS.md` remains unchanged until week-39 work actually ships
