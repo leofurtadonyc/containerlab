@@ -2906,3 +2906,56 @@ export interface ServiceStabilityProfileResponse {
   merged_caveats: string[];
   assembly_notes: string[];
 }
+
+/** `GET|POST /api/v1/actions/...` — bounded safe action v1 (not preview/validation). */
+export interface SafeActionDetailResponse extends ApiResponseMetadata {
+  action: {
+    contract_id: string;
+    action_id: string;
+    workflow_id: string | null;
+    preview_id: string | null;
+    validation_id: string | null;
+    action_type: string;
+    target_kind: string;
+    target_ids: string[];
+    action_decision: string;
+    capability_decision_state: string;
+    execution_status: string;
+    approval_state: string;
+    prerequisite_readiness: Record<string, unknown>;
+    prerequisite_notes: string[];
+    truth_scope_summary: Record<string, unknown>;
+    execution: Record<string, unknown>;
+    safety_framing: { explicit_non_claims: string[] };
+  };
+}
+
+export interface SafeActionListResponse extends ApiResponseMetadata {
+  contract_id: string;
+  items: Array<{
+    action_id: string;
+    action_type: string;
+    action_decision: string;
+    execution_status: string;
+    workflow_id: string | null;
+    preview_id: string | null;
+    validation_id: string | null;
+    requested_at: string;
+    requested_by_actor_id: string;
+  }>;
+}
+
+export interface SafeActionTimelineResponse extends ApiResponseMetadata {
+  contract_id: string;
+  action_id: string;
+  events: Array<{
+    event_id: string;
+    action_id: string;
+    event_type: string;
+    occurred_at: string;
+    actor: string;
+    reason: string | null;
+    metadata: Record<string, unknown>;
+    provenance: string;
+  }>;
+}

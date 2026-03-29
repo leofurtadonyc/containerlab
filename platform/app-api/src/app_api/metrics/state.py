@@ -13,6 +13,9 @@ _preview_generation_count: int = 0
 _validation_outcome_counts: Counter[tuple[str, str, str, str, str]] = Counter()
 _validation_generation_seconds_sum: float = 0.0
 _validation_generation_count: int = 0
+_safe_action_counts: Counter[tuple[str, str, str, str]] = Counter()
+_safe_action_execution_seconds_sum: float = 0.0
+_safe_action_execution_count: int = 0
 _request_duration_counts: Counter[tuple[str, str]] = Counter()
 _request_duration_sums: dict[tuple[str, str], float] = defaultdict(float)
 
@@ -135,6 +138,22 @@ def record_preview_outcome(
         _preview_decision_counts[(preview_type, decision, preview_status)] += 1
         _preview_generation_seconds_sum += max(0.0, duration_seconds)
         _preview_generation_count += 1
+
+
+def record_safe_action_outcome(
+    *,
+    action_type: str,
+    action_decision: str,
+    execution_status: str,
+    event: str,
+    duration_seconds: float,
+) -> None:
+    """Record one safe-action lifecycle observation (v1 bounded slice)."""
+    with _lock:
+        _safe_action_counts[(action_type, action_decision, execution_status, event)] += 1
+        if event.startswith("execute"):
+            _safe_action_execution_seconds_sum += max(0.0, duration_seconds)
+            _safe_action_execution_count += 1
 
 
 def record_validation_outcome(
@@ -1153,6 +1172,40 @@ def render_prometheus_metrics(
         ]
     )
 
+    with _lock:
+        safe_action_counts = dict(_safe_action_counts)
+        safe_act_sec_sum = _safe_action_execution_seconds_sum
+        safe_act_sec_n = _safe_action_execution_count
+    lines.extend(
+        [
+            (
+                "# HELP platform_app_api_safe_actions_total "
+                "Safe action observations by action_type, decision, execution_status, and event."
+            ),
+            "# TYPE platform_app_api_safe_actions_total counter",
+            *[
+                (
+                    "platform_app_api_safe_actions_total"
+                    f'{{action_type="{at}",action_decision="{ad}",execution_status="{es}",event="{ev}"}} '
+                    f"{cnt}"
+                )
+                for (at, ad, es, ev), cnt in sorted(safe_action_counts.items())
+            ],
+            (
+                "# HELP platform_app_api_safe_action_event_seconds_sum "
+                "Sum of wall time for safe-action events that include execute paths."
+            ),
+            "# TYPE platform_app_api_safe_action_event_seconds_sum counter",
+            f"platform_app_api_safe_action_event_seconds_sum {safe_act_sec_sum:.9f}",
+            (
+                "# HELP platform_app_api_safe_action_event_seconds_count "
+                "Count of safe-action timed events (execute family)."
+            ),
+            "# TYPE platform_app_api_safe_action_event_seconds_count counter",
+            f"platform_app_api_safe_action_event_seconds_count {safe_act_sec_n}",
+        ]
+    )
+
     lines.append("")
     return "\n".join(lines)
 
@@ -1164,6 +1217,7 @@ def reset_metrics_registry() -> None:
     global _cached_collector_boundary_fetch_metrics
     global _preview_generation_seconds_sum, _preview_generation_count
     global _validation_generation_seconds_sum, _validation_generation_count
+    global _safe_action_execution_seconds_sum, _safe_action_execution_count, _safe_action_counts
     with _lock:
         _request_counts.clear()
         _request_duration_counts.clear()
@@ -1174,6 +1228,9 @@ def reset_metrics_registry() -> None:
         _validation_outcome_counts.clear()
         _validation_generation_seconds_sum = 0.0
         _validation_generation_count = 0
+        _safe_action_counts.clear()
+        _safe_action_execution_seconds_sum = 0.0
+        _safe_action_execution_count = 0
         _cached_topology_metrics = CachedTopologyMetrics()
         _cached_policy_metrics = CachedPolicyMetrics()
         _cached_readiness_metrics = CachedReadinessMetrics()
