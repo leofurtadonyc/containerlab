@@ -23,4 +23,9 @@ describe("week 37 verifier bundle markers", () => {
     expect(view).toContain("operational_stability_summary_v1");
     expect(overview).toContain("operational_stability_summary_v1");
   });
+
+  it("retains topology_truth_v1 product marker in Topology view (verify-core-runtime.sh shipped /assets/*.js)", () => {
+    const topologyView = readFileSync(join(__dirname, "../src/features/topology/view.tsx"), "utf8");
+    expect(topologyView).toContain('data-product-contract="topology_truth_v1"');
+  });
 });

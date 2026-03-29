@@ -160,6 +160,21 @@ class TopologyLinkTable(Base):
     snapshot: Mapped[TopologySnapshotTable] = relationship(back_populates="links")
 
 
+class TopologyTruthSnapshotTable(Base):
+    """Append-only merged topology truth snapshot (device gNMI + optional controller BGP-LS)."""
+
+    __tablename__ = "topology_truth_snapshots"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    persisted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    device_gnmi_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    controller_bgpls_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    controller_fetch_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    merged_payload: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    sources_summary: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    correlation_notes: Mapped[list[object]] = mapped_column(JSON, nullable=False, default=list)
+
+
 class PolicySnapshotTable(Base):
     """One persisted normalized policy snapshot."""
 

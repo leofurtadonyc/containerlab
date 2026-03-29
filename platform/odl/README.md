@@ -47,6 +47,10 @@ The platform builds ODL as a local image so the controller's bounded RESTCONF ad
 - bounded adapter in `app-api` for ODL queries
 - normalized translation of ODL-derived data before exposure elsewhere
 
+## Deeper topology truth (RESTCONF `ietf-network-topology`)
+
+`app-api` may read **`GET /rests/data/ietf-network-topology:network-topologies`** (RFC 8345) for optional merge enrichment. The stock **`opendaylight/opendaylight`** image used here often **does not** install the Karaf features that expose that YANG module over RESTCONF; both `network-topology:…` and `ietf-network-topology:…` can return **`400 unknown-element`** until the right **topology / RESTCONF** features are installed in the controller. Check **`ietf-yang-library:modules-state`** for a module whose name contains **`ietf-network-topology`**, then use **`feature:list`** / **`feature:install`** per your OpenDaylight release docs—exact feature names vary by version and distribution.
+
 ## Notes and caveats
 ODL must remain a bounded helper. All operator-facing product logic lives in the backend and WebUI. If ODL capabilities are unavailable, the platform degrades gracefully.
 The current bounded read enrichment is intentionally narrow: it only checks controller reachability and exposed capability hints. It does not treat ODL as the primary source for topology, policy, or reconciliation decisions.

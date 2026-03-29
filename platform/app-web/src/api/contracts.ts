@@ -281,6 +281,135 @@ export interface TopologyResponse extends ApiResponseMetadata {
   topology: TopologyRecord;
 }
 
+export type TopologyTruthSourceType =
+  | "device_gnmi"
+  | "controller_bgpls"
+  | "persisted_snapshot"
+  | "merged";
+
+export type TopologyTruthPosture =
+  | "inferred_only"
+  | "device_observed"
+  | "protocol_confirmed"
+  | "controller_correlated"
+  | "merged_multi_source"
+  | "partial"
+  | "conflicting"
+  | "stale"
+  | "unknown";
+
+export type TopologyTruthDisagreementKind =
+  | "device_controller_mismatch"
+  | "missing_controller_evidence"
+  | "missing_device_evidence"
+  | "stale_controller_view"
+  | "stale_device_view"
+  | "identity_conflict"
+  | "attribute_conflict";
+
+export type TopologyTruthControllerFetchStatus = "ok" | "degraded" | "unreachable" | "empty";
+
+export interface TopologyTruthSourceRef {
+  source_type: TopologyTruthSourceType;
+  source_id: string;
+  source_scope: string;
+  source_time: string | null;
+  source_freshness: "current" | "stale" | "unknown";
+  source_authority_posture:
+    | "observed"
+    | "inferred"
+    | "controller_export"
+    | "merged"
+    | "unknown";
+  source_summary: string;
+}
+
+export interface TopologyTruthProvenance {
+  contributing_sources: TopologyTruthSourceType[];
+  primary_source: TopologyTruthSourceType | null;
+  evidence_timestamps: string[];
+  freshness_posture: "current" | "stale" | "unknown";
+  merged_or_correlated: boolean;
+  missing_sources: TopologyTruthSourceType[];
+}
+
+export interface TopologyTruthDisagreementRecord {
+  object_kind: "node" | "link";
+  object_id: string;
+  kind: TopologyTruthDisagreementKind;
+  summary: string;
+  source_a: TopologyTruthSourceType | null;
+  source_b: TopologyTruthSourceType | null;
+}
+
+export interface TopologyTruthNodeRecord {
+  node_id: string;
+  display_name: string;
+  role: string;
+  state: string;
+  truth_posture: TopologyTruthPosture;
+  provenance: TopologyTruthProvenance;
+  disagreement: TopologyTruthDisagreementRecord | null;
+  attributes: Record<string, string>;
+}
+
+export interface TopologyTruthLinkRecord {
+  link_id: string;
+  source_node_id: string;
+  target_node_id: string;
+  state: string;
+  truth_posture: TopologyTruthPosture;
+  provenance: TopologyTruthProvenance;
+  endpoint_pairing_state: string;
+  endpoint_evidence_count: number | null;
+  disagreement: TopologyTruthDisagreementRecord | null;
+  attributes: Record<string, string>;
+}
+
+export interface TopologyTruthMergedTopology {
+  topology_id: string;
+  topology_name: string;
+  nodes: TopologyTruthNodeRecord[];
+  links: TopologyTruthLinkRecord[];
+  notes: string[];
+}
+
+export interface TopologyTruthFreshnessSummary {
+  device_gnmi: "current" | "stale" | "unknown";
+  controller_bgpls: "current" | "stale" | "unknown" | "not_applicable";
+  merged_view: "current" | "stale" | "unknown";
+}
+
+export interface TopologyTruthCounts {
+  merged_node_count: number;
+  merged_link_count: number;
+  inferred_only_link_count: number;
+  protocol_confirmed_link_count: number;
+  controller_only_node_count: number;
+  device_only_node_count: number;
+  conflicting_object_count: number;
+  stale_source_marker_count: number;
+}
+
+export interface TopologyTruthSafetyFraming {
+  contract_id: "topology_truth_v1";
+  explicit_non_claims: string[];
+}
+
+/** Deeper topology truth v1 — `GET /api/v1/topology/truth`. */
+export interface TopologyTruthResponse extends ApiResponseMetadata {
+  contract_id: "topology_truth_v1";
+  sources: TopologyTruthSourceRef[];
+  controller_fetch_status: TopologyTruthControllerFetchStatus;
+  controller_notes: string[];
+  freshness: TopologyTruthFreshnessSummary;
+  counts: TopologyTruthCounts;
+  disagreements: TopologyTruthDisagreementRecord[];
+  merged_topology: TopologyTruthMergedTopology;
+  persisted_snapshot_id: string | null;
+  safety_framing: TopologyTruthSafetyFraming;
+}
+
 export interface CandidatePathRecord {
   name: string;
   current_posture: CurrentRowPosture;

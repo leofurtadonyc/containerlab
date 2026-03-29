@@ -1,9 +1,10 @@
 """Topology API endpoints."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from app_api.schemas.failure_impact import FailureImpactViewResponse
 from app_api.schemas.topology import TopologyResponse
+from app_api.schemas.topology_truth import TopologyTruthResponse
 from app_api.schemas.topology_object_dossier import TopologyObjectDossierResponse
 from app_api.schemas.topology_object_evidence_delta import TopologyObjectEvidenceDeltaResponse
 from app_api.schemas.topology_object_evidence_timeline import TopologyObjectEvidenceTimelineResponse
@@ -11,6 +12,7 @@ from app_api.schemas.topology_related_policies import TopologyObjectRelatedPolic
 from app_api.schemas.topology_risk_summary import TopologyRiskSummaryResponse
 from app_api.services.failure_impact import build_failure_impact_view_response
 from app_api.services.topology import build_topology_response
+from app_api.services.topology_truth import build_topology_truth_response
 from app_api.services.topology_object_dossier import build_topology_object_dossier_response
 from app_api.services.topology_object_evidence_delta import build_topology_object_evidence_delta_response
 from app_api.services.topology_object_evidence_timeline import build_topology_object_evidence_timeline_response
@@ -119,6 +121,15 @@ def get_topology_object_failure_impact(object_id: str) -> FailureImpactViewRespo
             ),
         )
     return response
+
+
+@router.get("/topology/truth", response_model=TopologyTruthResponse)
+def get_topology_truth(truth_posture: str | None = Query(None)) -> TopologyTruthResponse:
+    """Return merged deeper topology truth (gNMI baseline + optional ODL network-topology export).
+
+    Optional ``truth_posture`` filters merged nodes/links to one posture label (backend filter).
+    """
+    return build_topology_truth_response(truth_posture=truth_posture)
 
 
 @router.get("/topology", response_model=TopologyResponse)

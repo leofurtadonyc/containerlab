@@ -19,6 +19,9 @@ _safe_action_execution_count: int = 0
 _rollback_counts: Counter[tuple[str, str, str, str]] = Counter()
 _rollback_execution_seconds_sum: float = 0.0
 _rollback_execution_count: int = 0
+_topology_truth_merges_total: int = 0
+_topology_truth_controller_status_counts: Counter[str] = Counter()
+_topology_truth_seconds_sum: float = 0.0
 _request_duration_counts: Counter[tuple[str, str]] = Counter()
 _request_duration_sums: dict[tuple[str, str], float] = defaultdict(float)
 
@@ -118,10 +121,23 @@ class CachedRecoveryMetrics:
     persisted_artifact_availability: dict[str, int] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class CachedTopologyTruthMetrics:
+    """Latest deeper topology truth merge observation (scrape-safe)."""
+
+    controller_status: str = "unknown"
+    merged_node_count: int = 0
+    merged_link_count: int = 0
+    inferred_only_links: int = 0
+    protocol_confirmed_links: int = 0
+    conflicts: int = 0
+
+
 _cached_topology_metrics = CachedTopologyMetrics()
 _cached_policy_metrics = CachedPolicyMetrics()
 _cached_readiness_metrics = CachedReadinessMetrics()
 _cached_recovery_metrics = CachedRecoveryMetrics()
+_cached_topology_truth_metrics = CachedTopologyTruthMetrics()
 _cached_collector_boundary_fetch_metrics: dict[str, CachedCollectorBoundaryFetchMetrics] = {
     "inventory": CachedCollectorBoundaryFetchMetrics(),
     "topology": CachedCollectorBoundaryFetchMetrics(),
@@ -157,6 +173,33 @@ def record_safe_action_outcome(
         if event.startswith("execute"):
             _safe_action_execution_seconds_sum += max(0.0, duration_seconds)
             _safe_action_execution_count += 1
+
+
+def record_topology_truth_observation(
+    *,
+    controller_status: str,
+    merged_node_count: int,
+    merged_link_count: int,
+    inferred_only_links: int,
+    protocol_confirmed_links: int,
+    conflicts: int,
+    duration_seconds: float,
+) -> None:
+    """Record one deeper topology truth merge (v1)."""
+    global _cached_topology_truth_metrics
+    with _lock:
+        global _topology_truth_merges_total, _topology_truth_seconds_sum
+        _topology_truth_merges_total += 1
+        _topology_truth_controller_status_counts[controller_status] += 1
+        _topology_truth_seconds_sum += max(0.0, duration_seconds)
+        _cached_topology_truth_metrics = CachedTopologyTruthMetrics(
+            controller_status=controller_status,
+            merged_node_count=merged_node_count,
+            merged_link_count=merged_link_count,
+            inferred_only_links=inferred_only_links,
+            protocol_confirmed_links=protocol_confirmed_links,
+            conflicts=conflicts,
+        )
 
 
 def record_rollback_outcome(
@@ -1259,6 +1302,52 @@ def render_prometheus_metrics(
         ]
     )
 
+    with _lock:
+        tt_merge = _topology_truth_merges_total
+        tt_sec = _topology_truth_seconds_sum
+        tt_status = dict(_topology_truth_controller_status_counts)
+        tt_cached = _cached_topology_truth_metrics
+    lines.extend(
+        [
+            (
+                "# HELP platform_app_api_topology_truth_merges_total "
+                "Count of deeper topology truth merge computations."
+            ),
+            "# TYPE platform_app_api_topology_truth_merges_total counter",
+            f"platform_app_api_topology_truth_merges_total {tt_merge}",
+            (
+                "# HELP platform_app_api_topology_truth_merge_seconds_sum "
+                "Sum of wall time for topology truth merge computations."
+            ),
+            "# TYPE platform_app_api_topology_truth_merge_seconds_sum counter",
+            f"platform_app_api_topology_truth_merge_seconds_sum {tt_sec:.9f}",
+            (
+                "# HELP platform_app_api_topology_truth_controller_status_total "
+                "Topology truth merges by controller fetch status label."
+            ),
+            "# TYPE platform_app_api_topology_truth_controller_status_total counter",
+            *[
+                f'platform_app_api_topology_truth_controller_status_total{{status="{st}"}} {cnt}'
+                for st, cnt in sorted(tt_status.items())
+            ],
+            "# HELP platform_app_api_topology_truth_last_merged_nodes Latest merged node count from last observation.",
+            "# TYPE platform_app_api_topology_truth_last_merged_nodes gauge",
+            f"platform_app_api_topology_truth_last_merged_nodes {tt_cached.merged_node_count}",
+            "# HELP platform_app_api_topology_truth_last_merged_links Latest merged link count from last observation.",
+            "# TYPE platform_app_api_topology_truth_last_merged_links gauge",
+            f"platform_app_api_topology_truth_last_merged_links {tt_cached.merged_link_count}",
+            "# HELP platform_app_api_topology_truth_last_inferred_only_links Latest inferred-only link count.",
+            "# TYPE platform_app_api_topology_truth_last_inferred_only_links gauge",
+            f"platform_app_api_topology_truth_last_inferred_only_links {tt_cached.inferred_only_links}",
+            "# HELP platform_app_api_topology_truth_last_protocol_confirmed_links Latest protocol-confirmed link count.",
+            "# TYPE platform_app_api_topology_truth_last_protocol_confirmed_links gauge",
+            f"platform_app_api_topology_truth_last_protocol_confirmed_links {tt_cached.protocol_confirmed_links}",
+            "# HELP platform_app_api_topology_truth_last_conflicts Latest disagreement/conflict count.",
+            "# TYPE platform_app_api_topology_truth_last_conflicts gauge",
+            f"platform_app_api_topology_truth_last_conflicts {tt_cached.conflicts}",
+        ]
+    )
+
     lines.append("")
     return "\n".join(lines)
 
@@ -1272,6 +1361,8 @@ def reset_metrics_registry() -> None:
     global _validation_generation_seconds_sum, _validation_generation_count
     global _safe_action_execution_seconds_sum, _safe_action_execution_count, _safe_action_counts
     global _rollback_execution_seconds_sum, _rollback_execution_count, _rollback_counts
+    global _cached_topology_truth_metrics
+    global _topology_truth_merges_total, _topology_truth_seconds_sum, _topology_truth_controller_status_counts
     with _lock:
         _request_counts.clear()
         _request_duration_counts.clear()
@@ -1288,6 +1379,10 @@ def reset_metrics_registry() -> None:
         _rollback_counts.clear()
         _rollback_execution_seconds_sum = 0.0
         _rollback_execution_count = 0
+        _topology_truth_merges_total = 0
+        _topology_truth_seconds_sum = 0.0
+        _topology_truth_controller_status_counts.clear()
+        _cached_topology_truth_metrics = CachedTopologyTruthMetrics()
         _cached_topology_metrics = CachedTopologyMetrics()
         _cached_policy_metrics = CachedPolicyMetrics()
         _cached_readiness_metrics = CachedReadinessMetrics()

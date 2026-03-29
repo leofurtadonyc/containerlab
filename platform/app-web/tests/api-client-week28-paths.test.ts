@@ -803,4 +803,56 @@ describe("ApiClient week 28 bounded paths", () => {
     expect(url).toContain("preview_context=planning_window");
     expect(url).toContain("sync_runs_limit=20");
   });
+
+  it("getTopologyTruth uses /api/v1/topology/truth and optional truth_posture", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          service: "app-api",
+          version: "0.1.0",
+          phase: "phase_2_read_only_foundation",
+          generated_at: "2025-01-01T00:00:00Z",
+          contract_id: "topology_truth_v1",
+          sources: [],
+          controller_fetch_status: "empty",
+          controller_notes: [],
+          freshness: {
+            device_gnmi: "unknown",
+            controller_bgpls: "not_applicable",
+            merged_view: "unknown",
+          },
+          counts: {
+            merged_node_count: 0,
+            merged_link_count: 0,
+            inferred_only_link_count: 0,
+            protocol_confirmed_link_count: 0,
+            controller_only_node_count: 0,
+            device_only_node_count: 0,
+            conflicting_object_count: 0,
+            stale_source_marker_count: 0,
+          },
+          disagreements: [],
+          merged_topology: {
+            topology_id: "t",
+            topology_name: "t",
+            nodes: [],
+            links: [],
+            notes: [],
+          },
+          persisted_snapshot_id: null,
+          safety_framing: { contract_id: "topology_truth_v1", explicit_non_claims: [] },
+        }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getTopologyTruth();
+    let url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toBe("http://api/api/v1/topology/truth");
+    await client.getTopologyTruth({ truthPosture: "protocol_confirmed" });
+    url = fetchMock.mock.calls[1][0] as string;
+    expect(url).toContain("/api/v1/topology/truth?");
+    expect(url).toContain("truth_posture=protocol_confirmed");
+  });
 });

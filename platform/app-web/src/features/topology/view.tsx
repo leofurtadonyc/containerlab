@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type {
   EvidenceConfidenceSummary,
   TopologyLinkRecord,
   TopologyNodeRecord,
+  TopologyTruthResponse,
 } from "../../api/contracts";
+import { ApiClientError, apiClient } from "../../api/client";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { StatusPill } from "../../components/status-pill";
@@ -255,6 +257,23 @@ export function TopologyView() {
   const [linkSortBy, setLinkSortBy] = useState("state_then_id");
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(initialTopologySelection.linkId);
   const [workspaceMode, setWorkspaceMode] = useState<"standard" | "dossier">(readTopologyWorkspaceFromUrl);
+  const [truthData, setTruthData] = useState<TopologyTruthResponse | null>(null);
+  const [truthLoading, setTruthLoading] = useState(false);
+  const [truthError, setTruthError] = useState<string | null>(null);
+  const loadTopologyTruth = useCallback(async () => {
+    setTruthLoading(true);
+    setTruthError(null);
+    try {
+      const t = await apiClient.getTopologyTruth();
+      setTruthData(t);
+    } catch (err) {
+      const message =
+        err instanceof ApiClientError ? err.message : "Failed to load topology truth.";
+      setTruthError(message);
+    } finally {
+      setTruthLoading(false);
+    }
+  }, []);
   const searchKey = useUrlSearchParamsKey();
 
   useEffect(() => {
@@ -612,6 +631,42 @@ export function TopologyView() {
         <span>Served persisted at: {formatDateTime(data.served_persisted_at)}</span>
         <span>Generated: {formatDateTime(data.generated_at)}</span>
       </div>
+
+      <article className="detail-card" data-product-contract="topology_truth_v1">
+        <h3>Deeper topology truth</h3>
+        <p className="meta-copy">
+          Backend-owned merge of gNMI-normalized topology with optional controller enrichment—not dataplane path
+          truth, not sole ODL authority.
+        </p>
+        <div className="toolbar">
+          <button type="button" className="nav-item" onClick={loadTopologyTruth} disabled={truthLoading}>
+            {truthLoading ? "Loading…" : "Load merged truth"}
+          </button>
+        </div>
+        {truthError ? (
+          <div className="query-message query-message-error" role="status">
+            {truthError}
+          </div>
+        ) : null}
+        {truthData ? (
+          <>
+            <div className="metadata-row">
+              <span>Contract: {truthData.contract_id}</span>
+              <span>Controller fetch: {formatLabel(truthData.controller_fetch_status)}</span>
+              <span>Merged nodes: {truthData.counts.merged_node_count}</span>
+              <span>Merged links: {truthData.counts.merged_link_count}</span>
+              <span>Conflicts: {truthData.counts.conflicting_object_count}</span>
+            </div>
+            {truthData.safety_framing.explicit_non_claims.length > 0 ? (
+              <ul className="notes-list">
+                {truthData.safety_framing.explicit_non_claims.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            ) : null}
+          </>
+        ) : null}
+      </article>
 
       <div className="summary-grid">
         <article className="summary-card">
