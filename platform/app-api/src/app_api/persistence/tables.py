@@ -537,6 +537,12 @@ class SafeActionTable(Base):
     result_json: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
     audit_attachment_hint: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    compensated_by_rollback_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("platform_app.rollback_requests.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     events: Mapped[list["SafeActionEventTable"]] = relationship(
         back_populates="action",
@@ -580,6 +586,99 @@ class PolicyOperatorIntentRecordTable(Base):
         nullable=True,
         index=True,
     )
+    rollback_request_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("platform_app.rollback_requests.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     previous_record_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     applied_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     truth_notes: Mapped[list[object]] = mapped_column(JSON, nullable=False, default=list)
+
+
+class RollbackRequestTable(Base):
+    """Durable rollback orchestration request (bounded v1; not device restore)."""
+
+    __tablename__ = "rollback_requests"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    workflow_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("platform_app.workflow_lifecycles.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    parent_workflow_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    parent_action_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("platform_app.safe_actions.id", ondelete="SET NULL"),
+        nullable=False,
+        index=True,
+    )
+    parent_preview_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    parent_validation_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    pre_rollback_validation_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("platform_app.validation_requests.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    post_rollback_validation_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True, unique=True)
+    rollback_type: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    target_kind: Mapped[str] = mapped_column(String(64), nullable=False)
+    target_ids: Mapped[list[object]] = mapped_column(JSON, nullable=False)
+    target_scope: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    rollback_payload: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    requested_by_actor_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    requested_by_actor_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    requested_by_actor_display_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rollback_decision: Mapped[str] = mapped_column(String(32), nullable=False)
+    capability_decision_state: Mapped[str] = mapped_column(String(32), nullable=False)
+    capability_decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    truth_scope_summary: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    prerequisite_notes: Mapped[list[object]] = mapped_column(JSON, nullable=False, default=list)
+    restoration_semantics: Mapped[str] = mapped_column(String(64), nullable=False)
+    approval_required: Mapped[bool] = mapped_column(Boolean(), nullable=False, default=True)
+    approval_state: Mapped[str] = mapped_column(String(32), nullable=False)
+    approver_actor_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    approver_actor_display_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rollback_status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    execution_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    execution_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    execution_latency_ms: Mapped[float | None] = mapped_column(Float(), nullable=True)
+    execution_error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    execution_error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    result_json: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    audit_attachment_hint: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    events: Mapped[list["RollbackEventTable"]] = relationship(
+        back_populates="rollback",
+        cascade="all, delete-orphan",
+    )
+
+
+class RollbackEventTable(Base):
+    """One durable event on a rollback timeline."""
+
+    __tablename__ = "rollback_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    rollback_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("platform_app.rollback_requests.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    actor: Mapped[str] = mapped_column(String(255), nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    event_metadata: Mapped[dict[str, object]] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    provenance: Mapped[str] = mapped_column(String(32), nullable=False)
+
+    rollback: Mapped["RollbackRequestTable"] = relationship(back_populates="events")

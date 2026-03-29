@@ -25,6 +25,7 @@ export const PLATFORM_NAV_VIEW_IDS = new Set<string>([
   "preview-workspace",
   "validation-workspace",
   "safe-action-workspace",
+  "rollback-workspace",
   "audit",
   "capabilities",
   "readiness",

@@ -16,6 +16,9 @@ _validation_generation_count: int = 0
 _safe_action_counts: Counter[tuple[str, str, str, str]] = Counter()
 _safe_action_execution_seconds_sum: float = 0.0
 _safe_action_execution_count: int = 0
+_rollback_counts: Counter[tuple[str, str, str, str]] = Counter()
+_rollback_execution_seconds_sum: float = 0.0
+_rollback_execution_count: int = 0
 _request_duration_counts: Counter[tuple[str, str]] = Counter()
 _request_duration_sums: dict[tuple[str, str], float] = defaultdict(float)
 
@@ -154,6 +157,22 @@ def record_safe_action_outcome(
         if event.startswith("execute"):
             _safe_action_execution_seconds_sum += max(0.0, duration_seconds)
             _safe_action_execution_count += 1
+
+
+def record_rollback_outcome(
+    *,
+    rollback_type: str,
+    rollback_decision: str,
+    rollback_status: str,
+    event: str,
+    duration_seconds: float,
+) -> None:
+    """Record one rollback orchestration observation (v1 bounded slice)."""
+    with _lock:
+        _rollback_counts[(rollback_type, rollback_decision, rollback_status, event)] += 1
+        if event.startswith("execute"):
+            _rollback_execution_seconds_sum += max(0.0, duration_seconds)
+            _rollback_execution_count += 1
 
 
 def record_validation_outcome(
@@ -1206,6 +1225,40 @@ def render_prometheus_metrics(
         ]
     )
 
+    with _lock:
+        rollback_counts = dict(_rollback_counts)
+        rb_sec_sum = _rollback_execution_seconds_sum
+        rb_sec_n = _rollback_execution_count
+    lines.extend(
+        [
+            (
+                "# HELP platform_app_api_rollbacks_total "
+                "Rollback orchestration observations by rollback_type, decision, status, and event."
+            ),
+            "# TYPE platform_app_api_rollbacks_total counter",
+            *[
+                (
+                    "platform_app_api_rollbacks_total"
+                    f'{{rollback_type="{rt}",rollback_decision="{rd}",rollback_status="{rs}",event="{ev}"}} '
+                    f"{cnt}"
+                )
+                for (rt, rd, rs, ev), cnt in sorted(rollback_counts.items())
+            ],
+            (
+                "# HELP platform_app_api_rollback_event_seconds_sum "
+                "Sum of wall time for rollback events that include execute paths."
+            ),
+            "# TYPE platform_app_api_rollback_event_seconds_sum counter",
+            f"platform_app_api_rollback_event_seconds_sum {rb_sec_sum:.9f}",
+            (
+                "# HELP platform_app_api_rollback_event_seconds_count "
+                "Count of rollback timed events (execute family)."
+            ),
+            "# TYPE platform_app_api_rollback_event_seconds_count counter",
+            f"platform_app_api_rollback_event_seconds_count {rb_sec_n}",
+        ]
+    )
+
     lines.append("")
     return "\n".join(lines)
 
@@ -1218,6 +1271,7 @@ def reset_metrics_registry() -> None:
     global _preview_generation_seconds_sum, _preview_generation_count
     global _validation_generation_seconds_sum, _validation_generation_count
     global _safe_action_execution_seconds_sum, _safe_action_execution_count, _safe_action_counts
+    global _rollback_execution_seconds_sum, _rollback_execution_count, _rollback_counts
     with _lock:
         _request_counts.clear()
         _request_duration_counts.clear()
@@ -1231,6 +1285,9 @@ def reset_metrics_registry() -> None:
         _safe_action_counts.clear()
         _safe_action_execution_seconds_sum = 0.0
         _safe_action_execution_count = 0
+        _rollback_counts.clear()
+        _rollback_execution_seconds_sum = 0.0
+        _rollback_execution_count = 0
         _cached_topology_metrics = CachedTopologyMetrics()
         _cached_policy_metrics = CachedPolicyMetrics()
         _cached_readiness_metrics = CachedReadinessMetrics()
