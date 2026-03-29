@@ -127,6 +127,26 @@ def _merge_nodes_and_links(
     for ck, cn in ctrl_by_norm.items():
         if ck in dev_node_ids:
             continue
+        if cn.role == "controller_topology_scope":
+            out_nodes.append(
+                TopologyTruthNodeRecord(
+                    node_id=cn.node_id,
+                    display_name=cn.display_name,
+                    role=cn.role,
+                    state=cn.state,
+                    truth_posture="controller_correlated",
+                    provenance=TopologyTruthProvenance(
+                        contributing_sources=["controller_bgpls"],
+                        primary_source="controller_bgpls",
+                        freshness_posture="current" if ctrl_fresh == "current" else "unknown",
+                        merged_or_correlated=False,
+                        missing_sources=[],
+                    ),
+                    disagreement=None,
+                    attributes=dict(cn.attributes),
+                )
+            )
+            continue
         disagreements.append(
             TopologyDisagreementRecord(
                 object_kind="node",

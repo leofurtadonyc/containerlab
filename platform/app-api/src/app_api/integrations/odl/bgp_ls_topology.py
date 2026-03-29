@@ -7,6 +7,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Literal
 from urllib.error import HTTPError, URLError
+from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 from app_api.integrations.odl.client import OdlClient, get_odl_client
@@ -51,6 +52,194 @@ def _http_error_body(exc: HTTPError) -> str:
         return exc.read().decode("utf-8", errors="replace")
     except OSError:
         return ""
+
+
+def _extract_topology_list(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    nt = (
+        payload.get("ietf-network-topology:network-topologies")
+        or payload.get("network-topology:network-topology")
+        or {}
+    )
+    if isinstance(nt, dict):
+        raw = nt.get("topology", [])
+    else:
+        raw = []
+    if not isinstance(raw, list):
+        return []
+    return [x for x in raw if isinstance(x, dict)]
+
+
+def _topology_ids_from_parsed(nodes: list[TopologyNode], links: list[TopologyLink]) -> set[str]:
+    s: set[str] = set()
+    for n in nodes:
+        tid = n.attributes.get("topology_id")
+        if tid:
+            s.add(tid)
+    for lk in links:
+        tid = lk.attributes.get("topology_id")
+        if tid:
+            s.add(tid)
+    return s
+
+
+def _infer_scope_kind(topo: dict[str, Any]) -> str:
+    tt = topo.get("topology-types")
+    tid = str(topo.get("topology-id", "")).lower()
+    keys = ""
+    if isinstance(tt, dict):
+        keys = " ".join(tt.keys()).lower()
+    if "bgp-linkstate" in keys or "linkstate" in keys:
+        return "bgp_linkstate"
+    if "bgp-ipv4" in keys:
+        return "bgp_ipv4"
+    if "bgp-ipv6" in keys:
+        return "bgp_ipv6"
+    if "pcep" in keys or "topology-pcep" in keys:
+        return "pcep"
+    if "netconf" in tid:
+        return "netconf"
+    return "other"
+
+
+def _scope_attribute_strings(topo: dict[str, Any]) -> dict[str, str]:
+    tid = str(topo.get("topology-id", ""))
+    tt = topo.get("topology-types")
+    type_keys = ""
+    if isinstance(tt, dict):
+        type_keys = ";".join(sorted(tt.keys()))
+    rib = ""
+    for k, v in topo.items():
+        if isinstance(k, str) and "rib-id" in k:
+            rib = str(v) if v is not None else ""
+            break
+    out: dict[str, str] = {
+        "topology_id": tid,
+        "controller_topology_kind": _infer_scope_kind(topo),
+        "topology_types_keys": type_keys,
+        "export": "odl_network_topology_scope",
+        "controller_topology_scope": "true",
+    }
+    if rib:
+        out["rib_id"] = rib
+    sp = topo.get("server-provided")
+    if sp is not None:
+        out["server_provided"] = "true" if sp else "false"
+    return out
+
+
+def _is_bgp_linkstate_topology(topo: dict[str, Any]) -> bool:
+    tt = topo.get("topology-types")
+    if not isinstance(tt, dict):
+        return False
+    keys = " ".join(tt.keys()).lower()
+    return "bgp-linkstate" in keys or "linkstate" in keys
+
+
+def _normalize_subresource_payload(data: dict[str, Any]) -> dict[str, Any]:
+    if (
+        "network-topology:network-topology" in data
+        or "ietf-network-topology:network-topologies" in data
+    ):
+        return data
+    if "topology-id" in data:
+        return {"network-topology:network-topology": {"topology": [data]}}
+    return data
+
+
+def _restconf_get_json(client: OdlClient, path: str) -> dict[str, Any] | None:
+    try:
+        request = Request(
+            url=f"{client.config.base_url.rstrip('/')}{path}",
+            headers=client._build_headers(),
+        )
+        with urlopen(request, timeout=client.config.timeout_seconds) as response:
+            raw = response.read().decode("utf-8")
+        out = json.loads(raw)
+        return out if isinstance(out, dict) else None
+    except HTTPError as exc:
+        body = _http_error_body(exc)
+        if exc.code in {404, 400} and (
+            exc.code == 404 or _is_restconf_unknown_element(body)
+        ):
+            return None
+        return None
+    except (URLError, TimeoutError, json.JSONDecodeError, OSError):
+        return None
+
+
+def _enrich_linkstate_subresources(
+    client: OdlClient,
+    topologies: list[dict[str, Any]],
+    nodes: list[TopologyNode],
+    links: list[TopologyLink],
+    notes: list[str],
+) -> tuple[list[TopologyNode], list[TopologyLink], list[str]]:
+    have = _topology_ids_from_parsed(nodes, links)
+    extra: list[str] = []
+    for topo in topologies:
+        tid = topo.get("topology-id")
+        if not isinstance(tid, str) or not tid:
+            continue
+        if tid in have:
+            continue
+        if not _is_bgp_linkstate_topology(topo):
+            continue
+        sub_path = f"/rests/data/network-topology:network-topology/topology/{quote(tid, safe='')}"
+        sub = _restconf_get_json(client, sub_path)
+        if sub is None:
+            continue
+        merged = _normalize_subresource_payload(sub)
+        sn, sl, _ = _parse_network_topology_payload(merged)
+        if not sn and not sl:
+            continue
+        nodes.extend(sn)
+        links.extend(sl)
+        have.update(_topology_ids_from_parsed(sn, sl))
+        extra.append(
+            f"Merged BGP-LS subtree from {sub_path} ({len(sn)} nodes, {len(sl)} links)."
+        )
+    return nodes, links, notes + extra
+
+
+def _append_scope_markers(
+    topologies: list[dict[str, Any]],
+    nodes: list[TopologyNode],
+    links: list[TopologyLink],
+    notes: list[str],
+) -> tuple[list[TopologyNode], list[str]]:
+    have = _topology_ids_from_parsed(nodes, links)
+    added = 0
+    for topo in topologies:
+        tid = topo.get("topology-id")
+        if not isinstance(tid, str) or not tid:
+            continue
+        if tid in have:
+            continue
+        n_raw = topo.get("node")
+        l_raw = topo.get("link")
+        if (isinstance(n_raw, list) and len(n_raw) > 0) or (
+            isinstance(l_raw, list) and len(l_raw) > 0
+        ):
+            continue
+        nodes.append(
+            TopologyNode(
+                node_id=f"ctrl:topo:{tid}",
+                display_name=f"scope:{tid}",
+                role="controller_topology_scope",
+                state="up",
+                source="controller_bgpls",
+                device_id=None,
+                attributes=_scope_attribute_strings(topo),
+            )
+        )
+        have.add(tid)
+        added += 1
+    if added:
+        notes.append(
+            f"Added {added} controller topology scope marker(s) for ODL topologies with no "
+            "extractable node/link rows in this RESTCONF aggregate (protocol presence only)."
+        )
+    return nodes, notes
 
 
 def _is_restconf_unknown_element(body: str) -> bool:
@@ -243,6 +432,17 @@ def fetch_bgpls_topology_via_odl(client: OdlClient | None = None) -> BgplsTopolo
         parse_notes = [
             *parse_notes,
             "ODL served legacy network-topology:network-topology (ietf-network-topology was not registered on RESTCONF).",
+        ]
+    topologies = _extract_topology_list(payload if isinstance(payload, dict) else {})
+    nodes, links, parse_notes = _enrich_linkstate_subresources(
+        c, topologies, nodes, links, parse_notes
+    )
+    nodes, parse_notes = _append_scope_markers(topologies, nodes, links, parse_notes)
+    if nodes:
+        parse_notes = [
+            n
+            for n in parse_notes
+            if "no node/link elements were extracted" not in n
         ]
     snap = TopologySnapshot(
         topology_id="odl:bgp_ls:network_topology",
