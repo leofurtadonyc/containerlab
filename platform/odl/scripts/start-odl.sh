@@ -80,4 +80,16 @@ if [ "${target_password}" != "${default_password}" ]; then
   wait_for_auth
 fi
 
+# Features are normally installed via featuresBoot (see Dockerfile + append-features-boot.sh).
+# Optional: run `feature:install` over the client after boot (debug / recovery); uses long client idle timeout.
+if [ "${ODL_RUNTIME_KARAF_FEATURES_INSTALL:-}" = "1" ]; then
+  echo "Running runtime Karaf feature install (list: /usr/local/share/odl/karaf-features.list) ..."
+  if ! /usr/local/bin/install-karaf-features.sh; then
+    echo "WARN: Karaf feature install failed or was incomplete. Set ODL_KARAF_FEATURES_STRICT=1 to fail container startup on any failed feature:install." >&2
+    if [ "${ODL_KARAF_FEATURES_STRICT:-}" = "1" ]; then
+      exit 1
+    fi
+  fi
+fi
+
 wait "${odl_pid}"

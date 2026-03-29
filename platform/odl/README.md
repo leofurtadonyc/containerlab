@@ -49,7 +49,15 @@ The platform builds ODL as a local image so the controller's bounded RESTCONF ad
 
 ## Deeper topology truth (RESTCONF `ietf-network-topology`)
 
-`app-api` may read **`GET /rests/data/ietf-network-topology:network-topologies`** (RFC 8345) for optional merge enrichment. The stock **`opendaylight/opendaylight`** image used here often **does not** install the Karaf features that expose that YANG module over RESTCONF; both `network-topology:…` and `ietf-network-topology:…` can return **`400 unknown-element`** until the right **topology / RESTCONF** features are installed in the controller. Check **`ietf-yang-library:modules-state`** for a module whose name contains **`ietf-network-topology`**, then use **`feature:list`** / **`feature:install`** per your OpenDaylight release docs—exact feature names vary by version and distribution.
+`app-api` may read **`GET /rests/data/ietf-network-topology:network-topologies`** (RFC 8345) for optional merge enrichment.
+
+**Automated Karaf features:** at **image build** time, **`append-features-boot.sh`** appends every name in **`karaf-features.list`** to **`etc/org.apache.karaf.features.cfg`** **`featuresBoot`** (after the stock ODL bootstrap UUID). Karaf **installs and starts** those features on **every** process start, so redeploys are not dependent on a fragile `feature:install` client session (which previously hit **idle timeouts** and left most features uninstalled).
+
+First boot after a new image can take **several minutes** while features resolve. If Karaf **fails to start**, remove or rename the offending feature in **`karaf-features.list`**, rebuild **`platform-odl`**, and redeploy.
+
+Optional **runtime** `feature:install` (same list, long client timeout): set **`ODL_RUNTIME_KARAF_FEATURES_INSTALL=1`** on the ODL container (debug / recovery only).
+
+If **`ietf-yang-library:modules-state`** still does not list **`ietf-network-topology`**, check that installs succeeded (**`docker logs clab-platform-odl`**) and that feature names match your OpenDaylight **release** (edit **`karaf-features.list`**, rebuild the image).
 
 ## Notes and caveats
 ODL must remain a bounded helper. All operator-facing product logic lives in the backend and WebUI. If ODL capabilities are unavailable, the platform degrades gracefully.

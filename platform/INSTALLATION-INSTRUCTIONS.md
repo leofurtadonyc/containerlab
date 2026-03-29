@@ -270,6 +270,25 @@ Use `./scripts/drill-same-workspace-restart.sh` from `platform/` for a **repeata
 
 Full operator context: `docs/deployment-runbook.md` (Same-Workspace Restart Drill).
 
+## OpenDaylight Karaf features (baked in at image build)
+
+The **`platform-odl:0.1.0`** image **does not** rely on a fragile post-boot `bin/client` `feature:install` loop (which can hit **Karaf client idle timeouts** and leave most features **Uninstalled**). Instead, **`platform/odl/scripts/append-features-boot.sh`** runs during **`docker build`** and appends every entry in **`platform/odl/karaf-features.list`** to **`/opt/opendaylight/etc/org.apache.karaf.features.cfg`** **`featuresBoot`** (after the stock OpenDaylight bootstrap feature UUID). Karaf then **installs and starts** those features on **every** controller start—**including** fresh containers on a new host.
+
+Rebuild **`./scripts/build-images.sh`** (ODL stage) and redeploy whenever you change **`karaf-features.list`**.
+
+**Product truth remains in `app-api`**; ODL stays a bounded helper. Expect a **longer first-start time** while features resolve.
+
+**Optional** runtime installer (debug / recovery only): set **`ODL_RUNTIME_KARAF_FEATURES_INSTALL=1`** on the **`odl`** node to run **`install-karaf-features.sh`** after boot (uses a **long** client idle timeout; see **`ODL_KARAF_CLIENT_IDLE_TIMEOUT_MS`**).
+
+| Variable | Effect |
+| --- | --- |
+| **`ODL_RUNTIME_KARAF_FEATURES_INSTALL=1`** | Run `feature:install` for each feature in the list after Karaf is up (not required for normal operation). |
+| **`ODL_KARAF_FEATURES_STRICT=1`** | With runtime install: fail the container if any **`feature:install`** fails. |
+| **`ODL_KARAF_WAIT_SECONDS`** | Max wait for Karaf **8101** (default **600**). |
+| **`KARAF_USER` / `KARAF_PASSWORD`** | Karaf shell credentials (default **`karaf` / `karaf`**). |
+
+If your OpenDaylight **base image** does not provide a feature name, Karaf may **fail to start** entirely—remove or rename that line in **`karaf-features.list`**, rebuild **`platform-odl`**, and redeploy.
+
 ## Access The Running Services
 
 The current host port bindings are:

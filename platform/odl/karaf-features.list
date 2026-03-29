@@ -1,0 +1,41 @@
+# OpenDaylight Karaf features installed at container startup (see scripts/install-karaf-features.sh).
+# Order matters for dependency satisfaction; one feature name per line (whitespace-separated
+# tokens on a line are each installed separately).
+#
+# Pinned for opendaylight/opendaylight base in platform/odl/Dockerfile. If a feature is missing
+# on your ODL release, remove or rename it and rebuild platform-odl:0.1.0.
+
+odl-bgpcep-topology-config-loader
+odl-bgpcep-topology-tunnel-api
+odl-bgpcep-bgp-topology
+odl-bgpcep-topology-api
+odl-bgpcep-pcep-topology
+features-pcep
+odl-bgpcep-bgp-rib-api
+odl-bgpcep-pcep-segment-routing
+odl-bgpcep-pcep-topology-provider
+odl-bgpcep-pcep-p2mp-te-lsp
+odl-bgpcep-bgp
+odl-bgpcep-pcep-server
+odl-bgpcep-pcep-impl
+odl-bgpcep-programming-api
+odl-bgpcep-bgp-l3vpn
+odl-bgpcep-bgp-labeled-unicast
+odl-bgpcep-rsvp
+odl-bgpcep-graph
+odl-bgpcep-bmp-config-example
+odl-bgpcep-bgp-openconfig-state
+odl-bgpcep-algo-api
+odl-bgpcep-routing-policy-config-loader
+odl-bgpcep-programming-impl
+odl-bgpcep-bgp-evpn
+odl-bgpcep-bgp-openconfig
+odl-bgpcep-pcep
+odl-bgpcep-bgp-benchmark
+odl-bgpcep-data-change-counter
+odl-bgpcep-bmp
+odl-bgpcep-bmp-config-loader
+odl-bgpcep-bgp-config-example
+features-bgpcep-extras
+odl-netconf-topology
+odl-openflowplugin-all

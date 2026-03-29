@@ -46,6 +46,27 @@ def _empty_snapshot() -> TopologySnapshot:
     )
 
 
+def _http_error_body(exc: HTTPError) -> str:
+    try:
+        return exc.read().decode("utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
+def _is_restconf_unknown_element(body: str) -> bool:
+    """True when RESTCONF rejects the request because the YANG module or node is not registered."""
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError:
+        return False
+    for err in data.get("errors", {}).get("error", []) or []:
+        if not isinstance(err, dict):
+            continue
+        if err.get("error-tag") == "unknown-element":
+            return True
+    return False
+
+
 def _parse_network_topology_payload(payload: dict[str, Any]) -> tuple[list[TopologyNode], list[TopologyLink], list[str]]:
     """Extract minimal node/link tuples from IETF network-topology style JSON.
 
@@ -146,37 +167,64 @@ def fetch_bgpls_topology_via_odl(client: OdlClient | None = None) -> BgplsTopolo
     """
     observed_source = "odl_restconf_network_topology"
     c = client or get_odl_client()
-    # RFC 8345 module name is ``ietf-network-topology``; top-level container is ``network-topologies``.
-    path = "/rests/data/ietf-network-topology:network-topologies"
+    # Prefer RFC 8345 ``ietf-network-topology``; many ODL builds only register the older
+    # ``network-topology`` module (draft), which returns HTTP 400 unknown-element for the IETF name.
+    path_candidates = (
+        "/rests/data/ietf-network-topology:network-topologies",
+        "/rests/data/network-topology:network-topology",
+    )
+    payload: dict[str, Any] | None = None
+    path_used: str | None = None
     try:
-        request = Request(
-            url=f"{c.config.base_url.rstrip('/')}{path}",
-            headers=c._build_headers(),
-        )
-        with urlopen(request, timeout=c.config.timeout_seconds) as response:
-            raw = response.read().decode("utf-8")
-        payload = json.loads(raw)
-    except HTTPError as exc:
-        if exc.code in {401, 403, 404}:
+        for path in path_candidates:
+            request = Request(
+                url=f"{c.config.base_url.rstrip('/')}{path}",
+                headers=c._build_headers(),
+            )
+            try:
+                with urlopen(request, timeout=c.config.timeout_seconds) as response:
+                    raw = response.read().decode("utf-8")
+                payload = json.loads(raw)
+                path_used = path
+                break
+            except HTTPError as exc:
+                body = _http_error_body(exc)
+                if exc.code in {401, 403}:
+                    snap = _empty_snapshot()
+                    return BgplsTopologyFetchResult(
+                        status="empty",
+                        observed_source=observed_source,
+                        snapshot=snap,
+                        fingerprint=_fingerprint_payload({"error": exc.code}),
+                        notes=[
+                            f"ODL returned HTTP {exc.code} for bounded network-topology read; enrichment unavailable.",
+                            "gNMI-derived topology remains the baseline; controller correlation is optional.",
+                        ],
+                    )
+                if exc.code == 404 or (
+                    exc.code == 400 and _is_restconf_unknown_element(body)
+                ):
+                    continue
+                snap = _empty_snapshot()
+                return BgplsTopologyFetchResult(
+                    status="degraded",
+                    observed_source=observed_source,
+                    snapshot=snap,
+                    fingerprint=_fingerprint_payload({"error": exc.code, "body": body[:500]}),
+                    notes=[f"ODL HTTP {exc.code} during bounded network-topology read."],
+                )
+        if payload is None:
             snap = _empty_snapshot()
             return BgplsTopologyFetchResult(
                 status="empty",
                 observed_source=observed_source,
                 snapshot=snap,
-                fingerprint=_fingerprint_payload({"error": exc.code}),
+                fingerprint=_fingerprint_payload({"error": "no_topology_path"}),
                 notes=[
-                    f"ODL returned HTTP {exc.code} for bounded network-topology read; enrichment unavailable.",
+                    "ODL did not expose ietf-network-topology or network-topology on RESTCONF; enrichment unavailable.",
                     "gNMI-derived topology remains the baseline; controller correlation is optional.",
                 ],
             )
-        snap = _empty_snapshot()
-        return BgplsTopologyFetchResult(
-            status="degraded",
-            observed_source=observed_source,
-            snapshot=snap,
-            fingerprint=_fingerprint_payload({"error": exc.code}),
-            notes=[f"ODL HTTP {exc.code} during bounded network-topology read."],
-        )
     except (URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
         snap = _empty_snapshot()
         return BgplsTopologyFetchResult(
@@ -191,6 +239,11 @@ def fetch_bgpls_topology_via_odl(client: OdlClient | None = None) -> BgplsTopolo
         )
 
     nodes, links, parse_notes = _parse_network_topology_payload(payload if isinstance(payload, dict) else {})
+    if path_used == path_candidates[1]:
+        parse_notes = [
+            *parse_notes,
+            "ODL served legacy network-topology:network-topology (ietf-network-topology was not registered on RESTCONF).",
+        ]
     snap = TopologySnapshot(
         topology_id="odl:bgp_ls:network_topology",
         topology_name="controller_network_topology_v1",
