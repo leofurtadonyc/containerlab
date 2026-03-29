@@ -30,6 +30,7 @@ from app_api.routers.preview_engine import router as preview_engine_router
 from app_api.routers.readiness_snapshot_history import (
     router as readiness_snapshot_history_router,
 )
+from app_api.routers.safe_actions import router as safe_actions_router
 from app_api.routers.reports import router as reports_router
 from app_api.routers.policies import router as policies_router
 from app_api.routers.service_stability_profile import router as service_stability_profile_router
@@ -62,6 +63,7 @@ router.include_router(operational_stability_summary_router)
 router.include_router(workflow_history_router)
 router.include_router(workflow_lifecycle_router)
 router.include_router(validation_engine_router)
+router.include_router(safe_actions_router)
 router.include_router(preview_engine_router)
 router.include_router(audit_history_router)
 router.include_router(devices_router)

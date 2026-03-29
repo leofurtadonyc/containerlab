@@ -436,6 +436,7 @@ workflow_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-his
 workflow_lifecycle_response=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-lifecycle")
 preview_list_response=$(fetch_compact_json "$APP_API_URL/api/v1/previews?limit=5")
 validation_list_response=$(fetch_compact_json "$APP_API_URL/api/v1/validations?limit=5")
+safe_actions_list_response=$(fetch_compact_json "$APP_API_URL/api/v1/actions?limit=5")
 audit_history_response=$(fetch_compact_json "$APP_API_URL/api/v1/audit-history")
 change_intelligence_response=$(fetch_compact_json "$APP_API_URL/api/v1/change-intelligence/recent-summary")
 investigation_workspace_response=$(fetch_compact_json "$APP_API_URL/api/v1/investigation-workspace/context")
@@ -799,6 +800,9 @@ assert_contains "preview list response" "$preview_list_response" '"items":['
 assert_contains "preview list response (API metadata)" "$preview_list_response" '"service":"app-api"'
 assert_contains "validation list response" "$validation_list_response" '"items":['
 assert_contains "validation list response (API metadata)" "$validation_list_response" '"service":"app-api"'
+assert_contains "safe actions list response" "$safe_actions_list_response" '"contract_id":"safe_action_workflow_v1"'
+assert_contains "safe actions list response" "$safe_actions_list_response" '"items":['
+assert_contains "safe actions list response (API metadata)" "$safe_actions_list_response" '"service":"app-api"'
 
 # Optional bounded query strings: structural echo-only check (week 22 query ergonomics contract).
 workflow_history_bounded_query=$(fetch_compact_json "$APP_API_URL/api/v1/workflow-history?limit=1&sync_runs_limit=3")
@@ -1072,6 +1076,7 @@ assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_inventory
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshots_persisted_total'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshot_latest_persisted_at_seconds'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_preview_requests_total'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_safe_actions_total'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_inventory_newest_observed_timestamp_seconds'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_paired_links'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_single_sided_links'

@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app_api.models.base import Base
@@ -475,3 +475,111 @@ class ValidationEventTable(Base):
     provenance: Mapped[str] = mapped_column(String(32), nullable=False)
 
     validation: Mapped[ValidationRequestTable] = relationship(back_populates="events")
+
+
+class SafeActionTable(Base):
+    """Durable safe-action request (bounded v1 execution; backend-owned)."""
+
+    __tablename__ = "safe_actions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    workflow_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("platform_app.workflow_lifecycles.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    preview_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("platform_app.preview_requests.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    validation_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("platform_app.validation_requests.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True, unique=True)
+    action_type: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    target_kind: Mapped[str] = mapped_column(String(64), nullable=False)
+    target_ids: Mapped[list[object]] = mapped_column(JSON, nullable=False)
+    target_scope: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    requested_payload: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    requested_by_actor_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    requested_by_actor_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    requested_by_actor_display_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    action_decision: Mapped[str] = mapped_column(String(32), nullable=False)
+    capability_decision_state: Mapped[str] = mapped_column(String(32), nullable=False)
+    capability_decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    truth_scope_summary: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    prerequisite_notes: Mapped[list[object]] = mapped_column(JSON, nullable=False, default=list)
+    approval_required: Mapped[bool] = mapped_column(Boolean(), nullable=False, default=True)
+    approval_state: Mapped[str] = mapped_column(String(32), nullable=False)
+    approver_actor_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    approver_actor_display_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    execution_status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    execution_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    execution_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    execution_latency_ms: Mapped[float | None] = mapped_column(Float(), nullable=True)
+    execution_error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    execution_error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    post_check_validation_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    rollback_parent_action_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    rollback_workflow_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    rollback_ready_state: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    rollback_validation_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    compensation_reference: Mapped[str | None] = mapped_column(Text, nullable=True)
+    result_json: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    audit_attachment_hint: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    events: Mapped[list["SafeActionEventTable"]] = relationship(
+        back_populates="action",
+        cascade="all, delete-orphan",
+    )
+
+
+class SafeActionEventTable(Base):
+    """One durable event on a safe action timeline."""
+
+    __tablename__ = "safe_action_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    action_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("platform_app.safe_actions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    actor: Mapped[str] = mapped_column(String(255), nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    event_metadata: Mapped[dict[str, object]] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    provenance: Mapped[str] = mapped_column(String(32), nullable=False)
+
+    action: Mapped["SafeActionTable"] = relationship(back_populates="events")
+
+
+class PolicyOperatorIntentRecordTable(Base):
+    """Platform-owned operator intent overlay for a policy_id (not device push)."""
+
+    __tablename__ = "policy_operator_intent_records"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    policy_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    intent_state: Mapped[str] = mapped_column(String(32), nullable=False)
+    action_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("platform_app.safe_actions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    previous_record_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    applied_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    truth_notes: Mapped[list[object]] = mapped_column(JSON, nullable=False, default=list)

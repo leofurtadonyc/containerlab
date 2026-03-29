@@ -54,6 +54,9 @@ import type {
   ValidationDetailResponse,
   ValidationListResponse,
   ValidationTimelineResponse,
+  SafeActionDetailResponse,
+  SafeActionListResponse,
+  SafeActionTimelineResponse,
 } from "./contracts";
 import {
   buildAuditHistoryQueryString,
@@ -498,6 +501,87 @@ export class ApiClient {
     created_by_actor_display_name?: string | null;
   }): Promise<ValidationDetailResponse> {
     return this.jsonRequest<ValidationDetailResponse>("POST", "/api/v1/validations", {
+      body: JSON.stringify(body),
+    });
+  }
+
+  async getSafeActionList(limit = 50): Promise<SafeActionListResponse> {
+    const params = new URLSearchParams();
+    params.set("limit", String(Math.min(100, Math.max(1, Math.floor(limit)))));
+    return this.jsonRequest<SafeActionListResponse>("GET", `/api/v1/actions?${params.toString()}`);
+  }
+
+  async getSafeActionDetail(actionId: string): Promise<SafeActionDetailResponse> {
+    const encoded = encodeURIComponent(actionId.trim());
+    return this.jsonRequest<SafeActionDetailResponse>("GET", `/api/v1/actions/${encoded}`);
+  }
+
+  async getSafeActionTimeline(actionId: string): Promise<SafeActionTimelineResponse> {
+    const encoded = encodeURIComponent(actionId.trim());
+    return this.jsonRequest<SafeActionTimelineResponse>("GET", `/api/v1/actions/${encoded}/timeline`);
+  }
+
+  async createSafeAction(body: {
+    workflow_id: string;
+    preview_id: string;
+    validation_id: string;
+    action_type: string;
+    target_kind: "policy";
+    target_ids: string[];
+    target_scope?: Record<string, unknown> | null;
+    requested_payload: Record<string, unknown>;
+    idempotency_key?: string | null;
+    description?: string | null;
+    requested_by_actor_type?: "operator" | "api" | "system";
+    requested_by_actor_id?: string;
+    requested_by_actor_display_name?: string | null;
+  }): Promise<SafeActionDetailResponse> {
+    return this.jsonRequest<SafeActionDetailResponse>("POST", "/api/v1/actions", {
+      body: JSON.stringify(body),
+    });
+  }
+
+  async approveSafeAction(
+    actionId: string,
+    body: { actor_id: string; actor_display_name?: string | null; reason?: string | null; provenance?: "operator" | "api" },
+  ): Promise<SafeActionDetailResponse> {
+    const encoded = encodeURIComponent(actionId.trim());
+    return this.jsonRequest<SafeActionDetailResponse>("POST", `/api/v1/actions/${encoded}/approve`, {
+      body: JSON.stringify(body),
+    });
+  }
+
+  async rejectSafeAction(
+    actionId: string,
+    body: {
+      actor_id: string;
+      actor_display_name?: string | null;
+      reason: string;
+      provenance?: "operator" | "api";
+    },
+  ): Promise<SafeActionDetailResponse> {
+    const encoded = encodeURIComponent(actionId.trim());
+    return this.jsonRequest<SafeActionDetailResponse>("POST", `/api/v1/actions/${encoded}/reject`, {
+      body: JSON.stringify(body),
+    });
+  }
+
+  async executeSafeAction(
+    actionId: string,
+    body: { actor_id: string; provenance?: "operator" | "api" },
+  ): Promise<SafeActionDetailResponse> {
+    const encoded = encodeURIComponent(actionId.trim());
+    return this.jsonRequest<SafeActionDetailResponse>("POST", `/api/v1/actions/${encoded}/execute`, {
+      body: JSON.stringify(body),
+    });
+  }
+
+  async cancelSafeAction(
+    actionId: string,
+    body: { actor_id: string; reason?: string | null },
+  ): Promise<SafeActionDetailResponse> {
+    const encoded = encodeURIComponent(actionId.trim());
+    return this.jsonRequest<SafeActionDetailResponse>("POST", `/api/v1/actions/${encoded}/cancel`, {
       body: JSON.stringify(body),
     });
   }
