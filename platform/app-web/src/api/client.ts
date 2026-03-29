@@ -57,6 +57,9 @@ import type {
   SafeActionDetailResponse,
   SafeActionListResponse,
   SafeActionTimelineResponse,
+  RollbackDetailResponse,
+  RollbackListResponse,
+  RollbackTimelineResponse,
 } from "./contracts";
 import {
   buildAuditHistoryQueryString,
@@ -582,6 +585,85 @@ export class ApiClient {
   ): Promise<SafeActionDetailResponse> {
     const encoded = encodeURIComponent(actionId.trim());
     return this.jsonRequest<SafeActionDetailResponse>("POST", `/api/v1/actions/${encoded}/cancel`, {
+      body: JSON.stringify(body),
+    });
+  }
+
+  async getRollbackList(limit = 50): Promise<RollbackListResponse> {
+    const params = new URLSearchParams();
+    params.set("limit", String(Math.min(100, Math.max(1, Math.floor(limit)))));
+    return this.jsonRequest<RollbackListResponse>("GET", `/api/v1/rollbacks?${params.toString()}`);
+  }
+
+  async getRollbackDetail(rollbackId: string): Promise<RollbackDetailResponse> {
+    const encoded = encodeURIComponent(rollbackId.trim());
+    return this.jsonRequest<RollbackDetailResponse>("GET", `/api/v1/rollbacks/${encoded}`);
+  }
+
+  async getRollbackTimeline(rollbackId: string): Promise<RollbackTimelineResponse> {
+    const encoded = encodeURIComponent(rollbackId.trim());
+    return this.jsonRequest<RollbackTimelineResponse>("GET", `/api/v1/rollbacks/${encoded}/timeline`);
+  }
+
+  async createRollback(body: {
+    parent_action_id: string;
+    rollback_type: string;
+    target_kind: "policy";
+    target_ids: string[];
+    target_scope?: Record<string, unknown> | null;
+    pre_rollback_validation_id: string;
+    idempotency_key?: string | null;
+    description?: string | null;
+    requested_by_actor_type?: "operator" | "api" | "system";
+    requested_by_actor_id?: string;
+    requested_by_actor_display_name?: string | null;
+  }): Promise<RollbackDetailResponse> {
+    return this.jsonRequest<RollbackDetailResponse>("POST", "/api/v1/rollbacks", {
+      body: JSON.stringify(body),
+    });
+  }
+
+  async approveRollback(
+    rollbackId: string,
+    body: { actor_id: string; actor_display_name?: string | null; reason?: string | null; provenance?: "operator" | "api" },
+  ): Promise<RollbackDetailResponse> {
+    const encoded = encodeURIComponent(rollbackId.trim());
+    return this.jsonRequest<RollbackDetailResponse>("POST", `/api/v1/rollbacks/${encoded}/approve`, {
+      body: JSON.stringify(body),
+    });
+  }
+
+  async rejectRollback(
+    rollbackId: string,
+    body: {
+      actor_id: string;
+      actor_display_name?: string | null;
+      reason: string;
+      provenance?: "operator" | "api";
+    },
+  ): Promise<RollbackDetailResponse> {
+    const encoded = encodeURIComponent(rollbackId.trim());
+    return this.jsonRequest<RollbackDetailResponse>("POST", `/api/v1/rollbacks/${encoded}/reject`, {
+      body: JSON.stringify(body),
+    });
+  }
+
+  async executeRollback(
+    rollbackId: string,
+    body: { actor_id: string; provenance?: "operator" | "api" },
+  ): Promise<RollbackDetailResponse> {
+    const encoded = encodeURIComponent(rollbackId.trim());
+    return this.jsonRequest<RollbackDetailResponse>("POST", `/api/v1/rollbacks/${encoded}/execute`, {
+      body: JSON.stringify(body),
+    });
+  }
+
+  async cancelRollback(
+    rollbackId: string,
+    body: { actor_id: string; reason?: string | null },
+  ): Promise<RollbackDetailResponse> {
+    const encoded = encodeURIComponent(rollbackId.trim());
+    return this.jsonRequest<RollbackDetailResponse>("POST", `/api/v1/rollbacks/${encoded}/cancel`, {
       body: JSON.stringify(body),
     });
   }

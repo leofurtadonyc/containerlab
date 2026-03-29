@@ -39,6 +39,7 @@ import { WorkflowLifecycleView } from "./features/workflow-lifecycle/view";
 import { PreviewWorkspaceView } from "./features/preview-workspace/view";
 import { ValidationWorkspaceView } from "./features/validation-workspace/view";
 import { SafeActionWorkspaceView } from "./features/safe-action-workspace/view";
+import { RollbackWorkspaceView } from "./features/rollback-workspace/view";
 import { GlobalOperatorSearch } from "./features/global-search/global-operator-search";
 
 const NAV_ITEMS = [
@@ -66,6 +67,7 @@ const NAV_ITEMS = [
   { id: "preview-workspace", label: "Preview workspace" },
   { id: "validation-workspace", label: "Validation workspace" },
   { id: "safe-action-workspace", label: "Safe action" },
+  { id: "rollback-workspace", label: "Rollback" },
   { id: "audit", label: "Audit" },
   { id: "capabilities", label: "Capabilities" },
   { id: "readiness", label: "Readiness" },
@@ -128,6 +130,8 @@ function renderView(viewId: string) {
       return <ValidationWorkspaceView />;
     case "safe-action-workspace":
       return <SafeActionWorkspaceView />;
+    case "rollback-workspace":
+      return <RollbackWorkspaceView />;
     case "audit":
       return <AuditView />;
     case "capabilities":

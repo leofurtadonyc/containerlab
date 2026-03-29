@@ -1077,6 +1077,7 @@ assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_sn
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshot_latest_persisted_at_seconds'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_preview_requests_total'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_safe_actions_total'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_rollbacks_total'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_inventory_newest_observed_timestamp_seconds'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_paired_links'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_single_sided_links'

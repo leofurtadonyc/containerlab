@@ -2959,3 +2959,52 @@ export interface SafeActionTimelineResponse extends ApiResponseMetadata {
     provenance: string;
   }>;
 }
+
+/** `GET|POST /api/v1/rollbacks/...` — bounded rollback orchestration v1. */
+export interface RollbackDetailResponse extends ApiResponseMetadata {
+  rollback: {
+    contract_id: string;
+    rollback_id: string;
+    workflow_id: string | null;
+    parent_action_id: string;
+    rollback_type: string;
+    rollback_decision: string;
+    rollback_status: string;
+    approval_state: string;
+    prerequisite_readiness: Record<string, unknown>;
+    prerequisite_notes: string[];
+    truth_scope_summary: Record<string, unknown>;
+    restoration_semantics: string;
+    execution: Record<string, unknown>;
+    safety_framing: { explicit_non_claims: string[] };
+  };
+}
+
+export interface RollbackListResponse extends ApiResponseMetadata {
+  contract_id: string;
+  items: Array<{
+    rollback_id: string;
+    rollback_type: string;
+    rollback_decision: string;
+    rollback_status: string;
+    parent_action_id: string;
+    workflow_id: string | null;
+    requested_at: string;
+    requested_by_actor_id: string;
+  }>;
+}
+
+export interface RollbackTimelineResponse extends ApiResponseMetadata {
+  contract_id: string;
+  rollback_id: string;
+  events: Array<{
+    event_id: string;
+    rollback_id: string;
+    event_type: string;
+    occurred_at: string;
+    actor: string;
+    reason: string | null;
+    metadata: Record<string, unknown>;
+    provenance: string;
+  }>;
+}
