@@ -24,7 +24,7 @@ from app_api.integrations.collector.topology import (
 )
 from app_api.main import app
 from app_api.models.inventory import InventoryDevice, InventoryHistoryChangePreview
-from app_api.metrics.state import reset_metrics_registry
+from app_api.metrics.state import render_prometheus_metrics, reset_metrics_registry
 from app_api.models.policy import PolicyDetailSourceReadiness, PolicyInventorySnapshot
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.persistence.history import (
@@ -1785,9 +1785,18 @@ def _build_persisted_readiness_snapshot_history(
 
 
 def _build_sync_run_history_summary() -> SyncRunHistorySummary:
+    inv = datetime.fromisoformat("2026-03-10T00:30:02+00:00")
+    topo = datetime.fromisoformat("2026-03-10T01:00:03+00:00")
+    pol = datetime.fromisoformat("2026-03-10T01:30:04+00:00")
     return SyncRunHistorySummary(
         total_count=3,
+        total_persisted_count=3,
         counts_by_model_family={"inventory": 1, "topology": 1, "policy": 1},
+        persisted_counts_by_model_family={
+            "inventory": 1,
+            "topology": 1,
+            "policy": 1,
+        },
         counts_by_result={"completed": 2, "partial": 1},
         counts_by_model_family_and_result={
             "inventory": {"completed": 1},
@@ -1795,9 +1804,14 @@ def _build_sync_run_history_summary() -> SyncRunHistorySummary:
             "topology": {"partial": 1},
         },
         latest_finished_at_by_model_family={
-            "inventory": datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
-            "policy": datetime.fromisoformat("2026-03-10T01:30:04+00:00"),
-            "topology": datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
+            "inventory": inv,
+            "policy": pol,
+            "topology": topo,
+        },
+        latest_observed_at_by_model_family={
+            "inventory": inv,
+            "policy": pol,
+            "topology": topo,
         },
     )
 
@@ -5366,6 +5380,7 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert "platform_app_api_collector_boundary_latest_fetch_duration_seconds" in response.text
     assert "platform_app_api_collector_boundary_timeout_budget_seconds" in response.text
     assert "platform_app_api_collector_boundary_latest_fetch_posture" in response.text
+    assert "platform_app_api_collector_boundary_newest_observed_at_seconds" in response.text
     assert (
         'platform_app_api_collector_boundary_latest_fetch_duration_seconds{model_family="inventory",outcome="live_normalized_feed"} 0.184000000'
         in response.text
@@ -5465,6 +5480,11 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert "platform_app_api_inventory_snapshots_persisted_total 2" in response.text
     assert (
         "platform_app_api_inventory_snapshot_latest_persisted_at_seconds 1773144000.000"
+        in response.text
+    )
+    assert "platform_app_api_sync_runs_persisted_total 3" in response.text
+    assert (
+        'platform_app_api_sync_runs_persisted_by_family{model_family="topology"} 1'
         in response.text
     )
     assert "platform_app_api_policy_snapshots_persisted_total 2" in response.text
@@ -6086,3 +6106,75 @@ def test_policy_path_analysis_persisted_fallback_stale_row(monkeypatch) -> None:
     assert payload["freshness"]["serving_mode_echo"] == "persisted_fallback"
     assert payload["candidate_path_summaries"][0]["current_posture"] == "stale"
     assert any(c["code"] == "persisted_fallback_stale_row" for c in payload["caveats"])
+
+
+def test_render_prometheus_metrics_sync_latest_finished_emits_all_model_families() -> None:
+    """Latest-finished gauges must always expose inventory/topology/policy (0 = never)."""
+    payload = render_prometheus_metrics(
+        "test",
+        history_metrics={
+            "total_count": 0,
+            "counts_by_model_family": {},
+            "counts_by_result": {},
+            "counts_by_model_family_and_result": {},
+            "latest_finished_at_by_model_family": {},
+            "latest_observed_at_by_model_family": {},
+        },
+    )
+    assert (
+        'platform_app_api_sync_run_latest_finished_at_seconds{model_family="inventory"} 0.000'
+        in payload
+    )
+    assert (
+        'platform_app_api_sync_run_latest_finished_at_seconds{model_family="topology"} 0.000'
+        in payload
+    )
+    assert (
+        'platform_app_api_sync_run_latest_finished_at_seconds{model_family="policy"} 0.000'
+        in payload
+    )
+    assert (
+        'platform_app_api_collector_boundary_newest_observed_at_seconds{model_family="inventory"} 0.000'
+        in payload
+    )
+    assert (
+        'platform_app_api_collector_boundary_newest_observed_at_seconds{model_family="topology"} 0.000'
+        in payload
+    )
+    assert (
+        'platform_app_api_collector_boundary_newest_observed_at_seconds{model_family="policy"} 0.000'
+        in payload
+    )
+
+    ts = datetime.fromisoformat("2026-03-10T01:00:03+00:00").timestamp()
+    payload_partial = render_prometheus_metrics(
+        "test",
+        history_metrics={
+            "total_count": 50,
+            "counts_by_model_family": {"topology": 50},
+            "counts_by_result": {"completed": 50},
+            "counts_by_model_family_and_result": {"topology": {"completed": 50}},
+            "latest_finished_at_by_model_family": {"topology": datetime.fromisoformat("2026-03-10T01:00:03+00:00")},
+            "latest_observed_at_by_model_family": {"topology": datetime.fromisoformat("2026-03-10T01:00:03+00:00")},
+        },
+    )
+    assert (
+        f'platform_app_api_sync_run_latest_finished_at_seconds{{model_family="topology"}} {ts:.3f}'
+        in payload_partial
+    )
+    assert (
+        'platform_app_api_sync_run_latest_finished_at_seconds{model_family="inventory"} 0.000'
+        in payload_partial
+    )
+    assert (
+        'platform_app_api_sync_run_latest_finished_at_seconds{model_family="policy"} 0.000'
+        in payload_partial
+    )
+    assert (
+        f'platform_app_api_collector_boundary_newest_observed_at_seconds{{model_family="topology"}} {ts:.3f}'
+        in payload_partial
+    )
+    assert (
+        'platform_app_api_collector_boundary_newest_observed_at_seconds{model_family="inventory"} 0.000'
+        in payload_partial
+    )

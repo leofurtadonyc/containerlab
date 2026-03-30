@@ -1120,7 +1120,11 @@ def render_prometheus_metrics(
     if history_metrics is not None:
         history_families = {"inventory", "topology", "policy"}
         history_results = {"completed", "partial", "failed", "unknown"}
+        total_persisted_count = int(history_metrics.get("total_persisted_count", 0))
         counts_by_model_family = dict(history_metrics.get("counts_by_model_family", {}))
+        persisted_counts_by_model_family = dict(
+            history_metrics.get("persisted_counts_by_model_family", {})
+        )
         counts_by_result = dict(history_metrics.get("counts_by_result", {}))
         counts_by_model_family_and_result = dict(
             history_metrics.get("counts_by_model_family_and_result", {})
@@ -1128,8 +1132,30 @@ def render_prometheus_metrics(
         latest_finished_at_by_model_family = dict(
             history_metrics.get("latest_finished_at_by_model_family", {})
         )
+        latest_observed_at_by_model_family = dict(
+            history_metrics.get("latest_observed_at_by_model_family", {})
+        )
         lines.extend(
             [
+                (
+                    "# HELP platform_app_api_sync_runs_persisted_total "
+                    "Total rows in the sync_runs table."
+                ),
+                "# TYPE platform_app_api_sync_runs_persisted_total gauge",
+                f"platform_app_api_sync_runs_persisted_total {total_persisted_count}",
+                (
+                    "# HELP platform_app_api_sync_runs_persisted_by_family "
+                    "Total rows in the sync_runs table by model family."
+                ),
+                "# TYPE platform_app_api_sync_runs_persisted_by_family gauge",
+                *[
+                    (
+                        "platform_app_api_sync_runs_persisted_by_family"
+                        f'{{model_family="{model_family}"}} '
+                        f"{persisted_counts_by_model_family.get(model_family, 0)}"
+                    )
+                    for model_family in sorted(history_families)
+                ],
                 "# HELP platform_app_api_sync_runs_total Recent persisted sync-run count.",
                 "# TYPE platform_app_api_sync_runs_total gauge",
                 f"platform_app_api_sync_runs_total {history_metrics['total_count']}",
@@ -1174,17 +1200,40 @@ def render_prometheus_metrics(
                 ],
                 (
                     "# HELP platform_app_api_sync_run_latest_finished_at_seconds "
-                    "Unix timestamp of the latest persisted sync-run finish time by model family."
+                    "Unix timestamp of the latest persisted sync-run finish time by model family; "
+                    "zero when that family has no persisted sync runs yet."
                 ),
                 "# TYPE platform_app_api_sync_run_latest_finished_at_seconds gauge",
                 *[
                     (
                         "platform_app_api_sync_run_latest_finished_at_seconds"
-                        f'{{model_family="{model_family}"}} {finished_at.timestamp():.3f}'
+                        f'{{model_family="{model_family}"}} '
+                        f"{(
+                            latest_finished_at_by_model_family[model_family].timestamp()
+                            if model_family in latest_finished_at_by_model_family
+                            else 0.0
+                        ):.3f}"
                     )
-                    for model_family, finished_at in sorted(
-                        latest_finished_at_by_model_family.items()
+                    for model_family in sorted(history_families)
+                ],
+                (
+                    "# HELP platform_app_api_collector_boundary_newest_observed_at_seconds "
+                    "Unix timestamp from Postgres sync_runs: COALESCE(MAX(observed_at), MAX(finished_at)) "
+                    "per model_family (collector observation time when present; else last persist). "
+                    "Exposed on every /metrics scrape. Zero when that family has no rows."
+                ),
+                "# TYPE platform_app_api_collector_boundary_newest_observed_at_seconds gauge",
+                *[
+                    (
+                        "platform_app_api_collector_boundary_newest_observed_at_seconds"
+                        f'{{model_family="{model_family}"}} '
+                        f"{(
+                            latest_observed_at_by_model_family[model_family].timestamp()
+                            if model_family in latest_observed_at_by_model_family
+                            else 0.0
+                        ):.3f}"
                     )
+                    for model_family in sorted(history_families)
                 ],
             ]
         )

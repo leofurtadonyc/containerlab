@@ -82,7 +82,7 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_app_api_sync_runs_by_family{model_family=\"topology\"}",
+          "expr": "platform_app_api_sync_runs_persisted_by_family{model_family=\"topology\"}",
           "refId": "A"
         }
       ],
@@ -519,7 +519,8 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"topology\"}, 0)",
+          "expr": "clamp_min(time() - platform_app_api_collector_boundary_newest_observed_at_seconds{model_family=\"topology\"}, 0)",
+          "instant": true,
           "refId": "A"
         }
       ],
@@ -1140,7 +1141,8 @@
       "type": "bargauge"
     }
   ],
-  "refresh": "30s",
+  "liveNow": true,
+  "refresh": "5s",
   "schemaVersion": 39,
   "style": "dark",
   "tags": [

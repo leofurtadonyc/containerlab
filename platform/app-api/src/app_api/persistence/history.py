@@ -251,7 +251,9 @@ class SyncRunHistorySummary(BaseModel):
     """Bounded summary of persisted sync-run history for observability."""
 
     total_count: int = 0
+    total_persisted_count: int = 0
     counts_by_model_family: dict[str, int] = Field(default_factory=dict)
+    persisted_counts_by_model_family: dict[str, int] = Field(default_factory=dict)
     counts_by_result: dict[str, int] = Field(default_factory=dict)
     counts_by_model_family_and_result: dict[str, dict[str, int]] = Field(
         default_factory=dict
@@ -259,6 +261,7 @@ class SyncRunHistorySummary(BaseModel):
     latest_finished_at_by_model_family: dict[str, datetime] = Field(
         default_factory=dict
     )
+    latest_observed_at_by_model_family: dict[str, datetime] = Field(default_factory=dict)
 
 
 class InventorySnapshotMetricsSummary(BaseModel):
@@ -1131,9 +1134,20 @@ def summarize_sync_run_history(limit: int = 200) -> SyncRunHistorySummary:
     full comparison summaries for API responses and can take minutes on large
     histories, causing Prometheus scrapes of ``GET /metrics`` to hit
     ``context deadline exceeded`` (default scrape timeouts).
+
+    Counts and result breakdowns are derived from the most recent ``limit`` rows
+    (newest first). ``latest_finished_at_by_model_family`` uses ``MAX(finished_at)``
+    per ``model_family`` over the full table so per-family freshness is not lost
+    when recent activity is skewed toward other families.
+    ``latest_observed_at_by_model_family`` uses ``COALESCE(MAX(observed_at), MAX(finished_at))``
+    per ``model_family`` for Prometheus ``platform_app_api_collector_boundary_newest_observed_at_seconds``
+    (scrape-safe; does not depend on in-memory cache from API traffic).
     """
     try:
         with create_session() as session:
+            total_persisted_count = int(
+                session.scalar(select(func.count()).select_from(SyncRunTable)) or 0
+            )
             rows = session.execute(
                 select(
                     SyncRunTable.model_family,
@@ -1143,31 +1157,65 @@ def summarize_sync_run_history(limit: int = 200) -> SyncRunHistorySummary:
                 .order_by(SyncRunTable.finished_at.desc())
                 .limit(limit)
             ).all()
+            persisted_count_rows = session.execute(
+                select(
+                    SyncRunTable.model_family,
+                    func.count(),
+                ).group_by(SyncRunTable.model_family)
+            ).all()
+            latest_rows = session.execute(
+                select(
+                    SyncRunTable.model_family,
+                    func.max(SyncRunTable.finished_at),
+                ).group_by(SyncRunTable.model_family)
+            ).all()
+            observed_rows = session.execute(
+                select(
+                    SyncRunTable.model_family,
+                    func.coalesce(
+                        func.max(SyncRunTable.observed_at),
+                        func.max(SyncRunTable.finished_at),
+                    ),
+                ).group_by(SyncRunTable.model_family)
+            ).all()
     except Exception:
         logger.exception("Failed to summarize sync run history for metrics.")
         return SyncRunHistorySummary()
 
     counts_by_model_family: Counter[str] = Counter()
+    persisted_counts_by_model_family: dict[str, int] = {
+        model_family: int(count)
+        for model_family, count in persisted_count_rows
+    }
     counts_by_result: Counter[str] = Counter()
     counts_by_model_family_and_result: dict[str, Counter[str]] = defaultdict(Counter)
-    latest_finished_at_by_model_family: dict[str, datetime] = {}
+    latest_finished_at_by_model_family: dict[str, datetime] = {
+        model_family: finished_at
+        for model_family, finished_at in latest_rows
+        if finished_at is not None
+    }
+    latest_observed_at_by_model_family: dict[str, datetime] = {
+        model_family: ts
+        for model_family, ts in observed_rows
+        if ts is not None
+    }
 
     for model_family, fetch_status, finished_at in rows:
         result = _map_history_result(fetch_status)
         counts_by_model_family[model_family] += 1
         counts_by_result[result] += 1
         counts_by_model_family_and_result[model_family][result] += 1
-        current_latest = latest_finished_at_by_model_family.get(model_family)
-        if current_latest is None or finished_at > current_latest:
-            latest_finished_at_by_model_family[model_family] = finished_at
 
     return SyncRunHistorySummary(
         total_count=len(rows),
+        total_persisted_count=total_persisted_count,
         counts_by_model_family=dict(counts_by_model_family),
+        persisted_counts_by_model_family=persisted_counts_by_model_family,
         counts_by_result=dict(counts_by_result),
         counts_by_model_family_and_result={
             model_family: dict(result_counts)
             for model_family, result_counts in counts_by_model_family_and_result.items()
         },
         latest_finished_at_by_model_family=latest_finished_at_by_model_family,
+        latest_observed_at_by_model_family=latest_observed_at_by_model_family,
     )

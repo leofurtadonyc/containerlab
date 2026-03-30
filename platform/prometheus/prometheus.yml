@@ -24,8 +24,8 @@ scrape_configs:
   # scrape_interval must be strictly greater than scrape_timeout (Prometheus rule).
   - job_name: app-api
     metrics_path: /metrics
-    scrape_interval: 120s
-    scrape_timeout: 90s
+    scrape_interval: 30s
+    scrape_timeout: 25s
     static_configs:
       - targets:
           - app-api:8000

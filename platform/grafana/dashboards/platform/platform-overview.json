@@ -365,13 +365,15 @@
         "textMode": "value_and_name"
       },
       "pluginVersion": "11.0.0",
+      "description": "Total rows currently persisted in Postgres `sync_runs`. This is the full table count, not the bounded recent 200-row metrics window.",
       "targets": [
         {
-          "expr": "platform_app_api_sync_runs_total",
+          "expr": "platform_app_api_sync_runs_persisted_total",
+          "instant": true,
           "refId": "A"
         }
       ],
-      "title": "Recent Persisted Sync Runs",
+      "title": "Persisted Sync Runs (total rows)",
       "type": "stat"
     },
     {
@@ -421,22 +423,26 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"inventory\"}, 0)",
-          "legendFormat": "inventory age",
+          "expr": "clamp_min(time() - platform_app_api_collector_boundary_newest_observed_at_seconds{model_family=\"inventory\"}, 0)",
+          "instant": true,
+          "legendFormat": "inventory collector obs age",
           "refId": "A"
         },
         {
-          "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"topology\"}, 0)",
-          "legendFormat": "topology age",
+          "expr": "clamp_min(time() - platform_app_api_collector_boundary_newest_observed_at_seconds{model_family=\"topology\"}, 0)",
+          "instant": true,
+          "legendFormat": "topology collector obs age",
           "refId": "B"
         },
         {
-          "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"policy\"}, 0)",
-          "legendFormat": "policy age",
+          "expr": "clamp_min(time() - platform_app_api_collector_boundary_newest_observed_at_seconds{model_family=\"policy\"}, 0)",
+          "instant": true,
+          "legendFormat": "policy collector obs age",
           "refId": "C"
         },
         {
           "expr": "clamp_min(time() - platform_app_api_inventory_snapshot_latest_persisted_at_seconds, 0) unless platform_app_api_inventory_snapshot_latest_persisted_at_seconds == 0",
+          "instant": true,
           "legendFormat": "inventory persisted snapshot age",
           "refId": "D"
         }
@@ -666,10 +672,12 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"inventory\"}, 0)",
+          "expr": "clamp_min(time() - platform_app_api_collector_boundary_newest_observed_at_seconds{model_family=\"inventory\"}, 0)",
+          "instant": true,
           "refId": "A"
         }
       ],
+      "description": "Age of the collector snapshot **newest_observed_at** (gNMI observation clock), not Postgres `sync_runs` persist time. Persist runs on every live devices read and would misleadingly stay ~minutes.",
       "title": "Inventory Sync Age",
       "type": "stat"
     },
@@ -709,10 +717,12 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"topology\"}, 0)",
+          "expr": "clamp_min(time() - platform_app_api_collector_boundary_newest_observed_at_seconds{model_family=\"topology\"}, 0)",
+          "instant": true,
           "refId": "A"
         }
       ],
+      "description": "Collector **newest_observed_at** age (not `sync_runs` persist time).",
       "title": "Topology Sync Age",
       "type": "stat"
     },
@@ -764,16 +774,19 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_app_api_sync_runs_by_family{model_family=\"inventory\"}",
-          "legendFormat": "recent sync runs",
+          "expr": "platform_app_api_sync_runs_persisted_by_family{model_family=\"inventory\"}",
+          "instant": true,
+          "legendFormat": "persisted sync rows",
           "refId": "A"
         },
         {
           "expr": "platform_app_api_inventory_snapshots_persisted_total",
+          "instant": true,
           "legendFormat": "persisted snapshot rows",
           "refId": "B"
         }
       ],
+      "description": "Full persisted inventory sync-run rows versus full persisted inventory snapshot rows from Postgres.",
       "title": "Inventory sync runs vs persisted snapshot rows",
       "type": "stat"
     },
@@ -812,10 +825,12 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_app_api_sync_runs_by_family{model_family=\"topology\"}",
+          "expr": "platform_app_api_sync_runs_persisted_by_family{model_family=\"topology\"}",
+          "instant": true,
           "refId": "A"
         }
       ],
+      "description": "Total persisted topology sync-run rows in Postgres.",
       "title": "Topology Sync Runs",
       "type": "stat"
     },
@@ -855,10 +870,12 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"policy\"}, 0)",
+          "expr": "clamp_min(time() - platform_app_api_collector_boundary_newest_observed_at_seconds{model_family=\"policy\"}, 0)",
+          "instant": true,
           "refId": "A"
         }
       ],
+      "description": "Collector **newest_observed_at** age (not `sync_runs` persist time).",
       "title": "Policy Sync Age",
       "type": "stat"
     },
@@ -897,10 +914,12 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_app_api_sync_runs_by_family{model_family=\"policy\"}",
+          "expr": "platform_app_api_sync_runs_persisted_by_family{model_family=\"policy\"}",
+          "instant": true,
           "refId": "A"
         }
       ],
+      "description": "Total persisted policy sync-run rows in Postgres.",
       "title": "Policy Sync Runs",
       "type": "stat"
     },
@@ -1894,7 +1913,8 @@
       "type": "bargauge"
     }
   ],
-  "refresh": "30s",
+  "liveNow": true,
+  "refresh": "5s",
   "schemaVersion": 39,
   "style": "dark",
   "tags": [
@@ -1912,5 +1932,5 @@
   "timezone": "browser",
   "title": "Platform Overview",
   "uid": "platform-overview",
-  "version": 11
+  "version": 14
 }
