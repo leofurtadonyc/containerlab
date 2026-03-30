@@ -17,6 +17,7 @@ import type {
   TopologyObjectRelatedPoliciesResponse,
   TopologyResponse,
   TopologyTruthResponse,
+  ControllerEvidenceResponse,
   TopologyRiskSummaryResponse,
   FailureImpactViewResponse,
   TopologyObjectDossierResponse,
@@ -179,6 +180,11 @@ export class ApiClient {
     }
     const qs = params.toString();
     return this.request<TopologyTruthResponse>(`/api/v1/topology/truth${qs ? `?${qs}` : ""}`);
+  }
+
+  /** Controller southbound evidence v1 — distinct BGP-LS / PCEP / NETCONF lanes from ODL RESTCONF. */
+  async getControllerEvidence(): Promise<ControllerEvidenceResponse> {
+    return this.request<ControllerEvidenceResponse>("/api/v1/controller/evidence");
   }
 
   async getTopologyObjectRelatedPolicies(

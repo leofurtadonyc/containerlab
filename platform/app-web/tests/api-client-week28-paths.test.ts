@@ -855,4 +855,51 @@ describe("ApiClient week 28 bounded paths", () => {
     expect(url).toContain("/api/v1/topology/truth?");
     expect(url).toContain("truth_posture=protocol_confirmed");
   });
+
+  it("getControllerEvidence uses /api/v1/controller/evidence", async () => {
+    const lane = {
+      lane_posture: "empty" as const,
+      protocol_exposure_posture: "not_exposed" as const,
+      object_visibility_posture: "none_visible" as const,
+      session_posture: "not_observed" as const,
+      evidence_strength: "unavailable" as const,
+      derivation_mode: "unknown" as const,
+      observed_source: "test",
+      node_count: 0,
+      link_count: 0,
+      topology_ids: [] as string[],
+      fingerprint: "",
+      notes: [] as string[],
+      fallback_notes: [] as string[],
+      explicit_non_claims: [] as string[],
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          service: "app-api",
+          version: "0.1.0",
+          phase: "phase_2_read_only_foundation",
+          generated_at: "2025-01-01T00:00:00Z",
+          contract_id: "controller_southbound_session_truth_v2",
+          controller_reachability: "ok",
+          controller_capability_probe_summary: "",
+          yang_module_catalog_count: 0,
+          aggregate_fetch_notes: [],
+          bgp_ls: { lane_id: "bgp_ls", ...lane },
+          pcep: { lane_id: "pcep", ...lane },
+          netconf: { lane_id: "netconf", ...lane },
+          persisted_snapshot_id: null,
+          safety_framing: {
+            contract_id: "controller_southbound_session_truth_v2",
+            explicit_non_claims: [],
+          },
+        }),
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const client = new ApiClient({ baseUrl: "http://api" });
+    await client.getControllerEvidence();
+    expect(fetchMock.mock.calls[0][0] as string).toBe("http://api/api/v1/controller/evidence");
+  });
 });

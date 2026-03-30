@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from app_api.routers.audit_history import router as audit_history_router
 from app_api.routers.capabilities import router as capabilities_router
+from app_api.routers.controller_evidence import router as controller_evidence_router
 from app_api.routers.change_intelligence import router as change_intelligence_router
 from app_api.routers.change_safety_case import router as change_safety_case_router
 from app_api.routers.delta_digest import router as delta_digest_router
@@ -78,6 +79,7 @@ router.include_router(service_impact_workspace_router)
 # swallowed by the catch-all ``GET /services/{service_id:path}`` detail route.
 router.include_router(service_stability_profile_router)
 router.include_router(services_router)
+router.include_router(controller_evidence_router)
 router.include_router(capabilities_router)
 router.include_router(readiness_snapshot_history_router)
 router.include_router(reports_router)

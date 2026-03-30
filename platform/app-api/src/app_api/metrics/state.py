@@ -22,6 +22,11 @@ _rollback_execution_count: int = 0
 _topology_truth_merges_total: int = 0
 _topology_truth_controller_status_counts: Counter[str] = Counter()
 _topology_truth_seconds_sum: float = 0.0
+_controller_evidence_fetches_total: int = 0
+_controller_evidence_seconds_sum: float = 0.0
+_controller_evidence_reachability_counts: Counter[str] = Counter()
+_controller_evidence_lane_session_posture_counts: Counter[tuple[str, str]] = Counter()
+_controller_evidence_lane_evidence_strength_counts: Counter[tuple[str, str]] = Counter()
 _request_duration_counts: Counter[tuple[str, str]] = Counter()
 _request_duration_sums: dict[tuple[str, str], float] = defaultdict(float)
 
@@ -133,11 +138,28 @@ class CachedTopologyTruthMetrics:
     conflicts: int = 0
 
 
+@dataclass(frozen=True)
+class CachedControllerEvidenceMetrics:
+    """Latest controller southbound session truth fetch v2 (scrape-safe)."""
+
+    controller_reachability: str = "unknown"
+    bgp_ls_lane_posture: str = "unknown"
+    bgp_ls_session_posture: str = "unknown"
+    bgp_ls_evidence_strength: str = "unknown"
+    pcep_lane_posture: str = "unknown"
+    pcep_session_posture: str = "unknown"
+    pcep_evidence_strength: str = "unknown"
+    netconf_lane_posture: str = "unknown"
+    netconf_session_posture: str = "unknown"
+    netconf_evidence_strength: str = "unknown"
+
+
 _cached_topology_metrics = CachedTopologyMetrics()
 _cached_policy_metrics = CachedPolicyMetrics()
 _cached_readiness_metrics = CachedReadinessMetrics()
 _cached_recovery_metrics = CachedRecoveryMetrics()
 _cached_topology_truth_metrics = CachedTopologyTruthMetrics()
+_cached_controller_evidence_metrics = CachedControllerEvidenceMetrics()
 _cached_collector_boundary_fetch_metrics: dict[str, CachedCollectorBoundaryFetchMetrics] = {
     "inventory": CachedCollectorBoundaryFetchMetrics(),
     "topology": CachedCollectorBoundaryFetchMetrics(),
@@ -173,6 +195,50 @@ def record_safe_action_outcome(
         if event.startswith("execute"):
             _safe_action_execution_seconds_sum += max(0.0, duration_seconds)
             _safe_action_execution_count += 1
+
+
+def record_controller_evidence_v2_observation(
+    *,
+    controller_reachability: str,
+    bgp_ls_lane_posture: str,
+    bgp_ls_session_posture: str,
+    bgp_ls_evidence_strength: str,
+    pcep_lane_posture: str,
+    pcep_session_posture: str,
+    pcep_evidence_strength: str,
+    netconf_lane_posture: str,
+    netconf_session_posture: str,
+    netconf_evidence_strength: str,
+    duration_seconds: float,
+) -> None:
+    """Record one controller southbound session truth v2 aggregate fetch."""
+    global _cached_controller_evidence_metrics
+    with _lock:
+        global _controller_evidence_fetches_total, _controller_evidence_seconds_sum
+        global _controller_evidence_reachability_counts
+        global _controller_evidence_lane_session_posture_counts
+        global _controller_evidence_lane_evidence_strength_counts
+        _controller_evidence_fetches_total += 1
+        _controller_evidence_seconds_sum += max(0.0, duration_seconds)
+        _controller_evidence_reachability_counts[controller_reachability] += 1
+        _controller_evidence_lane_session_posture_counts[("bgp_ls", bgp_ls_session_posture)] += 1
+        _controller_evidence_lane_session_posture_counts[("pcep", pcep_session_posture)] += 1
+        _controller_evidence_lane_session_posture_counts[("netconf", netconf_session_posture)] += 1
+        _controller_evidence_lane_evidence_strength_counts[("bgp_ls", bgp_ls_evidence_strength)] += 1
+        _controller_evidence_lane_evidence_strength_counts[("pcep", pcep_evidence_strength)] += 1
+        _controller_evidence_lane_evidence_strength_counts[("netconf", netconf_evidence_strength)] += 1
+        _cached_controller_evidence_metrics = CachedControllerEvidenceMetrics(
+            controller_reachability=controller_reachability,
+            bgp_ls_lane_posture=bgp_ls_lane_posture,
+            bgp_ls_session_posture=bgp_ls_session_posture,
+            bgp_ls_evidence_strength=bgp_ls_evidence_strength,
+            pcep_lane_posture=pcep_lane_posture,
+            pcep_session_posture=pcep_session_posture,
+            pcep_evidence_strength=pcep_evidence_strength,
+            netconf_lane_posture=netconf_lane_posture,
+            netconf_session_posture=netconf_session_posture,
+            netconf_evidence_strength=netconf_evidence_strength,
+        )
 
 
 def record_topology_truth_observation(
@@ -1307,6 +1373,11 @@ def render_prometheus_metrics(
         tt_sec = _topology_truth_seconds_sum
         tt_status = dict(_topology_truth_controller_status_counts)
         tt_cached = _cached_topology_truth_metrics
+        ce_fetch = _controller_evidence_fetches_total
+        ce_sec = _controller_evidence_seconds_sum
+        ce_reach = dict(_controller_evidence_reachability_counts)
+        ce_sess = dict(_controller_evidence_lane_session_posture_counts)
+        ce_evd = dict(_controller_evidence_lane_evidence_strength_counts)
     lines.extend(
         [
             (
@@ -1345,6 +1416,45 @@ def render_prometheus_metrics(
             "# HELP platform_app_api_topology_truth_last_conflicts Latest disagreement/conflict count.",
             "# TYPE platform_app_api_topology_truth_last_conflicts gauge",
             f"platform_app_api_topology_truth_last_conflicts {tt_cached.conflicts}",
+            (
+                "# HELP platform_app_api_controller_evidence_fetches_total "
+                "Count of controller southbound evidence aggregate fetches."
+            ),
+            "# TYPE platform_app_api_controller_evidence_fetches_total counter",
+            f"platform_app_api_controller_evidence_fetches_total {ce_fetch}",
+            (
+                "# HELP platform_app_api_controller_evidence_fetch_seconds_sum "
+                "Sum of wall time for controller evidence aggregate fetches."
+            ),
+            "# TYPE platform_app_api_controller_evidence_fetch_seconds_sum counter",
+            f"platform_app_api_controller_evidence_fetch_seconds_sum {ce_sec:.9f}",
+            (
+                "# HELP platform_app_api_controller_evidence_reachability_total "
+                "Controller evidence fetches by controller reachability label."
+            ),
+            "# TYPE platform_app_api_controller_evidence_reachability_total counter",
+            *[
+                f'platform_app_api_controller_evidence_reachability_total{{reachability="{k}"}} {v}'
+                for k, v in sorted(ce_reach.items())
+            ],
+            (
+                "# HELP platform_app_api_controller_evidence_lane_session_posture_total "
+                "Session posture observations per lane (v2)."
+            ),
+            "# TYPE platform_app_api_controller_evidence_lane_session_posture_total counter",
+            *[
+                f'platform_app_api_controller_evidence_lane_session_posture_total{{lane="{lane}",posture="{post}"}} {cnt}'
+                for (lane, post), cnt in sorted(ce_sess.items())
+            ],
+            (
+                "# HELP platform_app_api_controller_evidence_lane_evidence_strength_total "
+                "Evidence strength observations per lane (v2)."
+            ),
+            "# TYPE platform_app_api_controller_evidence_lane_evidence_strength_total counter",
+            *[
+                f'platform_app_api_controller_evidence_lane_evidence_strength_total{{lane="{lane}",strength="{st}"}} {cnt}'
+                for (lane, st), cnt in sorted(ce_evd.items())
+            ],
         ]
     )
 
@@ -1363,6 +1473,9 @@ def reset_metrics_registry() -> None:
     global _rollback_execution_seconds_sum, _rollback_execution_count, _rollback_counts
     global _cached_topology_truth_metrics
     global _topology_truth_merges_total, _topology_truth_seconds_sum, _topology_truth_controller_status_counts
+    global _cached_controller_evidence_metrics
+    global _controller_evidence_fetches_total, _controller_evidence_seconds_sum, _controller_evidence_reachability_counts
+    global _controller_evidence_lane_session_posture_counts, _controller_evidence_lane_evidence_strength_counts
     with _lock:
         _request_counts.clear()
         _request_duration_counts.clear()
@@ -1383,6 +1496,12 @@ def reset_metrics_registry() -> None:
         _topology_truth_seconds_sum = 0.0
         _topology_truth_controller_status_counts.clear()
         _cached_topology_truth_metrics = CachedTopologyTruthMetrics()
+        _controller_evidence_fetches_total = 0
+        _controller_evidence_seconds_sum = 0.0
+        _controller_evidence_reachability_counts.clear()
+        _controller_evidence_lane_session_posture_counts.clear()
+        _controller_evidence_lane_evidence_strength_counts.clear()
+        _cached_controller_evidence_metrics = CachedControllerEvidenceMetrics()
         _cached_topology_metrics = CachedTopologyMetrics()
         _cached_policy_metrics = CachedPolicyMetrics()
         _cached_readiness_metrics = CachedReadinessMetrics()

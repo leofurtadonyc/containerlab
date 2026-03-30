@@ -175,6 +175,21 @@ class TopologyTruthSnapshotTable(Base):
     correlation_notes: Mapped[list[object]] = mapped_column(JSON, nullable=False, default=list)
 
 
+class ControllerEvidenceSnapshotTable(Base):
+    """Append-only controller southbound evidence observation (BGP-LS / PCEP / NETCONF lanes)."""
+
+    __tablename__ = "controller_evidence_snapshots"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    persisted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    controller_reachability: Mapped[str] = mapped_column(String(32), nullable=False)
+    bgp_ls_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    pcep_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    netconf_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    lanes_payload: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    aggregate_notes: Mapped[list[object]] = mapped_column(JSON, nullable=False, default=list)
+
+
 class PolicySnapshotTable(Base):
     """One persisted normalized policy snapshot."""
 

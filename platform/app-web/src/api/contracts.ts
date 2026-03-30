@@ -410,6 +410,97 @@ export interface TopologyTruthResponse extends ApiResponseMetadata {
   safety_framing: TopologyTruthSafetyFraming;
 }
 
+export type ControllerReachability = "ok" | "degraded" | "unreachable" | "unknown";
+
+export type ProtocolLanePosture =
+  | "available"
+  | "partial"
+  | "empty"
+  | "degraded"
+  | "unreachable"
+  | "unsupported"
+  | "unknown";
+
+/** Legacy v1 lane summary (kept for historical references). */
+export interface ProtocolLaneSummary {
+  lane_id: "bgp_ls" | "pcep" | "netconf";
+  posture: ProtocolLanePosture;
+  observed_source: string;
+  node_count: number;
+  link_count: number;
+  topology_ids: string[];
+  fingerprint: string;
+  notes: string[];
+  explicit_non_claims: string[];
+}
+
+export type ProtocolExposurePosture = "exposed" | "not_exposed" | "unknown";
+
+export type ObjectVisibilityPosture =
+  | "objects_visible"
+  | "scope_only"
+  | "none_visible"
+  | "unknown";
+
+export type SessionPosture =
+  | "established"
+  | "not_observed"
+  | "degraded"
+  | "unknown"
+  | "unsupported"
+  | "unreachable";
+
+export type EvidenceStrength =
+  | "session_backed"
+  | "object_backed"
+  | "scope_only"
+  | "heuristic_only"
+  | "unavailable";
+
+export type DerivationMode =
+  | "protocol_native"
+  | "controller_object_parse"
+  | "topology_partition_heuristic"
+  | "supplemental_restconf"
+  | "unknown";
+
+export interface ProtocolLaneDetailV2 {
+  lane_id: "bgp_ls" | "pcep" | "netconf";
+  lane_posture: ProtocolLanePosture;
+  protocol_exposure_posture: ProtocolExposurePosture;
+  object_visibility_posture: ObjectVisibilityPosture;
+  session_posture: SessionPosture;
+  evidence_strength: EvidenceStrength;
+  derivation_mode: DerivationMode;
+  observed_source: string;
+  node_count: number;
+  link_count: number;
+  topology_ids: string[];
+  fingerprint: string;
+  notes: string[];
+  fallback_notes: string[];
+  explicit_non_claims: string[];
+}
+
+export interface ControllerEvidenceSafetyFramingV2 {
+  contract_id: "controller_southbound_session_truth_v2";
+  explicit_non_claims: string[];
+}
+
+/** Verified southbound session truth v2 — `GET /api/v1/controller/evidence`. */
+export interface ControllerEvidenceResponse extends ApiResponseMetadata {
+  contract_id: "controller_southbound_session_truth_v2";
+  controller_reachability: ControllerReachability;
+  controller_capability_probe_summary: string;
+  yang_module_catalog_count: number;
+  aggregate_fetch_notes: string[];
+  bgp_ls: ProtocolLaneDetailV2;
+  pcep: ProtocolLaneDetailV2;
+  netconf: ProtocolLaneDetailV2;
+  persisted_snapshot_id: string | null;
+  safety_framing: ControllerEvidenceSafetyFramingV2;
+}
+
 export interface CandidatePathRecord {
   name: string;
   current_posture: CurrentRowPosture;

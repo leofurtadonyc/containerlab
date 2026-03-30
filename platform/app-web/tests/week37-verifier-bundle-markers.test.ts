@@ -28,4 +28,9 @@ describe("week 37 verifier bundle markers", () => {
     const topologyView = readFileSync(join(__dirname, "../src/features/topology/view.tsx"), "utf8");
     expect(topologyView).toContain('data-product-contract="topology_truth_v1"');
   });
+
+  it("retains controller_southbound_session_truth_v2 product marker in Platform Health view", () => {
+    const platformHealth = readFileSync(join(__dirname, "../src/features/platform-health/view.tsx"), "utf8");
+    expect(platformHealth).toContain('data-product-contract="controller_southbound_session_truth_v2"');
+  });
 });

@@ -1,8 +1,11 @@
+import { useCallback, useState } from "react";
+
 import { ChangeIntelligenceProductSurfaceLinks } from "../../components/change-intelligence-product-surface-links";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { TrustCueCard } from "../../components/trust-cue-card";
-import type { PoliciesListResponse, PlatformReadPathStatus } from "../../api/contracts";
+import type { ControllerEvidenceResponse, PoliciesListResponse, PlatformReadPathStatus } from "../../api/contracts";
+import { ApiClientError, apiClient } from "../../api/client";
 import {
   countBy,
   describeRecoveryPosture,
@@ -152,6 +155,23 @@ function buildPolicySourceReadinessReadout(
 }
 
 export function PlatformHealthView() {
+  const [controllerEvidence, setControllerEvidence] = useState<ControllerEvidenceResponse | null>(null);
+  const [controllerEvidenceLoading, setControllerEvidenceLoading] = useState(false);
+  const [controllerEvidenceError, setControllerEvidenceError] = useState<string | null>(null);
+  const loadControllerEvidence = useCallback(async () => {
+    setControllerEvidenceLoading(true);
+    setControllerEvidenceError(null);
+    try {
+      const ce = await apiClient.getControllerEvidence();
+      setControllerEvidence(ce);
+    } catch (err) {
+      const message =
+        err instanceof ApiClientError ? err.message : "Failed to load controller southbound evidence.";
+      setControllerEvidenceError(message);
+    } finally {
+      setControllerEvidenceLoading(false);
+    }
+  }, []);
   const { data, error, isLoading, reload } = usePlatformStatusQuery();
   const recentChangeQuery = useRecentChangeSummaryQuery();
   const {
@@ -715,6 +735,69 @@ export function PlatformHealthView() {
           ]}
         />
       </div>
+
+      <article className="detail-card" data-product-contract="controller_southbound_session_truth_v2">
+        <h3>Controller southbound session truth</h3>
+        <p className="meta-copy">
+          Per-lane session posture and evidence strength from bounded ODL reads (native RESTCONF where available, honest
+          fallbacks). Controller reachability is separate from southbound session truth — not dataplane or TE authority.
+        </p>
+        <div className="toolbar">
+          <button type="button" className="nav-item" onClick={loadControllerEvidence} disabled={controllerEvidenceLoading}>
+            {controllerEvidenceLoading ? "Loading…" : "Load controller evidence"}
+          </button>
+        </div>
+        {controllerEvidenceError ? (
+          <div className="query-message query-message-error" role="status">
+            {controllerEvidenceError}
+          </div>
+        ) : null}
+        {controllerEvidence ? (
+          <>
+            <div className="metadata-row">
+              <span>Contract: {controllerEvidence.contract_id}</span>
+              <span>Reachability: {formatLabel(controllerEvidence.controller_reachability)}</span>
+              <span>YANG catalog: {controllerEvidence.yang_module_catalog_count} modules</span>
+            </div>
+            <ul className="compact-list">
+              <li>
+                <span>BGP-LS lane</span>
+                <StatusPill value={controllerEvidence.bgp_ls.lane_posture} />
+                <span className="table-note">
+                  session {formatLabel(controllerEvidence.bgp_ls.session_posture)} · evidence{" "}
+                  {formatLabel(controllerEvidence.bgp_ls.evidence_strength)} · {formatLabel(controllerEvidence.bgp_ls.derivation_mode)}{" "}
+                  · {controllerEvidence.bgp_ls.node_count} nodes · {controllerEvidence.bgp_ls.link_count} links
+                </span>
+              </li>
+              <li>
+                <span>PCEP lane</span>
+                <StatusPill value={controllerEvidence.pcep.lane_posture} />
+                <span className="table-note">
+                  session {formatLabel(controllerEvidence.pcep.session_posture)} · evidence{" "}
+                  {formatLabel(controllerEvidence.pcep.evidence_strength)} · {formatLabel(controllerEvidence.pcep.derivation_mode)}{" "}
+                  · {controllerEvidence.pcep.node_count} nodes · {controllerEvidence.pcep.link_count} links
+                </span>
+              </li>
+              <li>
+                <span>NETCONF lane</span>
+                <StatusPill value={controllerEvidence.netconf.lane_posture} />
+                <span className="table-note">
+                  session {formatLabel(controllerEvidence.netconf.session_posture)} · evidence{" "}
+                  {formatLabel(controllerEvidence.netconf.evidence_strength)} · {formatLabel(controllerEvidence.netconf.derivation_mode)}{" "}
+                  · {controllerEvidence.netconf.node_count} nodes · {controllerEvidence.netconf.link_count} links
+                </span>
+              </li>
+            </ul>
+            {controllerEvidence.safety_framing.explicit_non_claims.length > 0 ? (
+              <ul className="notes-list">
+                {controllerEvidence.safety_framing.explicit_non_claims.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            ) : null}
+          </>
+        ) : null}
+      </article>
 
       <div className="table-card">
         <h3>Bounded Read-Path Coverage</h3>

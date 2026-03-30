@@ -11,6 +11,7 @@ from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 from app_api.integrations.odl.client import OdlClient, get_odl_client
+from app_api.integrations.odl.network_topology_common import NetworkTopologyAggregateResult
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 
 
@@ -348,11 +349,18 @@ def _parse_network_topology_payload(payload: dict[str, Any]) -> tuple[list[Topol
     return nodes, links, notes
 
 
-def fetch_bgpls_topology_via_odl(client: OdlClient | None = None) -> BgplsTopologyFetchResult:
+def fetch_bgpls_topology_via_odl(
+    client: OdlClient | None = None,
+    *,
+    preloaded_aggregate: NetworkTopologyAggregateResult | None = None,
+) -> BgplsTopologyFetchResult:
     """Fetch and normalize a bounded controller topology view (ODL RESTCONF).
 
     ODL remains enrichment plumbing: the backend correlates this with gNMI-derived topology;
     this snapshot alone is not the product's sole source of truth.
+
+    When ``preloaded_aggregate`` is supplied (same document as ``fetch_network_topology_aggregate``),
+    HTTP is skipped for the aggregate GET so multi-lane evidence can share one RESTCONF read.
     """
     observed_source = "odl_restconf_network_topology"
     c = client or get_odl_client()
@@ -364,68 +372,99 @@ def fetch_bgpls_topology_via_odl(client: OdlClient | None = None) -> BgplsTopolo
     )
     payload: dict[str, Any] | None = None
     path_used: str | None = None
-    try:
-        for path in path_candidates:
-            request = Request(
-                url=f"{c.config.base_url.rstrip('/')}{path}",
-                headers=c._build_headers(),
-            )
-            try:
-                with urlopen(request, timeout=c.config.timeout_seconds) as response:
-                    raw = response.read().decode("utf-8")
-                payload = json.loads(raw)
-                path_used = path
-                break
-            except HTTPError as exc:
-                body = _http_error_body(exc)
-                if exc.code in {401, 403}:
-                    snap = _empty_snapshot()
-                    return BgplsTopologyFetchResult(
-                        status="empty",
-                        observed_source=observed_source,
-                        snapshot=snap,
-                        fingerprint=_fingerprint_payload({"error": exc.code}),
-                        notes=[
-                            f"ODL returned HTTP {exc.code} for bounded network-topology read; enrichment unavailable.",
-                            "gNMI-derived topology remains the baseline; controller correlation is optional.",
-                        ],
-                    )
-                if exc.code == 404 or (
-                    exc.code == 400 and _is_restconf_unknown_element(body)
-                ):
-                    continue
-                snap = _empty_snapshot()
-                return BgplsTopologyFetchResult(
-                    status="degraded",
-                    observed_source=observed_source,
-                    snapshot=snap,
-                    fingerprint=_fingerprint_payload({"error": exc.code, "body": body[:500]}),
-                    notes=[f"ODL HTTP {exc.code} during bounded network-topology read."],
-                )
-        if payload is None:
+
+    if preloaded_aggregate is not None:
+        if preloaded_aggregate.status == "unreachable":
             snap = _empty_snapshot()
             return BgplsTopologyFetchResult(
-                status="empty",
+                status="unreachable",
                 observed_source=observed_source,
                 snapshot=snap,
-                fingerprint=_fingerprint_payload({"error": "no_topology_path"}),
-                notes=[
-                    "ODL did not expose ietf-network-topology or network-topology on RESTCONF; enrichment unavailable.",
-                    "gNMI-derived topology remains the baseline; controller correlation is optional.",
+                fingerprint=_fingerprint_payload({"error": "preloaded_unreachable"}),
+                notes=list(preloaded_aggregate.notes)
+                + [
+                    "The backend could not read controller network-topology over RESTCONF.",
+                    "Topology truth merges will use device-derived evidence only until controller data is available.",
                 ],
             )
-    except (URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
-        snap = _empty_snapshot()
-        return BgplsTopologyFetchResult(
-            status="unreachable",
-            observed_source=observed_source,
-            snapshot=snap,
-            fingerprint=_fingerprint_payload({"error": str(exc)[:200]}),
-            notes=[
-                "The backend could not read controller network-topology over RESTCONF.",
-                "Topology truth merges will use device-derived evidence only until controller data is available.",
-            ],
-        )
+        if preloaded_aggregate.status in ("empty", "degraded") or not preloaded_aggregate.payload:
+            snap = _empty_snapshot()
+            st: ControllerFetchStatus = "empty" if preloaded_aggregate.status == "empty" else "degraded"
+            return BgplsTopologyFetchResult(
+                status=st,
+                observed_source=observed_source,
+                snapshot=snap,
+                fingerprint=_fingerprint_payload({"error": "preloaded_empty"}),
+                notes=list(preloaded_aggregate.notes)
+                + [
+                    "Preloaded network-topology aggregate was empty or degraded; BGP-LS lane has no normalized objects.",
+                ],
+            )
+        payload = preloaded_aggregate.payload
+        path_used = preloaded_aggregate.path_used
+    else:
+        try:
+            for path in path_candidates:
+                request = Request(
+                    url=f"{c.config.base_url.rstrip('/')}{path}",
+                    headers=c._build_headers(),
+                )
+                try:
+                    with urlopen(request, timeout=c.config.timeout_seconds) as response:
+                        raw = response.read().decode("utf-8")
+                    payload = json.loads(raw)
+                    path_used = path
+                    break
+                except HTTPError as exc:
+                    body = _http_error_body(exc)
+                    if exc.code in {401, 403}:
+                        snap = _empty_snapshot()
+                        return BgplsTopologyFetchResult(
+                            status="empty",
+                            observed_source=observed_source,
+                            snapshot=snap,
+                            fingerprint=_fingerprint_payload({"error": exc.code}),
+                            notes=[
+                                f"ODL returned HTTP {exc.code} for bounded network-topology read; enrichment unavailable.",
+                                "gNMI-derived topology remains the baseline; controller correlation is optional.",
+                            ],
+                        )
+                    if exc.code == 404 or (
+                        exc.code == 400 and _is_restconf_unknown_element(body)
+                    ):
+                        continue
+                    snap = _empty_snapshot()
+                    return BgplsTopologyFetchResult(
+                        status="degraded",
+                        observed_source=observed_source,
+                        snapshot=snap,
+                        fingerprint=_fingerprint_payload({"error": exc.code, "body": body[:500]}),
+                        notes=[f"ODL HTTP {exc.code} during bounded network-topology read."],
+                    )
+            if payload is None:
+                snap = _empty_snapshot()
+                return BgplsTopologyFetchResult(
+                    status="empty",
+                    observed_source=observed_source,
+                    snapshot=snap,
+                    fingerprint=_fingerprint_payload({"error": "no_topology_path"}),
+                    notes=[
+                        "ODL did not expose ietf-network-topology or network-topology on RESTCONF; enrichment unavailable.",
+                        "gNMI-derived topology remains the baseline; controller correlation is optional.",
+                    ],
+                )
+        except (URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+            snap = _empty_snapshot()
+            return BgplsTopologyFetchResult(
+                status="unreachable",
+                observed_source=observed_source,
+                snapshot=snap,
+                fingerprint=_fingerprint_payload({"error": str(exc)[:200]}),
+                notes=[
+                    "The backend could not read controller network-topology over RESTCONF.",
+                    "Topology truth merges will use device-derived evidence only until controller data is available.",
+                ],
+            )
 
     nodes, links, parse_notes = _parse_network_topology_payload(payload if isinstance(payload, dict) else {})
     if path_used == path_candidates[1]:
