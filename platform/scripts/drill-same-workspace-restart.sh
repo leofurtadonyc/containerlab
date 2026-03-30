@@ -14,9 +14,10 @@
 #   TOPOLOGY_FILE  Optional path to the Containerlab topology file
 #                  (default: topology.clab.yml in the platform directory).
 #   DRILL_POST_DEPLOY_SLEEP_SECONDS  Optional pause after clab deploy before verifiers
-#                  (default: 20). Cold redeploys often need a few seconds before app-web
+#                  (default: 25). Cold redeploys often need a few seconds before app-web
 #                  can stream large /assets/*.js bundles; verify-core-runtime.sh also uses
-#                  longer static fetch timeouts and retries (see CURL_MAX_TIME_STATIC there).
+#                  longer static fetch timeouts, retries, and a poll until GET /api/v1/policies
+#                  returns 200 (see wait_for_app_api_policies_ready there).
 #   CURL_HTTP_MAX_TIME  Optional cap for app-api JSON GETs (default in drill: 180).
 #                  Same-workspace restarts can exceed the verifier default (90s) on first
 #                  large responses (e.g. /api/v1/operator-briefing) when Postgres warms up.
@@ -72,7 +73,7 @@ clab deploy -t "$TOPOLOGY_FILE"
 
 echo ""
 echo "Step 2b: Post-deploy warm-up (containers report healthy before HTTP is fully warm)"
-DRILL_POST_DEPLOY_SLEEP_SECONDS="${DRILL_POST_DEPLOY_SLEEP_SECONDS:-20}"
+DRILL_POST_DEPLOY_SLEEP_SECONDS="${DRILL_POST_DEPLOY_SLEEP_SECONDS:-25}"
 sleep "$DRILL_POST_DEPLOY_SLEEP_SECONDS"
 
 echo ""

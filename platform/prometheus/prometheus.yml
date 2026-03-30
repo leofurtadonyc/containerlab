@@ -19,8 +19,8 @@ scrape_configs:
           component: metrics
 
   # These are the currently real platform-semantic metrics targets in Phase 2.
-  # /metrics can take 30s+ on cold start (large registry + DB-backed gauges). The
-  # verifier and operators hit the same endpoint; scrape_timeout must exceed that.
+  # /metrics must stay cheap (narrow SQL for sync-run gauges, in-memory counters); cold
+  # start should not require multi-minute scrapes. scrape_timeout still bounds slow nets/DB.
   # scrape_interval must be strictly greater than scrape_timeout (Prometheus rule).
   - job_name: app-api
     metrics_path: /metrics

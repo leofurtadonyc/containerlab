@@ -77,32 +77,6 @@ wait_for_database
 
 python3 -m alembic -c alembic.ini upgrade head
 
-uvicorn app_api.main:app --host 0.0.0.0 --port "${API_PORT:-8000}" &
-api_pid=$!
-
-(
-  if {
-    python3 - <<'PY'
-import os
-import socket
-import time
-
-port = int(os.environ.get("API_PORT", "8000"))
-for _ in range(60):
-    try:
-        with socket.create_connection(("127.0.0.1", port), timeout=1):
-            raise SystemExit(0)
-    except OSError:
-        time.sleep(1)
-raise SystemExit(1)
-PY
-    python3 -m app_api.startup.warmup
-  } >/tmp/app-api-warmup.log 2>&1; then
-    echo "app-api bounded startup warm-up completed." >&2
-  else
-    echo "app-api bounded startup warm-up failed; see /tmp/app-api-warmup.log" >&2
-    cat /tmp/app-api-warmup.log >&2
-  fi
-) &
-
-wait "$api_pid"
+# Read-side warm-up runs in FastAPI lifespan (see app_api.main) before the server accepts connections.
+# The previous background subshell raced HTTP clients and caused intermittent 500s on cold start.
+exec uvicorn app_api.main:app --host 0.0.0.0 --port "${API_PORT:-8000}"

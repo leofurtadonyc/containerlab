@@ -1,5 +1,8 @@
 """Application entrypoint for the platform backend skeleton."""
 
+import asyncio
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,15 +15,25 @@ from app_api.api.errors import (
 )
 from app_api.api.router import api_router
 from app_api.config.settings import get_settings
+from app_api.startup.warmup import warm_read_side
 
 
 settings = get_settings()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Run bounded read-side warm-up before accepting traffic (avoids races with shell background warm-up)."""
+    await asyncio.to_thread(warm_read_side)
+    yield
+
 
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     docs_url="/docs",
     openapi_url="/openapi.json",
+    lifespan=lifespan,
 )
 app.add_middleware(
     CORSMiddleware,

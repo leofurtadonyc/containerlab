@@ -99,8 +99,13 @@ notice() {
   echo "Notice: $1"
 }
 
+# Important: do not pipe curl to tr — on HTTP 4xx/5xx, curl -f fails but tr still succeeds, so the
+# pipeline exits 0 and callers see an empty body (misleading assert_contains like missing
+# detail_blocker_reason after a transient 500 on cold start).
 fetch_compact_json() {
-  curl_http_json "$1" | tr -d '\n\r\t '
+  url=$1
+  _body=$(curl_http_json "$url") || exit 1
+  printf '%s' "$_body" | tr -d '\n\r\t '
 }
 
 assert_contains() {
@@ -270,6 +275,25 @@ wait_for_http_ok "app-api health" "$APP_API_URL/api/v1/health"
 wait_for_http_ok "app-api metrics" "$APP_API_URL/metrics"
 wait_for_http_ok "app-web root" "$APP_WEB_URL/"
 wait_for_http_ok "app-web API proxy health" "$APP_WEB_URL/api/v1/health"
+
+# /api/v1/health can be 200 before heavier read paths finish warming (Postgres pool, first large
+# assembly). Policies may briefly return 500; retry until 200 so Step 3 of drill-same-workspace-restart
+# and cold verify runs do not see empty bodies from a failed curl masked by the old fetch_compact_json pipe.
+wait_for_app_api_policies_ready() {
+  attempts=$VERIFY_ATTEMPTS
+  while [ "$attempts" -gt 0 ]; do
+    if curl_http_json "$APP_API_URL/api/v1/policies" >/dev/null 2>&1; then
+      return 0
+    fi
+    attempts=$((attempts - 1))
+    if [ "$attempts" -gt 0 ]; then
+      sleep "$VERIFY_SLEEP_SECONDS"
+    fi
+  done
+  echo "app-api GET /api/v1/policies did not return HTTP 200 (cold start / DB warm-up; see docker logs $APP_API_CONTAINER)" >&2
+  exit 1
+}
+wait_for_app_api_policies_ready
 
 # Week 29–30 NOC cockpit / handoff WebUI: shipped /assets/*.js must retain stable composition markers (repository vitest covers UI behavior).
 app_web_index_html=$(curl_http_json "$APP_WEB_URL/")

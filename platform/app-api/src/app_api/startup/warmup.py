@@ -1,4 +1,7 @@
-"""Bounded startup warm-up for read-side caches and sync history."""
+"""Bounded startup warm-up for read-side caches and sync history.
+
+Invoked from FastAPI lifespan in ``app_api.main`` before the server accepts traffic.
+"""
 
 from logging import getLogger
 

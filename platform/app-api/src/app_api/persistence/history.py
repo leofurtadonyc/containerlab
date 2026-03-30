@@ -1124,24 +1124,45 @@ def summarize_topology_snapshot_metrics() -> TopologySnapshotMetricsSummary:
 
 
 def summarize_sync_run_history(limit: int = 200) -> SyncRunHistorySummary:
-    """Summarize persisted sync-run history for metrics and dashboards."""
-    sync_runs = load_sync_runs(limit=limit)
+    """Summarize persisted sync-run history for metrics and dashboards.
+
+    Uses a narrow ``SELECT`` of ``sync_runs`` columns only. Do **not** call
+    :func:`load_sync_runs` here — that path joins snapshot tables and builds
+    full comparison summaries for API responses and can take minutes on large
+    histories, causing Prometheus scrapes of ``GET /metrics`` to hit
+    ``context deadline exceeded`` (default scrape timeouts).
+    """
+    try:
+        with create_session() as session:
+            rows = session.execute(
+                select(
+                    SyncRunTable.model_family,
+                    SyncRunTable.fetch_status,
+                    SyncRunTable.finished_at,
+                )
+                .order_by(SyncRunTable.finished_at.desc())
+                .limit(limit)
+            ).all()
+    except Exception:
+        logger.exception("Failed to summarize sync run history for metrics.")
+        return SyncRunHistorySummary()
+
     counts_by_model_family: Counter[str] = Counter()
     counts_by_result: Counter[str] = Counter()
     counts_by_model_family_and_result: dict[str, Counter[str]] = defaultdict(Counter)
     latest_finished_at_by_model_family: dict[str, datetime] = {}
 
-    for sync_run in sync_runs:
-        result = _map_history_result(sync_run.fetch_status)
-        counts_by_model_family[sync_run.model_family] += 1
+    for model_family, fetch_status, finished_at in rows:
+        result = _map_history_result(fetch_status)
+        counts_by_model_family[model_family] += 1
         counts_by_result[result] += 1
-        counts_by_model_family_and_result[sync_run.model_family][result] += 1
-        current_latest = latest_finished_at_by_model_family.get(sync_run.model_family)
-        if current_latest is None or sync_run.finished_at > current_latest:
-            latest_finished_at_by_model_family[sync_run.model_family] = sync_run.finished_at
+        counts_by_model_family_and_result[model_family][result] += 1
+        current_latest = latest_finished_at_by_model_family.get(model_family)
+        if current_latest is None or finished_at > current_latest:
+            latest_finished_at_by_model_family[model_family] = finished_at
 
     return SyncRunHistorySummary(
-        total_count=len(sync_runs),
+        total_count=len(rows),
         counts_by_model_family=dict(counts_by_model_family),
         counts_by_result=dict(counts_by_result),
         counts_by_model_family_and_result={
