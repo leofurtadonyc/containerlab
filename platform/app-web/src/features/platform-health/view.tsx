@@ -768,6 +768,13 @@ export function PlatformHealthView() {
                   {formatLabel(controllerEvidence.bgp_ls.evidence_strength)} · {formatLabel(controllerEvidence.bgp_ls.derivation_mode)}{" "}
                   · {controllerEvidence.bgp_ls.node_count} nodes · {controllerEvidence.bgp_ls.link_count} links
                 </span>
+                <span className="table-note">
+                  exposure {formatLabel(controllerEvidence.bgp_ls.protocol_exposure_posture)} · objects{" "}
+                  {formatLabel(controllerEvidence.bgp_ls.object_visibility_posture)}
+                </span>
+                {controllerEvidence.bgp_ls.fallback_notes.length > 0 ? (
+                  <span className="table-note">Fallback: {controllerEvidence.bgp_ls.fallback_notes.join(" ")}</span>
+                ) : null}
               </li>
               <li>
                 <span>PCEP lane</span>
@@ -777,6 +784,13 @@ export function PlatformHealthView() {
                   {formatLabel(controllerEvidence.pcep.evidence_strength)} · {formatLabel(controllerEvidence.pcep.derivation_mode)}{" "}
                   · {controllerEvidence.pcep.node_count} nodes · {controllerEvidence.pcep.link_count} links
                 </span>
+                <span className="table-note">
+                  exposure {formatLabel(controllerEvidence.pcep.protocol_exposure_posture)} · objects{" "}
+                  {formatLabel(controllerEvidence.pcep.object_visibility_posture)}
+                </span>
+                {controllerEvidence.pcep.fallback_notes.length > 0 ? (
+                  <span className="table-note">Fallback: {controllerEvidence.pcep.fallback_notes.join(" ")}</span>
+                ) : null}
               </li>
               <li>
                 <span>NETCONF lane</span>
@@ -786,6 +800,13 @@ export function PlatformHealthView() {
                   {formatLabel(controllerEvidence.netconf.evidence_strength)} · {formatLabel(controllerEvidence.netconf.derivation_mode)}{" "}
                   · {controllerEvidence.netconf.node_count} nodes · {controllerEvidence.netconf.link_count} links
                 </span>
+                <span className="table-note">
+                  exposure {formatLabel(controllerEvidence.netconf.protocol_exposure_posture)} · objects{" "}
+                  {formatLabel(controllerEvidence.netconf.object_visibility_posture)}
+                </span>
+                {controllerEvidence.netconf.fallback_notes.length > 0 ? (
+                  <span className="table-note">Fallback: {controllerEvidence.netconf.fallback_notes.join(" ")}</span>
+                ) : null}
               </li>
             </ul>
             {controllerEvidence.safety_framing.explicit_non_claims.length > 0 ? (

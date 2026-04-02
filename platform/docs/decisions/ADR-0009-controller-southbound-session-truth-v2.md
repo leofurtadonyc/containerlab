@@ -17,12 +17,13 @@ Evolve the aggregate read model to **`controller_southbound_session_truth_v2`**:
 - **Aggregate:** `controller_reachability` (unchanged probe family), `controller_capability_probe_summary`, `yang_module_catalog_count`, `aggregate_fetch_notes`, `safety_framing`.
 - **ODL integration:** `yang_module_catalog` (module names + per-lane hints), `native_session_probes` (bounded RESTCONF reads / JSON scans for session-oriented hints), `session_truth_derivation` (combines native probes, lane summaries, topology aggregate).
 - **Persistence:** `platform_app.controller_evidence_snapshots.lanes_payload` stores full lane JSON plus `contract_id` and `yang_module_catalog_count`.
-- **Metrics:** existing fetch/reachability counters plus **`platform_app_api_controller_evidence_lane_session_posture_total`** and **`platform_app_api_controller_evidence_lane_evidence_strength_total`** (labeled by lane).
+- **Metrics:** existing fetch/reachability counters plus **`platform_app_api_controller_evidence_lane_posture_total`**, **`platform_app_api_controller_evidence_lane_session_posture_total`**, **`platform_app_api_controller_evidence_lane_evidence_strength_total`**, and **`platform_app_api_controller_evidence_lane_session_backed_total`** (labeled by lane).
 - **WebUI:** Platform Health panel uses contract marker **`controller_southbound_session_truth_v2`** and shows session posture, evidence strength, derivation mode, catalog count.
 
 ## Consequences
 
 - Reachability and southbound session truth are **structurally separable** in API responses.
+- Missing YANG catalog access now leaves protocol exposure at **`unknown`**; the platform only emits **`unsupported`** when both module exposure and lane-native/object evidence are absent.
 - Weaker derivations (topology partition, heuristic scan) must be labeled via **`derivation_mode`** and **`fallback_notes`**, not hidden.
 - **ADR-0008** remains the historical record of v1; v2 **supersedes** the product contract while reusing endpoints and persistence table shape.
 

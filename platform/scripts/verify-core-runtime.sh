@@ -629,6 +629,11 @@ assert_contains "controller evidence response (yang catalog)" "$controller_evide
 assert_contains "controller evidence response (bgp_ls lane)" "$controller_evidence_response" '"bgp_ls":{'
 assert_contains "controller evidence response (pcep lane)" "$controller_evidence_response" '"pcep":{'
 assert_contains "controller evidence response (netconf lane)" "$controller_evidence_response" '"netconf":{'
+assert_contains "controller evidence response (protocol exposure posture)" "$controller_evidence_response" '"protocol_exposure_posture":"'
+assert_contains "controller evidence response (object visibility posture)" "$controller_evidence_response" '"object_visibility_posture":"'
+assert_contains "controller evidence response (session posture)" "$controller_evidence_response" '"session_posture":"'
+assert_contains "controller evidence response (evidence strength)" "$controller_evidence_response" '"evidence_strength":"'
+assert_contains "controller evidence response (derivation mode)" "$controller_evidence_response" '"derivation_mode":"'
 
 # Week 29: global operator search (bounded inventory field search; structural contract check).
 operator_search_response=$(fetch_compact_json "$APP_API_URL/api/v1/operator-search?q=__verify_runtime__")
@@ -1140,8 +1145,10 @@ assert_contains "app-api metrics" "$app_api_metrics" 'node_participation_posture
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_coverage_posture'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_truth_merges_total'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_controller_evidence_fetches_total'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_controller_evidence_lane_posture_total'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_controller_evidence_lane_session_posture_total'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_controller_evidence_lane_evidence_strength_total'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_controller_evidence_lane_session_backed_total'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshot_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_detail_source_readiness'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_detail_source_targets'

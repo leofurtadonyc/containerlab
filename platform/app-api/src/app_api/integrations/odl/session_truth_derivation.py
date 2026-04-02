@@ -65,7 +65,7 @@ def derive_bgp_ls_truth(
     aggregate: NetworkTopologyAggregateResult,
     bgp: BgplsTopologyFetchResult,
     native: NativeSessionProbeResult,
-    module_family_exposed: bool,
+    protocol_exposure_posture: ProtocolExposurePosture,
 ) -> LaneTruthDerivation:
     """BGP-LS lane: prefer native BGP tree; distinguish topology-only vs session hints."""
     fb: list[str] = list(native.notes)
@@ -80,9 +80,11 @@ def derive_bgp_ls_truth(
             fallback_notes=["Network-topology aggregate unreachable."],
         )
 
-    exposure: ProtocolExposurePosture = "exposed" if module_family_exposed else "not_exposed"
-    if not module_family_exposed:
+    exposure = protocol_exposure_posture
+    if exposure == "not_exposed":
         fb.append("No BGP/BGP-LS/BGPCEP family module name matched YANG catalog heuristics.")
+    elif exposure == "unknown":
+        fb.append("YANG module catalog unavailable; BGP-LS protocol exposure could not be confirmed.")
 
     snap = bgp.snapshot
     has_objects = bool(snap.nodes or snap.links)
@@ -106,6 +108,31 @@ def derive_bgp_ls_truth(
             evidence_strength="unavailable",
             derivation_mode="controller_object_parse",
             fallback_notes=fb + ["BGP-LS enrichment read unreachable."],
+        )
+
+    if exposure == "not_exposed" and native.payload is None and not has_objects:
+        return LaneTruthDerivation(
+            lane_posture="unsupported",
+            protocol_exposure_posture=exposure,
+            object_visibility_posture=obj_vis,
+            session_posture="unsupported",
+            evidence_strength="unavailable",
+            derivation_mode="unknown",
+            fallback_notes=fb
+            + [
+                "No BGP-LS module exposure, topology objects, or protocol-native session tree were observed.",
+            ],
+        )
+
+    if exposure == "unknown" and native.payload is None and not has_objects:
+        return LaneTruthDerivation(
+            lane_posture="unknown",
+            protocol_exposure_posture=exposure,
+            object_visibility_posture=obj_vis,
+            session_posture="unknown",
+            evidence_strength="unavailable",
+            derivation_mode="unknown",
+            fallback_notes=fb + ["No BGP-LS objects were observed and protocol exposure could not be verified."],
         )
 
     if native.payload is not None and native.has_session_oper_hints:
@@ -154,7 +181,7 @@ def derive_pcep_truth(
     aggregate: NetworkTopologyAggregateResult,
     pcep: PcepLaneFetchResult,
     native: NativeSessionProbeResult,
-    module_family_exposed: bool,
+    protocol_exposure_posture: ProtocolExposurePosture,
 ) -> LaneTruthDerivation:
     fb: list[str] = list(native.notes)
     if aggregate.status == "unreachable":
@@ -168,14 +195,40 @@ def derive_pcep_truth(
             fallback_notes=["Aggregate unreachable."],
         )
 
-    exposure: ProtocolExposurePosture = "exposed" if module_family_exposed else "not_exposed"
-    if not module_family_exposed:
+    exposure = protocol_exposure_posture
+    if exposure == "not_exposed":
         fb.append("No PCEP module name matched YANG catalog heuristics.")
+    elif exposure == "unknown":
+        fb.append("YANG module catalog unavailable; PCEP protocol exposure could not be confirmed.")
 
     has_obj = pcep.node_count > 0 or pcep.link_count > 0
     obj_vis: ObjectVisibilityPosture = (
-        "objects_visible" if has_obj else ("none_visible" if pcep.posture == "empty" else "unknown")
+        "objects_visible"
+        if has_obj
+        else ("scope_only" if pcep.topology_ids else ("none_visible" if pcep.posture == "empty" else "unknown"))
     )
+
+    if exposure == "not_exposed" and native.payload is None and not has_obj and not pcep.topology_ids:
+        return LaneTruthDerivation(
+            lane_posture="unsupported",
+            protocol_exposure_posture=exposure,
+            object_visibility_posture=obj_vis,
+            session_posture="unsupported",
+            evidence_strength="unavailable",
+            derivation_mode="unknown",
+            fallback_notes=fb + ["No PCEP module exposure, lane objects, or native session tree were observed."],
+        )
+
+    if exposure == "unknown" and native.payload is None and not has_obj and not pcep.topology_ids:
+        return LaneTruthDerivation(
+            lane_posture="unknown",
+            protocol_exposure_posture=exposure,
+            object_visibility_posture=obj_vis,
+            session_posture="unknown",
+            evidence_strength="unavailable",
+            derivation_mode="unknown",
+            fallback_notes=fb + ["No PCEP objects were observed and protocol exposure could not be verified."],
+        )
 
     if native.payload is not None and native.has_session_oper_hints:
         return LaneTruthDerivation(
@@ -202,7 +255,11 @@ def derive_pcep_truth(
         protocol_exposure_posture=exposure,
         object_visibility_posture=obj_vis,
         session_posture="not_observed",
-        evidence_strength="heuristic_only" if has_obj or pcep.topology_ids else "unavailable",
+        evidence_strength=(
+            "heuristic_only"
+            if has_obj
+            else ("scope_only" if pcep.topology_ids else "unavailable")
+        ),
         derivation_mode="topology_partition_heuristic",
         fallback_notes=fb + ["PCEP lane uses network-topology partition; native PCEP session tree unavailable."],
     )
@@ -213,7 +270,7 @@ def derive_netconf_truth(
     aggregate: NetworkTopologyAggregateResult,
     netconf: NetconfLaneFetchResult,
     native: NativeSessionProbeResult,
-    module_family_exposed: bool,
+    protocol_exposure_posture: ProtocolExposurePosture,
 ) -> LaneTruthDerivation:
     fb: list[str] = list(native.notes)
     if aggregate.status == "unreachable":
@@ -227,12 +284,43 @@ def derive_netconf_truth(
             fallback_notes=["Aggregate unreachable."],
         )
 
-    exposure: ProtocolExposurePosture = "exposed" if module_family_exposed else "not_exposed"
-    if not module_family_exposed:
+    exposure = protocol_exposure_posture
+    if exposure == "not_exposed":
         fb.append("No NETCONF topology module name matched YANG catalog heuristics.")
+    elif exposure == "unknown":
+        fb.append("YANG module catalog unavailable; NETCONF protocol exposure could not be confirmed.")
 
     has_obj = netconf.node_count > 0 or netconf.link_count > 0 or (netconf.netconf_connector_node_count or 0) > 0
-    obj_vis: ObjectVisibilityPosture = "objects_visible" if has_obj else "none_visible"
+    obj_vis: ObjectVisibilityPosture = (
+        "objects_visible" if has_obj else ("scope_only" if netconf.topology_ids else "none_visible")
+    )
+
+    if (
+        exposure == "not_exposed"
+        and native.payload is None
+        and not has_obj
+        and not netconf.topology_ids
+    ):
+        return LaneTruthDerivation(
+            lane_posture="unsupported",
+            protocol_exposure_posture=exposure,
+            object_visibility_posture=obj_vis,
+            session_posture="unsupported",
+            evidence_strength="unavailable",
+            derivation_mode="unknown",
+            fallback_notes=fb + ["No NETCONF module exposure, managed-node objects, or native session tree were observed."],
+        )
+
+    if exposure == "unknown" and native.payload is None and not has_obj and not netconf.topology_ids:
+        return LaneTruthDerivation(
+            lane_posture="unknown",
+            protocol_exposure_posture=exposure,
+            object_visibility_posture=obj_vis,
+            session_posture="unknown",
+            evidence_strength="unavailable",
+            derivation_mode="unknown",
+            fallback_notes=fb + ["No NETCONF objects were observed and protocol exposure could not be verified."],
+        )
 
     if native.payload is not None and native.has_session_oper_hints:
         return LaneTruthDerivation(
@@ -270,7 +358,11 @@ def derive_netconf_truth(
         protocol_exposure_posture=exposure,
         object_visibility_posture=obj_vis,
         session_posture="not_observed",
-        evidence_strength="heuristic_only" if has_obj else "unavailable",
+        evidence_strength=(
+            "heuristic_only"
+            if has_obj
+            else ("scope_only" if netconf.topology_ids else "unavailable")
+        ),
         derivation_mode="topology_partition_heuristic",
         fallback_notes=fb + ["NETCONF lane uses topology partition/heuristics; native connector session tree unavailable."],
     )

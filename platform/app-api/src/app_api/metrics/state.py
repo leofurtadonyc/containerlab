@@ -25,8 +25,10 @@ _topology_truth_seconds_sum: float = 0.0
 _controller_evidence_fetches_total: int = 0
 _controller_evidence_seconds_sum: float = 0.0
 _controller_evidence_reachability_counts: Counter[str] = Counter()
+_controller_evidence_lane_posture_counts: Counter[tuple[str, str]] = Counter()
 _controller_evidence_lane_session_posture_counts: Counter[tuple[str, str]] = Counter()
 _controller_evidence_lane_evidence_strength_counts: Counter[tuple[str, str]] = Counter()
+_controller_evidence_lane_session_backed_counts: Counter[tuple[str, str]] = Counter()
 _request_duration_counts: Counter[tuple[str, str]] = Counter()
 _request_duration_sums: dict[tuple[str, str], float] = defaultdict(float)
 
@@ -216,17 +218,25 @@ def record_controller_evidence_v2_observation(
     with _lock:
         global _controller_evidence_fetches_total, _controller_evidence_seconds_sum
         global _controller_evidence_reachability_counts
+        global _controller_evidence_lane_posture_counts
         global _controller_evidence_lane_session_posture_counts
         global _controller_evidence_lane_evidence_strength_counts
+        global _controller_evidence_lane_session_backed_counts
         _controller_evidence_fetches_total += 1
         _controller_evidence_seconds_sum += max(0.0, duration_seconds)
         _controller_evidence_reachability_counts[controller_reachability] += 1
+        _controller_evidence_lane_posture_counts[("bgp_ls", bgp_ls_lane_posture)] += 1
+        _controller_evidence_lane_posture_counts[("pcep", pcep_lane_posture)] += 1
+        _controller_evidence_lane_posture_counts[("netconf", netconf_lane_posture)] += 1
         _controller_evidence_lane_session_posture_counts[("bgp_ls", bgp_ls_session_posture)] += 1
         _controller_evidence_lane_session_posture_counts[("pcep", pcep_session_posture)] += 1
         _controller_evidence_lane_session_posture_counts[("netconf", netconf_session_posture)] += 1
         _controller_evidence_lane_evidence_strength_counts[("bgp_ls", bgp_ls_evidence_strength)] += 1
         _controller_evidence_lane_evidence_strength_counts[("pcep", pcep_evidence_strength)] += 1
         _controller_evidence_lane_evidence_strength_counts[("netconf", netconf_evidence_strength)] += 1
+        _controller_evidence_lane_session_backed_counts[("bgp_ls", str(bgp_ls_evidence_strength == "session_backed").lower())] += 1
+        _controller_evidence_lane_session_backed_counts[("pcep", str(pcep_evidence_strength == "session_backed").lower())] += 1
+        _controller_evidence_lane_session_backed_counts[("netconf", str(netconf_evidence_strength == "session_backed").lower())] += 1
         _cached_controller_evidence_metrics = CachedControllerEvidenceMetrics(
             controller_reachability=controller_reachability,
             bgp_ls_lane_posture=bgp_ls_lane_posture,
@@ -1425,8 +1435,10 @@ def render_prometheus_metrics(
         ce_fetch = _controller_evidence_fetches_total
         ce_sec = _controller_evidence_seconds_sum
         ce_reach = dict(_controller_evidence_reachability_counts)
+        ce_lane = dict(_controller_evidence_lane_posture_counts)
         ce_sess = dict(_controller_evidence_lane_session_posture_counts)
         ce_evd = dict(_controller_evidence_lane_evidence_strength_counts)
+        ce_backed = dict(_controller_evidence_lane_session_backed_counts)
     lines.extend(
         [
             (
@@ -1487,6 +1499,15 @@ def render_prometheus_metrics(
                 for k, v in sorted(ce_reach.items())
             ],
             (
+                "# HELP platform_app_api_controller_evidence_lane_posture_total "
+                "Lane posture observations per lane (v2)."
+            ),
+            "# TYPE platform_app_api_controller_evidence_lane_posture_total counter",
+            *[
+                f'platform_app_api_controller_evidence_lane_posture_total{{lane="{lane}",posture="{post}"}} {cnt}'
+                for (lane, post), cnt in sorted(ce_lane.items())
+            ],
+            (
                 "# HELP platform_app_api_controller_evidence_lane_session_posture_total "
                 "Session posture observations per lane (v2)."
             ),
@@ -1503,6 +1524,15 @@ def render_prometheus_metrics(
             *[
                 f'platform_app_api_controller_evidence_lane_evidence_strength_total{{lane="{lane}",strength="{st}"}} {cnt}'
                 for (lane, st), cnt in sorted(ce_evd.items())
+            ],
+            (
+                "# HELP platform_app_api_controller_evidence_lane_session_backed_total "
+                "Whether a lane observation was session-backed (`available=true`) versus weaker evidence."
+            ),
+            "# TYPE platform_app_api_controller_evidence_lane_session_backed_total counter",
+            *[
+                f'platform_app_api_controller_evidence_lane_session_backed_total{{lane="{lane}",available="{available}"}} {cnt}'
+                for (lane, available), cnt in sorted(ce_backed.items())
             ],
         ]
     )
@@ -1524,7 +1554,9 @@ def reset_metrics_registry() -> None:
     global _topology_truth_merges_total, _topology_truth_seconds_sum, _topology_truth_controller_status_counts
     global _cached_controller_evidence_metrics
     global _controller_evidence_fetches_total, _controller_evidence_seconds_sum, _controller_evidence_reachability_counts
+    global _controller_evidence_lane_posture_counts
     global _controller_evidence_lane_session_posture_counts, _controller_evidence_lane_evidence_strength_counts
+    global _controller_evidence_lane_session_backed_counts
     with _lock:
         _request_counts.clear()
         _request_duration_counts.clear()
@@ -1548,8 +1580,10 @@ def reset_metrics_registry() -> None:
         _controller_evidence_fetches_total = 0
         _controller_evidence_seconds_sum = 0.0
         _controller_evidence_reachability_counts.clear()
+        _controller_evidence_lane_posture_counts.clear()
         _controller_evidence_lane_session_posture_counts.clear()
         _controller_evidence_lane_evidence_strength_counts.clear()
+        _controller_evidence_lane_session_backed_counts.clear()
         _cached_controller_evidence_metrics = CachedControllerEvidenceMetrics()
         _cached_topology_metrics = CachedTopologyMetrics()
         _cached_policy_metrics = CachedPolicyMetrics()

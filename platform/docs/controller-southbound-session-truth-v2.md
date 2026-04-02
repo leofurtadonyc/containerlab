@@ -34,11 +34,13 @@ This is **not** wire-level proof on every device, **not** dataplane or TE author
 3. **Existing lane summaries** — `fetch_bgpls_topology_via_odl`, `summarize_pcep_lane`, `summarize_netconf_lane` on `fetch_network_topology_aggregate`.
 4. **`derive_*_truth`** — merges native probes + summaries + hints into `LaneTruthDerivation`, then **`_lane_v2`** builds `ProtocolLaneDetailV2`.
 5. **Persistence** — `ControllerEvidenceSnapshotTable.lanes_payload` JSON includes each lane’s `model_dump`, `contract_id`, and `yang_module_catalog_count`.
-6. **Metrics** — `record_controller_evidence_v2_observation` increments reachability and per-lane session/evidence counters.
+6. **Metrics** — `record_controller_evidence_v2_observation` increments reachability plus per-lane posture, session posture, evidence-strength, and explicit session-backed-availability counters.
 
 ## Limitations
 
 - ODL may not expose clean, stable RESTCONF trees for every session type; **unknown** / **not_observed** are valid outcomes.
+- If the YANG module catalog itself is unavailable, protocol exposure posture remains **`unknown`** rather than falsely collapsing to **`not_exposed`**.
+- A lane can resolve to **`unsupported`** only when the controller is reachable and the platform still observes no module exposure, no protocol objects, and no native session-oriented tree for that lane.
 - Heuristic JSON scans can produce false negatives; **derivation_mode** and **fallback_notes** document that path.
 - Lane-only routes call the full aggregate builder (same as v1 cost profile).
 

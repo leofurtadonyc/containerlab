@@ -109,8 +109,9 @@ def build_controller_evidence_response() -> ControllerEvidenceResponse:
     obs = client.read_controller_observation()
     reach = _reachability_from_observation(obs.observation_state)
 
-    module_names, yang_notes = fetch_yang_module_names(client)
-    hints = module_hints_for_lanes(module_names)
+    yang_catalog = fetch_yang_module_names(client)
+    yang_notes = list(yang_catalog.notes)
+    hints = module_hints_for_lanes(yang_catalog)
 
     aggregate = fetch_network_topology_aggregate(client)
     bgp = fetch_bgpls_topology_via_odl(client, preloaded_aggregate=aggregate)
@@ -125,19 +126,19 @@ def build_controller_evidence_response() -> ControllerEvidenceResponse:
         aggregate=aggregate,
         bgp=bgp,
         native=bgp_native,
-        module_family_exposed=hints["bgp_ls_family"],
+        protocol_exposure_posture=hints["bgp_ls_family"],
     )
     d_pcep = derive_pcep_truth(
         aggregate=aggregate,
         pcep=pcep,
         native=pcep_native,
-        module_family_exposed=hints["pcep_family"],
+        protocol_exposure_posture=hints["pcep_family"],
     )
     d_nc = derive_netconf_truth(
         aggregate=aggregate,
         netconf=netconf,
         native=netconf_native,
-        module_family_exposed=hints["netconf_family"],
+        protocol_exposure_posture=hints["netconf_family"],
     )
 
     snap = bgp.snapshot
@@ -191,7 +192,7 @@ def build_controller_evidence_response() -> ControllerEvidenceResponse:
             "pcep": pcep_lane.model_dump(mode="json"),
             "netconf": netconf_lane.model_dump(mode="json"),
             "contract_id": CONTROLLER_SOUTHBOUND_SESSION_TRUTH_V2_CONTRACT_ID,
-            "yang_module_catalog_count": len(module_names),
+            "yang_module_catalog_count": len(yang_catalog.module_names),
         },
         aggregate_notes=list(aggregate.notes),
     )
@@ -218,7 +219,7 @@ def build_controller_evidence_response() -> ControllerEvidenceResponse:
         contract_id=CONTROLLER_SOUTHBOUND_SESSION_TRUTH_V2_CONTRACT_ID,
         controller_reachability=reach,
         controller_capability_probe_summary=obs.observation_summary,
-        yang_module_catalog_count=len(module_names),
+        yang_module_catalog_count=len(yang_catalog.module_names),
         aggregate_fetch_notes=list(aggregate.notes),
         bgp_ls=bg_lane,
         pcep=pcep_lane,
