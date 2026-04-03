@@ -158,6 +158,35 @@ If either script fails, stop there and treat the deployment as not yet usable un
 
 This is the current documented replacement for ad hoc host-side validation of normal platform changes.
 
+### 4. If ODL Was Replaced, Refresh Southbound Peers Before Expecting Live BGP-LS/PCEP Again
+
+The core verifiers prove the packaged runtime contract and bounded ODL auth path, but they do not by themselves force the Nokia PE / CSC-PE routers to relearn a new southbound MAC after `platform-odl` was replaced.
+
+When the replacement path recreated ODL, the MAC behind `10.90.0.10` changed with the new container interface. In that case the routers can retain stale ARP for the southbound peer, which leaves BGP-LS down and can leave PCEP visible only as `pcep-topology` scope with no live PCC rows yet.
+
+Use the repo-owned recovery helper:
+
+```bash
+cd app-api
+python3 -m pip install -c requirements.lock.txt .
+
+cd ..
+python3 scripts/refresh-odl-southbound-peers.py
+```
+
+Then recheck the controller evidence lanes if live southbound posture matters for the current task:
+
+```bash
+curl -s http://localhost:8000/api/v1/controller/evidence/bgpls | python -m json.tool
+curl -s http://localhost:8000/api/v1/controller/evidence/pcep | python -m json.tool
+```
+
+Current expected post-refresh behavior:
+
+- `bgpls` returns `session_posture=established`
+- `pcep` returns `session_posture=established` once live PCC rows reattach
+- ODL `pcep-topology` contains the eight synchronized PCC nodes again
+
 ## What The Verification Scripts Prove
 
 ### `verify-core-runtime.sh`
@@ -630,6 +659,8 @@ The drill:
 2. deploys the topology again
 3. runs `./scripts/verify-core-runtime.sh`
 4. runs `./scripts/verify-odl-auth.sh`
+
+If the drill recreated ODL and you need live southbound BGP-LS / PCEP posture again after the drill, run `python3 scripts/refresh-odl-southbound-peers.py` from `platform/` after reinstalling the app-api package dependencies as shown above. The drill itself does not do this automatically because it would mutate the lab routers as part of a generic runtime recovery proof.
 
 When Postgres already holds persisted snapshots, sync runs, or readiness rows, the verifier asserts that **`recovery.baseline_posture`** on `/api/v1/platform/status` and **`baseline_summary.baseline_posture`** on `/api/v1/workflow-history` and `/api/v1/audit-history` report **`preserved_same_workspace_baseline`**, and that workflow-history and audit-history include a **`baseline_summary`** object. On an empty persisted read-side schema, those preserved-baseline assertions are skipped (honest fresh baseline).
 

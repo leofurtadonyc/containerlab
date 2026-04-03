@@ -37,6 +37,7 @@ class PcepLaneFetchResult:
     link_count: int
     fingerprint: str
     notes: list[str]
+    synchronized_node_count: int = 0
 
 
 def _fp(payload: dict[str, Any] | None) -> str:
@@ -54,6 +55,7 @@ def summarize_pcep_lane(aggregate: NetworkTopologyAggregateResult) -> PcepLaneFe
             topology_ids=(),
             node_count=0,
             link_count=0,
+            synchronized_node_count=0,
             fingerprint=_fp(None),
             notes=list(aggregate.notes)
             + [
@@ -67,6 +69,7 @@ def summarize_pcep_lane(aggregate: NetworkTopologyAggregateResult) -> PcepLaneFe
             topology_ids=(),
             node_count=0,
             link_count=0,
+            synchronized_node_count=0,
             fingerprint=_fp(aggregate.payload),
             notes=list(aggregate.notes)
             + [
@@ -79,15 +82,17 @@ def summarize_pcep_lane(aggregate: NetworkTopologyAggregateResult) -> PcepLaneFe
     node_count = 0
     link_count = 0
     config_only_node_count = 0
+    synchronized_node_count = 0
     tids: list[str] = []
     for topo in pcep_topos:
         tid = str(topo.get("topology-id", ""))
         if tid:
             tids.append(tid)
-        n, l, config_only = count_live_pcep_children(topo)
+        n, l, config_only, synchronized = count_live_pcep_children(topo)
         node_count += n
         link_count += l
         config_only_node_count += config_only
+        synchronized_node_count += synchronized
 
     notes = list(aggregate.notes)
     if not pcep_topos:
@@ -108,6 +113,10 @@ def summarize_pcep_lane(aggregate: NetworkTopologyAggregateResult) -> PcepLaneFe
         notes.append(
             f"PCEP lane: {len(pcep_topos)} topology scope(s), {node_count} node row(s), {link_count} link row(s) in aggregate.",
         )
+        if synchronized_node_count > 0:
+            notes.append(
+                f"PCEP lane: {synchronized_node_count} PCC node row(s) reported state-sync=synchronized.",
+            )
         posture = "available"
 
     return PcepLaneFetchResult(
@@ -116,8 +125,15 @@ def summarize_pcep_lane(aggregate: NetworkTopologyAggregateResult) -> PcepLaneFe
         topology_ids=tuple(sorted(set(tids))),
         node_count=node_count,
         link_count=link_count,
+        synchronized_node_count=synchronized_node_count,
         fingerprint=_fp(
-            {"lane": "pcep", "tids": tids, "n": node_count, "l": link_count},
+            {
+                "lane": "pcep",
+                "tids": tids,
+                "n": node_count,
+                "l": link_count,
+                "sync": synchronized_node_count,
+            },
         ),
         notes=notes,
     )

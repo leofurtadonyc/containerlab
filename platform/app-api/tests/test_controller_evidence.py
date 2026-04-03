@@ -196,6 +196,7 @@ def test_pcep_truth_is_unsupported_when_lane_not_exposed_and_no_objects_exist() 
             topology_ids=(),
             node_count=0,
             link_count=0,
+            synchronized_node_count=0,
             fingerprint="pcep-fp",
             notes=[],
         ),
@@ -217,6 +218,7 @@ def test_pcep_truth_uses_scope_only_when_only_topology_scope_is_visible() -> Non
             topology_ids=("pcep-topology",),
             node_count=0,
             link_count=0,
+            synchronized_node_count=0,
             fingerprint="pcep-fp",
             notes=[],
         ),
@@ -274,6 +276,7 @@ def test_pcep_lane_ignores_config_only_nodes() -> None:
         topology_ids=("pcep-topology",),
         node_count=0,
         link_count=0,
+        synchronized_node_count=0,
         fingerprint="pcep-fp",
         notes=["Ignored 1 config-only PCEP node row(s) with session-config but no live peer/session state."],
     )
@@ -287,6 +290,29 @@ def test_pcep_lane_ignores_config_only_nodes() -> None:
 
     assert derived.object_visibility_posture == "scope_only"
     assert derived.evidence_strength == "scope_only"
+
+
+def test_pcep_truth_uses_synchronized_topology_nodes_as_session_backed() -> None:
+    derived = derive_pcep_truth(
+        aggregate=_aggregate(),
+        pcep=PcepLaneFetchResult(
+            posture="available",
+            observed_source="odl_restconf_pcep",
+            topology_ids=("pcep-topology",),
+            node_count=8,
+            link_count=0,
+            synchronized_node_count=8,
+            fingerprint="pcep-sync-fp",
+            notes=["PCEP lane: 8 PCC node row(s) reported state-sync=synchronized."],
+        ),
+        native=NativeSessionProbeResult(path_used=None, payload=None, has_session_oper_hints=False, notes=[]),
+        protocol_exposure_posture="exposed",
+    )
+
+    assert derived.lane_posture == "available"
+    assert derived.session_posture == "established"
+    assert derived.evidence_strength == "session_backed"
+    assert derived.derivation_mode == "controller_object_parse"
 
 
 def test_netconf_truth_prefers_native_session_hints() -> None:

@@ -250,6 +250,19 @@ def derive_pcep_truth(
             derivation_mode="protocol_native",
             fallback_notes=fb + ["PCEP native data without session hints in bounded scan."],
         )
+    if pcep.synchronized_node_count > 0:
+        return LaneTruthDerivation(
+            lane_posture="available",
+            protocol_exposure_posture=exposure,
+            object_visibility_posture=obj_vis,
+            session_posture="established",
+            evidence_strength="session_backed",
+            derivation_mode="controller_object_parse",
+            fallback_notes=fb
+            + [
+                f"PCEP topology exposed {pcep.synchronized_node_count} PCC node row(s) with state-sync=synchronized.",
+            ],
+        )
     return LaneTruthDerivation(
         lane_posture=pcep.posture,
         protocol_exposure_posture=exposure,

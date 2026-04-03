@@ -113,16 +113,24 @@ def is_pcep_config_only_node(node: dict[str, Any]) -> bool:
     return node_keys.issubset({"node-id", "network-topology-pcep:session-config"})
 
 
-def count_live_pcep_children(topo: dict[str, Any]) -> tuple[int, int, int]:
-    """Return live-looking PCEP node/link counts and ignored config-only nodes."""
+def count_live_pcep_children(topo: dict[str, Any]) -> tuple[int, int, int, int]:
+    """Return live-looking PCEP counts, ignored config-only nodes, and synchronized PCC rows."""
 
     raw_nodes = topo.get("node") or []
     raw_links = topo.get("link") or []
     nodes = [node for node in raw_nodes if isinstance(node, dict)] if isinstance(raw_nodes, list) else []
     links = [link for link in raw_links if isinstance(link, dict)] if isinstance(raw_links, list) else []
     config_only_nodes = sum(1 for node in nodes if is_pcep_config_only_node(node))
-    live_nodes = len(nodes) - config_only_nodes
-    return live_nodes, len(links), config_only_nodes
+    live_nodes = [node for node in nodes if not is_pcep_config_only_node(node)]
+    synchronized_nodes = sum(
+        1
+        for node in live_nodes
+        if (
+            ((node.get("network-topology-pcep:path-computation-client") or {}).get("state-sync"))
+            == "synchronized"
+        )
+    )
+    return len(live_nodes), len(links), config_only_nodes, synchronized_nodes
 
 
 def is_empty_netconf_topology_placeholder(topo: dict[str, Any]) -> bool:

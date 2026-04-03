@@ -57,7 +57,7 @@ The latest live investigation proved the management-plane/Base-router mismatch, 
 - the platform host at `192.168.0.232` can reach device management addresses and SSH into the Nokia containers
 - the Nokia SR OS `management-interface` address exists on the Docker `clab` network, but it is not usable as a `router "Base"` protocol source for the current BGP/PCEP configuration
 - the repo now defines an explicit bridge `br-odl-sb`, lands ODL on `10.90.0.10/24`, and attaches every PE / CSC-PE southbound protocol target to that bridge on `1/1/c10/1`
-- BGP-LS and PCEP now source from real router-owned system loopbacks instead of containerlab management IPs
+- BGP-LS sources from real router-owned system loopbacks, and PCEP peers must explicitly prefer `inband` routing so SR OS does not default to the management plane first and ignore the configured Base-router `local-address`
 
 That means the repo no longer depends on the management plane for Base-router BGP-LS/PCEP design. Northbound/admin stays on `192.168.0.232`; the intended southbound controller peer address is `10.90.0.10/24` on the explicit bridge.
 
@@ -78,7 +78,7 @@ This is the current honest interpretation:
 - **Live NETCONF transport is not yet proven**: mounted nodes remain `connecting`.
 - **Repo-owned BGP-LS and PCEP pathing is now codified**: the repo carries the bridge topology, ODL southbound interface bootstrap, a runtime BGP peer-acceptor bootstrap that moves ODL from the packaged default listener port `1790` to `179`, and router-owned source addresses.
 - **Live BGP-LS is now established controller-side**: after clearing stale SR OS ARP entries for the redeployed ODL MAC, all eight configured BGP-LS neighbors appear `ESTABLISHED` from ODL's `lab-bgp-rib`, and the backend now reports `bgp_ls.session_posture=established` with `session_backed` evidence.
-- **Live PCEP is still pending**: PE1 now reaches `10.90.0.10`, but the current PCC peer remains `Oper Status: Down` with zero session setup attempts, so the remaining work has narrowed to router-side PCEP bring-up.
+- **Live PCEP root cause is now identified**: SR OS defaults PCEP peers to `route-preference both`, which tries out-of-band management reachability first. In that mode the PCC uses the management IP as its local address and ignores the configured Base-router `local-address`, so peers toward `10.90.0.10` never initiate on the southbound bridge. Setting `route-preference inband` on each PE / CSC-PE PCEP peer immediately forces loopback-sourced in-band reachability and brings the session up.
 
 ## Verification workflow
 

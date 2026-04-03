@@ -502,9 +502,9 @@ Re-run:
 
 after the services have had time to settle.
 
-### ODL southbound BGP-LS stays down after controller redeploy
+### ODL southbound BGP-LS or PCEP stays stale after controller redeploy
 
-If `platform-odl` was rebuilt or redeployed, the controller southbound MAC on `10.90.0.10` changes with the new container interface. The PE / CSC-PE routers can retain a stale ARP entry for `10.90.0.10`, which leaves `ping 10.90.0.10` failing and keeps BGP-LS down even though ODL is correctly listening on TCP `179`.
+If `platform-odl` was rebuilt or redeployed, the controller southbound MAC on `10.90.0.10` changes with the new container interface. The PE / CSC-PE routers can retain a stale ARP entry for `10.90.0.10`, which leaves `ping 10.90.0.10` failing and keeps BGP-LS down even though ODL is correctly listening on TCP `179`. The same stale southbound ARP can also leave PCEP at controller scope-only posture, where ODL exposes `pcep-topology` but no live PCC nodes have reattached yet.
 
 On each BGP-LS source (`PE1`-`PE4`, `CSC1-PE1`, `CSC1-PE2`, `CSC2-PE1`, `CSC2-PE2`), clear the stale ARP entry and then force a fresh BGP retry:
 
@@ -523,13 +523,15 @@ cd ..
 python3 scripts/refresh-odl-southbound-peers.py
 ```
 
-This helper reads `platform/odl/config/generated/southbound-inventory.json`, targets only the eight PE / CSC-PE BGP-LS sources, clears the stale ARP entry for `10.90.0.10`, clears the BGP neighbor, and prints the refreshed ARP MAC plus current BGP state for each node.
+This helper reads `platform/odl/config/generated/southbound-inventory.json`, targets only the eight PE / CSC-PE southbound sources, clears the stale ARP entry for `10.90.0.10`, clears the BGP neighbor, and prints the refreshed ARP MAC plus current BGP state for each node. In the current Nokia-first rollout that same recovery step is also enough to let the routers relearn the new controller MAC for PCEP and repopulate ODL `pcep-topology` again.
 
 Expected post-fix behavior:
 
 - `show router arp 10.90.0.10` learns the current ODL MAC again
 - `ping 10.90.0.10` succeeds on `to-ODL-SB`
 - `show router bgp neighbor 10.90.0.10` moves to `Established`
+- `GET /api/v1/controller/evidence/bgpls` returns `session_posture=established`
+- `GET /api/v1/controller/evidence/pcep` returns live PCC rows again instead of only `scope_only` / `partial` topology posture
 
 ## Current Portability Statement
 
