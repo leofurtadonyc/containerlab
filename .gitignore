@@ -1,5 +1,6 @@
 # Containerlab runtime artifacts
 clab-*/
+platform/clab-platform/
 *__clabtmp*
 *.log
 

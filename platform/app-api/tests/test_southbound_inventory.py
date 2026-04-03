@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from app_api.integrations.odl.southbound_inventory import (
@@ -9,6 +10,7 @@ from app_api.integrations.odl.southbound_inventory import (
     build_southbound_artifact_bundle,
     build_southbound_inventory,
     classify_node_role,
+    load_rollout_config,
     render_netconf_onboarding_script,
     render_odl_bgp_peer_acceptor_script,
     render_odl_bgp_protocols_config_xml,
@@ -49,6 +51,28 @@ def test_build_southbound_inventory_matches_lab3_full_targeting() -> None:
     assert all(target.protocol_targets.netconf for target in pe_targets)
     assert not any(target.protocol_targets.bgp_ls for target in p_targets)
     assert all(target.protocol_targets.netconf for target in p_targets)
+    assert all(not str(target.startup_config).startswith("/") for target in inventory if target.startup_config)
+
+
+def test_load_rollout_config_resolves_relative_topology_paths(tmp_path: Path) -> None:
+    config_path = tmp_path / "southbound-rollout.yaml"
+    relative_topology = os.path.relpath(LAB_TOPOLOGY, start=tmp_path)
+    config_path.write_text(
+        "\n".join(
+            [
+                f"topology_file: {relative_topology}",
+                "controller_northbound_address: 192.168.0.232",
+                "controller_southbound_address: 10.90.0.10/24",
+                "controller_asn: 64990",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_rollout_config(config_path)
+
+    assert Path(config.topology_file).resolve() == LAB_TOPOLOGY.resolve()
 
 
 def test_render_netconf_onboarding_script_covers_all_p_and_pe_targets() -> None:
@@ -71,6 +95,8 @@ def test_render_netconf_onboarding_script_covers_all_p_and_pe_targets() -> None:
     assert len(bundle.netconf_nodes) == 24
     assert len(bundle.protocol_peers) == 8
     assert bundle.protocol_peers[0].peer_asn in {64513, 64515, 64516}
+    assert bundle.inventory_summary()["topology_file"] == "nokia-sr-mpls/nokia-sr-mpls-lab3-full.clab.yml"
+    assert all(not target["startup_config"].startswith("/") for target in bundle.inventory_summary()["targets"] if target["startup_config"])
     assert "ODL_NETCONF_USERNAME" in script
     assert "ODL_NETCONF_PASSWORD" in script
     assert "--data @-" in script

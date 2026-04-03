@@ -12,9 +12,9 @@ This document captures the current repo-owned implementation for the live ODL so
 
 ## Phase-0 inventory now generated from topology truth
 
-The repository now derives the rollout inventory from `nokia-sr-mpls-lab3-full.clab.yml` instead of maintaining a hand-built southbound target list.
+The repository now derives the rollout inventory from `nokia-sr-mpls/nokia-sr-mpls-lab3-full.clab.yml` instead of maintaining a hand-built southbound target list.
 
-- Topology file: `/home/lfurtado/labs/nokia-sr-mpls/nokia-sr-mpls-lab3-full.clab.yml`
+- Topology file: `nokia-sr-mpls/nokia-sr-mpls-lab3-full.clab.yml`
 - Controller northbound/admin address: `192.168.0.232`
 - Controller southbound/protocol address: `10.90.0.10/24`
 - Southbound bridge: `br-odl-sb`
@@ -35,8 +35,8 @@ Repo-owned config and generated artifacts:
 Generation command:
 
 ```sh
-cd /home/lfurtado/labs/platform/app-api
-PYTHONPATH=src /home/lfurtado/.pyenv/versions/containerlab-venv/bin/python scripts/generate-odl-southbound-artifacts.py
+cd platform/app-api
+PYTHONPATH=src python3 scripts/generate-odl-southbound-artifacts.py
 ```
 
 ## Backend hardening added in this rollout
@@ -85,7 +85,7 @@ This is the current honest interpretation:
 Base packaged-runtime verification remains:
 
 ```sh
-cd /home/lfurtado/labs/platform
+cd platform
 ./scripts/prepare-odl-southbound-bridge.sh
 ./scripts/build-images.sh
 containerlab deploy -t topology.clab.yml -c
@@ -96,10 +96,10 @@ containerlab deploy -t topology.clab.yml -c
 Southbound-specific follow-up verification:
 
 ```sh
-cd /home/lfurtado/labs/platform/odl/config/generated
+cd platform/odl/config/generated
 ./apply-netconf-onboarding.sh
 
-cd /home/lfurtado/labs/platform
+cd ../../..
 ./scripts/verify-odl-southbound.sh
 ```
 
@@ -117,6 +117,6 @@ Remaining work is concentrated in three places:
 
 - device-side confirmation that NETCONF on port 830 is truly reachable and accepted, not merely mounted in ODL
 - router-side PCEP bring-up now that the controller is listening correctly on `4189` and BGP-LS is up
-- repeatable operator handling for stale SR OS ARP entries after ODL container redeploys, since the controller MAC on `10.90.0.10` changes with the container interface
+- repeatable operator handling for stale SR OS ARP entries after ODL container redeploys, since the controller MAC on `10.90.0.10` changes with the container interface; the repo now exposes this as an explicit helper script (`platform/scripts/refresh-odl-southbound-peers.py`) rather than as an implicit side effect of deploy
 
 Until those are implemented, `03-CURRENT-STATUS.md` should not claim a fully live ODL southbound rollout. The repo now has deterministic inventory generation, honest controller evidence, live BGP-LS establishment, and live NETCONF object onboarding, but not a completed end-to-end PCEP and NETCONF session rollout.

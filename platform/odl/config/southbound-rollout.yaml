@@ -1,4 +1,4 @@
-topology_file: /home/lfurtado/labs/nokia-sr-mpls/nokia-sr-mpls-lab3-full.clab.yml
+topology_file: ../../../nokia-sr-mpls/nokia-sr-mpls-lab3-full.clab.yml
 controller_northbound_address: 192.168.0.232
 controller_southbound_address: 10.90.0.10/24
 controller_southbound_bridge_name: br-odl-sb

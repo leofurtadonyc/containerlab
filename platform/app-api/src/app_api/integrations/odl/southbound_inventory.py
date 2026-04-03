@@ -128,7 +128,7 @@ class SouthboundArtifactBundle(BaseModel):
 
     def inventory_summary(self) -> dict[str, Any]:
         return {
-            "topology_file": self.config.topology_file,
+            "topology_file": _portable_path(self.config.topology_file),
             "controller_northbound_address": self.config.controller_northbound_address,
             "controller_southbound_address": self.config.controller_southbound_address,
             "controller_southbound_bridge_name": self.config.controller_southbound_bridge_name,
@@ -152,11 +152,37 @@ def _load_yaml(path: Path) -> dict[str, Any]:
     return loaded
 
 
+def _repo_root_for_display() -> Path | None:
+    current = Path(__file__).resolve()
+    for candidate in (current.parent, *current.parents):
+        if (candidate / "COPYRIGHT").is_file() and (candidate / "platform").is_dir():
+            return candidate
+    return None
+
+
+def _portable_path(path: str | Path) -> str:
+    resolved_path = Path(path).resolve()
+    repo_root = _repo_root_for_display()
+    if repo_root is None:
+        return str(resolved_path)
+    try:
+        return str(resolved_path.relative_to(repo_root))
+    except ValueError:
+        return str(resolved_path)
+
+
 def load_rollout_config(path: str | Path) -> SouthboundRolloutConfig:
     """Load the repo-owned rollout config file."""
 
-    config_path = Path(path)
+    config_path = Path(path).resolve()
     loaded = _load_yaml(config_path)
+    topology_file = loaded.get("topology_file")
+    if isinstance(topology_file, str) and topology_file:
+        topology_path = Path(topology_file)
+        if not topology_path.is_absolute():
+            loaded["topology_file"] = str((config_path.parent / topology_path).resolve())
+        else:
+            loaded["topology_file"] = str(topology_path.resolve())
     return SouthboundRolloutConfig.model_validate(loaded)
 
 
@@ -239,7 +265,7 @@ def _southbound_ipv4_for_target(
 def build_southbound_inventory(topology_file: str | Path) -> list[SouthboundTarget]:
     """Derive deterministic rollout targets from a Containerlab topology YAML."""
 
-    topology_path = Path(topology_file)
+    topology_path = Path(topology_file).resolve()
     loaded = _load_yaml(topology_path)
     nodes = loaded.get("topology", {}).get("nodes", {})
     if not isinstance(nodes, dict):
@@ -266,7 +292,7 @@ def build_southbound_inventory(topology_file: str | Path) -> list[SouthboundTarg
                 management_ipv4=management_ipv4,
                 loopback_ipv4=_loopback_ipv4_from_labels(labels) if isinstance(labels, dict) else None,
                 bgp_asn=_bgp_asn_from_startup_config(resolved_startup_config) if role == "pe" else None,
-                startup_config=resolved_startup_config,
+                startup_config=_portable_path(resolved_startup_config) if resolved_startup_config else None,
                 role=role,
                 protocol_targets=protocol_targets_for_role(role),
                 labels={str(key): str(value) for key, value in labels.items()} if isinstance(labels, dict) else {},
@@ -613,7 +639,7 @@ def render_inventory_markdown(bundle: SouthboundArtifactBundle) -> str:
     lines = [
         "# ODL Southbound Rollout Inventory Summary",
         "",
-        f"- Topology file: `{bundle.config.topology_file}`",
+        f"- Topology file: `{_portable_path(bundle.config.topology_file)}`",
         f"- Controller northbound/admin address: `{bundle.config.controller_northbound_address}`",
         f"- Controller southbound/protocol address: `{bundle.config.controller_southbound_address}`",
         f"- Southbound bridge: `{bundle.config.controller_southbound_bridge_name}`",

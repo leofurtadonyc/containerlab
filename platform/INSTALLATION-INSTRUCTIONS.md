@@ -149,9 +149,11 @@ If you change `platform/odl/config/southbound-rollout.yaml` or the Nokia lab top
 
 ```bash
 cd app-api
-PYTHONPATH=src /home/lfurtado/.pyenv/versions/containerlab-venv/bin/python scripts/generate-odl-southbound-artifacts.py
+PYTHONPATH=src python3 scripts/generate-odl-southbound-artifacts.py
 cd ..
 ```
+
+Run that from any Python environment with the `app-api` dependencies installed. If needed, install them first from `platform/app-api/` with `python3 -m pip install -c requirements.lock.txt .`.
 
 This builds the current local images:
 
@@ -510,6 +512,18 @@ On each BGP-LS source (`PE1`-`PE4`, `CSC1-PE1`, `CSC1-PE2`, `CSC2-PE1`, `CSC2-PE
 clear router arp 10.90.0.10
 clear router bgp neighbor 10.90.0.10
 ```
+
+The repo now provides an explicit helper for that recovery step instead of baking router mutation into every deploy:
+
+```bash
+cd app-api
+python3 -m pip install -c requirements.lock.txt .
+
+cd ..
+python3 scripts/refresh-odl-southbound-peers.py
+```
+
+This helper reads `platform/odl/config/generated/southbound-inventory.json`, targets only the eight PE / CSC-PE BGP-LS sources, clears the stale ARP entry for `10.90.0.10`, clears the BGP neighbor, and prints the refreshed ARP MAC plus current BGP state for each node.
 
 Expected post-fix behavior:
 

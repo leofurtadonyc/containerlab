@@ -1,5 +1,5 @@
 {
-  "topology_file": "/home/lfurtado/labs/nokia-sr-mpls/nokia-sr-mpls-lab3-full.clab.yml",
+  "topology_file": "nokia-sr-mpls/nokia-sr-mpls-lab3-full.clab.yml",
   "controller_northbound_address": "192.168.0.232",
   "controller_southbound_address": "10.90.0.10/24",
   "controller_southbound_bridge_name": "br-odl-sb",
@@ -19,7 +19,7 @@
       "management_ipv4": "172.20.20.101",
       "loopback_ipv4": "172.16.255.1",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CPE-A1.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CPE-A1.partial.cfg",
       "role": "other",
       "protocol_targets": {
         "bgp_ls": false,
@@ -38,7 +38,7 @@
       "management_ipv4": "172.20.20.102",
       "loopback_ipv4": "172.16.255.2",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CPE-A2.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CPE-A2.partial.cfg",
       "role": "other",
       "protocol_targets": {
         "bgp_ls": false,
@@ -57,7 +57,7 @@
       "management_ipv4": "172.20.20.103",
       "loopback_ipv4": "172.17.255.1",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CPE-B1.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CPE-B1.partial.cfg",
       "role": "other",
       "protocol_targets": {
         "bgp_ls": false,
@@ -76,7 +76,7 @@
       "management_ipv4": "172.20.20.104",
       "loopback_ipv4": "172.17.255.2",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CPE-B2.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CPE-B2.partial.cfg",
       "role": "other",
       "protocol_targets": {
         "bgp_ls": false,
@@ -95,7 +95,7 @@
       "management_ipv4": "172.20.20.133",
       "loopback_ipv4": "172.18.255.1",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CPE-C1.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CPE-C1.partial.cfg",
       "role": "other",
       "protocol_targets": {
         "bgp_ls": false,
@@ -114,7 +114,7 @@
       "management_ipv4": "172.20.20.134",
       "loopback_ipv4": "172.18.255.2",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CPE-C2.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CPE-C2.partial.cfg",
       "role": "other",
       "protocol_targets": {
         "bgp_ls": false,
@@ -133,7 +133,7 @@
       "management_ipv4": "172.20.20.121",
       "loopback_ipv4": "100.64.255.1",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CSC1-P1.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CSC1-P1.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -152,7 +152,7 @@
       "management_ipv4": "172.20.20.122",
       "loopback_ipv4": "100.64.255.2",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CSC1-P2.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CSC1-P2.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -171,7 +171,7 @@
       "management_ipv4": "172.20.20.123",
       "loopback_ipv4": "100.64.255.3",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CSC1-P3.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CSC1-P3.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -190,7 +190,7 @@
       "management_ipv4": "172.20.20.124",
       "loopback_ipv4": "100.64.255.4",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CSC1-P4.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CSC1-P4.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -209,7 +209,7 @@
       "management_ipv4": "172.20.20.119",
       "loopback_ipv4": "100.64.255.11",
       "bgp_asn": 64513,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CSC1-PE1.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CSC1-PE1.partial.cfg",
       "role": "pe",
       "protocol_targets": {
         "bgp_ls": true,
@@ -228,7 +228,7 @@
       "management_ipv4": "172.20.20.120",
       "loopback_ipv4": "100.64.255.12",
       "bgp_asn": 64513,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CSC1-PE2.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CSC1-PE2.partial.cfg",
       "role": "pe",
       "protocol_targets": {
         "bgp_ls": true,
@@ -247,7 +247,7 @@
       "management_ipv4": "172.20.20.129",
       "loopback_ipv4": "100.66.255.1",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CSC2-P1.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CSC2-P1.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -266,7 +266,7 @@
       "management_ipv4": "172.20.20.130",
       "loopback_ipv4": "100.66.255.2",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CSC2-P2.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CSC2-P2.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -285,7 +285,7 @@
       "management_ipv4": "172.20.20.131",
       "loopback_ipv4": "100.66.255.3",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CSC2-P3.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CSC2-P3.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -304,7 +304,7 @@
       "management_ipv4": "172.20.20.132",
       "loopback_ipv4": "100.66.255.4",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CSC2-P4.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CSC2-P4.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -323,7 +323,7 @@
       "management_ipv4": "172.20.20.127",
       "loopback_ipv4": "100.66.255.11",
       "bgp_asn": 64516,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CSC2-PE1.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CSC2-PE1.partial.cfg",
       "role": "pe",
       "protocol_targets": {
         "bgp_ls": true,
@@ -342,7 +342,7 @@
       "management_ipv4": "172.20.20.128",
       "loopback_ipv4": "100.66.255.12",
       "bgp_asn": 64516,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/CSC2-PE2.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/CSC2-PE2.partial.cfg",
       "role": "pe",
       "protocol_targets": {
         "bgp_ls": true,
@@ -361,7 +361,7 @@
       "management_ipv4": "172.20.20.125",
       "loopback_ipv4": "1.1.255.1",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/ISP1-R1.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/ISP1-R1.partial.cfg",
       "role": "other",
       "protocol_targets": {
         "bgp_ls": false,
@@ -380,7 +380,7 @@
       "management_ipv4": "172.20.20.126",
       "loopback_ipv4": "2.2.255.1",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/ISP2-R1.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/ISP2-R1.partial.cfg",
       "role": "other",
       "protocol_targets": {
         "bgp_ls": false,
@@ -399,7 +399,7 @@
       "management_ipv4": "172.20.20.105",
       "loopback_ipv4": "10.255.0.1",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/NOC-R1.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/NOC-R1.partial.cfg",
       "role": "other",
       "protocol_targets": {
         "bgp_ls": false,
@@ -418,7 +418,7 @@
       "management_ipv4": "172.20.20.106",
       "loopback_ipv4": "10.255.0.2",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/NOC-R2.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/NOC-R2.partial.cfg",
       "role": "other",
       "protocol_targets": {
         "bgp_ls": false,
@@ -437,7 +437,7 @@
       "management_ipv4": "172.20.20.109",
       "loopback_ipv4": "100.65.255.1",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/P1.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/P1.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -456,7 +456,7 @@
       "management_ipv4": "172.20.20.110",
       "loopback_ipv4": "100.65.255.2",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/P2.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/P2.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -475,7 +475,7 @@
       "management_ipv4": "172.20.20.111",
       "loopback_ipv4": "100.65.255.3",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/P3.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/P3.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -494,7 +494,7 @@
       "management_ipv4": "172.20.20.112",
       "loopback_ipv4": "100.65.255.4",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/P4.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/P4.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -513,7 +513,7 @@
       "management_ipv4": "172.20.20.113",
       "loopback_ipv4": "100.65.255.5",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/P5.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/P5.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -532,7 +532,7 @@
       "management_ipv4": "172.20.20.114",
       "loopback_ipv4": "100.65.255.6",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/P6.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/P6.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -551,7 +551,7 @@
       "management_ipv4": "172.20.20.115",
       "loopback_ipv4": "100.65.255.7",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/P7.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/P7.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -570,7 +570,7 @@
       "management_ipv4": "172.20.20.116",
       "loopback_ipv4": "100.65.255.8",
       "bgp_asn": null,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/P8.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/P8.partial.cfg",
       "role": "p",
       "protocol_targets": {
         "bgp_ls": false,
@@ -589,7 +589,7 @@
       "management_ipv4": "172.20.20.107",
       "loopback_ipv4": "100.65.255.11",
       "bgp_asn": 64515,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/PE1.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/PE1.partial.cfg",
       "role": "pe",
       "protocol_targets": {
         "bgp_ls": true,
@@ -608,7 +608,7 @@
       "management_ipv4": "172.20.20.108",
       "loopback_ipv4": "100.65.255.12",
       "bgp_asn": 64515,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/PE2.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/PE2.partial.cfg",
       "role": "pe",
       "protocol_targets": {
         "bgp_ls": true,
@@ -627,7 +627,7 @@
       "management_ipv4": "172.20.20.117",
       "loopback_ipv4": "100.65.255.13",
       "bgp_asn": 64515,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/PE3.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/PE3.partial.cfg",
       "role": "pe",
       "protocol_targets": {
         "bgp_ls": true,
@@ -646,7 +646,7 @@
       "management_ipv4": "172.20.20.118",
       "loopback_ipv4": "100.65.255.14",
       "bgp_asn": 64515,
-      "startup_config": "/home/lfurtado/labs/nokia-sr-mpls/configs/lab3-full/PE4.partial.cfg",
+      "startup_config": "nokia-sr-mpls/configs/lab3-full/PE4.partial.cfg",
       "role": "pe",
       "protocol_targets": {
         "bgp_ls": true,
