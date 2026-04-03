@@ -251,7 +251,7 @@ def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
         observed_at="2026-03-09T19:25:08.500000+00:00",
         notes=[
             "Topology links are inferred from live router interface names and current interface operational state.",
-            "The topology slice remains intentionally partial until LLDP, IGP, or bounded controller enrichment is added.",
+            "The topology slice remains intentionally partial; bounded controller enrichment now exists as optional backend-owned context, but the normalized gNMI slice remains the primary topology baseline until deeper evidence is added.",
         ],
         nodes=[
             CollectorTopologyNodeRecord(
@@ -4391,7 +4391,7 @@ def test_investigation_workspace_context_assembly_returns_nested_contracts(monke
     cap = payload["capabilities"]
     assert cap["data_status"] == "bounded_matrix"
     assert cap["readiness_snapshot_id"] == "readiness-snapshot-current"
-    assert cap["count"] == 13
+    assert cap["count"] == 20
 
     assert payload["next_inspection_framing"]
     assert isinstance(payload["next_inspection_suggestions"], list)
@@ -5131,45 +5131,83 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
 
         assert response.headers["X-Request-ID"] == "capabilities-test"
         assert payload["data_status"] == "bounded_matrix"
-        assert payload["count"] == 13
+        assert payload["count"] == 20
         assert payload["readiness_snapshot_id"] == "readiness-snapshot-current"
         assert payload["readiness_persisted_at"] == "2026-03-16T00:00:00Z"
-        assert "workflow-readiness interpretation are explicit" in payload["summary"]
-        assert payload["items"][0]["feature"] == "device_inventory"
-        assert payload["items"][0]["domain"] == "inventory"
-        assert payload["items"][0]["support_status"] == "supported"
-        assert payload["items"][0]["implementation_status"] == "implemented"
-        assert payload["items"][0]["delivery_tier"] == "delivered_read_only"
-        assert payload["items"][0]["evidence_basis"] == "live_validated"
-        assert payload["items"][0]["version_scope"] == "current onboarded Nokia SR OS lab targets"
-        assert payload["items"][0]["vendor_posture"] == "current_nokia_focus"
-        assert payload["items"][0]["workflow_readiness_status"] == "supports_planning"
-        assert payload["items"][0]["workflow_readiness_scopes"] == ["planning_depth"]
-        assert "stable backend-owned contract" in payload["items"][0]["status_detail"]
+        assert "controller southbound session truth" in payload["summary"]
+        items = payload["items"]
+
+        def find_item(vendor: str, domain: str, feature: str) -> dict[str, object]:
+            return next(
+                item
+                for item in items
+                if item["vendor"] == vendor
+                and item["domain"] == domain
+                and item["feature"] == feature
+            )
+
+        device_inventory = find_item("nokia", "inventory", "device_inventory")
+        topology_observation = find_item("nokia", "topology", "topology_observation")
+        topology_truth = find_item("nokia", "topology", "topology_truth_merge")
+        topology_pivots = find_item("nokia", "topology", "topology_related_policy_pivots")
+        controller_truth = find_item(
+            "nokia", "platform_health", "controller_southbound_session_truth"
+        )
+        juniper_inventory = find_item("juniper", "inventory", "device_inventory")
+
+        assert device_inventory["support_status"] == "supported"
+        assert device_inventory["implementation_status"] == "implemented"
+        assert device_inventory["delivery_tier"] == "delivered_read_only"
+        assert device_inventory["evidence_basis"] == "live_validated"
+        assert (
+            device_inventory["version_scope"]
+            == "current onboarded Nokia SR OS lab targets"
+        )
+        assert device_inventory["vendor_posture"] == "current_nokia_focus"
+        assert device_inventory["workflow_readiness_status"] == "supports_planning"
+        assert device_inventory["workflow_readiness_scopes"] == ["planning_depth"]
+        assert "stable backend-owned contract" in device_inventory["status_detail"]
+
+        assert topology_observation["support_status"] == "partially_supported"
+        assert topology_observation["workflow_readiness_status"] == "partial_foundation"
+        assert "validation_contracts" in topology_observation["workflow_readiness_scopes"]
+        assert topology_truth["support_status"] == "partially_supported"
+        assert topology_truth["delivery_tier"] == "bounded_partial_read_only"
+        assert topology_truth["workflow_readiness_status"] == "partial_foundation"
+        assert topology_pivots["support_status"] == "supported"
+        assert topology_pivots["workflow_readiness_status"] == "partial_foundation"
+        assert controller_truth["support_status"] == "partially_supported"
+        assert controller_truth["domain"] == "platform_health"
+        assert controller_truth["evidence_basis"] == "live_validated"
+        assert "controller southbound session truth" in controller_truth["status_detail"]
+
         assert payload["domain_counts"]["policy"] == 5
-        assert payload["domain_counts"]["topology"] == 3
-        assert payload["support_counts"]["partially_supported"] == 8
+        assert payload["domain_counts"]["topology"] == 9
+        assert payload["domain_counts"]["platform_health"] == 2
+        assert payload["support_counts"]["supported"] == 6
+        assert payload["support_counts"]["partially_supported"] == 10
         assert payload["support_counts"]["unknown"] == 1
         assert payload["support_counts"]["not_implemented_in_platform"] == 3
-        assert payload["implementation_counts"]["partial"] == 8
+        assert payload["implementation_counts"]["partial"] == 15
         assert payload["implementation_counts"]["planned"] == 4
-        assert payload["delivery_tier_counts"]["bounded_partial_read_only"] == 8
+        assert payload["delivery_tier_counts"]["bounded_partial_read_only"] == 15
         assert payload["delivery_tier_counts"]["future_roadmap"] == 4
+        assert payload["evidence_basis_counts"]["live_validated"] == 11
         assert payload["evidence_basis_counts"]["persisted_validated"] == 4
-        assert payload["vendor_counts"]["nokia"] == 10
+        assert payload["vendor_counts"]["nokia"] == 17
         assert payload["vendor_counts"]["juniper"] == 3
-        assert payload["vendor_posture_counts"]["current_nokia_focus"] == 10
+        assert payload["vendor_posture_counts"]["current_nokia_focus"] == 17
         assert payload["vendor_posture_counts"]["future_juniper_target"] == 3
         assert payload["workflow_readiness_counts"]["supports_planning"] == 1
-        assert payload["workflow_readiness_counts"]["partial_foundation"] == 7
+        assert payload["workflow_readiness_counts"]["partial_foundation"] == 12
         assert payload["workflow_readiness_counts"]["blocked"] == 1
-        assert payload["workflow_readiness_counts"]["context_only"] == 1
+        assert payload["workflow_readiness_counts"]["context_only"] == 3
         assert payload["workflow_readiness_counts"]["roadmap_only"] == 3
-        assert payload["workflow_readiness_scope_counts"]["planning_depth"] == 7
+        assert payload["workflow_readiness_scope_counts"]["planning_depth"] == 12
         assert payload["workflow_readiness_scope_counts"]["preview_contracts"] == 2
-        assert payload["workflow_readiness_scope_counts"]["validation_contracts"] == 6
+        assert payload["workflow_readiness_scope_counts"]["validation_contracts"] == 8
         assert payload["workflow_readiness_scope_counts"]["workflow_audit_relationships"] == 2
-        assert payload["workflow_readiness_scope_counts"]["phase_transition"] == 4
+        assert payload["workflow_readiness_scope_counts"]["phase_transition"] == 5
         assert payload["dry_run_readiness"]["status"] == "bounded_readiness_support"
         assert payload["dry_run_readiness"]["planning_readiness"] == "readiness_planning_supported"
         assert payload["dry_run_readiness"]["phase_recommendation"] == "remain_phase_2_read_only_foundation"
@@ -5191,6 +5229,12 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
         ]
         assert payload["dry_run_readiness"]["prerequisites"][1]["status"] == "partial"
         assert payload["dry_run_readiness"]["prerequisites"][1]["evidence_coverage"] == "bounded"
+        assert payload["dry_run_readiness"]["prerequisites"][1]["related_capabilities"] == [
+            "topology_observation",
+            "topology_persisted_comparison",
+            "topology_truth_merge",
+            "controller_southbound_session_truth",
+        ]
         assert payload["dry_run_readiness"]["evidence_coverage_counts"]["strong"] == 2
         assert payload["dry_run_readiness"]["evidence_coverage_counts"]["bounded"] == 2
         assert payload["dry_run_readiness"]["support_posture_counts"]["supported"] == 2
@@ -5222,25 +5266,23 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
         assert payload["dry_run_readiness"]["blockers"][1]["related_prerequisites"] == [
             "topology_comparison_evidence",
         ]
-        assert payload["items"][0]["related_readiness_blockers"] == []
-        assert payload["items"][1]["related_readiness_blockers"] == [
+        assert device_inventory["related_readiness_blockers"] == []
+        assert topology_observation["related_readiness_blockers"] == [
             "topology_truth_still_bounded",
             "validation_result_contract_missing",
         ]
-        assert payload["items"][1]["feature"] == "topology_observation"
-        assert payload["items"][1]["workflow_readiness_status"] == "partial_foundation"
-        assert "validation_contracts" in payload["items"][1]["workflow_readiness_scopes"]
-        assert payload["items"][2]["feature"] == "topology_persisted_comparison"
-        assert "preview_contracts" in payload["items"][2]["workflow_readiness_scopes"]
-        assert payload["items"][6]["feature"] == "bgp_signaled_policy_detail"
-        assert payload["items"][6]["workflow_readiness_status"] == "blocked"
-        assert payload["items"][10]["vendor"] == "juniper"
-        assert payload["items"][10]["vendor_posture"] == "future_juniper_target"
-        assert payload["items"][10]["delivery_tier"] == "future_roadmap"
-        assert payload["items"][10]["version_scope"] == "planned next expansion"
-        assert payload["items"][10]["workflow_readiness_status"] == "roadmap_only"
-        assert payload["items"][11]["domain"] == "topology"
-        assert payload["items"][12]["domain"] == "policy"
+        assert "preview_contracts" in find_item(
+            "nokia", "topology", "topology_persisted_comparison"
+        )["workflow_readiness_scopes"]
+        assert find_item("nokia", "policy", "bgp_signaled_policy_detail")[
+            "workflow_readiness_status"
+        ] == "blocked"
+        assert juniper_inventory["vendor_posture"] == "future_juniper_target"
+        assert juniper_inventory["delivery_tier"] == "future_roadmap"
+        assert juniper_inventory["version_scope"] == "planned next expansion"
+        assert juniper_inventory["workflow_readiness_status"] == "roadmap_only"
+        assert find_item("juniper", "topology", "topology_observation")["domain"] == "topology"
+        assert find_item("juniper", "policy", "policy_counter_visibility")["domain"] == "policy"
         assert datetime.fromisoformat(payload["generated_at"]) is not None
     finally:
         capabilities_service.persist_readiness_snapshot = original_persist

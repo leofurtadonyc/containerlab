@@ -604,6 +604,7 @@ def build_topology_response() -> TopologyResponse:
             "Topology is backed by live read-only Nokia gNMI collection and bounded "
             "interface-based link inference, with partial knowledge still explicit and usable live evidence from "
             f"{collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured targets. "
+            "Bounded controller enrichment and deeper topology truth now exist as optional backend-owned context, but the normalized gNMI slice remains the primary topology baseline. "
             f"{coverage_summary.summary}"
         )
     elif collector_snapshot.status == "partial_live_feed":
@@ -613,6 +614,7 @@ def build_topology_response() -> TopologyResponse:
             "Topology is backed by live Nokia gNMI collection, but one or more "
             "targets or inferred links remain partial or degraded. "
             f"Coverage currently includes {collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured targets. "
+            "Bounded controller enrichment and deeper topology truth now exist as optional backend-owned context, but the normalized gNMI slice remains the primary topology baseline. "
             f"{coverage_summary.summary}"
         )
     else:

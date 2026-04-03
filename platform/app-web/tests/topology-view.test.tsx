@@ -288,6 +288,18 @@ beforeEach(() => {
 });
 
 describe("topology view", () => {
+  it("renders controller and deeper-truth panel entry points", () => {
+    useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
+    usePoliciesQuery.mockReturnValue(createQueryState(null));
+
+    const html = renderToStaticMarkup(<TopologyView />);
+
+    expect(html).toContain("Controller southbound session truth");
+    expect(html).toContain("Load controller evidence");
+    expect(html).toContain("Deeper topology truth");
+    expect(html).toContain("Load merged truth");
+  });
+
   it("renders persisted topology history and recent snapshot anchors", () => {
     useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
     usePoliciesQuery.mockReturnValue(createQueryState(null));

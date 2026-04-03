@@ -167,7 +167,7 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
 
     notes = [
         "Topology links are inferred from live router interface names and current interface operational state.",
-        "The topology slice remains intentionally partial until LLDP, IGP, or bounded controller enrichment is added.",
+        "The topology slice remains intentionally partial; bounded controller enrichment now exists as optional backend-owned context, but the normalized gNMI slice remains the primary topology baseline until deeper evidence is added.",
     ]
     if oldest_observed_at is not None and newest_observed_at is not None:
         notes.append(
