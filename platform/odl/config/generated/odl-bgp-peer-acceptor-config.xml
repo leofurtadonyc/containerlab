@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bgp-peer-acceptor-config xmlns="urn:opendaylight:params:xml:ns:yang:odl-bgp-peer-acceptor-config">
+    <config-name>default</config-name>
+    <binding-address>0.0.0.0</binding-address>
+    <binding-port>179</binding-port>
+</bgp-peer-acceptor-config>

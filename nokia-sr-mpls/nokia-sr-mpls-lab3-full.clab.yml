@@ -487,6 +487,9 @@ topology:
             - slot: 1
               type: me12-100gb-qsfp28
 
+    br-odl-sb:
+      kind: bridge
+
   links:
     - endpoints: ["CPE-A1:1/1/c1/1", "PE1:1/1/c1/1"]
     - endpoints: ["CPE-A2:1/1/c3/1", "PE3:1/1/c3/1"]
@@ -532,3 +535,11 @@ topology:
     - endpoints: ["CSC2-PE2:1/1/c3/1", "CSC2-P4:1/1/c3/1"]
     - endpoints: ["CSC2-P1:1/1/c1/1", "CSC2-P3:1/1/c1/1"]
     - endpoints: ["CSC2-P2:1/1/c1/1", "CSC2-P4:1/1/c1/1"]
+    - endpoints: ["PE1:1/1/c10/1", "br-odl-sb:pe1-odl-sb"]
+    - endpoints: ["PE2:1/1/c10/1", "br-odl-sb:pe2-odl-sb"]
+    - endpoints: ["PE3:1/1/c10/1", "br-odl-sb:pe3-odl-sb"]
+    - endpoints: ["PE4:1/1/c10/1", "br-odl-sb:pe4-odl-sb"]
+    - endpoints: ["CSC1-PE1:1/1/c10/1", "br-odl-sb:csc1-pe1-odl-sb"]
+    - endpoints: ["CSC1-PE2:1/1/c10/1", "br-odl-sb:csc1-pe2-odl-sb"]
+    - endpoints: ["CSC2-PE1:1/1/c10/1", "br-odl-sb:csc2-pe1-odl-sb"]
+    - endpoints: ["CSC2-PE2:1/1/c10/1", "br-odl-sb:csc2-pe2-odl-sb"]

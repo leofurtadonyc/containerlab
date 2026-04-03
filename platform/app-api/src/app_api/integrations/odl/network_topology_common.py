@@ -35,6 +35,14 @@ NETWORK_TOPOLOGY_PATH_CANDIDATES = (
     "/rests/data/network-topology:network-topology",
 )
 
+PLACEHOLDER_BGP_TOPOLOGY_IDS = frozenset(
+    {
+        "example-linkstate-topology",
+        "example-ipv4-topology",
+        "example-ipv6-topology",
+    }
+)
+
 
 def extract_topology_list(payload: dict[str, Any]) -> list[dict[str, Any]]:
     nt = (
@@ -78,6 +86,49 @@ def count_node_link_children(topo: dict[str, Any]) -> tuple[int, int]:
     nc = len(n_raw) if isinstance(n_raw, list) else 0
     lc = len(l_raw) if isinstance(l_raw, list) else 0
     return nc, lc
+
+
+def is_example_bgp_topology(topo: dict[str, Any]) -> bool:
+    """True when ODL is exposing the stock example BGP/BGP-LS topology objects."""
+
+    topology_id = str(topo.get("topology-id", ""))
+    if topology_id in PLACEHOLDER_BGP_TOPOLOGY_IDS:
+        return True
+    for key, value in topo.items():
+        if isinstance(key, str) and "rib-id" in key and value == "example-bgp-rib":
+            return True
+    return False
+
+
+def is_pcep_config_only_node(node: dict[str, Any]) -> bool:
+    """True when a PCEP topology node only carries static session config.
+
+    This excludes list entries like the stock `43.43.43.43` example row from being
+    treated as live peer/session evidence.
+    """
+
+    if not isinstance(node, dict):
+        return False
+    node_keys = {str(key) for key in node.keys()}
+    return node_keys.issubset({"node-id", "network-topology-pcep:session-config"})
+
+
+def count_live_pcep_children(topo: dict[str, Any]) -> tuple[int, int, int]:
+    """Return live-looking PCEP node/link counts and ignored config-only nodes."""
+
+    raw_nodes = topo.get("node") or []
+    raw_links = topo.get("link") or []
+    nodes = [node for node in raw_nodes if isinstance(node, dict)] if isinstance(raw_nodes, list) else []
+    links = [link for link in raw_links if isinstance(link, dict)] if isinstance(raw_links, list) else []
+    config_only_nodes = sum(1 for node in nodes if is_pcep_config_only_node(node))
+    live_nodes = len(nodes) - config_only_nodes
+    return live_nodes, len(links), config_only_nodes
+
+
+def is_empty_netconf_topology_placeholder(topo: dict[str, Any]) -> bool:
+    """True when `topology-netconf` exists but exposes no mounted nodes yet."""
+
+    return infer_topology_scope_kind(topo) == "netconf" and count_node_link_children(topo) == (0, 0)
 
 
 AggregateFetchStatus = Literal["ok", "degraded", "empty", "unreachable"]

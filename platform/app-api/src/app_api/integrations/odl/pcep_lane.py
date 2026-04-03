@@ -9,7 +9,7 @@ from typing import Any, Literal
 
 from app_api.integrations.odl.network_topology_common import (
     NetworkTopologyAggregateResult,
-    count_node_link_children,
+    count_live_pcep_children,
     extract_topology_list,
     infer_topology_scope_kind,
 )
@@ -78,14 +78,16 @@ def summarize_pcep_lane(aggregate: NetworkTopologyAggregateResult) -> PcepLaneFe
     pcep_topos = [t for t in topologies if infer_topology_scope_kind(t) == "pcep"]
     node_count = 0
     link_count = 0
+    config_only_node_count = 0
     tids: list[str] = []
     for topo in pcep_topos:
         tid = str(topo.get("topology-id", ""))
         if tid:
             tids.append(tid)
-        n, l = count_node_link_children(topo)
+        n, l, config_only = count_live_pcep_children(topo)
         node_count += n
         link_count += l
+        config_only_node_count += config_only
 
     notes = list(aggregate.notes)
     if not pcep_topos:
@@ -94,6 +96,10 @@ def summarize_pcep_lane(aggregate: NetworkTopologyAggregateResult) -> PcepLaneFe
         )
         posture: LanePosture = "empty"
     elif node_count == 0 and link_count == 0:
+        if config_only_node_count > 0:
+            notes.append(
+                f"Ignored {config_only_node_count} config-only PCEP node row(s) with session-config but no live peer/session state.",
+            )
         notes.append(
             "PCEP-class topologies are present in the aggregate but carried no node/link rows in this bounded parse.",
         )

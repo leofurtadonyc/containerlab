@@ -635,6 +635,53 @@ assert_contains "controller evidence response (session posture)" "$controller_ev
 assert_contains "controller evidence response (evidence strength)" "$controller_evidence_response" '"evidence_strength":"'
 assert_contains "controller evidence response (derivation mode)" "$controller_evidence_response" '"derivation_mode":"'
 
+if command -v python3 >/dev/null 2>&1; then
+  printf '%s' "$controller_evidence_response" | python3 -c '
+import json
+import sys
+
+data = json.load(sys.stdin)
+
+bgp = data.get("bgp_ls") or {}
+pcep = data.get("pcep") or {}
+netconf = data.get("netconf") or {}
+
+placeholder_bgp_ids = {"example-linkstate-topology", "example-ipv4-topology", "example-ipv6-topology"}
+bgp_ids = set(bgp.get("topology_ids") or [])
+pcep_ids = set(pcep.get("topology_ids") or [])
+netconf_ids = set(netconf.get("topology_ids") or [])
+
+def fail(message: str) -> None:
+  raise SystemExit(message)
+
+if ((not bgp_ids or bgp_ids.issubset(placeholder_bgp_ids))
+    and int(bgp.get("node_count") or 0) == 0
+    and int(bgp.get("link_count") or 0) == 0):
+  if bgp.get("session_posture") == "established":
+    fail("controller evidence semantic check failed: bgp_ls lane claims established session posture with no live BGP-LS objects")
+  if bgp.get("evidence_strength") == "session_backed":
+    fail("controller evidence semantic check failed: bgp_ls lane claims session_backed evidence with no live BGP-LS objects")
+
+if (pcep_ids.issubset({"pcep-topology"})
+    and int(pcep.get("node_count") or 0) == 0
+    and int(pcep.get("link_count") or 0) == 0):
+  if pcep.get("session_posture") == "established":
+    fail("controller evidence semantic check failed: pcep lane claims established session posture with config-only scope")
+  if pcep.get("evidence_strength") == "session_backed":
+    fail("controller evidence semantic check failed: pcep lane claims session_backed evidence with config-only scope")
+
+if ((not netconf_ids or netconf_ids == {"topology-netconf"})
+    and int(netconf.get("node_count") or 0) == 0
+    and int(netconf.get("link_count") or 0) == 0):
+  if netconf.get("session_posture") == "established":
+    fail("controller evidence semantic check failed: netconf lane claims established session posture with no mounted nodes")
+  if netconf.get("evidence_strength") == "session_backed":
+    fail("controller evidence semantic check failed: netconf lane claims session_backed evidence with no mounted nodes")
+'
+else
+  notice "python3 not found; skipping controller evidence semantic anti-placeholder checks in verify-core-runtime.sh."
+fi
+
 # Week 29: global operator search (bounded inventory field search; structural contract check).
 operator_search_response=$(fetch_compact_json "$APP_API_URL/api/v1/operator-search?q=__verify_runtime__")
 assert_contains "operator search response (contract id)" "$operator_search_response" '"contract_id":"operator_search_pivot_v1"'

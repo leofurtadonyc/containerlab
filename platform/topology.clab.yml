@@ -7,6 +7,8 @@ topology:
     odl:
       kind: linux
       image: platform-odl:0.1.0
+      binds:
+        - ./odl/config/generated:/opt/platform-odl/config/generated:ro
       ports:
         - "8181:8181" # RESTCONF and northbound API access
         - "8101:8101" # Karaf shell access
@@ -94,5 +96,11 @@ topology:
       ports:
         - "8088:8088"
 
-  # No direct links to lab nodes are defined here.
-  # The platform is expected to reach lab services over management connectivity.
+    br-odl-sb:
+      kind: bridge
+
+  links:
+    - endpoints: ["odl:eth1", "br-odl-sb:odl-eth1"]
+
+  # Northbound/admin still uses the management plane.
+  # ODL southbound protocols now use the explicit external bridge above.

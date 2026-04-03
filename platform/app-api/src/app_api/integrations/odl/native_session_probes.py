@@ -12,41 +12,61 @@ from app_api.integrations.odl.client import OdlClient, get_odl_client
 from app_api.integrations.odl.network_topology_common import http_error_body, is_restconf_unknown_element
 
 
-# Keys suggesting operational/session state (not topology inventory alone).
-_SESSION_SUBSTRINGS = (
+# Keys and values that indicate real controller-observed session state rather than config-only trees.
+_SESSION_STATUS_KEYS = (
     "session-state",
     "session_state",
     "oper-state",
     "oper_state",
     "conn-state",
+    "connection-state",
     "tcp-state",
-    "session",
-    "neighbor",
-    "bgp-neighbor",
-    "peer",
-    "pcep-peer",
+    "sync-state",
+    "status",
+    "state",
+)
+_SESSION_POSITIVE_VALUES = (
+    "established",
+    "up",
     "connected",
+    "synced",
 )
 
 
-def _walk_session_hints(obj: Any, depth: int = 0) -> bool:
+def _value_has_positive_session_signal(value: Any, parent_key: str) -> bool:
+    if isinstance(value, str):
+        normalized = value.lower().replace("_", "-")
+        return any(token == normalized for token in _SESSION_POSITIVE_VALUES)
+    if isinstance(value, dict):
+        for key, nested in value.items():
+            lowered = str(key).lower().replace("_", "-")
+            if any(token in lowered for token in _SESSION_STATUS_KEYS):
+                if _value_has_positive_session_signal(nested, lowered):
+                    return True
+    if isinstance(value, list):
+        return any(_value_has_positive_session_signal(item, parent_key) for item in value[:200])
+    return False
+
+
+def _walk_session_hints(obj: Any, depth: int = 0, parent_key: str = "") -> bool:
     if depth > 40:
         return False
     if isinstance(obj, dict):
         for k, v in obj.items():
             lk = str(k).lower().replace("_", "-")
-            if any(s in lk for s in _SESSION_SUBSTRINGS):
-                return True
-            if _walk_session_hints(v, depth + 1):
+            if "peer-group" in lk:
+                continue
+            if any(token in lk for token in _SESSION_STATUS_KEYS):
+                if _value_has_positive_session_signal(v, lk):
+                    return True
+            if _walk_session_hints(v, depth + 1, lk):
                 return True
     elif isinstance(obj, list):
         for item in obj[:200]:
-            if _walk_session_hints(item, depth + 1):
+            if _walk_session_hints(item, depth + 1, parent_key):
                 return True
-    elif isinstance(obj, str):
-        ls = obj.lower()
-        if any(s.replace("-", "") in ls.replace("-", "") for s in ("up", "established", "connected")):
-            return True
+    elif parent_key and any(token in parent_key for token in _SESSION_STATUS_KEYS):
+        return _value_has_positive_session_signal(obj, parent_key)
     return False
 
 

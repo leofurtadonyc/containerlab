@@ -24,15 +24,17 @@ Some SR policy and topology interactions may benefit from a purpose-built SDN co
 - image: `platform-odl:0.1.0`, built from `opendaylight/opendaylight:0.18.2` with a small startup wrapper for bounded credential provisioning
 - ports: 8181 for northbound API access and 8101 for Karaf shell access
 - env vars: `ODL_ADMIN_PASSWORD` for the bounded RESTCONF admin credential used by the backend capability probe
-- mounts: none in the current topology skeleton; host config and data mounts can be added later with an explicit image-compatible layout and write-permissions strategy
+- mounts: `./odl/config/generated:/opt/platform-odl/config/generated:ro` so repo-generated southbound interface and route bootstrap stays deterministic
 - persistence: container-local controller state in the current topology skeleton; ODL is not the platform system of record
-- dependencies: none at platform layer; integrates with lab topologies over the management plane
+- dependencies: `../scripts/prepare-odl-southbound-bridge.sh` must prepare the external Linux bridge before the platform and Nokia labs are deployed; northbound/admin still uses the management plane
 
 ## Integration points
 - `app-api` queries ODL through bounded integration modules
 - ODL-derived records are treated as observed inputs, not the only source of truth
 - ODL does not call the backend; the backend pulls from ODL
 - `../scripts/verify-odl-auth.sh` provides a deploy-time regression check for the bounded RESTCONF credential path and the backend's ODL platform-health observation
+- `../app-api/scripts/generate-odl-southbound-artifacts.py` generates repo-owned southbound rollout artifacts from the lab topology YAML into `config/generated/`
+- `../scripts/verify-odl-southbound.sh` validates that controller evidence stays honest once repo-generated southbound targets are onboarded
 
 ## Current status
 Topology-level service presence exists and the backend has a **single** bounded live ODL read enrichment on the Platform Health path: `app-api` performs a small RESTCONF capability probe against the controller's YANG library and operations inventory, then exposes that result as **backend-owned** platform status data. **Operator interpretation:** this probe is **reachability and capability hints only**—it does **not** validate SR paths, replace collector-backed topology or policy APIs, or imply that the controller adjudicates product correctness.
@@ -40,6 +42,17 @@ Topology-level service presence exists and the backend has a **single** bounded 
 ODL still does not own topology, policy, or workflow truth.
 
 The platform builds ODL as a local image so the controller's bounded RESTCONF admin credential is rotated at startup to the topology-configured `ODL_ADMIN_PASSWORD` value. This keeps the backend ODL probe authenticated without falling back to the upstream image default credential.
+
+The repository now also carries a deterministic **southbound rollout generation** path for the Nokia `lab3-full` topology:
+
+- `config/southbound-rollout.yaml` externalizes the controller northbound/admin address, the controller southbound/protocol address, the bridge name, the controller ASN, and NETCONF credential env names
+- `config/generated/southbound-inventory.json`, `protocol-peer-specs.json`, and `inventory-summary.md` capture the topology-derived target inventory and PE / CSC-PE protocol peer assignments
+- `config/generated/configure-odl-southbound.sh` configures ODL `eth1` with the southbound IP and static routes back to each router system loopback
+- `config/generated/apply-netconf-onboarding.sh` mounts all topology-derived P / PE nodes into ODL `topology-netconf`
+
+Current honest runtime limit: the repo now codifies the explicit bridge-backed southbound design, but live BGP-LS and PCEP still remain bounded, non-live lanes until that design is deployed and the controller-side BGPCEP bootstrap is validated. The generated NETCONF onboarding still creates **controller-visible NETCONF node objects**, but those nodes sit in **`connecting`** until device-side NETCONF reachability is proven.
+
+For the current rollout workflow, see `../docs/odl-live-southbound-rollout-deep-dive.md`.
 
 ## Planned evolution
 - documented bounded role in the platform topology

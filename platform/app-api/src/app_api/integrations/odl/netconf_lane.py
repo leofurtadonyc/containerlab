@@ -17,6 +17,7 @@ from app_api.integrations.odl.network_topology_common import (
     extract_topology_list,
     http_error_body,
     infer_topology_scope_kind,
+    is_empty_netconf_topology_placeholder,
     is_restconf_unknown_element,
 )
 
@@ -157,12 +158,14 @@ def summarize_netconf_lane(
         )
 
     topologies = extract_topology_list(aggregate.payload)
-    netconf_topos = [
+    raw_netconf_topos = [
         t
         for t in topologies
         if infer_topology_scope_kind(t) == "netconf"
         or "netconf" in str(t.get("topology-id", "")).lower()
     ]
+    netconf_topos = [t for t in raw_netconf_topos if not is_empty_netconf_topology_placeholder(t)]
+    ignored_placeholder_count = len(raw_netconf_topos) - len(netconf_topos)
     node_count = 0
     link_count = 0
     tids: list[str] = []
@@ -179,6 +182,10 @@ def summarize_netconf_lane(
     notes.extend(sup_notes)
 
     if not netconf_topos and (supplemental_count is None or supplemental_count == 0):
+        if ignored_placeholder_count > 0:
+            notes.append(
+                f"Ignored {ignored_placeholder_count} empty NETCONF topology scope(s) with no mounted nodes.",
+            )
         notes.append(
             "No topology entries were classified as NETCONF-scoped from topology-types / topology-id heuristics.",
         )

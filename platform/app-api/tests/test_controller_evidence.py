@@ -9,6 +9,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from app_api.integrations.odl.bgp_ls_topology import BgplsTopologyFetchResult
+from app_api.integrations.odl import native_session_probes as native_probe_mod
 from app_api.integrations.odl.native_session_probes import NativeSessionProbeResult
 from app_api.integrations.odl.netconf_lane import NetconfLaneFetchResult
 from app_api.integrations.odl.network_topology_common import NetworkTopologyAggregateResult
@@ -226,6 +227,66 @@ def test_pcep_truth_uses_scope_only_when_only_topology_scope_is_visible() -> Non
     assert result.object_visibility_posture == "scope_only"
     assert result.evidence_strength == "scope_only"
     assert result.derivation_mode == "topology_partition_heuristic"
+
+
+def test_native_session_probe_ignores_openconfig_config_only_bgp_tree() -> None:
+    payload = {
+        "openconfig-network-instance:network-instances": {
+            "network-instance": [
+                {
+                    "protocols": {
+                        "protocol": [
+                            {
+                                "bgp-openconfig-extensions:bgp": {
+                                    "global": {
+                                        "state": {
+                                            "router-id": "192.0.2.2",
+                                            "as": 64496,
+                                            "total-prefixes": 0,
+                                            "total-paths": 0,
+                                        },
+                                        "config": {
+                                            "router-id": "192.0.2.2",
+                                            "as": 64496,
+                                        },
+                                    },
+                                    "peer-groups": {
+                                        "peer-group": [
+                                            {"peer-group-name": "internal-neighbor"}
+                                        ]
+                                    },
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    assert native_probe_mod._walk_session_hints(payload) is False
+
+
+def test_pcep_lane_ignores_config_only_nodes() -> None:
+    result = PcepLaneFetchResult(
+        posture="partial",
+        observed_source="odl_restconf_pcep",
+        topology_ids=("pcep-topology",),
+        node_count=0,
+        link_count=0,
+        fingerprint="pcep-fp",
+        notes=["Ignored 1 config-only PCEP node row(s) with session-config but no live peer/session state."],
+    )
+
+    derived = derive_pcep_truth(
+        aggregate=_aggregate(),
+        pcep=result,
+        native=NativeSessionProbeResult(path_used=None, payload=None, has_session_oper_hints=False, notes=[]),
+        protocol_exposure_posture="exposed",
+    )
+
+    assert derived.object_visibility_posture == "scope_only"
+    assert derived.evidence_strength == "scope_only"
 
 
 def test_netconf_truth_prefers_native_session_hints() -> None:

@@ -2,6 +2,10 @@ FROM opendaylight/opendaylight:0.18.2@sha256:698d903f45ce089e2312b0ee90f4cf6f4fc
 
 USER root
 
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends iproute2 \
+	&& rm -rf /var/lib/apt/lists/*
+
 # Bake platform Karaf features into featuresBoot so they install on every Karaf start (reliable across redeploy).
 # Runtime `install-karaf-features.sh` is optional (see ODL_RUNTIME_KARAF_FEATURES_INSTALL) and exists for debugging.
 COPY karaf-features.list /tmp/karaf-features.list

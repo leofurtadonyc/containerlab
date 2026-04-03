@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<network-topology xmlns="urn:TBD:params:xml:ns:yang:network-topology">
+    <topology>
+        <topology-id>lab-linkstate-topology</topology-id>
+        <topology-types>
+            <bgp-linkstate-topology xmlns="urn:opendaylight:params:xml:ns:yang:odl-bgp-topology-types"/>
+        </topology-types>
+        <rib-id xmlns="urn:opendaylight:params:xml:ns:yang:odl-bgp-topology-config">lab-bgp-rib</rib-id>
+    </topology>
+</network-topology>

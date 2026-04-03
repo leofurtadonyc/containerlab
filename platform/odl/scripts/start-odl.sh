@@ -7,6 +7,8 @@ odl_user=${ODL_USERNAME:-admin}
 default_password=${ODL_BOOTSTRAP_PASSWORD:-admin}
 target_password=${ODL_ADMIN_PASSWORD:-admin}
 user_id="${odl_user}@sdn"
+generated_config_dir=${ODL_GENERATED_CONFIG_DIR:-/opt/platform-odl/config/generated}
+bgpcep_seed_dir=${ODL_BGPCEP_SEED_DIR:-/opt/opendaylight/etc/opendaylight/bgpcep}
 
 auth_code() {
   curl -sS -o /dev/null -w "%{http_code}" \
@@ -73,12 +75,50 @@ wait_for_auth() {
   exit 1
 }
 
+apply_southbound_runtime_config() {
+  local config_script="${generated_config_dir}/configure-odl-southbound.sh"
+
+  if [ ! -x "${config_script}" ]; then
+    return 0
+  fi
+
+  echo "Applying repo-generated ODL southbound interface and route bootstrap."
+  "${config_script}"
+}
+
+apply_bgp_peer_acceptor_runtime_config() {
+  local config_script="${generated_config_dir}/configure-odl-bgp-peer-acceptor.sh"
+
+  if [ ! -x "${config_script}" ]; then
+    return 0
+  fi
+
+  echo "Applying repo-generated ODL BGP peer-acceptor bootstrap."
+  ODL_URL="${odl_url}" ODL_USERNAME="${odl_user}" ODL_PASSWORD="${target_password}" "${config_script}"
+}
+
+stage_generated_bgpcep_seed_config() {
+  local seed_file
+
+  mkdir -p "${bgpcep_seed_dir}"
+
+  for seed_file in protocols-config.xml network-topology-bgp-config.xml network-topology-pcep-config.xml; do
+    if [ ! -f "${generated_config_dir}/${seed_file}" ]; then
+      continue
+    fi
+    echo "Staging repo-generated ${seed_file} into ${bgpcep_seed_dir}."
+    cp "${generated_config_dir}/${seed_file}" "${bgpcep_seed_dir}/${seed_file}"
+  done
+}
+
+stage_generated_bgpcep_seed_config
+apply_southbound_runtime_config
+
 "${odl_dir}/start_docker.sh" &
 odl_pid=$!
 
-if [ "${target_password}" != "${default_password}" ]; then
-  wait_for_auth
-fi
+wait_for_auth
+apply_bgp_peer_acceptor_runtime_config
 
 # Features are normally installed via featuresBoot (see Dockerfile + append-features-boot.sh).
 # Optional: run `feature:install` over the client after boot (debug / recovery); uses long client idle timeout.

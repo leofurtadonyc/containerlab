@@ -11,7 +11,11 @@ from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 from app_api.integrations.odl.client import OdlClient, get_odl_client
-from app_api.integrations.odl.network_topology_common import NetworkTopologyAggregateResult
+from app_api.integrations.odl.network_topology_common import (
+    NetworkTopologyAggregateResult,
+    infer_topology_scope_kind,
+    is_example_bgp_topology,
+)
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 
 
@@ -83,25 +87,6 @@ def _topology_ids_from_parsed(nodes: list[TopologyNode], links: list[TopologyLin
     return s
 
 
-def _infer_scope_kind(topo: dict[str, Any]) -> str:
-    tt = topo.get("topology-types")
-    tid = str(topo.get("topology-id", "")).lower()
-    keys = ""
-    if isinstance(tt, dict):
-        keys = " ".join(tt.keys()).lower()
-    if "bgp-linkstate" in keys or "linkstate" in keys:
-        return "bgp_linkstate"
-    if "bgp-ipv4" in keys:
-        return "bgp_ipv4"
-    if "bgp-ipv6" in keys:
-        return "bgp_ipv6"
-    if "pcep" in keys or "topology-pcep" in keys:
-        return "pcep"
-    if "netconf" in tid:
-        return "netconf"
-    return "other"
-
-
 def _scope_attribute_strings(topo: dict[str, Any]) -> dict[str, str]:
     tid = str(topo.get("topology-id", ""))
     tt = topo.get("topology-types")
@@ -115,11 +100,13 @@ def _scope_attribute_strings(topo: dict[str, Any]) -> dict[str, str]:
             break
     out: dict[str, str] = {
         "topology_id": tid,
-        "controller_topology_kind": _infer_scope_kind(topo),
+        "controller_topology_kind": infer_topology_scope_kind(topo),
         "topology_types_keys": type_keys,
         "export": "odl_network_topology_scope",
         "controller_topology_scope": "true",
     }
+    if is_example_bgp_topology(topo):
+        out["placeholder_example"] = "true"
     if rib:
         out["rib_id"] = rib
     sp = topo.get("server-provided")
@@ -129,11 +116,10 @@ def _scope_attribute_strings(topo: dict[str, Any]) -> dict[str, str]:
 
 
 def _is_bgp_linkstate_topology(topo: dict[str, Any]) -> bool:
-    tt = topo.get("topology-types")
-    if not isinstance(tt, dict):
-        return False
-    keys = " ".join(tt.keys()).lower()
-    return "bgp-linkstate" in keys or "linkstate" in keys
+    if infer_topology_scope_kind(topo) == "bgp_linkstate":
+        return True
+    topology_id = str(topo.get("topology-id", "")).lower()
+    return "linkstate" in topology_id
 
 
 def _normalize_subresource_payload(data: dict[str, Any]) -> dict[str, Any]:
@@ -210,11 +196,17 @@ def _append_scope_markers(
 ) -> tuple[list[TopologyNode], list[str]]:
     have = _topology_ids_from_parsed(nodes, links)
     added = 0
+    ignored_placeholders = 0
     for topo in topologies:
         tid = topo.get("topology-id")
         if not isinstance(tid, str) or not tid:
             continue
         if tid in have:
+            continue
+        if not _is_bgp_linkstate_topology(topo):
+            continue
+        if is_example_bgp_topology(topo):
+            ignored_placeholders += 1
             continue
         n_raw = topo.get("node")
         l_raw = topo.get("link")
@@ -237,8 +229,12 @@ def _append_scope_markers(
         added += 1
     if added:
         notes.append(
-            f"Added {added} controller topology scope marker(s) for ODL topologies with no "
-            "extractable node/link rows in this RESTCONF aggregate (protocol presence only)."
+            f"Added {added} BGP-LS topology scope marker(s) for live link-state topologies with no "
+            "extractable node/link rows in this RESTCONF aggregate."
+        )
+    if ignored_placeholders:
+        notes.append(
+            f"Ignored {ignored_placeholders} placeholder example BGP/BGP-LS topology scope(s)."
         )
     return nodes, notes
 
@@ -281,8 +277,14 @@ def _parse_network_topology_payload(payload: dict[str, Any]) -> tuple[list[Topol
         return nodes, links, ["Unexpected network-topology shape; no topology list."]
 
     node_ids_seen: set[str] = set()
+    ignored_placeholders = 0
     for topo in topologies:
         if not isinstance(topo, dict):
+            continue
+        if not _is_bgp_linkstate_topology(topo):
+            continue
+        if is_example_bgp_topology(topo):
+            ignored_placeholders += 1
             continue
         tname = str(topo.get("topology-id", "default"))
         for n in topo.get("node", []) or []:
@@ -340,11 +342,15 @@ def _parse_network_topology_payload(payload: dict[str, Any]) -> tuple[list[Topol
 
     if nodes or links:
         notes.append(
-            f"Parsed {len(nodes)} controller-exported nodes and {len(links)} links from bounded network-topology JSON."
+            f"Parsed {len(nodes)} BGP-LS controller-exported nodes and {len(links)} links from bounded network-topology JSON."
         )
     else:
         notes.append(
-            "Controller returned network-topology JSON but no node/link elements were extracted by the bounded parser."
+            "Controller returned network-topology JSON but no live BGP-LS node/link elements were extracted by the bounded parser."
+        )
+    if ignored_placeholders:
+        notes.append(
+            f"Ignored {ignored_placeholders} placeholder example BGP/BGP-LS topology object(s)."
         )
     return nodes, links, notes
 

@@ -18,7 +18,8 @@ def test_parse_network_topology_payload_ietf_rfc8345_shape() -> None:
         "ietf-network-topology:network-topologies": {
             "topology": [
                 {
-                    "topology-id": "topo1",
+                    "topology-id": "lab-linkstate-topology",
+                    "odl-bgp-topology-config:rib-id": "lab-bgp-rib",
                     "node": [{"node-id": "n1"}, {"node-id": "n2"}],
                     "link": [
                         {
@@ -43,7 +44,8 @@ def test_parse_network_topology_payload_legacy_network_topology_key() -> None:
         "network-topology:network-topology": {
             "topology": [
                 {
-                    "topology-id": "t",
+                    "topology-id": "lab-linkstate-topology",
+                    "odl-bgp-topology-config:rib-id": "lab-bgp-rib",
                     "node": [{"node-id": "a"}],
                     "link": [],
                 }
@@ -107,7 +109,7 @@ def test_fetch_bgpls_topology_falls_back_when_ietf_returns_unknown_element() -> 
     assert any("legacy network-topology" in n for n in res.snapshot.notes)
 
 
-def test_lab_like_aggregate_yields_pcep_node_and_scope_markers() -> None:
+def test_lab_like_aggregate_ignores_placeholder_topologies_for_bgp_ls_lane() -> None:
     payload = {
         "network-topology:network-topology": {
             "topology": [
@@ -150,16 +152,33 @@ def test_lab_like_aggregate_yields_pcep_node_and_scope_markers() -> None:
         }
     }
     nodes, links, notes = mod._parse_network_topology_payload(payload)
-    assert len(nodes) == 1
-    assert nodes[0].node_id == "ctrl:43.43.43.43"
+    assert nodes == []
+    assert links == []
+    assert any("Ignored" in note for note in notes)
     topologies = mod._extract_topology_list(payload)
     nodes, notes = mod._append_scope_markers(topologies, nodes, links, notes)
-    assert len(nodes) == 5
-    assert sum(1 for n in nodes if n.role == "controller_topology_scope") == 4
-    scope_kinds = {n.attributes.get("controller_topology_kind") for n in nodes if n.role == "controller_topology_scope"}
-    assert "bgp_linkstate" in scope_kinds
-    assert "netconf" in scope_kinds
-    assert any("scope marker" in n for n in notes)
+    assert nodes == []
+    assert any("placeholder example BGP/BGP-LS topology scope" in note for note in notes)
+
+
+def test_parse_network_topology_payload_ignores_netconf_topology_rows() -> None:
+    payload = {
+        "network-topology:network-topology": {
+            "topology": [
+                {
+                    "topology-id": "topology-netconf",
+                    "node": [{"node-id": "PE1"}],
+                    "link": [],
+                }
+            ]
+        }
+    }
+
+    nodes, links, notes = mod._parse_network_topology_payload(payload)
+
+    assert nodes == []
+    assert links == []
+    assert any("no live BGP-LS node/link elements" in note for note in notes)
 
 
 def test_topology_truth_scope_nodes_no_missing_device_disagreement(
