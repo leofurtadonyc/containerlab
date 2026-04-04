@@ -241,16 +241,22 @@ def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
         node_participation_posture="fully_linked",
         paired_link_count=1,
         single_sided_link_count=0,
+        lldp_observation_count=2,
+        lldp_correlated_link_count=1,
+        lldp_single_sided_link_count=0,
+        lldp_bidirectional_link_count=1,
+        lldp_mismatch_link_count=0,
         linked_node_count=2,
         isolated_node_count=0,
         topology_id="platform-observed-topology",
         topology_name="Platform Observed Topology",
-        sync_source="gnmi_collector_topology_interface_inference",
+        sync_source="gnmi_collector_topology_interface_and_lldp",
         sync_status="ok",
         completeness="partial",
         observed_at="2026-03-09T19:25:08.500000+00:00",
         notes=[
             "Topology links are inferred from live router interface names and current interface operational state.",
+            "OpenConfig LLDP collection currently contributes 2 neighbor observations across 1 correlated links, including 1 bidirectional adjacencies and 0 mismatches.",
             "The topology slice remains intentionally partial; bounded controller enrichment now exists as optional backend-owned context, but the normalized gNMI slice remains the primary topology baseline until deeper evidence is added.",
         ],
         nodes=[
@@ -294,6 +300,13 @@ def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
                 source="gnmi",
                 endpoint_pairing_state="paired",
                 endpoint_evidence_count=2,
+                physical_adjacency_posture="bidirectional_lldp",
+                lldp_observation_count=2,
+                lldp_bidirectional=True,
+                lldp_local_interfaces=["to-P1"],
+                lldp_remote_systems=["P1"],
+                lldp_remote_ports=["to-PE1"],
+                lldp_correlation_notes=["Bidirectional LLDP observations confirm PE1 <-> P1 physical adjacency."],
                 attributes={
                     "knowledge_state": "partial",
                     "inference_method": "interface_name_and_oper_state",
@@ -326,16 +339,22 @@ def _build_live_mixed_topology_snapshot() -> CollectorTopologySnapshot:
         node_participation_posture="fully_linked",
         paired_link_count=1,
         single_sided_link_count=1,
+        lldp_observation_count=1,
+        lldp_correlated_link_count=1,
+        lldp_single_sided_link_count=1,
+        lldp_bidirectional_link_count=0,
+        lldp_mismatch_link_count=0,
         linked_node_count=3,
         isolated_node_count=0,
         topology_id="platform-observed-topology",
         topology_name="Platform Observed Topology",
-        sync_source="gnmi_collector_topology_interface_inference",
+        sync_source="gnmi_collector_topology_interface_and_lldp",
         sync_status="degraded",
         completeness="partial",
         observed_at="2026-03-09T19:25:11.500000+00:00",
         notes=[
             "Topology links are inferred from live router interface names and current interface operational state.",
+            "OpenConfig LLDP collection currently contributes 1 neighbor observations across 1 correlated links, including 0 bidirectional adjacencies and 0 mismatches.",
             "Collector endpoint-pairing posture is partially_paired, with 1 paired inferred links and 1 single-sided inferred links.",
         ],
         nodes=[
@@ -425,7 +444,7 @@ def _build_live_isolated_topology_snapshot() -> CollectorTopologySnapshot:
         isolated_node_count=1,
         topology_id="platform-observed-topology",
         topology_name="Platform Observed Topology",
-        sync_source="gnmi_collector_topology_interface_inference",
+        sync_source="gnmi_collector_topology_interface_and_lldp",
         sync_status="ok",
         completeness="partial",
         observed_at="2026-03-09T19:25:09.500000+00:00",
@@ -506,7 +525,7 @@ def _build_live_fully_isolated_topology_snapshot() -> CollectorTopologySnapshot:
         isolated_node_count=3,
         topology_id="platform-observed-topology",
         topology_name="Platform Observed Topology",
-        sync_source="gnmi_collector_topology_interface_inference",
+        sync_source="gnmi_collector_topology_interface_and_lldp",
         sync_status="ok",
         completeness="partial",
         observed_at="2026-03-09T19:25:09.500000+00:00",
@@ -1579,7 +1598,7 @@ def _build_persisted_sync_runs(*, limit: int = 50, **kwargs: object) -> list[Per
                 persisted_at=datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
                 observed_at=datetime.fromisoformat("2026-03-10T01:00:00+00:00"),
                 topology_name="Platform Observed Topology",
-                sync_source="gnmi_collector_topology_interface_inference",
+                sync_source="gnmi_collector_topology_interface_and_lldp",
                 sync_status="degraded",
                 completeness="partial",
                 node_count=2,
@@ -1713,7 +1732,7 @@ def _build_topology_sync_run_without_previous_comparison(
                 persisted_at=datetime.fromisoformat("2026-03-10T02:00:02+00:00"),
                 observed_at=datetime.fromisoformat("2026-03-10T02:00:00+00:00"),
                 topology_name="Platform Observed Topology",
-                sync_source="gnmi_collector_topology_interface_inference",
+                sync_source="gnmi_collector_topology_interface_and_lldp",
                 sync_status="degraded",
                 completeness="partial",
                 node_count=1,
@@ -2752,7 +2771,7 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert "All observed normalized nodes are currently represented" in payload["coverage_summary"]["summary"]
     assert payload["topology"]["topology_id"] == "platform-observed-topology"
     assert payload["topology"]["topology_name"] == "Platform Observed Topology"
-    assert payload["topology"]["sync_source"] == "gnmi_collector_topology_interface_inference"
+    assert payload["topology"]["sync_source"] == "gnmi_collector_topology_interface_and_lldp"
     assert payload["topology"]["sync_status"] == "ok"
     assert payload["topology"]["completeness"] == "partial"
     assert len(payload["topology"]["nodes"]) == 2
@@ -2770,10 +2789,10 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert payload["topology"]["links"][0]["endpoint_pairing_state"] == "paired"
     assert payload["topology"]["links"][0]["endpoint_evidence_count"] == 2
     assert payload["topology"]["links"][0]["attributes"]["knowledge_state"] == "partial"
-    assert "bounded interface-based link inference" in payload["summary"]
+    assert "device-native interface and LLDP evidence" in payload["summary"]
     assert "paired endpoint evidence" in payload["summary"]
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
-    assert "Topology links are inferred from live router interface names" in payload["topology"]["notes"][0]
+    assert any("OpenConfig LLDP" in note for note in payload["topology"]["notes"])
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 

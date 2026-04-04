@@ -115,7 +115,7 @@ Fourth, collector tests already pin the current topology shape in
 `platform/gnmi-collector/tests/test_collector.py`, including:
 
 - `link_count == 17`
-- `sync_source == "gnmi_collector_topology_interface_inference"`
+- `sync_source == "gnmi_collector_topology_interface_and_lldp"`
 - `completeness == "partial"`
 - `platform_gnmi_collector_topology_single_sided_links`
 

@@ -827,7 +827,11 @@ describe("ApiClient week 28 bounded paths", () => {
             merged_node_count: 0,
             merged_link_count: 0,
             inferred_only_link_count: 0,
-            protocol_confirmed_link_count: 0,
+            physical_confirmed_link_count: 0,
+            multi_source_confirmed_link_count: 0,
+            lldp_single_sided_link_count: 0,
+            lldp_bidirectional_link_count: 0,
+            lldp_mismatch_link_count: 0,
             controller_only_node_count: 0,
             device_only_node_count: 0,
             conflicting_object_count: 0,
@@ -850,10 +854,10 @@ describe("ApiClient week 28 bounded paths", () => {
     await client.getTopologyTruth();
     let url = fetchMock.mock.calls[0][0] as string;
     expect(url).toBe("http://api/api/v1/topology/truth");
-    await client.getTopologyTruth({ truthPosture: "protocol_confirmed" });
+    await client.getTopologyTruth({ truthPosture: "physical_confirmed" });
     url = fetchMock.mock.calls[1][0] as string;
     expect(url).toContain("/api/v1/topology/truth?");
-    expect(url).toContain("truth_posture=protocol_confirmed");
+    expect(url).toContain("truth_posture=physical_confirmed");
   });
 
   it("getControllerEvidence uses /api/v1/controller/evidence", async () => {

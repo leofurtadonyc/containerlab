@@ -212,6 +212,20 @@ export interface TopologyNodeRecord {
 }
 
 export interface TopologyLinkRecord {
+  physical_adjacency: {
+    posture:
+      | "not_observed"
+      | "single_sided_lldp"
+      | "bidirectional_lldp"
+      | "lldp_mismatch"
+      | "suppressed_or_unknown";
+    lldp_observation_count: number;
+    lldp_bidirectional: boolean;
+    local_interfaces: string[];
+    remote_systems: string[];
+    remote_ports: string[];
+    correlation_notes: string[];
+  };
   link_id: string;
   source_node_id: string;
   target_node_id: string;
@@ -221,6 +235,12 @@ export interface TopologyLinkRecord {
   source: string;
   endpoint_pairing_state: "paired" | "single_sided" | "unknown";
   endpoint_evidence_count: number | null;
+  physical_adjacency_posture:
+    | "not_observed"
+    | "single_sided_lldp"
+    | "bidirectional_lldp"
+    | "lldp_mismatch"
+    | "suppressed_or_unknown";
   attributes: Record<string, string>;
 }
 
@@ -283,6 +303,7 @@ export interface TopologyResponse extends ApiResponseMetadata {
 
 export type TopologyTruthSourceType =
   | "device_gnmi"
+  | "lldp_gnmi"
   | "controller_bgpls"
   | "persisted_snapshot"
   | "merged";
@@ -290,9 +311,9 @@ export type TopologyTruthSourceType =
 export type TopologyTruthPosture =
   | "inferred_only"
   | "device_observed"
-  | "protocol_confirmed"
+  | "physical_confirmed"
   | "controller_correlated"
-  | "merged_multi_source"
+  | "multi_source_confirmed"
   | "partial"
   | "conflicting"
   | "stale"
@@ -300,6 +321,8 @@ export type TopologyTruthPosture =
 
 export type TopologyTruthDisagreementKind =
   | "device_controller_mismatch"
+  | "lldp_inference_mismatch"
+  | "lldp_controller_mismatch"
   | "missing_controller_evidence"
   | "missing_device_evidence"
   | "stale_controller_view"
@@ -354,6 +377,20 @@ export interface TopologyTruthNodeRecord {
 }
 
 export interface TopologyTruthLinkRecord {
+  physical_adjacency: {
+    posture:
+      | "not_observed"
+      | "single_sided_lldp"
+      | "bidirectional_lldp"
+      | "lldp_mismatch"
+      | "suppressed_or_unknown";
+    lldp_observation_count: number;
+    lldp_bidirectional: boolean;
+    local_interfaces: string[];
+    remote_systems: string[];
+    remote_ports: string[];
+    correlation_notes: string[];
+  };
   link_id: string;
   source_node_id: string;
   target_node_id: string;
@@ -362,6 +399,12 @@ export interface TopologyTruthLinkRecord {
   provenance: TopologyTruthProvenance;
   endpoint_pairing_state: string;
   endpoint_evidence_count: number | null;
+  physical_adjacency_posture:
+    | "not_observed"
+    | "single_sided_lldp"
+    | "bidirectional_lldp"
+    | "lldp_mismatch"
+    | "suppressed_or_unknown";
   disagreement: TopologyTruthDisagreementRecord | null;
   attributes: Record<string, string>;
 }
@@ -384,7 +427,11 @@ export interface TopologyTruthCounts {
   merged_node_count: number;
   merged_link_count: number;
   inferred_only_link_count: number;
-  protocol_confirmed_link_count: number;
+  physical_confirmed_link_count: number;
+  multi_source_confirmed_link_count: number;
+  lldp_single_sided_link_count: number;
+  lldp_bidirectional_link_count: number;
+  lldp_mismatch_link_count: number;
   controller_only_node_count: number;
   device_only_node_count: number;
   conflicting_object_count: number;

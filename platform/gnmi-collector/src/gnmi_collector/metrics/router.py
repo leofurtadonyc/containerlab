@@ -215,6 +215,51 @@ def get_metrics() -> Response:
                 f"{topology_summary.single_sided_link_count if topology_summary else 0}"
             ),
             (
+                "# HELP platform_gnmi_collector_topology_lldp_observations "
+                "Collected LLDP neighbor rows across all topology targets."
+            ),
+            "# TYPE platform_gnmi_collector_topology_lldp_observations gauge",
+            (
+                "platform_gnmi_collector_topology_lldp_observations "
+                f"{topology_summary.lldp_observation_count if topology_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_topology_lldp_correlated_links "
+                "Normalized links with at least one correlated LLDP observation."
+            ),
+            "# TYPE platform_gnmi_collector_topology_lldp_correlated_links gauge",
+            (
+                "platform_gnmi_collector_topology_lldp_correlated_links "
+                f"{topology_summary.lldp_correlated_link_count if topology_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_topology_lldp_single_sided_links "
+                "Links backed by one-sided LLDP observations."
+            ),
+            "# TYPE platform_gnmi_collector_topology_lldp_single_sided_links gauge",
+            (
+                "platform_gnmi_collector_topology_lldp_single_sided_links "
+                f"{topology_summary.lldp_single_sided_link_count if topology_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_topology_lldp_bidirectional_links "
+                "Links backed by bidirectional LLDP observations."
+            ),
+            "# TYPE platform_gnmi_collector_topology_lldp_bidirectional_links gauge",
+            (
+                "platform_gnmi_collector_topology_lldp_bidirectional_links "
+                f"{topology_summary.lldp_bidirectional_link_count if topology_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_topology_lldp_mismatch_links "
+                "Links where LLDP contradicts the interface-derived peer mapping."
+            ),
+            "# TYPE platform_gnmi_collector_topology_lldp_mismatch_links gauge",
+            (
+                "platform_gnmi_collector_topology_lldp_mismatch_links "
+                f"{topology_summary.lldp_mismatch_link_count if topology_summary else 0}"
+            ),
+            (
                 "# HELP platform_gnmi_collector_topology_linked_nodes "
                 "Observed topology nodes represented by at least one emitted inferred link."
             ),

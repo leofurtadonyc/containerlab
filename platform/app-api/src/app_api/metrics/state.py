@@ -54,6 +54,11 @@ class CachedTopologyMetrics:
     node_participation_posture: str = "unknown"
     paired_link_count: int = 0
     single_sided_link_count: int = 0
+    lldp_observation_count: int = 0
+    lldp_correlated_link_count: int = 0
+    lldp_single_sided_link_count: int = 0
+    lldp_bidirectional_link_count: int = 0
+    lldp_mismatch_link_count: int = 0
     linked_node_count: int = 0
     isolated_node_count: int = 0
     data_status: str = "unknown"
@@ -136,7 +141,11 @@ class CachedTopologyTruthMetrics:
     merged_node_count: int = 0
     merged_link_count: int = 0
     inferred_only_links: int = 0
-    protocol_confirmed_links: int = 0
+    physical_confirmed_links: int = 0
+    multi_source_confirmed_links: int = 0
+    lldp_single_sided_links: int = 0
+    lldp_bidirectional_links: int = 0
+    lldp_mismatch_links: int = 0
     conflicts: int = 0
 
 
@@ -257,7 +266,11 @@ def record_topology_truth_observation(
     merged_node_count: int,
     merged_link_count: int,
     inferred_only_links: int,
-    protocol_confirmed_links: int,
+    physical_confirmed_links: int,
+    multi_source_confirmed_links: int,
+    lldp_single_sided_links: int,
+    lldp_bidirectional_links: int,
+    lldp_mismatch_links: int,
     conflicts: int,
     duration_seconds: float,
 ) -> None:
@@ -273,7 +286,11 @@ def record_topology_truth_observation(
             merged_node_count=merged_node_count,
             merged_link_count=merged_link_count,
             inferred_only_links=inferred_only_links,
-            protocol_confirmed_links=protocol_confirmed_links,
+            physical_confirmed_links=physical_confirmed_links,
+            multi_source_confirmed_links=multi_source_confirmed_links,
+            lldp_single_sided_links=lldp_single_sided_links,
+            lldp_bidirectional_links=lldp_bidirectional_links,
+            lldp_mismatch_links=lldp_mismatch_links,
             conflicts=conflicts,
         )
 
@@ -377,6 +394,11 @@ def cache_topology_metrics(
     node_participation_posture: str,
     paired_link_count: int,
     single_sided_link_count: int,
+    lldp_observation_count: int,
+    lldp_correlated_link_count: int,
+    lldp_single_sided_link_count: int,
+    lldp_bidirectional_link_count: int,
+    lldp_mismatch_link_count: int,
     linked_node_count: int,
     isolated_node_count: int,
     data_status: str,
@@ -403,6 +425,11 @@ def cache_topology_metrics(
             node_participation_posture=node_participation_posture,
             paired_link_count=paired_link_count,
             single_sided_link_count=single_sided_link_count,
+            lldp_observation_count=lldp_observation_count,
+            lldp_correlated_link_count=lldp_correlated_link_count,
+            lldp_single_sided_link_count=lldp_single_sided_link_count,
+            lldp_bidirectional_link_count=lldp_bidirectional_link_count,
+            lldp_mismatch_link_count=lldp_mismatch_link_count,
             linked_node_count=linked_node_count,
             isolated_node_count=isolated_node_count,
             data_status=data_status,
@@ -692,6 +719,51 @@ def render_prometheus_metrics(
                 (
                     "platform_app_api_topology_single_sided_links "
                     f"{topology_metrics['single_sided_link_count']}"
+                ),
+                (
+                    "# HELP platform_app_api_topology_lldp_observations "
+                    "Current backend-owned count of LLDP neighbor observations attached to the topology snapshot."
+                ),
+                "# TYPE platform_app_api_topology_lldp_observations gauge",
+                (
+                    "platform_app_api_topology_lldp_observations "
+                    f"{topology_metrics.get('lldp_observation_count', 0)}"
+                ),
+                (
+                    "# HELP platform_app_api_topology_lldp_correlated_links "
+                    "Current backend-owned count of topology links with correlated LLDP evidence."
+                ),
+                "# TYPE platform_app_api_topology_lldp_correlated_links gauge",
+                (
+                    "platform_app_api_topology_lldp_correlated_links "
+                    f"{topology_metrics.get('lldp_correlated_link_count', 0)}"
+                ),
+                (
+                    "# HELP platform_app_api_topology_lldp_single_sided_links "
+                    "Current backend-owned count of topology links with one-sided LLDP evidence."
+                ),
+                "# TYPE platform_app_api_topology_lldp_single_sided_links gauge",
+                (
+                    "platform_app_api_topology_lldp_single_sided_links "
+                    f"{topology_metrics.get('lldp_single_sided_link_count', 0)}"
+                ),
+                (
+                    "# HELP platform_app_api_topology_lldp_bidirectional_links "
+                    "Current backend-owned count of topology links with bidirectional LLDP evidence."
+                ),
+                "# TYPE platform_app_api_topology_lldp_bidirectional_links gauge",
+                (
+                    "platform_app_api_topology_lldp_bidirectional_links "
+                    f"{topology_metrics.get('lldp_bidirectional_link_count', 0)}"
+                ),
+                (
+                    "# HELP platform_app_api_topology_lldp_mismatch_links "
+                    "Current backend-owned count of topology links where LLDP contradicts the interface-derived peer mapping."
+                ),
+                "# TYPE platform_app_api_topology_lldp_mismatch_links gauge",
+                (
+                    "platform_app_api_topology_lldp_mismatch_links "
+                    f"{topology_metrics.get('lldp_mismatch_link_count', 0)}"
                 ),
                 (
                     "# HELP platform_app_api_topology_linked_nodes "
@@ -1471,9 +1543,21 @@ def render_prometheus_metrics(
             "# HELP platform_app_api_topology_truth_last_inferred_only_links Latest inferred-only link count.",
             "# TYPE platform_app_api_topology_truth_last_inferred_only_links gauge",
             f"platform_app_api_topology_truth_last_inferred_only_links {tt_cached.inferred_only_links}",
-            "# HELP platform_app_api_topology_truth_last_protocol_confirmed_links Latest protocol-confirmed link count.",
-            "# TYPE platform_app_api_topology_truth_last_protocol_confirmed_links gauge",
-            f"platform_app_api_topology_truth_last_protocol_confirmed_links {tt_cached.protocol_confirmed_links}",
+            "# HELP platform_app_api_topology_truth_last_physical_confirmed_links Latest physically confirmed link count.",
+            "# TYPE platform_app_api_topology_truth_last_physical_confirmed_links gauge",
+            f"platform_app_api_topology_truth_last_physical_confirmed_links {tt_cached.physical_confirmed_links}",
+            "# HELP platform_app_api_topology_truth_last_multi_source_confirmed_links Latest multi-source confirmed link count.",
+            "# TYPE platform_app_api_topology_truth_last_multi_source_confirmed_links gauge",
+            f"platform_app_api_topology_truth_last_multi_source_confirmed_links {tt_cached.multi_source_confirmed_links}",
+            "# HELP platform_app_api_topology_truth_last_lldp_single_sided_links Latest one-sided LLDP-backed link count.",
+            "# TYPE platform_app_api_topology_truth_last_lldp_single_sided_links gauge",
+            f"platform_app_api_topology_truth_last_lldp_single_sided_links {tt_cached.lldp_single_sided_links}",
+            "# HELP platform_app_api_topology_truth_last_lldp_bidirectional_links Latest bidirectional LLDP-backed link count.",
+            "# TYPE platform_app_api_topology_truth_last_lldp_bidirectional_links gauge",
+            f"platform_app_api_topology_truth_last_lldp_bidirectional_links {tt_cached.lldp_bidirectional_links}",
+            "# HELP platform_app_api_topology_truth_last_lldp_mismatch_links Latest LLDP mismatch-marked link count.",
+            "# TYPE platform_app_api_topology_truth_last_lldp_mismatch_links gauge",
+            f"platform_app_api_topology_truth_last_lldp_mismatch_links {tt_cached.lldp_mismatch_links}",
             "# HELP platform_app_api_topology_truth_last_conflicts Latest disagreement/conflict count.",
             "# TYPE platform_app_api_topology_truth_last_conflicts gauge",
             f"platform_app_api_topology_truth_last_conflicts {tt_cached.conflicts}",

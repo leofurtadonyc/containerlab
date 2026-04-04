@@ -13,6 +13,7 @@ TOPOLOGY_TRUTH_V1_CONTRACT_ID = "topology_truth_v1"
 
 TopologySourceType = Literal[
     "device_gnmi",
+    "lldp_gnmi",
     "controller_bgpls",
     "persisted_snapshot",
     "merged",
@@ -21,17 +22,27 @@ TopologySourceType = Literal[
 TopologyTruthPosture = Literal[
     "inferred_only",
     "device_observed",
-    "protocol_confirmed",
+    "physical_confirmed",
     "controller_correlated",
-    "merged_multi_source",
+    "multi_source_confirmed",
     "partial",
     "conflicting",
     "stale",
     "unknown",
 ]
 
+TopologyPhysicalAdjacencyPosture = Literal[
+    "not_observed",
+    "single_sided_lldp",
+    "bidirectional_lldp",
+    "lldp_mismatch",
+    "suppressed_or_unknown",
+]
+
 TopologyDisagreementKind = Literal[
     "device_controller_mismatch",
+    "lldp_inference_mismatch",
+    "lldp_controller_mismatch",
     "missing_controller_evidence",
     "missing_device_evidence",
     "stale_controller_view",
@@ -64,6 +75,18 @@ class TopologyTruthProvenance(BaseModel):
     freshness_posture: Literal["current", "stale", "unknown"] = "unknown"
     merged_or_correlated: bool = False
     missing_sources: list[TopologySourceType] = Field(default_factory=list)
+
+
+class TopologyPhysicalAdjacencyEvidence(BaseModel):
+    """Structured LLDP physical-adjacency evidence for one merged link."""
+
+    posture: TopologyPhysicalAdjacencyPosture = "suppressed_or_unknown"
+    lldp_observation_count: int = 0
+    lldp_bidirectional: bool = False
+    local_interfaces: list[str] = Field(default_factory=list)
+    remote_systems: list[str] = Field(default_factory=list)
+    remote_ports: list[str] = Field(default_factory=list)
+    correlation_notes: list[str] = Field(default_factory=list)
 
 
 class TopologyDisagreementRecord(BaseModel):
@@ -101,6 +124,10 @@ class TopologyTruthLinkRecord(BaseModel):
     provenance: TopologyTruthProvenance
     endpoint_pairing_state: str = "unknown"
     endpoint_evidence_count: int | None = None
+    physical_adjacency_posture: TopologyPhysicalAdjacencyPosture = "suppressed_or_unknown"
+    physical_adjacency: TopologyPhysicalAdjacencyEvidence = Field(
+        default_factory=TopologyPhysicalAdjacencyEvidence
+    )
     disagreement: TopologyDisagreementRecord | None = None
     attributes: dict[str, str] = Field(default_factory=dict)
 
@@ -129,7 +156,11 @@ class TopologyTruthCounts(BaseModel):
     merged_node_count: int
     merged_link_count: int
     inferred_only_link_count: int
-    protocol_confirmed_link_count: int
+    physical_confirmed_link_count: int
+    multi_source_confirmed_link_count: int
+    lldp_single_sided_link_count: int
+    lldp_bidirectional_link_count: int
+    lldp_mismatch_link_count: int
     controller_only_node_count: int
     device_only_node_count: int
     conflicting_object_count: int
@@ -142,7 +173,7 @@ class TopologyTruthSafetyFraming(BaseModel):
         default_factory=lambda: [
             "Merged topology truth is not end-to-end traffic path truth or full TE authority.",
             "ODL/controller inputs are enrichment only; the backend owns the merged read model.",
-            "Inferred gNMI links remain distinct from protocol-confirmed adjacency when sources disagree or controller data is missing.",
+            "Interface-derived links remain distinct from LLDP-backed physical adjacency when sources disagree or controller data is missing.",
         ],
     )
 

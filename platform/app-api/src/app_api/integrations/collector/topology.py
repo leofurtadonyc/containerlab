@@ -39,6 +39,19 @@ class CollectorTopologyLinkRecord(BaseModel):
     source: Literal["gnmi"]
     endpoint_pairing_state: Literal["paired", "single_sided", "unknown"] | None = None
     endpoint_evidence_count: int | None = None
+    physical_adjacency_posture: Literal[
+        "not_observed",
+        "single_sided_lldp",
+        "bidirectional_lldp",
+        "lldp_mismatch",
+        "suppressed_or_unknown",
+    ] = "suppressed_or_unknown"
+    lldp_observation_count: int = 0
+    lldp_bidirectional: bool = False
+    lldp_local_interfaces: list[str] = Field(default_factory=list)
+    lldp_remote_systems: list[str] = Field(default_factory=list)
+    lldp_remote_ports: list[str] = Field(default_factory=list)
+    lldp_correlation_notes: list[str] = Field(default_factory=list)
     attributes: dict[str, str] = Field(default_factory=dict)
 
 
@@ -67,6 +80,11 @@ class CollectorTopologySnapshot(BaseModel):
     ] | None = None
     paired_link_count: int | None = None
     single_sided_link_count: int | None = None
+    lldp_observation_count: int | None = None
+    lldp_correlated_link_count: int | None = None
+    lldp_single_sided_link_count: int | None = None
+    lldp_bidirectional_link_count: int | None = None
+    lldp_mismatch_link_count: int | None = None
     linked_node_count: int | None = None
     isolated_node_count: int | None = None
     topology_id: str

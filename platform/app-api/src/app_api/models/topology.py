@@ -11,11 +11,30 @@ TopologyEndpointPairingState = Literal["paired", "single_sided", "unknown"]
 TopologyEndpointPairingPosture = Literal[
     "paired", "partially_paired", "single_sided", "unknown"
 ]
+TopologyPhysicalAdjacencyPosture = Literal[
+    "not_observed",
+    "single_sided_lldp",
+    "bidirectional_lldp",
+    "lldp_mismatch",
+    "suppressed_or_unknown",
+]
 TopologyInferencePosture = Literal["inferred", "unknown"]
 TopologyCollectionPosture = Literal["ok", "degraded", "blocked", "unknown"]
 TopologyNodeParticipationPosture = Literal[
     "fully_linked", "partially_isolated", "isolated_only", "unknown"
 ]
+
+
+class TopologyPhysicalAdjacencyEvidence(BaseModel):
+    """Structured LLDP-backed physical adjacency evidence for one link."""
+
+    posture: TopologyPhysicalAdjacencyPosture = "suppressed_or_unknown"
+    lldp_observation_count: int = 0
+    lldp_bidirectional: bool = False
+    local_interfaces: list[str] = Field(default_factory=list)
+    remote_systems: list[str] = Field(default_factory=list)
+    remote_ports: list[str] = Field(default_factory=list)
+    correlation_notes: list[str] = Field(default_factory=list)
 
 
 class TopologyCoverageSummary(BaseModel):
@@ -62,6 +81,13 @@ class TopologyLink(BaseModel):
     source: str
     endpoint_pairing_state: TopologyEndpointPairingState = "unknown"
     endpoint_evidence_count: int | None = None
+    physical_adjacency_posture: TopologyPhysicalAdjacencyPosture = "suppressed_or_unknown"
+    lldp_observation_count: int = 0
+    lldp_bidirectional: bool = False
+    lldp_local_interfaces: list[str] = Field(default_factory=list)
+    lldp_remote_systems: list[str] = Field(default_factory=list)
+    lldp_remote_ports: list[str] = Field(default_factory=list)
+    lldp_correlation_notes: list[str] = Field(default_factory=list)
     attributes: dict[str, str] = Field(default_factory=dict)
 
 
@@ -168,6 +194,20 @@ def _normalize_inference_posture(value: object) -> TopologyInferencePosture | No
     return None
 
 
+def _normalize_physical_adjacency_posture(
+    value: object,
+) -> TopologyPhysicalAdjacencyPosture | None:
+    if value in {
+        "not_observed",
+        "single_sided_lldp",
+        "bidirectional_lldp",
+        "lldp_mismatch",
+        "suppressed_or_unknown",
+    }:
+        return value
+    return None
+
+
 def _normalize_collection_posture(value: object) -> TopologyCollectionPosture | None:
     if value in {"ok", "degraded", "blocked", "unknown"}:
         return value
@@ -227,6 +267,41 @@ def resolve_topology_link_endpoint_evidence(
             endpoint_pairing_state = "unknown"
 
     return endpoint_pairing_state, endpoint_evidence_count
+
+
+def resolve_topology_link_physical_adjacency(
+    link: Any,
+) -> TopologyPhysicalAdjacencyEvidence:
+    """Resolve typed LLDP physical-adjacency evidence from a link model or DTO."""
+    attributes = getattr(link, "attributes", {}) or {}
+    if not isinstance(attributes, dict):
+        attributes = {}
+
+    posture = _normalize_physical_adjacency_posture(
+        getattr(link, "physical_adjacency_posture", None)
+    )
+    if posture is None:
+        posture = _normalize_physical_adjacency_posture(
+            attributes.get("physical_adjacency_posture")
+        ) or "suppressed_or_unknown"
+
+    lldp_observation_count = _parse_endpoint_evidence_count(
+        getattr(link, "lldp_observation_count", None)
+    )
+    if lldp_observation_count is None:
+        lldp_observation_count = _parse_endpoint_evidence_count(
+            attributes.get("lldp_observation_count")
+        ) or 0
+
+    return TopologyPhysicalAdjacencyEvidence(
+        posture=posture,
+        lldp_observation_count=lldp_observation_count,
+        lldp_bidirectional=bool(getattr(link, "lldp_bidirectional", False)),
+        local_interfaces=list(getattr(link, "lldp_local_interfaces", []) or []),
+        remote_systems=list(getattr(link, "lldp_remote_systems", []) or []),
+        remote_ports=list(getattr(link, "lldp_remote_ports", []) or []),
+        correlation_notes=list(getattr(link, "lldp_correlation_notes", []) or []),
+    )
 
 
 def _derive_endpoint_pairing_posture(

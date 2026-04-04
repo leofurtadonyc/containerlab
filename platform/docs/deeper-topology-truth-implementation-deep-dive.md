@@ -176,7 +176,7 @@ The API exposes this as **`controller_fetch_status`** on every `TopologyTruthRes
 - **Controller nodes** use **`ctrl:{opaque-id}`** from ODL.
 - **Matching key:** `_norm_ctrl_id(node_id)` strips a leading **`ctrl:`** so **`ctrl:router1`** can match device **`router1`** if the same logical NE is named consistently.
 
-**If both sides present the same normalized id:** rows are **merged** with posture **`merged_multi_source`** (or **`conflicting`** if `state` differs).
+**If both sides present the same normalized id:** rows are **merged** with posture **`multi_source_confirmed`** (or **`conflicting`** if `state` differs).
 
 **Controller-only nodes:**
 
@@ -187,7 +187,7 @@ The API exposes this as **`controller_fetch_status`** on every `TopologyTruthRes
 
 Links are keyed by **undirected** pair **`_link_key(a, b)`**: normalize with `_norm_ctrl_id`, order endpoints so **`min ≤ max`**. This avoids missing matches when direction differs between sources.
 
-### 7.3 Endpoint evidence and `protocol_confirmed`
+### 7.3 LLDP physical adjacency and multi-source confirmation
 
 For **device** links, `resolve_topology_link_endpoint_evidence()` (in `models/topology.py`) yields:
 
@@ -196,13 +196,13 @@ For **device** links, `resolve_topology_link_endpoint_evidence()` (in `models/to
 
 In merge:
 
-- Device link **+** matching controller link:
-  - If endpoints **`paired`** → truth posture **`protocol_confirmed`** (and counter **`protocol_confirmed_link_count`** increments).
-  - Else → **`merged_multi_source`** (both sources agree on the adjacency key but device evidence is not fully paired).
-- Device link **only**: base posture from **`_device_link_truth_base`**: **`inferred_only`** if single-sided, else **`device_observed`**. If controller fetch was **`ok`** but no matching link, **`missing_sources`** may list **`controller_bgpls`**.
-- Controller link **only**: **`controller_correlated`**, **`missing_device_evidence`** disagreement, endpoints marked **`paired`** on controller side where parser set them.
+- Device link with **no** LLDP rows remains **`inferred_only`**.
+- Device link with **one-sided LLDP** becomes **`device_observed`** or **`partial`** when the controller also agrees.
+- Device link with **bidirectional LLDP** becomes **`physical_confirmed`**.
+- Device link with **bidirectional LLDP** plus matching controller export becomes **`multi_source_confirmed`**.
+- Device link with LLDP that contradicts the inferred or controller-correlated peer becomes **`conflicting`** with an explicit LLDP disagreement kind.
 
-**Important:** **`protocol_confirmed`** in this slice means **merged evidence agrees on this adjacency with strong device endpoint pairing** — **not** full RSVP/TE path validation or forwarding-plane verification.
+**Important:** physical or multi-source confirmation in this slice still does **not** mean RSVP/TE path validation or forwarding-plane verification.
 
 ---
 
@@ -214,7 +214,7 @@ Defined in `schemas/topology_truth.py` (`TopologyTruthPosture`, `TopologyDisagre
 
 | Situation | Typical `truth_posture` |
 | --- | --- |
-| Device node, controller match, same state | `merged_multi_source` |
+| Device node, controller match, same state | `multi_source_confirmed` |
 | Device node, controller match, different `state` | `conflicting` + disagreement `device_controller_mismatch` |
 | Device node, no controller node | `device_observed`; if `ctrl_status == ok`, `missing_sources` may include `controller_bgpls` |
 | Controller-only, scope marker role | `controller_correlated` |
@@ -224,11 +224,13 @@ Defined in `schemas/topology_truth.py` (`TopologyTruthPosture`, `TopologyDisagre
 
 | Situation | Typical `truth_posture` |
 | --- | --- |
-| Both sides, paired endpoints | `protocol_confirmed` |
-| Both sides, not paired on device | `merged_multi_source` |
+| Device + bidirectional LLDP | `physical_confirmed` |
+| Device + bidirectional LLDP + controller match | `multi_source_confirmed` |
+| Device + one-sided LLDP | `device_observed` or `partial` |
 | Device only, single-sided | `inferred_only` |
-| Device only, observed | `device_observed` |
+| Device only, no LLDP | `inferred_only` |
 | Device/controller link state mismatch | `conflicting` + `device_controller_mismatch` |
+| LLDP contradicts inferred/controller peer | `conflicting` + `lldp_inference_mismatch` or `lldp_controller_mismatch` |
 | Controller only | `controller_correlated` |
 
 ### 8.3 Disagreement records
@@ -308,7 +310,8 @@ Exposed on app-api metrics scrape (see `render_prometheus_text` in `metrics/stat
 | **`platform_app_api_topology_truth_last_merged_nodes`** | gauge | Last merge node count |
 | **`platform_app_api_topology_truth_last_merged_links`** | gauge | Last merge link count |
 | **`platform_app_api_topology_truth_last_inferred_only_links`** | gauge | Last inferred-only link count |
-| **`platform_app_api_topology_truth_last_protocol_confirmed_links`** | gauge | Last protocol-confirmed link count |
+| **`platform_app_api_topology_truth_last_physical_confirmed_links`** | gauge | Last bidirectional-LLDP physical confirmation count |
+| **`platform_app_api_topology_truth_last_multi_source_confirmed_links`** | gauge | Last LLDP + controller multi-source confirmation count |
 | **`platform_app_api_topology_truth_last_conflicts`** | gauge | Last conflict/disagreement count used in observation |
 
 Gauges reflect the **latest** observation in process memory (typical for this codebase’s metrics style).

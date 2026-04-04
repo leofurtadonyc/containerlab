@@ -83,6 +83,12 @@ def _device_snapshot() -> TopologySnapshot:
                 source="gnmi",
                 endpoint_pairing_state="paired",
                 endpoint_evidence_count=2,
+                physical_adjacency_posture="bidirectional_lldp",
+                lldp_observation_count=2,
+                lldp_bidirectional=True,
+                lldp_local_interfaces=["to-PE2", "to-PE1"],
+                lldp_remote_systems=["PE1", "PE2"],
+                lldp_remote_ports=["to-PE2", "to-PE1"],
                 attributes={},
             ),
             TopologyLink(
@@ -93,6 +99,7 @@ def _device_snapshot() -> TopologySnapshot:
                 source="gnmi",
                 endpoint_pairing_state="single_sided",
                 endpoint_evidence_count=1,
+                physical_adjacency_posture="suppressed_or_unknown",
                 attributes={},
             ),
         ],
@@ -104,7 +111,7 @@ def _device_snapshot() -> TopologySnapshot:
     )
 
 
-def test_merge_protocol_confirmed_and_inferred_only(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_merge_multi_source_confirmed_and_inferred_only(monkeypatch: pytest.MonkeyPatch) -> None:
     ctrl = TopologySnapshot(
         topology_id="odl:x",
         topology_name="c",
@@ -169,8 +176,9 @@ def test_merge_protocol_confirmed_and_inferred_only(monkeypatch: pytest.MonkeyPa
 
     res = tt_mod.build_topology_truth_response(truth_posture=None)
     by_id = {x.link_id: x.truth_posture for x in res.merged_topology.links}
-    assert by_id.get("L1") == "protocol_confirmed"
+    assert by_id.get("L1") == "multi_source_confirmed"
     assert by_id.get("L2") == "inferred_only"
+    assert res.counts.multi_source_confirmed_link_count == 1
     assert res.contract_id == "topology_truth_v1"
 
 

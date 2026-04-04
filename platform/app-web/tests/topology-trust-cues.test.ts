@@ -29,6 +29,16 @@ function createLink(overrides: Partial<TopologyLinkRecord> = {}): TopologyLinkRe
     source: "collector",
     endpoint_pairing_state: "unknown",
     endpoint_evidence_count: null,
+    physical_adjacency_posture: "suppressed_or_unknown",
+    physical_adjacency: {
+      posture: "suppressed_or_unknown",
+      lldp_observation_count: 0,
+      lldp_bidirectional: false,
+      local_interfaces: [],
+      remote_systems: [],
+      remote_ports: [],
+      correlation_notes: [],
+    },
     attributes: {},
     ...overrides,
   };

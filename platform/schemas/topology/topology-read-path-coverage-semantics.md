@@ -32,7 +32,7 @@ It does not authorize:
 - topology validation verdicts
 - workflow semantics
 - ODL-first topology truth
-- LLDP, IGP, or deeper controller enrichment
+- IGP or unbounded controller enrichment
 - claims of complete topology truth
 
 ## Design Constraints
@@ -182,6 +182,10 @@ separate from collection degradation.
 This also means the topology can remain honestly `partial` even when
 `endpoint_pairing_posture=paired`, because paired endpoint evidence still does
 not turn an inferred topology slice into full adjacency truth.
+
+## Update note
+
+The shipped topology slice now also carries LLDP-backed `physical_adjacency_posture` on link rows. That LLDP lane is additive and does not replace the four response-level coverage terms defined here.
 
 ### Relationship to `degraded_scope_summary`
 

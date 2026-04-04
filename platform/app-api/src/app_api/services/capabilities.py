@@ -413,7 +413,8 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
             evidence_basis="live_validated",
             vendor_posture="current_nokia_focus",
             availability_scope=(
-                "Live normalized nodes plus bounded interface-inferred links for "
+                "Live normalized nodes plus bounded interface-derived links and OpenConfig LLDP "
+                "physical adjacency evidence for "
                 "the current Nokia-first lab."
             ),
             status_detail=(
@@ -422,7 +423,7 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "path truth."
             ),
             caveats=[
-                "Link inference is still bounded to interface-name and operational-state evidence.",
+                "When LLDP is unavailable or empty on a target, the platform preserves explicit suppressed-or-unknown physical adjacency posture rather than fabricating certainty.",
                 "Controller-derived topology and controller southbound session truth now exist as bounded backend-owned context, but the normalized topology baseline remains the primary source of truth.",
             ],
             source_of_determination="live_topology_read_path",
@@ -458,12 +459,12 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
             ),
             status_detail=(
                 "The platform now exposes a deeper topology truth slice with per-object posture, "
-                "provenance, freshness, and disagreements, but it remains a bounded merged read "
-                "model rather than adjacency, dataplane, or TE truth."
+                "provenance, freshness, physical adjacency confirmation, and disagreements, but it remains a bounded merged read "
+                "model rather than dataplane or TE truth."
             ),
             caveats=[
                 "Controller inputs remain bounded enrichment only; the backend owns the merged read model.",
-                "Protocol-confirmed links and controller-correlated scope markers do not imply path validation or full graph completeness.",
+                "LLDP-backed physical confirmation and multi-source confirmation do not imply path validation or full graph completeness.",
             ],
             source_of_determination="topology_truth_v1_live_route",
             workflow_readiness_status="partial_foundation",

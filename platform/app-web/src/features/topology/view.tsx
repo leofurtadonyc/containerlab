@@ -87,6 +87,10 @@ function getLinkKnowledgeState(link: TopologyLinkRecord): string {
   return link.attributes.knowledge_state ?? "unknown";
 }
 
+function getLinkPhysicalAdjacencyPosture(link: TopologyLinkRecord): string {
+  return link.physical_adjacency_posture ?? link.physical_adjacency?.posture ?? "suppressed_or_unknown";
+}
+
 function formatSignedDelta(value: number): string {
   if (value > 0) {
     return `+${value}`;
@@ -179,8 +183,18 @@ function describeNodeEvidence(node: TopologyNodeRecord): string {
 }
 
 function describeLinkEvidence(link: TopologyLinkRecord): string {
+  const physicalAdjacencyPosture = getLinkPhysicalAdjacencyPosture(link);
   const knowledgeState = getLinkKnowledgeState(link);
   const pairingState = getTopologyLinkEndpointPairingState(link);
+  if (physicalAdjacencyPosture === "bidirectional_lldp") {
+    return "Bidirectional LLDP confirms the physical adjacency";
+  }
+  if (physicalAdjacencyPosture === "single_sided_lldp") {
+    return "LLDP observed one side of the physical adjacency";
+  }
+  if (physicalAdjacencyPosture === "lldp_mismatch") {
+    return "LLDP contradicts the current interface-derived peer mapping";
+  }
   if (knowledgeState === "partial" && pairingState === "single_sided") {
     return "Partial single-sided endpoint inference";
   }
@@ -659,8 +673,8 @@ export function TopologyView() {
     controllerEvidence &&
     truthData &&
     controllerEvidence.bgp_ls.session_posture === "established" &&
-    truthData.counts.protocol_confirmed_link_count === 0
-      ? "BGP-LS southbound session truth is established, but deeper topology truth still has no protocol-confirmed links. The controller is reachable and session-backed, yet the merged topology path has not extracted corroborating adjacency rows beyond bounded controller context markers."
+    truthData.counts.multi_source_confirmed_link_count === 0
+      ? "BGP-LS southbound session truth is established, but deeper topology truth still has no multi-source confirmed links. The controller is reachable and session-backed, yet the merged topology path has not produced LLDP-backed physical adjacency confirmation together with controller corroboration."
       : null;
 
   return (
@@ -814,9 +828,9 @@ export function TopologyView() {
             </div>
             <div className="summary-grid">
               <article className="summary-card">
-                <p className="summary-label">Protocol Confirmed Links</p>
-                <strong>{truthData.counts.protocol_confirmed_link_count}</strong>
-                <p>Links corroborated by both device evidence and controller export.</p>
+                <p className="summary-label">Physical Confirmed Links</p>
+                <strong>{truthData.counts.physical_confirmed_link_count}</strong>
+                <p>Links with bidirectional LLDP-backed physical adjacency confirmation.</p>
               </article>
               <article className="summary-card">
                 <p className="summary-label">Inferred-only Links</p>
@@ -839,9 +853,19 @@ export function TopologyView() {
                 <p>Scope markers or controller-side objects retained without device-side merge.</p>
               </article>
               <article className="summary-card">
-                <p className="summary-label">Merged Multi-source Links</p>
-                <strong>{truthLinkPostureCounts.merged_multi_source ?? 0}</strong>
-                <p>Links where multiple sources contribute without becoming protocol-confirmed.</p>
+                <p className="summary-label">Multi-source Confirmed Links</p>
+                <strong>{truthData.counts.multi_source_confirmed_link_count}</strong>
+                <p>Links where LLDP-backed physical adjacency and controller export corroborate the same edge.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">One-sided LLDP Links</p>
+                <strong>{truthData.counts.lldp_single_sided_link_count}</strong>
+                <p>Links with stronger-than-inference physical evidence that is still one-sided.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">LLDP Mismatch Links</p>
+                <strong>{truthData.counts.lldp_mismatch_link_count}</strong>
+                <p>Links where LLDP contradicts the current inferred or controller-correlated peer mapping.</p>
               </article>
             </div>
             <div className="callout">
@@ -2084,6 +2108,7 @@ export function TopologyView() {
                   <span>Link: {selectedLink.link_id}</span>
                   <span>Knowledge: {formatLabel(getLinkKnowledgeState(selectedLink))}</span>
                   <span>Pairing: {formatLabel(getTopologyLinkEndpointPairingState(selectedLink))}</span>
+                  <span>Physical adjacency: {formatLabel(getLinkPhysicalAdjacencyPosture(selectedLink))}</span>
                   <span>Current posture: {formatRowCurrentPosture(selectedLink.current_posture)}</span>
                 </div>
                 <div className="key-value-list">
@@ -2115,9 +2140,33 @@ export function TopologyView() {
                     <strong>{formatCountLabel(getTopologyLinkEndpointEvidenceCount(selectedLink), "endpoint")}</strong>
                   </div>
                   <div className="key-value-row">
+                    <span>LLDP observations</span>
+                    <strong>{formatCountLabel(selectedLink.physical_adjacency.lldp_observation_count, "observation")}</strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>Physical adjacency</span>
+                    <strong>{formatLabel(getLinkPhysicalAdjacencyPosture(selectedLink))}</strong>
+                  </div>
+                  <div className="key-value-row">
                     <span>Observed interfaces</span>
                     <strong>
                       {selectedLink.attributes.observed_interfaces ?? "No observed interfaces recorded"}
+                    </strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>LLDP remote systems</span>
+                    <strong>
+                      {selectedLink.physical_adjacency.remote_systems.length > 0
+                        ? selectedLink.physical_adjacency.remote_systems.join(", ")
+                        : "No LLDP remote systems recorded"}
+                    </strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>LLDP remote ports</span>
+                    <strong>
+                      {selectedLink.physical_adjacency.remote_ports.length > 0
+                        ? selectedLink.physical_adjacency.remote_ports.join(", ")
+                        : "No LLDP remote ports recorded"}
                     </strong>
                   </div>
                   <div className="key-value-row">
@@ -2139,6 +2188,16 @@ export function TopologyView() {
                     <strong>{describeLinkEvidence(selectedLink)}</strong>
                   </div>
                 </div>
+                {selectedLink.physical_adjacency.correlation_notes.length > 0 ? (
+                  <>
+                    <p className="summary-label">LLDP Correlation Notes</p>
+                    <ul className="notes-list">
+                      {selectedLink.physical_adjacency.correlation_notes.map((note) => (
+                        <li key={`${selectedLink.link_id}-${note}`}>{note}</li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
                 <p className="summary-label">Link Evidence</p>
                 <div className="key-value-list">
                   {Object.entries(selectedLink.attributes)
