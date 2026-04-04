@@ -128,6 +128,9 @@ def _normalize_subresource_payload(data: dict[str, Any]) -> dict[str, Any]:
         or "ietf-network-topology:network-topologies" in data
     ):
         return data
+    topology_list = data.get("network-topology:topology")
+    if isinstance(topology_list, list):
+        return {"network-topology:network-topology": {"topology": topology_list}}
     if "topology-id" in data:
         return {"network-topology:network-topology": {"topology": [data]}}
     return data
@@ -171,7 +174,10 @@ def _enrich_linkstate_subresources(
             continue
         if not _is_bgp_linkstate_topology(topo):
             continue
-        sub_path = f"/rests/data/network-topology:network-topology/topology/{quote(tid, safe='')}"
+        sub_path = (
+            "/rests/data/network-topology:network-topology/"
+            f"topology={quote(tid, safe='')}"
+        )
         sub = _restconf_get_json(client, sub_path)
         if sub is None:
             continue

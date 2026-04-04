@@ -397,6 +397,52 @@ class FakeLldpDisabledGnmiClient(FakeGnmiClient):
         return super().get(path=path, encoding=encoding)
 
 
+class FakeNokiaNativeLldpFallbackGnmiClient(FakeGnmiClient):
+    def get(self, *, path, encoding):
+        del encoding
+        host = self.target[0]
+        device_name = _target_name_by_host()[host]
+        if any("openconfig-lldp:lldp" in item for item in path):
+            raise RuntimeError(
+                "GRPC ERROR Host: 172.20.20.107:57400, Error: MINOR: MGMT_CORE #2201: /lldp - Unknown element - disabled by configuration"
+            )
+        if any("/nokia-state:state/port" in item for item in path):
+            peer_name = _paired_peer_by_host()[host]
+            return {
+                "notification": [
+                    {
+                        "timestamp": 1773094131368820265,
+                        "update": [
+                            {
+                                "path": "state/port[port-id=1/1/c2/1]",
+                                "val": {
+                                    "nokia-state:port-id": "1/1/c2/1",
+                                    "nokia-state:ethernet": {
+                                        "nokia-state:lldp": {
+                                            "nokia-state:dest-mac": [
+                                                {
+                                                    "mac-type": "nearest-bridge",
+                                                    "remote-system": [
+                                                        {
+                                                            "system-name": peer_name,
+                                                            "chassis-id": peer_name,
+                                                            "remote-port-id": f"to-{device_name}",
+                                                            "port-description": f"to-{device_name}",
+                                                        }
+                                                    ],
+                                                }
+                                            ]
+                                        }
+                                    },
+                                },
+                            }
+                        ],
+                    }
+                ]
+            }
+        return super().get(path=path, encoding="json_ietf")
+
+
 class FakeDegradedPolicyGnmiClient(FakeGnmiClient):
     def get(self, *, path, encoding):
         del encoding
@@ -972,6 +1018,47 @@ def test_collect_topology_classifies_disabled_lldp_as_not_exposed(monkeypatch) -
     assert record.lldp_collection_status == "not_exposed"
     assert record.raw_lldp_neighbors == []
     assert any("LLDP path is not exposed on the target" in note for note in record.lldp_notes)
+
+
+def test_collect_topology_falls_back_to_nokia_native_lldp_when_openconfig_is_not_exposed(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "gnmi_collector.adapters.nokia.sros.gNMIclient",
+        FakeNokiaNativeLldpFallbackGnmiClient,
+    )
+
+    target = next(item for item in _targets() if item.name == "PE1")
+    record = NokiaSrosAdapter().collect_topology(target)
+
+    assert record.collection_status == "success"
+    assert record.lldp_collection_status == "neighbors_visible"
+    assert len(record.raw_lldp_neighbors) == 1
+    assert record.raw_lldp_neighbors[0].local_interface_name == "1/1/c2/1"
+    assert record.raw_lldp_neighbors[0].remote_system_name == "PE2"
+    assert record.raw_lldp_neighbors[0].remote_port_id == "to-PE1"
+    assert any("Nokia native LLDP fallback returned 1 neighbor row" in note for note in record.lldp_notes)
+
+
+def test_topology_snapshot_endpoint_uses_nokia_native_lldp_fallback_when_openconfig_is_not_exposed(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "gnmi_collector.adapters.nokia.sros.gNMIclient",
+        FakeNokiaNativeLldpFallbackGnmiClient,
+    )
+
+    response = client.get("/topology/snapshot")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["delivery_status"] == "live_ready"
+    assert payload["lldp_observation_count"] == 34
+    assert payload["lldp_correlated_link_count"] == 17
+    assert payload["lldp_bidirectional_link_count"] == 17
+    assert payload["lldp_mismatch_link_count"] == 0
+    assert all(link["physical_adjacency_posture"] == "bidirectional_lldp" for link in payload["links"])
+    assert any("Nokia native LLDP fallback" in note for note in payload["notes"])
 
 
 def test_metrics_endpoint_surfaces_single_sided_topology_coverage_metrics(monkeypatch) -> None:

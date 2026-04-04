@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime
 from threading import Lock
 from time import sleep
@@ -2635,6 +2636,65 @@ def test_topology_collector_client_uses_short_unavailable_cache_ttl(monkeypatch)
     assert first_snapshot.fetch_error is not None
     assert "8s latency budget" in first_snapshot.fetch_error
     assert call_count["value"] == 2
+
+
+def test_topology_collector_client_maps_lldp_aggregate_fields(monkeypatch) -> None:
+    class StubResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return json.dumps(
+                {
+                    "delivery_status": "live_ready",
+                    "configured_target_count": 2,
+                    "observed_target_count": 2,
+                    "collection_success_count": 2,
+                    "collection_partial_count": 0,
+                    "collection_failure_count": 0,
+                    "degraded_scope_summary": "ok",
+                    "paired_link_count": 1,
+                    "single_sided_link_count": 0,
+                    "lldp_observation_count": 4,
+                    "lldp_correlated_link_count": 2,
+                    "lldp_single_sided_link_count": 0,
+                    "lldp_bidirectional_link_count": 2,
+                    "lldp_mismatch_link_count": 0,
+                    "linked_node_count": 2,
+                    "isolated_node_count": 0,
+                    "topology_id": "t",
+                    "topology_name": "t",
+                    "sync_source": "gnmi_collector_topology_interface_and_lldp",
+                    "sync_status": "ok",
+                    "completeness": "partial",
+                    "nodes": [],
+                    "links": [],
+                }
+            ).encode("utf-8")
+
+    monkeypatch.setattr(
+        "app_api.integrations.collector.topology.urlopen",
+        lambda url, timeout: StubResponse(),
+    )
+
+    from app_api.integrations.collector.topology import CollectorTopologyClient
+
+    snapshot = CollectorTopologyClient(
+        source_endpoint="http://gnmi-collector:9804",
+        timeout_seconds=3,
+        cache_ttl_seconds=0,
+        unavailable_cache_ttl_seconds=0,
+    ).read_topology_snapshot()
+
+    assert snapshot.status == "live_normalized_feed"
+    assert snapshot.lldp_observation_count == 4
+    assert snapshot.lldp_correlated_link_count == 2
+    assert snapshot.lldp_single_sided_link_count == 0
+    assert snapshot.lldp_bidirectional_link_count == 2
+    assert snapshot.lldp_mismatch_link_count == 0
 
 
 def test_policy_collector_client_classifies_connection_failure(monkeypatch) -> None:

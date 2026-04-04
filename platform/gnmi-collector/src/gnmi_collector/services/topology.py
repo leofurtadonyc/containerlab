@@ -201,6 +201,16 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         for record in raw_records
         if record.lldp_collection_status in {"neighbors_visible", "enabled_no_neighbors"}
     )
+    native_lldp_fallback_targets = sum(
+        1
+        for record in raw_records
+        if any("Nokia native LLDP fallback" in note for note in record.lldp_notes)
+    )
+    if native_lldp_fallback_targets > 0:
+        notes.append(
+            "Nokia native LLDP fallback supplied device-native neighbor rows for "
+            f"{native_lldp_fallback_targets} target(s) where OpenConfig LLDP was not exposed."
+        )
     if supported_lldp_targets < len(raw_records):
         notes.append(
             "One or more targets did not expose a usable OpenConfig LLDP subtree, so physical-adjacency posture remains suppressed or unknown on those paths."

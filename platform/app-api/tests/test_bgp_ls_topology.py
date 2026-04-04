@@ -58,6 +58,79 @@ def test_parse_network_topology_payload_legacy_network_topology_key() -> None:
     assert links == []
 
 
+def test_normalize_subresource_payload_accepts_list_instance_shape() -> None:
+    payload = {
+        "network-topology:topology": [
+            {
+                "topology-id": "lab-linkstate-topology",
+                "odl-bgp-topology-config:rib-id": "lab-bgp-rib",
+                "node": [{"node-id": "n1"}],
+                "link": [],
+            }
+        ]
+    }
+
+    normalized = mod._normalize_subresource_payload(payload)
+
+    assert normalized == {
+        "network-topology:network-topology": {
+            "topology": payload["network-topology:topology"]
+        }
+    }
+
+
+def test_enrich_linkstate_subresources_uses_list_instance_restconf_path() -> None:
+    cfg = OdlClientConfig(
+        base_url="http://odl", username="a", password="b", timeout_seconds=5
+    )
+    client = OdlClient(cfg)
+    urls: list[str] = []
+
+    def fake_urlopen(request: object, timeout: object = None) -> object:
+        full_url = getattr(request, "full_url", "")
+        urls.append(str(full_url))
+
+        class OkResp:
+            def __enter__(self) -> OkResp:
+                return self
+
+            def __exit__(self, *a: object) -> None:
+                pass
+
+            def read(self) -> bytes:
+                return (
+                    b'{"network-topology:topology":[{"topology-id":"lab-linkstate-topology",'
+                    b'"odl-bgp-topology-config:rib-id":"lab-bgp-rib",'
+                    b'"node":[{"node-id":"n1"}],"link":[]}]}'
+                )
+
+        return OkResp()
+
+    with patch("app_api.integrations.odl.bgp_ls_topology.urlopen", side_effect=fake_urlopen):
+        nodes, links, notes = mod._enrich_linkstate_subresources(
+            client,
+            [
+                {
+                    "topology-id": "lab-linkstate-topology",
+                    "topology-types": {
+                        "odl-bgp-topology-types:bgp-linkstate-topology": {}
+                    },
+                }
+            ],
+            [],
+            [],
+            [],
+        )
+
+    assert urls == [
+        "http://odl/rests/data/network-topology:network-topology/topology=lab-linkstate-topology"
+    ]
+    assert len(nodes) == 1
+    assert nodes[0].node_id == "ctrl:n1"
+    assert links == []
+    assert any("Merged BGP-LS subtree" in note for note in notes)
+
+
 def test_is_restconf_unknown_element() -> None:
     assert mod._is_restconf_unknown_element(
         '{"errors":{"error":[{"error-tag":"unknown-element"}]}}'

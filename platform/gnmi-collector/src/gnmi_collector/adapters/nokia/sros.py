@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+import re
 from typing import Any
 
 from pygnmi.client import gNMIclient
@@ -22,6 +23,7 @@ class NokiaSrosAdapter:
     """Nokia-first adapter for live read-only collection over gNMI."""
 
     vendor_name: str = "nokia"
+    native_lldp_fallback_path: str = "/nokia-state:state/port"
 
     def describe(self) -> str:
         """Describe the current adapter scope honestly."""
@@ -148,6 +150,136 @@ class NokiaSrosAdapter:
         return [], "enabled_no_neighbors", [
             "OpenConfig LLDP is enabled, but no neighbor rows were present under the interface table.",
         ]
+
+    def _extract_port_id_from_path(self, path: str) -> str | None:
+        match = re.search(r"port\[port-id=([^\]]+)\]", path)
+        if not match:
+            return None
+        return match.group(1)
+
+    def _extract_nokia_native_lldp_neighbors(
+        self,
+        result: dict[str, Any],
+        *,
+        source_path: str,
+    ) -> tuple[
+        list[LldpNeighborObservation],
+        str,
+        list[str],
+    ]:
+        if not isinstance(result, dict):
+            return [], "unknown", ["Nokia native LLDP subtree did not return a structured payload."]
+
+        observations: list[LldpNeighborObservation] = []
+        saw_lldp_payload = False
+        for notification in result.get("notification", []):
+            if not isinstance(notification, dict):
+                continue
+            for update in notification.get("update", []):
+                if not isinstance(update, dict):
+                    continue
+                path = str(update.get("path", ""))
+                value = update.get("val")
+                if not isinstance(value, dict):
+                    continue
+
+                port_id = self._extract_port_id_from_path(path)
+                if port_id is None:
+                    raw_port_id = value.get("nokia-state:port-id") or value.get("port-id")
+                    if raw_port_id:
+                        port_id = str(raw_port_id)
+
+                lldp_payload: object | None
+                if path.endswith("/ethernet/lldp"):
+                    lldp_payload = value
+                else:
+                    ethernet_payload = self._find_first_child(value, "ethernet")
+                    if not isinstance(ethernet_payload, dict):
+                        continue
+                    lldp_payload = self._find_first_child(ethernet_payload, "lldp")
+
+                if not isinstance(lldp_payload, dict):
+                    continue
+                saw_lldp_payload = True
+
+                dest_mac_entries = self._find_first_child(lldp_payload, "dest-mac")
+                if not isinstance(dest_mac_entries, list):
+                    continue
+                for dest_mac_entry in dest_mac_entries:
+                    if not isinstance(dest_mac_entry, dict):
+                        continue
+                    remote_systems = self._find_first_child(dest_mac_entry, "remote-system")
+                    if not isinstance(remote_systems, list):
+                        continue
+                    for remote_system in remote_systems:
+                        if not isinstance(remote_system, dict) or not port_id:
+                            continue
+                        observations.append(
+                            LldpNeighborObservation(
+                                local_interface_name=port_id,
+                                remote_system_name=(
+                                    str(remote_system.get("system-name"))
+                                    if remote_system.get("system-name")
+                                    else None
+                                ),
+                                remote_chassis_id=(
+                                    str(remote_system.get("chassis-id"))
+                                    if remote_system.get("chassis-id")
+                                    else None
+                                ),
+                                remote_port_id=(
+                                    str(remote_system.get("remote-port-id"))
+                                    if remote_system.get("remote-port-id")
+                                    else None
+                                ),
+                                remote_port_description=(
+                                    str(remote_system.get("port-description"))
+                                    if remote_system.get("port-description")
+                                    else None
+                                ),
+                                remote_interface_name=(
+                                    str(remote_system.get("remote-port-id"))
+                                    if remote_system.get("remote-port-id")
+                                    else None
+                                ),
+                                remote_management_address=None,
+                                source_path=source_path,
+                                notes=[],
+                            )
+                        )
+
+        if observations:
+            return observations, "neighbors_visible", [
+                f"Nokia native LLDP fallback returned {len(observations)} neighbor row(s).",
+            ]
+        if saw_lldp_payload:
+            return [], "enabled_no_neighbors", [
+                "Nokia native LLDP fallback was reachable, but no remote-system rows were present.",
+            ]
+        return [], "unknown", [
+            "Nokia native LLDP fallback did not expose any ethernet/lldp payloads in the returned port state.",
+        ]
+
+    def _collect_nokia_native_lldp_fallback(
+        self,
+        target: GnmiTargetConfig,
+    ) -> tuple[
+        list[LldpNeighborObservation],
+        str,
+        list[str],
+    ]:
+        path = self.native_lldp_fallback_path
+        try:
+            result = self._get_paths(target, [path])
+        except Exception as exc:
+            status, note = self._classify_lldp_query_error(exc)
+            return [], status, [f"{path}: Nokia native LLDP fallback failed: {note}"]
+
+        neighbors, status, notes = self._extract_nokia_native_lldp_neighbors(
+            result,
+            source_path=path,
+        )
+        return neighbors, status, [f"{path}: {note}" for note in notes]
 
     def _extract_interface_updates(
         self,
@@ -362,6 +494,17 @@ class NokiaSrosAdapter:
                 if "openconfig-lldp" in path:
                     lldp_collection_status, lldp_note = self._classify_lldp_query_error(exc)
                     lldp_notes.append(f"{path}: {lldp_note}")
+                    if lldp_collection_status == "not_exposed":
+                        (
+                            fallback_neighbors,
+                            fallback_status,
+                            fallback_notes,
+                        ) = self._collect_nokia_native_lldp_fallback(target)
+                        if fallback_neighbors:
+                            lldp_neighbors.extend(fallback_neighbors)
+                        if fallback_status in {"neighbors_visible", "enabled_no_neighbors"}:
+                            lldp_collection_status = fallback_status
+                        lldp_notes.extend(fallback_notes)
                     continue
                 collection_errors.append(f"{path}: {exc}")
                 continue
