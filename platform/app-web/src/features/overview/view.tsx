@@ -137,6 +137,8 @@ function renderMissingSliceDetailCard(
 
 export function OverviewView() {
   const refreshInFlightRef = useRef(false);
+  const searchKey = useUrlSearchParamsKey();
+  const overviewMode = useMemo(() => readOverviewModeFromSearch(searchKey), [searchKey]);
   const devicesQuery = useDevicesQuery();
   const devicesSettled = devicesQuery.data !== null || devicesQuery.error !== null;
   const topologyQuery = useTopologyQuery(devicesSettled);
@@ -144,15 +146,30 @@ export function OverviewView() {
   const policiesQuery = usePoliciesQuery(topologySettled);
   const policiesSettled = policiesQuery.data !== null || policiesQuery.error !== null;
   const platformQuery = usePlatformStatusQuery(policiesSettled);
+  const platformSettled = platformQuery.data !== null || platformQuery.error !== null;
   const capabilitiesQuery = useCapabilitiesQuery();
-  const recentChangeQuery = useRecentChangeSummaryQuery();
-  const riskSummaryQuery = useTopologyRiskSummaryQuery(topologySettled);
-  const deltaDigestQuery = useDeltaDigestQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
-  const evidenceConsistencyQuery = useEvidenceConsistencySummaryQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
-  const operationalStabilityQuery = useOperationalStabilitySummaryQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
-  const evidenceQualityQuery = useEvidenceQualityWorkspaceQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
-  const searchKey = useUrlSearchParamsKey();
-  const overviewMode = useMemo(() => readOverviewModeFromSearch(searchKey), [searchKey]);
+  const capabilitiesSettled = capabilitiesQuery.data !== null || capabilitiesQuery.error !== null;
+  const analyticsSlicesEnabled =
+    devicesSettled && topologySettled && policiesSettled && platformSettled && capabilitiesSettled;
+  const workspacePreviewsEnabled = overviewMode === "cockpit" && analyticsSlicesEnabled;
+  const recentChangeQuery = useRecentChangeSummaryQuery(analyticsSlicesEnabled);
+  const riskSummaryQuery = useTopologyRiskSummaryQuery(analyticsSlicesEnabled);
+  const deltaDigestQuery = useDeltaDigestQuery(
+    OVERVIEW_RECENT_CHANGE_SYNC_LIMIT,
+    workspacePreviewsEnabled,
+  );
+  const evidenceConsistencyQuery = useEvidenceConsistencySummaryQuery(
+    OVERVIEW_RECENT_CHANGE_SYNC_LIMIT,
+    workspacePreviewsEnabled,
+  );
+  const operationalStabilityQuery = useOperationalStabilitySummaryQuery(
+    OVERVIEW_RECENT_CHANGE_SYNC_LIMIT,
+    workspacePreviewsEnabled,
+  );
+  const evidenceQualityQuery = useEvidenceQualityWorkspaceQuery(
+    OVERVIEW_RECENT_CHANGE_SYNC_LIMIT,
+    workspacePreviewsEnabled,
+  );
 
   const reloadAllSlices = useCallback(async () => {
     if (refreshInFlightRef.current) {

@@ -12,7 +12,14 @@ from app_api.config.settings import get_settings
 def get_engine():
     """Return the shared SQLAlchemy engine for backend persistence."""
     settings = get_settings()
-    return create_engine(settings.get_sqlalchemy_database_url(), pool_pre_ping=True)
+    return create_engine(
+        settings.get_sqlalchemy_database_url(),
+        pool_pre_ping=True,
+        pool_size=settings.database_pool_size,
+        max_overflow=settings.database_max_overflow,
+        pool_timeout=settings.database_pool_timeout_seconds,
+        pool_recycle=settings.database_pool_recycle_seconds,
+    )
 
 
 @lru_cache
