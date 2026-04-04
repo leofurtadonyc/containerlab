@@ -4,6 +4,10 @@
 
 This document gives a strict go or no-go recommendation on whether the project is ready to begin planning a bounded future workflow-oriented phase.
 
+It was written during the earlier `Phase 2` workflow-planning cycle and should
+now be read as a historical planning artifact, not as the authoritative source
+for the current repo phase.
+
 It is a planning gate only.
 
 It does not authorize:
@@ -22,7 +26,7 @@ That means:
 
 - the project is ready to continue bounded workflow-phase planning work in docs, schemas, and design models
 - the project is not ready for workflow-phase implementation
-- the project must remain fully in `Phase 2 — read-only product foundation`
+- the dominant product surface remains the `Phase 2` read-only foundation while broader workflow expansion stays out of scope
 
 ## Why This Is Not A No-Go
 
@@ -74,10 +78,10 @@ Current evidence supports planning because:
 - the reuse map distinguishes directly reusable artifacts from partial analogues and non-reusable surfaces
 - the workflow-owned-state prerequisite plan now makes storage, API sequencing, and ownership boundaries explicit enough to support one small planning cycle without inventing implementation details
 
-Current evidence blocks implementation because:
+At the time this planning gate was written, the evidence still blocked broader workflow implementation because:
 
-- the active phase is still `Phase 2 — read-only product foundation` as stated in [agent/sdn/01-CURRENT-PHASE.md](agent/sdn/01-CURRENT-PHASE.md)
-- the current status file still says to remain in Phase 2 and explicitly says no workflow engine, dry-run APIs, preview or diff outputs, validation-result implementation, or workflow-grade audit relationships exist yet in [agent/sdn/03-CURRENT-STATUS.md](agent/sdn/03-CURRENT-STATUS.md)
+- the dominant product surface was still the `Phase 2` read-only foundation
+- broader workflow-grade audit linkage, broad approval policy, and broader execution semantics did not exist
 - the build-order rules place dry-run and workflow scaffolding after the read-only foundation in [agent/sdn/16-implementation-order.md](agent/sdn/16-implementation-order.md) and [agent/sdn/35-build-order-enforcement-rules.md](agent/sdn/35-build-order-enforcement-rules.md)
 
 ## Next Planning Cycle Recommendation
@@ -116,7 +120,7 @@ The conditional go is valid only if all of the following remain true.
 4. Planning preserves the current interpretation of topology and policy truth as bounded and not validation-grade.
 5. Planning uses the existing workflow design docs as the baseline rather than reopening basic vocabulary from scratch.
 6. Planning stays bounded to a future safe workflow surface rather than broad "change anything" automation.
-7. Planning keeps the project explicitly in `Phase 2 — read-only product foundation`.
+7. Planning keeps the dominant product surface in the `Phase 2` read-only foundation and does not justify broader workflow expansion.
 
 ## Strict Boundaries
 

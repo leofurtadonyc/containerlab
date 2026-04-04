@@ -4,7 +4,8 @@
 
 This document defines the future bounded contract shape for validation results that may later support preview-adjacent or preflight reasoning.
 
-It is a design artifact only.
+It originated as a design artifact during `Phase 2` planning and remains useful
+for broader workflow expansion rules.
 
 It does not introduce:
 
@@ -17,11 +18,16 @@ It does not introduce:
 
 ## Phase Boundary
 
-The platform remains in `Phase 2 — read-only product foundation`.
+This file was written during `Phase 2 — read-only product foundation`
+planning.
 
-So this contract is future-oriented design groundwork only.
+The current repo state is `Phase 5 — bounded safe action workflow (v1)`
+alongside completed `Phase 2` foundations.
 
-It must not be treated as an implemented API or a live validation surface.
+This document should not be treated as the sole description of live validation
+behavior. Current runtime truth for the implemented bounded validation slice
+lives in the active phase file, current status file, and validation engine
+contracts.
 
 ## Contract Role
 

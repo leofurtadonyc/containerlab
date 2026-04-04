@@ -10,7 +10,7 @@ Stable product vocabulary: **`contract_id`:** **`maintenance_window_handoff_v1`*
 
 **HTTP (implemented in app-api):** **`GET /api/v1/exports/maintenance-window-handoff`** — query alignment with **`GET /api/v1/maintenance-window-workspace`**: repeated **`subject`** (`node:` / `link:`), **`preview_context`**, **`sync_runs_limit`**; optional **`handoff_label`** and **`operator_note`** (communication only). **`format=json`** (default) or **`format=markdown`** (companion; JSON is canonical).
 
-**Phase:** [`Phase 2 — read-only product foundation`](../../agent/sdn/01-CURRENT-PHASE.md).
+**Surface role:** `Phase 2` read-only product surface within the current repo state. This contract does not expand the bounded `Phase 5` workflow slices.
 
 ---
 

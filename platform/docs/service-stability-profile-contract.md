@@ -126,5 +126,5 @@ A **service stability profile v1** is:
 | Field | Value |
 | --- | --- |
 | **`contract_id`** | **`service_stability_profile_v1`** |
-| **Phase** | **Phase 2 — read-only product foundation** |
+| **Surface role** | **Phase 2 read-only product surface within the current repo state** |
 | **Authority** | **Interpretation support only** — read-side assembly of existing evidence |

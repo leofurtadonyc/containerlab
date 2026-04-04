@@ -6,9 +6,11 @@ This document summarizes the platform's phased implementation roadmap.
 
 ## Current Status
 
-The project is currently in `Phase 2 — read-only product foundation`.
+The project is currently in `Phase 5 — bounded safe action workflow (v1)` alongside completed `Phase 2 — read-only product foundations`.
 
-Phase 2 to date has established:
+Most week-by-week entries below document closed `Phase 2` delivery lanes and remain historically correct in that context.
+
+Phase 2 foundations plus bounded workflow follow-ons to date have established:
 
 - repository structure
 - service boundaries
@@ -20,6 +22,9 @@ Phase 2 to date has established:
 - a useful read-only API, WebUI, and observability slice
 - bounded persistence for inventory, topology, and policy snapshots plus sync-run history
 - durable **workflow lifecycle** records and transitions (**`/api/v1/workflow-lifecycle`**, Postgres **`workflow_lifecycles`** / **`workflow_lifecycle_events`**) — **not** dry-run, validation, or execution; distinct from sync-derived **workflow-history**
+- bounded preview and diff APIs for the documented v1 workflow slice
+- bounded validation APIs for the documented v1 workflow slice
+- one bounded safe-action v1 slice and one bounded rollback orchestration v1 slice with explicit non-claims and platform-only effect
 - bounded workflow-history and audit-history visibility derived from persisted sync activity
 - sharper capability semantics plus a stricter descriptive dry-run-planning-readiness assessment
 - stronger platform, topology, and SR policy dashboards with bounded freshness, agreement, and evidence-gap cues where real metrics exist
@@ -161,7 +166,7 @@ Phase 2 to date has established:
 - **Week 24 closure (Friday task 02):** **`post-week-24-bounded-phase2-recommendation.md`** states the post–week **24** evidence-first default, narrowed plausible follow-ons (week **24** change intelligence closed unless proven gap), and **anti-recommendations** against momentum-driven reopen—**no** new default implementation lane, **no** phase transition
 - **Week 19 closure (Friday task 02):** **`topology-truth-depth-review.md`** adds a **Post–Week 19** note: topology **partiality contract** stays **closed** in shipped code; **default next scheduling** remains **`ADR-0001`** **Priority 2** evidence-first reassessment—**not** topology code by default after inventory work
 - **Week 18 delivered value (documentation and trust, not scope expansion):** a single honest operator story for history gates, readiness two-clocks, and Grafana placeholder versus real metrics—without authorizing workflow, dry-run, validation, or broader production-operations claims.
-- **Unchanged limits (explicit):** remain in **`Phase 2 — read-only product foundation`**; **Grafana** is not the product surface for readiness, capabilities, or change validation; **change-validation** still has **no** change-validation metric families; workflow implementation and phase transition stay **out of scope** until real contracts exist.
+- **Unchanged limits (explicit):** `Phase 2` remains the dominant product surface; **Grafana** is not the product surface for readiness, capabilities, or change validation; **change-validation** still has **no** change-validation metric families; broader workflow expansion stays out of scope beyond the documented bounded lifecycle, preview, validation, safe-action, and rollback contracts.
 - **Operator narrative alignment:** **`deployment-runbook.md`**, **`data-flows.md`**, **`production-readiness-assessment.md`**, and this roadmap describe the **same** bounded envelope: **`conditionally_ready_with_explicit_limits`**, same-workspace recovery only (host-backed data preserved), **product-owned** persisted history (including rich **`/api/v1/devices`** and **`/api/v1/policies`** **`history`**) versus Grafana **current-metrics** and bounded **`inventory_snapshots`** / **`policy_snapshots`** table mirrors on **`app-api`** **`/metrics`**, optional **read-side query ergonomics** (bounded **`read_side_query`** echo; not search or workflow flags), week **23** **readiness/capability decision-support** URL navigation and capabilities JSON cross-link fields (interpretation-only), **week 24** **change intelligence** (**`GET /api/v1/change-intelligence/recent-summary`**, Overview and Platform Health consumption, bounded **read-only** drilldowns to product and history surfaces—**app-api**–owned semantics, not Grafana), **week 25** **investigation workspace** (**`GET /api/v1/investigation-workspace/context`** nested assembly, WebUI **`view=investigation`** one-stop read-only interpretation surface with explicit non-claims—**not** validation, safe-to-change authority, or workflow execution), **week 26** **evidence pack / situation room** (**`GET /api/v1/evidence-pack/situation`** composed read-side assembly including nested **`investigation_context`**, backend **`situation_review_guidance`**, WebUI **`view=situation-room`**—interpretation and navigation only; **not** command authority or cross-domain scoring), **week 28** **failure-impact**, **topology risk summary**, **policy evidence timeline+delta**, and **Overview** **`OperatorWorkspaceEntry`** (read-only product and navigation-only shell hints—**not** Grafana semantics, **not** blast-radius/SLA/drift authority), **week 34** **Path Explorer** (**`path_explorer_v1`**, **`GET /api/v1/path-explorer`**) and **Service Impact Workspace** (**`service_impact_workspace_v1`**, **`GET /api/v1/service-impact-workspace`**, root JSON **not** **`evidence_export_v1`** replay input per contracts), **week 32** **Service Dossier** (**`GET /api/v1/services/{service_id}/dossier`**, **`view=service-dossier`**) and **Change Safety Case** (**`GET /api/v1/reports/change-safety-case/...`**, **`view=change-safety-case`**, report vs **evidence export** / replay boundaries per contracts—**not** dry-run or approval authority); **week 32** verifier evidence: **app-web** bundle markers plus **optional** structural **`GET`** sampling when **`python3`** and list gates pass ([`week-32-verifier-parity-contract.md`](./week-32-verifier-parity-contract.md)); completed-task inventory [`week-32-archive-index.md`](../../agent/sdn-tasks/completed/week-32-archive-index.md); conditional **`verify-core-runtime`** behavior when persisted rows exist or not, **Readiness** evaluation-sample versus **persisted-snapshot** language where relevant, and explicit **no** workflow, **no** dry-run, **no** validation-engine claims
 
 ## Updated Phase 2 Checkpoint Assessment
@@ -186,12 +191,12 @@ Strongest remaining evidence gap (post week 16–20):
 
 Bounded next steps:
 
-- preserve `Phase 2 — read-only product foundation` and the `conditionally_ready_with_explicit_limits` operating boundary
+- preserve the `Phase 2` read-only foundation as the dominant product surface and keep the `conditionally_ready_with_explicit_limits` operating boundary
 - keep the accepted week 13 identity no-change outcome closed unless a later concrete consumer proves the remaining item-level identity gap matters in practice
 - keep week 14 endpoint-pairing, partiality decomposition, and node-participation implementation outcomes closed; do not reopen pairing- or coverage-history consumption work by default
 - keep week 16–17 topology-history, policy-history, history-baseline, restart-drill, and related verifier Grafana doc honesty outcomes closed without new evidence
 - keep any policy follow-on constrained to proven live Nokia evidence shapes unless new collector evidence independently proves another supported detail-ready policy family
-- preserve `Phase 2 — read-only product foundation` until workflow records, workflow-owned APIs, and validation outputs are all real
+- preserve the `Phase 2` read-only foundation as the dominant product surface while keeping the bounded `Phase 5` slices narrow and honest
 
 ## Recommendation For The Next Bounded Cycle
 
@@ -199,7 +204,7 @@ Recommendation: preserve the week **16–20** checkpoint narrative (including **
 
 Interpret that recommendation narrowly.
 
-- keep the project fully in `Phase 2 — read-only product foundation`
+- keep the project focused on the `Phase 2` read-only foundation plus the already-documented bounded `Phase 5` slices
 - do not reopen item-identity implementation by default
 - do not reopen the accepted week 14 endpoint-pairing slice by default
 - do not reopen the already-implemented partiality decomposition by default
@@ -494,4 +499,4 @@ Phase transitions should not happen just because files exist.
 
 They should happen only when the foundational architecture is both present and honest enough to support the next class of work without drift.
 
-The project now supports stricter future dry-run planning assessment, but it should still remain fully in `Phase 2 — read-only product foundation` until actual workflow-model, dry-run API, preview or diff, validation-result, and workflow-audit relationship contracts become real.
+The project now supports bounded workflow lifecycle, preview, validation, safe-action, and rollback v1 slices, but broader workflow expansion should still remain evidence-gated. Do not treat the repository as broadly beyond its documented bounded contracts.

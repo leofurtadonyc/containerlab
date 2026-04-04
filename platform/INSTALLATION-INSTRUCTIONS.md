@@ -6,7 +6,7 @@ For the bounded operator-facing deployment and troubleshooting flow after initia
 
 It is written for the current implementation reality:
 
-- `Phase 2 — read-only product foundation`
+- `Phase 5 — bounded safe action workflow (v1)` alongside `Phase 2 — read-only product foundations`
 - platform and labs are deployed separately
 - the platform is a peer project, not a child of any lab
 - the platform is rebuilt from local repository source into local container images

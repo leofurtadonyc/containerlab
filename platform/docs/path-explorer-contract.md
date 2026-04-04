@@ -4,7 +4,7 @@
 
 **Path Explorer v1** is a **bounded Phase 2** operator workspace that **composes** existing read-only assemblies into one **path-centric** presentation. It is **documentation-first** in this contract; HTTP and UI surfaces, when implemented, must follow the same boundaries.
 
-**Phase:** [`Phase 2 — read-only product foundation`](../../agent/sdn/01-CURRENT-PHASE.md) — unchanged.
+**Surface role:** `Phase 2` read-only product surface within the current repo state.
 
 ---
 

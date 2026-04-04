@@ -16,7 +16,7 @@ Stable product vocabulary: **`contract_id`:** **`evidence_weakness_explanation_v
 
 **Composition:** The handler **reuses** **`GET /api/v1/evidence-quality-workspace`** assembly (same bounded inputs); it **does not** add investigation next-inspection, evidence-consistency tension resolution, or operational-stability churn analysis. **Optional future embedding** of explanation blocks on **`GET /api/v1/evidence-quality-workspace`** remains compatible; WebUI may also compose from this **`GET`** or from category tables.
 
-**Phase:** [`Phase 2 — read-only product foundation`](../../agent/sdn/01-CURRENT-PHASE.md).
+**Surface role:** `Phase 2` read-only product surface within the current repo state. This contract does not expand the bounded `Phase 5` workflow slices.
 
 ---
 

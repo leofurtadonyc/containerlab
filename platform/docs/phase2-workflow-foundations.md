@@ -4,6 +4,9 @@
 
 This document maps current `Phase 2 — read-only product foundation` artifacts to the future workflow-oriented foundation they may support later.
 
+It is a historical Phase 2 mapping artifact. The current repo state includes
+bounded `Phase 5` workflow slices alongside those Phase 2 foundations.
+
 It exists to answer three questions honestly:
 
 - what can carry forward directly
@@ -117,4 +120,4 @@ The correct interpretation is:
 - Phase 2 has produced meaningful workflow-phase foundations
 - those foundations are uneven across artifact types
 - several critical workflow-grade artifacts still do not exist
-- the platform should remain fully in `Phase 2 — read-only product foundation`
+- the dominant product surface remains the `Phase 2` read-only foundation even though the current repo also includes bounded `Phase 5` slices

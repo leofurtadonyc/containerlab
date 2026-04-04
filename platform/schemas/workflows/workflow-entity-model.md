@@ -4,7 +4,8 @@
 
 This document defines the core workflow-related entities and relationships the platform would need for future bounded workflow support.
 
-It is a domain-modeling document only.
+It originated as a domain-modeling document during `Phase 2` planning and
+remains useful for broader workflow expansion.
 
 It does not introduce:
 
@@ -19,11 +20,15 @@ It does not introduce:
 
 ## Phase Boundary
 
-The platform remains in `Phase 2 — read-only product foundation`.
+This file was written during `Phase 2 — read-only product foundation`
+planning.
 
-So this entity model must be treated as future-oriented design groundwork only.
+The current repo state is `Phase 5 — bounded safe action workflow (v1)`
+alongside completed `Phase 2` foundations.
 
-It exists to stabilize vocabulary and ownership boundaries before later schema, storage, and API design.
+This entity model remains broader workflow design groundwork. Current runtime
+truth for implemented workflow behavior lives in the bounded lifecycle,
+preview, validation, safe-action, and rollback contracts.
 
 ## Modeling Principles
 

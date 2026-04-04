@@ -127,5 +127,5 @@ A **topology object stability profile v1** is:
 | Field | Value |
 | --- | --- |
 | **`contract_id`** | **`topology_object_stability_profile_v1`** |
-| **Phase** | **Phase 2 — read-only product foundation** |
+| **Surface role** | **Phase 2 read-only product surface within the current repo state** |
 | **Authority** | **Interpretation support only** — read-side assembly of existing evidence |

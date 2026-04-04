@@ -139,5 +139,5 @@ An **operational stability summary v1** is:
 | Field | Value |
 | --- | --- |
 | **`contract_id`** | **`operational_stability_summary_v1`** |
-| **Phase** | **Phase 2 — read-only product foundation** |
+| **Surface role** | **Phase 2 read-only product surface within the current repo state** |
 | **Authority** | **Interpretation support only** — read-side assembly of existing evidence |

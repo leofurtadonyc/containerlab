@@ -2,11 +2,16 @@
 
 ## Purpose
 
-This document defines the bounded workflow lifecycle vocabulary the platform would eventually use.
+This document defines the bounded workflow lifecycle vocabulary used across the
+platform's workflow domain.
 
-It exists to make workflow language coherent before any dry-run, validation, approval, execution, or rollback behavior is implemented.
+It originated as a Phase 2 planning artifact and still exists to keep broader
+workflow language coherent as the platform evolves beyond the current bounded
+workflow slices.
 
-This is a vocabulary and modeling document only.
+Current runtime truth now includes bounded lifecycle, preview, validation,
+safe-action, and rollback behavior. This file remains a vocabulary and modeling
+document rather than the authoritative runtime contract.
 
 It does not introduce:
 
@@ -20,11 +25,14 @@ It does not introduce:
 
 ## Phase Boundary
 
-The platform remains in `Phase 2 — read-only product foundation`.
+This file was written during `Phase 2 — read-only product foundation` planning.
 
-That means this vocabulary is allowed only as architecture and contract-design groundwork.
+The current repo state is `Phase 5 — bounded safe action workflow (v1)`
+alongside completed `Phase 2` foundations.
 
-It must not be treated as evidence that workflow behavior, dry-run APIs, or action semantics already exist.
+Historical references below to `Phase 2` describe that planning context only.
+Current runtime truth lives in the active phase file and the concrete workflow
+contracts.
 
 ## Vocabulary Design Rules
 
@@ -204,7 +212,7 @@ Those items require separate design work after the current Phase 2 prerequisites
 
 ## Phase 2 Out-Of-Scope Reminder
 
-In `Phase 2 — read-only product foundation`, the platform still does not have:
+In the earlier `Phase 2 — read-only product foundation` planning context, the platform still did not have:
 
 - a workflow engine
 - durable workflow lifecycle records

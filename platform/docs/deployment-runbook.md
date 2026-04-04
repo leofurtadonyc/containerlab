@@ -1,8 +1,10 @@
-# Phase 2 Deployment Runbook
+# Bounded Platform Deployment Runbook
 
 ## Purpose
 
-This runbook documents how to build, deploy, verify, and troubleshoot the current bounded `Phase 2 — read-only product foundation` platform slice.
+This runbook documents how to build, deploy, verify, and troubleshoot the current bounded platform runtime.
+
+The repo's active phase includes one bounded `Phase 5` workflow slice alongside the dominant `Phase 2` read-only foundation. This runbook focuses on the operator-facing runtime boundary and does not widen that bounded workflow scope.
 
 It reflects the **week 16–26 operator-truth envelope** (week **19** deepens **devices/inventory** persisted history and observability alignment; week **20** deepens **policies** persisted-history contracts, **`verify-core-runtime`** policy **`history`** assertions when gates match, **`app-api`** **`/metrics`** **`policy_snapshots`** table gauges, and cross-doc alignment with the proven Nokia **`static_local`** boundary; week **22** documents bounded **read-side query ergonomics**—optional **`limit`**, **`history_recent_limit`**, **`sync_runs_limit`**, and **`readiness_snapshot_history_limit`** (audit only) with honest **`read_side_query`** echo, plus structural verifier sampling of optional bounded query strings on workflow-history and audit-history; week **23** documents **readiness/capability decision-support** as bounded **read-only** product navigation and JSON cross-links—**`readiness_blocker`**, **`readiness_prerequisite`**, **`readiness_capability_feature`** on **`view=`** URLs, Capabilities ↔ Readiness and history drilldown behavior per **`readiness-capability-decision-support-contract.md`**, **`GET /api/v1/readiness-snapshot-history`** inspection-only semantics, and structural **`verify-core-runtime`** substring checks that **`/api/v1/capabilities`** still exposes **`related_readiness_blockers`** and blocker **`related_prerequisites`** fields—**not** workflow execution, dry-run authorization, or validation; week **24** documents **bounded change intelligence**—**`GET /api/v1/change-intelligence/recent-summary`** aggregates existing snapshot metrics and sync-run history into a cross-domain read-only summary (**`change-intelligence-contract.md`**); WebUI **Overview** and **Platform Health** consume it with explicit non-claims; **read-only** **`view=`** navigation links the summary to Devices, Topology, Policies, Workflow history, and Audit history, and Workflow/Audit pages link back to **Overview** for the same panel—**not** validation verdicts, drift engines, safe-to-change scoring, or workflow authority; structural **`verify-core-runtime`** substring checks prove the **`change_intelligence_phase2_v1`** and **`sync_runs_limit_applied`** echo fields did not disappear; week **25** documents **bounded investigation workspace**—**`GET /api/v1/investigation-workspace/context`** nests **existing** change-intelligence, platform-status, and capabilities responses per **`investigation-workspace-contract.md`**; WebUI **`view=investigation`** is a read-only interpretation surface (safety framing, recency anchors, cross-domain context panels, next-inspection navigation hints); structural **`verify-core-runtime`** checks include **`investigation_workspace_phase2_v1`**, **`next_inspection_framing`**, **`next_inspection_suggestions`**, and suggestion-shape substrings—**not** validation authority, drift verdicts, or workflow execution; week **26** documents **bounded operator evidence pack / situation room**—**`GET /api/v1/evidence-pack/situation`** per **`evidence-pack-contract.md`** composes devices, topology, policies, readiness snapshot history, workflow history, audit history, nested **`investigation_context`**, plus backend **`situation_review_guidance`** (explicit gap notes and sorted navigation prompts; evidence-navigation only); WebUI **Overview** **Situation room** + **`view=situation-room`** / **`SituationRoomProduct`**—read-only framing; structural **`verify-core-runtime`** checks include **`evidence_pack_phase2_v1`**, **`situation_review_guidance`**, and bounded **`sync_runs_limit`** echo—**not** validation verdicts, safe-to-change authority, or workflow execution—**without** changing the Phase 2 stop line): **conditional** preserved-baseline checks in
 `verify-core-runtime` when Postgres holds persisted read-side rows (platform **`recovery`**, workflow-history and audit-history **`baseline_summary`** JSON plus **`preserved_same_workspace_baseline`**), **conditional** **devices** (inventory), **topology**, and **policy** `history` contract checks when snapshot rows exist and the API returns non-empty **`recent_snapshots`** (devices and policy use a **`[{"snapshot_id"`** prefix match in compact JSON so `comparison_to_previous` snapshot id fields cannot satisfy snapshot-level assertions; **devices** inventory checks assert the expanded snapshot and **`comparison_to_previous`** key families when those gates match), explicit recovery fields on
@@ -14,7 +16,7 @@ It is intentionally practical rather than aspirational:
 
 - it follows the repo-owned build and deploy path exactly
 - it treats the platform as a separate Containerlab topology under `platform/`
-- it keeps workflow, dry-run, and action semantics explicitly out of scope
+- it keeps broad workflow, dry-run, and action semantics out of scope beyond the documented bounded lifecycle, preview, validation, safe-action, and rollback slices
 - it describes the current operational stop line honestly
 
 ## Quick Validation Rule
@@ -66,8 +68,8 @@ Authoritative contract clauses remain in **`change-safety-case-contract.md`**, *
 ## What This Runbook Does Not Cover
 
 - architecture redesign
-- workflow execution or approvals
-- dry-run or preview workflows
+- broad workflow execution or approvals beyond the documented bounded slices
+- broad dry-run or preview programs beyond the documented bounded slices
 - TLS enablement
 - secret rotation outside the bounded ODL admin-password path
 - HA, clustering, or production backup automation
@@ -78,7 +80,7 @@ Authoritative contract clauses remain in **`change-safety-case-contract.md`**, *
 Treat the current platform honestly:
 
 - safe for bounded read-only visibility, bounded persisted fallback, platform metrics, and current operator-facing WebUI views
-- not safe to describe as a workflow platform, dry-run platform, or action-automation platform
+- not safe to describe as a broad workflow platform, broad dry-run platform, or broad action-automation platform beyond the documented bounded lifecycle, preview, validation, safe-action, and rollback slices
 - not safe to describe as full topology truth, full policy truth, or a multi-vendor parity claim
 - not hardened yet for broader production controls such as TLS, external identity, secret lifecycle, HA, backup automation, or full recovery automation
 
@@ -808,7 +810,7 @@ clab deploy -t topology.clab.yml -c
 ### Not Safe To Say Right Now
 
 - that the platform executes workflows
-- that the platform supports dry-run or preview workflows
+- that the platform supports broad dry-run or preview workflows beyond the documented bounded slices
 - that the platform provides full production hardening
 - that the platform provides full topology truth, full policy truth, or full multi-vendor parity
 - that the platform has complete recovery automation, complete backup discipline, or HA behavior

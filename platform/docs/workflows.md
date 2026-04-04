@@ -6,15 +6,17 @@ This document describes the workflow direction for the platform and the safety r
 
 ## Current Status
 
-Workflows are not the primary implementation target in the current Phase 2 read-only foundation.
+The repo is currently in `Phase 5 — bounded safe action workflow (v1)` alongside completed `Phase 2 — read-only product foundations`.
 
 Current reality:
 
-- the platform is focused on read-only product usefulness, bounded history visibility, and honest evidence rather than change execution
-- broad action workflows are intentionally deferred
-- no workflow engine has been implemented yet
+- the platform is still focused primarily on read-only product usefulness, bounded history visibility, and honest evidence
+- durable workflow lifecycle records now exist for the documented bounded slice
+- bounded preview and validation APIs now exist for the documented bounded slice
+- one bounded safe action and rollback orchestration slice now exists with explicit non-claims and platform-only effect
+- broad workflow automation remains intentionally deferred outside those documented v1 contracts
 
-This document therefore describes the workflow roadmap and boundaries, not completed functionality.
+This document therefore mixes current bounded workflow truth with historical planning guidance for broader workflow expansion. When this document disagrees with the active phase file or the concrete workflow contracts, treat the current contracts as authoritative.
 
 ## Workflow Direction
 
@@ -94,11 +96,12 @@ Workflow ownership does not belong to:
 The platform now has a dedicated workflow lifecycle vocabulary document in
 `platform/docs/workflow-lifecycle-vocabulary.md`.
 
-That document defines canonical state names, state meanings, non-definitions,
-and conceptual transitions only.
+That document remains useful for canonical state names, state meanings,
+non-definitions, and broader expansion rules.
 
-It does not introduce workflow behavior, dry-run APIs, approval semantics, or
-execution logic in the current phase.
+Current runtime truth for implemented lifecycle behavior lives in
+`platform/docs/workflow-lifecycle-contract.md`, `agent/sdn/01-CURRENT-PHASE.md`,
+and `agent/sdn/03-CURRENT-STATUS.md`.
 
 ## Preview And Diff Contract Design
 
@@ -111,8 +114,9 @@ The platform now also has design-only preview and diff contract documents under:
 These files define future contract vocabulary, bounded claim rules, uncertainty posture,
 and blocker semantics only.
 
-They do not introduce preview generation, validation behavior, approval behavior,
-execution behavior, or rollback behavior in the current phase.
+They began as planning artifacts. Current runtime truth for the implemented
+bounded preview slice lives in `platform/docs/dry-run-preview-diff-contract-v1.md`
+and the active phase and status files.
 
 ## Workflow Entity Model
 
@@ -123,7 +127,9 @@ The platform now also has a design-only workflow entity model document in:
 That document defines future workflow entities, their relationships, and how current
 Phase 2 history and readiness structures map only partially onto those future concepts.
 
-It does not introduce storage design, workflow APIs, or implementation behavior.
+It remains a design document for broader workflow expansion. Current implemented
+workflow behavior is defined by the bounded lifecycle, preview, validation,
+safe-action, and rollback contracts rather than this model.
 
 ## Workflow-Owned State Prerequisites
 
@@ -168,6 +174,10 @@ The platform now also has design-only validation and blocker contract documents 
 These files define future validation-result, blocker, unsupported-condition,
 and insufficient-evidence semantics without introducing validation behavior,
 rule execution, approval behavior, or dry-run implementation.
+
+Current runtime truth now includes a bounded validation engine. These design
+documents remain useful for broader vocabulary and future expansion rules, not
+as the sole description of live validation behavior.
 
 ## Audit Relationship Design
 
@@ -274,15 +284,17 @@ readiness, and preserves the current Phase 2 boundary.
 ### Current
 
 - workflow model direction is documented
+- workflow lifecycle records and transitions exist for the documented bounded slice
+- bounded preview and validation APIs exist for the documented bounded slice
+- bounded safe-action and rollback APIs exist for the documented bounded slice
 - placeholder dashboard family exists for change validation observability
 - bounded workflow-history and audit-history product views now exist; they are read-only history surfaces derived from persisted sync activity rather than an execution workflow engine, and they expose the response-level baseline summary so operators can see preserved-baseline versus new-baseline posture
-- the project now supports stricter future dry-run planning assessment, but only as descriptive readiness support rather than actual workflow functionality
-- no actual dry-run or action workflow implementation exists
+- the project still supports stricter future workflow-planning assessment beyond the current bounded slices
 - no workflow-grade audit linkage implementation exists
 
 ## Stricter Planning Readiness
 
-The platform is now strong enough to support **a stricter evidence-based assessment of eventual dry-run-phase planning**, but not strong enough to justify any dry-run implementation work or any dry-run-phase move yet.
+The platform is now strong enough to support **a stricter evidence-based assessment of broader workflow planning beyond the current bounded slices**, but not strong enough to justify broad workflow expansion or a general action platform move yet.
 
 Why planning readiness is now supportable:
 
@@ -291,26 +303,25 @@ Why planning readiness is now supportable:
 - the WebUI and docs can now present readiness boundaries and blockers honestly rather than only as roadmap prose
 - blocker records and blocked-scope overlap are now explicit enough to assess where planning support exists and where hard-stop maturity gaps still remain
 
-Why implementation readiness is still blocked:
+Why broader workflow expansion is still blocked:
 
-- no durable workflow lifecycle records exist yet for requested, planned, dry-run-complete, approved, executing, succeeded, failed, or rollback stages
-- no dry-run API, preview, diff, or validation-result implementation exists yet
+- the current lifecycle, preview, validation, safe-action, and rollback slices are intentionally narrow and not a general workflow platform
 - topology and policy truth remain intentionally partial and should not yet be used as workflow-grade pre-change intelligence
 - workflow-history and audit-history remain sync-derived visibility rather than workflow-grade audit relationships
-- blocker maturity itself remains explicitly blocked, because contract, truth, and history blockers still overlap with the `phase_transition` scope
+- broader workflow-owned audit linkage, approval policy, and multi-vendor execution behavior do not exist yet
+- blocker maturity itself remains explicitly blocked, because contract, truth, and history blockers still overlap with broader workflow expansion scope
 
 Current conclusion:
 
-- use the current foundation to plan later workflow contracts more carefully
-- do not treat that planning readiness as a phase transition
-- keep the platform fully in `Phase 2 — read-only product foundation`
+- use the current foundation and bounded workflow slices to plan later workflow contracts more carefully
+- do not treat the current bounded workflow slices as permission for broad workflow expansion
+- keep `Phase 2` as the dominant product surface while `Phase 5` remains limited to the documented v1 contracts
 
 ### Future
 
-- workflow model scaffolding
-- dry-run APIs
-- validation result views
-- one bounded safe workflow later
+- broader workflow families beyond the current bounded v1 slices
+- deeper workflow-grade audit linkage
+- broader post-change validation and execution authority where later evidence justifies it
 
 ## Boundary Reminder
 
