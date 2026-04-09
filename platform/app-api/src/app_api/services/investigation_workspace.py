@@ -1,5 +1,6 @@
 """Assemble bounded investigation context from existing read-side responses only."""
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 
 from app_api.config.settings import get_settings
@@ -32,9 +33,17 @@ def build_investigation_context_assembly_response(
     settings = get_settings()
     bounded = max(1, min(int(sync_runs_limit), RECENT_CHANGE_SYNC_RUNS_MAX))
 
-    recent_change = build_recent_change_summary_response(sync_runs_limit=bounded)
-    platform_status = build_platform_status_response()
-    capabilities = build_capabilities_list_response()
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        recent_change_future = executor.submit(
+            build_recent_change_summary_response,
+            sync_runs_limit=bounded,
+        )
+        platform_status_future = executor.submit(build_platform_status_response)
+        capabilities_future = executor.submit(build_capabilities_list_response)
+
+        recent_change = recent_change_future.result()
+        platform_status = platform_status_future.result()
+        capabilities = capabilities_future.result()
 
     now = datetime.now(UTC)
     suggestions = build_next_inspection_suggestions(

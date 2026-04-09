@@ -2405,7 +2405,7 @@ def test_platform_status_endpoint_classifies_collector_boundary_failures(monkeyp
     assert any("reported collector_connection_error" in note for note in payload["read_paths"][2]["notes"])
 
 
-def test_platform_status_endpoint_reads_collector_paths_sequentially(monkeypatch) -> None:
+def test_platform_status_endpoint_reads_collector_paths_in_parallel(monkeypatch) -> None:
     class StubOdlClient:
         def read_controller_observation(self) -> OdlControllerObservation:
             return OdlControllerObservation(
@@ -2464,7 +2464,7 @@ def test_platform_status_endpoint_reads_collector_paths_sequentially(monkeypatch
     response = client.get("/api/v1/platform/status")
 
     assert response.status_code == 200
-    assert active_reads["max"] == 1
+    assert active_reads["max"] >= 2
 
 
 def test_inventory_collector_client_reuses_recent_snapshot(monkeypatch) -> None:

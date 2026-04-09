@@ -31,9 +31,7 @@ export interface OverviewSliceReloader {
 export async function reloadOverviewSlicesSequentially(
   slices: OverviewSliceReloader[],
 ): Promise<void> {
-  for (const slice of slices) {
-    await slice.reload();
-  }
+  await Promise.all(slices.map((slice) => slice.reload()));
 }
 
 export function buildOverviewRenderState(

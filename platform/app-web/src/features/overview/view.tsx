@@ -199,20 +199,20 @@ export function OverviewView() {
   const searchKey = useUrlSearchParamsKey();
   const overviewMode = useMemo(() => readOverviewModeFromSearch(searchKey), [searchKey]);
   const devicesQuery = useDevicesQuery();
-  const devicesSettled = devicesQuery.data !== null || devicesQuery.error !== null;
-  const topologyQuery = useTopologyQuery(devicesSettled);
-  const topologySettled = topologyQuery.data !== null || topologyQuery.error !== null;
-  const policiesQuery = usePoliciesQuery(topologySettled);
-  const policiesSettled = policiesQuery.data !== null || policiesQuery.error !== null;
-  const platformQuery = usePlatformStatusQuery(policiesSettled);
-  const platformSettled = platformQuery.data !== null || platformQuery.error !== null;
+  const topologyQuery = useTopologyQuery();
+  const policiesQuery = usePoliciesQuery();
+  const platformQuery = usePlatformStatusQuery();
   const capabilitiesQuery = useCapabilitiesQuery();
   const capabilitiesSettled = capabilitiesQuery.data !== null || capabilitiesQuery.error !== null;
+  const devicesSettled = devicesQuery.data !== null || devicesQuery.error !== null;
+  const topologySettled = topologyQuery.data !== null || topologyQuery.error !== null;
+  const policiesSettled = policiesQuery.data !== null || policiesQuery.error !== null;
+  const platformSettled = platformQuery.data !== null || platformQuery.error !== null;
   const analyticsSlicesEnabled =
     devicesSettled && topologySettled && policiesSettled && platformSettled && capabilitiesSettled;
   const workspacePreviewsEnabled = overviewMode === "cockpit" && analyticsSlicesEnabled;
-  const recentChangeQuery = useRecentChangeSummaryQuery(analyticsSlicesEnabled);
-  const riskSummaryQuery = useTopologyRiskSummaryQuery(analyticsSlicesEnabled);
+  const recentChangeQuery = useRecentChangeSummaryQuery();
+  const riskSummaryQuery = useTopologyRiskSummaryQuery();
   const deltaDigestQuery = useDeltaDigestQuery(
     OVERVIEW_RECENT_CHANGE_SYNC_LIMIT,
     workspacePreviewsEnabled,

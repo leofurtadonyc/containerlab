@@ -146,6 +146,12 @@ clab deploy -t topology.clab.yml -c
 
 Use `-c` for the standard replacement path. It matches the documented host-recreation flow already used to verify the current bounded runtime.
 
+Collector-boundary timeout note:
+
+- the packaged runtime currently uses `GNMI_COLLECTOR_TIMEOUT_SECONDS=5` with per-path overrides of `GNMI_COLLECTOR_INVENTORY_TIMEOUT_SECONDS=5`, `GNMI_COLLECTOR_TOPOLOGY_TIMEOUT_SECONDS=8`, and `GNMI_COLLECTOR_POLICY_TIMEOUT_SECONDS=5` in `topology.clab.yml`
+- keep those values aligned with the actual collector latency of the deployed lab footprint; if the topology snapshot routinely takes longer than the topology budget, `app-api` will honestly report fallback or unreachable posture even when `gnmi-collector` itself is healthy
+- if you change those values, rebuild and redeploy the packaged runtime; do not assume an existing `app-api` container will pick up the new budget without replacement
+
 ### 3. Run The Required Verification Scripts
 
 After deployment, run both verification steps before treating the platform as usable:
@@ -157,6 +163,12 @@ After deployment, run both verification steps before treating the platform as us
 
 These are required, not optional, for the current bounded operational slice.
 If either script fails, stop there and treat the deployment as not yet usable until the failing runtime contract is understood.
+
+Cold-start note:
+
+- immediately after a full `clab deploy -t topology.clab.yml -c`, one verifier pass can still trip on bounded startup or warm-up races while containers are becoming healthy and caches are cold
+- if the containers are healthy and direct API spot checks look correct, rerun `./scripts/verify-core-runtime.sh` once before treating the failure as a stable regression
+- repeated verifier failures after the runtime is healthy should still be treated as real contract issues
 
 This is the current documented replacement for ad hoc host-side validation of normal platform changes.
 
@@ -365,6 +377,7 @@ Interpret them this way:
 - `collector_connection_error`, `collector_http_error`, `invalid_response_payload`, and `unknown_error` mean the boundary failed for a **non-timeout** reason (classify separately from `timeout_budget_exceeded`)
 - `partial_live_feed` means the fetch **completed within** the current timeout budget but still returned bounded degraded live coverage (not a timeout)
 - these metrics remain observability signals only; the product-facing truth still lives in the backend contracts and the WebUI trust cues
+- the current packaged runtime intentionally gives topology more time than inventory and policy because topology snapshot assembly is slower in the current deployed footprint; avoid collapsing those values back to one smaller shared timeout unless current collector latency measurements justify it
 
 ## What Remains Bootstrap-Grade
 

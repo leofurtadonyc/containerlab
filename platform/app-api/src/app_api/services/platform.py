@@ -1,5 +1,6 @@
 """Platform status service helpers."""
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 
 from app_api.config.settings import get_settings
@@ -441,14 +442,22 @@ def _build_odl_component_status() -> PlatformComponentStatus:
     )
 
 
+def _build_read_paths() -> list[PlatformReadPathStatus]:
+    """Assemble core collector read paths in parallel while preserving response order."""
+    builders = (
+        _build_inventory_read_path_status,
+        _build_topology_read_path_status,
+        _build_policy_read_path_status,
+    )
+    with ThreadPoolExecutor(max_workers=len(builders)) as executor:
+        futures = [executor.submit(builder) for builder in builders]
+        return [future.result() for future in futures]
+
+
 def build_platform_status_response() -> PlatformStatusResponse:
     """Build the bounded platform status response for the current phase."""
     settings = get_settings()
-    read_paths = [
-        _build_inventory_read_path_status(),
-        _build_topology_read_path_status(),
-        _build_policy_read_path_status(),
-    ]
+    read_paths = _build_read_paths()
     recovery = _build_recovery_status(read_paths)
     return PlatformStatusResponse(
         status="ok",

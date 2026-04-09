@@ -704,6 +704,22 @@ beforeEach(() => {
 });
 
 describe("overview view", () => {
+  it("starts core overview queries without waiting on prior slices", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
+    useDevicesQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+    useTopologyQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+    usePoliciesQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    renderToStaticMarkup(<OverviewView />);
+
+    expect(useTopologyQuery).toHaveBeenCalledWith();
+    expect(usePoliciesQuery).toHaveBeenCalledWith();
+    expect(usePlatformStatusQuery).toHaveBeenCalledWith();
+    expect(useRecentChangeSummaryQuery).toHaveBeenCalledWith();
+    expect(useTopologyRiskSummaryQuery).toHaveBeenCalledWith();
+  });
+
   it("surfaces degraded policy v1 summary and policies drill-down on the policy inventory card", () => {
     usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
     useDevicesQuery.mockReturnValue(createQueryState(null));
@@ -836,7 +852,7 @@ describe("overview view", () => {
     expect(html).toContain("sync run window");
   });
 
-  it("stages collector-backed overview queries instead of starting them all at once", () => {
+  it("starts collector-backed overview queries immediately", () => {
     usePlatformStatusQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
     useDevicesQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
     useTopologyQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
@@ -845,10 +861,10 @@ describe("overview view", () => {
 
     renderToStaticMarkup(<OverviewView />);
 
-    expect(useTopologyQuery).toHaveBeenCalledWith(false);
-    expect(usePoliciesQuery).toHaveBeenCalledWith(false);
-    expect(usePlatformStatusQuery).toHaveBeenCalledWith(false);
-    expect(useTopologyRiskSummaryQuery).toHaveBeenCalledWith(false);
+    expect(useTopologyQuery).toHaveBeenCalledWith();
+    expect(usePoliciesQuery).toHaveBeenCalledWith();
+    expect(usePlatformStatusQuery).toHaveBeenCalledWith();
+    expect(useTopologyRiskSummaryQuery).toHaveBeenCalledWith();
   });
 
   it("renders available slices when one core query fails", () => {
