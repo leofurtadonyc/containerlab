@@ -21,6 +21,7 @@ Introduce an OpenConfig-first LLDP physical adjacency lane inside the existing t
 
 - The product can distinguish inference-only topology from device-native physical adjacency evidence.
 - Controller export remains enrichment only; multi-source confirmation now requires LLDP-backed physical adjacency together with controller correlation.
+- Follow-on IGP control-plane adjacency evidence extends this model with a separate routing-truth lane rather than redefining LLDP semantics; see `ADR-0011`.
 - Empty or unavailable LLDP tables remain first-class outcomes rather than silent gaps.
 
 ## References

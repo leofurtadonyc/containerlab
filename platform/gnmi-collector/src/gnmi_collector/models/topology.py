@@ -5,6 +5,18 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+IgpAdjacencyProtocol = Literal["ospf", "isis"]
+IgpAdjacencyStateStrength = Literal["strong", "weak", "unknown"]
+TopologyControlPlaneAdjacencyPosture = Literal[
+    "not_observed",
+    "ospf_observed",
+    "isis_observed",
+    "igp_confirmed",
+    "protocol_mismatch",
+    "suppressed_or_unknown",
+    "unknown",
+]
+
 
 class TopologyCollectionPlan(BaseModel):
     """Vendor-neutral collection plan for one topology target."""
@@ -39,6 +51,26 @@ class LldpNeighborObservation(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class IgpAdjacencyObservation(BaseModel):
+    """Observed device-native IGP adjacency evidence collected from one target."""
+
+    protocol: IgpAdjacencyProtocol
+    local_interface_name: str | None = None
+    local_router_id: str | None = None
+    local_area: str | None = None
+    local_instance: str | None = None
+    local_level: str | None = None
+    local_system_id: str | None = None
+    remote_router_id: str | None = None
+    remote_system_id: str | None = None
+    remote_hostname: str | None = None
+    adjacency_state: str | None = None
+    state_strength: IgpAdjacencyStateStrength = "unknown"
+    last_change_at: str | None = None
+    source_path: str
+    notes: list[str] = Field(default_factory=list)
+
+
 class TopologyRawRecord(BaseModel):
     """Vendor-specific raw topology record before normalization."""
 
@@ -52,6 +84,7 @@ class TopologyRawRecord(BaseModel):
     observed_at: datetime | None = None
     raw_interfaces: list[TopologyObservedInterface] = Field(default_factory=list)
     raw_lldp_neighbors: list[LldpNeighborObservation] = Field(default_factory=list)
+    raw_igp_adjacencies: list[IgpAdjacencyObservation] = Field(default_factory=list)
     lldp_collection_status: Literal[
         "neighbors_visible",
         "enabled_no_neighbors",
@@ -60,6 +93,14 @@ class TopologyRawRecord(BaseModel):
         "unknown",
     ] = "unknown"
     lldp_notes: list[str] = Field(default_factory=list)
+    igp_collection_status: Literal[
+        "adjacencies_visible",
+        "enabled_no_adjacencies",
+        "not_exposed",
+        "query_failed",
+        "unknown",
+    ] = "unknown"
+    igp_notes: list[str] = Field(default_factory=list)
 
 
 class NormalizedTopologyNodeRecord(BaseModel):
@@ -91,12 +132,22 @@ class NormalizedTopologyLinkRecord(BaseModel):
         "lldp_mismatch",
         "suppressed_or_unknown",
     ] = "suppressed_or_unknown"
+    control_plane_adjacency_posture: TopologyControlPlaneAdjacencyPosture = (
+        "suppressed_or_unknown"
+    )
     lldp_observation_count: int = 0
     lldp_bidirectional: bool = False
     lldp_local_interfaces: list[str] = Field(default_factory=list)
     lldp_remote_systems: list[str] = Field(default_factory=list)
     lldp_remote_ports: list[str] = Field(default_factory=list)
     lldp_correlation_notes: list[str] = Field(default_factory=list)
+    igp_adjacency_observation_count: int = 0
+    igp_protocols_observed: list[IgpAdjacencyProtocol] = Field(default_factory=list)
+    ospf_adjacency_state: str | None = None
+    isis_adjacency_state: str | None = None
+    igp_local_interfaces: list[str] = Field(default_factory=list)
+    igp_remote_identities: list[str] = Field(default_factory=list)
+    igp_correlation_notes: list[str] = Field(default_factory=list)
     attributes: dict[str, str] = Field(default_factory=dict)
 
 
@@ -129,6 +180,12 @@ class BackendTopologyDeliveryEnvelope(BaseModel):
     lldp_single_sided_link_count: int
     lldp_bidirectional_link_count: int
     lldp_mismatch_link_count: int
+    igp_adjacency_observation_count: int
+    ospf_adjacency_observation_count: int
+    isis_adjacency_observation_count: int
+    igp_correlated_link_count: int
+    igp_confirmed_link_count: int
+    igp_protocol_mismatch_link_count: int
     linked_node_count: int
     isolated_node_count: int
     topology_id: str
@@ -171,6 +228,12 @@ class TopologyFlowSummary(BaseModel):
     lldp_single_sided_link_count: int
     lldp_bidirectional_link_count: int
     lldp_mismatch_link_count: int
+    igp_adjacency_observation_count: int
+    ospf_adjacency_observation_count: int
+    isis_adjacency_observation_count: int
+    igp_correlated_link_count: int
+    igp_confirmed_link_count: int
+    igp_protocol_mismatch_link_count: int
     linked_node_count: int
     isolated_node_count: int
     node_state_counts: dict[str, int] = Field(default_factory=dict)

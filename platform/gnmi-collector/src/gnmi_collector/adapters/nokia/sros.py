@@ -11,6 +11,7 @@ from gnmi_collector.config.models import GnmiTargetConfig
 from gnmi_collector.models.inventory import InventoryCollectionPlan, InventoryRawRecord
 from gnmi_collector.models.policy import PolicyCollectionPlan, PolicyRawRecord
 from gnmi_collector.models.topology import (
+    IgpAdjacencyObservation,
     LldpNeighborObservation,
     TopologyCollectionPlan,
     TopologyObservedInterface,
@@ -48,6 +49,57 @@ class NokiaSrosAdapter:
             if self._strip_module_prefix(key) == name:
                 return value
         return None
+
+    def _get_child_value(self, payload: dict[str, Any], *names: str) -> Any | None:
+        for name in names:
+            if name in payload:
+                return payload[name]
+            child = self._find_first_child(payload, name)
+            if child is not None:
+                return child
+        return None
+
+    def _as_list(self, value: object) -> list[dict[str, Any]]:
+        if isinstance(value, list):
+            return [item for item in value if isinstance(item, dict)]
+        if isinstance(value, dict):
+            return [value]
+        return []
+
+    def _classify_igp_query_error(self, exc: Exception) -> tuple[str, str]:
+        message = str(exc)
+        normalized = message.lower()
+        if "disabled by configuration" in normalized or "unknown element" in normalized:
+            return (
+                "not_exposed",
+                f"IGP path is not exposed on the target: {message}",
+            )
+        return (
+            "query_failed",
+            f"IGP path query failed: {message}",
+        )
+
+    def _prefer_collection_status(self, current: str, candidate: str) -> str:
+        ranking = {
+            "unknown": 0,
+            "not_exposed": 1,
+            "query_failed": 2,
+            "enabled_no_adjacencies": 3,
+            "adjacencies_visible": 4,
+        }
+        return candidate if ranking.get(candidate, 0) >= ranking.get(current, 0) else current
+
+    def _classify_igp_state_strength(self, protocol: str, state: str | None) -> str:
+        if state is None:
+            return "unknown"
+        normalized = state.strip().lower()
+        if not normalized:
+            return "unknown"
+        if protocol == "ospf":
+            return "strong" if normalized == "full" else "weak"
+        if protocol == "isis":
+            return "strong" if normalized == "up" else "weak"
+        return "unknown"
 
     def _extract_openconfig_lldp_neighbors(
         self,
@@ -335,6 +387,211 @@ class NokiaSrosAdapter:
             f"LLDP path query failed: {message}",
         )
 
+    def _extract_ospf_adjacencies(
+        self,
+        value: object,
+        *,
+        source_path: str,
+    ) -> tuple[list[IgpAdjacencyObservation], str, list[str]]:
+        if not isinstance(value, dict):
+            return [], "unknown", ["OSPF subtree did not return a structured payload."]
+
+        root = self._get_child_value(value, "ospf")
+        if root is None:
+            root = value
+
+        instance_entries = self._as_list(root)
+        observations: list[IgpAdjacencyObservation] = []
+        saw_root = False
+        saw_neighbor_container = False
+
+        for instance_entry in instance_entries:
+            saw_root = True
+            instance_state = self._get_child_value(instance_entry, "state")
+            instance_id = self._get_child_value(instance_entry, "instance-id", "ospf-instance")
+            local_router_id = None
+            if isinstance(instance_state, dict):
+                local_router_id = self._get_child_value(instance_state, "router-id")
+            if local_router_id is None:
+                local_router_id = self._get_child_value(instance_entry, "router-id")
+
+            area_entries = self._as_list(self._get_child_value(instance_entry, "area"))
+            for area_entry in area_entries:
+                area_id = self._get_child_value(area_entry, "area-id")
+                interface_entries = self._as_list(self._get_child_value(area_entry, "interface"))
+                for interface_entry in interface_entries:
+                    interface_name = self._get_child_value(
+                        interface_entry,
+                        "interface-name",
+                        "name",
+                    )
+                    neighbor_entries = self._as_list(self._get_child_value(interface_entry, "neighbor"))
+                    if neighbor_entries:
+                        saw_neighbor_container = True
+                    for neighbor_entry in neighbor_entries:
+                        neighbor_state = self._get_child_value(neighbor_entry, "state")
+                        if not isinstance(neighbor_state, dict):
+                            neighbor_state = neighbor_entry
+                        remote_router_id = self._get_child_value(
+                            neighbor_entry,
+                            "router-id",
+                            "neighbor-router-id",
+                        )
+                        if remote_router_id is None:
+                            remote_router_id = self._get_child_value(
+                                neighbor_state,
+                                "router-id",
+                                "neighbor-router-id",
+                            )
+                        adjacency_state = self._get_child_value(
+                            neighbor_state,
+                            "neighbor-state",
+                            "adjacency-state",
+                            "state",
+                        )
+                        last_change = self._get_child_value(
+                            neighbor_state,
+                            "last-state-change",
+                            "last-change",
+                        )
+                        observations.append(
+                            IgpAdjacencyObservation(
+                                protocol="ospf",
+                                local_interface_name=str(interface_name) if interface_name else None,
+                                local_router_id=str(local_router_id) if local_router_id else None,
+                                local_area=str(area_id) if area_id else None,
+                                local_instance=str(instance_id) if instance_id else None,
+                                remote_router_id=str(remote_router_id) if remote_router_id else None,
+                                adjacency_state=str(adjacency_state) if adjacency_state else None,
+                                state_strength=self._classify_igp_state_strength(
+                                    "ospf",
+                                    str(adjacency_state) if adjacency_state else None,
+                                ),
+                                last_change_at=str(last_change) if last_change else None,
+                                source_path=source_path,
+                                notes=[],
+                            )
+                        )
+
+        if observations:
+            return observations, "adjacencies_visible", [
+                f"OSPF returned {len(observations)} adjacency row(s).",
+            ]
+        if saw_neighbor_container or saw_root:
+            return [], "enabled_no_adjacencies", [
+                "OSPF state is reachable, but no neighbor rows were returned.",
+            ]
+        return [], "unknown", ["OSPF subtree did not expose recognizable area/interface/neighbor payloads."]
+
+    def _extract_isis_adjacencies(
+        self,
+        value: object,
+        *,
+        source_path: str,
+    ) -> tuple[list[IgpAdjacencyObservation], str, list[str]]:
+        if not isinstance(value, dict):
+            return [], "unknown", ["IS-IS subtree did not return a structured payload."]
+
+        root = self._get_child_value(value, "isis")
+        if root is None:
+            root = value
+
+        instance_entries = self._as_list(root)
+        observations: list[IgpAdjacencyObservation] = []
+        saw_root = False
+        saw_adjacency_container = False
+
+        for instance_entry in instance_entries:
+            saw_root = True
+            instance_state = self._get_child_value(instance_entry, "state")
+            instance_id = self._get_child_value(instance_entry, "instance", "instance-id")
+            local_system_id = None
+            if isinstance(instance_state, dict):
+                local_system_id = self._get_child_value(instance_state, "system-id")
+            if local_system_id is None:
+                local_system_id = self._get_child_value(instance_entry, "system-id")
+
+            interface_entries = self._as_list(self._get_child_value(instance_entry, "interface"))
+            for interface_entry in interface_entries:
+                interface_name = self._get_child_value(
+                    interface_entry,
+                    "interface-name",
+                    "name",
+                )
+                adjacency_entries = self._as_list(
+                    self._get_child_value(interface_entry, "adjacency", "neighbor")
+                )
+                if adjacency_entries:
+                    saw_adjacency_container = True
+                interface_level = self._get_child_value(interface_entry, "level")
+                for adjacency_entry in adjacency_entries:
+                    adjacency_state_payload = self._get_child_value(adjacency_entry, "state")
+                    if not isinstance(adjacency_state_payload, dict):
+                        adjacency_state_payload = adjacency_entry
+                    remote_system_id = self._get_child_value(
+                        adjacency_entry,
+                        "system-id",
+                        "neighbor-system-id",
+                    )
+                    if remote_system_id is None:
+                        remote_system_id = self._get_child_value(
+                            adjacency_state_payload,
+                            "system-id",
+                            "neighbor-system-id",
+                        )
+                    remote_hostname = self._get_child_value(
+                        adjacency_state_payload,
+                        "oper-hostname",
+                        "hostname",
+                        "neighbor-hostname",
+                        "system-name",
+                    )
+                    adjacency_state = self._get_child_value(
+                        adjacency_state_payload,
+                        "oper-state",
+                        "adjacency-state",
+                        "state",
+                    )
+                    level = self._get_child_value(adjacency_state_payload, "level")
+                    if level is None:
+                        level = interface_level
+                    last_change = self._get_child_value(
+                        adjacency_state_payload,
+                        "last-state-change",
+                        "last-change",
+                    )
+                    observations.append(
+                        IgpAdjacencyObservation(
+                            protocol="isis",
+                            local_interface_name=str(interface_name) if interface_name else None,
+                            local_instance=str(instance_id) if instance_id else None,
+                            local_level=str(level) if level else None,
+                            local_system_id=str(local_system_id) if local_system_id else None,
+                            remote_system_id=str(remote_system_id) if remote_system_id else None,
+                            remote_hostname=str(remote_hostname) if remote_hostname else None,
+                            adjacency_state=str(adjacency_state) if adjacency_state else None,
+                            state_strength=self._classify_igp_state_strength(
+                                "isis",
+                                str(adjacency_state) if adjacency_state else None,
+                            ),
+                            last_change_at=str(last_change) if last_change else None,
+                            source_path=source_path,
+                            notes=[],
+                        )
+                    )
+
+        if observations:
+            return observations, "adjacencies_visible", [
+                f"IS-IS returned {len(observations)} adjacency row(s).",
+            ]
+        if saw_adjacency_container or saw_root:
+            return [], "enabled_no_adjacencies", [
+                "IS-IS state is reachable, but no adjacency rows were returned.",
+            ]
+        return [], "unknown", [
+            "IS-IS subtree did not expose recognizable interface/adjacency payloads.",
+        ]
+
     def _extract_policy_payloads(self, value: object) -> list[dict[str, object]]:
         """Extract likely static-policy payload dictionaries from a subtree value."""
         payloads: list[dict[str, object]] = []
@@ -482,8 +739,11 @@ class NokiaSrosAdapter:
         """Collect live topology evidence from a Nokia SR OS target over gNMI."""
         interfaces: list[TopologyObservedInterface] = []
         lldp_neighbors: list[LldpNeighborObservation] = []
+        igp_adjacencies: list[IgpAdjacencyObservation] = []
         lldp_collection_status = "unknown"
         lldp_notes: list[str] = []
+        igp_collection_status = "unknown"
+        igp_notes: list[str] = []
         timestamps: list[int] = []
         collection_errors: list[str] = []
 
@@ -506,6 +766,22 @@ class NokiaSrosAdapter:
                             lldp_collection_status = fallback_status
                         lldp_notes.extend(fallback_notes)
                     continue
+                if "/ospf" in path or "ospf" in path:
+                    path_status, igp_note = self._classify_igp_query_error(exc)
+                    igp_collection_status = self._prefer_collection_status(
+                        igp_collection_status,
+                        path_status,
+                    )
+                    igp_notes.append(f"{path}: {igp_note}")
+                    continue
+                if "/isis" in path or "isis" in path:
+                    path_status, igp_note = self._classify_igp_query_error(exc)
+                    igp_collection_status = self._prefer_collection_status(
+                        igp_collection_status,
+                        path_status,
+                    )
+                    igp_notes.append(f"{path}: {igp_note}")
+                    continue
                 collection_errors.append(f"{path}: {exc}")
                 continue
 
@@ -514,27 +790,73 @@ class NokiaSrosAdapter:
                 for notification in result.get("notification", [])
                 if notification.get("timestamp") is not None
             )
+            if "openconfig-lldp" in path:
+                parsed_neighbors: list[LldpNeighborObservation] = []
+                parsed_status = "enabled_no_neighbors"
+                parsed_notes: list[str] = []
+                for notification in result.get("notification", []):
+                    for update in notification.get("update", []):
+                        update_neighbors, update_status, update_notes = self._extract_openconfig_lldp_neighbors(
+                            update.get("val"),
+                            source_path=path,
+                        )
+                        parsed_neighbors.extend(update_neighbors)
+                        parsed_status = update_status
+                        parsed_notes.extend(update_notes)
+
+                if parsed_neighbors:
+                    lldp_neighbors.extend(parsed_neighbors)
+                lldp_collection_status = parsed_status
+                lldp_notes.extend(parsed_notes)
+                continue
+
+            if "/ospf" in path or "ospf" in path:
+                parsed_adjacencies: list[IgpAdjacencyObservation] = []
+                parsed_status = "enabled_no_adjacencies"
+                parsed_notes: list[str] = []
+                for notification in result.get("notification", []):
+                    for update in notification.get("update", []):
+                        update_adjacencies, update_status, update_notes = self._extract_ospf_adjacencies(
+                            update.get("val"),
+                            source_path=path,
+                        )
+                        parsed_adjacencies.extend(update_adjacencies)
+                        parsed_status = self._prefer_collection_status(parsed_status, update_status)
+                        parsed_notes.extend(update_notes)
+                if parsed_adjacencies:
+                    igp_adjacencies.extend(parsed_adjacencies)
+                igp_collection_status = self._prefer_collection_status(
+                    igp_collection_status,
+                    parsed_status,
+                )
+                igp_notes.extend(parsed_notes)
+                continue
+
+            if "/isis" in path or "isis" in path:
+                parsed_adjacencies = []
+                parsed_status = "enabled_no_adjacencies"
+                parsed_notes = []
+                for notification in result.get("notification", []):
+                    for update in notification.get("update", []):
+                        update_adjacencies, update_status, update_notes = self._extract_isis_adjacencies(
+                            update.get("val"),
+                            source_path=path,
+                        )
+                        parsed_adjacencies.extend(update_adjacencies)
+                        parsed_status = self._prefer_collection_status(parsed_status, update_status)
+                        parsed_notes.extend(update_notes)
+                if parsed_adjacencies:
+                    igp_adjacencies.extend(parsed_adjacencies)
+                igp_collection_status = self._prefer_collection_status(
+                    igp_collection_status,
+                    parsed_status,
+                )
+                igp_notes.extend(parsed_notes)
+                continue
+
             if "openconfig-lldp" not in path:
                 interfaces.extend(self._extract_interface_updates(result))
                 continue
-
-            parsed_neighbors: list[LldpNeighborObservation] = []
-            parsed_status = "enabled_no_neighbors"
-            parsed_notes: list[str] = []
-            for notification in result.get("notification", []):
-                for update in notification.get("update", []):
-                    update_neighbors, update_status, update_notes = self._extract_openconfig_lldp_neighbors(
-                        update.get("val"),
-                        source_path=path,
-                    )
-                    parsed_neighbors.extend(update_neighbors)
-                    parsed_status = update_status
-                    parsed_notes.extend(update_notes)
-
-            if parsed_neighbors:
-                lldp_neighbors.extend(parsed_neighbors)
-            lldp_collection_status = parsed_status
-            lldp_notes.extend(parsed_notes)
 
         observed_at = None
         if timestamps:
@@ -569,8 +891,11 @@ class NokiaSrosAdapter:
             observed_at=observed_at,
             raw_interfaces=interfaces,
             raw_lldp_neighbors=lldp_neighbors,
+            raw_igp_adjacencies=igp_adjacencies,
             lldp_collection_status=lldp_collection_status,
             lldp_notes=lldp_notes,
+            igp_collection_status=igp_collection_status,
+            igp_notes=igp_notes,
         )
 
     def build_policy_plan(self, target: GnmiTargetConfig) -> PolicyCollectionPlan:

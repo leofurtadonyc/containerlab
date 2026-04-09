@@ -46,12 +46,28 @@ class CollectorTopologyLinkRecord(BaseModel):
         "lldp_mismatch",
         "suppressed_or_unknown",
     ] = "suppressed_or_unknown"
+    control_plane_adjacency_posture: Literal[
+        "not_observed",
+        "ospf_observed",
+        "isis_observed",
+        "igp_confirmed",
+        "protocol_mismatch",
+        "suppressed_or_unknown",
+        "unknown",
+    ] = "suppressed_or_unknown"
     lldp_observation_count: int = 0
     lldp_bidirectional: bool = False
     lldp_local_interfaces: list[str] = Field(default_factory=list)
     lldp_remote_systems: list[str] = Field(default_factory=list)
     lldp_remote_ports: list[str] = Field(default_factory=list)
     lldp_correlation_notes: list[str] = Field(default_factory=list)
+    igp_adjacency_observation_count: int = 0
+    igp_protocols_observed: list[Literal["ospf", "isis"]] = Field(default_factory=list)
+    ospf_adjacency_state: str | None = None
+    isis_adjacency_state: str | None = None
+    igp_local_interfaces: list[str] = Field(default_factory=list)
+    igp_remote_identities: list[str] = Field(default_factory=list)
+    igp_correlation_notes: list[str] = Field(default_factory=list)
     attributes: dict[str, str] = Field(default_factory=dict)
 
 
@@ -85,6 +101,12 @@ class CollectorTopologySnapshot(BaseModel):
     lldp_single_sided_link_count: int | None = None
     lldp_bidirectional_link_count: int | None = None
     lldp_mismatch_link_count: int | None = None
+    igp_adjacency_observation_count: int | None = None
+    ospf_adjacency_observation_count: int | None = None
+    isis_adjacency_observation_count: int | None = None
+    igp_correlated_link_count: int | None = None
+    igp_confirmed_link_count: int | None = None
+    igp_protocol_mismatch_link_count: int | None = None
     linked_node_count: int | None = None
     isolated_node_count: int | None = None
     topology_id: str

@@ -15,6 +15,7 @@ from app_api.integrations.odl.bgp_ls_topology import fetch_bgpls_topology_via_od
 from app_api.metrics.state import record_topology_truth_observation
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.models.topology import (
+    resolve_topology_link_control_plane_adjacency,
     resolve_topology_link_endpoint_evidence,
     resolve_topology_link_physical_adjacency,
 )
@@ -23,9 +24,11 @@ from app_api.persistence.tables import TopologyTruthSnapshotTable
 from app_api.schemas.topology_truth import (
     TOPOLOGY_TRUTH_V1_CONTRACT_ID,
     ControllerFetchStatus,
+    TopologyControlPlaneAdjacencyEvidence,
     TopologyDisagreementRecord,
     TopologyPhysicalAdjacencyEvidence,
     TopologySourceRef,
+    TopologySourceType,
     TopologyTruthCounts,
     TopologyTruthFreshnessSummary,
     TopologyTruthLinkRecord,
@@ -57,11 +60,43 @@ def _link_key(a: str, b: str) -> tuple[str, str]:
 
 def _device_link_truth_base(link: TopologyLink) -> TopologyTruthPosture:
     physical = resolve_topology_link_physical_adjacency(link)
+    control_plane = resolve_topology_link_control_plane_adjacency(link)
+    if control_plane.posture == "igp_confirmed":
+        return "igp_confirmed"
+    if control_plane.posture in {"ospf_observed", "isis_observed"}:
+        return "device_observed"
     if physical.posture == "bidirectional_lldp":
         return "physical_confirmed"
     if physical.posture == "single_sided_lldp":
         return "device_observed"
     return "inferred_only"
+
+
+def _igp_sources(link: TopologyLink) -> list[TopologySourceType]:
+    control_plane = resolve_topology_link_control_plane_adjacency(link)
+    sources: list[TopologySourceType] = []
+    if "ospf" in control_plane.protocols_observed:
+        sources.append("ospf_adjacency")
+    if "isis" in control_plane.protocols_observed:
+        sources.append("isis_adjacency")
+    return sources
+
+
+def _primary_link_source(
+    *,
+    physical: TopologyPhysicalAdjacencyEvidence,
+    control_plane: TopologyControlPlaneAdjacencyEvidence,
+) -> TopologySourceType:
+    igp_sources: list[TopologySourceType] = []
+    if "ospf" in control_plane.protocols_observed:
+        igp_sources.append("ospf_adjacency")
+    if "isis" in control_plane.protocols_observed:
+        igp_sources.append("isis_adjacency")
+    if control_plane.posture in {"igp_confirmed", "ospf_observed", "isis_observed"} and igp_sources:
+        return igp_sources[0]
+    if physical.lldp_observation_count > 0:
+        return "lldp_gnmi"
+    return "device_gnmi"
 
 
 def _merge_nodes_and_links(
@@ -191,20 +226,24 @@ def _merge_nodes_and_links(
     out_links: list[TopologyTruthLinkRecord] = []
     inferred_only = 0
     physical_confirmed = 0
+    igp_confirmed = 0
+    ospf_observed = 0
+    isis_observed = 0
     multi_source_confirmed = 0
     lldp_single_sided = 0
     lldp_bidirectional = 0
     lldp_mismatch = 0
+    igp_protocol_mismatch = 0
     for key, lk in dev_links_by_key.items():
         cl = ctrl_links_by_key.get(key)
         base = _device_link_truth_base(lk)
         ep, ev = resolve_topology_link_endpoint_evidence(lk)
         physical = resolve_topology_link_physical_adjacency(lk)
-        contributing_sources: list[Literal["device_gnmi", "lldp_gnmi", "controller_bgpls"]] = [
-            "device_gnmi"
-        ]
+        control_plane = resolve_topology_link_control_plane_adjacency(lk)
+        contributing_sources: list[TopologySourceType] = ["device_gnmi"]
         if physical.lldp_observation_count > 0:
             contributing_sources.append("lldp_gnmi")
+        contributing_sources.extend(_igp_sources(lk))
         if cl:
             contributing_sources.append("controller_bgpls")
         if physical.posture == "single_sided_lldp":
@@ -213,14 +252,27 @@ def _merge_nodes_and_links(
             lldp_bidirectional += 1
         elif physical.posture == "lldp_mismatch":
             lldp_mismatch += 1
+        if control_plane.posture == "igp_confirmed":
+            igp_confirmed += 1
+        elif control_plane.posture == "ospf_observed":
+            ospf_observed += 1
+        elif control_plane.posture == "isis_observed":
+            isis_observed += 1
+        elif control_plane.posture == "protocol_mismatch":
+            igp_protocol_mismatch += 1
 
         posture: TopologyTruthPosture = base
-        missing_sources: list[Literal["device_gnmi", "lldp_gnmi", "controller_bgpls"]] = []
+        missing_sources: list[TopologySourceType] = []
         if cl:
-            if physical.posture == "bidirectional_lldp":
+            if control_plane.posture == "igp_confirmed":
+                posture = "multi_source_confirmed"
+                multi_source_confirmed += 1
+            elif physical.posture == "bidirectional_lldp":
                 posture = "multi_source_confirmed"
                 multi_source_confirmed += 1
             elif physical.posture == "single_sided_lldp":
+                posture = "partial"
+            elif control_plane.posture in {"ospf_observed", "isis_observed"}:
                 posture = "partial"
             elif physical.posture == "lldp_mismatch":
                 posture = "conflicting"
@@ -237,6 +289,10 @@ def _merge_nodes_and_links(
             physical_confirmed += 1
         if physical.lldp_observation_count == 0:
             missing_sources.append("lldp_gnmi")
+        if "ospf" not in control_plane.protocols_observed:
+            missing_sources.append("ospf_adjacency")
+        if "isis" not in control_plane.protocols_observed:
+            missing_sources.append("isis_adjacency")
         disc = None
         if physical.posture == "lldp_mismatch":
             disc = TopologyDisagreementRecord(
@@ -249,6 +305,37 @@ def _merge_nodes_and_links(
                 ),
                 source_a="lldp_gnmi",
                 source_b="controller_bgpls" if cl else "device_gnmi",
+            )
+            disagreements.append(disc)
+            posture = "conflicting"
+        elif control_plane.posture == "protocol_mismatch":
+            disc = TopologyDisagreementRecord(
+                object_kind="link",
+                object_id=lk.link_id,
+                kind=(
+                    "igp_lldp_mismatch"
+                    if physical.lldp_observation_count > 0
+                    else "igp_controller_mismatch"
+                    if cl
+                    else "igp_inference_mismatch"
+                ),
+                summary=(
+                    "Device-native IGP adjacency evidence points at a different neighbor than the current normalized link correlation."
+                ),
+                source_a=(
+                    "ospf_adjacency"
+                    if "ospf" in control_plane.protocols_observed
+                    else "isis_adjacency"
+                    if "isis" in control_plane.protocols_observed
+                    else "device_gnmi"
+                ),
+                source_b=(
+                    "lldp_gnmi"
+                    if physical.lldp_observation_count > 0
+                    else "controller_bgpls"
+                    if cl
+                    else "device_gnmi"
+                ),
             )
             disagreements.append(disc)
             posture = "conflicting"
@@ -265,13 +352,16 @@ def _merge_nodes_and_links(
             posture = "conflicting"
         prov = TopologyTruthProvenance(
             contributing_sources=contributing_sources,
-            primary_source=(
-                "lldp_gnmi"
-                if physical.lldp_observation_count > 0
-                else "device_gnmi"
+            primary_source=_primary_link_source(
+                physical=physical,
+                control_plane=control_plane,
             ),
             freshness_posture=device_fresh,
-            merged_or_correlated=cl is not None or physical.lldp_observation_count > 0,
+            merged_or_correlated=(
+                cl is not None
+                or physical.lldp_observation_count > 0
+                or control_plane.observation_count > 0
+            ),
             missing_sources=missing_sources,
         )
         out_links.append(
@@ -293,6 +383,17 @@ def _merge_nodes_and_links(
                     remote_systems=physical.remote_systems,
                     remote_ports=physical.remote_ports,
                     correlation_notes=physical.correlation_notes,
+                ),
+                control_plane_adjacency_posture=control_plane.posture,
+                control_plane_adjacency=TopologyControlPlaneAdjacencyEvidence(
+                    posture=control_plane.posture,
+                    observation_count=control_plane.observation_count,
+                    protocols_observed=control_plane.protocols_observed,
+                    ospf_adjacency_state=control_plane.ospf_adjacency_state,
+                    isis_adjacency_state=control_plane.isis_adjacency_state,
+                    local_interfaces=control_plane.local_interfaces,
+                    remote_identities=control_plane.remote_identities,
+                    correlation_notes=control_plane.correlation_notes,
                 ),
                 disagreement=disc,
                 attributes=dict(lk.attributes),
@@ -323,12 +424,19 @@ def _merge_nodes_and_links(
                     contributing_sources=["controller_bgpls"],
                     primary_source="controller_bgpls",
                     freshness_posture="current",
-                    missing_sources=["device_gnmi", "lldp_gnmi"],
+                    missing_sources=[
+                        "device_gnmi",
+                        "lldp_gnmi",
+                        "ospf_adjacency",
+                        "isis_adjacency",
+                    ],
                 ),
                 endpoint_pairing_state="paired",
                 endpoint_evidence_count=cl.endpoint_evidence_count,
                 physical_adjacency_posture="suppressed_or_unknown",
                 physical_adjacency=TopologyPhysicalAdjacencyEvidence(),
+                control_plane_adjacency_posture="suppressed_or_unknown",
+                control_plane_adjacency=TopologyControlPlaneAdjacencyEvidence(),
                 disagreement=disagreements[-1],
                 attributes=dict(cl.attributes),
             )
@@ -365,10 +473,14 @@ def _merge_nodes_and_links(
         merged_link_count=len(out_links),
         inferred_only_link_count=inferred_only,
         physical_confirmed_link_count=physical_confirmed,
+        igp_confirmed_link_count=igp_confirmed,
+        ospf_observed_link_count=ospf_observed,
+        isis_observed_link_count=isis_observed,
         multi_source_confirmed_link_count=multi_source_confirmed,
         lldp_single_sided_link_count=lldp_single_sided,
         lldp_bidirectional_link_count=lldp_bidirectional,
         lldp_mismatch_link_count=lldp_mismatch,
+        igp_protocol_mismatch_link_count=igp_protocol_mismatch,
         controller_only_node_count=ctrl_only_nodes,
         device_only_node_count=dev_only_nodes,
         conflicting_object_count=conflict_count,
@@ -462,6 +574,22 @@ def build_topology_truth_response(
             source_summary="OpenConfig LLDP physical adjacency evidence when exposed by the device.",
         ),
         TopologySourceRef(
+            source_type="ospf_adjacency",
+            source_id=f"{device_snapshot.topology_id}:ospf",
+            source_time=device_snapshot.observed_at,
+            source_freshness=dev_fresh,
+            source_authority_posture="observed",
+            source_summary="Device-native OSPF adjacency evidence collected via gNMI.",
+        ),
+        TopologySourceRef(
+            source_type="isis_adjacency",
+            source_id=f"{device_snapshot.topology_id}:isis",
+            source_time=device_snapshot.observed_at,
+            source_freshness=dev_fresh,
+            source_authority_posture="observed",
+            source_summary="Device-native IS-IS adjacency evidence collected via gNMI.",
+        ),
+        TopologySourceRef(
             source_type="controller_bgpls",
             source_id=ctrl_snap.topology_id,
             source_time=None,
@@ -477,7 +605,7 @@ def build_topology_truth_response(
         nodes=merged_nodes,
         links=merged_links,
         notes=[
-            "Backend-owned merge of interface-derived topology, LLDP physical adjacency evidence, and optional controller export.",
+            "Backend-owned merge of interface-derived topology, LLDP physical adjacency evidence, device-native IGP adjacency evidence, and optional controller export.",
             "This is not path-validation-grade or traffic-path truth.",
             *bgp.notes,
         ],
@@ -498,10 +626,14 @@ def build_topology_truth_response(
         merged_link_count=counts.merged_link_count,
         inferred_only_links=counts.inferred_only_link_count,
         physical_confirmed_links=counts.physical_confirmed_link_count,
+        igp_confirmed_links=counts.igp_confirmed_link_count,
+        ospf_observed_links=counts.ospf_observed_link_count,
+        isis_observed_links=counts.isis_observed_link_count,
         multi_source_confirmed_links=counts.multi_source_confirmed_link_count,
         lldp_single_sided_links=counts.lldp_single_sided_link_count,
         lldp_bidirectional_links=counts.lldp_bidirectional_link_count,
         lldp_mismatch_links=counts.lldp_mismatch_link_count,
+        igp_protocol_mismatch_links=counts.igp_protocol_mismatch_link_count,
         conflicts=counts.conflicting_object_count,
         duration_seconds=time.perf_counter() - t0,
     )

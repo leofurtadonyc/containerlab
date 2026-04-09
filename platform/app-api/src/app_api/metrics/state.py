@@ -142,10 +142,14 @@ class CachedTopologyTruthMetrics:
     merged_link_count: int = 0
     inferred_only_links: int = 0
     physical_confirmed_links: int = 0
+    igp_confirmed_links: int = 0
+    ospf_observed_links: int = 0
+    isis_observed_links: int = 0
     multi_source_confirmed_links: int = 0
     lldp_single_sided_links: int = 0
     lldp_bidirectional_links: int = 0
     lldp_mismatch_links: int = 0
+    igp_protocol_mismatch_links: int = 0
     conflicts: int = 0
 
 
@@ -267,10 +271,14 @@ def record_topology_truth_observation(
     merged_link_count: int,
     inferred_only_links: int,
     physical_confirmed_links: int,
+    igp_confirmed_links: int,
+    ospf_observed_links: int,
+    isis_observed_links: int,
     multi_source_confirmed_links: int,
     lldp_single_sided_links: int,
     lldp_bidirectional_links: int,
     lldp_mismatch_links: int,
+    igp_protocol_mismatch_links: int,
     conflicts: int,
     duration_seconds: float,
 ) -> None:
@@ -287,10 +295,14 @@ def record_topology_truth_observation(
             merged_link_count=merged_link_count,
             inferred_only_links=inferred_only_links,
             physical_confirmed_links=physical_confirmed_links,
+            igp_confirmed_links=igp_confirmed_links,
+            ospf_observed_links=ospf_observed_links,
+            isis_observed_links=isis_observed_links,
             multi_source_confirmed_links=multi_source_confirmed_links,
             lldp_single_sided_links=lldp_single_sided_links,
             lldp_bidirectional_links=lldp_bidirectional_links,
             lldp_mismatch_links=lldp_mismatch_links,
+            igp_protocol_mismatch_links=igp_protocol_mismatch_links,
             conflicts=conflicts,
         )
 
@@ -1546,6 +1558,15 @@ def render_prometheus_metrics(
             "# HELP platform_app_api_topology_truth_last_physical_confirmed_links Latest physically confirmed link count.",
             "# TYPE platform_app_api_topology_truth_last_physical_confirmed_links gauge",
             f"platform_app_api_topology_truth_last_physical_confirmed_links {tt_cached.physical_confirmed_links}",
+            "# HELP platform_app_api_topology_truth_last_igp_confirmed_links Latest strongly IGP-confirmed link count.",
+            "# TYPE platform_app_api_topology_truth_last_igp_confirmed_links gauge",
+            f"platform_app_api_topology_truth_last_igp_confirmed_links {tt_cached.igp_confirmed_links}",
+            "# HELP platform_app_api_topology_truth_last_ospf_observed_links Latest OSPF-observed weak link count.",
+            "# TYPE platform_app_api_topology_truth_last_ospf_observed_links gauge",
+            f"platform_app_api_topology_truth_last_ospf_observed_links {tt_cached.ospf_observed_links}",
+            "# HELP platform_app_api_topology_truth_last_isis_observed_links Latest IS-IS-observed weak link count.",
+            "# TYPE platform_app_api_topology_truth_last_isis_observed_links gauge",
+            f"platform_app_api_topology_truth_last_isis_observed_links {tt_cached.isis_observed_links}",
             "# HELP platform_app_api_topology_truth_last_multi_source_confirmed_links Latest multi-source confirmed link count.",
             "# TYPE platform_app_api_topology_truth_last_multi_source_confirmed_links gauge",
             f"platform_app_api_topology_truth_last_multi_source_confirmed_links {tt_cached.multi_source_confirmed_links}",
@@ -1558,6 +1579,9 @@ def render_prometheus_metrics(
             "# HELP platform_app_api_topology_truth_last_lldp_mismatch_links Latest LLDP mismatch-marked link count.",
             "# TYPE platform_app_api_topology_truth_last_lldp_mismatch_links gauge",
             f"platform_app_api_topology_truth_last_lldp_mismatch_links {tt_cached.lldp_mismatch_links}",
+            "# HELP platform_app_api_topology_truth_last_igp_protocol_mismatch_links Latest IGP mismatch-marked link count.",
+            "# TYPE platform_app_api_topology_truth_last_igp_protocol_mismatch_links gauge",
+            f"platform_app_api_topology_truth_last_igp_protocol_mismatch_links {tt_cached.igp_protocol_mismatch_links}",
             "# HELP platform_app_api_topology_truth_last_conflicts Latest disagreement/conflict count.",
             "# TYPE platform_app_api_topology_truth_last_conflicts gauge",
             f"platform_app_api_topology_truth_last_conflicts {tt_cached.conflicts}",

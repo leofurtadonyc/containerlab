@@ -260,6 +260,60 @@ def get_metrics() -> Response:
                 f"{topology_summary.lldp_mismatch_link_count if topology_summary else 0}"
             ),
             (
+                "# HELP platform_gnmi_collector_topology_igp_adjacency_observations "
+                "Collected IGP adjacency rows across all topology targets."
+            ),
+            "# TYPE platform_gnmi_collector_topology_igp_adjacency_observations gauge",
+            (
+                "platform_gnmi_collector_topology_igp_adjacency_observations "
+                f"{topology_summary.igp_adjacency_observation_count if topology_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_topology_ospf_adjacency_observations "
+                "Collected OSPF adjacency rows across all topology targets."
+            ),
+            "# TYPE platform_gnmi_collector_topology_ospf_adjacency_observations gauge",
+            (
+                "platform_gnmi_collector_topology_ospf_adjacency_observations "
+                f"{topology_summary.ospf_adjacency_observation_count if topology_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_topology_isis_adjacency_observations "
+                "Collected IS-IS adjacency rows across all topology targets."
+            ),
+            "# TYPE platform_gnmi_collector_topology_isis_adjacency_observations gauge",
+            (
+                "platform_gnmi_collector_topology_isis_adjacency_observations "
+                f"{topology_summary.isis_adjacency_observation_count if topology_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_topology_igp_correlated_links "
+                "Normalized links with at least one correlated IGP adjacency observation."
+            ),
+            "# TYPE platform_gnmi_collector_topology_igp_correlated_links gauge",
+            (
+                "platform_gnmi_collector_topology_igp_correlated_links "
+                f"{topology_summary.igp_correlated_link_count if topology_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_topology_igp_confirmed_links "
+                "Normalized links with strong correlated IGP adjacency confirmation."
+            ),
+            "# TYPE platform_gnmi_collector_topology_igp_confirmed_links gauge",
+            (
+                "platform_gnmi_collector_topology_igp_confirmed_links "
+                f"{topology_summary.igp_confirmed_link_count if topology_summary else 0}"
+            ),
+            (
+                "# HELP platform_gnmi_collector_topology_igp_protocol_mismatch_links "
+                "Links where IGP remote identity contradicts the interface-derived peer mapping."
+            ),
+            "# TYPE platform_gnmi_collector_topology_igp_protocol_mismatch_links gauge",
+            (
+                "platform_gnmi_collector_topology_igp_protocol_mismatch_links "
+                f"{topology_summary.igp_protocol_mismatch_link_count if topology_summary else 0}"
+            ),
+            (
                 "# HELP platform_gnmi_collector_topology_linked_nodes "
                 "Observed topology nodes represented by at least one emitted inferred link."
             ),

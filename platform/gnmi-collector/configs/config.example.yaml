@@ -25,6 +25,12 @@ topology:
     - name: openconfig-lldp
       path: /openconfig-lldp:lldp
       cadence: poll
+    - name: base-router-ospf
+      path: /nokia-state:state/router[router-name=Base]/ospf
+      cadence: poll
+    - name: base-router-isis
+      path: /nokia-state:state/router[router-name=Base]/isis
+      cadence: poll
 
 policies:
   subscriptions:

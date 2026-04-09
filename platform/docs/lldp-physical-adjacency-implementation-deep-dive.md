@@ -33,6 +33,7 @@ This document records the bounded LLDP slice added to the topology family.
 
 - `/api/v1/topology` preserves LLDP posture on each normalized link.
 - `/api/v1/topology/truth` adds `lldp_gnmi` as a distinct source and surfaces the same physical-adjacency evidence in structured form.
+- IGP control-plane adjacency now ships as a separate evidence family; this document remains specific to LLDP and does not redefine the newer OSPF/IS-IS lane.
 - Missing LLDP evidence remains explicit through `suppressed_or_unknown` or `not_observed`; the backend does not collapse those to certainty.
 
 ## Observability and verification

@@ -5,6 +5,7 @@ from itertools import chain
 from typing import Literal, cast
 
 from gnmi_collector.models.topology import (
+    IgpAdjacencyObservation,
     LldpNeighborObservation,
     NormalizedTopologyLinkRecord,
     NormalizedTopologyNodeRecord,
@@ -52,6 +53,13 @@ def _normalize_identity(value: str | None) -> str | None:
     if not normalized:
         return None
     return normalized.split(".", maxsplit=1)[0]
+
+
+def _normalize_protocol_identity(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip().lower()
+    return normalized or None
 
 
 def _normalize_interface_token(value: str | None) -> str | None:
@@ -105,6 +113,31 @@ def _resolve_remote_interface(
     return None
 
 
+def _resolve_igp_remote_node(
+    observation: IgpAdjacencyObservation,
+    *,
+    by_name: dict[str, str],
+    ospf_router_id_to_node: dict[str, str],
+    isis_system_id_to_node: dict[str, str],
+) -> str | None:
+    if observation.protocol == "ospf":
+        remote_router_id = _normalize_protocol_identity(observation.remote_router_id)
+        if remote_router_id and remote_router_id in ospf_router_id_to_node:
+            return ospf_router_id_to_node[remote_router_id]
+        remote_hostname = _normalize_identity(observation.remote_hostname)
+        if remote_hostname and remote_hostname in by_name:
+            return by_name[remote_hostname]
+        return None
+
+    remote_hostname = _normalize_identity(observation.remote_hostname)
+    if remote_hostname and remote_hostname in by_name:
+        return by_name[remote_hostname]
+    remote_system_id = _normalize_protocol_identity(observation.remote_system_id)
+    if remote_system_id and remote_system_id in isis_system_id_to_node:
+        return isis_system_id_to_node[remote_system_id]
+    return None
+
+
 def map_topology_nodes(raw_records: list[TopologyRawRecord]) -> list[NormalizedTopologyNodeRecord]:
     """Map raw per-target topology evidence into normalized node records."""
     nodes: list[NormalizedTopologyNodeRecord] = []
@@ -152,8 +185,14 @@ def map_topology_links(
     int,
     int,
     int,
+    int,
+    int,
+    int,
+    int,
+    int,
+    int,
 ]:
-    """Infer normalized link records from interface evidence and correlate LLDP observations."""
+    """Infer normalized link records from interface evidence and correlate LLDP + IGP observations."""
     known_targets = {record.target_name for record in raw_records}
     evidence: dict[tuple[str, str], list[tuple[str, str, str]]] = {}
     interfaces_by_node = {
@@ -166,6 +205,28 @@ def map_topology_links(
         for interface in record.raw_interfaces
     }
     inferred_peer_by_endpoint: dict[tuple[str, str], str] = {}
+    by_name = {
+        _normalize_identity(record.target_name): record.target_name
+        for record in raw_records
+        if _normalize_identity(record.target_name) is not None
+    }
+    ospf_router_id_to_node: dict[str, str] = {}
+    isis_system_id_to_node: dict[str, str] = {}
+
+    for record in raw_records:
+        for observation in record.raw_igp_adjacencies:
+            if observation.local_router_id:
+                ospf_router_id_to_node.setdefault(
+                    _normalize_protocol_identity(observation.local_router_id) or "",
+                    record.target_name,
+                )
+            if observation.local_system_id:
+                isis_system_id_to_node.setdefault(
+                    _normalize_protocol_identity(observation.local_system_id) or "",
+                    record.target_name,
+                )
+    ospf_router_id_to_node = {key: value for key, value in ospf_router_id_to_node.items() if key}
+    isis_system_id_to_node = {key: value for key, value in isis_system_id_to_node.items() if key}
 
     for record in raw_records:
         for interface in record.raw_interfaces:
@@ -183,7 +244,16 @@ def map_topology_links(
             )
 
     lldp_by_pair: dict[tuple[str, str], list[tuple[str, LldpNeighborObservation, list[str]]]] = {}
+    igp_by_pair: dict[tuple[str, str], list[tuple[str, IgpAdjacencyObservation, list[str]]]] = {}
     total_lldp_observations = sum(len(record.raw_lldp_neighbors) for record in raw_records)
+    total_igp_observations = sum(len(record.raw_igp_adjacencies) for record in raw_records)
+    ospf_observation_count = sum(
+        1
+        for record in raw_records
+        for observation in record.raw_igp_adjacencies
+        if observation.protocol == "ospf"
+    )
+    isis_observation_count = total_igp_observations - ospf_observation_count
     for record in raw_records:
         for observation in record.raw_lldp_neighbors:
             notes = list(observation.notes)
@@ -212,6 +282,33 @@ def map_topology_links(
 
             pair = tuple(sorted((record.target_name, remote_node_id)))
             lldp_by_pair.setdefault(pair, []).append((record.target_name, observation, notes))
+        for observation in record.raw_igp_adjacencies:
+            notes = list(observation.notes)
+            inferred_peer = None
+            if observation.local_interface_name:
+                inferred_peer = inferred_peer_by_endpoint.get(
+                    (record.target_name, observation.local_interface_name)
+                )
+            remote_node_id = _resolve_igp_remote_node(
+                observation,
+                by_name=by_name,
+                ospf_router_id_to_node=ospf_router_id_to_node,
+                isis_system_id_to_node=isis_system_id_to_node,
+            )
+            if remote_node_id is None:
+                notes.append(
+                    "IGP remote identity could not be confidently correlated to a known topology node."
+                )
+                if inferred_peer is None:
+                    continue
+                remote_node_id = inferred_peer
+            elif inferred_peer is not None and inferred_peer != remote_node_id:
+                notes.append(
+                    f"IGP remote identity resolved to {remote_node_id}, which differs from the interface-derived peer {inferred_peer}."
+                )
+                remote_node_id = inferred_peer
+            pair = tuple(sorted((record.target_name, remote_node_id)))
+            igp_by_pair.setdefault(pair, []).append((record.target_name, observation, notes))
 
     links: list[NormalizedTopologyLinkRecord] = []
     paired_link_count = 0
@@ -220,12 +317,17 @@ def map_topology_links(
     lldp_single_sided_link_count = 0
     lldp_bidirectional_link_count = 0
     lldp_mismatch_link_count = 0
-    all_pairs = sorted(set(evidence) | set(lldp_by_pair))
+    igp_correlated_link_count = 0
+    igp_confirmed_link_count = 0
+    igp_protocol_mismatch_link_count = 0
+    all_pairs = sorted(set(evidence) | set(lldp_by_pair) | set(igp_by_pair))
     status_by_node = {record.target_name: record.lldp_collection_status for record in raw_records}
+    igp_status_by_node = {record.target_name: record.igp_collection_status for record in raw_records}
 
     for source_node_id, target_node_id in all_pairs:
         endpoint_evidence = evidence.get((source_node_id, target_node_id), [])
         lldp_evidence = lldp_by_pair.get((source_node_id, target_node_id), [])
+        igp_evidence = igp_by_pair.get((source_node_id, target_node_id), [])
         endpoint_evidence_count = len(endpoint_evidence)
         states = {item[2] for item in endpoint_evidence}
         if endpoint_evidence_count == 0 and lldp_evidence:
@@ -305,11 +407,88 @@ def map_topology_links(
         else:
             physical_adjacency_posture = "not_observed"
 
+        igp_adjacency_observation_count = len(igp_evidence)
+        igp_local_interfaces = sorted(
+            {
+                observation.local_interface_name
+                for _observer, observation, _notes in igp_evidence
+                if observation.local_interface_name
+            }
+        )
+        igp_remote_identities = sorted(
+            {
+                value
+                for _observer, observation, _notes in igp_evidence
+                for value in (
+                    observation.remote_hostname,
+                    observation.remote_router_id,
+                    observation.remote_system_id,
+                )
+                if value
+            }
+        )
+        igp_notes = sorted(
+            {
+                note
+                for _observer, _observation, notes in igp_evidence
+                for note in notes
+                if note
+            }
+        )
+        igp_protocols_observed = sorted(
+            {observation.protocol for _observer, observation, _notes in igp_evidence}
+        )
+        ospf_states = sorted(
+            {
+                observation.adjacency_state
+                for _observer, observation, _notes in igp_evidence
+                if observation.protocol == "ospf" and observation.adjacency_state
+            }
+        )
+        isis_states = sorted(
+            {
+                observation.adjacency_state
+                for _observer, observation, _notes in igp_evidence
+                if observation.protocol == "isis" and observation.adjacency_state
+            }
+        )
+        strong_igp = any(
+            observation.state_strength == "strong"
+            for _observer, observation, _notes in igp_evidence
+        )
+        if igp_adjacency_observation_count > 0:
+            igp_correlated_link_count += 1
+            if any("differs from the interface-derived peer" in note for note in igp_notes):
+                control_plane_adjacency_posture = "protocol_mismatch"
+                igp_protocol_mismatch_link_count += 1
+            elif strong_igp:
+                control_plane_adjacency_posture = "igp_confirmed"
+                igp_confirmed_link_count += 1
+            elif igp_protocols_observed == ["ospf"]:
+                control_plane_adjacency_posture = "ospf_observed"
+            elif igp_protocols_observed == ["isis"]:
+                control_plane_adjacency_posture = "isis_observed"
+            else:
+                control_plane_adjacency_posture = "unknown"
+        elif any(
+            igp_status_by_node.get(node_id) in {"not_exposed", "query_failed", "unknown"}
+            for node_id in (source_node_id, target_node_id)
+        ):
+            control_plane_adjacency_posture = "suppressed_or_unknown"
+        else:
+            control_plane_adjacency_posture = "not_observed"
+
         if endpoint_evidence and lldp_observation_count:
             inference_method = "interface_name_and_oper_state_plus_openconfig_lldp"
             knowledge_state = "partially_confirmed"
+        elif endpoint_evidence and igp_adjacency_observation_count:
+            inference_method = "interface_name_and_oper_state_plus_device_native_igp"
+            knowledge_state = "partially_confirmed"
         elif lldp_observation_count:
             inference_method = "openconfig_lldp_gnmi"
+            knowledge_state = "observed"
+        elif igp_adjacency_observation_count:
+            inference_method = "device_native_igp_gnmi"
             knowledge_state = "observed"
         else:
             inference_method = "interface_name_and_oper_state"
@@ -336,19 +515,41 @@ def map_topology_links(
                     ],
                     physical_adjacency_posture,
                 ),
+                control_plane_adjacency_posture=cast(
+                    Literal[
+                        "not_observed",
+                        "ospf_observed",
+                        "isis_observed",
+                        "igp_confirmed",
+                        "protocol_mismatch",
+                        "suppressed_or_unknown",
+                        "unknown",
+                    ],
+                    control_plane_adjacency_posture,
+                ),
                 lldp_observation_count=lldp_observation_count,
                 lldp_bidirectional=observer_count >= 2 and physical_adjacency_posture == "bidirectional_lldp",
                 lldp_local_interfaces=lldp_local_interfaces,
                 lldp_remote_systems=lldp_remote_systems,
                 lldp_remote_ports=lldp_remote_ports,
                 lldp_correlation_notes=lldp_notes,
+                igp_adjacency_observation_count=igp_adjacency_observation_count,
+                igp_protocols_observed=cast(list[Literal["ospf", "isis"]], igp_protocols_observed),
+                ospf_adjacency_state=", ".join(ospf_states) if ospf_states else None,
+                isis_adjacency_state=", ".join(isis_states) if isis_states else None,
+                igp_local_interfaces=igp_local_interfaces,
+                igp_remote_identities=igp_remote_identities,
+                igp_correlation_notes=igp_notes,
                 attributes={
                     "knowledge_state": knowledge_state,
                     "inference_method": inference_method,
                     "endpoint_evidence_count": str(endpoint_evidence_count),
                     "endpoint_pairing_state": endpoint_pairing_state,
                     "physical_adjacency_posture": physical_adjacency_posture,
+                    "control_plane_adjacency_posture": control_plane_adjacency_posture,
                     "lldp_observation_count": str(lldp_observation_count),
+                    "igp_adjacency_observation_count": str(igp_adjacency_observation_count),
+                    "igp_protocols_observed": ", ".join(igp_protocols_observed),
                     "observed_interfaces": ", ".join(
                         f"{node}:{interface_name}" for node, interface_name, _ in endpoint_evidence
                     )
@@ -370,6 +571,12 @@ def map_topology_links(
         lldp_single_sided_link_count,
         lldp_bidirectional_link_count,
         lldp_mismatch_link_count,
+        total_igp_observations,
+        ospf_observation_count,
+        isis_observation_count,
+        igp_correlated_link_count,
+        igp_confirmed_link_count,
+        igp_protocol_mismatch_link_count,
     )
 
 

@@ -182,6 +182,123 @@ def test_merge_multi_source_confirmed_and_inferred_only(monkeypatch: pytest.Monk
     assert res.contract_id == "topology_truth_v1"
 
 
+def test_merge_promotes_igp_confirmed_link_without_controller(monkeypatch: pytest.MonkeyPatch) -> None:
+    device = _device_snapshot()
+    updated_links = []
+    for link in device.links:
+        if link.link_id == "L2":
+            updated_links.append(
+                link.model_copy(
+                    update={
+                        "control_plane_adjacency_posture": "igp_confirmed",
+                        "igp_adjacency_observation_count": 1,
+                        "igp_protocols_observed": ["ospf"],
+                        "ospf_adjacency_state": "full",
+                        "igp_local_interfaces": ["to-PE3"],
+                        "igp_remote_identities": ["10.255.255.3"],
+                        "igp_correlation_notes": ["OSPF remote router-id resolved cleanly to PE3."],
+                    }
+                )
+            )
+        else:
+            updated_links.append(link)
+    device = device.model_copy(update={"links": updated_links})
+
+    monkeypatch.setattr(
+        tt_mod,
+        "load_topology_snapshot_for_topology_relationship_queries",
+        lambda: (_collector_live(), device, None),
+    )
+    monkeypatch.setattr(
+        tt_mod,
+        "fetch_bgpls_topology_via_odl",
+        lambda: BgplsTopologyFetchResult(
+            status="ok",
+            observed_source="test",
+            snapshot=TopologySnapshot(
+                topology_id="odl:x",
+                topology_name="c",
+                nodes=[],
+                links=[],
+                sync_source="controller_bgpls",
+                sync_status="ok",
+                completeness="partial",
+                notes=[],
+            ),
+            fingerprint="abc",
+            notes=[],
+        ),
+    )
+    monkeypatch.setattr(tt_mod, "_persist_merged_snapshot", lambda **kwargs: None)
+
+    res = tt_mod.build_topology_truth_response(truth_posture=None)
+    link = next(item for item in res.merged_topology.links if item.link_id == "L2")
+    assert link.truth_posture == "igp_confirmed"
+    assert link.control_plane_adjacency_posture == "igp_confirmed"
+    assert link.control_plane_adjacency.protocols_observed == ["ospf"]
+    assert "ospf_adjacency" in link.provenance.contributing_sources
+    assert res.counts.igp_confirmed_link_count >= 1
+
+
+def test_merge_marks_igp_protocol_mismatch_as_conflicting(monkeypatch: pytest.MonkeyPatch) -> None:
+    device = _device_snapshot()
+    updated_links = []
+    for link in device.links:
+        if link.link_id == "L1":
+            updated_links.append(
+                link.model_copy(
+                    update={
+                        "control_plane_adjacency_posture": "protocol_mismatch",
+                        "igp_adjacency_observation_count": 1,
+                        "igp_protocols_observed": ["isis"],
+                        "isis_adjacency_state": "up",
+                        "igp_remote_identities": ["49.0001.0000.0000.9999.00"],
+                        "igp_correlation_notes": ["IGP remote identity resolved to a different peer."],
+                    }
+                )
+            )
+        else:
+            updated_links.append(link)
+    device = device.model_copy(update={"links": updated_links})
+
+    monkeypatch.setattr(
+        tt_mod,
+        "load_topology_snapshot_for_topology_relationship_queries",
+        lambda: (_collector_live(), device, None),
+    )
+    monkeypatch.setattr(
+        tt_mod,
+        "fetch_bgpls_topology_via_odl",
+        lambda: BgplsTopologyFetchResult(
+            status="ok",
+            observed_source="test",
+            snapshot=TopologySnapshot(
+                topology_id="odl:x",
+                topology_name="c",
+                nodes=[],
+                links=[],
+                sync_source="controller_bgpls",
+                sync_status="ok",
+                completeness="partial",
+                notes=[],
+            ),
+            fingerprint="abc",
+            notes=[],
+        ),
+    )
+    monkeypatch.setattr(tt_mod, "_persist_merged_snapshot", lambda **kwargs: None)
+
+    res = tt_mod.build_topology_truth_response(truth_posture=None)
+    link = next(item for item in res.merged_topology.links if item.link_id == "L1")
+    assert link.truth_posture == "conflicting"
+    assert link.disagreement is not None
+    assert link.disagreement.kind in {
+        "igp_inference_mismatch",
+        "igp_lldp_mismatch",
+    }
+    assert res.counts.igp_protocol_mismatch_link_count >= 1
+
+
 def test_controller_only_node_partial(monkeypatch: pytest.MonkeyPatch) -> None:
     ctrl = TopologySnapshot(
         topology_id="odl:x",

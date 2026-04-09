@@ -14,6 +14,8 @@ TOPOLOGY_TRUTH_V1_CONTRACT_ID = "topology_truth_v1"
 TopologySourceType = Literal[
     "device_gnmi",
     "lldp_gnmi",
+    "ospf_adjacency",
+    "isis_adjacency",
     "controller_bgpls",
     "persisted_snapshot",
     "merged",
@@ -23,6 +25,7 @@ TopologyTruthPosture = Literal[
     "inferred_only",
     "device_observed",
     "physical_confirmed",
+    "igp_confirmed",
     "controller_correlated",
     "multi_source_confirmed",
     "partial",
@@ -38,11 +41,23 @@ TopologyPhysicalAdjacencyPosture = Literal[
     "lldp_mismatch",
     "suppressed_or_unknown",
 ]
+TopologyControlPlaneAdjacencyPosture = Literal[
+    "not_observed",
+    "ospf_observed",
+    "isis_observed",
+    "igp_confirmed",
+    "protocol_mismatch",
+    "suppressed_or_unknown",
+    "unknown",
+]
 
 TopologyDisagreementKind = Literal[
     "device_controller_mismatch",
     "lldp_inference_mismatch",
     "lldp_controller_mismatch",
+    "igp_inference_mismatch",
+    "igp_controller_mismatch",
+    "igp_lldp_mismatch",
     "missing_controller_evidence",
     "missing_device_evidence",
     "stale_controller_view",
@@ -89,6 +104,19 @@ class TopologyPhysicalAdjacencyEvidence(BaseModel):
     correlation_notes: list[str] = Field(default_factory=list)
 
 
+class TopologyControlPlaneAdjacencyEvidence(BaseModel):
+    """Structured IGP control-plane adjacency evidence for one merged link."""
+
+    posture: TopologyControlPlaneAdjacencyPosture = "suppressed_or_unknown"
+    observation_count: int = 0
+    protocols_observed: list[Literal["ospf", "isis"]] = Field(default_factory=list)
+    ospf_adjacency_state: str | None = None
+    isis_adjacency_state: str | None = None
+    local_interfaces: list[str] = Field(default_factory=list)
+    remote_identities: list[str] = Field(default_factory=list)
+    correlation_notes: list[str] = Field(default_factory=list)
+
+
 class TopologyDisagreementRecord(BaseModel):
     """Explicit disagreement between sources for an object."""
 
@@ -128,6 +156,12 @@ class TopologyTruthLinkRecord(BaseModel):
     physical_adjacency: TopologyPhysicalAdjacencyEvidence = Field(
         default_factory=TopologyPhysicalAdjacencyEvidence
     )
+    control_plane_adjacency_posture: TopologyControlPlaneAdjacencyPosture = (
+        "suppressed_or_unknown"
+    )
+    control_plane_adjacency: TopologyControlPlaneAdjacencyEvidence = Field(
+        default_factory=TopologyControlPlaneAdjacencyEvidence
+    )
     disagreement: TopologyDisagreementRecord | None = None
     attributes: dict[str, str] = Field(default_factory=dict)
 
@@ -157,10 +191,14 @@ class TopologyTruthCounts(BaseModel):
     merged_link_count: int
     inferred_only_link_count: int
     physical_confirmed_link_count: int
+    igp_confirmed_link_count: int
+    ospf_observed_link_count: int
+    isis_observed_link_count: int
     multi_source_confirmed_link_count: int
     lldp_single_sided_link_count: int
     lldp_bidirectional_link_count: int
     lldp_mismatch_link_count: int
+    igp_protocol_mismatch_link_count: int
     controller_only_node_count: int
     device_only_node_count: int
     conflicting_object_count: int
@@ -174,6 +212,7 @@ class TopologyTruthSafetyFraming(BaseModel):
             "Merged topology truth is not end-to-end traffic path truth or full TE authority.",
             "ODL/controller inputs are enrichment only; the backend owns the merged read model.",
             "Interface-derived links remain distinct from LLDP-backed physical adjacency when sources disagree or controller data is missing.",
+            "Device-native OSPF and IS-IS adjacency evidence strengthens control-plane trust but does not itself prove forwarding, traffic, or service truth.",
         ],
     )
 

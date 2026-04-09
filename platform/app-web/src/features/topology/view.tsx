@@ -91,6 +91,14 @@ function getLinkPhysicalAdjacencyPosture(link: TopologyLinkRecord): string {
   return link.physical_adjacency_posture ?? link.physical_adjacency?.posture ?? "suppressed_or_unknown";
 }
 
+function getLinkControlPlaneAdjacencyPosture(link: TopologyLinkRecord): string {
+  return (
+    link.control_plane_adjacency_posture ??
+    link.control_plane_adjacency?.posture ??
+    "suppressed_or_unknown"
+  );
+}
+
 function formatSignedDelta(value: number): string {
   if (value > 0) {
     return `+${value}`;
@@ -184,8 +192,24 @@ function describeNodeEvidence(node: TopologyNodeRecord): string {
 
 function describeLinkEvidence(link: TopologyLinkRecord): string {
   const physicalAdjacencyPosture = getLinkPhysicalAdjacencyPosture(link);
+  const controlPlaneAdjacencyPosture = getLinkControlPlaneAdjacencyPosture(link);
   const knowledgeState = getLinkKnowledgeState(link);
   const pairingState = getTopologyLinkEndpointPairingState(link);
+  if (controlPlaneAdjacencyPosture === "igp_confirmed") {
+    const protocols = link.control_plane_adjacency.protocols_observed.join(" / ").toUpperCase();
+    return protocols
+      ? `${protocols} confirms a live control-plane adjacency on this link`
+      : "Device-native IGP confirms a live control-plane adjacency on this link";
+  }
+  if (controlPlaneAdjacencyPosture === "ospf_observed") {
+    return "OSPF observes this adjacency, but the state is weaker than a full confirmation";
+  }
+  if (controlPlaneAdjacencyPosture === "isis_observed") {
+    return "IS-IS observes this adjacency, but the state is weaker than a full confirmation";
+  }
+  if (controlPlaneAdjacencyPosture === "protocol_mismatch") {
+    return "Device-native IGP points at a different neighbor than the current normalized link correlation";
+  }
   if (physicalAdjacencyPosture === "bidirectional_lldp") {
     return "Bidirectional LLDP confirms the physical adjacency";
   }
@@ -675,6 +699,11 @@ export function TopologyView() {
     controllerEvidence.bgp_ls.session_posture === "established" &&
     truthData.counts.multi_source_confirmed_link_count === 0
       ? "BGP-LS southbound session truth is established, but deeper topology truth still has no multi-source confirmed links. The controller is reachable and session-backed, yet the merged topology path has not produced LLDP-backed physical adjacency confirmation together with controller corroboration."
+      : controllerEvidence &&
+          truthData &&
+          controllerEvidence.bgp_ls.session_posture === "established" &&
+          truthData.counts.igp_confirmed_link_count === 0
+        ? "BGP-LS southbound session truth is established, but deeper topology truth still has no IGP-confirmed links. The controller is reachable and session-backed, yet the merged topology path has not produced device-native routing adjacency confirmation on any current link."
       : null;
 
   return (
@@ -833,6 +862,11 @@ export function TopologyView() {
                 <p>Links with bidirectional LLDP-backed physical adjacency confirmation.</p>
               </article>
               <article className="summary-card">
+                <p className="summary-label">IGP-confirmed Links</p>
+                <strong>{truthData.counts.igp_confirmed_link_count}</strong>
+                <p>Links with strong device-native OSPF or IS-IS adjacency confirmation.</p>
+              </article>
+              <article className="summary-card">
                 <p className="summary-label">Inferred-only Links</p>
                 <strong>{truthData.counts.inferred_only_link_count}</strong>
                 <p>Links still backed only by bounded inferred topology evidence.</p>
@@ -855,7 +889,17 @@ export function TopologyView() {
               <article className="summary-card">
                 <p className="summary-label">Multi-source Confirmed Links</p>
                 <strong>{truthData.counts.multi_source_confirmed_link_count}</strong>
-                <p>Links where LLDP-backed physical adjacency and controller export corroborate the same edge.</p>
+                <p>Links where LLDP and/or strong IGP evidence corroborate the controller view of the same edge.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">OSPF-observed Links</p>
+                <strong>{truthData.counts.ospf_observed_link_count}</strong>
+                <p>Links with weaker OSPF evidence that did not reach full IGP confirmation.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">IS-IS-observed Links</p>
+                <strong>{truthData.counts.isis_observed_link_count}</strong>
+                <p>Links with weaker IS-IS evidence that did not reach full IGP confirmation.</p>
               </article>
               <article className="summary-card">
                 <p className="summary-label">One-sided LLDP Links</p>
@@ -866,6 +910,11 @@ export function TopologyView() {
                 <p className="summary-label">LLDP Mismatch Links</p>
                 <strong>{truthData.counts.lldp_mismatch_link_count}</strong>
                 <p>Links where LLDP contradicts the current inferred or controller-correlated peer mapping.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">IGP Mismatch Links</p>
+                <strong>{truthData.counts.igp_protocol_mismatch_link_count}</strong>
+                <p>Links where device-native IGP points at a different neighbor than the current normalized correlation.</p>
               </article>
             </div>
             <div className="callout">
@@ -2148,6 +2197,37 @@ export function TopologyView() {
                     <strong>{formatLabel(getLinkPhysicalAdjacencyPosture(selectedLink))}</strong>
                   </div>
                   <div className="key-value-row">
+                    <span>IGP observations</span>
+                    <strong>
+                      {formatCountLabel(
+                        selectedLink.control_plane_adjacency.observation_count,
+                        "observation",
+                      )}
+                    </strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>Control-plane adjacency</span>
+                    <strong>{formatLabel(getLinkControlPlaneAdjacencyPosture(selectedLink))}</strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>IGP protocols</span>
+                    <strong>
+                      {selectedLink.control_plane_adjacency.protocols_observed.length > 0
+                        ? selectedLink.control_plane_adjacency.protocols_observed
+                            .map((protocol) => protocol.toUpperCase())
+                            .join(", ")
+                        : "No IGP protocol evidence recorded"}
+                    </strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>IGP remote identities</span>
+                    <strong>
+                      {selectedLink.control_plane_adjacency.remote_identities.length > 0
+                        ? selectedLink.control_plane_adjacency.remote_identities.join(", ")
+                        : "No IGP remote identities recorded"}
+                    </strong>
+                  </div>
+                  <div className="key-value-row">
                     <span>Observed interfaces</span>
                     <strong>
                       {selectedLink.attributes.observed_interfaces ?? "No observed interfaces recorded"}
@@ -2194,6 +2274,16 @@ export function TopologyView() {
                     <ul className="notes-list">
                       {selectedLink.physical_adjacency.correlation_notes.map((note) => (
                         <li key={`${selectedLink.link_id}-${note}`}>{note}</li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
+                {selectedLink.control_plane_adjacency.correlation_notes.length > 0 ? (
+                  <>
+                    <p className="summary-label">IGP Correlation Notes</p>
+                    <ul className="notes-list">
+                      {selectedLink.control_plane_adjacency.correlation_notes.map((note) => (
+                        <li key={`${selectedLink.link_id}-igp-${note}`}>{note}</li>
                       ))}
                     </ul>
                   </>

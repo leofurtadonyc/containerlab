@@ -357,6 +357,7 @@ app_web_evidence_consistency_marker=0
 app_web_stability_workspace_marker=0
 app_web_topology_truth_v1_marker=0
 app_web_topology_lldp_marker=0
+app_web_topology_igp_marker=0
 for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n' | grep -E '^/assets/.*\.js$' || true); do
   app_web_chunk=$(fetch_app_web_asset_chunk "$APP_WEB_URL$asset_path")
   if printf '%s' "$app_web_chunk" | grep -qF 'noc_cockpit_v1'; then
@@ -431,9 +432,12 @@ for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n
   if printf '%s' "$app_web_chunk" | grep -qF 'LLDP observations'; then
     app_web_topology_lldp_marker=1
   fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'IGP-confirmed Links'; then
+    app_web_topology_igp_marker=1
+  fi
 done
-if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ] || [ "$app_web_noc_cockpit_strategic_pivots_marker" != "1" ] || [ "$app_web_global_search_week30_marker" != "1" ] || [ "$app_web_global_search_impact_hub_marker" != "1" ] || [ "$app_web_maintenance_preview_marker" != "1" ] || [ "$app_web_maintenance_evidence_workspace_marker" != "1" ] || [ "$app_web_maintenance_window_workspace_marker" != "1" ] || [ "$app_web_mww_subject_marker" != "1" ] || [ "$app_web_impact_report_marker" != "1" ] || [ "$app_web_service_explorer_marker" != "1" ] || [ "$app_web_service_dossier_marker" != "1" ] || [ "$app_web_policy_explainability_marker" != "1" ] || [ "$app_web_path_explorer_marker" != "1" ] || [ "$app_web_service_impact_workspace_marker" != "1" ] || [ "$app_web_change_safety_case_marker" != "1" ] || [ "$app_web_evidence_consistency_marker" != "1" ] || [ "$app_web_stability_workspace_marker" != "1" ] || [ "$app_web_topology_truth_v1_marker" != "1" ] || [ "$app_web_topology_lldp_marker" != "1" ]; then
-  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, evidence_replay_viewer_v1, noc-cockpit-strategic-pivots, Evidence replay (frozen file), Impact report hub, maintenance_preview_v1, maintenance_evidence_workspace_v1, maintenance_window_workspace_v1, mww_subject (maintenance window URL state), impact_report_v1, service_explorer_v1, service_dossier_v1, policy_explainability_workspace_v1, path_explorer_v1, service_impact_workspace_v1, change_safety_case_v1, evidence_consistency_summary_v1, operational_stability_summary_v1, topology_truth_v1, and LLDP observations substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing + bundle export + evidence replay + cockpit 2.0 pivots + global search week 30 footer + impact hub + maintenance preview + maintenance evidence workspace + maintenance window workspace + impact report + week 31 service/explainability + week 34 path explorer + week 34 service impact workspace + week 32 service dossier + change safety case + week 35 evidence consistency workspace + week 37 stability workspace + deeper topology truth v1 + LLDP topology cues)" >&2
+if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ] || [ "$app_web_noc_cockpit_strategic_pivots_marker" != "1" ] || [ "$app_web_global_search_week30_marker" != "1" ] || [ "$app_web_global_search_impact_hub_marker" != "1" ] || [ "$app_web_maintenance_preview_marker" != "1" ] || [ "$app_web_maintenance_evidence_workspace_marker" != "1" ] || [ "$app_web_maintenance_window_workspace_marker" != "1" ] || [ "$app_web_mww_subject_marker" != "1" ] || [ "$app_web_impact_report_marker" != "1" ] || [ "$app_web_service_explorer_marker" != "1" ] || [ "$app_web_service_dossier_marker" != "1" ] || [ "$app_web_policy_explainability_marker" != "1" ] || [ "$app_web_path_explorer_marker" != "1" ] || [ "$app_web_service_impact_workspace_marker" != "1" ] || [ "$app_web_change_safety_case_marker" != "1" ] || [ "$app_web_evidence_consistency_marker" != "1" ] || [ "$app_web_stability_workspace_marker" != "1" ] || [ "$app_web_topology_truth_v1_marker" != "1" ] || [ "$app_web_topology_lldp_marker" != "1" ] || [ "$app_web_topology_igp_marker" != "1" ]; then
+  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, evidence_replay_viewer_v1, noc-cockpit-strategic-pivots, Evidence replay (frozen file), Impact report hub, maintenance_preview_v1, maintenance_evidence_workspace_v1, maintenance_window_workspace_v1, mww_subject (maintenance window URL state), impact_report_v1, service_explorer_v1, service_dossier_v1, policy_explainability_workspace_v1, path_explorer_v1, service_impact_workspace_v1, change_safety_case_v1, evidence_consistency_summary_v1, operational_stability_summary_v1, topology_truth_v1, LLDP observations, and IGP-confirmed Links substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing + bundle export + evidence replay + cockpit 2.0 pivots + global search week 30 footer + impact hub + maintenance preview + maintenance evidence workspace + maintenance window workspace + impact report + week 31 service/explainability + week 34 path explorer + week 34 service impact workspace + week 32 service dossier + change safety case + week 35 evidence consistency workspace + week 37 stability workspace + deeper topology truth v1 + LLDP + IGP topology cues)" >&2
   exit 1
 fi
 
@@ -627,6 +631,8 @@ assert_contains "topology truth response (merged_topology)" "$topology_truth_res
 assert_contains "topology truth response (controller_fetch_status)" "$topology_truth_response" '"controller_fetch_status":"'
 assert_contains "topology truth response (physical adjacency posture)" "$topology_truth_response" '"physical_adjacency_posture":"'
 assert_contains "topology truth response (lldp observation count)" "$topology_truth_response" '"lldp_observation_count":'
+assert_contains "topology truth response (control-plane adjacency posture)" "$topology_truth_response" '"control_plane_adjacency_posture":"'
+assert_contains "topology truth response (igp confirmed count)" "$topology_truth_response" '"igp_confirmed_link_count":'
 
 # Controller southbound session truth v2 (per-lane session posture + evidence strength; structural contract check).
 controller_evidence_response=$(fetch_compact_json "$APP_API_URL/api/v1/controller/evidence")
@@ -1202,8 +1208,10 @@ assert_contains "app-api metrics" "$app_api_metrics" 'node_participation_posture
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_coverage_posture'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_truth_merges_total'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_truth_last_physical_confirmed_links'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_truth_last_igp_confirmed_links'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_truth_last_multi_source_confirmed_links'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_truth_last_lldp_bidirectional_links'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_truth_last_igp_protocol_mismatch_links'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_controller_evidence_fetches_total'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_controller_evidence_lane_posture_total'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_controller_evidence_lane_session_posture_total'

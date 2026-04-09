@@ -95,6 +95,12 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         lldp_single_sided_link_count,
         lldp_bidirectional_link_count,
         lldp_mismatch_link_count,
+        igp_adjacency_observation_count,
+        ospf_adjacency_observation_count,
+        isis_adjacency_observation_count,
+        igp_correlated_link_count,
+        igp_confirmed_link_count,
+        igp_protocol_mismatch_link_count,
     ) = map_topology_links(raw_records)
     linked_node_count, isolated_node_count = derive_node_participation_counts(
         normalized_nodes,
@@ -180,6 +186,7 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
 
     notes = [
         "Topology links are still rooted in live router interface evidence, with OpenConfig LLDP used as an additional device-native physical adjacency lane when available.",
+        "Device-native OSPF and IS-IS adjacency observations now act as separate control-plane evidence lanes; they strengthen trust when correlated, but do not claim forwarding or service truth.",
         "The topology slice remains intentionally partial; bounded controller enrichment now exists as optional backend-owned context, but the normalized gNMI slice remains the primary topology baseline until deeper evidence is added.",
     ]
     if oldest_observed_at is not None and newest_observed_at is not None:
@@ -195,6 +202,12 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         "LLDP physical-adjacency coverage currently includes "
         f"{lldp_observation_count} observed neighbor rows across {lldp_correlated_link_count} correlated links, "
         f"with {lldp_bidirectional_link_count} bidirectional links, {lldp_single_sided_link_count} single-sided links, and {lldp_mismatch_link_count} mismatch-marked links."
+    )
+    notes.append(
+        "IGP control-plane adjacency coverage currently includes "
+        f"{igp_adjacency_observation_count} observed adjacency row(s) across {igp_correlated_link_count} correlated links, "
+        f"including {ospf_adjacency_observation_count} OSPF row(s), {isis_adjacency_observation_count} IS-IS row(s), "
+        f"{igp_confirmed_link_count} IGP-confirmed link(s), and {igp_protocol_mismatch_link_count} protocol-mismatch link(s)."
     )
     supported_lldp_targets = sum(
         1
@@ -258,6 +271,12 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         lldp_single_sided_link_count=lldp_single_sided_link_count,
         lldp_bidirectional_link_count=lldp_bidirectional_link_count,
         lldp_mismatch_link_count=lldp_mismatch_link_count,
+        igp_adjacency_observation_count=igp_adjacency_observation_count,
+        ospf_adjacency_observation_count=ospf_adjacency_observation_count,
+        isis_adjacency_observation_count=isis_adjacency_observation_count,
+        igp_correlated_link_count=igp_correlated_link_count,
+        igp_confirmed_link_count=igp_confirmed_link_count,
+        igp_protocol_mismatch_link_count=igp_protocol_mismatch_link_count,
         linked_node_count=linked_node_count,
         isolated_node_count=isolated_node_count,
         topology_id="platform-observed-topology",
@@ -266,7 +285,7 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         link_count=len(normalized_links),
         nodes=normalized_nodes,
         links=normalized_links,
-        sync_source="gnmi_collector_topology_interface_and_lldp",
+        sync_source="gnmi_collector_topology_interface_lldp_and_igp",
         sync_status=sync_status,
         completeness="partial",
         observed_at=derive_topology_observed_at(raw_records),
@@ -295,6 +314,12 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         lldp_single_sided_link_count=lldp_single_sided_link_count,
         lldp_bidirectional_link_count=lldp_bidirectional_link_count,
         lldp_mismatch_link_count=lldp_mismatch_link_count,
+        igp_adjacency_observation_count=igp_adjacency_observation_count,
+        ospf_adjacency_observation_count=ospf_adjacency_observation_count,
+        isis_adjacency_observation_count=isis_adjacency_observation_count,
+        igp_correlated_link_count=igp_correlated_link_count,
+        igp_confirmed_link_count=igp_confirmed_link_count,
+        igp_protocol_mismatch_link_count=igp_protocol_mismatch_link_count,
         linked_node_count=linked_node_count,
         isolated_node_count=isolated_node_count,
         node_state_counts=node_state_counts,

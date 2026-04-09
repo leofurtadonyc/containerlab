@@ -16,6 +16,7 @@ from app_api.models.topology import (
     TopologyNode,
     TopologySnapshot,
     build_topology_coverage_summary,
+    resolve_topology_link_control_plane_adjacency,
     resolve_topology_link_endpoint_evidence,
     resolve_topology_link_physical_adjacency,
 )
@@ -476,12 +477,20 @@ def _build_topology_snapshot() -> tuple[
             endpoint_pairing_state=resolve_topology_link_endpoint_evidence(link)[0],
             endpoint_evidence_count=resolve_topology_link_endpoint_evidence(link)[1],
             physical_adjacency_posture=link.physical_adjacency_posture,
+            control_plane_adjacency_posture=link.control_plane_adjacency_posture,
             lldp_observation_count=link.lldp_observation_count,
             lldp_bidirectional=link.lldp_bidirectional,
             lldp_local_interfaces=link.lldp_local_interfaces,
             lldp_remote_systems=link.lldp_remote_systems,
             lldp_remote_ports=link.lldp_remote_ports,
             lldp_correlation_notes=link.lldp_correlation_notes,
+            igp_adjacency_observation_count=link.igp_adjacency_observation_count,
+            igp_protocols_observed=link.igp_protocols_observed,
+            ospf_adjacency_state=link.ospf_adjacency_state,
+            isis_adjacency_state=link.isis_adjacency_state,
+            igp_local_interfaces=link.igp_local_interfaces,
+            igp_remote_identities=link.igp_remote_identities,
+            igp_correlation_notes=link.igp_correlation_notes,
             attributes=link.attributes,
         )
         for link in collector_snapshot.links
@@ -599,6 +608,10 @@ def build_topology_response() -> TopologyResponse:
                 physical_adjacency=TopologyLinkRecord.PhysicalAdjacencyRecord(
                     **resolve_topology_link_physical_adjacency(link).model_dump()
                 ),
+                control_plane_adjacency_posture=resolve_topology_link_control_plane_adjacency(link).posture,
+                control_plane_adjacency=TopologyLinkRecord.ControlPlaneAdjacencyRecord(
+                    **resolve_topology_link_control_plane_adjacency(link).model_dump()
+                ),
                 attributes=link.attributes,
             )
             for link in snapshot.links
@@ -614,7 +627,7 @@ def build_topology_response() -> TopologyResponse:
         serving_mode = "live_collector"
         summary = (
             "Topology is backed by live read-only Nokia gNMI collection and bounded "
-            "device-native interface and LLDP evidence, with partial knowledge still explicit and usable live evidence from "
+            "device-native interface, LLDP, and IGP evidence, with partial knowledge still explicit and usable live evidence from "
             f"{collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured targets. "
             "Bounded controller enrichment and deeper topology truth now exist as optional backend-owned context, but the normalized gNMI slice remains the primary topology baseline. "
             f"{coverage_summary.summary}"
@@ -624,7 +637,7 @@ def build_topology_response() -> TopologyResponse:
         serving_mode = "live_collector"
         summary = (
             "Topology is backed by live Nokia gNMI collection, but one or more "
-            "targets, inferred links, or LLDP-backed physical adjacency lanes remain partial or degraded. "
+            "targets, inferred links, LLDP-backed physical adjacency lanes, or IGP control-plane lanes remain partial or degraded. "
             f"Coverage currently includes {collector_snapshot.observed_target_count} of {collector_snapshot.configured_target_count} configured targets. "
             "Bounded controller enrichment and deeper topology truth now exist as optional backend-owned context, but the normalized gNMI slice remains the primary topology baseline. "
             f"{coverage_summary.summary}"

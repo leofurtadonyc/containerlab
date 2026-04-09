@@ -277,6 +277,17 @@ function createTopologyData() {
             remote_ports: [],
             correlation_notes: [],
           },
+          control_plane_adjacency_posture: "suppressed_or_unknown",
+          control_plane_adjacency: {
+            posture: "suppressed_or_unknown",
+            observation_count: 0,
+            protocols_observed: [],
+            ospf_adjacency_state: null,
+            isis_adjacency_state: null,
+            local_interfaces: [],
+            remote_identities: [],
+            correlation_notes: [],
+          },
           attributes: {
             knowledge_state: "partial",
             inference_method: "interface_name_and_oper_state",
