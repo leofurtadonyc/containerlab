@@ -148,8 +148,9 @@ Use `-c` for the standard replacement path. It matches the documented host-recre
 
 Collector-boundary timeout note:
 
-- the packaged runtime currently uses `GNMI_COLLECTOR_TIMEOUT_SECONDS=5` with per-path overrides of `GNMI_COLLECTOR_INVENTORY_TIMEOUT_SECONDS=5`, `GNMI_COLLECTOR_TOPOLOGY_TIMEOUT_SECONDS=8`, and `GNMI_COLLECTOR_POLICY_TIMEOUT_SECONDS=5` in `topology.clab.yml`
+- the packaged runtime currently uses `GNMI_COLLECTOR_TIMEOUT_SECONDS=5` with per-path overrides of `GNMI_COLLECTOR_INVENTORY_TIMEOUT_SECONDS=5`, `GNMI_COLLECTOR_TOPOLOGY_TIMEOUT_SECONDS=15`, and `GNMI_COLLECTOR_POLICY_TIMEOUT_SECONDS=5` in `topology.clab.yml`
 - keep those values aligned with the actual collector latency of the deployed lab footprint; if the topology snapshot routinely takes longer than the topology budget, `app-api` will honestly report fallback or unreachable posture even when `gnmi-collector` itself is healthy
+- the topology budget specifically needs to cover interface, LLDP, and bounded IGP evidence collection together; after adding IGP adjacency truth, an `8s` topology budget proved too tight for normal live collection on the current lab footprint
 - if you change those values, rebuild and redeploy the packaged runtime; do not assume an existing `app-api` container will pick up the new budget without replacement
 
 ### 3. Run The Required Verification Scripts
