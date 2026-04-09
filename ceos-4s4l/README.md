@@ -565,7 +565,7 @@ rtt min/avg/max/mdev = 4.476/11.268/22.906/8.267 ms
 ```
 ##  Switch interfaces (i.e., leaf1)
 ```
-ssh lfurtado@clab-ceos-4s4l-leaf1
+ssh clab@clab-ceos-4s4l-leaf1
 
 leaf1#show interfaces description 
 Interface                      Status         Protocol           Description

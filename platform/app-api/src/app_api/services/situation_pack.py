@@ -1,5 +1,6 @@
 """Assemble bounded operator situation (evidence) pack from existing read-side services only."""
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 
 from app_api.config.settings import get_settings
@@ -42,23 +43,38 @@ def build_situation_pack_assembly_response(
     settings = get_settings()
     bounded = max(1, min(int(sync_runs_limit), RECENT_CHANGE_SYNC_RUNS_MAX))
 
-    investigation_context = build_investigation_context_assembly_response(
-        sync_runs_limit=bounded,
-    )
-    devices = build_devices_list_response()
-    topology = build_topology_response()
-    policies = build_policies_list_response()
-    readiness = build_readiness_snapshot_history_response(
-        limit_requested=None,
-        blocker_filter=None,
-        include_blockers_detail=False,
-    )
-    workflow_history = build_workflow_history_response(sync_runs_limit=bounded)
-    audit_history = build_audit_history_response(
-        limit=None,
-        sync_runs_limit=bounded,
-        readiness_snapshot_history_limit=None,
-    )
+    with ThreadPoolExecutor(max_workers=7) as executor:
+        investigation_future = executor.submit(
+            build_investigation_context_assembly_response,
+            sync_runs_limit=bounded,
+        )
+        devices_future = executor.submit(build_devices_list_response)
+        topology_future = executor.submit(build_topology_response)
+        policies_future = executor.submit(build_policies_list_response)
+        readiness_future = executor.submit(
+            build_readiness_snapshot_history_response,
+            limit_requested=None,
+            blocker_filter=None,
+            include_blockers_detail=False,
+        )
+        workflow_history_future = executor.submit(
+            build_workflow_history_response,
+            sync_runs_limit=bounded,
+        )
+        audit_history_future = executor.submit(
+            build_audit_history_response,
+            limit=None,
+            sync_runs_limit=bounded,
+            readiness_snapshot_history_limit=None,
+        )
+
+        investigation_context = investigation_future.result()
+        devices = devices_future.result()
+        topology = topology_future.result()
+        policies = policies_future.result()
+        readiness = readiness_future.result()
+        workflow_history = workflow_history_future.result()
+        audit_history = audit_history_future.result()
 
     now = datetime.now(UTC)
     assembly_notes = [

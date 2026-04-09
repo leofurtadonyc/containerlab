@@ -99,8 +99,16 @@ notice() {
   echo "Notice: $1"
 }
 
+# Important: do not pipe curl to tr — on HTTP 4xx/5xx, curl -f fails but tr still succeeds, so the
+# pipeline exits 0 and callers see an empty body (misleading assert_contains like missing
+# detail_blocker_reason after a transient 500 on cold start).
 fetch_compact_json() {
-  curl_http_json "$1" | tr -d '\n\r\t '
+  url=$1
+  _body=$(curl_http_json "$url") || {
+    echo "fetch_compact_json failed (curl HTTP error or timeout): $url" >&2
+    exit 1
+  }
+  printf '%s' "$_body" | tr -d '\n\r\t '
 }
 
 assert_contains() {
@@ -271,6 +279,58 @@ wait_for_http_ok "app-api metrics" "$APP_API_URL/metrics"
 wait_for_http_ok "app-web root" "$APP_WEB_URL/"
 wait_for_http_ok "app-web API proxy health" "$APP_WEB_URL/api/v1/health"
 
+# /api/v1/health can be 200 before heavier read paths finish warming. Poll policies, platform/status,
+# and app-web / before asset + bulk JSON fetches (policies alone does not cover platform/status).
+wait_for_app_api_policies_ready() {
+  attempts=$VERIFY_ATTEMPTS
+  while [ "$attempts" -gt 0 ]; do
+    if curl_http_json "$APP_API_URL/api/v1/policies" >/dev/null 2>&1; then
+      return 0
+    fi
+    attempts=$((attempts - 1))
+    if [ "$attempts" -gt 0 ]; then
+      sleep "$VERIFY_SLEEP_SECONDS"
+    fi
+  done
+  echo "app-api GET /api/v1/policies did not return HTTP 200 (cold start / DB warm-up; see docker logs $APP_API_CONTAINER)" >&2
+  exit 1
+}
+wait_for_app_api_policies_ready
+
+# First bulk JSON fetch is GET /api/v1/platform/status (collector read_paths + recovery + ODL). Policies=200
+# does not imply platform/status=200; same-workspace drills could hit curl (22) 500 here or on app-web / next.
+wait_for_app_api_platform_status_ready() {
+  attempts=$VERIFY_ATTEMPTS
+  while [ "$attempts" -gt 0 ]; do
+    if curl_http_json "$APP_API_URL/api/v1/platform/status" >/dev/null 2>&1; then
+      return 0
+    fi
+    attempts=$((attempts - 1))
+    if [ "$attempts" -gt 0 ]; then
+      sleep "$VERIFY_SLEEP_SECONDS"
+    fi
+  done
+  echo "app-api GET /api/v1/platform/status did not return HTTP 200 (cold start; see docker logs $APP_API_CONTAINER)" >&2
+  exit 1
+}
+wait_for_app_api_platform_status_ready
+
+wait_for_app_web_root_ok() {
+  attempts=$VERIFY_ATTEMPTS
+  while [ "$attempts" -gt 0 ]; do
+    if curl_http_json "$APP_WEB_URL/" >/dev/null 2>&1; then
+      return 0
+    fi
+    attempts=$((attempts - 1))
+    if [ "$attempts" -gt 0 ]; then
+      sleep "$VERIFY_SLEEP_SECONDS"
+    fi
+  done
+  echo "app-web GET / did not return HTTP 200 (cold start; see docker logs $APP_WEB_CONTAINER)" >&2
+  exit 1
+}
+wait_for_app_web_root_ok
+
 # Week 29–30 NOC cockpit / handoff WebUI: shipped /assets/*.js must retain stable composition markers (repository vitest covers UI behavior).
 app_web_index_html=$(curl_http_json "$APP_WEB_URL/")
 app_web_noc_cockpit_marker=0
@@ -295,6 +355,9 @@ app_web_service_impact_workspace_marker=0
 app_web_change_safety_case_marker=0
 app_web_evidence_consistency_marker=0
 app_web_stability_workspace_marker=0
+app_web_topology_truth_v1_marker=0
+app_web_topology_lldp_marker=0
+app_web_topology_igp_marker=0
 for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n' | grep -E '^/assets/.*\.js$' || true); do
   app_web_chunk=$(fetch_app_web_asset_chunk "$APP_WEB_URL$asset_path")
   if printf '%s' "$app_web_chunk" | grep -qF 'noc_cockpit_v1'; then
@@ -363,9 +426,18 @@ for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n
   if printf '%s' "$app_web_chunk" | grep -qF 'operational_stability_summary_v1'; then
     app_web_stability_workspace_marker=1
   fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'topology_truth_v1'; then
+    app_web_topology_truth_v1_marker=1
+  fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'LLDP observations'; then
+    app_web_topology_lldp_marker=1
+  fi
+  if printf '%s' "$app_web_chunk" | grep -qF 'IGP-confirmed Links'; then
+    app_web_topology_igp_marker=1
+  fi
 done
-if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ] || [ "$app_web_noc_cockpit_strategic_pivots_marker" != "1" ] || [ "$app_web_global_search_week30_marker" != "1" ] || [ "$app_web_global_search_impact_hub_marker" != "1" ] || [ "$app_web_maintenance_preview_marker" != "1" ] || [ "$app_web_maintenance_evidence_workspace_marker" != "1" ] || [ "$app_web_maintenance_window_workspace_marker" != "1" ] || [ "$app_web_mww_subject_marker" != "1" ] || [ "$app_web_impact_report_marker" != "1" ] || [ "$app_web_service_explorer_marker" != "1" ] || [ "$app_web_service_dossier_marker" != "1" ] || [ "$app_web_policy_explainability_marker" != "1" ] || [ "$app_web_path_explorer_marker" != "1" ] || [ "$app_web_service_impact_workspace_marker" != "1" ] || [ "$app_web_change_safety_case_marker" != "1" ] || [ "$app_web_evidence_consistency_marker" != "1" ] || [ "$app_web_stability_workspace_marker" != "1" ]; then
-  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, evidence_replay_viewer_v1, noc-cockpit-strategic-pivots, Evidence replay (frozen file), Impact report hub, maintenance_preview_v1, maintenance_evidence_workspace_v1, maintenance_window_workspace_v1, mww_subject (maintenance window URL state), impact_report_v1, service_explorer_v1, service_dossier_v1, policy_explainability_workspace_v1, path_explorer_v1, service_impact_workspace_v1, change_safety_case_v1, evidence_consistency_summary_v1, and operational_stability_summary_v1 substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing + bundle export + evidence replay + cockpit 2.0 pivots + global search week 30 footer + impact hub + maintenance preview + maintenance evidence workspace + maintenance window workspace + impact report + week 31 service/explainability + week 34 path explorer + week 34 service impact workspace + week 32 service dossier + change safety case + week 35 evidence consistency workspace + week 37 stability workspace)" >&2
+if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ] || [ "$app_web_noc_cockpit_strategic_pivots_marker" != "1" ] || [ "$app_web_global_search_week30_marker" != "1" ] || [ "$app_web_global_search_impact_hub_marker" != "1" ] || [ "$app_web_maintenance_preview_marker" != "1" ] || [ "$app_web_maintenance_evidence_workspace_marker" != "1" ] || [ "$app_web_maintenance_window_workspace_marker" != "1" ] || [ "$app_web_mww_subject_marker" != "1" ] || [ "$app_web_impact_report_marker" != "1" ] || [ "$app_web_service_explorer_marker" != "1" ] || [ "$app_web_service_dossier_marker" != "1" ] || [ "$app_web_policy_explainability_marker" != "1" ] || [ "$app_web_path_explorer_marker" != "1" ] || [ "$app_web_service_impact_workspace_marker" != "1" ] || [ "$app_web_change_safety_case_marker" != "1" ] || [ "$app_web_evidence_consistency_marker" != "1" ] || [ "$app_web_stability_workspace_marker" != "1" ] || [ "$app_web_topology_truth_v1_marker" != "1" ] || [ "$app_web_topology_lldp_marker" != "1" ] || [ "$app_web_topology_igp_marker" != "1" ]; then
+  echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, evidence_replay_viewer_v1, noc-cockpit-strategic-pivots, Evidence replay (frozen file), Impact report hub, maintenance_preview_v1, maintenance_evidence_workspace_v1, maintenance_window_workspace_v1, mww_subject (maintenance window URL state), impact_report_v1, service_explorer_v1, service_dossier_v1, policy_explainability_workspace_v1, path_explorer_v1, service_impact_workspace_v1, change_safety_case_v1, evidence_consistency_summary_v1, operational_stability_summary_v1, topology_truth_v1, LLDP observations, and IGP-confirmed Links substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing + bundle export + evidence replay + cockpit 2.0 pivots + global search week 30 footer + impact hub + maintenance preview + maintenance evidence workspace + maintenance window workspace + impact report + week 31 service/explainability + week 34 path explorer + week 34 service impact workspace + week 32 service dossier + change safety case + week 35 evidence consistency workspace + week 37 stability workspace + deeper topology truth v1 + LLDP + IGP topology cues)" >&2
   exit 1
 fi
 
@@ -551,6 +623,76 @@ assert_contains "services response (read_side_query)" "$services_response" '"rea
 topology_risk_summary_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/risk-summary")
 assert_contains "topology risk summary response (contract id)" "$topology_risk_summary_response" '"contract_id":"topology_risk_summary_v1"'
 assert_contains "topology risk summary response (ranked_objects)" "$topology_risk_summary_response" '"ranked_objects":['
+
+# Deeper topology truth v1 (merged gNMI + optional controller enrichment; structural contract check).
+topology_truth_response=$(fetch_compact_json "$APP_API_URL/api/v1/topology/truth")
+assert_contains "topology truth response (contract id)" "$topology_truth_response" '"contract_id":"topology_truth_v1"'
+assert_contains "topology truth response (merged_topology)" "$topology_truth_response" '"merged_topology":{'
+assert_contains "topology truth response (controller_fetch_status)" "$topology_truth_response" '"controller_fetch_status":"'
+assert_contains "topology truth response (physical adjacency posture)" "$topology_truth_response" '"physical_adjacency_posture":"'
+assert_contains "topology truth response (lldp observation count)" "$topology_truth_response" '"lldp_observation_count":'
+assert_contains "topology truth response (control-plane adjacency posture)" "$topology_truth_response" '"control_plane_adjacency_posture":"'
+assert_contains "topology truth response (igp confirmed count)" "$topology_truth_response" '"igp_confirmed_link_count":'
+
+# Controller southbound session truth v2 (per-lane session posture + evidence strength; structural contract check).
+controller_evidence_response=$(fetch_compact_json "$APP_API_URL/api/v1/controller/evidence")
+assert_contains "controller evidence response (contract id)" "$controller_evidence_response" '"contract_id":"controller_southbound_session_truth_v2"'
+assert_contains "controller evidence response (yang catalog)" "$controller_evidence_response" '"yang_module_catalog_count":'
+assert_contains "controller evidence response (bgp_ls lane)" "$controller_evidence_response" '"bgp_ls":{'
+assert_contains "controller evidence response (pcep lane)" "$controller_evidence_response" '"pcep":{'
+assert_contains "controller evidence response (netconf lane)" "$controller_evidence_response" '"netconf":{'
+assert_contains "controller evidence response (protocol exposure posture)" "$controller_evidence_response" '"protocol_exposure_posture":"'
+assert_contains "controller evidence response (object visibility posture)" "$controller_evidence_response" '"object_visibility_posture":"'
+assert_contains "controller evidence response (session posture)" "$controller_evidence_response" '"session_posture":"'
+assert_contains "controller evidence response (evidence strength)" "$controller_evidence_response" '"evidence_strength":"'
+assert_contains "controller evidence response (derivation mode)" "$controller_evidence_response" '"derivation_mode":"'
+
+if command -v python3 >/dev/null 2>&1; then
+  printf '%s' "$controller_evidence_response" | python3 -c '
+import json
+import sys
+
+data = json.load(sys.stdin)
+
+bgp = data.get("bgp_ls") or {}
+pcep = data.get("pcep") or {}
+netconf = data.get("netconf") or {}
+
+placeholder_bgp_ids = {"example-linkstate-topology", "example-ipv4-topology", "example-ipv6-topology"}
+bgp_ids = set(bgp.get("topology_ids") or [])
+pcep_ids = set(pcep.get("topology_ids") or [])
+netconf_ids = set(netconf.get("topology_ids") or [])
+
+def fail(message: str) -> None:
+  raise SystemExit(message)
+
+if ((not bgp_ids or bgp_ids.issubset(placeholder_bgp_ids))
+    and int(bgp.get("node_count") or 0) == 0
+    and int(bgp.get("link_count") or 0) == 0):
+  if bgp.get("session_posture") == "established":
+    fail("controller evidence semantic check failed: bgp_ls lane claims established session posture with no live BGP-LS objects")
+  if bgp.get("evidence_strength") == "session_backed":
+    fail("controller evidence semantic check failed: bgp_ls lane claims session_backed evidence with no live BGP-LS objects")
+
+if (pcep_ids.issubset({"pcep-topology"})
+    and int(pcep.get("node_count") or 0) == 0
+    and int(pcep.get("link_count") or 0) == 0):
+  if pcep.get("session_posture") == "established":
+    fail("controller evidence semantic check failed: pcep lane claims established session posture with config-only scope")
+  if pcep.get("evidence_strength") == "session_backed":
+    fail("controller evidence semantic check failed: pcep lane claims session_backed evidence with config-only scope")
+
+if ((not netconf_ids or netconf_ids == {"topology-netconf"})
+    and int(netconf.get("node_count") or 0) == 0
+    and int(netconf.get("link_count") or 0) == 0):
+  if netconf.get("session_posture") == "established":
+    fail("controller evidence semantic check failed: netconf lane claims established session posture with no mounted nodes")
+  if netconf.get("evidence_strength") == "session_backed":
+    fail("controller evidence semantic check failed: netconf lane claims session_backed evidence with no mounted nodes")
+'
+else
+  notice "python3 not found; skipping controller evidence semantic anti-placeholder checks in verify-core-runtime.sh."
+fi
 
 # Week 29: global operator search (bounded inventory field search; structural contract check).
 operator_search_response=$(fetch_compact_json "$APP_API_URL/api/v1/operator-search?q=__verify_runtime__")
@@ -1055,11 +1197,26 @@ fi
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_snapshot_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_paired_links'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_single_sided_links'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_lldp_observations'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_lldp_correlated_links'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_lldp_bidirectional_links'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_lldp_mismatch_links'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_linked_nodes'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_isolated_nodes'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_coverage_posture{inference_posture="'
 assert_contains "app-api metrics" "$app_api_metrics" 'node_participation_posture="'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_coverage_posture'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_truth_merges_total'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_truth_last_physical_confirmed_links'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_truth_last_igp_confirmed_links'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_truth_last_multi_source_confirmed_links'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_truth_last_lldp_bidirectional_links'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_topology_truth_last_igp_protocol_mismatch_links'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_controller_evidence_fetches_total'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_controller_evidence_lane_posture_total'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_controller_evidence_lane_session_posture_total'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_controller_evidence_lane_evidence_strength_total'
+assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_controller_evidence_lane_session_backed_total'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_snapshot_status'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_detail_source_readiness'
 assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_policy_detail_source_targets'
@@ -1081,6 +1238,10 @@ assert_contains "app-api metrics" "$app_api_metrics" 'platform_app_api_rollbacks
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_inventory_newest_observed_timestamp_seconds'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_paired_links'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_single_sided_links'
+assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_lldp_observations'
+assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_lldp_correlated_links'
+assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_lldp_bidirectional_links'
+assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_lldp_mismatch_links'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_linked_nodes'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_isolated_nodes'
 assert_contains "collector metrics" "$collector_metrics" 'platform_gnmi_collector_topology_node_participation_posture'

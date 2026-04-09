@@ -45,7 +45,7 @@ endpoint-coverage limits, and collection degradation.
 
 Interpret it narrowly.
 
-- stay fully in `Phase 2 — read-only product foundation`
+- keep the dominant product surface in the `Phase 2` read-only foundation
 - treat the accepted week 13 identity no-change outcome as closed for now
 - treat the accepted week 14 endpoint-pairing implementation outcome as closed
   for now

@@ -212,6 +212,37 @@ export interface TopologyNodeRecord {
 }
 
 export interface TopologyLinkRecord {
+  physical_adjacency: {
+    posture:
+      | "not_observed"
+      | "single_sided_lldp"
+      | "bidirectional_lldp"
+      | "lldp_mismatch"
+      | "suppressed_or_unknown";
+    lldp_observation_count: number;
+    lldp_bidirectional: boolean;
+    local_interfaces: string[];
+    remote_systems: string[];
+    remote_ports: string[];
+    correlation_notes: string[];
+  };
+  control_plane_adjacency: {
+    posture:
+      | "not_observed"
+      | "ospf_observed"
+      | "isis_observed"
+      | "igp_confirmed"
+      | "protocol_mismatch"
+      | "suppressed_or_unknown"
+      | "unknown";
+    observation_count: number;
+    protocols_observed: Array<"ospf" | "isis">;
+    ospf_adjacency_state: string | null;
+    isis_adjacency_state: string | null;
+    local_interfaces: string[];
+    remote_identities: string[];
+    correlation_notes: string[];
+  };
   link_id: string;
   source_node_id: string;
   target_node_id: string;
@@ -221,6 +252,20 @@ export interface TopologyLinkRecord {
   source: string;
   endpoint_pairing_state: "paired" | "single_sided" | "unknown";
   endpoint_evidence_count: number | null;
+  physical_adjacency_posture:
+    | "not_observed"
+    | "single_sided_lldp"
+    | "bidirectional_lldp"
+    | "lldp_mismatch"
+    | "suppressed_or_unknown";
+  control_plane_adjacency_posture:
+    | "not_observed"
+    | "ospf_observed"
+    | "isis_observed"
+    | "igp_confirmed"
+    | "protocol_mismatch"
+    | "suppressed_or_unknown"
+    | "unknown";
   attributes: Record<string, string>;
 }
 
@@ -279,6 +324,283 @@ export interface TopologyResponse extends ApiResponseMetadata {
   history: TopologyHistoryWindow;
   coverage_summary: TopologyCoverageSummaryRecord;
   topology: TopologyRecord;
+}
+
+export type TopologyTruthSourceType =
+  | "device_gnmi"
+  | "lldp_gnmi"
+  | "ospf_adjacency"
+  | "isis_adjacency"
+  | "controller_bgpls"
+  | "persisted_snapshot"
+  | "merged";
+
+export type TopologyTruthPosture =
+  | "inferred_only"
+  | "device_observed"
+  | "physical_confirmed"
+  | "igp_confirmed"
+  | "controller_correlated"
+  | "multi_source_confirmed"
+  | "partial"
+  | "conflicting"
+  | "stale"
+  | "unknown";
+
+export type TopologyTruthControlPlaneAdjacencyPosture =
+  | "not_observed"
+  | "ospf_observed"
+  | "isis_observed"
+  | "igp_confirmed"
+  | "protocol_mismatch"
+  | "suppressed_or_unknown"
+  | "unknown";
+
+export type TopologyTruthDisagreementKind =
+  | "device_controller_mismatch"
+  | "lldp_inference_mismatch"
+  | "lldp_controller_mismatch"
+  | "igp_inference_mismatch"
+  | "igp_controller_mismatch"
+  | "igp_lldp_mismatch"
+  | "missing_controller_evidence"
+  | "missing_device_evidence"
+  | "stale_controller_view"
+  | "stale_device_view"
+  | "identity_conflict"
+  | "attribute_conflict";
+
+export type TopologyTruthControllerFetchStatus = "ok" | "degraded" | "unreachable" | "empty";
+
+export interface TopologyTruthSourceRef {
+  source_type: TopologyTruthSourceType;
+  source_id: string;
+  source_scope: string;
+  source_time: string | null;
+  source_freshness: "current" | "stale" | "unknown";
+  source_authority_posture:
+    | "observed"
+    | "inferred"
+    | "controller_export"
+    | "merged"
+    | "unknown";
+  source_summary: string;
+}
+
+export interface TopologyTruthProvenance {
+  contributing_sources: TopologyTruthSourceType[];
+  primary_source: TopologyTruthSourceType | null;
+  evidence_timestamps: string[];
+  freshness_posture: "current" | "stale" | "unknown";
+  merged_or_correlated: boolean;
+  missing_sources: TopologyTruthSourceType[];
+}
+
+export interface TopologyTruthDisagreementRecord {
+  object_kind: "node" | "link";
+  object_id: string;
+  kind: TopologyTruthDisagreementKind;
+  summary: string;
+  source_a: TopologyTruthSourceType | null;
+  source_b: TopologyTruthSourceType | null;
+}
+
+export interface TopologyTruthNodeRecord {
+  node_id: string;
+  display_name: string;
+  role: string;
+  state: string;
+  truth_posture: TopologyTruthPosture;
+  provenance: TopologyTruthProvenance;
+  disagreement: TopologyTruthDisagreementRecord | null;
+  attributes: Record<string, string>;
+}
+
+export interface TopologyTruthLinkRecord {
+  physical_adjacency: {
+    posture:
+      | "not_observed"
+      | "single_sided_lldp"
+      | "bidirectional_lldp"
+      | "lldp_mismatch"
+      | "suppressed_or_unknown";
+    lldp_observation_count: number;
+    lldp_bidirectional: boolean;
+    local_interfaces: string[];
+    remote_systems: string[];
+    remote_ports: string[];
+    correlation_notes: string[];
+  };
+  control_plane_adjacency: {
+    posture: TopologyTruthControlPlaneAdjacencyPosture;
+    observation_count: number;
+    protocols_observed: Array<"ospf" | "isis">;
+    ospf_adjacency_state: string | null;
+    isis_adjacency_state: string | null;
+    local_interfaces: string[];
+    remote_identities: string[];
+    correlation_notes: string[];
+  };
+  link_id: string;
+  source_node_id: string;
+  target_node_id: string;
+  state: string;
+  truth_posture: TopologyTruthPosture;
+  provenance: TopologyTruthProvenance;
+  endpoint_pairing_state: string;
+  endpoint_evidence_count: number | null;
+  physical_adjacency_posture:
+    | "not_observed"
+    | "single_sided_lldp"
+    | "bidirectional_lldp"
+    | "lldp_mismatch"
+    | "suppressed_or_unknown";
+  control_plane_adjacency_posture: TopologyTruthControlPlaneAdjacencyPosture;
+  disagreement: TopologyTruthDisagreementRecord | null;
+  attributes: Record<string, string>;
+}
+
+export interface TopologyTruthMergedTopology {
+  topology_id: string;
+  topology_name: string;
+  nodes: TopologyTruthNodeRecord[];
+  links: TopologyTruthLinkRecord[];
+  notes: string[];
+}
+
+export interface TopologyTruthFreshnessSummary {
+  device_gnmi: "current" | "stale" | "unknown";
+  controller_bgpls: "current" | "stale" | "unknown" | "not_applicable";
+  merged_view: "current" | "stale" | "unknown";
+}
+
+export interface TopologyTruthCounts {
+  merged_node_count: number;
+  merged_link_count: number;
+  inferred_only_link_count: number;
+  physical_confirmed_link_count: number;
+  igp_confirmed_link_count: number;
+  ospf_observed_link_count: number;
+  isis_observed_link_count: number;
+  multi_source_confirmed_link_count: number;
+  lldp_single_sided_link_count: number;
+  lldp_bidirectional_link_count: number;
+  lldp_mismatch_link_count: number;
+  igp_protocol_mismatch_link_count: number;
+  controller_only_node_count: number;
+  device_only_node_count: number;
+  conflicting_object_count: number;
+  stale_source_marker_count: number;
+}
+
+export interface TopologyTruthSafetyFraming {
+  contract_id: "topology_truth_v1";
+  explicit_non_claims: string[];
+}
+
+/** Deeper topology truth v1 — `GET /api/v1/topology/truth`. */
+export interface TopologyTruthResponse extends ApiResponseMetadata {
+  contract_id: "topology_truth_v1";
+  sources: TopologyTruthSourceRef[];
+  controller_fetch_status: TopologyTruthControllerFetchStatus;
+  controller_notes: string[];
+  freshness: TopologyTruthFreshnessSummary;
+  counts: TopologyTruthCounts;
+  disagreements: TopologyTruthDisagreementRecord[];
+  merged_topology: TopologyTruthMergedTopology;
+  persisted_snapshot_id: string | null;
+  safety_framing: TopologyTruthSafetyFraming;
+}
+
+export type ControllerReachability = "ok" | "degraded" | "unreachable" | "unknown";
+
+export type ProtocolLanePosture =
+  | "available"
+  | "partial"
+  | "empty"
+  | "degraded"
+  | "unreachable"
+  | "unsupported"
+  | "unknown";
+
+/** Legacy v1 lane summary (kept for historical references). */
+export interface ProtocolLaneSummary {
+  lane_id: "bgp_ls" | "pcep" | "netconf";
+  posture: ProtocolLanePosture;
+  observed_source: string;
+  node_count: number;
+  link_count: number;
+  topology_ids: string[];
+  fingerprint: string;
+  notes: string[];
+  explicit_non_claims: string[];
+}
+
+export type ProtocolExposurePosture = "exposed" | "not_exposed" | "unknown";
+
+export type ObjectVisibilityPosture =
+  | "objects_visible"
+  | "scope_only"
+  | "none_visible"
+  | "unknown";
+
+export type SessionPosture =
+  | "established"
+  | "not_observed"
+  | "degraded"
+  | "unknown"
+  | "unsupported"
+  | "unreachable";
+
+export type EvidenceStrength =
+  | "session_backed"
+  | "object_backed"
+  | "scope_only"
+  | "heuristic_only"
+  | "unavailable";
+
+export type DerivationMode =
+  | "protocol_native"
+  | "controller_object_parse"
+  | "topology_partition_heuristic"
+  | "supplemental_restconf"
+  | "unknown";
+
+export interface ProtocolLaneDetailV2 {
+  lane_id: "bgp_ls" | "pcep" | "netconf";
+  lane_posture: ProtocolLanePosture;
+  protocol_exposure_posture: ProtocolExposurePosture;
+  object_visibility_posture: ObjectVisibilityPosture;
+  session_posture: SessionPosture;
+  evidence_strength: EvidenceStrength;
+  derivation_mode: DerivationMode;
+  observed_source: string;
+  node_count: number;
+  link_count: number;
+  topology_ids: string[];
+  fingerprint: string;
+  notes: string[];
+  fallback_notes: string[];
+  explicit_non_claims: string[];
+}
+
+export interface ControllerEvidenceSafetyFramingV2 {
+  contract_id: "controller_southbound_session_truth_v2";
+  explicit_non_claims: string[];
+}
+
+/** Verified southbound session truth v2 — `GET /api/v1/controller/evidence`. */
+export interface ControllerEvidenceResponse extends ApiResponseMetadata {
+  contract_id: "controller_southbound_session_truth_v2";
+  controller_reachability: ControllerReachability;
+  controller_capability_probe_summary: string;
+  yang_module_catalog_count: number;
+  aggregate_fetch_notes: string[];
+  bgp_ls: ProtocolLaneDetailV2;
+  pcep: ProtocolLaneDetailV2;
+  netconf: ProtocolLaneDetailV2;
+  persisted_snapshot_id: string | null;
+  safety_framing: ControllerEvidenceSafetyFramingV2;
 }
 
 export interface CandidatePathRecord {

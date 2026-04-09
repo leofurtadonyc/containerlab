@@ -115,7 +115,7 @@ Fourth, collector tests already pin the current topology shape in
 `platform/gnmi-collector/tests/test_collector.py`, including:
 
 - `link_count == 17`
-- `sync_source == "gnmi_collector_topology_interface_inference"`
+- `sync_source == "gnmi_collector_topology_interface_and_lldp"`
 - `completeness == "partial"`
 - `platform_gnmi_collector_topology_single_sided_links`
 
@@ -617,7 +617,7 @@ justified.
 That slice should not attempt:
 
 - LLDP redesign
-- IGP adjacency truth
+- controller-first topology ownership
 - ODL topology ownership
 - validation verdicts
 - workflow semantics
@@ -684,4 +684,4 @@ coverage are now aligned with
 
 **Scheduling default after Week 19:** do **not** assume topology is the next implementation lane. Follow **`platform/docs/decisions/ADR-0001-next-bounded-truth-depth-slice.md`** **Priority 2** (evidence-first reassessment): reopen **topology code** only if **new live evidence** shows a concrete, narrow truth-depth gain **beyond** the already-shipped pairing, partiality, node-participation, and coverage-history cues. Otherwise prefer **policy** steps tied to **proven** collector evidence, **documentation-only** alignment, or **inventory** read-side ergonomics—**not** opportunistic topology redesign, unsupported policy families, or validation semantics.
 
-**Explicitly still deferred:** protocol-derived adjacency truth, controller-first topology, LLDP/IGP redesign, workflow or validation language, and broader policy families without collector proof—unchanged from the anti-goals above.
+**Historical defer note:** protocol-derived adjacency truth was deferred at the time of this review, but later bounded work added device-native IGP control-plane adjacency evidence as its own lane. The anti-goals that still hold are controller-first topology ownership, LLDP redesign, workflow or validation language, and broader policy families without collector proof.

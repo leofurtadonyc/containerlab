@@ -10,6 +10,7 @@ from uuid import uuid4
 from sqlalchemy import desc, select
 from sqlalchemy.exc import IntegrityError
 
+from app_api.config.settings import get_settings
 from app_api.metrics.state import record_preview_outcome
 from app_api.persistence.session import create_session
 from app_api.persistence.tables import (

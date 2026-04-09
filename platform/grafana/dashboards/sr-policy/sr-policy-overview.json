@@ -866,12 +866,14 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "clamp_min(time() - platform_app_api_sync_run_latest_finished_at_seconds{model_family=\"policy\"}, 0)",
+          "expr": "clamp_min(time() - platform_app_api_collector_boundary_newest_observed_at_seconds{model_family=\"policy\"}, 0)",
+          "instant": true,
           "legendFormat": "policy sync age",
           "refId": "A"
         },
         {
           "expr": "clamp_min(time() - platform_app_api_policy_snapshot_latest_persisted_at_seconds, 0) unless platform_app_api_policy_snapshot_latest_persisted_at_seconds == 0",
+          "instant": true,
           "legendFormat": "persisted snapshot age",
           "refId": "B"
         }
@@ -914,8 +916,8 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "platform_app_api_sync_runs_by_family{model_family=\"policy\"}",
-          "legendFormat": "recent sync runs",
+          "expr": "platform_app_api_sync_runs_persisted_by_family{model_family=\"policy\"}",
+          "legendFormat": "persisted sync rows",
           "refId": "A"
         },
         {
@@ -1260,7 +1262,8 @@
       "type": "bargauge"
     }
   ],
-  "refresh": "30s",
+  "liveNow": true,
+  "refresh": "5s",
   "schemaVersion": 39,
   "style": "dark",
   "tags": [

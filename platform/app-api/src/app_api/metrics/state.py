@@ -19,6 +19,16 @@ _safe_action_execution_count: int = 0
 _rollback_counts: Counter[tuple[str, str, str, str]] = Counter()
 _rollback_execution_seconds_sum: float = 0.0
 _rollback_execution_count: int = 0
+_topology_truth_merges_total: int = 0
+_topology_truth_controller_status_counts: Counter[str] = Counter()
+_topology_truth_seconds_sum: float = 0.0
+_controller_evidence_fetches_total: int = 0
+_controller_evidence_seconds_sum: float = 0.0
+_controller_evidence_reachability_counts: Counter[str] = Counter()
+_controller_evidence_lane_posture_counts: Counter[tuple[str, str]] = Counter()
+_controller_evidence_lane_session_posture_counts: Counter[tuple[str, str]] = Counter()
+_controller_evidence_lane_evidence_strength_counts: Counter[tuple[str, str]] = Counter()
+_controller_evidence_lane_session_backed_counts: Counter[tuple[str, str]] = Counter()
 _request_duration_counts: Counter[tuple[str, str]] = Counter()
 _request_duration_sums: dict[tuple[str, str], float] = defaultdict(float)
 
@@ -44,6 +54,11 @@ class CachedTopologyMetrics:
     node_participation_posture: str = "unknown"
     paired_link_count: int = 0
     single_sided_link_count: int = 0
+    lldp_observation_count: int = 0
+    lldp_correlated_link_count: int = 0
+    lldp_single_sided_link_count: int = 0
+    lldp_bidirectional_link_count: int = 0
+    lldp_mismatch_link_count: int = 0
     linked_node_count: int = 0
     isolated_node_count: int = 0
     data_status: str = "unknown"
@@ -118,10 +133,48 @@ class CachedRecoveryMetrics:
     persisted_artifact_availability: dict[str, int] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class CachedTopologyTruthMetrics:
+    """Latest deeper topology truth merge observation (scrape-safe)."""
+
+    controller_status: str = "unknown"
+    merged_node_count: int = 0
+    merged_link_count: int = 0
+    inferred_only_links: int = 0
+    physical_confirmed_links: int = 0
+    igp_confirmed_links: int = 0
+    ospf_observed_links: int = 0
+    isis_observed_links: int = 0
+    multi_source_confirmed_links: int = 0
+    lldp_single_sided_links: int = 0
+    lldp_bidirectional_links: int = 0
+    lldp_mismatch_links: int = 0
+    igp_protocol_mismatch_links: int = 0
+    conflicts: int = 0
+
+
+@dataclass(frozen=True)
+class CachedControllerEvidenceMetrics:
+    """Latest controller southbound session truth fetch v2 (scrape-safe)."""
+
+    controller_reachability: str = "unknown"
+    bgp_ls_lane_posture: str = "unknown"
+    bgp_ls_session_posture: str = "unknown"
+    bgp_ls_evidence_strength: str = "unknown"
+    pcep_lane_posture: str = "unknown"
+    pcep_session_posture: str = "unknown"
+    pcep_evidence_strength: str = "unknown"
+    netconf_lane_posture: str = "unknown"
+    netconf_session_posture: str = "unknown"
+    netconf_evidence_strength: str = "unknown"
+
+
 _cached_topology_metrics = CachedTopologyMetrics()
 _cached_policy_metrics = CachedPolicyMetrics()
 _cached_readiness_metrics = CachedReadinessMetrics()
 _cached_recovery_metrics = CachedRecoveryMetrics()
+_cached_topology_truth_metrics = CachedTopologyTruthMetrics()
+_cached_controller_evidence_metrics = CachedControllerEvidenceMetrics()
 _cached_collector_boundary_fetch_metrics: dict[str, CachedCollectorBoundaryFetchMetrics] = {
     "inventory": CachedCollectorBoundaryFetchMetrics(),
     "topology": CachedCollectorBoundaryFetchMetrics(),
@@ -157,6 +210,101 @@ def record_safe_action_outcome(
         if event.startswith("execute"):
             _safe_action_execution_seconds_sum += max(0.0, duration_seconds)
             _safe_action_execution_count += 1
+
+
+def record_controller_evidence_v2_observation(
+    *,
+    controller_reachability: str,
+    bgp_ls_lane_posture: str,
+    bgp_ls_session_posture: str,
+    bgp_ls_evidence_strength: str,
+    pcep_lane_posture: str,
+    pcep_session_posture: str,
+    pcep_evidence_strength: str,
+    netconf_lane_posture: str,
+    netconf_session_posture: str,
+    netconf_evidence_strength: str,
+    duration_seconds: float,
+) -> None:
+    """Record one controller southbound session truth v2 aggregate fetch."""
+    global _cached_controller_evidence_metrics
+    with _lock:
+        global _controller_evidence_fetches_total, _controller_evidence_seconds_sum
+        global _controller_evidence_reachability_counts
+        global _controller_evidence_lane_posture_counts
+        global _controller_evidence_lane_session_posture_counts
+        global _controller_evidence_lane_evidence_strength_counts
+        global _controller_evidence_lane_session_backed_counts
+        _controller_evidence_fetches_total += 1
+        _controller_evidence_seconds_sum += max(0.0, duration_seconds)
+        _controller_evidence_reachability_counts[controller_reachability] += 1
+        _controller_evidence_lane_posture_counts[("bgp_ls", bgp_ls_lane_posture)] += 1
+        _controller_evidence_lane_posture_counts[("pcep", pcep_lane_posture)] += 1
+        _controller_evidence_lane_posture_counts[("netconf", netconf_lane_posture)] += 1
+        _controller_evidence_lane_session_posture_counts[("bgp_ls", bgp_ls_session_posture)] += 1
+        _controller_evidence_lane_session_posture_counts[("pcep", pcep_session_posture)] += 1
+        _controller_evidence_lane_session_posture_counts[("netconf", netconf_session_posture)] += 1
+        _controller_evidence_lane_evidence_strength_counts[("bgp_ls", bgp_ls_evidence_strength)] += 1
+        _controller_evidence_lane_evidence_strength_counts[("pcep", pcep_evidence_strength)] += 1
+        _controller_evidence_lane_evidence_strength_counts[("netconf", netconf_evidence_strength)] += 1
+        _controller_evidence_lane_session_backed_counts[("bgp_ls", str(bgp_ls_evidence_strength == "session_backed").lower())] += 1
+        _controller_evidence_lane_session_backed_counts[("pcep", str(pcep_evidence_strength == "session_backed").lower())] += 1
+        _controller_evidence_lane_session_backed_counts[("netconf", str(netconf_evidence_strength == "session_backed").lower())] += 1
+        _cached_controller_evidence_metrics = CachedControllerEvidenceMetrics(
+            controller_reachability=controller_reachability,
+            bgp_ls_lane_posture=bgp_ls_lane_posture,
+            bgp_ls_session_posture=bgp_ls_session_posture,
+            bgp_ls_evidence_strength=bgp_ls_evidence_strength,
+            pcep_lane_posture=pcep_lane_posture,
+            pcep_session_posture=pcep_session_posture,
+            pcep_evidence_strength=pcep_evidence_strength,
+            netconf_lane_posture=netconf_lane_posture,
+            netconf_session_posture=netconf_session_posture,
+            netconf_evidence_strength=netconf_evidence_strength,
+        )
+
+
+def record_topology_truth_observation(
+    *,
+    controller_status: str,
+    merged_node_count: int,
+    merged_link_count: int,
+    inferred_only_links: int,
+    physical_confirmed_links: int,
+    igp_confirmed_links: int,
+    ospf_observed_links: int,
+    isis_observed_links: int,
+    multi_source_confirmed_links: int,
+    lldp_single_sided_links: int,
+    lldp_bidirectional_links: int,
+    lldp_mismatch_links: int,
+    igp_protocol_mismatch_links: int,
+    conflicts: int,
+    duration_seconds: float,
+) -> None:
+    """Record one deeper topology truth merge (v1)."""
+    global _cached_topology_truth_metrics
+    with _lock:
+        global _topology_truth_merges_total, _topology_truth_seconds_sum
+        _topology_truth_merges_total += 1
+        _topology_truth_controller_status_counts[controller_status] += 1
+        _topology_truth_seconds_sum += max(0.0, duration_seconds)
+        _cached_topology_truth_metrics = CachedTopologyTruthMetrics(
+            controller_status=controller_status,
+            merged_node_count=merged_node_count,
+            merged_link_count=merged_link_count,
+            inferred_only_links=inferred_only_links,
+            physical_confirmed_links=physical_confirmed_links,
+            igp_confirmed_links=igp_confirmed_links,
+            ospf_observed_links=ospf_observed_links,
+            isis_observed_links=isis_observed_links,
+            multi_source_confirmed_links=multi_source_confirmed_links,
+            lldp_single_sided_links=lldp_single_sided_links,
+            lldp_bidirectional_links=lldp_bidirectional_links,
+            lldp_mismatch_links=lldp_mismatch_links,
+            igp_protocol_mismatch_links=igp_protocol_mismatch_links,
+            conflicts=conflicts,
+        )
 
 
 def record_rollback_outcome(
@@ -258,6 +406,11 @@ def cache_topology_metrics(
     node_participation_posture: str,
     paired_link_count: int,
     single_sided_link_count: int,
+    lldp_observation_count: int,
+    lldp_correlated_link_count: int,
+    lldp_single_sided_link_count: int,
+    lldp_bidirectional_link_count: int,
+    lldp_mismatch_link_count: int,
     linked_node_count: int,
     isolated_node_count: int,
     data_status: str,
@@ -284,6 +437,11 @@ def cache_topology_metrics(
             node_participation_posture=node_participation_posture,
             paired_link_count=paired_link_count,
             single_sided_link_count=single_sided_link_count,
+            lldp_observation_count=lldp_observation_count,
+            lldp_correlated_link_count=lldp_correlated_link_count,
+            lldp_single_sided_link_count=lldp_single_sided_link_count,
+            lldp_bidirectional_link_count=lldp_bidirectional_link_count,
+            lldp_mismatch_link_count=lldp_mismatch_link_count,
             linked_node_count=linked_node_count,
             isolated_node_count=isolated_node_count,
             data_status=data_status,
@@ -573,6 +731,51 @@ def render_prometheus_metrics(
                 (
                     "platform_app_api_topology_single_sided_links "
                     f"{topology_metrics['single_sided_link_count']}"
+                ),
+                (
+                    "# HELP platform_app_api_topology_lldp_observations "
+                    "Current backend-owned count of LLDP neighbor observations attached to the topology snapshot."
+                ),
+                "# TYPE platform_app_api_topology_lldp_observations gauge",
+                (
+                    "platform_app_api_topology_lldp_observations "
+                    f"{topology_metrics.get('lldp_observation_count', 0)}"
+                ),
+                (
+                    "# HELP platform_app_api_topology_lldp_correlated_links "
+                    "Current backend-owned count of topology links with correlated LLDP evidence."
+                ),
+                "# TYPE platform_app_api_topology_lldp_correlated_links gauge",
+                (
+                    "platform_app_api_topology_lldp_correlated_links "
+                    f"{topology_metrics.get('lldp_correlated_link_count', 0)}"
+                ),
+                (
+                    "# HELP platform_app_api_topology_lldp_single_sided_links "
+                    "Current backend-owned count of topology links with one-sided LLDP evidence."
+                ),
+                "# TYPE platform_app_api_topology_lldp_single_sided_links gauge",
+                (
+                    "platform_app_api_topology_lldp_single_sided_links "
+                    f"{topology_metrics.get('lldp_single_sided_link_count', 0)}"
+                ),
+                (
+                    "# HELP platform_app_api_topology_lldp_bidirectional_links "
+                    "Current backend-owned count of topology links with bidirectional LLDP evidence."
+                ),
+                "# TYPE platform_app_api_topology_lldp_bidirectional_links gauge",
+                (
+                    "platform_app_api_topology_lldp_bidirectional_links "
+                    f"{topology_metrics.get('lldp_bidirectional_link_count', 0)}"
+                ),
+                (
+                    "# HELP platform_app_api_topology_lldp_mismatch_links "
+                    "Current backend-owned count of topology links where LLDP contradicts the interface-derived peer mapping."
+                ),
+                "# TYPE platform_app_api_topology_lldp_mismatch_links gauge",
+                (
+                    "platform_app_api_topology_lldp_mismatch_links "
+                    f"{topology_metrics.get('lldp_mismatch_link_count', 0)}"
                 ),
                 (
                     "# HELP platform_app_api_topology_linked_nodes "
@@ -1011,7 +1214,11 @@ def render_prometheus_metrics(
     if history_metrics is not None:
         history_families = {"inventory", "topology", "policy"}
         history_results = {"completed", "partial", "failed", "unknown"}
+        total_persisted_count = int(history_metrics.get("total_persisted_count", 0))
         counts_by_model_family = dict(history_metrics.get("counts_by_model_family", {}))
+        persisted_counts_by_model_family = dict(
+            history_metrics.get("persisted_counts_by_model_family", {})
+        )
         counts_by_result = dict(history_metrics.get("counts_by_result", {}))
         counts_by_model_family_and_result = dict(
             history_metrics.get("counts_by_model_family_and_result", {})
@@ -1019,8 +1226,30 @@ def render_prometheus_metrics(
         latest_finished_at_by_model_family = dict(
             history_metrics.get("latest_finished_at_by_model_family", {})
         )
+        latest_observed_at_by_model_family = dict(
+            history_metrics.get("latest_observed_at_by_model_family", {})
+        )
         lines.extend(
             [
+                (
+                    "# HELP platform_app_api_sync_runs_persisted_total "
+                    "Total rows in the sync_runs table."
+                ),
+                "# TYPE platform_app_api_sync_runs_persisted_total gauge",
+                f"platform_app_api_sync_runs_persisted_total {total_persisted_count}",
+                (
+                    "# HELP platform_app_api_sync_runs_persisted_by_family "
+                    "Total rows in the sync_runs table by model family."
+                ),
+                "# TYPE platform_app_api_sync_runs_persisted_by_family gauge",
+                *[
+                    (
+                        "platform_app_api_sync_runs_persisted_by_family"
+                        f'{{model_family="{model_family}"}} '
+                        f"{persisted_counts_by_model_family.get(model_family, 0)}"
+                    )
+                    for model_family in sorted(history_families)
+                ],
                 "# HELP platform_app_api_sync_runs_total Recent persisted sync-run count.",
                 "# TYPE platform_app_api_sync_runs_total gauge",
                 f"platform_app_api_sync_runs_total {history_metrics['total_count']}",
@@ -1065,17 +1294,40 @@ def render_prometheus_metrics(
                 ],
                 (
                     "# HELP platform_app_api_sync_run_latest_finished_at_seconds "
-                    "Unix timestamp of the latest persisted sync-run finish time by model family."
+                    "Unix timestamp of the latest persisted sync-run finish time by model family; "
+                    "zero when that family has no persisted sync runs yet."
                 ),
                 "# TYPE platform_app_api_sync_run_latest_finished_at_seconds gauge",
                 *[
                     (
                         "platform_app_api_sync_run_latest_finished_at_seconds"
-                        f'{{model_family="{model_family}"}} {finished_at.timestamp():.3f}'
+                        f'{{model_family="{model_family}"}} '
+                        f"{(
+                            latest_finished_at_by_model_family[model_family].timestamp()
+                            if model_family in latest_finished_at_by_model_family
+                            else 0.0
+                        ):.3f}"
                     )
-                    for model_family, finished_at in sorted(
-                        latest_finished_at_by_model_family.items()
+                    for model_family in sorted(history_families)
+                ],
+                (
+                    "# HELP platform_app_api_collector_boundary_newest_observed_at_seconds "
+                    "Unix timestamp from Postgres sync_runs: COALESCE(MAX(observed_at), MAX(finished_at)) "
+                    "per model_family (collector observation time when present; else last persist). "
+                    "Exposed on every /metrics scrape. Zero when that family has no rows."
+                ),
+                "# TYPE platform_app_api_collector_boundary_newest_observed_at_seconds gauge",
+                *[
+                    (
+                        "platform_app_api_collector_boundary_newest_observed_at_seconds"
+                        f'{{model_family="{model_family}"}} '
+                        f"{(
+                            latest_observed_at_by_model_family[model_family].timestamp()
+                            if model_family in latest_observed_at_by_model_family
+                            else 0.0
+                        ):.3f}"
                     )
+                    for model_family in sorted(history_families)
                 ],
             ]
         )
@@ -1259,6 +1511,140 @@ def render_prometheus_metrics(
         ]
     )
 
+    with _lock:
+        tt_merge = _topology_truth_merges_total
+        tt_sec = _topology_truth_seconds_sum
+        tt_status = dict(_topology_truth_controller_status_counts)
+        tt_cached = _cached_topology_truth_metrics
+        ce_fetch = _controller_evidence_fetches_total
+        ce_sec = _controller_evidence_seconds_sum
+        ce_reach = dict(_controller_evidence_reachability_counts)
+        ce_lane = dict(_controller_evidence_lane_posture_counts)
+        ce_sess = dict(_controller_evidence_lane_session_posture_counts)
+        ce_evd = dict(_controller_evidence_lane_evidence_strength_counts)
+        ce_backed = dict(_controller_evidence_lane_session_backed_counts)
+    lines.extend(
+        [
+            (
+                "# HELP platform_app_api_topology_truth_merges_total "
+                "Count of deeper topology truth merge computations."
+            ),
+            "# TYPE platform_app_api_topology_truth_merges_total counter",
+            f"platform_app_api_topology_truth_merges_total {tt_merge}",
+            (
+                "# HELP platform_app_api_topology_truth_merge_seconds_sum "
+                "Sum of wall time for topology truth merge computations."
+            ),
+            "# TYPE platform_app_api_topology_truth_merge_seconds_sum counter",
+            f"platform_app_api_topology_truth_merge_seconds_sum {tt_sec:.9f}",
+            (
+                "# HELP platform_app_api_topology_truth_controller_status_total "
+                "Topology truth merges by controller fetch status label."
+            ),
+            "# TYPE platform_app_api_topology_truth_controller_status_total counter",
+            *[
+                f'platform_app_api_topology_truth_controller_status_total{{status="{st}"}} {cnt}'
+                for st, cnt in sorted(tt_status.items())
+            ],
+            "# HELP platform_app_api_topology_truth_last_merged_nodes Latest merged node count from last observation.",
+            "# TYPE platform_app_api_topology_truth_last_merged_nodes gauge",
+            f"platform_app_api_topology_truth_last_merged_nodes {tt_cached.merged_node_count}",
+            "# HELP platform_app_api_topology_truth_last_merged_links Latest merged link count from last observation.",
+            "# TYPE platform_app_api_topology_truth_last_merged_links gauge",
+            f"platform_app_api_topology_truth_last_merged_links {tt_cached.merged_link_count}",
+            "# HELP platform_app_api_topology_truth_last_inferred_only_links Latest inferred-only link count.",
+            "# TYPE platform_app_api_topology_truth_last_inferred_only_links gauge",
+            f"platform_app_api_topology_truth_last_inferred_only_links {tt_cached.inferred_only_links}",
+            "# HELP platform_app_api_topology_truth_last_physical_confirmed_links Latest physically confirmed link count.",
+            "# TYPE platform_app_api_topology_truth_last_physical_confirmed_links gauge",
+            f"platform_app_api_topology_truth_last_physical_confirmed_links {tt_cached.physical_confirmed_links}",
+            "# HELP platform_app_api_topology_truth_last_igp_confirmed_links Latest strongly IGP-confirmed link count.",
+            "# TYPE platform_app_api_topology_truth_last_igp_confirmed_links gauge",
+            f"platform_app_api_topology_truth_last_igp_confirmed_links {tt_cached.igp_confirmed_links}",
+            "# HELP platform_app_api_topology_truth_last_ospf_observed_links Latest OSPF-observed weak link count.",
+            "# TYPE platform_app_api_topology_truth_last_ospf_observed_links gauge",
+            f"platform_app_api_topology_truth_last_ospf_observed_links {tt_cached.ospf_observed_links}",
+            "# HELP platform_app_api_topology_truth_last_isis_observed_links Latest IS-IS-observed weak link count.",
+            "# TYPE platform_app_api_topology_truth_last_isis_observed_links gauge",
+            f"platform_app_api_topology_truth_last_isis_observed_links {tt_cached.isis_observed_links}",
+            "# HELP platform_app_api_topology_truth_last_multi_source_confirmed_links Latest multi-source confirmed link count.",
+            "# TYPE platform_app_api_topology_truth_last_multi_source_confirmed_links gauge",
+            f"platform_app_api_topology_truth_last_multi_source_confirmed_links {tt_cached.multi_source_confirmed_links}",
+            "# HELP platform_app_api_topology_truth_last_lldp_single_sided_links Latest one-sided LLDP-backed link count.",
+            "# TYPE platform_app_api_topology_truth_last_lldp_single_sided_links gauge",
+            f"platform_app_api_topology_truth_last_lldp_single_sided_links {tt_cached.lldp_single_sided_links}",
+            "# HELP platform_app_api_topology_truth_last_lldp_bidirectional_links Latest bidirectional LLDP-backed link count.",
+            "# TYPE platform_app_api_topology_truth_last_lldp_bidirectional_links gauge",
+            f"platform_app_api_topology_truth_last_lldp_bidirectional_links {tt_cached.lldp_bidirectional_links}",
+            "# HELP platform_app_api_topology_truth_last_lldp_mismatch_links Latest LLDP mismatch-marked link count.",
+            "# TYPE platform_app_api_topology_truth_last_lldp_mismatch_links gauge",
+            f"platform_app_api_topology_truth_last_lldp_mismatch_links {tt_cached.lldp_mismatch_links}",
+            "# HELP platform_app_api_topology_truth_last_igp_protocol_mismatch_links Latest IGP mismatch-marked link count.",
+            "# TYPE platform_app_api_topology_truth_last_igp_protocol_mismatch_links gauge",
+            f"platform_app_api_topology_truth_last_igp_protocol_mismatch_links {tt_cached.igp_protocol_mismatch_links}",
+            "# HELP platform_app_api_topology_truth_last_conflicts Latest disagreement/conflict count.",
+            "# TYPE platform_app_api_topology_truth_last_conflicts gauge",
+            f"platform_app_api_topology_truth_last_conflicts {tt_cached.conflicts}",
+            (
+                "# HELP platform_app_api_controller_evidence_fetches_total "
+                "Count of controller southbound evidence aggregate fetches."
+            ),
+            "# TYPE platform_app_api_controller_evidence_fetches_total counter",
+            f"platform_app_api_controller_evidence_fetches_total {ce_fetch}",
+            (
+                "# HELP platform_app_api_controller_evidence_fetch_seconds_sum "
+                "Sum of wall time for controller evidence aggregate fetches."
+            ),
+            "# TYPE platform_app_api_controller_evidence_fetch_seconds_sum counter",
+            f"platform_app_api_controller_evidence_fetch_seconds_sum {ce_sec:.9f}",
+            (
+                "# HELP platform_app_api_controller_evidence_reachability_total "
+                "Controller evidence fetches by controller reachability label."
+            ),
+            "# TYPE platform_app_api_controller_evidence_reachability_total counter",
+            *[
+                f'platform_app_api_controller_evidence_reachability_total{{reachability="{k}"}} {v}'
+                for k, v in sorted(ce_reach.items())
+            ],
+            (
+                "# HELP platform_app_api_controller_evidence_lane_posture_total "
+                "Lane posture observations per lane (v2)."
+            ),
+            "# TYPE platform_app_api_controller_evidence_lane_posture_total counter",
+            *[
+                f'platform_app_api_controller_evidence_lane_posture_total{{lane="{lane}",posture="{post}"}} {cnt}'
+                for (lane, post), cnt in sorted(ce_lane.items())
+            ],
+            (
+                "# HELP platform_app_api_controller_evidence_lane_session_posture_total "
+                "Session posture observations per lane (v2)."
+            ),
+            "# TYPE platform_app_api_controller_evidence_lane_session_posture_total counter",
+            *[
+                f'platform_app_api_controller_evidence_lane_session_posture_total{{lane="{lane}",posture="{post}"}} {cnt}'
+                for (lane, post), cnt in sorted(ce_sess.items())
+            ],
+            (
+                "# HELP platform_app_api_controller_evidence_lane_evidence_strength_total "
+                "Evidence strength observations per lane (v2)."
+            ),
+            "# TYPE platform_app_api_controller_evidence_lane_evidence_strength_total counter",
+            *[
+                f'platform_app_api_controller_evidence_lane_evidence_strength_total{{lane="{lane}",strength="{st}"}} {cnt}'
+                for (lane, st), cnt in sorted(ce_evd.items())
+            ],
+            (
+                "# HELP platform_app_api_controller_evidence_lane_session_backed_total "
+                "Whether a lane observation was session-backed (`available=true`) versus weaker evidence."
+            ),
+            "# TYPE platform_app_api_controller_evidence_lane_session_backed_total counter",
+            *[
+                f'platform_app_api_controller_evidence_lane_session_backed_total{{lane="{lane}",available="{available}"}} {cnt}'
+                for (lane, available), cnt in sorted(ce_backed.items())
+            ],
+        ]
+    )
+
     lines.append("")
     return "\n".join(lines)
 
@@ -1272,6 +1658,13 @@ def reset_metrics_registry() -> None:
     global _validation_generation_seconds_sum, _validation_generation_count
     global _safe_action_execution_seconds_sum, _safe_action_execution_count, _safe_action_counts
     global _rollback_execution_seconds_sum, _rollback_execution_count, _rollback_counts
+    global _cached_topology_truth_metrics
+    global _topology_truth_merges_total, _topology_truth_seconds_sum, _topology_truth_controller_status_counts
+    global _cached_controller_evidence_metrics
+    global _controller_evidence_fetches_total, _controller_evidence_seconds_sum, _controller_evidence_reachability_counts
+    global _controller_evidence_lane_posture_counts
+    global _controller_evidence_lane_session_posture_counts, _controller_evidence_lane_evidence_strength_counts
+    global _controller_evidence_lane_session_backed_counts
     with _lock:
         _request_counts.clear()
         _request_duration_counts.clear()
@@ -1288,6 +1681,18 @@ def reset_metrics_registry() -> None:
         _rollback_counts.clear()
         _rollback_execution_seconds_sum = 0.0
         _rollback_execution_count = 0
+        _topology_truth_merges_total = 0
+        _topology_truth_seconds_sum = 0.0
+        _topology_truth_controller_status_counts.clear()
+        _cached_topology_truth_metrics = CachedTopologyTruthMetrics()
+        _controller_evidence_fetches_total = 0
+        _controller_evidence_seconds_sum = 0.0
+        _controller_evidence_reachability_counts.clear()
+        _controller_evidence_lane_posture_counts.clear()
+        _controller_evidence_lane_session_posture_counts.clear()
+        _controller_evidence_lane_evidence_strength_counts.clear()
+        _controller_evidence_lane_session_backed_counts.clear()
+        _cached_controller_evidence_metrics = CachedControllerEvidenceMetrics()
         _cached_topology_metrics = CachedTopologyMetrics()
         _cached_policy_metrics = CachedPolicyMetrics()
         _cached_readiness_metrics = CachedReadinessMetrics()

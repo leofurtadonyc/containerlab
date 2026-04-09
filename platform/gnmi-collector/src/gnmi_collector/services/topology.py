@@ -86,7 +86,22 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         raw_records = list(executor.map(adapter.collect_topology, config.targets))
     normalized_nodes = map_topology_nodes(raw_records)
-    normalized_links, paired_link_count, single_sided_link_count = map_topology_links(raw_records)
+    (
+        normalized_links,
+        paired_link_count,
+        single_sided_link_count,
+        lldp_observation_count,
+        lldp_correlated_link_count,
+        lldp_single_sided_link_count,
+        lldp_bidirectional_link_count,
+        lldp_mismatch_link_count,
+        igp_adjacency_observation_count,
+        ospf_adjacency_observation_count,
+        isis_adjacency_observation_count,
+        igp_correlated_link_count,
+        igp_confirmed_link_count,
+        igp_protocol_mismatch_link_count,
+    ) = map_topology_links(raw_records)
     linked_node_count, isolated_node_count = derive_node_participation_counts(
         normalized_nodes,
         normalized_links,
@@ -152,6 +167,10 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         degraded_scope_summary = (
             "Topology delivery is degraded because one or more targets failed or returned partial live topology evidence."
         )
+    elif lldp_mismatch_link_count > 0:
+        degraded_scope_summary = (
+            "Topology delivery remains bounded because one or more LLDP observations contradict the current interface-derived peer mapping."
+        )
     else:
         degraded_scope_summary = (
             "Topology delivery remains bounded because one or more inferred links still rely on single-sided endpoint evidence."
@@ -166,8 +185,9 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         )
 
     notes = [
-        "Topology links are inferred from live router interface names and current interface operational state.",
-        "The topology slice remains intentionally partial until LLDP, IGP, or bounded controller enrichment is added.",
+        "Topology links are still rooted in live router interface evidence, with OpenConfig LLDP used as an additional device-native physical adjacency lane when available.",
+        "Device-native OSPF and IS-IS adjacency observations now act as separate control-plane evidence lanes; they strengthen trust when correlated, but do not claim forwarding or service truth.",
+        "The topology slice remains intentionally partial; bounded controller enrichment now exists as optional backend-owned context, but the normalized gNMI slice remains the primary topology baseline until deeper evidence is added.",
     ]
     if oldest_observed_at is not None and newest_observed_at is not None:
         notes.append(
@@ -177,6 +197,36 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         notes.append(
             "Collector endpoint-pairing posture is "
             f"{endpoint_pairing_posture}, with {paired_link_count} paired inferred links and {single_sided_link_count} single-sided inferred links."
+        )
+    notes.append(
+        "LLDP physical-adjacency coverage currently includes "
+        f"{lldp_observation_count} observed neighbor rows across {lldp_correlated_link_count} correlated links, "
+        f"with {lldp_bidirectional_link_count} bidirectional links, {lldp_single_sided_link_count} single-sided links, and {lldp_mismatch_link_count} mismatch-marked links."
+    )
+    notes.append(
+        "IGP control-plane adjacency coverage currently includes "
+        f"{igp_adjacency_observation_count} observed adjacency row(s) across {igp_correlated_link_count} correlated links, "
+        f"including {ospf_adjacency_observation_count} OSPF row(s), {isis_adjacency_observation_count} IS-IS row(s), "
+        f"{igp_confirmed_link_count} IGP-confirmed link(s), and {igp_protocol_mismatch_link_count} protocol-mismatch link(s)."
+    )
+    supported_lldp_targets = sum(
+        1
+        for record in raw_records
+        if record.lldp_collection_status in {"neighbors_visible", "enabled_no_neighbors"}
+    )
+    native_lldp_fallback_targets = sum(
+        1
+        for record in raw_records
+        if any("Nokia native LLDP fallback" in note for note in record.lldp_notes)
+    )
+    if native_lldp_fallback_targets > 0:
+        notes.append(
+            "Nokia native LLDP fallback supplied device-native neighbor rows for "
+            f"{native_lldp_fallback_targets} target(s) where OpenConfig LLDP was not exposed."
+        )
+    if supported_lldp_targets < len(raw_records):
+        notes.append(
+            "One or more targets did not expose a usable OpenConfig LLDP subtree, so physical-adjacency posture remains suppressed or unknown on those paths."
         )
     if normalized_nodes:
         notes.append(
@@ -216,6 +266,17 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         node_participation_posture=node_participation_posture,
         paired_link_count=paired_link_count,
         single_sided_link_count=single_sided_link_count,
+        lldp_observation_count=lldp_observation_count,
+        lldp_correlated_link_count=lldp_correlated_link_count,
+        lldp_single_sided_link_count=lldp_single_sided_link_count,
+        lldp_bidirectional_link_count=lldp_bidirectional_link_count,
+        lldp_mismatch_link_count=lldp_mismatch_link_count,
+        igp_adjacency_observation_count=igp_adjacency_observation_count,
+        ospf_adjacency_observation_count=ospf_adjacency_observation_count,
+        isis_adjacency_observation_count=isis_adjacency_observation_count,
+        igp_correlated_link_count=igp_correlated_link_count,
+        igp_confirmed_link_count=igp_confirmed_link_count,
+        igp_protocol_mismatch_link_count=igp_protocol_mismatch_link_count,
         linked_node_count=linked_node_count,
         isolated_node_count=isolated_node_count,
         topology_id="platform-observed-topology",
@@ -224,7 +285,7 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         link_count=len(normalized_links),
         nodes=normalized_nodes,
         links=normalized_links,
-        sync_source="gnmi_collector_topology_interface_inference",
+        sync_source="gnmi_collector_topology_interface_lldp_and_igp",
         sync_status=sync_status,
         completeness="partial",
         observed_at=derive_topology_observed_at(raw_records),
@@ -248,6 +309,17 @@ def build_topology_flow_snapshot() -> TopologyFlowSnapshot:
         node_participation_posture=node_participation_posture,
         paired_link_count=paired_link_count,
         single_sided_link_count=single_sided_link_count,
+        lldp_observation_count=lldp_observation_count,
+        lldp_correlated_link_count=lldp_correlated_link_count,
+        lldp_single_sided_link_count=lldp_single_sided_link_count,
+        lldp_bidirectional_link_count=lldp_bidirectional_link_count,
+        lldp_mismatch_link_count=lldp_mismatch_link_count,
+        igp_adjacency_observation_count=igp_adjacency_observation_count,
+        ospf_adjacency_observation_count=ospf_adjacency_observation_count,
+        isis_adjacency_observation_count=isis_adjacency_observation_count,
+        igp_correlated_link_count=igp_correlated_link_count,
+        igp_confirmed_link_count=igp_confirmed_link_count,
+        igp_protocol_mismatch_link_count=igp_protocol_mismatch_link_count,
         linked_node_count=linked_node_count,
         isolated_node_count=isolated_node_count,
         node_state_counts=node_state_counts,

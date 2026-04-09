@@ -1,8 +1,12 @@
-"""Bounded startup warm-up for read-side caches and sync history."""
+"""Bounded startup warm-up for read-side caches and sync history.
+
+Invoked from FastAPI lifespan in ``app_api.main`` before the server accepts traffic.
+"""
 
 from logging import getLogger
 
 from app_api.services.devices import build_devices_list_response
+from app_api.services.platform import build_platform_status_response
 from app_api.services.policies import build_policies_list_response
 from app_api.services.topology import build_topology_response
 
@@ -15,6 +19,10 @@ def warm_read_side() -> None:
         ("devices", build_devices_list_response),
         ("topology", build_topology_response),
         ("policies", build_policies_list_response),
+        # After per-slice builders, warm the composed platform status (collector x3 + recovery + ODL).
+        # Verifier and drills hit GET /api/v1/platform/status early; omitting this allowed policies=200
+        # while platform/status still failed transiently on cold start.
+        ("platform_status", build_platform_status_response),
     ]
     for name, builder in warmup_steps:
         try:

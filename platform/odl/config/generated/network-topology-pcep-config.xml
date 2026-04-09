@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<network-topology xmlns="urn:TBD:params:xml:ns:yang:network-topology">
+    <topology xmlns="urn:TBD:params:xml:ns:yang:network-topology">
+        <topology-id>pcep-topology</topology-id>
+        <topology-types>
+            <topology-pcep xmlns="urn:opendaylight:params:xml:ns:yang:topology:pcep">
+                <session-config>
+                    <rpc-timeout>30</rpc-timeout>
+                    <listen-address>0.0.0.0</listen-address>
+                    <listen-port>4189</listen-port>
+                    <dead-timer-value>120</dead-timer-value>
+                    <keep-alive-timer-value>30</keep-alive-timer-value>
+                </session-config>
+                <ted-name>lab-linkstate-topology</ted-name>
+            </topology-pcep>
+        </topology-types>
+    </topology>
+</network-topology>

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import logging
 from datetime import UTC, datetime
 from typing import Literal
@@ -123,11 +124,30 @@ def build_operator_briefing_workspace_response(
         ),
     )
 
-    digest, digest_err = _safe_call(
-        "delta_digest",
-        build_cross_domain_delta_digest_response,
-        sync_runs_limit=bounded,
-    )
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        digest_future = executor.submit(
+            _safe_call,
+            "delta_digest",
+            build_cross_domain_delta_digest_response,
+            sync_runs_limit=bounded,
+        )
+        situation_future = executor.submit(
+            _safe_call,
+            "situation_pack",
+            build_situation_pack_assembly_response,
+            sync_runs_limit=bounded,
+        )
+        investigation_future = executor.submit(
+            _safe_call,
+            "investigation_workspace",
+            build_investigation_context_assembly_response,
+            sync_runs_limit=bounded,
+        )
+
+        digest, digest_err = digest_future.result()
+        situation, situation_err = situation_future.result()
+        investigation, inv_err = investigation_future.result()
+
     delta_digest_error: str | None = digest_err
     if digest is not None:
         merged.extend(digest.digest_framing_notes[:8])
@@ -238,11 +258,6 @@ def build_operator_briefing_workspace_response(
             ),
         )
 
-    situation, situation_err = _safe_call(
-        "situation_pack",
-        build_situation_pack_assembly_response,
-        sync_runs_limit=bounded,
-    )
     situation_pack_error = situation_err
     if situation is not None:
         merged.extend(situation.assembly_notes[:6])
@@ -267,11 +282,6 @@ def build_operator_briefing_workspace_response(
             ),
         )
 
-    investigation, inv_err = _safe_call(
-        "investigation_workspace",
-        build_investigation_context_assembly_response,
-        sync_runs_limit=bounded,
-    )
     investigation_workspace_error = inv_err
     if investigation is not None:
         merged.extend(investigation.assembly_notes[:6])

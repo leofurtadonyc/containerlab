@@ -19,7 +19,7 @@ Stable product vocabulary: **`contract_id`:** **`maintenance_window_workspace_v1
 
 This file remains the **authoritative vocabulary** for rollup semantics, pivot discipline, and non-claims.
 
-**Phase:** [`Phase 2 — read-only product foundation`](../../agent/sdn/01-CURRENT-PHASE.md).
+**Surface role:** `Phase 2` read-only product surface within the current repo state. This contract does not expand the bounded `Phase 5` workflow slices.
 
 ---
 

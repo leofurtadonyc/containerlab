@@ -93,6 +93,65 @@ function formatReadPathFreshness(readPath: PlatformReadPathStatus | null): strin
   return `${formatDateTime(readPath.oldest_observed_at)} -> ${formatDateTime(readPath.newest_observed_at)}`;
 }
 
+function buildOverviewDegradedScopeStatus(readPath: PlatformReadPathStatus | null): string {
+  if (!readPath) {
+    return "unknown";
+  }
+
+  if (readPath.observation_state === "ok") {
+    return "ok";
+  }
+
+  if (readPath.observation_state === "unknown") {
+    return "unknown";
+  }
+
+  return "degraded";
+}
+
+function buildOverviewDegradedScopeNotes(
+  readPath: PlatformReadPathStatus | null,
+  extraNotes: string[] = [],
+): string | string[] {
+  if (!readPath) {
+    return "No degraded-scope summary is exposed on the current platform-status response.";
+  }
+
+  const notes = [
+    readPath.degraded_scope_summary,
+    ...extraNotes,
+  ];
+
+  if (readPath.observation_state === "unreachable") {
+    notes.push(
+      "Current live read-path probe was unreachable; this row summarizes the bounded scope impact rather than repeating the transport failure label.",
+    );
+  }
+
+  return notes;
+}
+
+function buildTopologyCollectionNotes(
+  baseDetail: string,
+  options: {
+    servingMode: "live_collector" | "persisted_fallback" | "empty_scaffold";
+    collectionStatus: string;
+    source: "topology_api" | "read_path";
+  },
+): string | string[] {
+  const { servingMode, collectionStatus, source } = options;
+  if (servingMode !== "persisted_fallback" || collectionStatus !== "blocked") {
+    return baseDetail;
+  }
+
+  return [
+    baseDetail,
+    source === "topology_api"
+      ? "Live topology collection is currently blocked, but the topology slice is still renderable because app-api served the latest persisted normalized snapshot."
+      : "Platform status still reports the live topology read path as blocked, while the topology slice above remains renderable from the latest persisted normalized snapshot.",
+  ];
+}
+
 function buildSliceAvailabilitySummary(summary: string, sliceState: OverviewSliceState): string {
   switch (sliceState.status) {
     case "refreshing":
@@ -137,22 +196,39 @@ function renderMissingSliceDetailCard(
 
 export function OverviewView() {
   const refreshInFlightRef = useRef(false);
-  const devicesQuery = useDevicesQuery();
-  const devicesSettled = devicesQuery.data !== null || devicesQuery.error !== null;
-  const topologyQuery = useTopologyQuery(devicesSettled);
-  const topologySettled = topologyQuery.data !== null || topologyQuery.error !== null;
-  const policiesQuery = usePoliciesQuery(topologySettled);
-  const policiesSettled = policiesQuery.data !== null || policiesQuery.error !== null;
-  const platformQuery = usePlatformStatusQuery(policiesSettled);
-  const capabilitiesQuery = useCapabilitiesQuery();
-  const recentChangeQuery = useRecentChangeSummaryQuery();
-  const riskSummaryQuery = useTopologyRiskSummaryQuery(topologySettled);
-  const deltaDigestQuery = useDeltaDigestQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
-  const evidenceConsistencyQuery = useEvidenceConsistencySummaryQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
-  const operationalStabilityQuery = useOperationalStabilitySummaryQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
-  const evidenceQualityQuery = useEvidenceQualityWorkspaceQuery(OVERVIEW_RECENT_CHANGE_SYNC_LIMIT);
   const searchKey = useUrlSearchParamsKey();
   const overviewMode = useMemo(() => readOverviewModeFromSearch(searchKey), [searchKey]);
+  const devicesQuery = useDevicesQuery();
+  const topologyQuery = useTopologyQuery();
+  const policiesQuery = usePoliciesQuery();
+  const platformQuery = usePlatformStatusQuery();
+  const capabilitiesQuery = useCapabilitiesQuery();
+  const capabilitiesSettled = capabilitiesQuery.data !== null || capabilitiesQuery.error !== null;
+  const devicesSettled = devicesQuery.data !== null || devicesQuery.error !== null;
+  const topologySettled = topologyQuery.data !== null || topologyQuery.error !== null;
+  const policiesSettled = policiesQuery.data !== null || policiesQuery.error !== null;
+  const platformSettled = platformQuery.data !== null || platformQuery.error !== null;
+  const analyticsSlicesEnabled =
+    devicesSettled && topologySettled && policiesSettled && platformSettled && capabilitiesSettled;
+  const workspacePreviewsEnabled = overviewMode === "cockpit" && analyticsSlicesEnabled;
+  const recentChangeQuery = useRecentChangeSummaryQuery();
+  const riskSummaryQuery = useTopologyRiskSummaryQuery();
+  const deltaDigestQuery = useDeltaDigestQuery(
+    OVERVIEW_RECENT_CHANGE_SYNC_LIMIT,
+    workspacePreviewsEnabled,
+  );
+  const evidenceConsistencyQuery = useEvidenceConsistencySummaryQuery(
+    OVERVIEW_RECENT_CHANGE_SYNC_LIMIT,
+    workspacePreviewsEnabled,
+  );
+  const operationalStabilityQuery = useOperationalStabilitySummaryQuery(
+    OVERVIEW_RECENT_CHANGE_SYNC_LIMIT,
+    workspacePreviewsEnabled,
+  );
+  const evidenceQualityQuery = useEvidenceQualityWorkspaceQuery(
+    OVERVIEW_RECENT_CHANGE_SYNC_LIMIT,
+    workspacePreviewsEnabled,
+  );
 
   const reloadAllSlices = useCallback(async () => {
     if (refreshInFlightRef.current) {
@@ -1020,7 +1096,11 @@ export function OverviewView() {
                 label: "Collection posture (topology API)",
                 kind: "status",
                 value: topologyCollectionReadout.status,
-                note: topologyCollectionReadout.detail,
+                note: buildTopologyCollectionNotes(topologyCollectionReadout.detail, {
+                  servingMode: topologyData.serving_mode,
+                  collectionStatus: topologyCollectionReadout.status,
+                  source: "topology_api",
+                }),
               },
               {
                 label: "Node participation (topology API)",
@@ -1044,7 +1124,11 @@ export function OverviewView() {
                 label: "Collection (read path)",
                 kind: "status",
                 value: topologyReadPathCollection.status,
-                note: topologyReadPathCollection.detail,
+                note: buildTopologyCollectionNotes(topologyReadPathCollection.detail, {
+                  servingMode: topologyData.serving_mode,
+                  collectionStatus: topologyReadPathCollection.status,
+                  source: "read_path",
+                }),
               },
               {
                 label: "Node participation (read path)",
@@ -1083,14 +1167,13 @@ export function OverviewView() {
               {
                 label: "Degraded scope",
                 kind: "status",
-                value: topologyReadPath?.observation_state ?? "unknown",
-                note: [
-                  topologyReadPath?.degraded_scope_summary ?? "No topology degraded-scope summary is exposed.",
+                value: buildOverviewDegradedScopeStatus(topologyReadPath),
+                note: buildOverviewDegradedScopeNotes(topologyReadPath, [
                   topologyReadPathInference.detail,
                   topologyReadPathCollection.detail,
                   topologyReadPathPairing.countDetail,
                   topologyReadPathNodeParticipation.countDetail,
-                ],
+                ]),
               },
               {
                 label: "Comparison anchor",

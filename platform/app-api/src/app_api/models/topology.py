@@ -11,11 +11,52 @@ TopologyEndpointPairingState = Literal["paired", "single_sided", "unknown"]
 TopologyEndpointPairingPosture = Literal[
     "paired", "partially_paired", "single_sided", "unknown"
 ]
+TopologyPhysicalAdjacencyPosture = Literal[
+    "not_observed",
+    "single_sided_lldp",
+    "bidirectional_lldp",
+    "lldp_mismatch",
+    "suppressed_or_unknown",
+]
+TopologyControlPlaneAdjacencyPosture = Literal[
+    "not_observed",
+    "ospf_observed",
+    "isis_observed",
+    "igp_confirmed",
+    "protocol_mismatch",
+    "suppressed_or_unknown",
+    "unknown",
+]
 TopologyInferencePosture = Literal["inferred", "unknown"]
 TopologyCollectionPosture = Literal["ok", "degraded", "blocked", "unknown"]
 TopologyNodeParticipationPosture = Literal[
     "fully_linked", "partially_isolated", "isolated_only", "unknown"
 ]
+
+
+class TopologyPhysicalAdjacencyEvidence(BaseModel):
+    """Structured LLDP-backed physical adjacency evidence for one link."""
+
+    posture: TopologyPhysicalAdjacencyPosture = "suppressed_or_unknown"
+    lldp_observation_count: int = 0
+    lldp_bidirectional: bool = False
+    local_interfaces: list[str] = Field(default_factory=list)
+    remote_systems: list[str] = Field(default_factory=list)
+    remote_ports: list[str] = Field(default_factory=list)
+    correlation_notes: list[str] = Field(default_factory=list)
+
+
+class TopologyControlPlaneAdjacencyEvidence(BaseModel):
+    """Structured device-native IGP control-plane adjacency evidence for one link."""
+
+    posture: TopologyControlPlaneAdjacencyPosture = "suppressed_or_unknown"
+    observation_count: int = 0
+    protocols_observed: list[Literal["ospf", "isis"]] = Field(default_factory=list)
+    ospf_adjacency_state: str | None = None
+    isis_adjacency_state: str | None = None
+    local_interfaces: list[str] = Field(default_factory=list)
+    remote_identities: list[str] = Field(default_factory=list)
+    correlation_notes: list[str] = Field(default_factory=list)
 
 
 class TopologyCoverageSummary(BaseModel):
@@ -62,6 +103,23 @@ class TopologyLink(BaseModel):
     source: str
     endpoint_pairing_state: TopologyEndpointPairingState = "unknown"
     endpoint_evidence_count: int | None = None
+    physical_adjacency_posture: TopologyPhysicalAdjacencyPosture = "suppressed_or_unknown"
+    control_plane_adjacency_posture: TopologyControlPlaneAdjacencyPosture = (
+        "suppressed_or_unknown"
+    )
+    lldp_observation_count: int = 0
+    lldp_bidirectional: bool = False
+    lldp_local_interfaces: list[str] = Field(default_factory=list)
+    lldp_remote_systems: list[str] = Field(default_factory=list)
+    lldp_remote_ports: list[str] = Field(default_factory=list)
+    lldp_correlation_notes: list[str] = Field(default_factory=list)
+    igp_adjacency_observation_count: int = 0
+    igp_protocols_observed: list[Literal["ospf", "isis"]] = Field(default_factory=list)
+    ospf_adjacency_state: str | None = None
+    isis_adjacency_state: str | None = None
+    igp_local_interfaces: list[str] = Field(default_factory=list)
+    igp_remote_identities: list[str] = Field(default_factory=list)
+    igp_correlation_notes: list[str] = Field(default_factory=list)
     attributes: dict[str, str] = Field(default_factory=dict)
 
 
@@ -168,6 +226,36 @@ def _normalize_inference_posture(value: object) -> TopologyInferencePosture | No
     return None
 
 
+def _normalize_physical_adjacency_posture(
+    value: object,
+) -> TopologyPhysicalAdjacencyPosture | None:
+    if value in {
+        "not_observed",
+        "single_sided_lldp",
+        "bidirectional_lldp",
+        "lldp_mismatch",
+        "suppressed_or_unknown",
+    }:
+        return value
+    return None
+
+
+def _normalize_control_plane_adjacency_posture(
+    value: object,
+) -> TopologyControlPlaneAdjacencyPosture | None:
+    if value in {
+        "not_observed",
+        "ospf_observed",
+        "isis_observed",
+        "igp_confirmed",
+        "protocol_mismatch",
+        "suppressed_or_unknown",
+        "unknown",
+    }:
+        return value
+    return None
+
+
 def _normalize_collection_posture(value: object) -> TopologyCollectionPosture | None:
     if value in {"ok", "degraded", "blocked", "unknown"}:
         return value
@@ -192,6 +280,14 @@ def _parse_endpoint_evidence_count(value: object) -> int | None:
             return None
         return parsed_value if parsed_value >= 0 else None
     return None
+
+
+def _parse_csv_list(value: object) -> list[str]:
+    if isinstance(value, list):
+        return [str(item) for item in value if str(item)]
+    if isinstance(value, str):
+        return [item.strip() for item in value.split(",") if item.strip()]
+    return []
 
 
 def resolve_topology_link_endpoint_evidence(
@@ -227,6 +323,95 @@ def resolve_topology_link_endpoint_evidence(
             endpoint_pairing_state = "unknown"
 
     return endpoint_pairing_state, endpoint_evidence_count
+
+
+def resolve_topology_link_physical_adjacency(
+    link: Any,
+) -> TopologyPhysicalAdjacencyEvidence:
+    """Resolve typed LLDP physical-adjacency evidence from a link model or DTO."""
+    attributes = getattr(link, "attributes", {}) or {}
+    if not isinstance(attributes, dict):
+        attributes = {}
+
+    posture = _normalize_physical_adjacency_posture(
+        getattr(link, "physical_adjacency_posture", None)
+    )
+    if posture is None:
+        posture = _normalize_physical_adjacency_posture(
+            attributes.get("physical_adjacency_posture")
+        ) or "suppressed_or_unknown"
+
+    lldp_observation_count = _parse_endpoint_evidence_count(
+        getattr(link, "lldp_observation_count", None)
+    )
+    if lldp_observation_count is None:
+        lldp_observation_count = _parse_endpoint_evidence_count(
+            attributes.get("lldp_observation_count")
+        ) or 0
+
+    return TopologyPhysicalAdjacencyEvidence(
+        posture=posture,
+        lldp_observation_count=lldp_observation_count,
+        lldp_bidirectional=bool(getattr(link, "lldp_bidirectional", False)),
+        local_interfaces=list(getattr(link, "lldp_local_interfaces", []) or []),
+        remote_systems=list(getattr(link, "lldp_remote_systems", []) or []),
+        remote_ports=list(getattr(link, "lldp_remote_ports", []) or []),
+        correlation_notes=list(getattr(link, "lldp_correlation_notes", []) or []),
+    )
+
+
+def resolve_topology_link_control_plane_adjacency(
+    link: Any,
+) -> TopologyControlPlaneAdjacencyEvidence:
+    """Resolve typed IGP control-plane adjacency evidence from a link model or DTO."""
+    attributes = getattr(link, "attributes", {}) or {}
+    if not isinstance(attributes, dict):
+        attributes = {}
+
+    posture = _normalize_control_plane_adjacency_posture(
+        getattr(link, "control_plane_adjacency_posture", None)
+    )
+    if posture is None:
+        posture = _normalize_control_plane_adjacency_posture(
+            attributes.get("control_plane_adjacency_posture")
+        ) or "suppressed_or_unknown"
+
+    observation_count = _parse_endpoint_evidence_count(
+        getattr(link, "igp_adjacency_observation_count", None)
+    )
+    if observation_count is None:
+        observation_count = _parse_endpoint_evidence_count(
+            attributes.get("igp_adjacency_observation_count")
+        ) or 0
+
+    protocols = list(getattr(link, "igp_protocols_observed", []) or [])
+    if not protocols:
+        protocols = _parse_csv_list(attributes.get("igp_protocols_observed"))
+
+    local_interfaces = list(getattr(link, "igp_local_interfaces", []) or [])
+    if not local_interfaces:
+        local_interfaces = _parse_csv_list(attributes.get("igp_local_interfaces"))
+
+    remote_identities = list(getattr(link, "igp_remote_identities", []) or [])
+    if not remote_identities:
+        remote_identities = _parse_csv_list(attributes.get("igp_remote_identities"))
+
+    correlation_notes = list(getattr(link, "igp_correlation_notes", []) or [])
+    if not correlation_notes:
+        correlation_notes = _parse_csv_list(attributes.get("igp_correlation_notes"))
+
+    return TopologyControlPlaneAdjacencyEvidence(
+        posture=posture,
+        observation_count=observation_count,
+        protocols_observed=[p for p in protocols if p in {"ospf", "isis"}],
+        ospf_adjacency_state=getattr(link, "ospf_adjacency_state", None)
+        or (str(attributes.get("ospf_adjacency_state")) if attributes.get("ospf_adjacency_state") else None),
+        isis_adjacency_state=getattr(link, "isis_adjacency_state", None)
+        or (str(attributes.get("isis_adjacency_state")) if attributes.get("isis_adjacency_state") else None),
+        local_interfaces=local_interfaces,
+        remote_identities=remote_identities,
+        correlation_notes=correlation_notes,
+    )
 
 
 def _derive_endpoint_pairing_posture(

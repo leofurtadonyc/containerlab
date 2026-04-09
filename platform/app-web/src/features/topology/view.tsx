@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type {
+  ControllerEvidenceResponse,
   EvidenceConfidenceSummary,
   TopologyLinkRecord,
   TopologyNodeRecord,
+  TopologyTruthResponse,
 } from "../../api/contracts";
+import { ApiClientError, apiClient } from "../../api/client";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { StatusPill } from "../../components/status-pill";
@@ -82,6 +85,18 @@ function readTopologySelectionFromUrl(): { nodeId: string | null; linkId: string
 
 function getLinkKnowledgeState(link: TopologyLinkRecord): string {
   return link.attributes.knowledge_state ?? "unknown";
+}
+
+function getLinkPhysicalAdjacencyPosture(link: TopologyLinkRecord): string {
+  return link.physical_adjacency_posture ?? link.physical_adjacency?.posture ?? "suppressed_or_unknown";
+}
+
+function getLinkControlPlaneAdjacencyPosture(link: TopologyLinkRecord): string {
+  return (
+    link.control_plane_adjacency_posture ??
+    link.control_plane_adjacency?.posture ??
+    "suppressed_or_unknown"
+  );
 }
 
 function formatSignedDelta(value: number): string {
@@ -176,8 +191,34 @@ function describeNodeEvidence(node: TopologyNodeRecord): string {
 }
 
 function describeLinkEvidence(link: TopologyLinkRecord): string {
+  const physicalAdjacencyPosture = getLinkPhysicalAdjacencyPosture(link);
+  const controlPlaneAdjacencyPosture = getLinkControlPlaneAdjacencyPosture(link);
   const knowledgeState = getLinkKnowledgeState(link);
   const pairingState = getTopologyLinkEndpointPairingState(link);
+  if (controlPlaneAdjacencyPosture === "igp_confirmed") {
+    const protocols = link.control_plane_adjacency.protocols_observed.join(" / ").toUpperCase();
+    return protocols
+      ? `${protocols} confirms a live control-plane adjacency on this link`
+      : "Device-native IGP confirms a live control-plane adjacency on this link";
+  }
+  if (controlPlaneAdjacencyPosture === "ospf_observed") {
+    return "OSPF observes this adjacency, but the state is weaker than a full confirmation";
+  }
+  if (controlPlaneAdjacencyPosture === "isis_observed") {
+    return "IS-IS observes this adjacency, but the state is weaker than a full confirmation";
+  }
+  if (controlPlaneAdjacencyPosture === "protocol_mismatch") {
+    return "Device-native IGP points at a different neighbor than the current normalized link correlation";
+  }
+  if (physicalAdjacencyPosture === "bidirectional_lldp") {
+    return "Bidirectional LLDP confirms the physical adjacency";
+  }
+  if (physicalAdjacencyPosture === "single_sided_lldp") {
+    return "LLDP observed one side of the physical adjacency";
+  }
+  if (physicalAdjacencyPosture === "lldp_mismatch") {
+    return "LLDP contradicts the current interface-derived peer mapping";
+  }
   if (knowledgeState === "partial" && pairingState === "single_sided") {
     return "Partial single-sided endpoint inference";
   }
@@ -255,6 +296,40 @@ export function TopologyView() {
   const [linkSortBy, setLinkSortBy] = useState("state_then_id");
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(initialTopologySelection.linkId);
   const [workspaceMode, setWorkspaceMode] = useState<"standard" | "dossier">(readTopologyWorkspaceFromUrl);
+  const [controllerEvidence, setControllerEvidence] = useState<ControllerEvidenceResponse | null>(null);
+  const [controllerEvidenceLoading, setControllerEvidenceLoading] = useState(false);
+  const [controllerEvidenceError, setControllerEvidenceError] = useState<string | null>(null);
+  const [truthData, setTruthData] = useState<TopologyTruthResponse | null>(null);
+  const [truthLoading, setTruthLoading] = useState(false);
+  const [truthError, setTruthError] = useState<string | null>(null);
+  const loadControllerEvidence = useCallback(async () => {
+    setControllerEvidenceLoading(true);
+    setControllerEvidenceError(null);
+    try {
+      const ce = await apiClient.getControllerEvidence();
+      setControllerEvidence(ce);
+    } catch (err) {
+      const message =
+        err instanceof ApiClientError ? err.message : "Failed to load controller southbound evidence.";
+      setControllerEvidenceError(message);
+    } finally {
+      setControllerEvidenceLoading(false);
+    }
+  }, []);
+  const loadTopologyTruth = useCallback(async () => {
+    setTruthLoading(true);
+    setTruthError(null);
+    try {
+      const t = await apiClient.getTopologyTruth();
+      setTruthData(t);
+    } catch (err) {
+      const message =
+        err instanceof ApiClientError ? err.message : "Failed to load topology truth.";
+      setTruthError(message);
+    } finally {
+      setTruthLoading(false);
+    }
+  }, []);
   const searchKey = useUrlSearchParamsKey();
 
   useEffect(() => {
@@ -587,6 +662,50 @@ export function TopologyView() {
     },
   );
 
+  const truthNodePostureCounts = truthData
+    ? countBy(truthData.merged_topology.nodes, (node) => node.truth_posture)
+    : {};
+  const truthLinkPostureCounts = truthData
+    ? countBy(truthData.merged_topology.links, (link) => link.truth_posture)
+    : {};
+  const truthControllerObjects = truthData
+    ? [
+        ...truthData.merged_topology.nodes
+          .filter(
+            (node) =>
+              node.node_id.startsWith("ctrl:") ||
+              node.truth_posture === "controller_correlated" ||
+              node.provenance.contributing_sources.includes("controller_bgpls"),
+          )
+          .map((node) => ({
+            objectId: node.node_id,
+            role: node.role,
+            truthPosture: node.truth_posture,
+            sourceLabel: "node",
+          })),
+        ...truthData.merged_topology.links
+          .filter((link) => link.provenance.contributing_sources.includes("controller_bgpls"))
+          .map((link) => ({
+            objectId: link.link_id,
+            role: `${link.source_node_id} -> ${link.target_node_id}`,
+            truthPosture: link.truth_posture,
+            sourceLabel: "link",
+          })),
+      ].slice(0, 6)
+    : [];
+  const topologyControllerGapNote =
+    controllerEvidence &&
+    truthData &&
+    controllerEvidence.bgp_ls.session_posture === "established" &&
+    truthData.counts.multi_source_confirmed_link_count === 0
+      ? "BGP-LS southbound session truth is established, but deeper topology truth still has no multi-source confirmed links. The controller is reachable and session-backed, yet the merged topology path has not produced LLDP-backed physical adjacency confirmation together with controller corroboration."
+      : controllerEvidence &&
+          truthData &&
+          controllerEvidence.bgp_ls.session_posture === "established" &&
+          truthData.counts.igp_confirmed_link_count === 0
+        ? "BGP-LS southbound session truth is established, but deeper topology truth still has no IGP-confirmed links. The controller is reachable and session-backed, yet the merged topology path has not produced device-native routing adjacency confirmation on any current link."
+      : null;
+
   return (
     <section>
       <div className="section-header">
@@ -612,6 +731,236 @@ export function TopologyView() {
         <span>Served persisted at: {formatDateTime(data.served_persisted_at)}</span>
         <span>Generated: {formatDateTime(data.generated_at)}</span>
       </div>
+
+      <article className="detail-card" data-product-contract="controller_southbound_session_truth_v2">
+        <h3>Controller southbound session truth</h3>
+        <p className="meta-copy">
+          Bounded BGP-LS, PCEP, and NETCONF lane posture from controller-visible evidence. This is controller context for
+          topology reasoning, not dataplane truth, not TE authority, and not a replacement for the normalized topology baseline.
+        </p>
+        <div className="toolbar">
+          <button type="button" className="nav-item" onClick={loadControllerEvidence} disabled={controllerEvidenceLoading}>
+            {controllerEvidenceLoading ? "Loading…" : "Load controller evidence"}
+          </button>
+        </div>
+        {controllerEvidenceError ? (
+          <div className="query-message query-message-error" role="status">
+            {controllerEvidenceError}
+          </div>
+        ) : null}
+        {controllerEvidence ? (
+          <>
+            <div className="metadata-row">
+              <span>Contract: {controllerEvidence.contract_id}</span>
+              <span>Reachability: {formatLabel(controllerEvidence.controller_reachability)}</span>
+              <span>YANG catalog: {controllerEvidence.yang_module_catalog_count} modules</span>
+              <span>Generated: {formatDateTime(controllerEvidence.generated_at)}</span>
+            </div>
+            <ul className="compact-list">
+              <li>
+                <span>BGP-LS lane</span>
+                <StatusPill value={controllerEvidence.bgp_ls.lane_posture} />
+                <span className="table-note">
+                  session {formatLabel(controllerEvidence.bgp_ls.session_posture)} · evidence{" "}
+                  {formatLabel(controllerEvidence.bgp_ls.evidence_strength)} · {formatLabel(controllerEvidence.bgp_ls.derivation_mode)}
+                </span>
+                <span className="table-note">
+                  exposure {formatLabel(controllerEvidence.bgp_ls.protocol_exposure_posture)} · objects{" "}
+                  {formatLabel(controllerEvidence.bgp_ls.object_visibility_posture)} · {controllerEvidence.bgp_ls.node_count} nodes ·{" "}
+                  {controllerEvidence.bgp_ls.link_count} links
+                </span>
+              </li>
+              <li>
+                <span>PCEP lane</span>
+                <StatusPill value={controllerEvidence.pcep.lane_posture} />
+                <span className="table-note">
+                  session {formatLabel(controllerEvidence.pcep.session_posture)} · evidence{" "}
+                  {formatLabel(controllerEvidence.pcep.evidence_strength)} · {formatLabel(controllerEvidence.pcep.derivation_mode)}
+                </span>
+                <span className="table-note">
+                  exposure {formatLabel(controllerEvidence.pcep.protocol_exposure_posture)} · objects{" "}
+                  {formatLabel(controllerEvidence.pcep.object_visibility_posture)} · {controllerEvidence.pcep.node_count} nodes ·{" "}
+                  {controllerEvidence.pcep.link_count} links
+                </span>
+              </li>
+              <li>
+                <span>NETCONF lane</span>
+                <StatusPill value={controllerEvidence.netconf.lane_posture} />
+                <span className="table-note">
+                  session {formatLabel(controllerEvidence.netconf.session_posture)} · evidence{" "}
+                  {formatLabel(controllerEvidence.netconf.evidence_strength)} · {formatLabel(controllerEvidence.netconf.derivation_mode)}
+                </span>
+                <span className="table-note">
+                  exposure {formatLabel(controllerEvidence.netconf.protocol_exposure_posture)} · objects{" "}
+                  {formatLabel(controllerEvidence.netconf.object_visibility_posture)} · {controllerEvidence.netconf.node_count} nodes ·{" "}
+                  {controllerEvidence.netconf.link_count} links
+                </span>
+              </li>
+            </ul>
+            <div className="callout">
+              <strong>Relationship to topology truth</strong>
+              <p>
+                Controller southbound session truth and deeper topology truth are separate evidence families. BGP-LS and PCEP can
+                be session-backed here while the merged topology view still remains mostly device-backed and inference-bounded.
+              </p>
+              <p className="table-note">
+                PCEP lane evidence is controller-session context only. The deeper topology truth panel below currently consumes the
+                bounded controller BGP-LS export path, not PCEP topology objects.
+              </p>
+            </div>
+            {topologyControllerGapNote ? (
+              <div className="callout">
+                <strong>Current live mismatch explained</strong>
+                <p>{topologyControllerGapNote}</p>
+              </div>
+            ) : null}
+            {controllerEvidence.aggregate_fetch_notes.length > 0 ? (
+              <div className="callout">
+                <strong>Aggregate fetch notes</strong>
+                <ul className="notes-list">
+                  {controllerEvidence.aggregate_fetch_notes.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </>
+        ) : null}
+      </article>
+
+      <article className="detail-card" data-product-contract="topology_truth_v1">
+        <h3>Deeper topology truth</h3>
+        <p className="meta-copy">
+          Backend-owned merge of gNMI-normalized topology with optional controller enrichment—not dataplane path
+          truth, not sole ODL authority.
+        </p>
+        <div className="toolbar">
+          <button type="button" className="nav-item" onClick={loadTopologyTruth} disabled={truthLoading}>
+            {truthLoading ? "Loading…" : "Load merged truth"}
+          </button>
+        </div>
+        {truthError ? (
+          <div className="query-message query-message-error" role="status">
+            {truthError}
+          </div>
+        ) : null}
+        {truthData ? (
+          <>
+            <div className="metadata-row">
+              <span>Contract: {truthData.contract_id}</span>
+              <span>Controller fetch: {formatLabel(truthData.controller_fetch_status)}</span>
+              <span>Merged freshness: {formatLabel(truthData.freshness.merged_view)}</span>
+              <span>Controller freshness: {formatLabel(truthData.freshness.controller_bgpls)}</span>
+              <span>Merged nodes: {truthData.counts.merged_node_count}</span>
+              <span>Merged links: {truthData.counts.merged_link_count}</span>
+              <span>Conflicts: {truthData.counts.conflicting_object_count}</span>
+            </div>
+            <div className="summary-grid">
+              <article className="summary-card">
+                <p className="summary-label">Physical Confirmed Links</p>
+                <strong>{truthData.counts.physical_confirmed_link_count}</strong>
+                <p>Links with bidirectional LLDP-backed physical adjacency confirmation.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">IGP-confirmed Links</p>
+                <strong>{truthData.counts.igp_confirmed_link_count}</strong>
+                <p>Links with strong device-native OSPF or IS-IS adjacency confirmation.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">Inferred-only Links</p>
+                <strong>{truthData.counts.inferred_only_link_count}</strong>
+                <p>Links still backed only by bounded inferred topology evidence.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">Device-only Nodes</p>
+                <strong>{truthData.counts.device_only_node_count}</strong>
+                <p>Nodes currently present only in the normalized gNMI baseline.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">Controller-only Nodes</p>
+                <strong>{truthData.counts.controller_only_node_count}</strong>
+                <p>Nodes present only in bounded controller export.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">Controller-correlated Nodes</p>
+                <strong>{truthNodePostureCounts.controller_correlated ?? 0}</strong>
+                <p>Scope markers or controller-side objects retained without device-side merge.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">Multi-source Confirmed Links</p>
+                <strong>{truthData.counts.multi_source_confirmed_link_count}</strong>
+                <p>Links where LLDP and/or strong IGP evidence corroborate the controller view of the same edge.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">OSPF-observed Links</p>
+                <strong>{truthData.counts.ospf_observed_link_count}</strong>
+                <p>Links with weaker OSPF evidence that did not reach full IGP confirmation.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">IS-IS-observed Links</p>
+                <strong>{truthData.counts.isis_observed_link_count}</strong>
+                <p>Links with weaker IS-IS evidence that did not reach full IGP confirmation.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">One-sided LLDP Links</p>
+                <strong>{truthData.counts.lldp_single_sided_link_count}</strong>
+                <p>Links with stronger-than-inference physical evidence that is still one-sided.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">LLDP Mismatch Links</p>
+                <strong>{truthData.counts.lldp_mismatch_link_count}</strong>
+                <p>Links where LLDP contradicts the current inferred or controller-correlated peer mapping.</p>
+              </article>
+              <article className="summary-card">
+                <p className="summary-label">IGP Mismatch Links</p>
+                <strong>{truthData.counts.igp_protocol_mismatch_link_count}</strong>
+                <p>Links where device-native IGP points at a different neighbor than the current normalized correlation.</p>
+              </article>
+            </div>
+            <div className="callout">
+              <strong>Sources</strong>
+              <ul className="notes-list">
+                {truthData.sources.map((source) => (
+                  <li key={`${source.source_type}-${source.source_id}`}>
+                    <strong>{formatLabel(source.source_type)}</strong>: {source.source_summary} Freshness{" "}
+                    {formatLabel(source.source_freshness)} · authority {formatLabel(source.source_authority_posture)}.
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {truthData.controller_notes.length > 0 ? (
+              <div className="callout">
+                <strong>Controller merge notes</strong>
+                <ul className="notes-list">
+                  {truthData.controller_notes.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {truthControllerObjects.length > 0 ? (
+              <div className="callout">
+                <strong>Controller-derived objects in merged view</strong>
+                <ul className="notes-list">
+                  {truthControllerObjects.map((item) => (
+                    <li key={`${item.sourceLabel}-${item.objectId}`}>
+                      <strong>{formatLabel(item.sourceLabel)}</strong> <code>{item.objectId}</code> · {item.role} · posture{" "}
+                      {formatLabel(item.truthPosture)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {truthData.safety_framing.explicit_non_claims.length > 0 ? (
+              <ul className="notes-list">
+                {truthData.safety_framing.explicit_non_claims.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            ) : null}
+          </>
+        ) : null}
+      </article>
 
       <div className="summary-grid">
         <article className="summary-card">
@@ -1808,6 +2157,7 @@ export function TopologyView() {
                   <span>Link: {selectedLink.link_id}</span>
                   <span>Knowledge: {formatLabel(getLinkKnowledgeState(selectedLink))}</span>
                   <span>Pairing: {formatLabel(getTopologyLinkEndpointPairingState(selectedLink))}</span>
+                  <span>Physical adjacency: {formatLabel(getLinkPhysicalAdjacencyPosture(selectedLink))}</span>
                   <span>Current posture: {formatRowCurrentPosture(selectedLink.current_posture)}</span>
                 </div>
                 <div className="key-value-list">
@@ -1839,9 +2189,64 @@ export function TopologyView() {
                     <strong>{formatCountLabel(getTopologyLinkEndpointEvidenceCount(selectedLink), "endpoint")}</strong>
                   </div>
                   <div className="key-value-row">
+                    <span>LLDP observations</span>
+                    <strong>{formatCountLabel(selectedLink.physical_adjacency.lldp_observation_count, "observation")}</strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>Physical adjacency</span>
+                    <strong>{formatLabel(getLinkPhysicalAdjacencyPosture(selectedLink))}</strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>IGP observations</span>
+                    <strong>
+                      {formatCountLabel(
+                        selectedLink.control_plane_adjacency.observation_count,
+                        "observation",
+                      )}
+                    </strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>Control-plane adjacency</span>
+                    <strong>{formatLabel(getLinkControlPlaneAdjacencyPosture(selectedLink))}</strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>IGP protocols</span>
+                    <strong>
+                      {selectedLink.control_plane_adjacency.protocols_observed.length > 0
+                        ? selectedLink.control_plane_adjacency.protocols_observed
+                            .map((protocol) => protocol.toUpperCase())
+                            .join(", ")
+                        : "No IGP protocol evidence recorded"}
+                    </strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>IGP remote identities</span>
+                    <strong>
+                      {selectedLink.control_plane_adjacency.remote_identities.length > 0
+                        ? selectedLink.control_plane_adjacency.remote_identities.join(", ")
+                        : "No IGP remote identities recorded"}
+                    </strong>
+                  </div>
+                  <div className="key-value-row">
                     <span>Observed interfaces</span>
                     <strong>
                       {selectedLink.attributes.observed_interfaces ?? "No observed interfaces recorded"}
+                    </strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>LLDP remote systems</span>
+                    <strong>
+                      {selectedLink.physical_adjacency.remote_systems.length > 0
+                        ? selectedLink.physical_adjacency.remote_systems.join(", ")
+                        : "No LLDP remote systems recorded"}
+                    </strong>
+                  </div>
+                  <div className="key-value-row">
+                    <span>LLDP remote ports</span>
+                    <strong>
+                      {selectedLink.physical_adjacency.remote_ports.length > 0
+                        ? selectedLink.physical_adjacency.remote_ports.join(", ")
+                        : "No LLDP remote ports recorded"}
                     </strong>
                   </div>
                   <div className="key-value-row">
@@ -1863,6 +2268,26 @@ export function TopologyView() {
                     <strong>{describeLinkEvidence(selectedLink)}</strong>
                   </div>
                 </div>
+                {selectedLink.physical_adjacency.correlation_notes.length > 0 ? (
+                  <>
+                    <p className="summary-label">LLDP Correlation Notes</p>
+                    <ul className="notes-list">
+                      {selectedLink.physical_adjacency.correlation_notes.map((note) => (
+                        <li key={`${selectedLink.link_id}-${note}`}>{note}</li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
+                {selectedLink.control_plane_adjacency.correlation_notes.length > 0 ? (
+                  <>
+                    <p className="summary-label">IGP Correlation Notes</p>
+                    <ul className="notes-list">
+                      {selectedLink.control_plane_adjacency.correlation_notes.map((note) => (
+                        <li key={`${selectedLink.link_id}-igp-${note}`}>{note}</li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
                 <p className="summary-label">Link Evidence</p>
                 <div className="key-value-list">
                   {Object.entries(selectedLink.attributes)

@@ -57,6 +57,20 @@ def _paired_peer_by_host() -> dict[str, str]:
     return peers
 
 
+def _router_id_by_name() -> dict[str, str]:
+    return {
+        target.name: f"10.255.255.{index + 1}"
+        for index, target in enumerate(_targets())
+    }
+
+
+def _isis_system_id_by_name() -> dict[str, str]:
+    return {
+        target.name: f"49.0001.0000.0000.{index + 1:04d}.00"
+        for index, target in enumerate(_targets())
+    }
+
+
 class FakeGnmiClient:
     def __init__(self, *, target, username, password, insecure, gnmi_timeout=None):
         self.target = target
@@ -75,6 +89,92 @@ class FakeGnmiClient:
         del encoding
         host = self.target[0]
         device_name = _target_name_by_host()[host]
+        if any("/ospf" in item for item in path):
+            return {
+                "notification": [
+                    {
+                        "timestamp": 1773094131368820265,
+                        "update": [
+                            {
+                                "path": "state/router[router-name=Base]/ospf",
+                                "val": {
+                                    "nokia-state:ospf": [
+                                        {
+                                            "instance-id": 0,
+                                            "state": {
+                                                "router-id": _router_id_by_name()[device_name],
+                                            },
+                                            "area": [],
+                                        }
+                                    ]
+                                },
+                            }
+                        ],
+                    }
+                ]
+            }
+        if any("/isis" in item for item in path):
+            return {
+                "notification": [
+                    {
+                        "timestamp": 1773094131368820265,
+                        "update": [
+                            {
+                                "path": "state/router[router-name=Base]/isis",
+                                "val": {
+                                    "nokia-state:isis": [
+                                        {
+                                            "instance": 0,
+                                            "state": {
+                                                "system-id": _isis_system_id_by_name()[device_name],
+                                            },
+                                            "interface": [],
+                                        }
+                                    ]
+                                },
+                            }
+                        ],
+                    }
+                ]
+            }
+        if any("openconfig-lldp:lldp" in item for item in path):
+            peer_name = _paired_peer_by_host()[host]
+            return {
+                "notification": [
+                    {
+                        "timestamp": 1773094131368820265,
+                        "update": [
+                            {
+                                "path": "openconfig-lldp:lldp",
+                                "val": {
+                                    "openconfig-lldp:lldp": {
+                                        "interfaces": {
+                                            "interface": [
+                                                {
+                                                    "name": f"to-{peer_name}",
+                                                    "neighbors": {
+                                                        "neighbor": [
+                                                            {
+                                                                "id": "1",
+                                                                "state": {
+                                                                    "system-name": peer_name,
+                                                                    "chassis-id": peer_name,
+                                                                    "port-id": f"to-{device_name}",
+                                                                    "port-description": f"to-{device_name}",
+                                                                },
+                                                            }
+                                                        ]
+                                                    },
+                                                }
+                                            ]
+                                        }
+                                    }
+                                },
+                            }
+                        ],
+                    }
+                ]
+            }
         if any("segment-routing/sr-policies" in item for item in path):
             static_policy_payload = []
             static_local_policies = 0
@@ -258,11 +358,128 @@ class FakeSingleSidedTopologyGnmiClient(FakeGnmiClient):
         return super().get(path=path, encoding="json_ietf")
 
 
+class FakeOspfAdjacencyGnmiClient(FakeGnmiClient):
+    def get(self, *, path, encoding):
+        del encoding
+        host = self.target[0]
+        device_name = _target_name_by_host()[host]
+        peer_name = _paired_peer_by_host()[host]
+        if any("/ospf" in item for item in path):
+            return {
+                "notification": [
+                    {
+                        "timestamp": 1773094131368820265,
+                        "update": [
+                            {
+                                "path": "state/router[router-name=Base]/ospf",
+                                "val": {
+                                    "nokia-state:ospf": [
+                                        {
+                                            "instance-id": 0,
+                                            "state": {
+                                                "router-id": _router_id_by_name()[device_name],
+                                            },
+                                            "area": [
+                                                {
+                                                    "area-id": "0.0.0.0",
+                                                    "interface": [
+                                                        {
+                                                            "interface-name": f"to-{peer_name}",
+                                                            "neighbor": [
+                                                                {
+                                                                    "router-id": _router_id_by_name()[peer_name],
+                                                                    "state": {
+                                                                        "neighbor-state": "full",
+                                                                        "last-state-change": "2026-04-09T00:00:00Z",
+                                                                    },
+                                                                }
+                                                            ],
+                                                        }
+                                                    ],
+                                                }
+                                            ],
+                                        }
+                                    ]
+                                },
+                            }
+                        ],
+                    }
+                ]
+            }
+        return super().get(path=path, encoding="json_ietf")
+
+
+class FakeIsisAdjacencyGnmiClient(FakeGnmiClient):
+    def get(self, *, path, encoding):
+        del encoding
+        host = self.target[0]
+        device_name = _target_name_by_host()[host]
+        peer_name = _paired_peer_by_host()[host]
+        if any("/isis" in item for item in path):
+            return {
+                "notification": [
+                    {
+                        "timestamp": 1773094131368820265,
+                        "update": [
+                            {
+                                "path": "state/router[router-name=Base]/isis",
+                                "val": {
+                                    "nokia-state:isis": [
+                                        {
+                                            "instance": 0,
+                                            "state": {
+                                                "system-id": _isis_system_id_by_name()[device_name],
+                                            },
+                                            "interface": [
+                                                {
+                                                    "interface-name": f"to-{peer_name}",
+                                                    "level": "2",
+                                                    "adjacency": [
+                                                        {
+                                                            "neighbor-system-id": _isis_system_id_by_name()[peer_name],
+                                                            "state": {
+                                                                "oper-state": "up",
+                                                                "oper-hostname": peer_name,
+                                                                "level": "2",
+                                                                "last-state-change": "2026-04-09T00:00:00Z",
+                                                            },
+                                                        }
+                                                    ],
+                                                }
+                                            ],
+                                        }
+                                    ]
+                                },
+                            }
+                        ],
+                    }
+                ]
+            }
+        return super().get(path=path, encoding="json_ietf")
+
+
 class FakeIsolatedNodeTopologyGnmiClient(FakeGnmiClient):
     def get(self, *, path, encoding):
         del encoding
         host = self.target[0]
         device_name = _target_name_by_host()[host]
+        if any("openconfig-lldp:lldp" in item for item in path) and device_name in {
+            "PE1",
+            "PE2",
+        }:
+            return {
+                "notification": [
+                    {
+                        "timestamp": 1773094131368820265,
+                        "update": [
+                            {
+                                "path": "openconfig-lldp:lldp",
+                                "val": {"openconfig-lldp:lldp": {"interfaces": {"interface": []}}},
+                            }
+                        ],
+                    }
+                ]
+            }
         if any("router[router-name=Base]/interface" in item for item in path) and device_name in {
             "PE1",
             "PE2",
@@ -295,6 +512,20 @@ class FakeIsolatedNodeTopologyGnmiClient(FakeGnmiClient):
 class FakeFullyIsolatedNodeTopologyGnmiClient(FakeGnmiClient):
     def get(self, *, path, encoding):
         del encoding
+        if any("openconfig-lldp:lldp" in item for item in path):
+            return {
+                "notification": [
+                    {
+                        "timestamp": 1773094131368820265,
+                        "update": [
+                            {
+                                "path": "openconfig-lldp:lldp",
+                                "val": {"openconfig-lldp:lldp": {"interfaces": {"interface": []}}},
+                            }
+                        ],
+                    }
+                ]
+            }
         if any("router[router-name=Base]/interface" in item for item in path):
             return {
                 "notification": [
@@ -309,6 +540,61 @@ class FakeFullyIsolatedNodeTopologyGnmiClient(FakeGnmiClient):
                                     "nokia-state:protocol": "ospfv2 mpls rsvp",
                                     "nokia-state:ipv4": {
                                         "primary": {"oper-address": "10.255.255.31"}
+                                    },
+                                },
+                            }
+                        ],
+                    }
+                ]
+            }
+        return super().get(path=path, encoding="json_ietf")
+
+
+class FakeLldpDisabledGnmiClient(FakeGnmiClient):
+    def get(self, *, path, encoding):
+        if any("openconfig-lldp:lldp" in item for item in path):
+            raise RuntimeError(
+                "GRPC ERROR Host: 172.20.20.107:57400, Error: MINOR: MGMT_CORE #2201: /lldp - Unknown element - disabled by configuration"
+            )
+        return super().get(path=path, encoding=encoding)
+
+
+class FakeNokiaNativeLldpFallbackGnmiClient(FakeGnmiClient):
+    def get(self, *, path, encoding):
+        del encoding
+        host = self.target[0]
+        device_name = _target_name_by_host()[host]
+        if any("openconfig-lldp:lldp" in item for item in path):
+            raise RuntimeError(
+                "GRPC ERROR Host: 172.20.20.107:57400, Error: MINOR: MGMT_CORE #2201: /lldp - Unknown element - disabled by configuration"
+            )
+        if any("/nokia-state:state/port" in item for item in path):
+            peer_name = _paired_peer_by_host()[host]
+            return {
+                "notification": [
+                    {
+                        "timestamp": 1773094131368820265,
+                        "update": [
+                            {
+                                "path": "state/port[port-id=1/1/c2/1]",
+                                "val": {
+                                    "nokia-state:port-id": "1/1/c2/1",
+                                    "nokia-state:ethernet": {
+                                        "nokia-state:lldp": {
+                                            "nokia-state:dest-mac": [
+                                                {
+                                                    "mac-type": "nearest-bridge",
+                                                    "remote-system": [
+                                                        {
+                                                            "system-name": peer_name,
+                                                            "chassis-id": peer_name,
+                                                            "remote-port-id": f"to-{device_name}",
+                                                            "port-description": f"to-{device_name}",
+                                                        }
+                                                    ],
+                                                }
+                                            ]
+                                        }
                                     },
                                 },
                             }
@@ -368,6 +654,7 @@ def test_runtime_config_loads_live_nokia_targets() -> None:
     }
     assert config.inventory_subscriptions[0].path == "/nokia-state:state/system/oper-name"
     assert config.topology_subscriptions[0].path == "/nokia-state:state/router[router-name=Base]/interface"
+    assert config.topology_subscriptions[1].path == "/openconfig-lldp:lldp"
     assert (
         config.policy_subscriptions[0].path
         == "/nokia-state:state/router[router-name=Base]/segment-routing/sr-policies"
@@ -438,6 +725,11 @@ def test_metrics_endpoint_returns_inventory_and_topology_operational_metrics(
     assert "platform_gnmi_collector_topology_normalized_links 17" in response.text
     assert "platform_gnmi_collector_topology_paired_links 17" in response.text
     assert "platform_gnmi_collector_topology_single_sided_links 0" in response.text
+    assert "platform_gnmi_collector_topology_lldp_observations 34" in response.text
+    assert "platform_gnmi_collector_topology_lldp_correlated_links 17" in response.text
+    assert "platform_gnmi_collector_topology_lldp_single_sided_links 0" in response.text
+    assert "platform_gnmi_collector_topology_lldp_bidirectional_links 17" in response.text
+    assert "platform_gnmi_collector_topology_lldp_mismatch_links 0" in response.text
     assert "platform_gnmi_collector_topology_linked_nodes 34" in response.text
     assert "platform_gnmi_collector_topology_isolated_nodes 0" in response.text
     assert (
@@ -514,9 +806,13 @@ def test_topology_snapshot_endpoint_returns_normalized_live_records(monkeypatch)
     assert payload["node_participation_posture"] == "fully_linked"
     assert payload["paired_link_count"] == 17
     assert payload["single_sided_link_count"] == 0
+    assert payload["lldp_observation_count"] == 34
+    assert payload["lldp_correlated_link_count"] == 17
+    assert payload["lldp_bidirectional_link_count"] == 17
+    assert payload["lldp_mismatch_link_count"] == 0
     assert payload["linked_node_count"] == 34
     assert payload["isolated_node_count"] == 0
-    assert payload["sync_source"] == "gnmi_collector_topology_interface_inference"
+    assert payload["sync_source"] == "gnmi_collector_topology_interface_lldp_and_igp"
     assert payload["completeness"] == "partial"
     assert payload["oldest_observed_at"] is not None
     assert payload["newest_observed_at"] is not None
@@ -526,6 +822,8 @@ def test_topology_snapshot_endpoint_returns_normalized_live_records(monkeypatch)
     first_link = payload["links"][0]
     assert first_link["endpoint_pairing_state"] == "paired"
     assert first_link["endpoint_evidence_count"] == 2
+    assert first_link["physical_adjacency_posture"] == "bidirectional_lldp"
+    assert first_link["lldp_observation_count"] == 2
     assert first_link["attributes"]["endpoint_pairing_state"] == "paired"
     assert first_link["attributes"]["endpoint_evidence_count"] == "2"
 
@@ -550,6 +848,7 @@ def test_topology_snapshot_endpoint_marks_single_sided_coverage_explicit(monkeyp
     assert payload["node_participation_posture"] == "fully_linked"
     assert payload["paired_link_count"] == 16
     assert payload["single_sided_link_count"] == 1
+    assert payload["lldp_observation_count"] == 34
     assert payload["linked_node_count"] == 34
     assert payload["isolated_node_count"] == 0
     assert payload["degraded_scope_summary"] == (
@@ -564,6 +863,7 @@ def test_topology_snapshot_endpoint_marks_single_sided_coverage_explicit(monkeyp
     )
     assert single_sided_link["link_id"] == "PE1--PE2"
     assert single_sided_link["endpoint_evidence_count"] == 1
+    assert single_sided_link["physical_adjacency_posture"] == "bidirectional_lldp"
     assert single_sided_link["attributes"]["endpoint_pairing_state"] == "single_sided"
     assert single_sided_link["attributes"]["endpoint_evidence_count"] == "1"
 
@@ -584,6 +884,7 @@ def test_topology_snapshot_endpoint_marks_isolated_node_coverage_explicit(monkey
     assert payload["node_participation_posture"] == "partially_isolated"
     assert payload["paired_link_count"] == 16
     assert payload["single_sided_link_count"] == 0
+    assert payload["lldp_bidirectional_link_count"] == 16
     assert payload["linked_node_count"] == 32
     assert payload["isolated_node_count"] == 2
     assert payload["node_count"] == 34
@@ -595,6 +896,47 @@ def test_topology_snapshot_endpoint_marks_isolated_node_coverage_explicit(monkey
         "Collector node-participation posture is partially_isolated" in note
         for note in payload["notes"]
     )
+
+
+def test_topology_snapshot_endpoint_surfaces_ospf_adjacency_truth(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "gnmi_collector.adapters.nokia.sros.gNMIclient",
+        FakeOspfAdjacencyGnmiClient,
+    )
+
+    response = client.get("/topology/snapshot")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["igp_adjacency_observation_count"] == 34
+    assert payload["ospf_adjacency_observation_count"] == 34
+    assert payload["isis_adjacency_observation_count"] == 0
+    assert payload["igp_correlated_link_count"] == 17
+    assert payload["igp_confirmed_link_count"] == 17
+    assert payload["igp_protocol_mismatch_link_count"] == 0
+    assert payload["sync_source"] == "gnmi_collector_topology_interface_lldp_and_igp"
+    assert all(link["control_plane_adjacency_posture"] == "igp_confirmed" for link in payload["links"])
+    assert all(link["ospf_adjacency_state"] == "full" for link in payload["links"])
+
+
+def test_topology_snapshot_endpoint_surfaces_isis_adjacency_truth(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "gnmi_collector.adapters.nokia.sros.gNMIclient",
+        FakeIsisAdjacencyGnmiClient,
+    )
+
+    response = client.get("/topology/snapshot")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["igp_adjacency_observation_count"] == 34
+    assert payload["ospf_adjacency_observation_count"] == 0
+    assert payload["isis_adjacency_observation_count"] == 34
+    assert payload["igp_correlated_link_count"] == 17
+    assert payload["igp_confirmed_link_count"] == 17
+    assert payload["igp_protocol_mismatch_link_count"] == 0
+    assert all(link["control_plane_adjacency_posture"] == "igp_confirmed" for link in payload["links"])
+    assert all(link["isis_adjacency_state"] == "up" for link in payload["links"])
 
 
 def test_policy_snapshot_endpoint_returns_live_policy_observations(monkeypatch) -> None:
@@ -866,6 +1208,62 @@ def test_topology_flow_snapshot_marks_isolated_node_coverage_explicit(monkeypatc
     )
 
 
+def test_collect_topology_classifies_disabled_lldp_as_not_exposed(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "gnmi_collector.adapters.nokia.sros.gNMIclient",
+        FakeLldpDisabledGnmiClient,
+    )
+
+    target = next(item for item in _targets() if item.name == "PE1")
+    record = NokiaSrosAdapter().collect_topology(target)
+
+    assert record.collection_status == "success"
+    assert record.lldp_collection_status == "not_exposed"
+    assert record.raw_lldp_neighbors == []
+    assert any("LLDP path is not exposed on the target" in note for note in record.lldp_notes)
+
+
+def test_collect_topology_falls_back_to_nokia_native_lldp_when_openconfig_is_not_exposed(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "gnmi_collector.adapters.nokia.sros.gNMIclient",
+        FakeNokiaNativeLldpFallbackGnmiClient,
+    )
+
+    target = next(item for item in _targets() if item.name == "PE1")
+    record = NokiaSrosAdapter().collect_topology(target)
+
+    assert record.collection_status == "success"
+    assert record.lldp_collection_status == "neighbors_visible"
+    assert len(record.raw_lldp_neighbors) == 1
+    assert record.raw_lldp_neighbors[0].local_interface_name == "1/1/c2/1"
+    assert record.raw_lldp_neighbors[0].remote_system_name == "PE2"
+    assert record.raw_lldp_neighbors[0].remote_port_id == "to-PE1"
+    assert any("Nokia native LLDP fallback returned 1 neighbor row" in note for note in record.lldp_notes)
+
+
+def test_topology_snapshot_endpoint_uses_nokia_native_lldp_fallback_when_openconfig_is_not_exposed(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "gnmi_collector.adapters.nokia.sros.gNMIclient",
+        FakeNokiaNativeLldpFallbackGnmiClient,
+    )
+
+    response = client.get("/topology/snapshot")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["delivery_status"] == "live_ready"
+    assert payload["lldp_observation_count"] == 34
+    assert payload["lldp_correlated_link_count"] == 17
+    assert payload["lldp_bidirectional_link_count"] == 17
+    assert payload["lldp_mismatch_link_count"] == 0
+    assert all(link["physical_adjacency_posture"] == "bidirectional_lldp" for link in payload["links"])
+    assert any("Nokia native LLDP fallback" in note for note in payload["notes"])
+
+
 def test_metrics_endpoint_surfaces_single_sided_topology_coverage_metrics(monkeypatch) -> None:
     monkeypatch.setattr(
         "gnmi_collector.adapters.nokia.sros.gNMIclient",
@@ -885,6 +1283,24 @@ def test_metrics_endpoint_surfaces_single_sided_topology_coverage_metrics(monkey
         'platform_gnmi_collector_topology_node_participation_posture{posture="fully_linked"} 1'
         in response.text
     )
+
+
+def test_metrics_endpoint_surfaces_igp_topology_metrics(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "gnmi_collector.adapters.nokia.sros.gNMIclient",
+        FakeOspfAdjacencyGnmiClient,
+    )
+    client.get("/topology/snapshot")
+
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert "platform_gnmi_collector_topology_igp_adjacency_observations 34" in response.text
+    assert "platform_gnmi_collector_topology_ospf_adjacency_observations 34" in response.text
+    assert "platform_gnmi_collector_topology_isis_adjacency_observations 0" in response.text
+    assert "platform_gnmi_collector_topology_igp_correlated_links 17" in response.text
+    assert "platform_gnmi_collector_topology_igp_confirmed_links 17" in response.text
+    assert "platform_gnmi_collector_topology_igp_protocol_mismatch_links 0" in response.text
 
 
 def test_metrics_endpoint_surfaces_isolated_node_topology_coverage_metrics(monkeypatch) -> None:

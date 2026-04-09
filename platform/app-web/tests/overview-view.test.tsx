@@ -704,6 +704,22 @@ beforeEach(() => {
 });
 
 describe("overview view", () => {
+  it("starts core overview queries without waiting on prior slices", () => {
+    usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
+    useDevicesQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+    useTopologyQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+    usePoliciesQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    renderToStaticMarkup(<OverviewView />);
+
+    expect(useTopologyQuery).toHaveBeenCalledWith();
+    expect(usePoliciesQuery).toHaveBeenCalledWith();
+    expect(usePlatformStatusQuery).toHaveBeenCalledWith();
+    expect(useRecentChangeSummaryQuery).toHaveBeenCalledWith();
+    expect(useTopologyRiskSummaryQuery).toHaveBeenCalledWith();
+  });
+
   it("surfaces degraded policy v1 summary and policies drill-down on the policy inventory card", () => {
     usePlatformStatusQuery.mockReturnValue(createQueryState(createPlatformStatusData()));
     useDevicesQuery.mockReturnValue(createQueryState(null));
@@ -836,7 +852,7 @@ describe("overview view", () => {
     expect(html).toContain("sync run window");
   });
 
-  it("stages collector-backed overview queries instead of starting them all at once", () => {
+  it("starts collector-backed overview queries immediately", () => {
     usePlatformStatusQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
     useDevicesQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
     useTopologyQuery.mockReturnValue(createQueryState(null, { isLoading: true }));
@@ -845,10 +861,10 @@ describe("overview view", () => {
 
     renderToStaticMarkup(<OverviewView />);
 
-    expect(useTopologyQuery).toHaveBeenCalledWith(false);
-    expect(usePoliciesQuery).toHaveBeenCalledWith(false);
-    expect(usePlatformStatusQuery).toHaveBeenCalledWith(false);
-    expect(useTopologyRiskSummaryQuery).toHaveBeenCalledWith(false);
+    expect(useTopologyQuery).toHaveBeenCalledWith();
+    expect(usePoliciesQuery).toHaveBeenCalledWith();
+    expect(usePlatformStatusQuery).toHaveBeenCalledWith();
+    expect(useTopologyRiskSummaryQuery).toHaveBeenCalledWith();
   });
 
   it("renders available slices when one core query fails", () => {
@@ -923,6 +939,55 @@ describe("overview view", () => {
 
     expect(html).toContain("Notes");
     expect(html).toContain("Per-slice live coverage may still be partial despite preserved anchors.");
+  });
+
+  it("keeps topology degraded-scope and blocked collection cues consistent during persisted fallback", () => {
+    const status = createPlatformStatusData();
+    status.read_paths = [
+      {
+        ...status.read_paths[0],
+        observation_state: "unreachable",
+        collection_posture: "blocked",
+        degraded_scope_summary: "Latest live topology recollection could not reach the collector boundary.",
+      },
+    ];
+
+    const topology = createTopologyData();
+    topology.serving_mode = "persisted_fallback";
+    topology.data_status = "degraded";
+    topology.summary = "Topology is being served from the latest persisted normalized snapshot.";
+    topology.served_persisted_at = "2025-01-01T00:00:00Z";
+    topology.evidence_confidence = {
+      ...topology.evidence_confidence,
+      source_posture: "persisted_fallback",
+      confidence_posture: "degraded",
+      freshness_posture: "stale",
+      blocked_reason: "collector_unavailable",
+      summary: "Topology is stale because live collection is unavailable.",
+    };
+    topology.coverage_summary = {
+      ...topology.coverage_summary,
+      collection_posture: "blocked",
+    };
+
+    usePlatformStatusQuery.mockReturnValue(createQueryState(status));
+    useDevicesQuery.mockReturnValue(createQueryState(null));
+    useTopologyQuery.mockReturnValue(createQueryState(topology));
+    usePoliciesQuery.mockReturnValue(createQueryState(createPoliciesData()));
+    useCapabilitiesQuery.mockReturnValue(createQueryState(createCapabilitiesData()));
+
+    const html = renderToStaticMarkup(<OverviewView />);
+
+    expect(html).toContain(
+      "Live topology collection is currently blocked, but the topology slice is still renderable because app-api served the latest persisted normalized snapshot.",
+    );
+    expect(html).toContain(
+      "Platform status still reports the live topology read path as blocked, while the topology slice above remains renderable from the latest persisted normalized snapshot.",
+    );
+    expect(html).toContain(
+      "Current live read-path probe was unreachable; this row summarizes the bounded scope impact rather than repeating the transport failure label.",
+    );
+    expect(html).not.toContain(">Unreachable<");
   });
 
   it("surfaces observed policy count separately from detailed records in the overview summary", () => {

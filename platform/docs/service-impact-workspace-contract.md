@@ -6,7 +6,7 @@
 
 It **aggregates and frames** already-delivered assemblies; it **does not** replace inventory rules, collector mappings, or the authoritative JSON of nested routes.
 
-**Phase:** [`Phase 2 — read-only product foundation`](../../agent/sdn/01-CURRENT-PHASE.md) — unchanged.
+**Surface role:** `Phase 2` read-only product surface within the current repo state.
 
 ---
 

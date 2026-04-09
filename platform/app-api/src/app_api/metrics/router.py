@@ -113,13 +113,20 @@ def get_metrics() -> Response:
         },
         history_metrics={
             "total_count": sync_history.total_count,
+            "total_persisted_count": sync_history.total_persisted_count,
             "counts_by_model_family": sync_history.counts_by_model_family,
+            "persisted_counts_by_model_family": (
+                sync_history.persisted_counts_by_model_family
+            ),
             "counts_by_result": sync_history.counts_by_result,
             "counts_by_model_family_and_result": (
                 sync_history.counts_by_model_family_and_result
             ),
             "latest_finished_at_by_model_family": (
                 sync_history.latest_finished_at_by_model_family
+            ),
+            "latest_observed_at_by_model_family": (
+                sync_history.latest_observed_at_by_model_family
             ),
         },
         inventory_snapshot_metrics={

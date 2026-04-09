@@ -34,6 +34,12 @@ Operators need a product UI that is purpose-built for network operations workflo
 ## Current status
 The frontend now has a Vite + React + TypeScript scaffold, a feature-oriented `src/` layout, a typed API client layer for stable read-only backend contracts, and useful read-oriented product pages for overview, platform health, devices, topology, policies, workflow history, audit history, and capabilities. Those pages handle loading, error, empty, partial, unsupported-support, and mixed-version states explicitly, while execution workflow controls and richer audit semantics remain out of scope for the current phase.
 
+Current load-strategy posture:
+
+- the Overview page now starts its core product queries (`devices`, `topology`, `policies`, `platform/status`, `capabilities`) in parallel rather than chaining them behind one another
+- cockpit-only secondary previews such as delta digest, evidence consistency, stability, and evidence quality still remain gated behind the core-slice readiness posture so the heavier composed assemblies do not delay the first usable Overview render
+- refresh of Overview slices should stay parallel for independent API calls; do not reintroduce serial query gating for unrelated read-only slices unless a later contract creates a real dependency
+
 ## Planned evolution
 - richer read-oriented pages backed by deeper backend APIs as those contracts become real
 - stronger route structure and shared UI primitives for a fuller product experience
@@ -45,3 +51,4 @@ The packaged runtime is now stricter about local startup validation and containe
 Readiness trust cues stay bounded: the persisted readiness snapshot anchor is the strongest stable reference for that response, while any per-item readiness identifiers are optional descriptive cues only and must not be treated as workflow handles or execution objects.
 Capability trust cues stay bounded as well: the capabilities page now treats the existing vendor-platform-domain-feature tuple, plus version scope when present, as the current UI identity posture for a capability record. That helps operators distinguish version-scoped records without implying a stronger backend capability-item ID contract.
 Device capability posture remains intentionally coarser than the capabilities matrix. The devices page shows bounded support summaries only, while delivery tier, evidence basis, roadmap posture, and future-vendor direction remain explained on the dedicated capabilities page.
+Independent product queries should stay independent in the WebUI. Serializing unrelated backend calls in the shell or Overview layer makes the UI look broken under bounded slow-read conditions and can hide whether the underlying issue is backend latency, collector timeout posture, or a genuine page-specific failure.

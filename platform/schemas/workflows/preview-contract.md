@@ -4,7 +4,8 @@
 
 This document defines the future bounded contract shape for workflow preview requests and preview responses.
 
-It is a design artifact only.
+It originated as a design artifact during `Phase 2` planning and remains useful
+for broader workflow expansion rules.
 
 It does not introduce:
 
@@ -17,11 +18,15 @@ It does not introduce:
 
 ## Phase Boundary
 
-The platform remains in `Phase 2 — read-only product foundation`.
+This file was written during `Phase 2 — read-only product foundation`
+planning.
 
-So this contract is a future-oriented design shape only.
+The current repo state is `Phase 5 — bounded safe action workflow (v1)`
+alongside completed `Phase 2` foundations.
 
-It must not be treated as an implemented API.
+This document should not be treated as the sole description of live preview
+behavior. Current runtime truth for the implemented bounded preview slice lives
+in the active phase file, current status file, and preview contract docs.
 
 ## Contract Role
 

@@ -136,7 +136,7 @@ The word **“briefing”** means **read-only interpretation support for handoff
 
 ## Current phase
 
-This contract is **Phase 2 — read-only product foundation** only. It **does not** authorize phase transition, workflow implementation, or validation engines.
+This contract defines a **Phase 2 read-only product surface** within the current repo state. It **does not** authorize broader workflow expansion, phase transition, or validation engines.
 
 Implementations **must not** justify changing [`01-CURRENT-PHASE.md`](../../agent/sdn/01-CURRENT-PHASE.md) unless separate evidence exists for a documented phase-boundary review (out of scope for this document).
 

@@ -74,6 +74,8 @@ Current state:
 - `/api/v1/topology` and the topology row in `/api/v1/platform/status` now expose backend-owned endpoint-pairing posture plus paired-versus-single-sided inferred-link counts as bounded topology coverage semantics
 - Alembic-managed persistence now exists for normalized inventory snapshots, normalized topology snapshots, normalized policy snapshots, candidate-path records, and sync-run history
 - devices, topology, and policy can fall back to the latest persisted normalized snapshot when the collector boundary is temporarily unavailable
+- `/api/v1/platform/status` now builds the inventory, topology, and policy read paths in parallel; keep that fan-out posture unless a later contract introduces a real dependency between those slices
+- heavier composed read-only assemblies such as delta digest, investigation workspace, situation room, and operator briefing now also fan out independent nested builders in parallel so product latency is dominated by real source work rather than avoidable serialization
 - workflow-history and audit-history currently expose bounded views derived from persisted sync-run activity rather than full workflow or audit tables
 - `/api/v1/platform/status` now includes one bounded ODL-backed controller capability probe derived from RESTCONF YANG-library and operations discovery, while the backend remains the owner of the normalized product response
 - `/api/v1/capabilities` now exposes a bounded capability matrix that makes supported, partially-supported, unknown, and not-implemented states explicit across the current Nokia-first read-only product slice without implying Juniper parity
@@ -247,6 +249,7 @@ Current state:
 - useful read-only pages now exist for overview, platform health, devices, topology, policies, workflow history, audit history, and capabilities
 - a typed API client layer now consumes stable backend contracts
 - topology, Overview, and Platform Health now surface backend-owned endpoint-pairing posture and paired-versus-single-sided inferred-link counts as bounded topology trust cues without turning the WebUI into a validation surface
+- the Overview page now starts its core independent read-side queries in parallel and keeps only the heavier cockpit-only previews gated behind core-slice readiness
 - workflow and audit views now surface bounded platform-side sync visibility rather than remaining placeholders
 - **week 27:** **Policies** detail includes **Path analysis** and **Topology impact** panels; **Topology** and **Devices** include **related policies** where object ids align; **Overview** / **Platform Health** include degraded-policy v1 drill-downs; **Investigation** supports optional **`inv_from`** breadcrumb context— all **read-only** product consumption of the same **`app-api`** contracts; Grafana does not implement these surfaces (see `dashboards.md`)
 

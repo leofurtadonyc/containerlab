@@ -46,6 +46,14 @@ Current collector-boundary latency posture:
 - collector snapshot reads now default to a short bounded timeout budget so persisted fallback can appear quickly when the live collector path is slow or unavailable
 - the shared collector timeout can be overridden per model family for inventory, topology, or policy reads if a later bounded deployment needs different budgets
 - collector-boundary fetch failures are now classified into timeout-budget, connection, HTTP, or invalid-payload posture before fallback rather than exposing only raw exception text
+- the packaged topology currently uses a shared `5s` collector budget with per-path overrides of `5s` for inventory, `8s` for topology, and `5s` for policy because live topology reads are materially slower than inventory and policy in the current lab footprint
+- keep those budgets above normal observed collector latency for the deployed target set; if topology is routinely slower than the topology budget, `app-api` will honestly fall back or mark the read path unreachable even when the collector itself is still healthy
+
+Current read-side composition posture:
+
+- `/api/v1/platform/status` now fans out the inventory, topology, and policy collector-backed read paths in parallel and then preserves response order in the returned `read_paths` array
+- heavier composed read-only assemblies such as delta digest, investigation workspace, situation room, and operator briefing also fan out their independent nested reads in parallel
+- do not reintroduce strictly sequential composition for independent read-side builders unless a later contract requires ordered dependency semantics; it materially increases page latency and can make timeout-budget posture look worse than the live collector reality
 
 Current comparison-friendly API reality:
 
@@ -74,7 +82,8 @@ Current comparison-friendly API reality:
 The backend is the only service that writes to Postgres. Keep it as the single source of truth for application state.
 The current inventory, topology, and policy read models are intentionally bounded and honest: they provide stable product-owned contracts, but they do not yet claim live operational completeness, deep path computation, intended-state reconciliation, or workflow-grade policy semantics.
 Inventory, topology, and policy now persist normalized snapshot records and sync-run history in Postgres, and the API may fall back to the latest persisted snapshot when the live collector path is temporarily unavailable.
-The collector boundary now uses a short latency budget by default so slow live reads fail fast enough to surface explicit fallback posture instead of stalling the read-only product behind long collector waits. Timeout exhaustion (`timeout_budget_exceeded`) is classified separately from connection, HTTP, and invalid-payload boundary failures; platform status `read_paths` notes summarize that posture for operators.
+The collector boundary now uses a bounded latency budget by default so slow live reads fail fast enough to surface explicit fallback posture instead of stalling the read-only product behind long collector waits. Timeout exhaustion (`timeout_budget_exceeded`) is classified separately from connection, HTTP, and invalid-payload boundary failures; platform status `read_paths` notes summarize that posture for operators.
+The current packaged runtime intentionally gives topology a larger budget than inventory and policy because the collector's normalized topology snapshot is slower in the present lab shape. Treat those timeout values as product-runtime tuning, not incidental scaffolding.
 The capabilities path now also persists deduplicated readiness-support snapshots in Postgres so the latest readiness anchor and timestamp can survive normal service replacement in the same workspace.
 Live collector-backed reads remain the primary source for current observed state; persistence strengthens bounded fallback behavior and sync-derived history rather than replacing those live reads.
 Serving-mode fields explain whether the current response is live-backed, persisted fallback, or effectively empty because neither live nor persisted state is available.

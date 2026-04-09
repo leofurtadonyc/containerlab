@@ -53,13 +53,16 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
             related_capabilities=[
                 "topology_observation",
                 "topology_persisted_comparison",
+                "topology_truth_merge",
+                "controller_southbound_session_truth",
             ],
             current_evidence=(
                 "Topology now exposes bounded current-versus-latest-persisted comparison "
-                "evidence and serving-mode context."
+                "evidence, backend-owned deeper topology truth, and controller southbound "
+                "session-truth context."
             ),
             blocking_gaps=[
-                "Topology remains intentionally partial and should not yet be treated as full protocol-derived truth.",
+                "Even with deeper topology truth and controller session evidence, topology remains intentionally partial and should not yet be treated as full protocol-derived truth.",
             ],
         ),
         DryRunReadinessPrerequisite(
@@ -145,7 +148,7 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
             blocked_readiness_scopes=["validation_contracts", "phase_transition"],
             related_prerequisites=["topology_comparison_evidence"],
             notes=[
-                "Bounded topology comparison support is useful, but not workflow-grade path truth.",
+                "Bounded topology comparison, deeper topology truth, and controller southbound session evidence are useful, but they do not yet provide workflow-grade adjacency or path truth.",
             ],
         ),
         DryRunReadinessBlocker(
@@ -186,11 +189,12 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
             area="model_maturity",
             status="mixed",
             summary=(
-                "Inventory is stable enough to support future planning, but topology and "
-                "policy still remain intentionally partial read-side models."
+                "Inventory is stable enough to support future planning, and topology now has "
+                "deeper merged truth plus controller southbound session-truth context, but topology "
+                "and policy still remain intentionally partial read-side models."
             ),
             strongest_gaps=[
-                "Topology still depends on bounded inferred link evidence rather than protocol-derived adjacency truth.",
+                "Topology still depends primarily on bounded inferred link evidence; deeper topology truth and controller session evidence do not yet provide protocol-derived adjacency truth across the graph.",
                 "Policy truth remains bounded to counters, static-policy detail when present, and partial comparison support rather than full per-policy operational truth.",
             ],
         ),
@@ -255,8 +259,9 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
         phase_recommendation="remain_phase_2_read_only_foundation",
         summary=(
             "The Phase 2 foundation includes durable workflow lifecycle records and a bounded "
-            "backend-owned preview/diff for one narrow static_local intent slice. Validation "
-            "outputs, execution, and phase transition remain out of scope."
+            "backend-owned preview/diff for one narrow static_local intent slice plus deeper topology "
+            "truth and controller southbound session-truth context. Validation outputs, execution, "
+            "and phase transition remain out of scope."
         ),
         readiness_scope=(
             "This readiness summary is descriptive only. It exists to show which bounded "
@@ -267,6 +272,7 @@ def _build_dry_run_readiness_summary() -> DryRunReadinessSummary:
         notes=[
             "Readiness support is not execution authority.",
             "Preview engine v1 is bounded, capability-gated, and does not perform validation verdicts or network changes.",
+            "Deeper topology truth and controller southbound session-truth improve read-side context, not workflow authority or full adjacency/path truth.",
             "Validation outputs, approvals, rollback execution, and broader dry-run families remain future work.",
             "Planning readiness does not mean phase transition readiness.",
         ],
@@ -407,7 +413,8 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
             evidence_basis="live_validated",
             vendor_posture="current_nokia_focus",
             availability_scope=(
-                "Live normalized nodes plus bounded interface-inferred links for "
+                "Live normalized nodes plus bounded interface-derived links and OpenConfig LLDP "
+                "physical adjacency evidence for "
                 "the current Nokia-first lab."
             ),
             status_detail=(
@@ -416,8 +423,8 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "path truth."
             ),
             caveats=[
-                "Link inference is still bounded to interface-name and operational-state evidence.",
-                "Controller-derived or protocol-derived topology enrichment is not the current source of truth.",
+                "When LLDP is unavailable or empty on a target, the platform preserves explicit suppressed-or-unknown physical adjacency posture rather than fabricating certainty.",
+                "Controller-derived topology and controller southbound session truth now exist as bounded backend-owned context, but the normalized topology baseline remains the primary source of truth.",
             ],
             source_of_determination="live_topology_read_path",
             workflow_readiness_status="partial_foundation",
@@ -429,6 +436,42 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
             workflow_readiness_detail=(
                 "This capability gives future planning useful live topology context, but it "
                 "still remains too inference-heavy for workflow-grade validation or any phase move."
+            ),
+            related_readiness_blockers=[
+                "topology_truth_still_bounded",
+                "validation_result_contract_missing",
+            ],
+        ),
+        CapabilityRecord(
+            vendor="nokia",
+            platform="sros",
+            version_scope="current merged gNMI plus bounded controller export view",
+            domain="topology",
+            feature="topology_truth_merge",
+            support_status="partially_supported",
+            implementation_status="partial",
+            delivery_tier="bounded_partial_read_only",
+            evidence_basis="live_validated",
+            vendor_posture="current_nokia_focus",
+            availability_scope=(
+                "Backend-owned deeper topology truth v1 that merges normalized gNMI topology "
+                "with optional bounded controller export when reachable."
+            ),
+            status_detail=(
+                "The platform now exposes a deeper topology truth slice with per-object posture, "
+                "provenance, freshness, physical adjacency confirmation, and disagreements, but it remains a bounded merged read "
+                "model rather than dataplane or TE truth."
+            ),
+            caveats=[
+                "Controller inputs remain bounded enrichment only; the backend owns the merged read model.",
+                "LLDP-backed physical confirmation and multi-source confirmation do not imply path validation or full graph completeness.",
+            ],
+            source_of_determination="topology_truth_v1_live_route",
+            workflow_readiness_status="partial_foundation",
+            workflow_readiness_scopes=["planning_depth", "validation_contracts", "phase_transition"],
+            workflow_readiness_detail=(
+                "Deeper topology truth gives future planning more source-aware topology context, "
+                "but it remains intentionally partial and does not remove validation-grade topology blockers."
             ),
             related_readiness_blockers=[
                 "topology_truth_still_bounded",
@@ -475,6 +518,159 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
                 "validation_result_contract_missing",
                 "topology_truth_still_bounded",
             ],
+        ),
+        CapabilityRecord(
+            vendor="nokia",
+            platform="sros",
+            version_scope="current normalized topology object pivots",
+            domain="topology",
+            feature="topology_related_policy_pivots",
+            support_status="supported",
+            implementation_status="partial",
+            delivery_tier="bounded_partial_read_only",
+            evidence_basis="live_validated",
+            vendor_posture="current_nokia_focus",
+            availability_scope=(
+                "Read-only related-policies and topology-impact pivots over the current normalized "
+                "topology and policy inventory slices."
+            ),
+            status_detail=(
+                "The platform can currently pivot between topology objects and related policy records "
+                "using stable bounded read-only contracts, while keeping the relationship semantics "
+                "explicitly string-aligned rather than dependency or dataplane truth."
+            ),
+            caveats=[
+                "These pivots are exact string-equality interpretation surfaces, not blast-radius, dependency, or forwarding truth.",
+                "Completeness remains bounded to the current normalized topology and policy inventory slices.",
+            ],
+            source_of_determination="topology_related_policies_live_routes",
+            workflow_readiness_status="partial_foundation",
+            workflow_readiness_scopes=["planning_depth"],
+            workflow_readiness_detail=(
+                "These pivots improve future planning navigation and interpretation, but they do not create validation-grade dependency semantics."
+            ),
+            related_readiness_blockers=["topology_truth_still_bounded"],
+        ),
+        CapabilityRecord(
+            vendor="nokia",
+            platform="sros",
+            version_scope="current topology object interpretation surfaces",
+            domain="topology",
+            feature="topology_failure_impact",
+            support_status="supported",
+            implementation_status="partial",
+            delivery_tier="bounded_partial_read_only",
+            evidence_basis="live_validated",
+            vendor_posture="current_nokia_focus",
+            availability_scope=(
+                "Read-only failure-impact v1 rollups for normalized topology nodes and links using "
+                "existing related-policy and degraded-policy evidence."
+            ),
+            status_detail=(
+                "The platform now exposes bounded per-object failure-impact interpretation, but it "
+                "remains relationship-based evidence assembly rather than failure simulation, blast "
+                "radius, or safe-change authority."
+            ),
+            caveats=[
+                "Failure-impact v1 is subset-scoped to related policy evidence for the selected object.",
+                "It does not simulate failures, dependencies, dataplane behavior, or policy binding to a specific adjacency.",
+            ],
+            source_of_determination="failure_impact_v1_live_route",
+            workflow_readiness_status="partial_foundation",
+            workflow_readiness_scopes=["planning_depth"],
+            workflow_readiness_detail=(
+                "Failure-impact v1 improves future planning interpretation for one object at a time, but it is not validation, dependency, or execution authority."
+            ),
+            related_readiness_blockers=["topology_truth_still_bounded"],
+        ),
+        CapabilityRecord(
+            vendor="nokia",
+            platform="sros",
+            version_scope="current topology-wide attention summary",
+            domain="topology",
+            feature="topology_risk_summary",
+            support_status="supported",
+            implementation_status="partial",
+            delivery_tier="bounded_partial_read_only",
+            evidence_basis="live_validated",
+            vendor_posture="current_nokia_focus",
+            availability_scope=(
+                "Read-only topology risk summary v1 ranking across the current normalized topology "
+                "object set."
+            ),
+            status_detail=(
+                "The platform can currently rank topology objects for operator attention using published "
+                "related-policy and degraded-policy inputs, without claiming SLA risk, traffic risk, or optimization authority."
+            ),
+            caveats=[
+                "Ranking is subset-scoped and evidence-derived only; it is not blast radius or service risk truth.",
+                "The ranking remains bounded by current topology and policy inventory completeness.",
+            ],
+            source_of_determination="topology_risk_summary_v1_live_route",
+            workflow_readiness_status="partial_foundation",
+            workflow_readiness_scopes=["planning_depth"],
+            workflow_readiness_detail=(
+                "This summary helps future planning prioritize bounded review targets, but it does not become validation, severity, or safe-change authority."
+            ),
+            related_readiness_blockers=["topology_truth_still_bounded"],
+        ),
+        CapabilityRecord(
+            vendor="nokia",
+            platform="sros",
+            version_scope="current topology object composed read-only workspaces",
+            domain="topology",
+            feature="topology_object_dossier",
+            support_status="supported",
+            implementation_status="partial",
+            delivery_tier="bounded_partial_read_only",
+            evidence_basis="live_validated",
+            vendor_posture="current_nokia_focus",
+            availability_scope=(
+                "Read-only topology object dossier composition over related-policy, failure-impact, and adjacent topology object evidence slices."
+            ),
+            status_detail=(
+                "The platform now exposes a topology object dossier workspace for bounded operator drill-through, while keeping the composed result explicitly read-only and non-authoritative."
+            ),
+            caveats=[
+                "The dossier is a composition surface over existing contracts, not a new topology truth domain.",
+                "It does not replace per-slice non-claims or imply write/workflow authority.",
+            ],
+            source_of_determination="topology_object_dossier_v1_live_route",
+            workflow_readiness_status="context_only",
+            workflow_readiness_scopes=[],
+            workflow_readiness_detail=(
+                "The dossier improves operator context and navigation, but it is not itself a foundational preview, validation, or lifecycle contract."
+            ),
+            related_readiness_blockers=[],
+        ),
+        CapabilityRecord(
+            vendor="nokia",
+            platform="sros",
+            version_scope="current topology object evidence chronology and comparison",
+            domain="topology",
+            feature="topology_object_evidence_history",
+            support_status="supported",
+            implementation_status="partial",
+            delivery_tier="bounded_partial_read_only",
+            evidence_basis="live_validated",
+            vendor_posture="current_nokia_focus",
+            availability_scope=(
+                "Read-only topology object evidence timeline and delta surfaces over the current and persisted normalized topology/policy evidence families."
+            ),
+            status_detail=(
+                "The platform now exposes bounded object-scoped evidence timeline and delta interpretation surfaces, while keeping them explicitly separate from drift truth, dataplane history, or workflow chronology."
+            ),
+            caveats=[
+                "These surfaces are chronology and comparison aids only, not topology drift authority or packet-path history.",
+                "Coverage remains bounded by persisted snapshot availability and the current normalized object identity rules.",
+            ],
+            source_of_determination="topology_object_evidence_timeline_delta_live_routes",
+            workflow_readiness_status="context_only",
+            workflow_readiness_scopes=[],
+            workflow_readiness_detail=(
+                "These history surfaces improve operator inspection context, but they do not create validation results, execution history, or workflow-grade audit semantics."
+            ),
+            related_readiness_blockers=[],
         ),
         CapabilityRecord(
             vendor="nokia",
@@ -721,6 +917,38 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
             related_readiness_blockers=[],
         ),
         CapabilityRecord(
+            vendor="nokia",
+            platform="sros",
+            version_scope="current bounded ODL southbound helper integration",
+            domain="platform_health",
+            feature="controller_southbound_session_truth",
+            support_status="partially_supported",
+            implementation_status="partial",
+            delivery_tier="bounded_partial_read_only",
+            evidence_basis="live_validated",
+            vendor_posture="current_nokia_focus",
+            availability_scope=(
+                "Read-only controller southbound session truth for BGP-LS, PCEP, and NETCONF lanes exposed through bounded ODL RESTCONF integration."
+            ),
+            status_detail=(
+                "The platform now exposes explicit controller southbound session truth with per-lane posture, object visibility, session posture, evidence strength, and derivation mode, while keeping controller reachability separate from southbound protocol truth."
+            ),
+            caveats=[
+                "Controller-exported lane evidence is bounded and does not imply dataplane, TE, or path-validation truth.",
+                "Native session trees can be absent or partial; fallback derivation remains explicit rather than hidden.",
+            ],
+            source_of_determination="controller_southbound_session_truth_v2_live_route",
+            workflow_readiness_status="partial_foundation",
+            workflow_readiness_scopes=["planning_depth", "validation_contracts"],
+            workflow_readiness_detail=(
+                "Controller southbound session truth improves future planning context for controller-assisted topology reasoning, but it remains too bounded for workflow-grade validation or phase transition claims."
+            ),
+            related_readiness_blockers=[
+                "topology_truth_still_bounded",
+                "validation_result_contract_missing",
+            ],
+        ),
+        CapabilityRecord(
             vendor="juniper",
             platform="junos",
             version_scope="planned next expansion",
@@ -828,7 +1056,8 @@ def build_capabilities_list_response() -> CapabilitiesListResponse:
             "Phase 2 bounded capability matrix. Support state, implementation status, "
             "delivery tier, evidence basis, vendor posture, and bounded workflow-readiness "
             "interpretation are explicit across the current Nokia-first read-only product "
-            "slice, while future Juniper expansion remains structurally visible but "
+            "slice, including deeper topology truth, controller southbound session truth, "
+            "and topology drill-through interpretation surfaces, while future Juniper expansion remains structurally visible but "
             "roadmap-only rather than implied parity."
         ),
         count=len(items),

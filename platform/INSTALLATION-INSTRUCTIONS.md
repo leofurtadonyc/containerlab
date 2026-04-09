@@ -6,7 +6,7 @@ For the bounded operator-facing deployment and troubleshooting flow after initia
 
 It is written for the current implementation reality:
 
-- `Phase 2 — read-only product foundation`
+- `Phase 5 — bounded safe action workflow (v1)` alongside `Phase 2 — read-only product foundations`
 - platform and labs are deployed separately
 - the platform is a peer project, not a child of any lab
 - the platform is rebuilt from local repository source into local container images
@@ -17,7 +17,7 @@ For future context windows and normal operator use, keep this rule explicit:
 
 - do not default to host-side `npm` for frontend validation
 - do not default to host-side `pytest` for routine platform validation
-- validate through `./scripts/build-images.sh`, `clab deploy -t topology.clab.yml -c`, `./scripts/verify-core-runtime.sh`, and `./scripts/verify-odl-auth.sh`
+- validate through `./scripts/build-images.sh`, `./scripts/prepare-odl-southbound-bridge.sh`, `clab deploy -t topology.clab.yml -c`, `./scripts/verify-core-runtime.sh`, and `./scripts/verify-odl-auth.sh`
 
 The current packaged platform treats that rebuild, redeploy, and verify flow as the primary documented validation boundary.
 
@@ -56,6 +56,7 @@ Current repo-only rebuildable state includes:
 
 - service images rebuilt from local Dockerfiles
 - startup validators and topology wiring
+- generated ODL southbound bootstrap artifacts under `platform/odl/config/generated`
 - app-api schema migration path
 - Prometheus config and rules
 - Grafana datasource and dashboard provisioning files
@@ -101,7 +102,7 @@ Treat this as the current validation boundary as well:
 
 - do not default to host-side `npm` for frontend validation
 - do not default to host-side `pytest` for routine platform validation
-- prefer the repo-owned `./scripts/build-images.sh` then `clab deploy -t topology.clab.yml -c` flow
+- prefer the repo-owned `./scripts/build-images.sh`, `./scripts/prepare-odl-southbound-bridge.sh`, then `clab deploy -t topology.clab.yml -c` flow
 - verify the resulting runtime with `./scripts/verify-core-runtime.sh` and `./scripts/verify-odl-auth.sh`
 
 Current external dependencies still required during a fresh rebuild:
@@ -119,6 +120,7 @@ On the target Linux host, verify at minimum:
 - `docker version`
 - `docker info`
 - `clab version`
+- ability to create or update Linux bridges through `sudo` when needed, because the explicit ODL southbound bridge helper uses `ip link`
 
 You should also ensure the current user can run Docker commands without `sudo`, because the platform build and deployment flow assumes direct access to the container runtime.
 
@@ -140,6 +142,18 @@ Build the current platform images from the local repository source:
 ```bash
 ./scripts/build-images.sh
 ```
+
+The current rollout also depends on repo-generated ODL southbound artifacts under `platform/odl/config/generated/`.
+For the committed current state, treat those files as part of the rebuildable repo payload.
+If you change `platform/odl/config/southbound-rollout.yaml` or the Nokia lab topology that feeds it, regenerate them before redeploy:
+
+```bash
+cd app-api
+PYTHONPATH=src python3 scripts/generate-odl-southbound-artifacts.py
+cd ..
+```
+
+Run that from any Python environment with the `app-api` dependencies installed. If needed, install them first from `platform/app-api/` with `python3 -m pip install -c requirements.lock.txt .`.
 
 This builds the current local images:
 
@@ -189,6 +203,14 @@ The production image does not include **`httpx`**, but repository **`pytest`** u
 To run a **single** test module (for example bounded contract tests only), replace the final `tests/` path with that file. This exercises the same Python dependency set as the shipped image without relying on host-side `pytest`.
 
 ## Deploy The Platform Topology
+
+Before deploying, prepare the explicit ODL southbound bridge used by the platform topology and the Nokia full lab:
+
+```bash
+./scripts/prepare-odl-southbound-bridge.sh
+```
+
+The helper is idempotent. It creates or reuses Linux bridge `br-odl-sb` and requires either root or `sudo`.
 
 From `platform/`, deploy the current topology:
 
@@ -260,15 +282,36 @@ After restart or redeploy, operators should also confirm whether the platform ca
 
 Use `./scripts/drill-same-workspace-restart.sh` from `platform/` for a **repeatable** proof that **container replacement** in the same workspace still leaves bounded persisted read-side state visible through the APIs after redeploy.
 
-**Prerequisites:** Docker, Containerlab (`clab`), prior successful `./scripts/build-images.sh` and `clab deploy` as in this guide, and the host-backed directories **`platform/postgres/data`**, **`platform/prometheus/data`**, and **`platform/grafana/data`** left intact (the script never deletes them).
+**Prerequisites:** Docker, Containerlab (`clab`), prior successful `./scripts/build-images.sh`, `./scripts/prepare-odl-southbound-bridge.sh`, and `clab deploy` as in this guide, and the host-backed directories **`platform/postgres/data`**, **`platform/prometheus/data`**, and **`platform/grafana/data`** left intact (the script never deletes them).
 
 **What it runs:** `clab destroy` (containers only) → `clab deploy` → `./scripts/verify-core-runtime.sh` → `./scripts/verify-odl-auth.sh`. Override the topology file with **`TOPOLOGY_FILE=/path/to/topology.clab.yml`** if needed.
+
+Because the explicit ODL southbound bridge is host state outside the topology, rerun `./scripts/prepare-odl-southbound-bridge.sh` before the drill if the host bridge may have been removed.
 
 **Success:** script exits `0` and both verifiers pass. **Failure:** fix the reported verifier or deploy error before treating the stack as healthy; the script uses `set -e` and does not ignore verification failures.
 
 **What it does not prove:** disaster recovery, backup/restore automation, cross-host migration, HA, or recovery after deleting the data directories above. Same-workspace only.
 
 Full operator context: `docs/deployment-runbook.md` (Same-Workspace Restart Drill).
+
+## OpenDaylight Karaf features (baked in at image build)
+
+The **`platform-odl:0.1.0`** image **does not** rely on a fragile post-boot `bin/client` `feature:install` loop (which can hit **Karaf client idle timeouts** and leave most features **Uninstalled**). Instead, **`platform/odl/scripts/append-features-boot.sh`** runs during **`docker build`** and appends every entry in **`platform/odl/karaf-features.list`** to **`/opt/opendaylight/etc/org.apache.karaf.features.cfg`** **`featuresBoot`** (after the stock OpenDaylight bootstrap feature UUID). Karaf then **installs and starts** those features on **every** controller start—**including** fresh containers on a new host.
+
+Rebuild **`./scripts/build-images.sh`** (ODL stage) and redeploy whenever you change **`karaf-features.list`**.
+
+**Product truth remains in `app-api`**; ODL stays a bounded helper. Expect a **longer first-start time** while features resolve.
+
+**Optional** runtime installer (debug / recovery only): set **`ODL_RUNTIME_KARAF_FEATURES_INSTALL=1`** on the **`odl`** node to run **`install-karaf-features.sh`** after boot (uses a **long** client idle timeout; see **`ODL_KARAF_CLIENT_IDLE_TIMEOUT_MS`**).
+
+| Variable | Effect |
+| --- | --- |
+| **`ODL_RUNTIME_KARAF_FEATURES_INSTALL=1`** | Run `feature:install` for each feature in the list after Karaf is up (not required for normal operation). |
+| **`ODL_KARAF_FEATURES_STRICT=1`** | With runtime install: fail the container if any **`feature:install`** fails. |
+| **`ODL_KARAF_WAIT_SECONDS`** | Max wait for Karaf **8101** (default **600**). |
+| **`KARAF_USER` / `KARAF_PASSWORD`** | Karaf shell credentials (default **`karaf` / `karaf`**). |
+
+If your OpenDaylight **base image** does not provide a feature name, Karaf may **fail to start** entirely—remove or rename that line in **`karaf-features.list`**, rebuild **`platform-odl`**, and redeploy.
 
 ## Access The Running Services
 
@@ -327,7 +370,7 @@ Keep the platform and the lab separate even when deploying both on the same host
 
 Recommended order:
 
-1. Build and deploy the platform from `platform/`.
+1. Build the platform and prepare the shared ODL southbound bridge from `platform/`.
 2. Verify the platform with `./scripts/verify-core-runtime.sh` and `./scripts/verify-odl-auth.sh`.
 3. Deploy the Nokia full lab from `nokia-sr-mpls/`.
 
@@ -338,6 +381,7 @@ From the repository root on the target host:
 ```bash
 cd platform
 ./scripts/build-images.sh
+./scripts/prepare-odl-southbound-bridge.sh
 clab deploy -t topology.clab.yml
 ./scripts/verify-core-runtime.sh
 ./scripts/verify-odl-auth.sh
@@ -351,6 +395,7 @@ This preserves the intended model:
 - one platform topology under `platform/`
 - one lab topology under `nokia-sr-mpls/`
 - management-plane-first integration between them
+- one shared external bridge `br-odl-sb` that carries only the explicit ODL southbound BGP-LS / PCEP segment
 
 ### What To Expect
 
@@ -359,6 +404,7 @@ After both topologies are up:
 - platform containers should appear under the `clab-platform-...` naming prefix
 - lab nodes should appear under the `clab-nokia-sr-mpls-...` naming prefix
 - the platform should reach the Nokia nodes over their management IPs such as `172.20.20.101` through `172.20.20.134`
+- ODL should also have a secondary southbound interface on bridge `br-odl-sb` for protocol traffic distinct from the admin / RESTCONF path
 
 The platform and the lab should coexist on the shared `clab` management network without being merged into one topology.
 
@@ -429,6 +475,7 @@ Check:
 - `clab version`
 - Docker daemon health
 - host ports are not already occupied
+- bridge `br-odl-sb` exists and is up; if not, rerun `./scripts/prepare-odl-southbound-bridge.sh`
 
 ### A stateful service restarts immediately
 
@@ -454,6 +501,37 @@ Re-run:
 ```
 
 after the services have had time to settle.
+
+### ODL southbound BGP-LS or PCEP stays stale after controller redeploy
+
+If `platform-odl` was rebuilt or redeployed, the controller southbound MAC on `10.90.0.10` changes with the new container interface. The PE / CSC-PE routers can retain a stale ARP entry for `10.90.0.10`, which leaves `ping 10.90.0.10` failing and keeps BGP-LS down even though ODL is correctly listening on TCP `179`. The same stale southbound ARP can also leave PCEP at controller scope-only posture, where ODL exposes `pcep-topology` but no live PCC nodes have reattached yet.
+
+On each BGP-LS source (`PE1`-`PE4`, `CSC1-PE1`, `CSC1-PE2`, `CSC2-PE1`, `CSC2-PE2`), clear the stale ARP entry and then force a fresh BGP retry:
+
+```text
+clear router arp 10.90.0.10
+clear router bgp neighbor 10.90.0.10
+```
+
+The repo now provides an explicit helper for that recovery step instead of baking router mutation into every deploy:
+
+```bash
+cd app-api
+python3 -m pip install -c requirements.lock.txt .
+
+cd ..
+python3 scripts/refresh-odl-southbound-peers.py
+```
+
+This helper reads `platform/odl/config/generated/southbound-inventory.json`, targets only the eight PE / CSC-PE southbound sources, clears the stale ARP entry for `10.90.0.10`, clears the BGP neighbor, and prints the refreshed ARP MAC plus current BGP state for each node. In the current Nokia-first rollout that same recovery step is also enough to let the routers relearn the new controller MAC for PCEP and repopulate ODL `pcep-topology` again.
+
+Expected post-fix behavior:
+
+- `show router arp 10.90.0.10` learns the current ODL MAC again
+- `ping 10.90.0.10` succeeds on `to-ODL-SB`
+- `show router bgp neighbor 10.90.0.10` moves to `Established`
+- `GET /api/v1/controller/evidence/bgpls` returns `session_posture=established`
+- `GET /api/v1/controller/evidence/pcep` returns live PCC rows again instead of only `scope_only` / `partial` topology posture
 
 ## Current Portability Statement
 

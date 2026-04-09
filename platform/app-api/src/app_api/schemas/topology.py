@@ -25,6 +25,22 @@ from app_api.schemas.common import (
 
 CurrentRowPosture = Literal["current", "stale"]
 TopologyState = Literal["up", "down", "degraded", "unknown"]
+TopologyPhysicalAdjacencyPosture = Literal[
+    "not_observed",
+    "single_sided_lldp",
+    "bidirectional_lldp",
+    "lldp_mismatch",
+    "suppressed_or_unknown",
+]
+TopologyControlPlaneAdjacencyPosture = Literal[
+    "not_observed",
+    "ospf_observed",
+    "isis_observed",
+    "igp_confirmed",
+    "protocol_mismatch",
+    "suppressed_or_unknown",
+    "unknown",
+]
 
 
 class TopologyNodeRecord(BaseModel):
@@ -44,6 +60,25 @@ class TopologyNodeRecord(BaseModel):
 class TopologyLinkRecord(BaseModel):
     """Normalized topology link record."""
 
+    class PhysicalAdjacencyRecord(BaseModel):
+        posture: TopologyPhysicalAdjacencyPosture
+        lldp_observation_count: int = 0
+        lldp_bidirectional: bool = False
+        local_interfaces: list[str] = Field(default_factory=list)
+        remote_systems: list[str] = Field(default_factory=list)
+        remote_ports: list[str] = Field(default_factory=list)
+        correlation_notes: list[str] = Field(default_factory=list)
+
+    class ControlPlaneAdjacencyRecord(BaseModel):
+        posture: TopologyControlPlaneAdjacencyPosture
+        observation_count: int = 0
+        protocols_observed: list[Literal["ospf", "isis"]] = Field(default_factory=list)
+        ospf_adjacency_state: str | None = None
+        isis_adjacency_state: str | None = None
+        local_interfaces: list[str] = Field(default_factory=list)
+        remote_identities: list[str] = Field(default_factory=list)
+        correlation_notes: list[str] = Field(default_factory=list)
+
     link_id: str
     source_node_id: str
     target_node_id: str
@@ -53,6 +88,12 @@ class TopologyLinkRecord(BaseModel):
     source: str
     endpoint_pairing_state: Literal["paired", "single_sided", "unknown"]
     endpoint_evidence_count: int | None = None
+    physical_adjacency_posture: TopologyPhysicalAdjacencyPosture = "suppressed_or_unknown"
+    physical_adjacency: PhysicalAdjacencyRecord
+    control_plane_adjacency_posture: TopologyControlPlaneAdjacencyPosture = (
+        "suppressed_or_unknown"
+    )
+    control_plane_adjacency: ControlPlaneAdjacencyRecord
     attributes: dict[str, str]
 
 

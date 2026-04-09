@@ -52,7 +52,7 @@ from app_api.services.safe_actions import (
 )
 
 V1_ROLLBACK_TYPE = "policy_operator_intent_rollback_v1"
-_metadata_phase = "phase_5_bounded_rollback_v1"
+_metadata_phase = "phase_2_read_only_foundation"
 
 ACTIVE_ROLLBACK_STATUSES = frozenset(
     {"awaiting_approval", "ready_to_execute", "executing", "succeeded"}

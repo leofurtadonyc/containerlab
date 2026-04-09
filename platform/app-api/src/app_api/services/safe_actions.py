@@ -53,7 +53,7 @@ V1_VALIDATION_TYPE = "policy_read_model_observability_v1"
 STATIC_POLICY_DETAIL_FEATURE = "static_policy_detail"
 TERMINAL_WORKFLOW: frozenset[str] = frozenset({"succeeded", "failed", "cancelled", "rejected"})
 
-_metadata_phase = "phase_5_bounded_safe_action_v1"
+_metadata_phase = "phase_2_read_only_foundation"
 
 
 def _utcnow() -> datetime:

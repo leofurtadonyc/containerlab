@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import logging
 from datetime import UTC, datetime
 
@@ -74,13 +75,27 @@ def build_cross_domain_delta_digest_response(
     bounded = max(1, min(int(sync_runs_limit), RECENT_CHANGE_SYNC_RUNS_MAX))
     generated_at = datetime.now(UTC)
 
-    platform = build_platform_status_response()
-    recent_change = build_recent_change_summary_response(sync_runs_limit=bounded)
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        platform_future = executor.submit(build_platform_status_response)
+        recent_change_future = executor.submit(
+            build_recent_change_summary_response,
+            sync_runs_limit=bounded,
+        )
+        devices_future = executor.submit(_safe_call, "devices", build_devices_list_response)
+        topology_future = executor.submit(_safe_call, "topology", build_topology_response)
+        policies_future = executor.submit(_safe_call, "policies", build_policies_list_response)
+        capabilities_future = executor.submit(
+            _safe_call,
+            "capabilities",
+            build_capabilities_list_response,
+        )
 
-    devices, devices_err = _safe_call("devices", build_devices_list_response)
-    topology, topology_err = _safe_call("topology", build_topology_response)
-    policies, policies_err = _safe_call("policies", build_policies_list_response)
-    capabilities, capabilities_err = _safe_call("capabilities", build_capabilities_list_response)
+        platform = platform_future.result()
+        recent_change = recent_change_future.result()
+        devices, devices_err = devices_future.result()
+        topology, topology_err = topology_future.result()
+        policies, policies_err = policies_future.result()
+        capabilities, capabilities_err = capabilities_future.result()
 
     provenance: list[DeltaDigestSourceProvenance] = [
         DeltaDigestSourceProvenance(

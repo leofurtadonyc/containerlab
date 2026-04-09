@@ -22,7 +22,7 @@ This file remains the **authoritative** vocabulary for workspace intent, **evide
 
 **Related (structured explanation + next-best pivot):** [`evidence-weakness-explanation-contract.md`](./evidence-weakness-explanation-contract.md) — **`evidence_weakness_explanation_v1`**; operator explanation categories and read-only **next-best pivot** semantics (not investigation next-inspection). **Backend:** **`GET /api/v1/evidence-weakness-explanation`** maps each workspace row to explanation categories and bounded pivots (same **`sync_runs_limit`** as this **`GET`**).
 
-**Phase:** [`Phase 2 — read-only product foundation`](../../agent/sdn/01-CURRENT-PHASE.md).
+**Surface role:** `Phase 2` read-only product surface within the current repo state. This contract does not expand the bounded `Phase 5` workflow slices.
 
 ---
 

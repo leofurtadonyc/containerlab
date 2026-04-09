@@ -159,9 +159,9 @@ The platform must therefore keep:
 
 ## Current Status
 
-The project is currently in `Phase 2 — read-only product foundation`.
+The project is currently in `Phase 5 — bounded safe action workflow (v1)` alongside completed `Phase 2 — read-only product foundations`.
 
-Right now, the emphasis is on:
+Right now, most operator-facing value still comes from the read-only foundation:
 
 - repository structure
 - service boundaries
@@ -177,8 +177,9 @@ At this stage, contributors should assume:
 - the platform structure is established enough to support a read-only product foundation
 - several services still expose bounded live slices and partial persistence rather than mature end-state behavior
 - the runtime posture is no longer bootstrap-only: all initial services now run from repo-built local images, while the current hardening slice adds bounded startup validation and post-deploy verification only for the most important stateful and controller-adjacent runtime contracts
-- read-only visibility comes before advanced workflows
-- broad action automation is intentionally deferred
+- read-only visibility remains the dominant product surface
+- bounded workflow lifecycle, preview, validation, safe action, and rollback slices are real but intentionally narrow
+- broad action automation remains deferred outside the documented bounded v1 contracts
 
 ## Current Vs Planned
 
@@ -193,13 +194,14 @@ At this stage, contributors should assume:
 - read-only inventory, topology, policy, capability, and platform status APIs (including week **27** bounded endpoints for **path-analysis**, **topology↔policy** naming pivots, and **degraded-policy v1** on policy records—**not** workflow or validation engines; week **28** **`failure-impact`**, **`topology/risk-summary`**, **`policy` evidence timeline/delta**—**not** blast-radius, SLA/traffic risk, or drift authority)
 - read-only WebUI pages backed by stable backend contracts
 - bounded Postgres-backed persistence for inventory, topology, and policy snapshots plus sync-run history
+- durable workflow lifecycle records plus bounded preview, validation, safe-action, and rollback APIs for the documented v1 workflow slice
 
 ### Planned Later
 
 - broader durable read-side persistence beyond the current inventory/topology/policy snapshot slice
 - deeper bounded ODL-backed enrichment beyond the current platform-health RESTCONF probe (where justified)
-- dry-run workflow support
-- one narrowly scoped safe action workflow only after the read/validate foundation is solid
+- broader workflow families beyond the current lifecycle, preview, validation, safe-action, and rollback v1 slice
+- deeper post-change validation and broader execution authority only if evidence and phase discipline justify it
 
 ## Why This README Exists
 
@@ -216,7 +218,7 @@ Future contributors should be able to tell immediately that:
 - gNMI-first observed-state collection is a core principle
 - the design is Nokia-first but prepared for later vendor expansion
 
-For host recreation and deployment steps, see `INSTALLATION-INSTRUCTIONS.md`. For the bounded operator-facing build, deploy, verify, healthy-state, and first-response troubleshooting flow, see `docs/deployment-runbook.md`. For the **Phase 2** safe-use verdict, verification semantics, and drill limits, see `docs/production-readiness-assessment.md` and keep it aligned with the runbook and the repo’s current-status narrative (`../agent/sdn/03-CURRENT-STATUS.md`).
+For host recreation and deployment steps, see `INSTALLATION-INSTRUCTIONS.md`. For the bounded operator-facing build, deploy, verify, healthy-state, and first-response troubleshooting flow, see `docs/deployment-runbook.md`. For the read-only safe-use verdict, verification semantics, and drill limits within the broader current repo state, see `docs/production-readiness-assessment.md` and keep it aligned with the runbook and the repo’s current-status narrative (`../agent/sdn/03-CURRENT-STATUS.md`).
 
 ## Additional Docs
 

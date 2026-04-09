@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime
 from threading import Lock
 from time import sleep
@@ -24,7 +25,7 @@ from app_api.integrations.collector.topology import (
 )
 from app_api.main import app
 from app_api.models.inventory import InventoryDevice, InventoryHistoryChangePreview
-from app_api.metrics.state import reset_metrics_registry
+from app_api.metrics.state import render_prometheus_metrics, reset_metrics_registry
 from app_api.models.policy import PolicyDetailSourceReadiness, PolicyInventorySnapshot
 from app_api.models.topology import TopologyLink, TopologyNode, TopologySnapshot
 from app_api.persistence.history import (
@@ -241,17 +242,23 @@ def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
         node_participation_posture="fully_linked",
         paired_link_count=1,
         single_sided_link_count=0,
+        lldp_observation_count=2,
+        lldp_correlated_link_count=1,
+        lldp_single_sided_link_count=0,
+        lldp_bidirectional_link_count=1,
+        lldp_mismatch_link_count=0,
         linked_node_count=2,
         isolated_node_count=0,
         topology_id="platform-observed-topology",
         topology_name="Platform Observed Topology",
-        sync_source="gnmi_collector_topology_interface_inference",
+        sync_source="gnmi_collector_topology_interface_and_lldp",
         sync_status="ok",
         completeness="partial",
         observed_at="2026-03-09T19:25:08.500000+00:00",
         notes=[
             "Topology links are inferred from live router interface names and current interface operational state.",
-            "The topology slice remains intentionally partial until LLDP, IGP, or bounded controller enrichment is added.",
+            "OpenConfig LLDP collection currently contributes 2 neighbor observations across 1 correlated links, including 1 bidirectional adjacencies and 0 mismatches.",
+            "The topology slice remains intentionally partial; bounded controller enrichment now exists as optional backend-owned context, but the normalized gNMI slice remains the primary topology baseline until deeper evidence is added.",
         ],
         nodes=[
             CollectorTopologyNodeRecord(
@@ -294,6 +301,13 @@ def _build_live_topology_snapshot() -> CollectorTopologySnapshot:
                 source="gnmi",
                 endpoint_pairing_state="paired",
                 endpoint_evidence_count=2,
+                physical_adjacency_posture="bidirectional_lldp",
+                lldp_observation_count=2,
+                lldp_bidirectional=True,
+                lldp_local_interfaces=["to-P1"],
+                lldp_remote_systems=["P1"],
+                lldp_remote_ports=["to-PE1"],
+                lldp_correlation_notes=["Bidirectional LLDP observations confirm PE1 <-> P1 physical adjacency."],
                 attributes={
                     "knowledge_state": "partial",
                     "inference_method": "interface_name_and_oper_state",
@@ -326,16 +340,22 @@ def _build_live_mixed_topology_snapshot() -> CollectorTopologySnapshot:
         node_participation_posture="fully_linked",
         paired_link_count=1,
         single_sided_link_count=1,
+        lldp_observation_count=1,
+        lldp_correlated_link_count=1,
+        lldp_single_sided_link_count=1,
+        lldp_bidirectional_link_count=0,
+        lldp_mismatch_link_count=0,
         linked_node_count=3,
         isolated_node_count=0,
         topology_id="platform-observed-topology",
         topology_name="Platform Observed Topology",
-        sync_source="gnmi_collector_topology_interface_inference",
+        sync_source="gnmi_collector_topology_interface_and_lldp",
         sync_status="degraded",
         completeness="partial",
         observed_at="2026-03-09T19:25:11.500000+00:00",
         notes=[
             "Topology links are inferred from live router interface names and current interface operational state.",
+            "OpenConfig LLDP collection currently contributes 1 neighbor observations across 1 correlated links, including 0 bidirectional adjacencies and 0 mismatches.",
             "Collector endpoint-pairing posture is partially_paired, with 1 paired inferred links and 1 single-sided inferred links.",
         ],
         nodes=[
@@ -425,7 +445,7 @@ def _build_live_isolated_topology_snapshot() -> CollectorTopologySnapshot:
         isolated_node_count=1,
         topology_id="platform-observed-topology",
         topology_name="Platform Observed Topology",
-        sync_source="gnmi_collector_topology_interface_inference",
+        sync_source="gnmi_collector_topology_interface_and_lldp",
         sync_status="ok",
         completeness="partial",
         observed_at="2026-03-09T19:25:09.500000+00:00",
@@ -506,7 +526,7 @@ def _build_live_fully_isolated_topology_snapshot() -> CollectorTopologySnapshot:
         isolated_node_count=3,
         topology_id="platform-observed-topology",
         topology_name="Platform Observed Topology",
-        sync_source="gnmi_collector_topology_interface_inference",
+        sync_source="gnmi_collector_topology_interface_and_lldp",
         sync_status="ok",
         completeness="partial",
         observed_at="2026-03-09T19:25:09.500000+00:00",
@@ -1579,7 +1599,7 @@ def _build_persisted_sync_runs(*, limit: int = 50, **kwargs: object) -> list[Per
                 persisted_at=datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
                 observed_at=datetime.fromisoformat("2026-03-10T01:00:00+00:00"),
                 topology_name="Platform Observed Topology",
-                sync_source="gnmi_collector_topology_interface_inference",
+                sync_source="gnmi_collector_topology_interface_and_lldp",
                 sync_status="degraded",
                 completeness="partial",
                 node_count=2,
@@ -1713,7 +1733,7 @@ def _build_topology_sync_run_without_previous_comparison(
                 persisted_at=datetime.fromisoformat("2026-03-10T02:00:02+00:00"),
                 observed_at=datetime.fromisoformat("2026-03-10T02:00:00+00:00"),
                 topology_name="Platform Observed Topology",
-                sync_source="gnmi_collector_topology_interface_inference",
+                sync_source="gnmi_collector_topology_interface_and_lldp",
                 sync_status="degraded",
                 completeness="partial",
                 node_count=1,
@@ -1785,9 +1805,18 @@ def _build_persisted_readiness_snapshot_history(
 
 
 def _build_sync_run_history_summary() -> SyncRunHistorySummary:
+    inv = datetime.fromisoformat("2026-03-10T00:30:02+00:00")
+    topo = datetime.fromisoformat("2026-03-10T01:00:03+00:00")
+    pol = datetime.fromisoformat("2026-03-10T01:30:04+00:00")
     return SyncRunHistorySummary(
         total_count=3,
+        total_persisted_count=3,
         counts_by_model_family={"inventory": 1, "topology": 1, "policy": 1},
+        persisted_counts_by_model_family={
+            "inventory": 1,
+            "topology": 1,
+            "policy": 1,
+        },
         counts_by_result={"completed": 2, "partial": 1},
         counts_by_model_family_and_result={
             "inventory": {"completed": 1},
@@ -1795,9 +1824,14 @@ def _build_sync_run_history_summary() -> SyncRunHistorySummary:
             "topology": {"partial": 1},
         },
         latest_finished_at_by_model_family={
-            "inventory": datetime.fromisoformat("2026-03-10T00:30:02+00:00"),
-            "policy": datetime.fromisoformat("2026-03-10T01:30:04+00:00"),
-            "topology": datetime.fromisoformat("2026-03-10T01:00:03+00:00"),
+            "inventory": inv,
+            "policy": pol,
+            "topology": topo,
+        },
+        latest_observed_at_by_model_family={
+            "inventory": inv,
+            "policy": pol,
+            "topology": topo,
         },
     )
 
@@ -2371,7 +2405,7 @@ def test_platform_status_endpoint_classifies_collector_boundary_failures(monkeyp
     assert any("reported collector_connection_error" in note for note in payload["read_paths"][2]["notes"])
 
 
-def test_platform_status_endpoint_reads_collector_paths_sequentially(monkeypatch) -> None:
+def test_platform_status_endpoint_reads_collector_paths_in_parallel(monkeypatch) -> None:
     class StubOdlClient:
         def read_controller_observation(self) -> OdlControllerObservation:
             return OdlControllerObservation(
@@ -2430,7 +2464,7 @@ def test_platform_status_endpoint_reads_collector_paths_sequentially(monkeypatch
     response = client.get("/api/v1/platform/status")
 
     assert response.status_code == 200
-    assert active_reads["max"] == 1
+    assert active_reads["max"] >= 2
 
 
 def test_inventory_collector_client_reuses_recent_snapshot(monkeypatch) -> None:
@@ -2604,6 +2638,65 @@ def test_topology_collector_client_uses_short_unavailable_cache_ttl(monkeypatch)
     assert call_count["value"] == 2
 
 
+def test_topology_collector_client_maps_lldp_aggregate_fields(monkeypatch) -> None:
+    class StubResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return json.dumps(
+                {
+                    "delivery_status": "live_ready",
+                    "configured_target_count": 2,
+                    "observed_target_count": 2,
+                    "collection_success_count": 2,
+                    "collection_partial_count": 0,
+                    "collection_failure_count": 0,
+                    "degraded_scope_summary": "ok",
+                    "paired_link_count": 1,
+                    "single_sided_link_count": 0,
+                    "lldp_observation_count": 4,
+                    "lldp_correlated_link_count": 2,
+                    "lldp_single_sided_link_count": 0,
+                    "lldp_bidirectional_link_count": 2,
+                    "lldp_mismatch_link_count": 0,
+                    "linked_node_count": 2,
+                    "isolated_node_count": 0,
+                    "topology_id": "t",
+                    "topology_name": "t",
+                    "sync_source": "gnmi_collector_topology_interface_and_lldp",
+                    "sync_status": "ok",
+                    "completeness": "partial",
+                    "nodes": [],
+                    "links": [],
+                }
+            ).encode("utf-8")
+
+    monkeypatch.setattr(
+        "app_api.integrations.collector.topology.urlopen",
+        lambda url, timeout: StubResponse(),
+    )
+
+    from app_api.integrations.collector.topology import CollectorTopologyClient
+
+    snapshot = CollectorTopologyClient(
+        source_endpoint="http://gnmi-collector:9804",
+        timeout_seconds=3,
+        cache_ttl_seconds=0,
+        unavailable_cache_ttl_seconds=0,
+    ).read_topology_snapshot()
+
+    assert snapshot.status == "live_normalized_feed"
+    assert snapshot.lldp_observation_count == 4
+    assert snapshot.lldp_correlated_link_count == 2
+    assert snapshot.lldp_single_sided_link_count == 0
+    assert snapshot.lldp_bidirectional_link_count == 2
+    assert snapshot.lldp_mismatch_link_count == 0
+
+
 def test_policy_collector_client_classifies_connection_failure(monkeypatch) -> None:
     def fake_urlopen(url: str, timeout: int):
         raise URLError("Connection refused")
@@ -2738,7 +2831,7 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert "All observed normalized nodes are currently represented" in payload["coverage_summary"]["summary"]
     assert payload["topology"]["topology_id"] == "platform-observed-topology"
     assert payload["topology"]["topology_name"] == "Platform Observed Topology"
-    assert payload["topology"]["sync_source"] == "gnmi_collector_topology_interface_inference"
+    assert payload["topology"]["sync_source"] == "gnmi_collector_topology_interface_and_lldp"
     assert payload["topology"]["sync_status"] == "ok"
     assert payload["topology"]["completeness"] == "partial"
     assert len(payload["topology"]["nodes"]) == 2
@@ -2756,10 +2849,10 @@ def test_topology_endpoint_returns_live_normalized_topology(monkeypatch) -> None
     assert payload["topology"]["links"][0]["endpoint_pairing_state"] == "paired"
     assert payload["topology"]["links"][0]["endpoint_evidence_count"] == 2
     assert payload["topology"]["links"][0]["attributes"]["knowledge_state"] == "partial"
-    assert "bounded interface-based link inference" in payload["summary"]
+    assert "device-native interface and LLDP evidence" in payload["summary"]
     assert "paired endpoint evidence" in payload["summary"]
     assert payload["comparison_to_latest_persisted"]["status"] == "unavailable"
-    assert "Topology links are inferred from live router interface names" in payload["topology"]["notes"][0]
+    assert any("OpenConfig LLDP" in note for note in payload["topology"]["notes"])
     assert datetime.fromisoformat(payload["generated_at"]) is not None
 
 
@@ -4377,7 +4470,7 @@ def test_investigation_workspace_context_assembly_returns_nested_contracts(monke
     cap = payload["capabilities"]
     assert cap["data_status"] == "bounded_matrix"
     assert cap["readiness_snapshot_id"] == "readiness-snapshot-current"
-    assert cap["count"] == 13
+    assert cap["count"] == 20
 
     assert payload["next_inspection_framing"]
     assert isinstance(payload["next_inspection_suggestions"], list)
@@ -5117,45 +5210,83 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
 
         assert response.headers["X-Request-ID"] == "capabilities-test"
         assert payload["data_status"] == "bounded_matrix"
-        assert payload["count"] == 13
+        assert payload["count"] == 20
         assert payload["readiness_snapshot_id"] == "readiness-snapshot-current"
         assert payload["readiness_persisted_at"] == "2026-03-16T00:00:00Z"
-        assert "workflow-readiness interpretation are explicit" in payload["summary"]
-        assert payload["items"][0]["feature"] == "device_inventory"
-        assert payload["items"][0]["domain"] == "inventory"
-        assert payload["items"][0]["support_status"] == "supported"
-        assert payload["items"][0]["implementation_status"] == "implemented"
-        assert payload["items"][0]["delivery_tier"] == "delivered_read_only"
-        assert payload["items"][0]["evidence_basis"] == "live_validated"
-        assert payload["items"][0]["version_scope"] == "current onboarded Nokia SR OS lab targets"
-        assert payload["items"][0]["vendor_posture"] == "current_nokia_focus"
-        assert payload["items"][0]["workflow_readiness_status"] == "supports_planning"
-        assert payload["items"][0]["workflow_readiness_scopes"] == ["planning_depth"]
-        assert "stable backend-owned contract" in payload["items"][0]["status_detail"]
+        assert "controller southbound session truth" in payload["summary"]
+        items = payload["items"]
+
+        def find_item(vendor: str, domain: str, feature: str) -> dict[str, object]:
+            return next(
+                item
+                for item in items
+                if item["vendor"] == vendor
+                and item["domain"] == domain
+                and item["feature"] == feature
+            )
+
+        device_inventory = find_item("nokia", "inventory", "device_inventory")
+        topology_observation = find_item("nokia", "topology", "topology_observation")
+        topology_truth = find_item("nokia", "topology", "topology_truth_merge")
+        topology_pivots = find_item("nokia", "topology", "topology_related_policy_pivots")
+        controller_truth = find_item(
+            "nokia", "platform_health", "controller_southbound_session_truth"
+        )
+        juniper_inventory = find_item("juniper", "inventory", "device_inventory")
+
+        assert device_inventory["support_status"] == "supported"
+        assert device_inventory["implementation_status"] == "implemented"
+        assert device_inventory["delivery_tier"] == "delivered_read_only"
+        assert device_inventory["evidence_basis"] == "live_validated"
+        assert (
+            device_inventory["version_scope"]
+            == "current onboarded Nokia SR OS lab targets"
+        )
+        assert device_inventory["vendor_posture"] == "current_nokia_focus"
+        assert device_inventory["workflow_readiness_status"] == "supports_planning"
+        assert device_inventory["workflow_readiness_scopes"] == ["planning_depth"]
+        assert "stable backend-owned contract" in device_inventory["status_detail"]
+
+        assert topology_observation["support_status"] == "partially_supported"
+        assert topology_observation["workflow_readiness_status"] == "partial_foundation"
+        assert "validation_contracts" in topology_observation["workflow_readiness_scopes"]
+        assert topology_truth["support_status"] == "partially_supported"
+        assert topology_truth["delivery_tier"] == "bounded_partial_read_only"
+        assert topology_truth["workflow_readiness_status"] == "partial_foundation"
+        assert topology_pivots["support_status"] == "supported"
+        assert topology_pivots["workflow_readiness_status"] == "partial_foundation"
+        assert controller_truth["support_status"] == "partially_supported"
+        assert controller_truth["domain"] == "platform_health"
+        assert controller_truth["evidence_basis"] == "live_validated"
+        assert "controller southbound session truth" in controller_truth["status_detail"]
+
         assert payload["domain_counts"]["policy"] == 5
-        assert payload["domain_counts"]["topology"] == 3
-        assert payload["support_counts"]["partially_supported"] == 8
+        assert payload["domain_counts"]["topology"] == 9
+        assert payload["domain_counts"]["platform_health"] == 2
+        assert payload["support_counts"]["supported"] == 6
+        assert payload["support_counts"]["partially_supported"] == 10
         assert payload["support_counts"]["unknown"] == 1
         assert payload["support_counts"]["not_implemented_in_platform"] == 3
-        assert payload["implementation_counts"]["partial"] == 8
+        assert payload["implementation_counts"]["partial"] == 15
         assert payload["implementation_counts"]["planned"] == 4
-        assert payload["delivery_tier_counts"]["bounded_partial_read_only"] == 8
+        assert payload["delivery_tier_counts"]["bounded_partial_read_only"] == 15
         assert payload["delivery_tier_counts"]["future_roadmap"] == 4
+        assert payload["evidence_basis_counts"]["live_validated"] == 11
         assert payload["evidence_basis_counts"]["persisted_validated"] == 4
-        assert payload["vendor_counts"]["nokia"] == 10
+        assert payload["vendor_counts"]["nokia"] == 17
         assert payload["vendor_counts"]["juniper"] == 3
-        assert payload["vendor_posture_counts"]["current_nokia_focus"] == 10
+        assert payload["vendor_posture_counts"]["current_nokia_focus"] == 17
         assert payload["vendor_posture_counts"]["future_juniper_target"] == 3
         assert payload["workflow_readiness_counts"]["supports_planning"] == 1
-        assert payload["workflow_readiness_counts"]["partial_foundation"] == 7
+        assert payload["workflow_readiness_counts"]["partial_foundation"] == 12
         assert payload["workflow_readiness_counts"]["blocked"] == 1
-        assert payload["workflow_readiness_counts"]["context_only"] == 1
+        assert payload["workflow_readiness_counts"]["context_only"] == 3
         assert payload["workflow_readiness_counts"]["roadmap_only"] == 3
-        assert payload["workflow_readiness_scope_counts"]["planning_depth"] == 7
+        assert payload["workflow_readiness_scope_counts"]["planning_depth"] == 12
         assert payload["workflow_readiness_scope_counts"]["preview_contracts"] == 2
-        assert payload["workflow_readiness_scope_counts"]["validation_contracts"] == 6
+        assert payload["workflow_readiness_scope_counts"]["validation_contracts"] == 8
         assert payload["workflow_readiness_scope_counts"]["workflow_audit_relationships"] == 2
-        assert payload["workflow_readiness_scope_counts"]["phase_transition"] == 4
+        assert payload["workflow_readiness_scope_counts"]["phase_transition"] == 5
         assert payload["dry_run_readiness"]["status"] == "bounded_readiness_support"
         assert payload["dry_run_readiness"]["planning_readiness"] == "readiness_planning_supported"
         assert payload["dry_run_readiness"]["phase_recommendation"] == "remain_phase_2_read_only_foundation"
@@ -5177,6 +5308,12 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
         ]
         assert payload["dry_run_readiness"]["prerequisites"][1]["status"] == "partial"
         assert payload["dry_run_readiness"]["prerequisites"][1]["evidence_coverage"] == "bounded"
+        assert payload["dry_run_readiness"]["prerequisites"][1]["related_capabilities"] == [
+            "topology_observation",
+            "topology_persisted_comparison",
+            "topology_truth_merge",
+            "controller_southbound_session_truth",
+        ]
         assert payload["dry_run_readiness"]["evidence_coverage_counts"]["strong"] == 2
         assert payload["dry_run_readiness"]["evidence_coverage_counts"]["bounded"] == 2
         assert payload["dry_run_readiness"]["support_posture_counts"]["supported"] == 2
@@ -5208,25 +5345,23 @@ def test_capabilities_endpoint_returns_bounded_capability_matrix() -> None:
         assert payload["dry_run_readiness"]["blockers"][1]["related_prerequisites"] == [
             "topology_comparison_evidence",
         ]
-        assert payload["items"][0]["related_readiness_blockers"] == []
-        assert payload["items"][1]["related_readiness_blockers"] == [
+        assert device_inventory["related_readiness_blockers"] == []
+        assert topology_observation["related_readiness_blockers"] == [
             "topology_truth_still_bounded",
             "validation_result_contract_missing",
         ]
-        assert payload["items"][1]["feature"] == "topology_observation"
-        assert payload["items"][1]["workflow_readiness_status"] == "partial_foundation"
-        assert "validation_contracts" in payload["items"][1]["workflow_readiness_scopes"]
-        assert payload["items"][2]["feature"] == "topology_persisted_comparison"
-        assert "preview_contracts" in payload["items"][2]["workflow_readiness_scopes"]
-        assert payload["items"][6]["feature"] == "bgp_signaled_policy_detail"
-        assert payload["items"][6]["workflow_readiness_status"] == "blocked"
-        assert payload["items"][10]["vendor"] == "juniper"
-        assert payload["items"][10]["vendor_posture"] == "future_juniper_target"
-        assert payload["items"][10]["delivery_tier"] == "future_roadmap"
-        assert payload["items"][10]["version_scope"] == "planned next expansion"
-        assert payload["items"][10]["workflow_readiness_status"] == "roadmap_only"
-        assert payload["items"][11]["domain"] == "topology"
-        assert payload["items"][12]["domain"] == "policy"
+        assert "preview_contracts" in find_item(
+            "nokia", "topology", "topology_persisted_comparison"
+        )["workflow_readiness_scopes"]
+        assert find_item("nokia", "policy", "bgp_signaled_policy_detail")[
+            "workflow_readiness_status"
+        ] == "blocked"
+        assert juniper_inventory["vendor_posture"] == "future_juniper_target"
+        assert juniper_inventory["delivery_tier"] == "future_roadmap"
+        assert juniper_inventory["version_scope"] == "planned next expansion"
+        assert juniper_inventory["workflow_readiness_status"] == "roadmap_only"
+        assert find_item("juniper", "topology", "topology_observation")["domain"] == "topology"
+        assert find_item("juniper", "policy", "policy_counter_visibility")["domain"] == "policy"
         assert datetime.fromisoformat(payload["generated_at"]) is not None
     finally:
         capabilities_service.persist_readiness_snapshot = original_persist
@@ -5366,6 +5501,7 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert "platform_app_api_collector_boundary_latest_fetch_duration_seconds" in response.text
     assert "platform_app_api_collector_boundary_timeout_budget_seconds" in response.text
     assert "platform_app_api_collector_boundary_latest_fetch_posture" in response.text
+    assert "platform_app_api_collector_boundary_newest_observed_at_seconds" in response.text
     assert (
         'platform_app_api_collector_boundary_latest_fetch_duration_seconds{model_family="inventory",outcome="live_normalized_feed"} 0.184000000'
         in response.text
@@ -5465,6 +5601,11 @@ def test_metrics_endpoint_returns_bounded_backend_metrics(monkeypatch) -> None:
     assert "platform_app_api_inventory_snapshots_persisted_total 2" in response.text
     assert (
         "platform_app_api_inventory_snapshot_latest_persisted_at_seconds 1773144000.000"
+        in response.text
+    )
+    assert "platform_app_api_sync_runs_persisted_total 3" in response.text
+    assert (
+        'platform_app_api_sync_runs_persisted_by_family{model_family="topology"} 1'
         in response.text
     )
     assert "platform_app_api_policy_snapshots_persisted_total 2" in response.text
@@ -6086,3 +6227,75 @@ def test_policy_path_analysis_persisted_fallback_stale_row(monkeypatch) -> None:
     assert payload["freshness"]["serving_mode_echo"] == "persisted_fallback"
     assert payload["candidate_path_summaries"][0]["current_posture"] == "stale"
     assert any(c["code"] == "persisted_fallback_stale_row" for c in payload["caveats"])
+
+
+def test_render_prometheus_metrics_sync_latest_finished_emits_all_model_families() -> None:
+    """Latest-finished gauges must always expose inventory/topology/policy (0 = never)."""
+    payload = render_prometheus_metrics(
+        "test",
+        history_metrics={
+            "total_count": 0,
+            "counts_by_model_family": {},
+            "counts_by_result": {},
+            "counts_by_model_family_and_result": {},
+            "latest_finished_at_by_model_family": {},
+            "latest_observed_at_by_model_family": {},
+        },
+    )
+    assert (
+        'platform_app_api_sync_run_latest_finished_at_seconds{model_family="inventory"} 0.000'
+        in payload
+    )
+    assert (
+        'platform_app_api_sync_run_latest_finished_at_seconds{model_family="topology"} 0.000'
+        in payload
+    )
+    assert (
+        'platform_app_api_sync_run_latest_finished_at_seconds{model_family="policy"} 0.000'
+        in payload
+    )
+    assert (
+        'platform_app_api_collector_boundary_newest_observed_at_seconds{model_family="inventory"} 0.000'
+        in payload
+    )
+    assert (
+        'platform_app_api_collector_boundary_newest_observed_at_seconds{model_family="topology"} 0.000'
+        in payload
+    )
+    assert (
+        'platform_app_api_collector_boundary_newest_observed_at_seconds{model_family="policy"} 0.000'
+        in payload
+    )
+
+    ts = datetime.fromisoformat("2026-03-10T01:00:03+00:00").timestamp()
+    payload_partial = render_prometheus_metrics(
+        "test",
+        history_metrics={
+            "total_count": 50,
+            "counts_by_model_family": {"topology": 50},
+            "counts_by_result": {"completed": 50},
+            "counts_by_model_family_and_result": {"topology": {"completed": 50}},
+            "latest_finished_at_by_model_family": {"topology": datetime.fromisoformat("2026-03-10T01:00:03+00:00")},
+            "latest_observed_at_by_model_family": {"topology": datetime.fromisoformat("2026-03-10T01:00:03+00:00")},
+        },
+    )
+    assert (
+        f'platform_app_api_sync_run_latest_finished_at_seconds{{model_family="topology"}} {ts:.3f}'
+        in payload_partial
+    )
+    assert (
+        'platform_app_api_sync_run_latest_finished_at_seconds{model_family="inventory"} 0.000'
+        in payload_partial
+    )
+    assert (
+        'platform_app_api_sync_run_latest_finished_at_seconds{model_family="policy"} 0.000'
+        in payload_partial
+    )
+    assert (
+        f'platform_app_api_collector_boundary_newest_observed_at_seconds{{model_family="topology"}} {ts:.3f}'
+        in payload_partial
+    )
+    assert (
+        'platform_app_api_collector_boundary_newest_observed_at_seconds{model_family="inventory"} 0.000'
+        in payload_partial
+    )

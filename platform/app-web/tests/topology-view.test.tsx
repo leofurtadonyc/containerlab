@@ -267,13 +267,34 @@ function createTopologyData() {
           source: "gnmi",
           endpoint_pairing_state: "paired",
           endpoint_evidence_count: 2,
+          physical_adjacency_posture: "suppressed_or_unknown",
+          physical_adjacency: {
+            posture: "suppressed_or_unknown",
+            lldp_observation_count: 0,
+            lldp_bidirectional: false,
+            local_interfaces: [],
+            remote_systems: [],
+            remote_ports: [],
+            correlation_notes: [],
+          },
+          control_plane_adjacency_posture: "suppressed_or_unknown",
+          control_plane_adjacency: {
+            posture: "suppressed_or_unknown",
+            observation_count: 0,
+            protocols_observed: [],
+            ospf_adjacency_state: null,
+            isis_adjacency_state: null,
+            local_interfaces: [],
+            remote_identities: [],
+            correlation_notes: [],
+          },
           attributes: {
             knowledge_state: "partial",
             inference_method: "interface_name_and_oper_state",
           },
         },
       ],
-      sync_source: "gnmi_collector_topology_interface_inference",
+      sync_source: "gnmi_collector_topology_interface_and_lldp",
       sync_status: "ok",
       completeness: "partial",
       observed_at: "2025-01-01T00:00:00Z",
@@ -288,6 +309,18 @@ beforeEach(() => {
 });
 
 describe("topology view", () => {
+  it("renders controller and deeper-truth panel entry points", () => {
+    useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
+    usePoliciesQuery.mockReturnValue(createQueryState(null));
+
+    const html = renderToStaticMarkup(<TopologyView />);
+
+    expect(html).toContain("Controller southbound session truth");
+    expect(html).toContain("Load controller evidence");
+    expect(html).toContain("Deeper topology truth");
+    expect(html).toContain("Load merged truth");
+  });
+
   it("renders persisted topology history and recent snapshot anchors", () => {
     useTopologyQuery.mockReturnValue(createQueryState(createTopologyData()));
     usePoliciesQuery.mockReturnValue(createQueryState(null));

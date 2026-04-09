@@ -1,0 +1,12 @@
+topology_file: ../../../nokia-sr-mpls/nokia-sr-mpls-lab3-full.clab.yml
+controller_northbound_address: 192.168.0.232
+controller_southbound_address: 10.90.0.10/24
+controller_southbound_bridge_name: br-odl-sb
+controller_southbound_interface: eth1
+controller_asn: 64990
+netconf_port: 830
+pcep_port: 4189
+netconf_username_env: ODL_NETCONF_USERNAME
+netconf_password_env: ODL_NETCONF_PASSWORD
+netconf_default_username: admin
+netconf_default_password: admin

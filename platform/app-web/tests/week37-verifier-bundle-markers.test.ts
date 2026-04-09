@@ -23,4 +23,16 @@ describe("week 37 verifier bundle markers", () => {
     expect(view).toContain("operational_stability_summary_v1");
     expect(overview).toContain("operational_stability_summary_v1");
   });
+
+  it("retains topology_truth_v1 product marker in Topology view (verify-core-runtime.sh shipped /assets/*.js)", () => {
+    const topologyView = readFileSync(join(__dirname, "../src/features/topology/view.tsx"), "utf8");
+    expect(topologyView).toContain('data-product-contract="topology_truth_v1"');
+    expect(topologyView).toContain("LLDP observations");
+    expect(topologyView).toContain("IGP-confirmed Links");
+  });
+
+  it("retains controller_southbound_session_truth_v2 product marker in Platform Health view", () => {
+    const platformHealth = readFileSync(join(__dirname, "../src/features/platform-health/view.tsx"), "utf8");
+    expect(platformHealth).toContain('data-product-contract="controller_southbound_session_truth_v2"');
+  });
 });

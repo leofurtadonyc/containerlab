@@ -1,0 +1,74 @@
+[
+  {
+    "node_name": "CSC1-PE1",
+    "southbound_ipv4": "10.90.0.111",
+    "loopback_ipv4": "100.64.255.11",
+    "peer_asn": 64513,
+    "controller_peer_ipv4": "10.90.0.10",
+    "controller_asn": 64990,
+    "device_interface": "1/1/c10/1"
+  },
+  {
+    "node_name": "CSC1-PE2",
+    "southbound_ipv4": "10.90.0.112",
+    "loopback_ipv4": "100.64.255.12",
+    "peer_asn": 64513,
+    "controller_peer_ipv4": "10.90.0.10",
+    "controller_asn": 64990,
+    "device_interface": "1/1/c10/1"
+  },
+  {
+    "node_name": "CSC2-PE1",
+    "southbound_ipv4": "10.90.0.211",
+    "loopback_ipv4": "100.66.255.11",
+    "peer_asn": 64516,
+    "controller_peer_ipv4": "10.90.0.10",
+    "controller_asn": 64990,
+    "device_interface": "1/1/c10/1"
+  },
+  {
+    "node_name": "CSC2-PE2",
+    "southbound_ipv4": "10.90.0.212",
+    "loopback_ipv4": "100.66.255.12",
+    "peer_asn": 64516,
+    "controller_peer_ipv4": "10.90.0.10",
+    "controller_asn": 64990,
+    "device_interface": "1/1/c10/1"
+  },
+  {
+    "node_name": "PE1",
+    "southbound_ipv4": "10.90.0.11",
+    "loopback_ipv4": "100.65.255.11",
+    "peer_asn": 64515,
+    "controller_peer_ipv4": "10.90.0.10",
+    "controller_asn": 64990,
+    "device_interface": "1/1/c10/1"
+  },
+  {
+    "node_name": "PE2",
+    "southbound_ipv4": "10.90.0.12",
+    "loopback_ipv4": "100.65.255.12",
+    "peer_asn": 64515,
+    "controller_peer_ipv4": "10.90.0.10",
+    "controller_asn": 64990,
+    "device_interface": "1/1/c10/1"
+  },
+  {
+    "node_name": "PE3",
+    "southbound_ipv4": "10.90.0.13",
+    "loopback_ipv4": "100.65.255.13",
+    "peer_asn": 64515,
+    "controller_peer_ipv4": "10.90.0.10",
+    "controller_asn": 64990,
+    "device_interface": "1/1/c10/1"
+  },
+  {
+    "node_name": "PE4",
+    "southbound_ipv4": "10.90.0.14",
+    "loopback_ipv4": "100.65.255.14",
+    "peer_asn": 64515,
+    "controller_peer_ipv4": "10.90.0.10",
+    "controller_asn": 64990,
+    "device_interface": "1/1/c10/1"
+  }
+]

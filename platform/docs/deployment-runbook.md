@@ -1,8 +1,10 @@
-# Phase 2 Deployment Runbook
+# Bounded Platform Deployment Runbook
 
 ## Purpose
 
-This runbook documents how to build, deploy, verify, and troubleshoot the current bounded `Phase 2 — read-only product foundation` platform slice.
+This runbook documents how to build, deploy, verify, and troubleshoot the current bounded platform runtime.
+
+The repo's active phase includes one bounded `Phase 5` workflow slice alongside the dominant `Phase 2` read-only foundation. This runbook focuses on the operator-facing runtime boundary and does not widen that bounded workflow scope.
 
 It reflects the **week 16–26 operator-truth envelope** (week **19** deepens **devices/inventory** persisted history and observability alignment; week **20** deepens **policies** persisted-history contracts, **`verify-core-runtime`** policy **`history`** assertions when gates match, **`app-api`** **`/metrics`** **`policy_snapshots`** table gauges, and cross-doc alignment with the proven Nokia **`static_local`** boundary; week **22** documents bounded **read-side query ergonomics**—optional **`limit`**, **`history_recent_limit`**, **`sync_runs_limit`**, and **`readiness_snapshot_history_limit`** (audit only) with honest **`read_side_query`** echo, plus structural verifier sampling of optional bounded query strings on workflow-history and audit-history; week **23** documents **readiness/capability decision-support** as bounded **read-only** product navigation and JSON cross-links—**`readiness_blocker`**, **`readiness_prerequisite`**, **`readiness_capability_feature`** on **`view=`** URLs, Capabilities ↔ Readiness and history drilldown behavior per **`readiness-capability-decision-support-contract.md`**, **`GET /api/v1/readiness-snapshot-history`** inspection-only semantics, and structural **`verify-core-runtime`** substring checks that **`/api/v1/capabilities`** still exposes **`related_readiness_blockers`** and blocker **`related_prerequisites`** fields—**not** workflow execution, dry-run authorization, or validation; week **24** documents **bounded change intelligence**—**`GET /api/v1/change-intelligence/recent-summary`** aggregates existing snapshot metrics and sync-run history into a cross-domain read-only summary (**`change-intelligence-contract.md`**); WebUI **Overview** and **Platform Health** consume it with explicit non-claims; **read-only** **`view=`** navigation links the summary to Devices, Topology, Policies, Workflow history, and Audit history, and Workflow/Audit pages link back to **Overview** for the same panel—**not** validation verdicts, drift engines, safe-to-change scoring, or workflow authority; structural **`verify-core-runtime`** substring checks prove the **`change_intelligence_phase2_v1`** and **`sync_runs_limit_applied`** echo fields did not disappear; week **25** documents **bounded investigation workspace**—**`GET /api/v1/investigation-workspace/context`** nests **existing** change-intelligence, platform-status, and capabilities responses per **`investigation-workspace-contract.md`**; WebUI **`view=investigation`** is a read-only interpretation surface (safety framing, recency anchors, cross-domain context panels, next-inspection navigation hints); structural **`verify-core-runtime`** checks include **`investigation_workspace_phase2_v1`**, **`next_inspection_framing`**, **`next_inspection_suggestions`**, and suggestion-shape substrings—**not** validation authority, drift verdicts, or workflow execution; week **26** documents **bounded operator evidence pack / situation room**—**`GET /api/v1/evidence-pack/situation`** per **`evidence-pack-contract.md`** composes devices, topology, policies, readiness snapshot history, workflow history, audit history, nested **`investigation_context`**, plus backend **`situation_review_guidance`** (explicit gap notes and sorted navigation prompts; evidence-navigation only); WebUI **Overview** **Situation room** + **`view=situation-room`** / **`SituationRoomProduct`**—read-only framing; structural **`verify-core-runtime`** checks include **`evidence_pack_phase2_v1`**, **`situation_review_guidance`**, and bounded **`sync_runs_limit`** echo—**not** validation verdicts, safe-to-change authority, or workflow execution—**without** changing the Phase 2 stop line): **conditional** preserved-baseline checks in
 `verify-core-runtime` when Postgres holds persisted read-side rows (platform **`recovery`**, workflow-history and audit-history **`baseline_summary`** JSON plus **`preserved_same_workspace_baseline`**), **conditional** **devices** (inventory), **topology**, and **policy** `history` contract checks when snapshot rows exist and the API returns non-empty **`recent_snapshots`** (devices and policy use a **`[{"snapshot_id"`** prefix match in compact JSON so `comparison_to_previous` snapshot id fields cannot satisfy snapshot-level assertions; **devices** inventory checks assert the expanded snapshot and **`comparison_to_previous`** key families when those gates match), explicit recovery fields on
@@ -14,7 +16,7 @@ It is intentionally practical rather than aspirational:
 
 - it follows the repo-owned build and deploy path exactly
 - it treats the platform as a separate Containerlab topology under `platform/`
-- it keeps workflow, dry-run, and action semantics explicitly out of scope
+- it keeps broad workflow, dry-run, and action semantics out of scope beyond the documented bounded lifecycle, preview, validation, safe-action, and rollback slices
 - it describes the current operational stop line honestly
 
 ## Quick Validation Rule
@@ -66,8 +68,8 @@ Authoritative contract clauses remain in **`change-safety-case-contract.md`**, *
 ## What This Runbook Does Not Cover
 
 - architecture redesign
-- workflow execution or approvals
-- dry-run or preview workflows
+- broad workflow execution or approvals beyond the documented bounded slices
+- broad dry-run or preview programs beyond the documented bounded slices
 - TLS enablement
 - secret rotation outside the bounded ODL admin-password path
 - HA, clustering, or production backup automation
@@ -78,7 +80,7 @@ Authoritative contract clauses remain in **`change-safety-case-contract.md`**, *
 Treat the current platform honestly:
 
 - safe for bounded read-only visibility, bounded persisted fallback, platform metrics, and current operator-facing WebUI views
-- not safe to describe as a workflow platform, dry-run platform, or action-automation platform
+- not safe to describe as a broad workflow platform, broad dry-run platform, or broad action-automation platform beyond the documented bounded lifecycle, preview, validation, safe-action, and rollback slices
 - not safe to describe as full topology truth, full policy truth, or a multi-vendor parity claim
 - not hardened yet for broader production controls such as TLS, external identity, secret lifecycle, HA, backup automation, or full recovery automation
 
@@ -144,6 +146,12 @@ clab deploy -t topology.clab.yml -c
 
 Use `-c` for the standard replacement path. It matches the documented host-recreation flow already used to verify the current bounded runtime.
 
+Collector-boundary timeout note:
+
+- the packaged runtime currently uses `GNMI_COLLECTOR_TIMEOUT_SECONDS=5` with per-path overrides of `GNMI_COLLECTOR_INVENTORY_TIMEOUT_SECONDS=5`, `GNMI_COLLECTOR_TOPOLOGY_TIMEOUT_SECONDS=8`, and `GNMI_COLLECTOR_POLICY_TIMEOUT_SECONDS=5` in `topology.clab.yml`
+- keep those values aligned with the actual collector latency of the deployed lab footprint; if the topology snapshot routinely takes longer than the topology budget, `app-api` will honestly report fallback or unreachable posture even when `gnmi-collector` itself is healthy
+- if you change those values, rebuild and redeploy the packaged runtime; do not assume an existing `app-api` container will pick up the new budget without replacement
+
 ### 3. Run The Required Verification Scripts
 
 After deployment, run both verification steps before treating the platform as usable:
@@ -156,7 +164,42 @@ After deployment, run both verification steps before treating the platform as us
 These are required, not optional, for the current bounded operational slice.
 If either script fails, stop there and treat the deployment as not yet usable until the failing runtime contract is understood.
 
+Cold-start note:
+
+- immediately after a full `clab deploy -t topology.clab.yml -c`, one verifier pass can still trip on bounded startup or warm-up races while containers are becoming healthy and caches are cold
+- if the containers are healthy and direct API spot checks look correct, rerun `./scripts/verify-core-runtime.sh` once before treating the failure as a stable regression
+- repeated verifier failures after the runtime is healthy should still be treated as real contract issues
+
 This is the current documented replacement for ad hoc host-side validation of normal platform changes.
+
+### 4. If ODL Was Replaced, Refresh Southbound Peers Before Expecting Live BGP-LS/PCEP Again
+
+The core verifiers prove the packaged runtime contract and bounded ODL auth path, but they do not by themselves force the Nokia PE / CSC-PE routers to relearn a new southbound MAC after `platform-odl` was replaced.
+
+When the replacement path recreated ODL, the MAC behind `10.90.0.10` changed with the new container interface. In that case the routers can retain stale ARP for the southbound peer, which leaves BGP-LS down and can leave PCEP visible only as `pcep-topology` scope with no live PCC rows yet.
+
+Use the repo-owned recovery helper:
+
+```bash
+cd app-api
+python3 -m pip install -c requirements.lock.txt .
+
+cd ..
+python3 scripts/refresh-odl-southbound-peers.py
+```
+
+Then recheck the controller evidence lanes if live southbound posture matters for the current task:
+
+```bash
+curl -s http://localhost:8000/api/v1/controller/evidence/bgpls | python -m json.tool
+curl -s http://localhost:8000/api/v1/controller/evidence/pcep | python -m json.tool
+```
+
+Current expected post-refresh behavior:
+
+- `bgpls` returns `session_posture=established`
+- `pcep` returns `session_posture=established` once live PCC rows reattach
+- ODL `pcep-topology` contains the eight synchronized PCC nodes again
 
 ## What The Verification Scripts Prove
 
@@ -292,9 +335,9 @@ What healthy means here:
 The script waits for **Docker health** and **HTTP readiness** on several services. **Worst-case** wall time per wait is approximately **`VERIFY_ATTEMPTS` × `VERIFY_SLEEP_SECONDS`** (defaults **45 × 1 s** between attempts) for each loop that never succeeds—so a **missing or unhealthy container** can still make the script feel “stuck” for minutes before it exits.
 
 **HTTP readiness polling** uses short **`curl`** probes (defaults **`CURL_PROBE_MAX_TIME` = 12 s**, **`CURL_PROBE_CONNECT_TIMEOUT` = 5 s**) so retries do not burn the full **`CURL_MAX_TIME`**. URLs ending in **`/metrics`** use **`METRICS_PROBE_MAX_TIME`** (default **90 s**) and **`METRICS_PROBE_CONNECT_TIMEOUT`** (default **8 s**) because the first **Prometheus exposition** after a cold deploy can exceed the generic probe window—this addresses intermittent **`app-api metrics did not become ready`** failures when **`/api/v1/health`** already returns.
-
+**app-api JSON** responses use **`CURL_HTTP_MAX_TIME`** (default **90 s**) via **`fetch_compact_json`**. The full **app-api `/metrics`** body for assertions uses **`METRICS_FULL_MAX_TIME`** (default **90 s**). Prometheus now scrapes the **`app-api`** job every **30 s** with **`scrape_timeout: 25s`** in **`prometheus/prometheus.yml`** so low-cardinality sync-row and snapshot-row dashboard cards move on a useful cadence without waiting two minutes between updates. The file is **bind-mounted** into the **prometheus** container (`topology.clab.yml`); **restart** that container or **`clab deploy`** to pick up edits—no **prometheus** image rebuild required for **`prometheus.yml`** alone.
 **app-api JSON** responses use **`CURL_HTTP_MAX_TIME`** (default **90 s**) via **`fetch_compact_json`**. The full **app-api `/metrics`** body for assertions uses **`METRICS_FULL_MAX_TIME`** (default **90 s**), aligned with **`prometheus/prometheus.yml`** **`scrape_timeout: 90s`** for the **`app-api`** job ( **`scrape_interval: 120s`** must exceed **`scrape_timeout`** ). The file is **bind-mounted** into the **prometheus** container (`topology.clab.yml`); **restart** that container or **`clab deploy`** to pick up edits—no **prometheus** image rebuild required for **`prometheus.yml`** alone.
-
+**If `/metrics` is still slow** on very constrained hosts, increase **`METRICS_PROBE_MAX_TIME`**, **`METRICS_FULL_MAX_TIME`**, and the **`app-api`** **`scrape_timeout`** / **`scrape_interval`** in **`prometheus.yml`** together while keeping **`scrape_interval > scrape_timeout`**.
 **Most other non-probe HTTP fetches** use **`CURL_MAX_TIME`** (default **25 s**) with **`CURL_CONNECT_TIMEOUT`** (default **10 s**) so a single wedged endpoint cannot hang the script indefinitely.
 
 **To fail faster while debugging**, run from `platform/` for example:
@@ -334,6 +377,7 @@ Interpret them this way:
 - `collector_connection_error`, `collector_http_error`, `invalid_response_payload`, and `unknown_error` mean the boundary failed for a **non-timeout** reason (classify separately from `timeout_budget_exceeded`)
 - `partial_live_feed` means the fetch **completed within** the current timeout budget but still returned bounded degraded live coverage (not a timeout)
 - these metrics remain observability signals only; the product-facing truth still lives in the backend contracts and the WebUI trust cues
+- the current packaged runtime intentionally gives topology more time than inventory and policy because topology snapshot assembly is slower in the current deployed footprint; avoid collapsing those values back to one smaller shared timeout unless current collector latency measurements justify it
 
 ## What Remains Bootstrap-Grade
 
@@ -631,6 +675,8 @@ The drill:
 3. runs `./scripts/verify-core-runtime.sh`
 4. runs `./scripts/verify-odl-auth.sh`
 
+If the drill recreated ODL and you need live southbound BGP-LS / PCEP posture again after the drill, run `python3 scripts/refresh-odl-southbound-peers.py` from `platform/` after reinstalling the app-api package dependencies as shown above. The drill itself does not do this automatically because it would mutate the lab routers as part of a generic runtime recovery proof.
+
 When Postgres already holds persisted snapshots, sync runs, or readiness rows, the verifier asserts that **`recovery.baseline_posture`** on `/api/v1/platform/status` and **`baseline_summary.baseline_posture`** on `/api/v1/workflow-history` and `/api/v1/audit-history` report **`preserved_same_workspace_baseline`**, and that workflow-history and audit-history include a **`baseline_summary`** object. On an empty persisted read-side schema, those preserved-baseline assertions are skipped (honest fresh baseline).
 
 ### What the drill does NOT prove
@@ -777,7 +823,7 @@ clab deploy -t topology.clab.yml -c
 ### Not Safe To Say Right Now
 
 - that the platform executes workflows
-- that the platform supports dry-run or preview workflows
+- that the platform supports broad dry-run or preview workflows beyond the documented bounded slices
 - that the platform provides full production hardening
 - that the platform provides full topology truth, full policy truth, or full multi-vendor parity
 - that the platform has complete recovery automation, complete backup discipline, or HA behavior

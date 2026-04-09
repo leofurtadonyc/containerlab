@@ -16,6 +16,8 @@ import type {
   SituationPackAssemblyResponse,
   TopologyObjectRelatedPoliciesResponse,
   TopologyResponse,
+  TopologyTruthResponse,
+  ControllerEvidenceResponse,
   TopologyRiskSummaryResponse,
   FailureImpactViewResponse,
   TopologyObjectDossierResponse,
@@ -167,6 +169,22 @@ export class ApiClient {
 
   async getTopology(): Promise<TopologyResponse> {
     return this.request<TopologyResponse>("/api/v1/topology");
+  }
+
+  /** Deeper topology truth v1 — optional `truth_posture` filters merged nodes/links. */
+  async getTopologyTruth(query?: { truthPosture?: string }): Promise<TopologyTruthResponse> {
+    const params = new URLSearchParams();
+    const posture = query?.truthPosture?.trim();
+    if (posture) {
+      params.set("truth_posture", posture);
+    }
+    const qs = params.toString();
+    return this.request<TopologyTruthResponse>(`/api/v1/topology/truth${qs ? `?${qs}` : ""}`);
+  }
+
+  /** Controller southbound evidence v1 — distinct BGP-LS / PCEP / NETCONF lanes from ODL RESTCONF. */
+  async getControllerEvidence(): Promise<ControllerEvidenceResponse> {
+    return this.request<ControllerEvidenceResponse>("/api/v1/controller/evidence");
   }
 
   async getTopologyObjectRelatedPolicies(

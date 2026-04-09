@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     api_port: int = 8000
     database_url: str = "postgresql://platform:change_me@postgres:5432/platform"
+    database_pool_size: int = Field(default=20, ge=1)
+    database_max_overflow: int = Field(default=20, ge=0)
+    database_pool_timeout_seconds: int = Field(default=10, ge=1)
+    database_pool_recycle_seconds: int = Field(default=1800, ge=0)
     gnmi_collector_url: str = "http://gnmi-collector:9804"
     gnmi_collector_timeout_seconds: int = Field(default=3, ge=1)
     gnmi_collector_inventory_timeout_seconds: int | None = Field(default=None, ge=1)

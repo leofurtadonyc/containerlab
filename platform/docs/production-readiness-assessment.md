@@ -3,7 +3,9 @@
 ## Purpose
 
 This document gives a strict readiness assessment for the current platform in
-its active `Phase 2 - read-only product foundation` role.
+its active repo state, whose dominant operational role is still the `Phase 2`
+read-only product foundation even though the repository now includes one
+bounded `Phase 5` workflow slice.
 
 It answers one narrow question.
 
@@ -13,10 +15,14 @@ was meant to do first.
 It does not authorize:
 
 - a phase change
-- workflow implementation
-- dry-run implementation
+- broader workflow implementation beyond the documented bounded slices
+- broader dry-run implementation beyond the documented bounded slices
 - broad production-marketing language
 - claims of full topology, policy, or lifecycle truth
+
+It also does not assess execution readiness for the bounded safe-action or
+rollback slices beyond their effect on the surrounding read-only operating
+boundary.
 
 ## Verdict
 
@@ -510,6 +516,7 @@ The current platform is not yet safe to use for the following jobs.
 This verdict holds only if the following conditions remain true.
 
 - the platform remains in `Phase 2 - read-only product foundation`
+- the dominant operational boundary being assessed remains the `Phase 2` read-only foundation even though the repo also includes bounded `Phase 5` workflow slices
 - deploys continue to use the documented repo-owned image-build and topology
   flow
 - `./scripts/verify-core-runtime.sh` passes before the platform is treated as

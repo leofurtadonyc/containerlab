@@ -7,6 +7,8 @@ topology:
     odl:
       kind: linux
       image: platform-odl:0.1.0
+      binds:
+        - ./odl/config/generated:/opt/platform-odl/config/generated:ro
       ports:
         - "8181:8181" # RESTCONF and northbound API access
         - "8101:8101" # Karaf shell access
@@ -81,7 +83,10 @@ topology:
       env:
         API_PORT: "8000"
         DATABASE_URL: postgresql://platform:change_me@postgres:5432/platform
-        GNMI_COLLECTOR_TIMEOUT_SECONDS: "3" # Fail fast to explicit persisted fallback when the collector boundary stalls.
+        GNMI_COLLECTOR_TIMEOUT_SECONDS: "5" # Keep bounded collector waits explicit without letting normal live reads trip the fallback path too early.
+        GNMI_COLLECTOR_INVENTORY_TIMEOUT_SECONDS: "5"
+        GNMI_COLLECTOR_TOPOLOGY_TIMEOUT_SECONDS: "8"
+        GNMI_COLLECTOR_POLICY_TIMEOUT_SECONDS: "5"
         ODL_URL: http://odl:8181
         ODL_USERNAME: admin
         ODL_PASSWORD: change_me
@@ -94,5 +99,11 @@ topology:
       ports:
         - "8088:8088"
 
-  # No direct links to lab nodes are defined here.
-  # The platform is expected to reach lab services over management connectivity.
+    br-odl-sb:
+      kind: bridge
+
+  links:
+    - endpoints: ["odl:eth1", "br-odl-sb:odl-eth1"]
+
+  # Northbound/admin still uses the management plane.
+  # ODL southbound protocols now use the explicit external bridge above.
