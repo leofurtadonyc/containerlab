@@ -4,6 +4,7 @@ import type { WorkflowLifecycleStatus } from "../../api/contracts";
 import { apiClient } from "../../api/client";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import {
   mergeViewIntoSearch,
   replaceUrlSearchParams,
@@ -112,28 +113,30 @@ export function WorkflowLifecycleView() {
   const effectiveList = listQuery.data?.items ?? [];
 
   return (
-    <div className="page-section workflow-lifecycle-view">
-      <header className="page-section-header">
-        <div>
-          <h2>Workflow lifecycle</h2>
-          <p className="body-copy">
-            Durable <strong>workflow lifecycle records</strong> owned by the backend (create/transition
-            here updates Postgres). This is <strong>not</strong> sync-run history — use{" "}
+    <div className="page-section workflow-lifecycle-view workspace-page">
+      <WorkspaceHeader
+        eyebrow="Change & Safety"
+        title="Workflow lifecycle"
+        summary="Manage durable backend-owned workflow lifecycle records without confusing them for sync-run history, dry-run validation, or network execution."
+        actions={
+          <div className="workspace-toolbar">
             <button
               type="button"
-              className="inline-action"
+              className="shell-action-button shell-action-button--secondary"
               onClick={() => {
                 const sp = mergeViewIntoSearch(window.location.search, "workflows");
                 replaceUrlSearchParams(sp);
               }}
             >
-              Workflows
-            </button>{" "}
-            for persisted collector sync activity. Dry-run, validation, and network execution are{" "}
-            <strong>not</strong> implemented.
-          </p>
-        </div>
-      </header>
+              Open Workflows
+            </button>
+          </div>
+        }
+      />
+      <p className="workspace-inline-note">
+        Durable <strong>workflow lifecycle records</strong> are owned by the backend and stored in Postgres. This is
+        <strong> not</strong> sync-run history, and Dry-run, validation, and network execution remain unimplemented.
+      </p>
 
       <section className="panel workflow-lifecycle-create">
         <h3 className="panel-title">Create workflow record</h3>

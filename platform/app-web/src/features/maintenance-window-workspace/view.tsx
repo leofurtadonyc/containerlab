@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MaintenancePreviewContext } from "../../api/contracts";
 import { ApiClientError, type MaintenanceWindowWorkspaceQuery } from "../../api/client";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import { APP_URL_SEARCH_CHANGED } from "../../lib/url-app-state";
 import {
   MAINTENANCE_WINDOW_WORKSPACE_MAX_SUBJECTS,
@@ -52,8 +53,12 @@ export function MaintenanceWindowWorkspaceView() {
 
   if (urlState.kind === "invalid") {
     return (
-      <section className="maintenance-preview-route maintenance-preview-route--error">
-        <h2>Maintenance window workspace</h2>
+      <section className="workspace-page maintenance-preview-route maintenance-preview-route--error">
+        <WorkspaceHeader
+          eyebrow="Change & Safety"
+          title="Maintenance window workspace"
+          summary="Coordinate a bounded multi-subject maintenance window with explicit subject selection and safety framing."
+        />
         <ErrorState
           error={
             new ApiClientError(
@@ -75,8 +80,12 @@ export function MaintenanceWindowWorkspaceView() {
 
   if (urlState.kind === "empty") {
     return (
-      <section className="maintenance-preview-route maintenance-preview-route--setup">
-        <h2>Maintenance window workspace</h2>
+      <section className="workspace-page maintenance-preview-route maintenance-preview-route--setup">
+        <WorkspaceHeader
+          eyebrow="Change & Safety"
+          title="Maintenance window workspace"
+          summary="Coordinate a bounded multi-subject maintenance window with explicit subject selection and safety framing."
+        />
         <MaintenanceWindowWorkspaceSetupForm />
       </section>
     );
@@ -84,8 +93,12 @@ export function MaintenanceWindowWorkspaceView() {
 
   if (workspaceQuery.isLoading && !workspaceQuery.data) {
     return (
-      <section className="maintenance-preview-route maintenance-preview-route--loading">
-        <h2>Maintenance window workspace</h2>
+      <section className="workspace-page maintenance-preview-route maintenance-preview-route--loading">
+        <WorkspaceHeader
+          eyebrow="Change & Safety"
+          title="Maintenance window workspace"
+          summary="Coordinate a bounded multi-subject maintenance window with explicit subject selection and safety framing."
+        />
         <LoadingState label="Loading maintenance_window_workspace_v1 assembly from app-api." />
       </section>
     );
@@ -93,8 +106,12 @@ export function MaintenanceWindowWorkspaceView() {
 
   if (workspaceQuery.error) {
     return (
-      <section className="maintenance-preview-route maintenance-preview-route--error">
-        <h2>Maintenance window workspace</h2>
+      <section className="workspace-page maintenance-preview-route maintenance-preview-route--error">
+        <WorkspaceHeader
+          eyebrow="Change & Safety"
+          title="Maintenance window workspace"
+          summary="Coordinate a bounded multi-subject maintenance window with explicit subject selection and safety framing."
+        />
         <ErrorState error={workspaceQuery.error} onRetry={reload} />
         <p className="table-note">
           <button type="button" className="inline-action" onClick={() => navigateToMaintenanceWindowWorkspaceSetup()}>
@@ -107,20 +124,38 @@ export function MaintenanceWindowWorkspaceView() {
 
   if (!workspaceQuery.data) {
     return (
-      <section className="maintenance-preview-route maintenance-preview-route--empty">
-        <h2>Maintenance window workspace</h2>
+      <section className="workspace-page maintenance-preview-route maintenance-preview-route--empty">
+        <WorkspaceHeader
+          eyebrow="Change & Safety"
+          title="Maintenance window workspace"
+          summary="Coordinate a bounded multi-subject maintenance window with explicit subject selection and safety framing."
+        />
         <EmptyState title="No payload" description="The workspace request did not return a body." />
       </section>
     );
   }
 
   return (
-    <section className="maintenance-preview-route">
-      <h2>Maintenance window workspace</h2>
-      <p className="body-copy">
-        Multi-subject <strong>planning support</strong> only — not maintenance approval, execution, simulation, or
-        blast-radius authority. Use single-subject <strong>Maintenance preview</strong> or <strong>Maintenance evidence</strong>{" "}
-        for deep per-object drill-down.
+    <section className="workspace-page maintenance-preview-route">
+      <WorkspaceHeader
+        eyebrow="Change & Safety"
+        title="Maintenance window workspace"
+        summary="Coordinate a bounded multi-subject maintenance window without treating it as maintenance approval, execution, or simulation authority."
+        actions={
+          <div className="workspace-toolbar">
+            <button
+              type="button"
+              className="shell-action-button shell-action-button--secondary"
+              onClick={() => navigateToMaintenanceWindowWorkspaceSetup()}
+            >
+              Change subjects
+            </button>
+          </div>
+        }
+      />
+      <p className="workspace-inline-note">
+        Multi-subject <strong>planning support</strong> only. Use single-subject <strong>Maintenance Preview</strong> or{" "}
+        <strong>Maintenance Evidence</strong> for deeper per-object drill-down.
       </p>
       <MaintenanceWindowWorkspaceProduct
         data={workspaceQuery.data}

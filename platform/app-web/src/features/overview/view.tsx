@@ -9,6 +9,7 @@ import {
 } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { TrustCueCard } from "../../components/trust-cue-card";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import type { PlatformReadPathStatus } from "../../api/contracts";
 import {
   countBy,
@@ -485,34 +486,36 @@ export function OverviewView() {
   const firstOverviewPolicyId = policiesData?.items[0]?.policy_id ?? null;
 
   return (
-    <section>
-      <div className="section-header overview-section-header">
-        <div>
-          <h2>Overview</h2>
-          <p>
-            The WebUI now reads stable product contracts from `app-api` to summarize
-            what exists, what is healthy, and where the current read-only foundation remains intentionally
-            partial.
-          </p>
-        </div>
-        <div className="overview-layout-switch" role="group" aria-label="Overview layout">
-          <button
-            type="button"
-            className={overviewMode === "standard" ? "nav-item active" : "nav-item"}
-            onClick={() => navigateOverviewLayoutMode("standard")}
-          >
-            Standard
-          </button>
-          <button
-            type="button"
-            className={overviewMode === "cockpit" ? "nav-item active" : "nav-item"}
-            onClick={() => navigateOverviewLayoutMode("cockpit")}
-          >
-            NOC cockpit
-          </button>
-        </div>
-        <StatusPill value={platformData?.status ?? (showPartialWarning ? "degraded" : "unknown")} />
-      </div>
+    <section className="workspace-page">
+      <WorkspaceHeader
+        eyebrow="Command Center"
+        title="Overview"
+        summary="Summarize platform posture, recent change, evidence trust, and the next bounded investigation paths without pretending away partial knowledge."
+        statusValue={platformData?.status ?? (showPartialWarning ? "degraded" : "unknown")}
+        actions={
+          <div className="workspace-toolbar">
+            <div className="workspace-segmented-control" role="group" aria-label="Overview layout">
+              <button
+                type="button"
+                className={overviewMode === "standard" ? "nav-item active" : "nav-item"}
+                onClick={() => navigateOverviewLayoutMode("standard")}
+              >
+                Standard
+              </button>
+              <button
+                type="button"
+                className={overviewMode === "cockpit" ? "nav-item active" : "nav-item"}
+                onClick={() => navigateOverviewLayoutMode("cockpit")}
+              >
+                NOC cockpit
+              </button>
+            </div>
+            <button type="button" className="shell-action-button shell-action-button--secondary" onClick={() => void reloadAllSlices()}>
+              Reload
+            </button>
+          </div>
+        }
+      />
 
       {overviewState.mode === "partial" && showPartialWarning ? (
         <div className="query-message query-message-error">

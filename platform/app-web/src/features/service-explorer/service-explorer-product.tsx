@@ -26,6 +26,7 @@ import { navigateToServiceExplorer } from "../../lib/service-explorer-navigation
 import { navigateToServiceImpactWorkspace } from "../../lib/service-impact-workspace-navigation";
 import { navigateToServiceDossier } from "../../lib/service-dossier-navigation";
 import { navigateToEvidenceView } from "../../lib/url-app-state";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import { ServiceEvidenceDeltaPanel } from "./service-evidence-delta-panel";
 import { ServiceEvidenceTimelinePanel } from "./service-evidence-timeline-panel";
 
@@ -59,27 +60,22 @@ export function ServiceExplorerListProduct({ data, limitApplied, onReload }: Ser
   const sparse = data.items.length === 0 || data.policy_inventory.empty_reason !== "none";
   return (
     <div className="service-explorer-product">
-      <header className="service-explorer-hero">
-        <div className="service-explorer-hero__text">
-          <p className="eyebrow">Phase 2 · service_explorer_v1</p>
-          <h2 className="service-explorer-hero__title">Service Explorer</h2>
-          <p className="body-copy service-explorer-hero__lede">
-            Grouped read lens over the <strong>same</strong> policy inventory as Policies—not a second catalog.{" "}
-            <strong>List/index only</strong>: composed <strong>Service dossier</strong> and{" "}
-            <strong>Service Impact workspace</strong> are separate shell views (they nest Explorer detail with other
-            contracts). Rows are discoverable groupings (policy, color, headend, endpoint); membership is bounded to the
-            current inventory slice.
-          </p>
-        </div>
-        <div className="service-explorer-hero__actions">
-          <button type="button" className="inline-action" onClick={() => navigateToEvidenceView("policies")}>
-            Open Policies
-          </button>
-          <button type="button" className="service-explorer-toolbar-reload" onClick={() => void onReload()}>
-            Reload
-          </button>
-        </div>
-      </header>
+      <WorkspaceHeader
+        eyebrow="Services & Policies"
+        title="Service Explorer"
+        summary="Grouped read lens over the same policy inventory as Policies. List/index only: use this view to understand service groupings and evidence pivots without treating it as a second catalog."
+        statusValue={data.policy_inventory.data_status}
+        actions={
+          <div className="workspace-toolbar">
+            <button type="button" className="shell-action-button shell-action-button--secondary" onClick={() => navigateToEvidenceView("policies")}>
+              Open Policies
+            </button>
+            <button type="button" className="shell-action-button" onClick={() => void onReload()}>
+              Reload
+            </button>
+          </div>
+        }
+      />
 
       <div className="service-explorer-metadata">
         <span>Generated {formatDateTime(data.generated_at)}</span>
@@ -247,44 +243,38 @@ export function ServiceExplorerDetailProduct({ data, onReload }: ServiceExplorer
 
   return (
     <div className="service-explorer-product service-explorer-product--detail">
-      <header className="service-explorer-hero">
-        <div className="service-explorer-hero__text">
-          <p className="eyebrow">Phase 2 · service_explorer_v1 · detail</p>
-          <h2 className="service-explorer-hero__title">
-            <code>{data.service_id}</code>
-          </h2>
-          <p className="body-copy service-explorer-hero__lede">
-            Members are normalized policy rows from the current inventory only. Topology links are best-effort string
-            matches—not adjacency or dataplane proof. This route is Explorer <strong>membership detail</strong>—
-            <strong>not</strong> Service dossier (composed briefing) or Service Impact workspace (Explorer + failure-impact
-            assembly).
-          </p>
-        </div>
-        <div className="service-explorer-hero__actions">
-          <button type="button" className="inline-action" onClick={() => navigateToServiceExplorer({ serviceId: null })}>
-            Back to list
-          </button>
-          <button
-            type="button"
-            className="inline-action"
-            onClick={() => navigateToServiceDossier({ serviceId: data.service_id })}
-            title="service_dossier_v1 — composed workspace (explainability + optional maintenance); not a replacement for this Explorer detail"
-          >
-            Service dossier
-          </button>
-          <button
-            type="button"
-            className="inline-action"
-            onClick={() => navigateToServiceImpactWorkspace(data.service_id)}
-            title="service_impact_workspace_v1 — composed Explorer + optional failure-impact; distinct from this detail GET"
-          >
-            Service Impact workspace
-          </button>
-          <button type="button" className="service-explorer-toolbar-reload" onClick={() => void onReload()}>
-            Reload
-          </button>
-        </div>
-      </header>
+      <WorkspaceHeader
+        eyebrow="Services & Policies"
+        title={data.service_id}
+        summary="Review bounded service membership detail, current posture, topology hints, and service pivots. This remains Explorer detail, not the broader Service Dossier or Service Impact workspace."
+        statusValue={data.degraded_service.posture}
+        actions={
+          <div className="workspace-toolbar">
+            <button type="button" className="shell-action-button shell-action-button--secondary" onClick={() => navigateToServiceExplorer({ serviceId: null })}>
+              Back to list
+            </button>
+            <button
+              type="button"
+              className="shell-action-button shell-action-button--secondary"
+              onClick={() => navigateToServiceDossier({ serviceId: data.service_id })}
+              title="service_dossier_v1 — composed workspace (explainability + optional maintenance); not a replacement for this Explorer detail"
+            >
+              Service dossier
+            </button>
+            <button
+              type="button"
+              className="shell-action-button shell-action-button--secondary"
+              onClick={() => navigateToServiceImpactWorkspace(data.service_id)}
+              title="service_impact_workspace_v1 — composed Explorer + optional failure-impact; distinct from this detail GET"
+            >
+              Service Impact
+            </button>
+            <button type="button" className="shell-action-button" onClick={() => void onReload()}>
+              Reload
+            </button>
+          </div>
+        }
+      />
 
       <div className="service-explorer-metadata">
         <span>Generated {formatDateTime(data.generated_at)}</span>

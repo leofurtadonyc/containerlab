@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import {
   DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
   readSyncRunsLimitFromSearch,
@@ -29,8 +30,12 @@ export function DeltaDigestView() {
 
   if (query.isLoading && !query.data) {
     return (
-      <section className="delta-digest-route delta-digest-route--loading">
-        <h2>Delta digest</h2>
+      <section className="workspace-page delta-digest-route delta-digest-route--loading">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Delta Digest"
+          summary="Summarize bounded cross-domain deltas and evidence shifts across existing read-side surfaces."
+        />
         <LoadingState label="Loading cross-domain delta digest from app-api (bounded read-side assembly)." />
       </section>
     );
@@ -38,8 +43,12 @@ export function DeltaDigestView() {
 
   if (query.error) {
     return (
-      <section className="delta-digest-route delta-digest-route--error">
-        <h2>Delta digest</h2>
+      <section className="workspace-page delta-digest-route delta-digest-route--error">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Delta Digest"
+          summary="Summarize bounded cross-domain deltas and evidence shifts across existing read-side surfaces."
+        />
         <ErrorState error={query.error} onRetry={query.reload} />
         <p className="table-note">
           <button type="button" className="inline-action" onClick={() => navigateToEvidenceView("overview")}>
@@ -52,8 +61,12 @@ export function DeltaDigestView() {
 
   if (!query.data) {
     return (
-      <section className="delta-digest-route delta-digest-route--empty">
-        <h2>Delta digest</h2>
+      <section className="workspace-page delta-digest-route delta-digest-route--empty">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Delta Digest"
+          summary="Summarize bounded cross-domain deltas and evidence shifts across existing read-side surfaces."
+        />
         <EmptyState
           title="No digest payload"
           description="The backend did not return a delta digest for the current request."
@@ -68,7 +81,7 @@ export function DeltaDigestView() {
   const isSparsePayload = sparseSections.length >= 4;
 
   return (
-    <section className={`delta-digest-route${isSparsePayload ? " delta-digest-route--sparse" : ""}`}>
+    <section className={`workspace-page delta-digest-route${isSparsePayload ? " delta-digest-route--sparse" : ""}`}>
       {isSparsePayload ? (
         <p className="callout delta-digest-route-sparse-callout" role="status">
           Several digest sections report partial or missing evidence—this is expected when upstream lists are empty or

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MaintenancePreviewContext } from "../../api/contracts";
 import { ApiClientError, type MaintenancePreviewQuery } from "../../api/client";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import { APP_URL_SEARCH_CHANGED } from "../../lib/url-app-state";
 import {
   navigateToMaintenanceEvidenceWorkspace,
@@ -60,8 +61,12 @@ export function MaintenanceEvidenceWorkspaceView() {
 
   if (subject?.kind === "invalid") {
     return (
-      <section className="maintenance-preview-route maintenance-preview-route--error">
-        <h2>Maintenance evidence workspace</h2>
+      <section className="workspace-page maintenance-preview-route maintenance-preview-route--error">
+        <WorkspaceHeader
+          eyebrow="Change & Safety"
+          title="Maintenance Evidence"
+          summary="Review the maintenance-focused evidence workspace for a selected subject and related pivots."
+        />
         <ErrorState error={INVALID_MAINTENANCE_SUBJECT_ERROR} onRetry={syncFromUrl} />
         <p className="table-note">
           <button type="button" className="inline-action" onClick={() => navigateToMaintenanceEvidenceWorkspace()}>
@@ -74,8 +79,12 @@ export function MaintenanceEvidenceWorkspaceView() {
 
   if (!subject) {
     return (
-      <section className="maintenance-preview-route maintenance-preview-route--setup">
-        <h2>Maintenance evidence workspace</h2>
+      <section className="workspace-page maintenance-preview-route maintenance-preview-route--setup">
+        <WorkspaceHeader
+          eyebrow="Change & Safety"
+          title="Maintenance Evidence"
+          summary="Review the maintenance-focused evidence workspace for a selected subject and related pivots."
+        />
         <MaintenanceEvidenceWorkspaceSetupForm />
       </section>
     );
@@ -83,8 +92,12 @@ export function MaintenanceEvidenceWorkspaceView() {
 
   if (workspaceQuery.isLoading && !workspaceQuery.data) {
     return (
-      <section className="maintenance-preview-route maintenance-preview-route--loading">
-        <h2>Maintenance evidence workspace</h2>
+      <section className="workspace-page maintenance-preview-route maintenance-preview-route--loading">
+        <WorkspaceHeader
+          eyebrow="Change & Safety"
+          title="Maintenance Evidence"
+          summary="Review the maintenance-focused evidence workspace for a selected subject and related pivots."
+        />
         <LoadingState label="Loading maintenance_evidence_workspace_v1 assembly from app-api." />
       </section>
     );
@@ -92,8 +105,12 @@ export function MaintenanceEvidenceWorkspaceView() {
 
   if (workspaceQuery.error) {
     return (
-      <section className="maintenance-preview-route maintenance-preview-route--error">
-        <h2>Maintenance evidence workspace</h2>
+      <section className="workspace-page maintenance-preview-route maintenance-preview-route--error">
+        <WorkspaceHeader
+          eyebrow="Change & Safety"
+          title="Maintenance Evidence"
+          summary="Review the maintenance-focused evidence workspace for a selected subject and related pivots."
+        />
         <ErrorState error={workspaceQuery.error} onRetry={reload} />
         <p className="table-note">
           <button type="button" className="inline-action" onClick={() => navigateToMaintenanceEvidenceWorkspace()}>
@@ -106,15 +123,19 @@ export function MaintenanceEvidenceWorkspaceView() {
 
   if (!workspaceQuery.data) {
     return (
-      <section className="maintenance-preview-route maintenance-preview-route--empty">
-        <h2>Maintenance evidence workspace</h2>
+      <section className="workspace-page maintenance-preview-route maintenance-preview-route--empty">
+        <WorkspaceHeader
+          eyebrow="Change & Safety"
+          title="Maintenance Evidence"
+          summary="Review the maintenance-focused evidence workspace for a selected subject and related pivots."
+        />
         <EmptyState title="No payload" description="The workspace request did not return a body." />
       </section>
     );
   }
 
   return (
-    <section className="maintenance-preview-route">
+    <section className="workspace-page maintenance-preview-route">
       <p className="table-note maintenance-preview-subject-bar">
         <span>
           Subject: <code>{workspaceQuery.data.object_kind}</code> ·{" "}

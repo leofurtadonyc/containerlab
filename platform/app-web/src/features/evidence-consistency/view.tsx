@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import type { EvidenceConsistencyItemRow, EvidenceConsistencySignal } from "../../api/contracts";
 import { navigateEvidenceConsistencyPivotFromHint } from "../../lib/evidence-consistency-pivots";
 import { navigateToDeltaDigestView } from "../../lib/delta-digest-navigation";
@@ -70,8 +71,12 @@ export function EvidenceConsistencyView() {
 
   if (query.isLoading && !query.data) {
     return (
-      <section className="evidence-consistency-route evidence-consistency-route--loading">
-        <h2>Evidence consistency workspace</h2>
+      <section className="workspace-page evidence-consistency-route evidence-consistency-route--loading">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Evidence Consistency"
+          summary="Review where the current evidence appears aligned, weakly aligned, or in tension across bounded read-side domains."
+        />
         <LoadingState label="Loading evidence_consistency_summary_v1 from app-api (bounded read-side assembly)." />
       </section>
     );
@@ -79,8 +84,12 @@ export function EvidenceConsistencyView() {
 
   if (query.error) {
     return (
-      <section className="evidence-consistency-route evidence-consistency-route--error">
-        <h2>Evidence consistency workspace</h2>
+      <section className="workspace-page evidence-consistency-route evidence-consistency-route--error">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Evidence Consistency"
+          summary="Review where the current evidence appears aligned, weakly aligned, or in tension across bounded read-side domains."
+        />
         <ErrorState error={query.error} onRetry={query.reload} />
         <p className="table-note">
           <button type="button" className="inline-action" onClick={() => navigateToEvidenceView("overview")}>
@@ -93,8 +102,12 @@ export function EvidenceConsistencyView() {
 
   if (!query.data) {
     return (
-      <section className="evidence-consistency-route evidence-consistency-route--empty">
-        <h2>Evidence consistency workspace</h2>
+      <section className="workspace-page evidence-consistency-route evidence-consistency-route--empty">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Evidence Consistency"
+          summary="Review where the current evidence appears aligned, weakly aligned, or in tension across bounded read-side domains."
+        />
         <EmptyState
           title="No consistency summary"
           description="The backend did not return an evidence consistency summary for the current request."
@@ -106,7 +119,7 @@ export function EvidenceConsistencyView() {
   const data = query.data;
 
   return (
-    <section className="evidence-consistency-route" data-testid="evidence-consistency-workspace">
+    <section className="workspace-page evidence-consistency-route" data-testid="evidence-consistency-workspace">
       <header className="evidence-consistency-hero">
         <div className="evidence-consistency-hero__text">
           <p className="eyebrow">Phase 2 · {data.contract_id}</p>

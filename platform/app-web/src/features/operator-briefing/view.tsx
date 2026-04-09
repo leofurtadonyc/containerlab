@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import { APP_URL_SEARCH_CHANGED, navigateToEvidenceView } from "../../lib/url-app-state";
 import { useUrlSearchParamsKey } from "../../lib/use-url-search-params";
 import {
@@ -31,8 +32,12 @@ export function OperatorBriefingView() {
 
   if (apiQuery.isLoading && !apiQuery.data) {
     return (
-      <section className="operator-briefing-route operator-briefing-route--loading">
-        <h2>Operator briefing workspace</h2>
+      <section className="workspace-page operator-briefing-route operator-briefing-route--loading">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Operator Briefing"
+          summary="Assemble a bounded briefing workspace for handoff, review, and cross-surface operator context."
+        />
         <LoadingState label="Loading operator_briefing_workspace_v1 from app-api (composed read-only assemblies)." />
         <p className="table-note">
           URL: <code>{searchKey || "—"}</code>
@@ -43,8 +48,12 @@ export function OperatorBriefingView() {
 
   if (apiQuery.error) {
     return (
-      <section className="operator-briefing-route operator-briefing-route--error">
-        <h2>Operator briefing workspace</h2>
+      <section className="workspace-page operator-briefing-route operator-briefing-route--error">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Operator Briefing"
+          summary="Assemble a bounded briefing workspace for handoff, review, and cross-surface operator context."
+        />
         <ErrorState error={apiQuery.error} onRetry={apiQuery.reload} />
         <p className="table-note">
           <button type="button" className="inline-action" onClick={() => navigateToEvidenceView("overview")}>
@@ -57,8 +66,12 @@ export function OperatorBriefingView() {
 
   if (!apiQuery.data) {
     return (
-      <section className="operator-briefing-route operator-briefing-route--empty">
-        <h2>Operator briefing workspace</h2>
+      <section className="workspace-page operator-briefing-route operator-briefing-route--empty">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Operator Briefing"
+          summary="Assemble a bounded briefing workspace for handoff, review, and cross-surface operator context."
+        />
         <EmptyState
           title="No briefing payload"
           description="The backend did not return an operator briefing assembly for the current request."
@@ -68,7 +81,7 @@ export function OperatorBriefingView() {
   }
 
   return (
-    <section className="operator-briefing-route">
+    <section className="workspace-page operator-briefing-route">
       <OperatorBriefingProduct
         data={apiQuery.data}
         syncRunsLimit={query.syncRunsLimit ?? DEFAULT_OPERATOR_BRIEFING_SYNC_RUNS_LIMIT}

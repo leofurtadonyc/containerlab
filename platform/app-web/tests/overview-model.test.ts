@@ -90,7 +90,7 @@ describe("overview render state", () => {
     expect(state.slices[0].hasData).toBe(true);
   });
 
-  it("reloads overview slices sequentially", async () => {
+  it("reloads overview slices in parallel", async () => {
     const order: string[] = [];
 
     await reloadOverviewSlicesSequentially([
@@ -119,10 +119,10 @@ describe("overview render state", () => {
 
     expect(order).toEqual([
       "devices:start",
-      "devices:end",
       "topology:start",
-      "topology:end",
       "policies:start",
+      "devices:end",
+      "topology:end",
       "policies:end",
     ]);
   });

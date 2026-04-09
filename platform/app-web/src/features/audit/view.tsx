@@ -8,6 +8,7 @@ import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import {
   auditHistoryDrilldownTargets,
   policyEvidenceTimelineRowsFromComparison,
@@ -317,8 +318,12 @@ export function AuditView() {
 
   if (isLoading) {
     return (
-      <section>
-        <h2>Audit History</h2>
+      <section className="workspace-page">
+        <WorkspaceHeader
+          eyebrow="Governance & Platform"
+          title="Audit History"
+          summary="Review bounded audit-style history, persisted context, and related readiness or comparison anchors."
+        />
         <ReadSideQueryPanel variant="audit-history" />
         <ChangeIntelligenceOverviewLink historySurface="audit" />
         <LoadingState label="Loading read-only audit history." />
@@ -328,8 +333,12 @@ export function AuditView() {
 
   if (error) {
     return (
-      <section>
-        <h2>Audit History</h2>
+      <section className="workspace-page">
+        <WorkspaceHeader
+          eyebrow="Governance & Platform"
+          title="Audit History"
+          summary="Review bounded audit-style history, persisted context, and related readiness or comparison anchors."
+        />
         <ReadSideQueryPanel variant="audit-history" />
         <ChangeIntelligenceOverviewLink historySurface="audit" />
         <ErrorState error={error} onRetry={reload} />
@@ -339,8 +348,12 @@ export function AuditView() {
 
   if (!data) {
     return (
-      <section>
-        <h2>Audit History</h2>
+      <section className="workspace-page">
+        <WorkspaceHeader
+          eyebrow="Governance & Platform"
+          title="Audit History"
+          summary="Review bounded audit-style history, persisted context, and related readiness or comparison anchors."
+        />
         <ReadSideQueryPanel variant="audit-history" />
         <ChangeIntelligenceOverviewLink historySurface="audit" />
         <EmptyState
@@ -352,19 +365,21 @@ export function AuditView() {
   }
 
   return (
-    <section>
+    <section className="workspace-page">
       <ReadSideQueryPanel variant="audit-history" />
-      <div className="section-header">
-        <div>
-          <h2>Audit History</h2>
-          <p>
-            This page shows platform-recorded audit-style events derived from persisted
-            sync activity. It is product-facing history visibility, not an approvals or
-            execution control surface.
-          </p>
-        </div>
-        <StatusPill value={data.data_status} />
-      </div>
+      <WorkspaceHeader
+        eyebrow="Governance & Platform"
+        title="Audit History"
+        summary="Inspect platform-recorded audit-style visibility derived from persisted sync activity without treating it as approvals or execution control."
+        statusValue={data.data_status}
+        actions={
+          <div className="workspace-toolbar">
+            <button type="button" className="shell-action-button shell-action-button--secondary" onClick={() => void reload()}>
+              Reload
+            </button>
+          </div>
+        }
+      />
 
       <div className="metadata-row">
         <span>Data status: {data.data_status}</span>

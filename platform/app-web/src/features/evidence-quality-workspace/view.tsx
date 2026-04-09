@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import type { ReadPathReliabilityPosture } from "../../api/contracts";
 import {
   DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
@@ -66,8 +67,12 @@ export function EvidenceQualityWorkspaceView() {
 
   if (query.isLoading && !query.data) {
     return (
-      <section className="evidence-quality-workspace-route evidence-quality-workspace-route--loading">
-        <h2>Evidence quality workspace</h2>
+      <section className="workspace-page evidence-quality-workspace-route evidence-quality-workspace-route--loading">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Evidence Quality"
+          summary="Review collection assurance, read-path reliability, and bounded evidence weakness across current surfaces."
+        />
         <LoadingState label="Loading evidence_quality_workspace_v1 from app-api (collection assurance summary)." />
       </section>
     );
@@ -75,8 +80,12 @@ export function EvidenceQualityWorkspaceView() {
 
   if (query.error) {
     return (
-      <section className="evidence-quality-workspace-route evidence-quality-workspace-route--error">
-        <h2>Evidence quality workspace</h2>
+      <section className="workspace-page evidence-quality-workspace-route evidence-quality-workspace-route--error">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Evidence Quality"
+          summary="Review collection assurance, read-path reliability, and bounded evidence weakness across current surfaces."
+        />
         <ErrorState error={query.error} onRetry={query.reload} />
         <p className="table-note">
           <button type="button" className="inline-action" onClick={() => navigateToEvidenceView("overview")}>
@@ -89,8 +98,12 @@ export function EvidenceQualityWorkspaceView() {
 
   if (!query.data) {
     return (
-      <section className="evidence-quality-workspace-route evidence-quality-workspace-route--empty">
-        <h2>Evidence quality workspace</h2>
+      <section className="workspace-page evidence-quality-workspace-route evidence-quality-workspace-route--empty">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Evidence Quality"
+          summary="Review collection assurance, read-path reliability, and bounded evidence weakness across current surfaces."
+        />
         <EmptyState
           title="No evidence quality summary"
           description="The backend did not return an evidence quality workspace response for the current request."
@@ -103,8 +116,12 @@ export function EvidenceQualityWorkspaceView() {
 
   if (data.contract_id !== "evidence_quality_workspace_v1") {
     return (
-      <section className="evidence-quality-workspace-route evidence-quality-workspace-route--unsupported">
-        <h2>Evidence quality workspace</h2>
+      <section className="workspace-page evidence-quality-workspace-route evidence-quality-workspace-route--unsupported">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Evidence Quality"
+          summary="Review collection assurance, read-path reliability, and bounded evidence weakness across current surfaces."
+        />
         <p className="callout">
           Unexpected contract <code>{data.contract_id}</code> — this shell expects{" "}
           <code>evidence_quality_workspace_v1</code>.
@@ -114,7 +131,7 @@ export function EvidenceQualityWorkspaceView() {
   }
 
   return (
-    <section className="evidence-quality-workspace-route" data-testid="evidence-quality-workspace">
+    <section className="workspace-page evidence-quality-workspace-route" data-testid="evidence-quality-workspace">
       <header className="evidence-quality-workspace-hero">
         <div className="evidence-quality-workspace-hero__text">
           <p className="eyebrow">Phase 2 · {data.contract_id}</p>

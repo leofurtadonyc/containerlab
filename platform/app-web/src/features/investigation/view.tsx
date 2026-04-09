@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import {
   DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
   readSyncRunsLimitFromSearch,
@@ -32,9 +33,13 @@ export function InvestigationView() {
 
   if (query.isLoading && !query.data) {
     return (
-      <section className="investigation-workspace-route investigation-workspace-route--loading">
+      <section className="workspace-page investigation-workspace-route investigation-workspace-route--loading">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Investigation"
+          summary="Guide structured troubleshooting across current bounded evidence, platform posture, and next-inspection hints."
+        />
         <InvestigationNavContextBanner search={searchKey} />
-        <h2>Investigation workspace</h2>
         <LoadingState label="Loading bounded investigation context from app-api (nested existing responses only)." />
       </section>
     );
@@ -42,9 +47,13 @@ export function InvestigationView() {
 
   if (query.error) {
     return (
-      <section className="investigation-workspace-route investigation-workspace-route--error">
+      <section className="workspace-page investigation-workspace-route investigation-workspace-route--error">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Investigation"
+          summary="Guide structured troubleshooting across current bounded evidence, platform posture, and next-inspection hints."
+        />
         <InvestigationNavContextBanner search={searchKey} />
-        <h2>Investigation workspace</h2>
         <ErrorState error={query.error} onRetry={query.reload} />
         <p className="table-note">
           <button type="button" className="inline-action" onClick={() => navigateToEvidenceView("overview")}>
@@ -57,9 +66,13 @@ export function InvestigationView() {
 
   if (!query.data) {
     return (
-      <section className="investigation-workspace-route investigation-workspace-route--empty">
+      <section className="workspace-page investigation-workspace-route investigation-workspace-route--empty">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Investigation"
+          summary="Guide structured troubleshooting across current bounded evidence, platform posture, and next-inspection hints."
+        />
         <InvestigationNavContextBanner search={searchKey} />
-        <h2>Investigation workspace</h2>
         <EmptyState
           title="No investigation context"
           description="The backend did not return an investigation assembly for the current request."
@@ -69,7 +82,7 @@ export function InvestigationView() {
   }
 
   return (
-    <section className="investigation-workspace-route">
+    <section className="workspace-page investigation-workspace-route">
       <InvestigationNavContextBanner search={searchKey} />
       <InvestigationWorkspaceProduct data={query.data} syncRunsLimit={syncRunsLimit} onReload={query.reload} />
     </section>

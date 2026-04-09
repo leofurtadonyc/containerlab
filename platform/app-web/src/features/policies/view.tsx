@@ -5,6 +5,7 @@ import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { StatusPill } from "../../components/status-pill";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import {
   buildCrossSliceConsistencyReadout,
   buildPolicySupportObservedReadout,
@@ -927,18 +928,21 @@ export function PoliciesView() {
       : "Health degraded";
 
   return (
-    <section>
+    <section className="workspace-page">
       <ReadSideQueryPanel variant="devices-policies" />
-      <div className="section-header">
-        <div>
-          <h2>Policies</h2>
-          <p>
-            Policy inventory is read from the live backend contract.
-            Workflow execution stays out of scope for this phase.
-          </p>
-        </div>
-        <StatusPill value={data.data_status} />
-      </div>
+      <WorkspaceHeader
+        eyebrow="Services & Policies"
+        title="Policies"
+        summary="Inspect policy inventory, bounded support posture, path analysis, topology impact, and evidence history without overstating workflow or dataplane authority."
+        statusValue={data.data_status}
+        actions={
+          <div className="workspace-toolbar">
+            <button type="button" className="shell-action-button shell-action-button--secondary" onClick={() => void reload()}>
+              Reload
+            </button>
+          </div>
+        }
+      />
 
       <InvestigationSurfaceEntry invFrom="policies" />
       <EvidenceQualitySurfaceEntry />

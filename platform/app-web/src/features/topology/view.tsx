@@ -11,6 +11,7 @@ import { ApiClientError, apiClient } from "../../api/client";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { StatusPill } from "../../components/status-pill";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import { buildCrossSliceConsistencyReadout } from "../../lib/cross-slice-consistency";
 import {
   buildFallbackAwareStatusDisplay,
@@ -707,17 +708,13 @@ export function TopologyView() {
       : null;
 
   return (
-    <section>
-      <div className="section-header">
-        <div>
-          <h2>Topology</h2>
-          <p>
-            Topology is shown through the backend-owned normalized read model rather
-            than direct observability dashboards or raw protocol payloads.
-          </p>
-        </div>
-        <StatusPill value={topology.completeness} />
-      </div>
+    <section className="workspace-page">
+      <WorkspaceHeader
+        eyebrow="Network Truth"
+        title="Topology"
+        summary="Read the network through the backend-owned normalized topology, trust cues, and bounded controller enrichment rather than raw protocol payloads or observability dashboards."
+        statusValue={topology.completeness}
+      />
 
       <InvestigationSurfaceEntry invFrom="topology" />
       <EvidenceQualitySurfaceEntry />
