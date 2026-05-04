@@ -13,6 +13,8 @@ from app_api.schemas.safe_actions import (
     SafeActionRejectRequest,
     SafeActionTimelineResponse,
 )
+from app_api.schemas.action_safety_case import ActionSafetyCaseResponse
+from app_api.services.action_safety_case import build_action_safety_case
 from app_api.services import safe_actions as safe_actions_service
 
 router = APIRouter(prefix="/actions", tags=["safe-actions"])
@@ -42,6 +44,15 @@ def get_action(action_id: str) -> SafeActionDetailResponse:
 @router.get("/{action_id}/timeline", response_model=SafeActionTimelineResponse)
 def get_action_timeline(action_id: str) -> SafeActionTimelineResponse:
     got = safe_actions_service.get_safe_action_timeline(action_id)
+    if got is None:
+        raise HTTPException(status_code=404, detail="action_not_found")
+    return got
+
+
+@router.get("/{action_id}/safety-case", response_model=ActionSafetyCaseResponse)
+def get_action_safety_case(action_id: str) -> ActionSafetyCaseResponse:
+    """Assemble bounded operator safety case over existing workflow artifacts only."""
+    got = build_action_safety_case(action_id)
     if got is None:
         raise HTTPException(status_code=404, detail="action_not_found")
     return got

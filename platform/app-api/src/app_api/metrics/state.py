@@ -190,6 +190,7 @@ def record_preview_outcome(
     duration_seconds: float,
 ) -> None:
     """Record one completed preview evaluation (Phase 2 preview engine)."""
+    global _preview_generation_seconds_sum, _preview_generation_count
     with _lock:
         _preview_decision_counts[(preview_type, decision, preview_status)] += 1
         _preview_generation_seconds_sum += max(0.0, duration_seconds)
@@ -205,6 +206,7 @@ def record_safe_action_outcome(
     duration_seconds: float,
 ) -> None:
     """Record one safe-action lifecycle observation (v1 bounded slice)."""
+    global _safe_action_execution_seconds_sum, _safe_action_execution_count
     with _lock:
         _safe_action_counts[(action_type, action_decision, execution_status, event)] += 1
         if event.startswith("execute"):
@@ -316,6 +318,7 @@ def record_rollback_outcome(
     duration_seconds: float,
 ) -> None:
     """Record one rollback orchestration observation (v1 bounded slice)."""
+    global _rollback_execution_seconds_sum, _rollback_execution_count
     with _lock:
         _rollback_counts[(rollback_type, rollback_decision, rollback_status, event)] += 1
         if event.startswith("execute"):
@@ -333,6 +336,7 @@ def record_validation_outcome(
     duration_seconds: float,
 ) -> None:
     """Record one completed validation evaluation (Phase 2 validation engine v1)."""
+    global _validation_generation_seconds_sum, _validation_generation_count
     verdict_label = overall_verdict if overall_verdict else "none"
     with _lock:
         _validation_outcome_counts[

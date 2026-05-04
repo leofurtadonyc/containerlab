@@ -10,3 +10,11 @@ export function useEvidenceQualityWorkspaceQuery(syncRunsLimit: number, enabled 
   );
   return useApiQuery(queryFn, { enabled });
 }
+
+export function useEvidenceWeaknessExplanationQuery(syncRunsLimit: number, enabled = true) {
+  const queryFn = useCallback(
+    () => apiClient.getEvidenceWeaknessExplanation(syncRunsLimit),
+    [syncRunsLimit],
+  );
+  return useApiQuery(queryFn, { enabled });
+}
