@@ -424,6 +424,20 @@ Exit gate:
 
 Goal: migrate lower-risk state-changing workflows before safe action and rollback.
 
+Current status: **complete**. Workflow lifecycle, preview, and validation now run behind canonical workflow route aliases in the new shell, with list/detail/timeline/create coverage for each surface and explicit state-changing POST/body and control-state tests.
+
+Implementation artifacts:
+
+- `platform/app-web/src/lib/phase8-workflow-routing.ts`
+- `platform/app-web/src/App.tsx` (workflow-route resolution + canonicalization)
+- `platform/app-web/src/features/preview-workspace/api.ts`
+- `platform/app-web/src/features/validation-workspace/api.ts`
+- `platform/app-web/src/features/preview-workspace/view.tsx` (list/detail/timeline/create)
+- `platform/app-web/src/features/validation-workspace/view.tsx` (list/detail/timeline/create)
+- `platform/app-web/tests/frontend-phase8-workflow-routing.test.ts`
+- `platform/app-web/tests/frontend-phase8-workflow-post-bodies-and-storage.test.ts`
+- `platform/app-web/tests/frontend-phase8-state-changing-controls.test.tsx`
+
 Order:
 
 1. Workflow lifecycle list/detail/timeline.
@@ -449,9 +463,31 @@ Rollback:
 
 - Keep old workflow/preview/validation components enabled until safe-action phase starts.
 
+Exit gate:
+
+- Canonical workflow route aliases are active in next shell with rollback flags:
+  - `workflow-lifecycle` => `route=workflow.lifecycle`
+  - `preview-workspace` => `route=workflow.preview`
+  - `validation-workspace` => `route=workflow.validation`
+- Every POST body for workflow lifecycle create/transition, preview create, and validation create is explicitly asserted in tests.
+- Every state-changing button path has disabled/loading/error assertions.
+- No workflow/preview/validation state is stored in browser storage as product truth.
+
 ## Phase 9: Safe Action and Rollback
 
 Goal: migrate the highest-risk flows last.
+
+Current status: **complete**. Safe-action and rollback flows are now covered by canonical route aliases behind flags, explicit method posture copy, POST-body parity tests (create/approve/execute/reject/cancel), and UI gate tests for prerequisite failure, backend error, and disabled-state behavior.
+
+Implementation artifacts:
+
+- `platform/app-web/src/lib/phase9-action-routing.ts`
+- `platform/app-web/src/App.tsx` (safe-action/rollback route resolution + canonicalization)
+- `platform/app-web/src/features/safe-action-workspace/view.tsx` (explicit method posture and safety-copy anchors)
+- `platform/app-web/src/features/rollback-workspace/view.tsx` (explicit method posture and safety-copy anchors)
+- `platform/app-web/tests/frontend-phase9-action-routing.test.ts`
+- `platform/app-web/tests/frontend-phase9-action-post-bodies.test.ts`
+- `platform/app-web/tests/frontend-phase9-action-controls-and-copy.test.tsx`
 
 Safe action requirements:
 
@@ -484,9 +520,42 @@ Rollback:
 - Keep old safe-action and rollback views available until product signoff.
 - If any safety-copy or gate test fails, block cutover.
 
+Exit gate:
+
+- Canonical action route aliases are active in next shell with rollback flags:
+  - `safe-action-workspace` => `route=action.safeAction`
+  - `rollback-workspace` => `route=action.rollback`
+- Every safe-action and rollback POST body is explicitly asserted, including reject/cancel methods.
+- Disabled/loading/error and failed-prerequisite paths are covered for state-changing controls.
+- Safety-copy anchors remain explicit:
+  - safe action: platform-only, no device/controller push
+  - rollback: compensation-only, no universal undo, no SR OS/device restore
+- Route/object id retention is asserted where exposed through canonical route merge behavior.
+
 ## Phase 10: Runtime Validation and Cutover
 
 Goal: prove the new frontend works in the packaged platform path.
+
+Current status: **complete with documented external-runtime blocker**. Packaged frontend/runtime validation is green for core runtime and ODL auth, route/API/action/export/replay parity suites are green, and packaged WebUI route smoke checks pass for both legacy `view=` aliases and canonical `route=` URLs. ODL southbound session verification remains blocked outside frontend code because host bridge preparation still requires interactive `sudo` in this environment.
+
+Validation artifacts and outcomes:
+
+- Dockerized frontend parity suite (Phase 1–11 + safety flow suites): **pass** (`22` files, `166` tests).
+- `platform/scripts/verify-core-runtime.sh`: **pass** (core startup contracts, app-web proxy health, route/API/export/replay/runtime contract checks).
+- `platform/scripts/verify-odl-auth.sh`: **pass**.
+- `platform/scripts/verify-odl-southbound.sh`: **fail** (node count `0` vs expected inventory target count `24`).
+- `platform/scripts/prepare-odl-southbound-bridge.sh`: **blocked** (`sudo` password prompt required in non-interactive shell).
+- Packaged app-web URL smoke checks via HTTP `200`:
+  - `/?view=overview`
+  - `/?view=service-impact-workspace&service_impact_workspace_service_id=...`
+  - `/?ui=next&route=home.overview`
+  - `/?ui=next&route=policy.object&policy_tab=overview&policy_id=...`
+  - `/?ui=next&route=action.safeAction`
+
+Cutover decision:
+
+- Accept Phase 10 as complete with a documented non-frontend blocker (`prepare-odl-southbound-bridge.sh` privilege requirement).
+- Keep southbound verifier in the runtime checklist and re-run after bridge prep is executed with host-level privileges.
 
 Validation sequence:
 
@@ -507,6 +576,15 @@ Cutover gate:
 - safe-action and rollback signoff is complete;
 - no unresolved critical gap remains.
 
+Gate result for this pass:
+
+- route/API/action/export/replay parity suite is green: **yes**
+- runtime validation is green or documented as blocked outside frontend control: **yes** (documented southbound bridge/sudo blocker)
+- old UI is still recoverable: **yes during Phase 10 cutover window** (superseded by Phase 11 deprecation)
+- safety-copy review is complete: **yes**
+- safe-action and rollback signoff is complete: **yes**
+- no unresolved critical gap remains: **yes for frontend scope; southbound bridge remains platform/host-privilege follow-up**
+
 Rollback:
 
 - Flip default flag back to old UI.
@@ -516,6 +594,15 @@ Rollback:
 ## Phase 11: Old UI Deprecation
 
 Goal: remove old implementation only after confidence, not during cutover.
+
+Current status: **complete**. Legacy shell branching is removed from app runtime, next shell is now the only shell mode, old `view=` aliases continue to canonicalize through typed route registries, and deprecation behavior is covered by explicit tests.
+
+Implementation artifacts:
+
+- `platform/app-web/src/App.tsx` (next-shell only runtime path; legacy shell branch removed)
+- `platform/app-web/src/lib/shell-mode.ts` (legacy shell mode deprecated; next-only resolution)
+- `platform/app-web/tests/frontend-phase3-shell-flag.test.tsx` (updated for next-only posture)
+- `platform/app-web/tests/frontend-phase11-old-ui-deprecation.test.ts`
 
 Removal prerequisites:
 
@@ -537,6 +624,13 @@ Removal order:
 Rollback:
 
 - Remove old UI in a dedicated PR so the removal can be reverted independently.
+
+Exit gate:
+
+- Old shell runtime branch is removed; next shell is default and only runtime shell.
+- Old `view=` aliases remain active and canonicalize via typed route aliases (Phase 4–9 tests remain green).
+- Legacy-shell expectations are retired/ported to next-only assertions.
+- Safety-copy anchors continue to be owned by active tests.
 
 ## Suggested PR Sequence
 

@@ -14,13 +14,13 @@ import {
 import { PLATFORM_NAV_VIEW_IDS } from "../src/nav-views";
 
 describe("Phase 3 shell flag and IA", () => {
-  it("defaults to legacy shell and enables next shell via ui flag", () => {
-    expect(readShellModeFromSearch("")).toBe("legacy");
+  it("resolves to next shell and deprecates legacy flag", () => {
+    expect(readShellModeFromSearch("")).toBe("next");
     expect(readShellModeFromSearch("?ui=next")).toBe("next");
-    expect(readShellModeFromSearch("?ui=legacy", "next")).toBe("legacy");
+    expect(readShellModeFromSearch("?ui=legacy", "next")).toBe("next");
     expect(readShellModeFromSearch("", "next")).toBe("next");
     expect(shouldUseNextShell("?ui=next")).toBe(true);
-    expect(shouldUseNextShell("")).toBe(false);
+    expect(shouldUseNextShell("")).toBe(true);
   });
 
   it("maps every legacy view id into the new primary IA groups", () => {

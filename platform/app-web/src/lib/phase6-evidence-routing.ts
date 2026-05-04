@@ -131,7 +131,7 @@ export function readViewIdFromSearchWithEvidenceRoutes(
   if (!isEvidenceRouteEnabled(route, flags)) {
     return null;
   }
-  return route.viewId;
+  return route!.viewId;
 }
 
 export function mergeEvidenceRouteIntoSearch(search: string, routeId: EvidenceRouteId): URLSearchParams {
@@ -168,5 +168,5 @@ export function maybeCanonicalizeEvidenceAlias(
   if (!isEvidenceRouteEnabled(byView, flags)) {
     return null;
   }
-  return mergeEvidenceRouteIntoSearch(sp.toString(), byView.id);
+  return mergeEvidenceRouteIntoSearch(sp.toString(), byView!.id);
 }

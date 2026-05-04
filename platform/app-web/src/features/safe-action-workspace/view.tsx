@@ -161,7 +161,7 @@ export function SafeActionWorkspaceView() {
         <h1 className="view-title">Safe action workspace</h1>
         <p className="view-subtitle text-muted">
           Backend-owned <strong>action execution</strong> for one v1 slice: persist operator{" "}
-          <code>intent_state</code> for <code>static_local</code> policies as platform data only. This is{" "}
+          <code>intent_state</code> for <code>static_local</code> policies as <strong>platform-only</strong> data. This is{" "}
           <strong>not</strong> a preview diff, validation verdict, evidence export, replay, or sync-history
           row. It is <strong>not</strong> device or controller configuration push.
         </p>
@@ -282,6 +282,24 @@ export function SafeActionWorkspaceView() {
         ) : (
           <p className="text-muted">Timeline appears after action create.</p>
         )}
+      </section>
+
+      <section className="detail-card">
+        <h2 className="detail-card__title">Method posture</h2>
+        <ul className="text-muted">
+          <li>
+            <code>GET /api/v1/actions</code>, <code>GET /api/v1/actions/{"{id}"}</code>, and{" "}
+            <code>GET /api/v1/actions/{"{id}"}/timeline</code> are read-only surfaces (list/detail/timeline posture).
+          </li>
+          <li>
+            <code>POST /api/v1/actions/{"{id}"}/approve</code> and <code>POST /api/v1/actions/{"{id}"}/execute</code>{" "}
+            are exposed in this workspace.
+          </li>
+          <li>
+            <code>POST /api/v1/actions/{"{id}"}/reject</code> and <code>POST /api/v1/actions/{"{id}"}/cancel</code> remain
+            backend-supported with explicit non-exposure in this UI phase.
+          </li>
+        </ul>
       </section>
 
       <section className="detail-card">

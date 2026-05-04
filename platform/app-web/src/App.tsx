@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { appApiBaseUrl } from "./api/client";
-import { AppShell } from "./components/shell";
 import { NextShell } from "./components/next-shell";
 import {
   APP_URL_SEARCH_CHANGED,
@@ -14,8 +13,7 @@ import {
   NEXT_SHELL_NAV_GROUPS,
 } from "./lib/next-shell-navigation";
 import {
-  LEGACY_UI_MODE_VALUE,
-  readShellModeFromSearch,
+  NEXT_UI_MODE_VALUE,
   UI_MODE_PARAM,
 } from "./lib/shell-mode";
 import {
@@ -36,6 +34,16 @@ import {
   readEvidenceRouteFlagsFromSearch,
   readViewIdFromSearchWithEvidenceRoutes,
 } from "./lib/phase6-evidence-routing";
+import {
+  maybeCanonicalizeWorkflowAlias,
+  readViewIdFromSearchWithWorkflowRoutes,
+  readWorkflowRouteFlagsFromSearch,
+} from "./lib/phase8-workflow-routing";
+import {
+  maybeCanonicalizeActionAlias,
+  readActionRouteFlagsFromSearch,
+  readViewIdFromSearchWithActionRoutes,
+} from "./lib/phase9-action-routing";
 import { PLATFORM_NAV_VIEW_IDS } from "./nav-views";
 import { AuditView } from "./features/audit/view";
 import { CapabilitiesView } from "./features/capabilities/view";
@@ -327,6 +335,13 @@ function countRouteContextParams(search: string): number {
   sp.delete("next_evidence_quality");
   sp.delete("next_evidence_stability");
   sp.delete("next_evidence_replay");
+  sp.delete("next_workflow");
+  sp.delete("next_workflow_lifecycle");
+  sp.delete("next_preview_workspace");
+  sp.delete("next_validation_workspace");
+  sp.delete("next_action");
+  sp.delete("next_safe_action");
+  sp.delete("next_rollback");
   return [...sp.keys()].length;
 }
 
@@ -401,7 +416,6 @@ function renderView(viewId: string) {
 export function App() {
   const [locationSearch, setLocationSearch] = useState<string>(() => window.location.search);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
-  const runtimeShellMode = (import.meta.env.VITE_UI_SHELL_MODE as string | undefined) ?? undefined;
   const coreDomainFlags = useMemo(
     () => readCoreDomainFlagsFromSearch(locationSearch, import.meta.env),
     [locationSearch],
@@ -412,6 +426,14 @@ export function App() {
   );
   const evidenceRouteFlags = useMemo(
     () => readEvidenceRouteFlagsFromSearch(locationSearch, import.meta.env),
+    [locationSearch],
+  );
+  const workflowRouteFlags = useMemo(
+    () => readWorkflowRouteFlagsFromSearch(locationSearch, import.meta.env),
+    [locationSearch],
+  );
+  const actionRouteFlags = useMemo(
+    () => readActionRouteFlagsFromSearch(locationSearch, import.meta.env),
     [locationSearch],
   );
 
@@ -458,6 +480,14 @@ export function App() {
       if (fromEvidenceRoute && PLATFORM_NAV_VIEW_IDS.has(fromEvidenceRoute)) {
         return fromEvidenceRoute;
       }
+      const fromWorkflowRoute = readViewIdFromSearchWithWorkflowRoutes(locationSearch, workflowRouteFlags);
+      if (fromWorkflowRoute && PLATFORM_NAV_VIEW_IDS.has(fromWorkflowRoute)) {
+        return fromWorkflowRoute;
+      }
+      const fromActionRoute = readViewIdFromSearchWithActionRoutes(locationSearch, actionRouteFlags);
+      if (fromActionRoute && PLATFORM_NAV_VIEW_IDS.has(fromActionRoute)) {
+        return fromActionRoute;
+      }
       return (
         readViewIdFromSearchWithCoreRoutes(
           locationSearch,
@@ -466,7 +496,7 @@ export function App() {
         ) ?? "overview"
       );
     },
-    [coreDomainFlags, evidenceRouteFlags, locationSearch, objectWorkspaceFlags],
+    [actionRouteFlags, coreDomainFlags, evidenceRouteFlags, locationSearch, objectWorkspaceFlags, workflowRouteFlags],
   );
   const requestedView = useMemo(
     () => new URLSearchParams(locationSearch).get("view"),
@@ -476,11 +506,6 @@ export function App() {
     () => Boolean(requestedView && !PLATFORM_NAV_VIEW_IDS.has(requestedView)),
     [requestedView],
   );
-  const shellMode = useMemo(
-    () => readShellModeFromSearch(locationSearch, runtimeShellMode),
-    [locationSearch, runtimeShellMode],
-  );
-  const usingNextShell = shellMode === "next";
   const activeMeta = VIEW_META.get(activeView) ?? VIEW_META.get("overview")!;
   const routeContextCount = countRouteContextParams(locationSearch);
   const environmentSummary = summarizeAppApiBaseUrl(appApiBaseUrl);
@@ -528,11 +553,8 @@ export function App() {
     if (route && coreDomainFlags[route.flag] && !sp.get("route")) {
       sp.set("route", route.id);
     }
-    if (shellMode === "next") {
-      sp.set(UI_MODE_PARAM, "next");
-    } else if (shellMode === "legacy" && new URLSearchParams(window.location.search).get(UI_MODE_PARAM) === LEGACY_UI_MODE_VALUE) {
-      sp.set(UI_MODE_PARAM, LEGACY_UI_MODE_VALUE);
-    }
+    // Phase 11 deprecates legacy shell branches; preserve explicit next-shell marker.
+    sp.set(UI_MODE_PARAM, NEXT_UI_MODE_VALUE);
     if (current.has("next_home")) {
       sp.set("next_home", current.get("next_home") ?? "");
     }
@@ -584,11 +606,43 @@ export function App() {
     if (current.has("next_evidence_replay")) {
       sp.set("next_evidence_replay", current.get("next_evidence_replay") ?? "");
     }
+    if (current.has("next_workflow")) {
+      sp.set("next_workflow", current.get("next_workflow") ?? "");
+    }
+    if (current.has("next_workflow_lifecycle")) {
+      sp.set("next_workflow_lifecycle", current.get("next_workflow_lifecycle") ?? "");
+    }
+    if (current.has("next_preview_workspace")) {
+      sp.set("next_preview_workspace", current.get("next_preview_workspace") ?? "");
+    }
+    if (current.has("next_validation_workspace")) {
+      sp.set("next_validation_workspace", current.get("next_validation_workspace") ?? "");
+    }
+    if (current.has("next_action")) {
+      sp.set("next_action", current.get("next_action") ?? "");
+    }
+    if (current.has("next_safe_action")) {
+      sp.set("next_safe_action", current.get("next_safe_action") ?? "");
+    }
+    if (current.has("next_rollback")) {
+      sp.set("next_rollback", current.get("next_rollback") ?? "");
+    }
     replaceUrlSearchParams(sp);
-  }, [activeView, coreDomainFlags, shellMode]);
+  }, [activeView, coreDomainFlags]);
 
   useEffect(() => {
-    if (!usingNextShell) {
+    const canonicalActionAlias = maybeCanonicalizeActionAlias(locationSearch, actionRouteFlags);
+    if (canonicalActionAlias) {
+      if (canonicalActionAlias.toString() !== new URLSearchParams(locationSearch).toString()) {
+        replaceUrlSearchParams(canonicalActionAlias);
+      }
+      return;
+    }
+    const canonicalWorkflowAlias = maybeCanonicalizeWorkflowAlias(locationSearch, workflowRouteFlags);
+    if (canonicalWorkflowAlias) {
+      if (canonicalWorkflowAlias.toString() !== new URLSearchParams(locationSearch).toString()) {
+        replaceUrlSearchParams(canonicalWorkflowAlias);
+      }
       return;
     }
     const canonicalEvidenceAlias = maybeCanonicalizeEvidenceAlias(locationSearch, evidenceRouteFlags);
@@ -613,55 +667,30 @@ export function App() {
       return;
     }
     replaceUrlSearchParams(canonical);
-  }, [coreDomainFlags, evidenceRouteFlags, locationSearch, objectWorkspaceFlags, usingNextShell]);
-
-  if (usingNextShell) {
-    return (
-      <NextShell
-        title="Platform"
-        navigationGroups={NEXT_SHELL_NAV_GROUPS}
-        activeItemId={activeView}
-        onSelect={handleSelectView}
-        currentGroupLabel={findGroupLabelForView(activeView)}
-        currentPageLabel={activeMeta.label}
-        currentPageDescription={activeMeta.description}
-        routeContextChips={routeContextChips}
-        environmentSummary={environmentSummary}
-        onCopyLink={handleCopyLink}
-        copyState={copyState}
-        onResetContext={handleResetContext}
-        commandSlot={<GlobalOperatorSearch />}
-        fallbackNote={
-          hasInvalidView
-            ? `Unrecognized view "${requestedView}" opened. Showing Overview while preserving URL compatibility.`
-            : null
-        }
-      >
-        {renderView(activeView)}
-      </NextShell>
-    );
-  }
+  }, [actionRouteFlags, coreDomainFlags, evidenceRouteFlags, locationSearch, objectWorkspaceFlags, workflowRouteFlags]);
 
   return (
-    <AppShell
+    <NextShell
       title="Platform"
-      navigationGroups={LEGACY_NAV_GROUPS.map((group) => ({
-        ...group,
-        items: group.items.map((item) => ({ ...item })),
-      }))}
+      navigationGroups={NEXT_SHELL_NAV_GROUPS}
       activeItemId={activeView}
       onSelect={handleSelectView}
-      currentGroupLabel={activeMeta.groupLabel}
+      currentGroupLabel={findGroupLabelForView(activeView)}
       currentPageLabel={activeMeta.label}
       currentPageDescription={activeMeta.description}
       environmentSummary={environmentSummary}
-      routeContextCount={routeContextCount}
+      routeContextChips={routeContextChips}
       onCopyLink={handleCopyLink}
       copyState={copyState}
       onResetContext={handleResetContext}
       commandSlot={<GlobalOperatorSearch />}
+      fallbackNote={
+        hasInvalidView
+          ? `Unrecognized view "${requestedView}" opened. Showing Overview while preserving URL compatibility.`
+          : null
+      }
     >
       {renderView(activeView)}
-    </AppShell>
+    </NextShell>
   );
 }

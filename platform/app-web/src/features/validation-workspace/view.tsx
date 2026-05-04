@@ -1,21 +1,41 @@
 import { useCallback, useState } from "react";
 
 import { apiClient } from "../../api/client";
-import { EmptyState, LoadingState } from "../../components/query-states";
+import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
+import { formatDateTime } from "../../lib/presentation";
+import { mergeViewIntoSearch, replaceUrlSearchParams } from "../../lib/url-app-state";
+import {
+  useValidationDetailQuery,
+  useValidationListQuery,
+  useValidationTimelineQuery,
+  useValidationUrlSelection,
+} from "./api";
 
 const V1_TYPE = "policy_read_model_observability_v1";
 
+function setValidationSelection(validationId: string | null) {
+  const sp = mergeViewIntoSearch(window.location.search, "validation-workspace");
+  if (validationId) {
+    sp.set("validation_id", validationId);
+  } else {
+    sp.delete("validation_id");
+  }
+  replaceUrlSearchParams(sp);
+}
+
 export function ValidationWorkspaceView() {
+  const { selectedId } = useValidationUrlSelection();
+  const listQuery = useValidationListQuery();
+  const detailQuery = useValidationDetailQuery(selectedId);
+  const timelineQuery = useValidationTimelineQuery(selectedId);
   const [policyId, setPolicyId] = useState("");
   const [context, setContext] = useState<"pre_change" | "post_change">("pre_change");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [detailJson, setDetailJson] = useState<string | null>(null);
 
   const onSubmit = useCallback(async () => {
     setError(null);
     setBusy(true);
-    setDetailJson(null);
     try {
       const pid = policyId.trim();
       if (!pid) {
@@ -30,13 +50,14 @@ export function ValidationWorkspaceView() {
         created_by_actor_type: "operator",
         created_by_actor_id: "operator_webui",
       });
-      setDetailJson(JSON.stringify(res, null, 2));
+      await listQuery.reload();
+      setValidationSelection(res.validation_id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Request failed.");
     } finally {
       setBusy(false);
     }
-  }, [policyId, context]);
+  }, [policyId, context, listQuery]);
 
   return (
     <div className="view-stack">
@@ -83,21 +104,85 @@ export function ValidationWorkspaceView() {
         {error ? <p className="text-error">{error}</p> : null}
       </section>
 
-      <section className="detail-card">
-        <h2 className="detail-card__title">Last response</h2>
-        {busy ? <LoadingState label="Loading validation" /> : null}
-        {!busy && !detailJson && !error ? (
-          <EmptyState
-            title="No validation yet"
-            description="Submit a policy id to see capability decision, checks, and verdict JSON."
-          />
-        ) : null}
-        {detailJson ? (
-          <pre className="code-block code-block--scroll" data-testid="validation-last-json">
-            {detailJson}
-          </pre>
-        ) : null}
-      </section>
+      <div className="workflow-lifecycle-split">
+        <section className="detail-card">
+          <h2 className="detail-card__title">Validation records</h2>
+          {listQuery.isLoading ? <LoadingState label="Loading validation records" /> : null}
+          {listQuery.error ? <ErrorState error={listQuery.error} onRetry={() => void listQuery.reload()} /> : null}
+          {!listQuery.isLoading && !listQuery.error && (listQuery.data?.items.length ?? 0) === 0 ? (
+            <EmptyState title="No validation records" description="Run validation to create one." />
+          ) : null}
+          {!listQuery.isLoading && !listQuery.error && (listQuery.data?.items.length ?? 0) > 0 ? (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Validation id</th>
+                  <th>Status</th>
+                  <th>Verdict</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(listQuery.data?.items ?? []).map((item) => (
+                  <tr key={item.validation_id}>
+                    <td>
+                      <button
+                        type="button"
+                        className="inline-action"
+                        onClick={() => setValidationSelection(item.validation_id)}
+                      >
+                        <code>{item.validation_id}</code>
+                      </button>
+                    </td>
+                    <td>{item.validation_status}</td>
+                    <td>{item.overall_verdict ?? "unknown"}</td>
+                    <td className="meta-copy">{formatDateTime(item.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : null}
+        </section>
+
+        <section className="detail-card">
+          <h2 className="detail-card__title">Detail & timeline</h2>
+          {!selectedId ? (
+            <EmptyState title="No validation selected" description="Select a validation record from the list." />
+          ) : null}
+          {selectedId && detailQuery.isLoading ? <LoadingState label="Loading validation detail" /> : null}
+          {selectedId && detailQuery.error ? (
+            <ErrorState error={detailQuery.error} onRetry={() => void detailQuery.reload()} />
+          ) : null}
+          {selectedId && detailQuery.data ? (
+            <>
+              <button type="button" className="inline-action" onClick={() => setValidationSelection(null)}>
+                Clear selection
+              </button>
+              <pre className="code-block code-block--scroll" data-testid="validation-last-json">
+                {JSON.stringify(detailQuery.data, null, 2)}
+              </pre>
+              <h3 className="detail-card__title">Timeline</h3>
+              {timelineQuery.isLoading ? <LoadingState label="Loading validation timeline" /> : null}
+              {timelineQuery.error ? (
+                <ErrorState error={timelineQuery.error} onRetry={() => void timelineQuery.reload()} />
+              ) : null}
+              {timelineQuery.data?.events?.length ? (
+                <ol className="timeline-list">
+                  {timelineQuery.data.events.map((ev) => (
+                    <li key={ev.event_id}>
+                      <span className="meta-copy">{formatDateTime(ev.occurred_at)}</span> —{" "}
+                      <code>{ev.event_type}</code>
+                      {ev.reason ? ` — ${ev.reason}` : ""}
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="meta-copy">No timeline events.</p>
+              )}
+            </>
+          ) : null}
+        </section>
+      </div>
 
       <section className="detail-card">
         <h2 className="detail-card__title">API</h2>
