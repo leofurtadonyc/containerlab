@@ -25,6 +25,17 @@ import {
   readCoreDomainFlagsFromSearch,
   readViewIdFromSearchWithCoreRoutes,
 } from "./lib/phase4-core-domain-routing";
+import {
+  maybeCanonicalizeObjectWorkspaceAlias,
+  mergeObjectWorkspaceRouteIntoSearch,
+  readObjectWorkspaceFlagsFromSearch,
+  readViewIdFromSearchWithObjectRoutes,
+} from "./lib/phase5-object-workspace-routing";
+import {
+  maybeCanonicalizeEvidenceAlias,
+  readEvidenceRouteFlagsFromSearch,
+  readViewIdFromSearchWithEvidenceRoutes,
+} from "./lib/phase6-evidence-routing";
 import { PLATFORM_NAV_VIEW_IDS } from "./nav-views";
 import { AuditView } from "./features/audit/view";
 import { CapabilitiesView } from "./features/capabilities/view";
@@ -299,6 +310,23 @@ function countRouteContextParams(search: string): number {
   sp.delete("next_network");
   sp.delete("next_governance");
   sp.delete("next_policy_service");
+  sp.delete("next_policy_object");
+  sp.delete("next_topology_object");
+  sp.delete("next_service_object");
+  sp.delete("next_maintenance_object");
+  sp.delete("policy_tab");
+  sp.delete("topology_tab");
+  sp.delete("service_tab");
+  sp.delete("maintenance_tab");
+  sp.delete("next_evidence");
+  sp.delete("next_evidence_investigation");
+  sp.delete("next_evidence_situation_room");
+  sp.delete("next_evidence_operator_briefing");
+  sp.delete("next_evidence_delta_digest");
+  sp.delete("next_evidence_consistency");
+  sp.delete("next_evidence_quality");
+  sp.delete("next_evidence_stability");
+  sp.delete("next_evidence_replay");
   return [...sp.keys()].length;
 }
 
@@ -378,6 +406,14 @@ export function App() {
     () => readCoreDomainFlagsFromSearch(locationSearch, import.meta.env),
     [locationSearch],
   );
+  const objectWorkspaceFlags = useMemo(
+    () => readObjectWorkspaceFlagsFromSearch(locationSearch, import.meta.env),
+    [locationSearch],
+  );
+  const evidenceRouteFlags = useMemo(
+    () => readEvidenceRouteFlagsFromSearch(locationSearch, import.meta.env),
+    [locationSearch],
+  );
 
   useEffect(() => {
     const syncFromUrl = () => {
@@ -413,13 +449,24 @@ export function App() {
   }, []);
 
   const activeView = useMemo(
-    () =>
-      readViewIdFromSearchWithCoreRoutes(
-        locationSearch,
-        PLATFORM_NAV_VIEW_IDS,
-        coreDomainFlags,
-      ) ?? "overview",
-    [coreDomainFlags, locationSearch],
+    () => {
+      const fromObjectRoute = readViewIdFromSearchWithObjectRoutes(locationSearch, objectWorkspaceFlags);
+      if (fromObjectRoute && PLATFORM_NAV_VIEW_IDS.has(fromObjectRoute)) {
+        return fromObjectRoute;
+      }
+      const fromEvidenceRoute = readViewIdFromSearchWithEvidenceRoutes(locationSearch, evidenceRouteFlags);
+      if (fromEvidenceRoute && PLATFORM_NAV_VIEW_IDS.has(fromEvidenceRoute)) {
+        return fromEvidenceRoute;
+      }
+      return (
+        readViewIdFromSearchWithCoreRoutes(
+          locationSearch,
+          PLATFORM_NAV_VIEW_IDS,
+          coreDomainFlags,
+        ) ?? "overview"
+      );
+    },
+    [coreDomainFlags, evidenceRouteFlags, locationSearch, objectWorkspaceFlags],
   );
   const requestedView = useMemo(
     () => new URLSearchParams(locationSearch).get("view"),
@@ -444,8 +491,41 @@ export function App() {
   const handleResetContext = useCallback(() => {
     const sp = new URLSearchParams();
     sp.set("view", activeView);
+    const current = new URLSearchParams(window.location.search);
+    const currentRoute = current.get("route");
+    if (
+      currentRoute === "policy.object" ||
+      currentRoute === "topology.object" ||
+      currentRoute === "service.object" ||
+      currentRoute === "maintenance.subjectSet"
+    ) {
+      const tabParam =
+        currentRoute === "policy.object"
+          ? "policy_tab"
+          : currentRoute === "topology.object"
+            ? "topology_tab"
+            : currentRoute === "service.object"
+              ? "service_tab"
+              : "maintenance_tab";
+      const tab = current.get(tabParam) ?? "overview";
+      const merged = mergeObjectWorkspaceRouteIntoSearch(sp.toString(), currentRoute, tab);
+      sp.set("route", merged.get("route") ?? currentRoute);
+      sp.set("view", merged.get("view") ?? activeView);
+      if (merged.get("policy_tab")) {
+        sp.set("policy_tab", merged.get("policy_tab") ?? "");
+      }
+      if (merged.get("topology_tab")) {
+        sp.set("topology_tab", merged.get("topology_tab") ?? "");
+      }
+      if (merged.get("service_tab")) {
+        sp.set("service_tab", merged.get("service_tab") ?? "");
+      }
+      if (merged.get("maintenance_tab")) {
+        sp.set("maintenance_tab", merged.get("maintenance_tab") ?? "");
+      }
+    }
     const route = findCoreDomainRouteByViewId(activeView);
-    if (route && coreDomainFlags[route.flag]) {
+    if (route && coreDomainFlags[route.flag] && !sp.get("route")) {
       sp.set("route", route.id);
     }
     if (shellMode === "next") {
@@ -453,7 +533,6 @@ export function App() {
     } else if (shellMode === "legacy" && new URLSearchParams(window.location.search).get(UI_MODE_PARAM) === LEGACY_UI_MODE_VALUE) {
       sp.set(UI_MODE_PARAM, LEGACY_UI_MODE_VALUE);
     }
-    const current = new URLSearchParams(window.location.search);
     if (current.has("next_home")) {
       sp.set("next_home", current.get("next_home") ?? "");
     }
@@ -466,11 +545,64 @@ export function App() {
     if (current.has("next_policy_service")) {
       sp.set("next_policy_service", current.get("next_policy_service") ?? "");
     }
+    if (current.has("next_policy_object")) {
+      sp.set("next_policy_object", current.get("next_policy_object") ?? "");
+    }
+    if (current.has("next_topology_object")) {
+      sp.set("next_topology_object", current.get("next_topology_object") ?? "");
+    }
+    if (current.has("next_service_object")) {
+      sp.set("next_service_object", current.get("next_service_object") ?? "");
+    }
+    if (current.has("next_maintenance_object")) {
+      sp.set("next_maintenance_object", current.get("next_maintenance_object") ?? "");
+    }
+    if (current.has("next_evidence")) {
+      sp.set("next_evidence", current.get("next_evidence") ?? "");
+    }
+    if (current.has("next_evidence_investigation")) {
+      sp.set("next_evidence_investigation", current.get("next_evidence_investigation") ?? "");
+    }
+    if (current.has("next_evidence_situation_room")) {
+      sp.set("next_evidence_situation_room", current.get("next_evidence_situation_room") ?? "");
+    }
+    if (current.has("next_evidence_operator_briefing")) {
+      sp.set("next_evidence_operator_briefing", current.get("next_evidence_operator_briefing") ?? "");
+    }
+    if (current.has("next_evidence_delta_digest")) {
+      sp.set("next_evidence_delta_digest", current.get("next_evidence_delta_digest") ?? "");
+    }
+    if (current.has("next_evidence_consistency")) {
+      sp.set("next_evidence_consistency", current.get("next_evidence_consistency") ?? "");
+    }
+    if (current.has("next_evidence_quality")) {
+      sp.set("next_evidence_quality", current.get("next_evidence_quality") ?? "");
+    }
+    if (current.has("next_evidence_stability")) {
+      sp.set("next_evidence_stability", current.get("next_evidence_stability") ?? "");
+    }
+    if (current.has("next_evidence_replay")) {
+      sp.set("next_evidence_replay", current.get("next_evidence_replay") ?? "");
+    }
     replaceUrlSearchParams(sp);
   }, [activeView, coreDomainFlags, shellMode]);
 
   useEffect(() => {
     if (!usingNextShell) {
+      return;
+    }
+    const canonicalEvidenceAlias = maybeCanonicalizeEvidenceAlias(locationSearch, evidenceRouteFlags);
+    if (canonicalEvidenceAlias) {
+      if (canonicalEvidenceAlias.toString() !== new URLSearchParams(locationSearch).toString()) {
+        replaceUrlSearchParams(canonicalEvidenceAlias);
+      }
+      return;
+    }
+    const canonicalObjectAlias = maybeCanonicalizeObjectWorkspaceAlias(locationSearch, objectWorkspaceFlags);
+    if (canonicalObjectAlias) {
+      if (canonicalObjectAlias.toString() !== new URLSearchParams(locationSearch).toString()) {
+        replaceUrlSearchParams(canonicalObjectAlias);
+      }
       return;
     }
     const canonical = maybeCanonicalizeCoreDomainAlias(locationSearch, coreDomainFlags);
@@ -481,7 +613,7 @@ export function App() {
       return;
     }
     replaceUrlSearchParams(canonical);
-  }, [coreDomainFlags, locationSearch, usingNextShell]);
+  }, [coreDomainFlags, evidenceRouteFlags, locationSearch, objectWorkspaceFlags, usingNextShell]);
 
   if (usingNextShell) {
     return (

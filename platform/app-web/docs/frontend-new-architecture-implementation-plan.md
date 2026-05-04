@@ -281,6 +281,14 @@ Exit gate:
 
 Goal: consolidate policy, topology, service, and maintenance object workflows into object pages and tabs.
 
+Current status: **complete**. Policy/topology/service/maintenance object workflows now canonicalize to typed object-route ids with tab semantics in the new shell, while old direct `view=` links remain supported as aliases and continue rendering existing feature components.
+
+Implementation artifacts:
+
+- `platform/app-web/src/lib/phase5-object-workspace-routing.ts`
+- `platform/app-web/src/App.tsx` (object-route resolution + canonicalization on next shell)
+- `platform/app-web/tests/frontend-phase5-object-workspace-routing.test.ts`
+
 Migration slices:
 
 | Slice | Current views/panels | New destination | Highest risk |
@@ -303,9 +311,27 @@ Rollback:
 - Disable slice flag.
 - Keep old object panels and route helpers.
 
+Exit gate:
+
+- Old object/workspace aliases canonicalize to object routes when enabled:
+  - `policies` + `policy_id` => `route=policy.object`
+  - `topology` + `topology_object` => `route=topology.object`
+  - `service-explorer`/`service-dossier`/`service-impact-workspace` + service anchor => `route=service.object`
+  - maintenance preview/evidence/window subject routes => `route=maintenance.subjectSet`
+- Canonical object routes continue carrying legacy `view=` aliases for compatibility and unchanged feature rendering.
+- Per-slice rollback flags (`next_policy_object`, `next_topology_object`, `next_service_object`, `next_maintenance_object`) disable canonicalization without changing backend semantics.
+
 ## Phase 6: Evidence and Handoff Workspaces
 
 Goal: migrate composed evidence surfaces while preserving contract boundaries.
+
+Current status: **complete**. Evidence and handoff workspaces now canonicalize to typed evidence route ids in the new shell while preserving distinct workspace semantics and existing feature/API behavior.
+
+Implementation artifacts:
+
+- `platform/app-web/src/lib/phase6-evidence-routing.ts`
+- `platform/app-web/src/App.tsx` (evidence-route resolution + canonicalization precedence)
+- `platform/app-web/tests/frontend-phase6-evidence-routing.test.ts`
 
 Order:
 
@@ -337,9 +363,30 @@ Rollback:
 
 - Disable the evidence domain flag or individual workspace flag.
 
+Exit gate:
+
+- Evidence workspace aliases canonicalize to canonical route ids when enabled:
+  - `investigation` => `route=evidence.investigation`
+  - `situation-room` => `route=evidence.situationRoom`
+  - `operator-briefing` => `route=evidence.operatorBriefing`
+  - `delta-digest` => `route=evidence.deltaDigest`
+  - `evidence-consistency` => `route=evidence.consistency`
+  - `evidence-quality-workspace` => `route=evidence.quality`
+  - `stability-workspace` => `route=evidence.stability`
+  - `evidence-replay` => `route=evidence.replay`
+- Canonical evidence routes keep legacy `view=` aliases and continue rendering the existing workspace components unchanged.
+- Domain-level rollback (`next_evidence`) and per-workspace rollback flags (`next_evidence_*`) disable canonicalization without changing backend semantics.
+
 ## Phase 7: Export, Report, and Replay Boundaries
 
 Goal: harden all download-style interactions before action workflows migrate.
+
+Current status: **complete**. Export/report/replay boundaries are now codified with explicit posture metadata and dedicated tests for path families, supported formats, filename behavior, replay acceptance/rejection, and envelope-family copy anchors.
+
+Implementation artifacts:
+
+- `platform/app-web/src/lib/phase7-export-boundaries.ts`
+- `platform/app-web/tests/frontend-phase7-export-report-replay-boundaries.test.tsx`
 
 Work packages:
 
@@ -363,6 +410,15 @@ Acceptance criteria:
 Rollback:
 
 - Reuse old download helpers/components.
+
+Exit gate:
+
+- Every export/report path family remains explicitly bounded (`/exports` vs `/reports`) with tested route semantics.
+- Supported formats are explicitly listed and asserted (`json`, `markdown`).
+- Download filename behavior is deterministic by family/prefix and tested.
+- Replay parser acceptance/rejection is explicit (`evidence_export_v1` accepted; report/workspace envelopes rejected).
+- UI copy for export/report/replay actions names envelope families (`evidence_export_v1`, `briefing_export_bundle_v1`, `impact_report_v1`, `change_safety_case_v1`).
+- Maintenance handoff posture is explicitly resolved as backend-only in Phase 7 boundary registry.
 
 ## Phase 8: Workflow Lifecycle, Preview, and Validation
 
