@@ -106,7 +106,7 @@ export function RollbackWorkspaceView() {
         <h1 className="view-title">Rollback workspace</h1>
         <p className="view-subtitle text-muted">
           Backend-owned <strong>rollback orchestration</strong> for one v1 slice: compensate the platform
-          operator intent overlay by writing a new intent record (bounded; not SR OS / device restore). This
+          operator intent overlay by writing a new intent record (<strong>compensation-only</strong>; not SR OS / device restore). This
           is <strong>not</strong> universal undo, multi-vendor rollback, or evidence replay.
         </p>
       </header>
@@ -191,6 +191,24 @@ export function RollbackWorkspaceView() {
         ) : (
           <p className="text-muted">Timeline appears after rollback create.</p>
         )}
+      </section>
+
+      <section className="detail-card">
+        <h2 className="detail-card__title">Method posture</h2>
+        <ul className="text-muted">
+          <li>
+            <code>GET /api/v1/rollbacks</code>, <code>GET /api/v1/rollbacks/{"{id}"}</code>, and{" "}
+            <code>GET /api/v1/rollbacks/{"{id}"}/timeline</code> are read-only surfaces (list/detail/timeline posture).
+          </li>
+          <li>
+            <code>POST /api/v1/rollbacks/{"{id}"}/approve</code> and <code>POST /api/v1/rollbacks/{"{id}"}/execute</code>{" "}
+            are exposed in this workspace.
+          </li>
+          <li>
+            <code>POST /api/v1/rollbacks/{"{id}"}/reject</code> and <code>POST /api/v1/rollbacks/{"{id}"}/cancel</code>{" "}
+            remain backend-supported with explicit non-exposure in this UI phase.
+          </li>
+        </ul>
       </section>
 
       <section className="detail-card">

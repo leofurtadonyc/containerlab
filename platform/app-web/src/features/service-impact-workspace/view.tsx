@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { APP_URL_SEARCH_CHANGED } from "../../lib/url-app-state";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import {
   SERVICE_IMPACT_WORKSPACE_SERVICE_ID_PARAM,
   readServiceImpactWorkspaceServiceIdFromSearch,
@@ -42,7 +43,7 @@ export function ServiceImpactWorkspaceView() {
   );
 
   return (
-    <section className="service-impact-workspace-route">
+    <section className="workspace-page service-impact-workspace-route">
       <ServiceImpactWorkspaceSetup serviceId={serviceId} onApplyServiceId={applyServiceId} />
       {serviceId ? <ServiceImpactWorkspaceProduct serviceId={serviceId} /> : null}
     </section>
@@ -63,14 +64,19 @@ function ServiceImpactWorkspaceSetup({
   }, [serviceId]);
 
   return (
-    <div className="service-impact-workspace-setup detail-card">
-      <h2>Service Impact Workspace</h2>
-      <p className="body-copy">
-        Enter a <strong>service_id</strong> (same forms as Service Explorer: <code>policy:…</code>,{" "}
-        <code>color:…</code>, <code>headend:…</code>, <code>endpoint:…</code>) to load the composed{" "}
-        <code>service_impact_workspace_v1</code> workspace (Explorer detail [+ optional failure-impact]). This is
-        read-only interpretation support — not blast-radius truth, SLA proof, incident command, or change authority.
-      </p>
+    <div className="service-impact-workspace-setup workspace-page">
+      <WorkspaceHeader
+        eyebrow="Services & Policies"
+        title="Service Impact"
+        summary="Load a bounded service impact workspace that composes service grouping detail with optional impact context."
+      />
+      <div className="detail-card">
+        <p className="body-copy">
+          Enter a <strong>service_id</strong> (same forms as Service Explorer: <code>policy:…</code>,{" "}
+          <code>color:…</code>, <code>headend:…</code>, <code>endpoint:…</code>) to load the composed{" "}
+          <code>service_impact_workspace_v1</code> workspace (Explorer detail [+ optional failure-impact]). This is
+          read-only interpretation support, not blast-radius truth, SLA proof, incident command, or change authority.
+        </p>
       <form
         className="service-impact-workspace-setup__form"
         onSubmit={(e) => {
@@ -89,6 +95,7 @@ function ServiceImpactWorkspaceSetup({
         />
         <button type="submit">Load workspace</button>
       </form>
+      </div>
     </div>
   );
 }

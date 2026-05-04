@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MaintenancePreviewContext } from "../../api/contracts";
 import { ApiClientError, type MaintenancePreviewQuery } from "../../api/client";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import { APP_URL_SEARCH_CHANGED } from "../../lib/url-app-state";
 import {
   navigateToMaintenancePreview,
@@ -60,8 +61,12 @@ export function MaintenancePreviewView() {
 
   if (subject?.kind === "invalid") {
     return (
-      <section className="maintenance-preview-route maintenance-preview-route--error">
-        <h2>Maintenance Preview</h2>
+      <section className="workspace-page maintenance-preview-route maintenance-preview-route--error">
+        <WorkspaceHeader
+          eyebrow="Change & Safety"
+          title="Maintenance Preview"
+          summary="Preview bounded maintenance impact around a selected subject before opening deeper maintenance workspaces."
+        />
         <ErrorState error={INVALID_MAINTENANCE_SUBJECT_ERROR} onRetry={syncFromUrl} />
         <p className="table-note">
           <button type="button" className="inline-action" onClick={() => navigateToMaintenancePreview()}>
@@ -74,8 +79,12 @@ export function MaintenancePreviewView() {
 
   if (!subject) {
     return (
-      <section className="maintenance-preview-route maintenance-preview-route--setup">
-        <h2>Maintenance Preview</h2>
+      <section className="workspace-page maintenance-preview-route maintenance-preview-route--setup">
+        <WorkspaceHeader
+          eyebrow="Change & Safety"
+          title="Maintenance Preview"
+          summary="Preview bounded maintenance impact around a selected subject before opening deeper maintenance workspaces."
+        />
         <MaintenancePreviewSetupForm />
       </section>
     );
@@ -83,8 +92,12 @@ export function MaintenancePreviewView() {
 
   if (previewQuery.isLoading && !previewQuery.data) {
     return (
-      <section className="maintenance-preview-route maintenance-preview-route--loading">
-        <h2>Maintenance Preview</h2>
+      <section className="workspace-page maintenance-preview-route maintenance-preview-route--loading">
+        <WorkspaceHeader
+          eyebrow="Change & Safety"
+          title="Maintenance Preview"
+          summary="Preview bounded maintenance impact around a selected subject before opening deeper maintenance workspaces."
+        />
         <LoadingState label="Loading maintenance_preview_v1 assembly from app-api." />
       </section>
     );
@@ -92,8 +105,12 @@ export function MaintenancePreviewView() {
 
   if (previewQuery.error) {
     return (
-      <section className="maintenance-preview-route maintenance-preview-route--error">
-        <h2>Maintenance Preview</h2>
+      <section className="workspace-page maintenance-preview-route maintenance-preview-route--error">
+        <WorkspaceHeader
+          eyebrow="Change & Safety"
+          title="Maintenance Preview"
+          summary="Preview bounded maintenance impact around a selected subject before opening deeper maintenance workspaces."
+        />
         <ErrorState error={previewQuery.error} onRetry={reload} />
         <p className="table-note">
           <button type="button" className="inline-action" onClick={() => navigateToMaintenancePreview()}>
@@ -106,15 +123,19 @@ export function MaintenancePreviewView() {
 
   if (!previewQuery.data) {
     return (
-      <section className="maintenance-preview-route maintenance-preview-route--empty">
-        <h2>Maintenance Preview</h2>
+      <section className="workspace-page maintenance-preview-route maintenance-preview-route--empty">
+        <WorkspaceHeader
+          eyebrow="Change & Safety"
+          title="Maintenance Preview"
+          summary="Preview bounded maintenance impact around a selected subject before opening deeper maintenance workspaces."
+        />
         <EmptyState title="No payload" description="The preview request did not return a body." />
       </section>
     );
   }
 
   return (
-    <section className="maintenance-preview-route">
+    <section className="workspace-page maintenance-preview-route">
       <p className="table-note maintenance-preview-subject-bar">
         <span>
           Subject: <code>{previewQuery.data.subject.object_kind}</code> ·{" "}

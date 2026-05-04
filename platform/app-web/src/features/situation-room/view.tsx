@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import { APP_URL_SEARCH_CHANGED, navigateToEvidenceView } from "../../lib/url-app-state";
 import { OVERVIEW_RECENT_CHANGE_SYNC_LIMIT } from "../overview/api";
 import { SituationRoomProduct } from "./situation-room-product";
@@ -35,8 +36,12 @@ export function SituationRoomView() {
 
   if (query.isLoading && !query.data) {
     return (
-      <section className="situation-room-route situation-room-route--loading">
-        <h2>Situation room</h2>
+      <section className="workspace-page situation-room-route situation-room-route--loading">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Situation Room"
+          summary="Review a broader bounded evidence pack for active situations, cross-domain context, and review guidance."
+        />
         <LoadingState label="Loading bounded evidence pack assembly from app-api (existing read-side responses only)." />
       </section>
     );
@@ -44,8 +49,12 @@ export function SituationRoomView() {
 
   if (query.error) {
     return (
-      <section className="situation-room-route situation-room-route--error">
-        <h2>Situation room</h2>
+      <section className="workspace-page situation-room-route situation-room-route--error">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Situation Room"
+          summary="Review a broader bounded evidence pack for active situations, cross-domain context, and review guidance."
+        />
         <ErrorState error={query.error} onRetry={query.reload} />
         <p className="table-note">
           <button type="button" className="inline-action" onClick={() => navigateToEvidenceView("overview")}>
@@ -58,8 +67,12 @@ export function SituationRoomView() {
 
   if (!query.data) {
     return (
-      <section className="situation-room-route situation-room-route--empty">
-        <h2>Situation room</h2>
+      <section className="workspace-page situation-room-route situation-room-route--empty">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Situation Room"
+          summary="Review a broader bounded evidence pack for active situations, cross-domain context, and review guidance."
+        />
         <EmptyState
           title="No situation pack"
           description="The backend did not return an evidence pack assembly for the current request."
@@ -69,7 +82,7 @@ export function SituationRoomView() {
   }
 
   return (
-    <section className="situation-room-route">
+    <section className="workspace-page situation-room-route">
       <SituationRoomProduct data={query.data} syncRunsLimit={syncRunsLimit} onReload={query.reload} />
     </section>
   );

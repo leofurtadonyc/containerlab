@@ -14,7 +14,7 @@ Stable product vocabulary: **`contract_id`:** **`evidence_weakness_explanation_v
 - **Response:** **`evidence_weakness_explanation_v1`** — **`blocks[]`** with **`explanation_category`**, echoed **`evidence_quality_dimension`** / **`evidence_subject_domain`**, **`row_summary`**, **`primary_next_best_pivot`** (`pivot_id`, **`label`**, **`route_family`**, **`rationale`**, optional **`cited_evidence_fields`**), and optional **`alternate_next_best_pivot`** only for deterministic **`comparison_limits`** tie-breaks; **`safety_framing.explicit_non_claims`** are normative; **`assembly_notes`** propagate partial source failures from the evidence-quality workspace assembly.
 - **Schema:** [`platform/app-api/src/app_api/schemas/evidence_weakness_explanation.py`](../../platform/app-api/src/app_api/schemas/evidence_weakness_explanation.py) — **`NextBestPivot`**, **`EvidenceWeaknessExplanationBlock`**, **`EvidenceWeaknessExplanationResponse`**.
 
-**Composition:** The handler **reuses** **`GET /api/v1/evidence-quality-workspace`** assembly (same bounded inputs); it **does not** add investigation next-inspection, evidence-consistency tension resolution, or operational-stability churn analysis. **Optional future embedding** of explanation blocks on **`GET /api/v1/evidence-quality-workspace`** remains compatible; WebUI may also compose from this **`GET`** or from category tables.
+**Composition:** The handler **reuses** **`GET /api/v1/evidence-quality-workspace`** assembly (same bounded inputs); it **does not** add investigation next-inspection, evidence-consistency tension resolution, or operational-stability churn analysis. **Optional future embedding** of explanation blocks on **`GET /api/v1/evidence-quality-workspace`** remains compatible. The current WebUI consumes this dedicated **`GET`** inside the existing **Evidence Quality Workspace** and renders explanation categories, affected domains, bounded confidence language, explicit non-claims, and read-only next-best pivots.
 
 **Surface role:** `Phase 2` read-only product surface within the current repo state. This contract does not expand the bounded `Phase 5` workflow slices.
 
@@ -95,7 +95,7 @@ When structured (future schema), each pivot **should** carry:
 
 - **`GET /api/v1/evidence-weakness-explanation`** derives **only** from the same bounded assembly as **`GET /api/v1/evidence-quality-workspace`** (one explanation block per workspace row; dimension → explanation category mapping is deterministic).
 - **`rows[]`** on **`GET /api/v1/evidence-quality-workspace`** may **later** embed **`evidence_weakness_explanation_v1`** blocks (category + optional pivots) **without** changing the **core** dimension strings—implementations **must** keep backward-compatible **summary/detail** text when embedding is partial.
-- WebUI may **compose** explanation copy from **`GET /api/v1/evidence-weakness-explanation`**, documented category tables, and **existing** pivot navigators—**no** invented semantics beyond these contracts.
+- WebUI composes explanation copy from **`GET /api/v1/evidence-weakness-explanation`**, documented category tables, and **existing** pivot navigators—**no** invented semantics beyond these contracts.
 
 ---
 

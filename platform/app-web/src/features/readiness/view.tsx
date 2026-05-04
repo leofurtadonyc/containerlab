@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { StatusPill } from "../../components/status-pill";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import type { DryRunReadinessBlocker, DryRunReadinessPrerequisite } from "../../api/contracts";
 import { formatDateTime, formatLabel } from "../../lib/presentation";
 import {
@@ -71,8 +72,12 @@ export function ReadinessView() {
 
   if (isLoading) {
     return (
-      <section>
-        <h2>Readiness</h2>
+      <section className="workspace-page">
+        <WorkspaceHeader
+          eyebrow="Governance & Platform"
+          title="Readiness"
+          summary="Inspect what the platform is currently ready to reason about, where evidence remains bounded, and what still blocks stronger planning posture."
+        />
         <LoadingState label="Loading bounded readiness support." />
       </section>
     );
@@ -80,8 +85,12 @@ export function ReadinessView() {
 
   if (error) {
     return (
-      <section>
-        <h2>Readiness</h2>
+      <section className="workspace-page">
+        <WorkspaceHeader
+          eyebrow="Governance & Platform"
+          title="Readiness"
+          summary="Inspect what the platform is currently ready to reason about, where evidence remains bounded, and what still blocks stronger planning posture."
+        />
         <ErrorState error={error} onRetry={reload} />
       </section>
     );
@@ -89,8 +98,12 @@ export function ReadinessView() {
 
   if (!data) {
     return (
-      <section>
-        <h2>Readiness</h2>
+      <section className="workspace-page">
+        <WorkspaceHeader
+          eyebrow="Governance & Platform"
+          title="Readiness"
+          summary="Inspect what the platform is currently ready to reason about, where evidence remains bounded, and what still blocks stronger planning posture."
+        />
         <EmptyState
           title="No readiness data"
           description="The backend returned no readiness-support response."
@@ -106,18 +119,20 @@ export function ReadinessView() {
   const identitySupport = summarizeReadinessItemIdentitySupport(readiness);
 
   return (
-    <section>
-      <div className="section-header">
-        <div>
-          <h2>Readiness</h2>
-          <p>
-            This page explains what the current platform is ready to reason about,
-            what remains blocked, and where evidence coverage is still bounded. It is
-            strictly read-only and does not imply any execution capability.
-          </p>
-        </div>
-        <StatusPill value={readiness.status} />
-      </div>
+    <section className="workspace-page">
+      <WorkspaceHeader
+        eyebrow="Governance & Platform"
+        title="Readiness"
+        summary="Explain what the current platform is ready to reason about, what remains blocked, and where evidence coverage is still intentionally bounded."
+        statusValue={readiness.status}
+        actions={
+          <div className="workspace-toolbar">
+            <button type="button" className="shell-action-button shell-action-button--secondary" onClick={() => void reload()}>
+              Reload
+            </button>
+          </div>
+        }
+      />
 
       {capabilityFeatureContext ? (
         <p className="table-note">

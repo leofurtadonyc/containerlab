@@ -3179,6 +3179,61 @@ export interface EvidenceQualitySummaryResponse {
   assembly_notes: string[];
 }
 
+/** `GET /api/v1/evidence-weakness-explanation` — `evidence_weakness_explanation_v1`. */
+export type EvidenceWeaknessExplanationCategory =
+  | "collection_assurance_weak"
+  | "fallback_or_stale_serving"
+  | "sparse_history_or_anchors"
+  | "comparison_or_scope_limited"
+  | "partial_or_unsupported_detail"
+  | "cross_surface_scope_note";
+
+export type EvidenceWeaknessNextBestPivotId =
+  | "open_devices_list"
+  | "open_topology_view"
+  | "open_policies_list"
+  | "open_platform_health"
+  | "open_capabilities"
+  | "open_service_explorer"
+  | "open_maintenance_evidence_workspace"
+  | "open_maintenance_window_workspace"
+  | "open_stability_workspace"
+  | "open_evidence_consistency_workspace"
+  | "open_investigation_workspace";
+
+export interface EvidenceWeaknessNextBestPivot {
+  pivot_id: EvidenceWeaknessNextBestPivotId;
+  label: string;
+  route_family: string;
+  rationale: string;
+  cited_evidence_fields: string[] | null;
+}
+
+export interface EvidenceWeaknessExplanationBlock {
+  explanation_category: EvidenceWeaknessExplanationCategory;
+  evidence_quality_dimension: EvidenceQualityDimension;
+  evidence_subject_domain: EvidenceQualitySubjectDomain;
+  row_summary: string;
+  primary_next_best_pivot: EvidenceWeaknessNextBestPivot;
+  alternate_next_best_pivot: EvidenceWeaknessNextBestPivot | null;
+}
+
+export interface EvidenceWeaknessExplanationResponse {
+  metadata: ApiResponseMetadata;
+  contract_id: string;
+  safety_framing: {
+    contract_id: string;
+    authority_posture: "advisory_read_only_navigation" | "interpretation_support_only";
+    explicit_non_claims: string[];
+    phase: "phase_2_read_only_foundation";
+    summary_disclaimer: string;
+  };
+  sync_runs_limit_applied: number;
+  blocks: EvidenceWeaknessExplanationBlock[];
+  caveats: string[];
+  assembly_notes: string[];
+}
+
 export interface StabilityProfilePivotHint {
   label: string;
   route_family: string;
@@ -3280,6 +3335,60 @@ export interface SafeActionTimelineResponse extends ApiResponseMetadata {
     metadata: Record<string, unknown>;
     provenance: string;
   }>;
+}
+
+export type ActionSafetyCasePosture =
+  | "ready_for_review"
+  | "blocked"
+  | "degraded_evidence"
+  | "rollback_not_ready"
+  | "awaiting_validation"
+  | "not_executable"
+  | "unknown";
+
+export interface ActionSafetyCaseReference {
+  present: boolean;
+  identifier: string | null;
+  status: string | null;
+  verdict: string | null;
+  summary: string;
+  route_family: string | null;
+  cited_fields: string[];
+}
+
+export interface ActionSafetyCaseGate {
+  gate_id: string;
+  severity: "blocking" | "warning" | "missing_evidence";
+  summary: string;
+  cited_fields: string[];
+}
+
+export interface ActionSafetyCaseResponse extends ApiResponseMetadata {
+  contract_id: string;
+  action_id: string;
+  final_bounded_posture: ActionSafetyCasePosture;
+  action: ActionSafetyCaseReference;
+  workflow_lifecycle: ActionSafetyCaseReference;
+  preview: ActionSafetyCaseReference;
+  diff_summary: ActionSafetyCaseReference;
+  validation: ActionSafetyCaseReference;
+  evidence_quality: ActionSafetyCaseReference;
+  controller_evidence: ActionSafetyCaseReference;
+  rollback_readiness: ActionSafetyCaseReference;
+  blocking_gates: ActionSafetyCaseGate[];
+  warning_gates: ActionSafetyCaseGate[];
+  missing_evidence: ActionSafetyCaseGate[];
+  operator_next_steps: Array<{
+    step_id: string;
+    label: string;
+    rationale: string;
+    route_family: string | null;
+  }>;
+  safety_framing: {
+    contract_id: string;
+    authority_posture: "bounded_operator_review_only";
+    explicit_limitations: string[];
+  };
 }
 
 /** `GET|POST /api/v1/rollbacks/...` — bounded rollback orchestration v1. */

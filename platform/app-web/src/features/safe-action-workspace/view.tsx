@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 
 import { apiClient } from "../../api/client";
+import type { ActionSafetyCaseResponse } from "../../api/contracts";
 import { EmptyState, LoadingState } from "../../components/query-states";
 
 const V1_ACTION = "policy_static_local_operator_intent_record_v1";
@@ -19,6 +20,7 @@ export function SafeActionWorkspaceView() {
   const [step, setStep] = useState<string | null>(null);
   const [detailJson, setDetailJson] = useState<string | null>(null);
   const [timelineJson, setTimelineJson] = useState<string | null>(null);
+  const [safetyCase, setSafetyCase] = useState<ActionSafetyCaseResponse | null>(null);
 
   const onCreateWorkflow = useCallback(async () => {
     setError(null);
@@ -96,6 +98,7 @@ export function SafeActionWorkspaceView() {
     setBusy(true);
     setDetailJson(null);
     setTimelineJson(null);
+      setSafetyCase(null);
     setStep("Creating action…");
     try {
       const wid = workflowId.trim();
@@ -118,6 +121,7 @@ export function SafeActionWorkspaceView() {
         requested_by_actor_id: "operator_webui",
       });
       setDetailJson(JSON.stringify(res, null, 2));
+      setSafetyCase(await apiClient.getActionSafetyCase(res.action.action_id));
       const tl = await apiClient.getSafeActionTimeline(res.action.action_id);
       setTimelineJson(JSON.stringify(tl, null, 2));
       setStep(`Action ${res.action.action_id} — decision ${res.action.action_decision} / ${res.action.execution_status}`);
@@ -140,6 +144,7 @@ export function SafeActionWorkspaceView() {
       await apiClient.approveSafeAction(aid, { actor_id: "operator_webui", provenance: "operator" });
       const done = await apiClient.executeSafeAction(aid, { actor_id: "operator_webui", provenance: "operator" });
       setDetailJson(JSON.stringify(done, null, 2));
+      setSafetyCase(await apiClient.getActionSafetyCase(aid));
       const tl = await apiClient.getSafeActionTimeline(aid);
       setTimelineJson(JSON.stringify(tl, null, 2));
       setStep("Approved and executed (if prerequisites still current).");
@@ -156,7 +161,7 @@ export function SafeActionWorkspaceView() {
         <h1 className="view-title">Safe action workspace</h1>
         <p className="view-subtitle text-muted">
           Backend-owned <strong>action execution</strong> for one v1 slice: persist operator{" "}
-          <code>intent_state</code> for <code>static_local</code> policies as platform data only. This is{" "}
+          <code>intent_state</code> for <code>static_local</code> policies as <strong>platform-only</strong> data. This is{" "}
           <strong>not</strong> a preview diff, validation verdict, evidence export, replay, or sync-history
           row. It is <strong>not</strong> device or controller configuration push.
         </p>
@@ -244,6 +249,18 @@ export function SafeActionWorkspaceView() {
       </section>
 
       <section className="detail-card">
+        <h2 className="detail-card__title">Action safety case</h2>
+        {safetyCase ? (
+          <ActionSafetyCasePanel safetyCase={safetyCase} />
+        ) : (
+          <EmptyState
+            title="No safety case yet"
+            description="Create an action to assemble bounded preview, validation, evidence, and rollback readiness."
+          />
+        )}
+      </section>
+
+      <section className="detail-card">
         <h2 className="detail-card__title">Last action detail</h2>
         {busy ? <LoadingState label="Working" /> : null}
         {!busy && !detailJson ? (
@@ -268,6 +285,24 @@ export function SafeActionWorkspaceView() {
       </section>
 
       <section className="detail-card">
+        <h2 className="detail-card__title">Method posture</h2>
+        <ul className="text-muted">
+          <li>
+            <code>GET /api/v1/actions</code>, <code>GET /api/v1/actions/{"{id}"}</code>, and{" "}
+            <code>GET /api/v1/actions/{"{id}"}/timeline</code> are read-only surfaces (list/detail/timeline posture).
+          </li>
+          <li>
+            <code>POST /api/v1/actions/{"{id}"}/approve</code> and <code>POST /api/v1/actions/{"{id}"}/execute</code>{" "}
+            are exposed in this workspace.
+          </li>
+          <li>
+            <code>POST /api/v1/actions/{"{id}"}/reject</code> and <code>POST /api/v1/actions/{"{id}"}/cancel</code> remain
+            backend-supported with explicit non-exposure in this UI phase.
+          </li>
+        </ul>
+      </section>
+
+      <section className="detail-card">
         <h2 className="detail-card__title">API</h2>
         <p className="text-muted">
           <code>POST /api/v1/actions</code>, <code>GET /api/v1/actions</code>, <code>…/approve</code>,{" "}
@@ -276,5 +311,102 @@ export function SafeActionWorkspaceView() {
         </p>
       </section>
     </div>
+  );
+}
+
+function postureLabel(posture: ActionSafetyCaseResponse["final_bounded_posture"]): string {
+  return posture.replace(/_/g, " ");
+}
+
+export function ActionSafetyCasePanel({ safetyCase }: { safetyCase: ActionSafetyCaseResponse }) {
+  return (
+    <div data-testid="action-safety-case">
+      <p className="callout">
+        Final bounded posture: <strong>{postureLabel(safetyCase.final_bounded_posture)}</strong>{" "}
+        (<code>{safetyCase.final_bounded_posture}</code>). This is operator review language, not safe-to-execute
+        authority.
+      </p>
+      <div className="summary-grid">
+        <SafetyCaseReference label="Action" refData={safetyCase.action} />
+        <SafetyCaseReference label="Workflow" refData={safetyCase.workflow_lifecycle} />
+        <SafetyCaseReference label="Preview" refData={safetyCase.preview} />
+        <SafetyCaseReference label="Validation" refData={safetyCase.validation} />
+        <SafetyCaseReference label="Evidence quality" refData={safetyCase.evidence_quality} />
+        <SafetyCaseReference label="Controller evidence" refData={safetyCase.controller_evidence} />
+        <SafetyCaseReference label="Rollback readiness" refData={safetyCase.rollback_readiness} />
+      </div>
+      <SafetyCaseGateList title="Blocking gates" gates={safetyCase.blocking_gates} empty="No blocking gates reported." />
+      <SafetyCaseGateList title="Warning gates" gates={safetyCase.warning_gates} empty="No warning gates reported." />
+      <SafetyCaseGateList
+        title="Missing evidence"
+        gates={safetyCase.missing_evidence}
+        empty="No missing evidence gates reported."
+      />
+      <h3 className="detail-card__subtitle">Operator next steps</h3>
+      <ul>
+        {safetyCase.operator_next_steps.map((step) => (
+          <li key={step.step_id}>
+            <strong>{step.label}:</strong> {step.rationale}
+          </li>
+        ))}
+      </ul>
+      <h3 className="detail-card__subtitle">Explicit limitations</h3>
+      <ul>
+        {safetyCase.safety_framing.explicit_limitations.map((limitation) => (
+          <li key={limitation}>{limitation}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function SafetyCaseReference({ label, refData }: { label: string; refData: ActionSafetyCaseResponse["action"] }) {
+  return (
+    <div className="summary-card">
+      <h3 className="summary-card__title">{label}</h3>
+      <p className="text-muted">{refData.summary}</p>
+      <p className="text-muted">
+        present=<code>{String(refData.present)}</code>
+        {refData.status ? (
+          <>
+            {" "}
+            status=<code>{refData.status}</code>
+          </>
+        ) : null}
+        {refData.verdict ? (
+          <>
+            {" "}
+            verdict=<code>{refData.verdict}</code>
+          </>
+        ) : null}
+      </p>
+    </div>
+  );
+}
+
+function SafetyCaseGateList({
+  title,
+  gates,
+  empty,
+}: {
+  title: string;
+  gates: ActionSafetyCaseResponse["blocking_gates"];
+  empty: string;
+}) {
+  return (
+    <>
+      <h3 className="detail-card__subtitle">{title}</h3>
+      {gates.length === 0 ? (
+        <p className="text-muted">{empty}</p>
+      ) : (
+        <ul>
+          {gates.map((gate) => (
+            <li key={gate.gate_id}>
+              <strong>{gate.gate_id}</strong>: {gate.summary}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }

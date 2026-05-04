@@ -7,6 +7,7 @@ import type {
 import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import { countBy, formatDateTime, formatLabel } from "../../lib/presentation";
 import {
   describeAssessmentAreaStatus,
@@ -306,8 +307,12 @@ export function CapabilitiesView() {
 
   if (isLoading) {
     return (
-      <section>
-        <h2>Capabilities</h2>
+      <section className="workspace-page">
+        <WorkspaceHeader
+          eyebrow="Governance & Platform"
+          title="Capabilities"
+          summary="Review the delivered support matrix, readiness contribution, and explicit support boundaries across the platform."
+        />
         <LoadingState label="Loading vendor capability visibility." />
       </section>
     );
@@ -315,8 +320,12 @@ export function CapabilitiesView() {
 
   if (error) {
     return (
-      <section>
-        <h2>Capabilities</h2>
+      <section className="workspace-page">
+        <WorkspaceHeader
+          eyebrow="Governance & Platform"
+          title="Capabilities"
+          summary="Review the delivered support matrix, readiness contribution, and explicit support boundaries across the platform."
+        />
         <ErrorState error={error} onRetry={reload} />
       </section>
     );
@@ -324,8 +333,12 @@ export function CapabilitiesView() {
 
   if (!data) {
     return (
-      <section>
-        <h2>Capabilities</h2>
+      <section className="workspace-page">
+        <WorkspaceHeader
+          eyebrow="Governance & Platform"
+          title="Capabilities"
+          summary="Review the delivered support matrix, readiness contribution, and explicit support boundaries across the platform."
+        />
         <EmptyState
           title="No capability data"
           description="The backend returned no capability inventory response."
@@ -346,17 +359,20 @@ export function CapabilitiesView() {
   );
 
   return (
-    <section>
-      <div className="section-header">
-        <div>
-          <h2>Capabilities</h2>
-          <p>
-            This view makes support boundaries explicit so the product does not imply
-            feature parity that the platform has not implemented yet.
-          </p>
-        </div>
-        <StatusPill value={data.data_status} />
-      </div>
+    <section className="workspace-page">
+      <WorkspaceHeader
+        eyebrow="Governance & Platform"
+        title="Capabilities"
+        summary="Make support boundaries explicit so the product does not imply feature parity or workflow-grade support that the platform has not implemented."
+        statusValue={data.data_status}
+        actions={
+          <div className="workspace-toolbar">
+            <button type="button" className="shell-action-button shell-action-button--secondary" onClick={() => void reload()}>
+              Reload
+            </button>
+          </div>
+        }
+      />
 
       <div className="metadata-row">
         <span>Count: {data.count}</span>

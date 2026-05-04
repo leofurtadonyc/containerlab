@@ -51,11 +51,13 @@ import type {
   ChangeSafetyCaseResponse,
   OperationalStabilitySummaryResponse,
   EvidenceQualitySummaryResponse,
+  EvidenceWeaknessExplanationResponse,
   ServiceStabilityProfileResponse,
   TopologyObjectStabilityProfileResponse,
   ValidationDetailResponse,
   ValidationListResponse,
   ValidationTimelineResponse,
+  ActionSafetyCaseResponse,
   SafeActionDetailResponse,
   SafeActionListResponse,
   SafeActionTimelineResponse,
@@ -542,6 +544,11 @@ export class ApiClient {
     return this.jsonRequest<SafeActionTimelineResponse>("GET", `/api/v1/actions/${encoded}/timeline`);
   }
 
+  async getActionSafetyCase(actionId: string): Promise<ActionSafetyCaseResponse> {
+    const encoded = encodeURIComponent(actionId.trim());
+    return this.jsonRequest<ActionSafetyCaseResponse>("GET", `/api/v1/actions/${encoded}/safety-case`);
+  }
+
   async createSafeAction(body: {
     workflow_id: string;
     preview_id: string;
@@ -727,6 +734,13 @@ export class ApiClient {
     const limit = Math.min(100, Math.max(1, syncRunsLimit));
     return this.request<EvidenceQualitySummaryResponse>(
       `/api/v1/evidence-quality-workspace?sync_runs_limit=${limit}`,
+    );
+  }
+
+  async getEvidenceWeaknessExplanation(syncRunsLimit = 20): Promise<EvidenceWeaknessExplanationResponse> {
+    const limit = Math.min(100, Math.max(1, syncRunsLimit));
+    return this.request<EvidenceWeaknessExplanationResponse>(
+      `/api/v1/evidence-weakness-explanation?sync_runs_limit=${limit}`,
     );
   }
 

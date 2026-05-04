@@ -4,6 +4,7 @@ import { ChangeIntelligenceProductSurfaceLinks } from "../../components/change-i
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
 import { TrustCueCard } from "../../components/trust-cue-card";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import type { ControllerEvidenceResponse, PoliciesListResponse, PlatformReadPathStatus } from "../../api/contracts";
 import { ApiClientError, apiClient } from "../../api/client";
 import {
@@ -280,18 +281,20 @@ export function PlatformHealthView() {
     : null;
 
   return (
-    <section>
-      <div className="section-header">
-        <div>
-          <h2>Platform Health</h2>
-          <p>
-            This page stays product-oriented. It summarizes declared platform
-            components, bounded collector-to-backend read-path posture, and current
-            API-level status without duplicating Grafana's deeper metrics views.
-          </p>
-        </div>
-        <StatusPill value={data.status} />
-      </div>
+    <section className="workspace-page">
+      <WorkspaceHeader
+        eyebrow="Command Center"
+        title="Platform Health"
+        summary="Summarize declared components, bounded collector-to-backend read-path posture, recovery posture, and current controller-helper state without duplicating deeper Grafana metrics views."
+        statusValue={data.status}
+        actions={
+          <div className="workspace-toolbar">
+            <button type="button" className="shell-action-button shell-action-button--secondary" onClick={() => void reload()}>
+              Reload
+            </button>
+          </div>
+        }
+      />
 
       <div className="metadata-row">
         <span>Topology: {data.topology_name}</span>

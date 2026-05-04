@@ -1,13 +1,49 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { appApiBaseUrl } from "./api/client";
-import { AppShell } from "./components/shell";
+import { NextShell } from "./components/next-shell";
 import {
   APP_URL_SEARCH_CHANGED,
   mergeViewIntoSearch,
-  readViewIdFromSearch,
   replaceUrlSearchParams,
 } from "./lib/url-app-state";
+import {
+  buildRouteContextChips,
+  findGroupLabelForView,
+  NEXT_SHELL_NAV_GROUPS,
+} from "./lib/next-shell-navigation";
+import {
+  NEXT_UI_MODE_VALUE,
+  UI_MODE_PARAM,
+} from "./lib/shell-mode";
+import {
+  findCoreDomainRouteByViewId,
+  maybeCanonicalizeCoreDomainAlias,
+  mergeCoreDomainRouteIntoSearch,
+  readCoreDomainFlagsFromSearch,
+  readViewIdFromSearchWithCoreRoutes,
+} from "./lib/phase4-core-domain-routing";
+import {
+  maybeCanonicalizeObjectWorkspaceAlias,
+  mergeObjectWorkspaceRouteIntoSearch,
+  readObjectWorkspaceFlagsFromSearch,
+  readViewIdFromSearchWithObjectRoutes,
+} from "./lib/phase5-object-workspace-routing";
+import {
+  maybeCanonicalizeEvidenceAlias,
+  readEvidenceRouteFlagsFromSearch,
+  readViewIdFromSearchWithEvidenceRoutes,
+} from "./lib/phase6-evidence-routing";
+import {
+  maybeCanonicalizeWorkflowAlias,
+  readViewIdFromSearchWithWorkflowRoutes,
+  readWorkflowRouteFlagsFromSearch,
+} from "./lib/phase8-workflow-routing";
+import {
+  maybeCanonicalizeActionAlias,
+  readActionRouteFlagsFromSearch,
+  readViewIdFromSearchWithActionRoutes,
+} from "./lib/phase9-action-routing";
 import { PLATFORM_NAV_VIEW_IDS } from "./nav-views";
 import { AuditView } from "./features/audit/view";
 import { CapabilitiesView } from "./features/capabilities/view";
@@ -42,42 +78,271 @@ import { SafeActionWorkspaceView } from "./features/safe-action-workspace/view";
 import { RollbackWorkspaceView } from "./features/rollback-workspace/view";
 import { GlobalOperatorSearch } from "./features/global-search/global-operator-search";
 
-const NAV_ITEMS = [
-  { id: "overview", label: "Overview" },
-  { id: "delta-digest", label: "Delta digest" },
-  { id: "evidence-consistency", label: "Evidence consistency" },
-  { id: "evidence-quality-workspace", label: "Evidence quality" },
-  { id: "stability-workspace", label: "Stability" },
-  { id: "situation-room", label: "Situation room" },
-  { id: "investigation", label: "Investigation" },
-  { id: "devices", label: "Devices" },
-  { id: "topology", label: "Topology" },
-  { id: "policies", label: "Policies" },
-  { id: "path-explorer", label: "Path Explorer" },
-  { id: "service-impact-workspace", label: "Service Impact" },
-  { id: "service-explorer", label: "Service Explorer" },
-  { id: "service-dossier", label: "Service dossier" },
-  { id: "maintenance-preview", label: "Maintenance Preview" },
-  { id: "maintenance-evidence-workspace", label: "Maintenance evidence" },
-  { id: "maintenance-window-workspace", label: "Maintenance window" },
-  { id: "impact-report", label: "Impact Report" },
-  { id: "change-safety-case", label: "Change safety case" },
-  { id: "workflows", label: "Workflows" },
-  { id: "workflow-lifecycle", label: "Workflow lifecycle" },
-  { id: "preview-workspace", label: "Preview workspace" },
-  { id: "validation-workspace", label: "Validation workspace" },
-  { id: "safe-action-workspace", label: "Safe action" },
-  { id: "rollback-workspace", label: "Rollback" },
-  { id: "audit", label: "Audit" },
-  { id: "capabilities", label: "Capabilities" },
-  { id: "readiness", label: "Readiness" },
-  { id: "platform-health", label: "Platform Health" },
-  { id: "evidence-replay", label: "Evidence replay" },
+type AppNavItem = {
+  id: string;
+  label: string;
+  description: string;
+};
+
+type AppNavGroup = {
+  id: string;
+  label: string;
+  items: AppNavItem[];
+};
+
+const LEGACY_NAV_GROUPS: readonly AppNavGroup[] = [
+  {
+    id: "command-center",
+    label: "Command Center",
+    items: [
+      {
+        id: "overview",
+        label: "Overview",
+        description: "Start here for platform posture, recent change, and next investigation cues.",
+      },
+      {
+        id: "platform-health",
+        label: "Platform Health",
+        description: "Inspect platform components, read paths, and controller-helper posture.",
+      },
+    ],
+  },
+  {
+    id: "investigate",
+    label: "Investigate",
+    items: [
+      {
+        id: "investigation",
+        label: "Investigation",
+        description: "Structured troubleshooting workspace with cross-domain context and next inspections.",
+      },
+      {
+        id: "situation-room",
+        label: "Situation Room",
+        description: "Broader evidence-pack view for active operational situations.",
+      },
+      {
+        id: "operator-briefing",
+        label: "Operator Briefing",
+        description: "Summarize and hand off bounded operator context across key evidence surfaces.",
+      },
+      {
+        id: "delta-digest",
+        label: "Delta Digest",
+        description: "Cross-domain summary of recent bounded changes and evidence deltas.",
+      },
+      {
+        id: "evidence-consistency",
+        label: "Evidence Consistency",
+        description: "Find where current evidence aligns cleanly versus where it still tensions.",
+      },
+      {
+        id: "evidence-quality-workspace",
+        label: "Evidence Quality",
+        description: "Review collection assurance, read-path reliability, and evidence weakness explanations.",
+      },
+      {
+        id: "stability-workspace",
+        label: "Stability",
+        description: "Inspect operational churn, recurrence, and stability posture across surfaces.",
+      },
+    ],
+  },
+  {
+    id: "network-truth",
+    label: "Network Truth",
+    items: [
+      {
+        id: "devices",
+        label: "Devices",
+        description: "Read normalized inventory and current device-facing support evidence.",
+      },
+      {
+        id: "topology",
+        label: "Topology",
+        description: "Explore normalized topology, truth cues, controller evidence, and topology dossiers.",
+      },
+      {
+        id: "path-explorer",
+        label: "Path Explorer",
+        description: "Trace bounded path reasoning anchored on current policy and topology evidence.",
+      },
+    ],
+  },
+  {
+    id: "services-policies",
+    label: "Services & Policies",
+    items: [
+      {
+        id: "policies",
+        label: "Policies",
+        description: "Inspect policy inventory, path analysis, evidence timeline, and policy impact.",
+      },
+      {
+        id: "service-explorer",
+        label: "Service Explorer",
+        description: "Grouped service lens over bounded policy inventory and service evidence.",
+      },
+      {
+        id: "service-dossier",
+        label: "Service Dossier",
+        description: "Composed service workspace with timelines, deltas, and related pivots.",
+      },
+      {
+        id: "service-impact-workspace",
+        label: "Service Impact",
+        description: "Investigate service impact with bounded topology and change context.",
+      },
+    ],
+  },
+  {
+    id: "change-safety",
+    label: "Change & Safety",
+    items: [
+      {
+        id: "maintenance-preview",
+        label: "Maintenance Preview",
+        description: "Preview bounded impact and evidence before planned maintenance activity.",
+      },
+      {
+        id: "maintenance-evidence-workspace",
+        label: "Maintenance Evidence",
+        description: "Review maintenance-focused evidence, dossiers, and safety pivots together.",
+      },
+      {
+        id: "maintenance-window-workspace",
+        label: "Maintenance Window",
+        description: "Coordinate maintenance subjects, service impact, and handoff artifacts.",
+      },
+      {
+        id: "impact-report",
+        label: "Impact Report",
+        description: "Generate bounded impact reports for service, policy, or maintenance anchors.",
+      },
+      {
+        id: "change-safety-case",
+        label: "Change Safety Case",
+        description: "Review bounded pre-change reasoning and evidence gaps before execution.",
+      },
+      {
+        id: "workflow-lifecycle",
+        label: "Workflow Lifecycle",
+        description: "Inspect durable workflow records and lifecycle transitions.",
+      },
+      {
+        id: "preview-workspace",
+        label: "Preview Workspace",
+        description: "Review preview requests, details, and diff context.",
+      },
+      {
+        id: "validation-workspace",
+        label: "Validation Workspace",
+        description: "Review validation requests, timelines, and bounded outcomes.",
+      },
+      {
+        id: "safe-action-workspace",
+        label: "Safe Action",
+        description: "Operate the bounded safe-action workflow with explicit gates and approvals.",
+      },
+      {
+        id: "rollback-workspace",
+        label: "Rollback",
+        description: "Inspect rollback requests, approvals, execution, and current status.",
+      },
+    ],
+  },
+  {
+    id: "governance-platform",
+    label: "Governance & Platform",
+    items: [
+      {
+        id: "workflows",
+        label: "Workflows",
+        description: "Browse workflow-history derived from persisted sync activity.",
+      },
+      {
+        id: "audit",
+        label: "Audit",
+        description: "Browse bounded audit-history and related readiness or sync anchors.",
+      },
+      {
+        id: "capabilities",
+        label: "Capabilities",
+        description: "Review current platform support matrix and capability posture.",
+      },
+      {
+        id: "readiness",
+        label: "Readiness",
+        description: "Inspect dry-run-planning readiness, blockers, and support anchors.",
+      },
+      {
+        id: "evidence-replay",
+        label: "Evidence Replay",
+        description: "Replay exported bounded evidence offline without treating it as live product truth.",
+      },
+    ],
+  },
 ] as const;
 
-function readInitialView(): string {
-  const fromUrl = readViewIdFromSearch(window.location.search, PLATFORM_NAV_VIEW_IDS);
-  return fromUrl ?? "overview";
+const VIEW_META = new Map(
+  LEGACY_NAV_GROUPS.flatMap((group) =>
+    group.items.map((item) => [
+      item.id,
+      {
+        label: item.label,
+        description: item.description,
+        groupLabel: group.label,
+      },
+    ]),
+  ),
+);
+
+function summarizeAppApiBaseUrl(baseUrl: string): string {
+  if (!baseUrl) {
+    return "Same-origin API proxy";
+  }
+  try {
+    const url = new URL(baseUrl);
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return baseUrl;
+  }
+}
+
+function countRouteContextParams(search: string): number {
+  const sp = new URLSearchParams(search);
+  sp.delete("view");
+  sp.delete("route");
+  sp.delete("ui");
+  sp.delete("next_home");
+  sp.delete("next_network");
+  sp.delete("next_governance");
+  sp.delete("next_policy_service");
+  sp.delete("next_policy_object");
+  sp.delete("next_topology_object");
+  sp.delete("next_service_object");
+  sp.delete("next_maintenance_object");
+  sp.delete("policy_tab");
+  sp.delete("topology_tab");
+  sp.delete("service_tab");
+  sp.delete("maintenance_tab");
+  sp.delete("next_evidence");
+  sp.delete("next_evidence_investigation");
+  sp.delete("next_evidence_situation_room");
+  sp.delete("next_evidence_operator_briefing");
+  sp.delete("next_evidence_delta_digest");
+  sp.delete("next_evidence_consistency");
+  sp.delete("next_evidence_quality");
+  sp.delete("next_evidence_stability");
+  sp.delete("next_evidence_replay");
+  sp.delete("next_workflow");
+  sp.delete("next_workflow_lifecycle");
+  sp.delete("next_preview_workspace");
+  sp.delete("next_validation_workspace");
+  sp.delete("next_action");
+  sp.delete("next_safe_action");
+  sp.delete("next_rollback");
+  return [...sp.keys()].length;
 }
 
 function renderView(viewId: string) {
@@ -149,51 +414,283 @@ function renderView(viewId: string) {
 }
 
 export function App() {
-  const [activeView, setActiveView] = useState<string>(readInitialView());
+  const [locationSearch, setLocationSearch] = useState<string>(() => window.location.search);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const coreDomainFlags = useMemo(
+    () => readCoreDomainFlagsFromSearch(locationSearch, import.meta.env),
+    [locationSearch],
+  );
+  const objectWorkspaceFlags = useMemo(
+    () => readObjectWorkspaceFlagsFromSearch(locationSearch, import.meta.env),
+    [locationSearch],
+  );
+  const evidenceRouteFlags = useMemo(
+    () => readEvidenceRouteFlagsFromSearch(locationSearch, import.meta.env),
+    [locationSearch],
+  );
+  const workflowRouteFlags = useMemo(
+    () => readWorkflowRouteFlagsFromSearch(locationSearch, import.meta.env),
+    [locationSearch],
+  );
+  const actionRouteFlags = useMemo(
+    () => readActionRouteFlagsFromSearch(locationSearch, import.meta.env),
+    [locationSearch],
+  );
 
   useEffect(() => {
-    const syncViewFromUrl = () => {
-      const next = readViewIdFromSearch(window.location.search, PLATFORM_NAV_VIEW_IDS);
-      if (next) {
-        setActiveView(next);
-      }
+    const syncFromUrl = () => {
+      setLocationSearch(window.location.search);
     };
-    window.addEventListener("popstate", syncViewFromUrl);
-    window.addEventListener(APP_URL_SEARCH_CHANGED, syncViewFromUrl);
+    window.addEventListener("popstate", syncFromUrl);
+    window.addEventListener(APP_URL_SEARCH_CHANGED, syncFromUrl);
     return () => {
-      window.removeEventListener("popstate", syncViewFromUrl);
-      window.removeEventListener(APP_URL_SEARCH_CHANGED, syncViewFromUrl);
+      window.removeEventListener("popstate", syncFromUrl);
+      window.removeEventListener(APP_URL_SEARCH_CHANGED, syncFromUrl);
     };
   }, []);
 
   const handleSelectView = useCallback((id: string) => {
-    setActiveView(id);
-    const sp = mergeViewIntoSearch(window.location.search, id);
+    let sp = mergeViewIntoSearch(window.location.search, id);
+    const route = findCoreDomainRouteByViewId(id);
+    if (route && coreDomainFlags[route.flag]) {
+      sp = mergeCoreDomainRouteIntoSearch(sp.toString(), route.id);
+    } else {
+      sp.delete("route");
+    }
     replaceUrlSearchParams(sp);
+  }, [coreDomainFlags]);
+
+  const handleCopyLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopyState("copied");
+    } catch {
+      setCopyState("failed");
+    }
+    window.setTimeout(() => setCopyState("idle"), 1800);
   }, []);
 
+  const activeView = useMemo(
+    () => {
+      const fromObjectRoute = readViewIdFromSearchWithObjectRoutes(locationSearch, objectWorkspaceFlags);
+      if (fromObjectRoute && PLATFORM_NAV_VIEW_IDS.has(fromObjectRoute)) {
+        return fromObjectRoute;
+      }
+      const fromEvidenceRoute = readViewIdFromSearchWithEvidenceRoutes(locationSearch, evidenceRouteFlags);
+      if (fromEvidenceRoute && PLATFORM_NAV_VIEW_IDS.has(fromEvidenceRoute)) {
+        return fromEvidenceRoute;
+      }
+      const fromWorkflowRoute = readViewIdFromSearchWithWorkflowRoutes(locationSearch, workflowRouteFlags);
+      if (fromWorkflowRoute && PLATFORM_NAV_VIEW_IDS.has(fromWorkflowRoute)) {
+        return fromWorkflowRoute;
+      }
+      const fromActionRoute = readViewIdFromSearchWithActionRoutes(locationSearch, actionRouteFlags);
+      if (fromActionRoute && PLATFORM_NAV_VIEW_IDS.has(fromActionRoute)) {
+        return fromActionRoute;
+      }
+      return (
+        readViewIdFromSearchWithCoreRoutes(
+          locationSearch,
+          PLATFORM_NAV_VIEW_IDS,
+          coreDomainFlags,
+        ) ?? "overview"
+      );
+    },
+    [actionRouteFlags, coreDomainFlags, evidenceRouteFlags, locationSearch, objectWorkspaceFlags, workflowRouteFlags],
+  );
+  const requestedView = useMemo(
+    () => new URLSearchParams(locationSearch).get("view"),
+    [locationSearch],
+  );
+  const hasInvalidView = useMemo(
+    () => Boolean(requestedView && !PLATFORM_NAV_VIEW_IDS.has(requestedView)),
+    [requestedView],
+  );
+  const activeMeta = VIEW_META.get(activeView) ?? VIEW_META.get("overview")!;
+  const routeContextCount = countRouteContextParams(locationSearch);
+  const environmentSummary = summarizeAppApiBaseUrl(appApiBaseUrl);
+  const routeContextChips = useMemo(
+    () => buildRouteContextChips(locationSearch),
+    [locationSearch],
+  );
+  const handleResetContext = useCallback(() => {
+    const sp = new URLSearchParams();
+    sp.set("view", activeView);
+    const current = new URLSearchParams(window.location.search);
+    const currentRoute = current.get("route");
+    if (
+      currentRoute === "policy.object" ||
+      currentRoute === "topology.object" ||
+      currentRoute === "service.object" ||
+      currentRoute === "maintenance.subjectSet"
+    ) {
+      const tabParam =
+        currentRoute === "policy.object"
+          ? "policy_tab"
+          : currentRoute === "topology.object"
+            ? "topology_tab"
+            : currentRoute === "service.object"
+              ? "service_tab"
+              : "maintenance_tab";
+      const tab = current.get(tabParam) ?? "overview";
+      const merged = mergeObjectWorkspaceRouteIntoSearch(sp.toString(), currentRoute, tab);
+      sp.set("route", merged.get("route") ?? currentRoute);
+      sp.set("view", merged.get("view") ?? activeView);
+      if (merged.get("policy_tab")) {
+        sp.set("policy_tab", merged.get("policy_tab") ?? "");
+      }
+      if (merged.get("topology_tab")) {
+        sp.set("topology_tab", merged.get("topology_tab") ?? "");
+      }
+      if (merged.get("service_tab")) {
+        sp.set("service_tab", merged.get("service_tab") ?? "");
+      }
+      if (merged.get("maintenance_tab")) {
+        sp.set("maintenance_tab", merged.get("maintenance_tab") ?? "");
+      }
+    }
+    const route = findCoreDomainRouteByViewId(activeView);
+    if (route && coreDomainFlags[route.flag] && !sp.get("route")) {
+      sp.set("route", route.id);
+    }
+    // Phase 11 deprecates legacy shell branches; preserve explicit next-shell marker.
+    sp.set(UI_MODE_PARAM, NEXT_UI_MODE_VALUE);
+    if (current.has("next_home")) {
+      sp.set("next_home", current.get("next_home") ?? "");
+    }
+    if (current.has("next_network")) {
+      sp.set("next_network", current.get("next_network") ?? "");
+    }
+    if (current.has("next_governance")) {
+      sp.set("next_governance", current.get("next_governance") ?? "");
+    }
+    if (current.has("next_policy_service")) {
+      sp.set("next_policy_service", current.get("next_policy_service") ?? "");
+    }
+    if (current.has("next_policy_object")) {
+      sp.set("next_policy_object", current.get("next_policy_object") ?? "");
+    }
+    if (current.has("next_topology_object")) {
+      sp.set("next_topology_object", current.get("next_topology_object") ?? "");
+    }
+    if (current.has("next_service_object")) {
+      sp.set("next_service_object", current.get("next_service_object") ?? "");
+    }
+    if (current.has("next_maintenance_object")) {
+      sp.set("next_maintenance_object", current.get("next_maintenance_object") ?? "");
+    }
+    if (current.has("next_evidence")) {
+      sp.set("next_evidence", current.get("next_evidence") ?? "");
+    }
+    if (current.has("next_evidence_investigation")) {
+      sp.set("next_evidence_investigation", current.get("next_evidence_investigation") ?? "");
+    }
+    if (current.has("next_evidence_situation_room")) {
+      sp.set("next_evidence_situation_room", current.get("next_evidence_situation_room") ?? "");
+    }
+    if (current.has("next_evidence_operator_briefing")) {
+      sp.set("next_evidence_operator_briefing", current.get("next_evidence_operator_briefing") ?? "");
+    }
+    if (current.has("next_evidence_delta_digest")) {
+      sp.set("next_evidence_delta_digest", current.get("next_evidence_delta_digest") ?? "");
+    }
+    if (current.has("next_evidence_consistency")) {
+      sp.set("next_evidence_consistency", current.get("next_evidence_consistency") ?? "");
+    }
+    if (current.has("next_evidence_quality")) {
+      sp.set("next_evidence_quality", current.get("next_evidence_quality") ?? "");
+    }
+    if (current.has("next_evidence_stability")) {
+      sp.set("next_evidence_stability", current.get("next_evidence_stability") ?? "");
+    }
+    if (current.has("next_evidence_replay")) {
+      sp.set("next_evidence_replay", current.get("next_evidence_replay") ?? "");
+    }
+    if (current.has("next_workflow")) {
+      sp.set("next_workflow", current.get("next_workflow") ?? "");
+    }
+    if (current.has("next_workflow_lifecycle")) {
+      sp.set("next_workflow_lifecycle", current.get("next_workflow_lifecycle") ?? "");
+    }
+    if (current.has("next_preview_workspace")) {
+      sp.set("next_preview_workspace", current.get("next_preview_workspace") ?? "");
+    }
+    if (current.has("next_validation_workspace")) {
+      sp.set("next_validation_workspace", current.get("next_validation_workspace") ?? "");
+    }
+    if (current.has("next_action")) {
+      sp.set("next_action", current.get("next_action") ?? "");
+    }
+    if (current.has("next_safe_action")) {
+      sp.set("next_safe_action", current.get("next_safe_action") ?? "");
+    }
+    if (current.has("next_rollback")) {
+      sp.set("next_rollback", current.get("next_rollback") ?? "");
+    }
+    replaceUrlSearchParams(sp);
+  }, [activeView, coreDomainFlags]);
+
+  useEffect(() => {
+    const canonicalActionAlias = maybeCanonicalizeActionAlias(locationSearch, actionRouteFlags);
+    if (canonicalActionAlias) {
+      if (canonicalActionAlias.toString() !== new URLSearchParams(locationSearch).toString()) {
+        replaceUrlSearchParams(canonicalActionAlias);
+      }
+      return;
+    }
+    const canonicalWorkflowAlias = maybeCanonicalizeWorkflowAlias(locationSearch, workflowRouteFlags);
+    if (canonicalWorkflowAlias) {
+      if (canonicalWorkflowAlias.toString() !== new URLSearchParams(locationSearch).toString()) {
+        replaceUrlSearchParams(canonicalWorkflowAlias);
+      }
+      return;
+    }
+    const canonicalEvidenceAlias = maybeCanonicalizeEvidenceAlias(locationSearch, evidenceRouteFlags);
+    if (canonicalEvidenceAlias) {
+      if (canonicalEvidenceAlias.toString() !== new URLSearchParams(locationSearch).toString()) {
+        replaceUrlSearchParams(canonicalEvidenceAlias);
+      }
+      return;
+    }
+    const canonicalObjectAlias = maybeCanonicalizeObjectWorkspaceAlias(locationSearch, objectWorkspaceFlags);
+    if (canonicalObjectAlias) {
+      if (canonicalObjectAlias.toString() !== new URLSearchParams(locationSearch).toString()) {
+        replaceUrlSearchParams(canonicalObjectAlias);
+      }
+      return;
+    }
+    const canonical = maybeCanonicalizeCoreDomainAlias(locationSearch, coreDomainFlags);
+    if (!canonical) {
+      return;
+    }
+    if (canonical.toString() === new URLSearchParams(locationSearch).toString()) {
+      return;
+    }
+    replaceUrlSearchParams(canonical);
+  }, [actionRouteFlags, coreDomainFlags, evidenceRouteFlags, locationSearch, objectWorkspaceFlags, workflowRouteFlags]);
+
   return (
-    <AppShell
-      title="Platform WebUI"
-      navigationItems={NAV_ITEMS.map((item) => ({ ...item }))}
+    <NextShell
+      title="Platform"
+      navigationGroups={NEXT_SHELL_NAV_GROUPS}
       activeItemId={activeView}
       onSelect={handleSelectView}
+      currentGroupLabel={findGroupLabelForView(activeView)}
+      currentPageLabel={activeMeta.label}
+      currentPageDescription={activeMeta.description}
+      environmentSummary={environmentSummary}
+      routeContextChips={routeContextChips}
+      onCopyLink={handleCopyLink}
+      copyState={copyState}
+      onResetContext={handleResetContext}
+      commandSlot={<GlobalOperatorSearch />}
+      fallbackNote={
+        hasInvalidView
+          ? `Unrecognized view "${requestedView}" opened. Showing Overview while preserving URL compatibility.`
+          : null
+      }
     >
-      <GlobalOperatorSearch />
-      <div className="page-header">
-        <p className="eyebrow">Phase 2 Read-Only Foundation</p>
-        <p className="body-copy">
-          This WebUI now consumes the current read-only backend contracts for
-          overview, platform status, devices, topology, policies, service explorer, service dossier, maintenance preview, workflow
-          history, audit history, capabilities, readiness, bounded situation room
-          evidence-pack assembly, operator briefing workspace, bounded investigation workspace assembly, and evidence export
-          replay (not live). Grafana remains
-          the observability layer, and backend APIs remain the source of
-          business logic.
-        </p>
-        <p className="meta-copy">Configured backend base URL: {appApiBaseUrl}</p>
-      </div>
       {renderView(activeView)}
-    </AppShell>
+    </NextShell>
   );
 }

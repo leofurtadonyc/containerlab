@@ -8,6 +8,7 @@ import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import {
   policyEvidenceTimelineRowsFromComparison,
   workflowHistoryDrilldownTargets,
@@ -357,8 +358,12 @@ export function WorkflowsView() {
 
   if (isLoading) {
     return (
-      <section>
-        <h2>Workflow History</h2>
+      <section className="workspace-page">
+        <WorkspaceHeader
+          eyebrow="Governance & Platform"
+          title="Workflow History"
+          summary="Review sync-derived workflow history, persisted context, and bounded comparison evidence across current read-side activity."
+        />
         <ReadSideQueryPanel variant="workflow-history" />
         <ChangeIntelligenceOverviewLink historySurface="workflow" />
         <LoadingState label="Loading read-only workflow history." />
@@ -368,8 +373,12 @@ export function WorkflowsView() {
 
   if (error) {
     return (
-      <section>
-        <h2>Workflow History</h2>
+      <section className="workspace-page">
+        <WorkspaceHeader
+          eyebrow="Governance & Platform"
+          title="Workflow History"
+          summary="Review sync-derived workflow history, persisted context, and bounded comparison evidence across current read-side activity."
+        />
         <ReadSideQueryPanel variant="workflow-history" />
         <ChangeIntelligenceOverviewLink historySurface="workflow" />
         <ErrorState error={error} onRetry={reload} />
@@ -379,8 +388,12 @@ export function WorkflowsView() {
 
   if (!data) {
     return (
-      <section>
-        <h2>Workflow History</h2>
+      <section className="workspace-page">
+        <WorkspaceHeader
+          eyebrow="Governance & Platform"
+          title="Workflow History"
+          summary="Review sync-derived workflow history, persisted context, and bounded comparison evidence across current read-side activity."
+        />
         <ReadSideQueryPanel variant="workflow-history" />
         <ChangeIntelligenceOverviewLink historySurface="workflow" />
         <EmptyState
@@ -392,19 +405,21 @@ export function WorkflowsView() {
   }
 
   return (
-    <section>
+    <section className="workspace-page">
       <ReadSideQueryPanel variant="workflow-history" />
-      <div className="section-header">
-        <div>
-          <h2>Workflow History</h2>
-          <p>
-            This page shows bounded platform-side sync activity exposed through the
-            backend workflow-history contract. It does not implement execution
-            workflows, approvals, or rollback controls.
-          </p>
-        </div>
-        <StatusPill value={data.data_status} />
-      </div>
+      <WorkspaceHeader
+        eyebrow="Governance & Platform"
+        title="Workflow History"
+        summary="Review bounded platform-side sync activity exposed through workflow-history without confusing it for execution workflows, approvals, or rollback controls."
+        statusValue={data.data_status}
+        actions={
+          <div className="workspace-toolbar">
+            <button type="button" className="shell-action-button shell-action-button--secondary" onClick={() => void reload()}>
+              Reload
+            </button>
+          </div>
+        }
+      />
 
       <div className="metadata-row">
         <span>Data status: {data.data_status}</span>

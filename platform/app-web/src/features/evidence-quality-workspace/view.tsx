@@ -1,16 +1,30 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
-import type { ReadPathReliabilityPosture } from "../../api/contracts";
+import { WorkspaceHeader } from "../../components/workspace-header";
+import type {
+  EvidenceWeaknessExplanationBlock,
+  EvidenceWeaknessExplanationCategory,
+  EvidenceWeaknessExplanationResponse,
+  EvidenceWeaknessNextBestPivot,
+  ReadPathReliabilityPosture,
+} from "../../api/contracts";
+import type { ApiQueryState } from "../../api/use-api-query";
+import { navigateToEvidenceConsistencyWorkspace } from "../../lib/evidence-consistency-navigation";
 import {
   DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT,
+  navigateToInvestigationView,
   readSyncRunsLimitFromSearch,
 } from "../../lib/investigation-navigation";
+import { navigateToMaintenanceEvidenceWorkspace } from "../../lib/maintenance-evidence-workspace-navigation";
+import { navigateToMaintenanceWindowWorkspaceSetup } from "../../lib/maintenance-window-workspace-navigation";
 import { navigateToOperatorBriefingView } from "../../lib/operator-briefing-navigation";
+import { navigateToStabilityWorkspace } from "../../lib/stability-workspace-navigation";
 import { APP_URL_SEARCH_CHANGED, navigateToEvidenceView } from "../../lib/url-app-state";
 import { useReplaceUrlSearchParams } from "../../lib/use-url-search-params";
 import { EvidenceQualityDomainSections } from "./domain-sections";
-import { useEvidenceQualityWorkspaceQuery } from "./api";
+import { useEvidenceQualityWorkspaceQuery, useEvidenceWeaknessExplanationQuery } from "./api";
+import { dimensionLabel } from "./labels";
 
 function readSyncRunsLimitFromWindow(): number {
   return readSyncRunsLimitFromSearch(window.location.search, DEFAULT_INVESTIGATION_SYNC_RUNS_LIMIT);
@@ -27,6 +41,239 @@ function postureLabel(p: ReadPathReliabilityPosture): string {
     default:
       return p;
   }
+}
+
+function explanationCategoryLabel(c: EvidenceWeaknessExplanationCategory): string {
+  switch (c) {
+    case "collection_assurance_weak":
+      return "Collection assurance weak";
+    case "fallback_or_stale_serving":
+      return "Fallback or stale serving";
+    case "sparse_history_or_anchors":
+      return "Sparse history or anchors";
+    case "comparison_or_scope_limited":
+      return "Comparison or scope limited";
+    case "partial_or_unsupported_detail":
+      return "Partial or unsupported detail";
+    case "cross_surface_scope_note":
+      return "Cross-surface scope note";
+    default:
+      return c;
+  }
+}
+
+function evidenceDomainLabel(domain: EvidenceWeaknessExplanationBlock["evidence_subject_domain"]): string {
+  return domain.replace(/_/g, " ");
+}
+
+function handlePivotNavigation(pivot: EvidenceWeaknessNextBestPivot, syncRunsLimit: number): void {
+  switch (pivot.pivot_id) {
+    case "open_devices_list":
+      navigateToEvidenceView("devices");
+      return;
+    case "open_topology_view":
+      navigateToEvidenceView("topology");
+      return;
+    case "open_policies_list":
+      navigateToEvidenceView("policies");
+      return;
+    case "open_platform_health":
+      navigateToEvidenceView("platform-health");
+      return;
+    case "open_capabilities":
+      navigateToEvidenceView("capabilities");
+      return;
+    case "open_service_explorer":
+      navigateToEvidenceView("service-explorer");
+      return;
+    case "open_maintenance_evidence_workspace":
+      navigateToMaintenanceEvidenceWorkspace();
+      return;
+    case "open_maintenance_window_workspace":
+      navigateToMaintenanceWindowWorkspaceSetup();
+      return;
+    case "open_stability_workspace":
+      navigateToStabilityWorkspace({ syncRunsLimit });
+      return;
+    case "open_evidence_consistency_workspace":
+      navigateToEvidenceConsistencyWorkspace(syncRunsLimit);
+      return;
+    case "open_investigation_workspace":
+      navigateToInvestigationView(syncRunsLimit);
+      return;
+    default:
+      return;
+  }
+}
+
+function PivotButton({
+  pivot,
+  syncRunsLimit,
+  labelPrefix,
+}: {
+  pivot: EvidenceWeaknessNextBestPivot;
+  syncRunsLimit: number;
+  labelPrefix: string;
+}) {
+  return (
+    <button
+      type="button"
+      className="nav-drilldown-button"
+      onClick={() => handlePivotNavigation(pivot, syncRunsLimit)}
+      title={`${pivot.route_family} — ${pivot.rationale}`}
+    >
+      {labelPrefix}: {pivot.label}
+    </button>
+  );
+}
+
+function EvidenceWeaknessExplanationPanel({
+  query,
+  syncRunsLimit,
+}: {
+  query: ApiQueryState<EvidenceWeaknessExplanationResponse>;
+  syncRunsLimit: number;
+}) {
+  if (query.isLoading && !query.data) {
+    return (
+      <section className="detail-card evidence-weakness-explanation" aria-labelledby="ewe-heading">
+        <h3 id="ewe-heading">Evidence weakness explanation</h3>
+        <LoadingState label="Loading evidence_weakness_explanation_v1 (bounded next-best pivots)." />
+      </section>
+    );
+  }
+
+  if (query.error) {
+    return (
+      <section
+        className="detail-card evidence-weakness-explanation evidence-weakness-explanation--error"
+        aria-labelledby="ewe-heading"
+      >
+        <h3 id="ewe-heading">Evidence weakness explanation</h3>
+        <p className="callout">
+          Explanation pivots are temporarily unavailable. The evidence-quality rows below remain the authoritative
+          read-only workspace content for this request.
+        </p>
+        <ErrorState error={query.error} onRetry={query.reload} />
+      </section>
+    );
+  }
+
+  if (!query.data) {
+    return (
+      <section
+        className="detail-card evidence-weakness-explanation evidence-weakness-explanation--empty"
+        aria-labelledby="ewe-heading"
+      >
+        <h3 id="ewe-heading">Evidence weakness explanation</h3>
+        <EmptyState
+          title="No weakness explanation response"
+          description="The backend did not return evidence_weakness_explanation_v1 for the current bounded sync window."
+        />
+      </section>
+    );
+  }
+
+  const data = query.data;
+  const blocks = data.contract_id === "evidence_weakness_explanation_v1" ? data.blocks : [];
+
+  return (
+    <section
+      className="detail-card evidence-weakness-explanation"
+      aria-labelledby="ewe-heading"
+      data-testid="evidence-weakness-explanation"
+    >
+      <div className="evidence-weakness-explanation__header">
+        <div>
+          <h3 id="ewe-heading">Evidence weakness explanation</h3>
+          <p className="body-copy">
+            Bounded explanations and read-only next-best pivots from <code>{data.contract_id}</code>. These hints
+            support navigation only; they do not assign root cause, approve changes, or replace consistency, stability,
+            or investigation workspaces.
+          </p>
+        </div>
+        <button type="button" className="inline-action" onClick={() => void query.reload()}>
+          Reload explanation
+        </button>
+      </div>
+      <p className="callout">{data.safety_framing.summary_disclaimer}</p>
+      <p className="table-note">
+        Confidence language: <strong>{data.safety_framing.authority_posture.replace(/_/g, " ")}</strong>; applied{" "}
+        <strong>{data.sync_runs_limit_applied}</strong> sync runs.
+      </p>
+
+      {blocks.length === 0 ? (
+        <EmptyState
+          title="No explanation blocks"
+          description="No evidence-quality weakness rows were mapped to next-best pivots for this bounded assembly."
+        />
+      ) : (
+        <ul className="evidence-weakness-explanation__blocks">
+          {blocks.map((block, idx) => (
+            <li
+              key={`${block.evidence_subject_domain}-${block.evidence_quality_dimension}-${block.explanation_category}-${idx}`}
+              className="evidence-weakness-explanation__block"
+            >
+              <div className="evidence-quality-workspace-domain-row__cues">
+                <span className="evidence-quality-workspace-cue">
+                  {explanationCategoryLabel(block.explanation_category)}
+                </span>
+                <span className="evidence-quality-workspace-cue evidence-quality-workspace-cue--detail">
+                  {evidenceDomainLabel(block.evidence_subject_domain)}
+                </span>
+              </div>
+              <p className="body-copy">
+                <strong>{dimensionLabel(block.evidence_quality_dimension)}:</strong> {block.row_summary}
+              </p>
+              <p className="table-note">
+                Likely explanation: <code>{block.explanation_category}</code> maps this weakness to bounded
+                read-path or collection evidence only, based on cited fields when present.
+              </p>
+              <p className="table-note">
+                Primary pivot rationale: {block.primary_next_best_pivot.rationale}
+              </p>
+              {block.primary_next_best_pivot.cited_evidence_fields?.length ? (
+                <ul className="evidence-quality-workspace-row__cites">
+                  {block.primary_next_best_pivot.cited_evidence_fields.map((c) => (
+                    <li key={c}>
+                      <code>{c}</code>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <div className="evidence-quality-workspace-domain__pivots">
+                <PivotButton
+                  pivot={block.primary_next_best_pivot}
+                  syncRunsLimit={syncRunsLimit}
+                  labelPrefix="Open next-best pivot"
+                />
+                {block.alternate_next_best_pivot ? (
+                  <PivotButton
+                    pivot={block.alternate_next_best_pivot}
+                    syncRunsLimit={syncRunsLimit}
+                    labelPrefix="Alternate pivot"
+                  />
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {data.safety_framing.explicit_non_claims.length > 0 ? (
+        <>
+          <h4 className="evidence-quality-workspace-subheading">Non-claims for this explanation layer</h4>
+          <ul className="evidence-quality-workspace-nonclaims">
+            {data.safety_framing.explicit_non_claims.slice(0, 5).map((c) => (
+              <li key={c}>
+                <code>{c}</code>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+    </section>
+  );
 }
 
 export function EvidenceQualityWorkspaceView() {
@@ -50,6 +297,7 @@ export function EvidenceQualityWorkspaceView() {
   );
 
   const query = useEvidenceQualityWorkspaceQuery(syncRunsLimit);
+  const weaknessExplanationQuery = useEvidenceWeaknessExplanationQuery(syncRunsLimit);
 
   const applySyncLimit = useCallback(
     (raw: string) => {
@@ -66,8 +314,12 @@ export function EvidenceQualityWorkspaceView() {
 
   if (query.isLoading && !query.data) {
     return (
-      <section className="evidence-quality-workspace-route evidence-quality-workspace-route--loading">
-        <h2>Evidence quality workspace</h2>
+      <section className="workspace-page evidence-quality-workspace-route evidence-quality-workspace-route--loading">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Evidence Quality"
+          summary="Review collection assurance, read-path reliability, and bounded evidence weakness across current surfaces."
+        />
         <LoadingState label="Loading evidence_quality_workspace_v1 from app-api (collection assurance summary)." />
       </section>
     );
@@ -75,8 +327,12 @@ export function EvidenceQualityWorkspaceView() {
 
   if (query.error) {
     return (
-      <section className="evidence-quality-workspace-route evidence-quality-workspace-route--error">
-        <h2>Evidence quality workspace</h2>
+      <section className="workspace-page evidence-quality-workspace-route evidence-quality-workspace-route--error">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Evidence Quality"
+          summary="Review collection assurance, read-path reliability, and bounded evidence weakness across current surfaces."
+        />
         <ErrorState error={query.error} onRetry={query.reload} />
         <p className="table-note">
           <button type="button" className="inline-action" onClick={() => navigateToEvidenceView("overview")}>
@@ -89,8 +345,12 @@ export function EvidenceQualityWorkspaceView() {
 
   if (!query.data) {
     return (
-      <section className="evidence-quality-workspace-route evidence-quality-workspace-route--empty">
-        <h2>Evidence quality workspace</h2>
+      <section className="workspace-page evidence-quality-workspace-route evidence-quality-workspace-route--empty">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Evidence Quality"
+          summary="Review collection assurance, read-path reliability, and bounded evidence weakness across current surfaces."
+        />
         <EmptyState
           title="No evidence quality summary"
           description="The backend did not return an evidence quality workspace response for the current request."
@@ -103,8 +363,12 @@ export function EvidenceQualityWorkspaceView() {
 
   if (data.contract_id !== "evidence_quality_workspace_v1") {
     return (
-      <section className="evidence-quality-workspace-route evidence-quality-workspace-route--unsupported">
-        <h2>Evidence quality workspace</h2>
+      <section className="workspace-page evidence-quality-workspace-route evidence-quality-workspace-route--unsupported">
+        <WorkspaceHeader
+          eyebrow="Investigate"
+          title="Evidence Quality"
+          summary="Review collection assurance, read-path reliability, and bounded evidence weakness across current surfaces."
+        />
         <p className="callout">
           Unexpected contract <code>{data.contract_id}</code> — this shell expects{" "}
           <code>evidence_quality_workspace_v1</code>.
@@ -114,7 +378,7 @@ export function EvidenceQualityWorkspaceView() {
   }
 
   return (
-    <section className="evidence-quality-workspace-route" data-testid="evidence-quality-workspace">
+    <section className="workspace-page evidence-quality-workspace-route" data-testid="evidence-quality-workspace">
       <header className="evidence-quality-workspace-hero">
         <div className="evidence-quality-workspace-hero__text">
           <p className="eyebrow">Phase 2 · {data.contract_id}</p>
@@ -219,6 +483,8 @@ export function EvidenceQualityWorkspaceView() {
           </ul>
         </section>
       ) : null}
+
+      <EvidenceWeaknessExplanationPanel query={weaknessExplanationQuery} syncRunsLimit={syncRunsLimit} />
 
       <EvidenceQualityDomainSections rows={data.rows} syncRunsLimit={syncRunsLimit} />
     </section>

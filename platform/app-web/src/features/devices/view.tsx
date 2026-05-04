@@ -6,6 +6,7 @@ import { ReadSideQueryPanel } from "../../components/read-side-query-panel";
 import { IdentifierChip } from "../../components/identifier-chip";
 import { EmptyState, ErrorState, LoadingState } from "../../components/query-states";
 import { StatusPill } from "../../components/status-pill";
+import { WorkspaceHeader } from "../../components/workspace-header";
 import {
   buildRowPostureStatusDisplay,
   countBy,
@@ -226,8 +227,12 @@ export function DevicesView() {
 
   if (isLoading) {
     return (
-      <section>
-        <h2>Devices</h2>
+      <section className="workspace-page">
+        <WorkspaceHeader
+          eyebrow="Network Truth"
+          title="Devices"
+          summary="Inspect normalized device inventory, capability posture, and inventory trust without dropping into raw collector payloads."
+        />
         <ReadSideQueryPanel variant="devices-policies" />
         <LoadingState label="Loading normalized device inventory." />
       </section>
@@ -236,8 +241,12 @@ export function DevicesView() {
 
   if (error) {
     return (
-      <section>
-        <h2>Devices</h2>
+      <section className="workspace-page">
+        <WorkspaceHeader
+          eyebrow="Network Truth"
+          title="Devices"
+          summary="Inspect normalized device inventory, capability posture, and inventory trust without dropping into raw collector payloads."
+        />
         <ReadSideQueryPanel variant="devices-policies" />
         <ErrorState error={error} onRetry={reload} />
       </section>
@@ -246,8 +255,12 @@ export function DevicesView() {
 
   if (!data) {
     return (
-      <section>
-        <h2>Devices</h2>
+      <section className="workspace-page">
+        <WorkspaceHeader
+          eyebrow="Network Truth"
+          title="Devices"
+          summary="Inspect normalized device inventory, capability posture, and inventory trust without dropping into raw collector payloads."
+        />
         <ReadSideQueryPanel variant="devices-policies" />
         <EmptyState
           title="No device inventory"
@@ -287,18 +300,21 @@ export function DevicesView() {
       : "Inventory exists, but observed collector certainty remains partial.";
 
   return (
-    <section>
+    <section className="workspace-page">
       <ReadSideQueryPanel variant="devices-policies" />
-      <div className="section-header">
-        <div>
-          <h2>Devices</h2>
-          <p>
-            Device inventory is now read from the backend API contract rather than
-            direct collector or vendor payloads.
-          </p>
-        </div>
-        <StatusPill value={data.data_status} />
-      </div>
+      <WorkspaceHeader
+        eyebrow="Network Truth"
+        title="Devices"
+        summary="Inspect normalized device inventory, current collector posture, and related topology-policy pivots through the backend-owned inventory contract."
+        statusValue={data.data_status}
+        actions={
+          <div className="workspace-toolbar">
+            <button type="button" className="shell-action-button shell-action-button--secondary" onClick={() => void reload()}>
+              Reload
+            </button>
+          </div>
+        }
+      />
 
       <InvestigationSurfaceEntry invFrom="devices" />
       <EvidenceQualitySurfaceEntry />
