@@ -1,6 +1,6 @@
 # Frontend New Architecture Implementation Plan
 
-This document turns `frontend-new-architecture-proposal.md` into an execution plan. It is still a planning artifact: do not treat it as permission to rewrite application code until the Phase 0 parity inventories are complete.
+This document turns `frontend-new-architecture-proposal.md` into an execution plan. Phase 0 inventory closure and Phase 1 executable parity gates are complete; do not treat that as permission to rewrite feature UI until the later shell, design-system, and migration phase gates are satisfied.
 
 ## Guiding Decision
 
@@ -9,6 +9,18 @@ Use a **side-by-side migration**. Keep the current UI as the default product whi
 ## Phase 0: Mechanical Parity Baseline
 
 Goal: close the known inventory gaps before implementation starts.
+
+Current status: **complete**. The appendices now provide source-backed inventories for feature/test files, API methods, route params, interactions, safety copy, style/accessibility, runtime validation, an exact `contracts.ts` export index, an AST-generated JSX interaction inventory, and exact safety-copy source anchors. Phase 1 has converted the required route/API/download/copy/posture follow-ups into executable parity tests.
+
+Appendix artifacts:
+
+- `platform/app-web/docs/frontend-phase0-feature-test-inventory.md`
+- `platform/app-web/docs/frontend-phase0-api-contract-inventory.md`
+- `platform/app-web/docs/frontend-phase0-route-interaction-copy-inventory.md`
+- `platform/app-web/docs/frontend-phase0-design-runtime-checklist.md`
+- `platform/app-web/docs/frontend-phase0-contract-export-index.md`
+- `platform/app-web/docs/frontend-phase0-jsx-interaction-inventory.md`
+- `platform/app-web/docs/frontend-phase0-safety-copy-source-anchors.md`
 
 Scope:
 
@@ -25,6 +37,22 @@ Scope:
 | Shell metadata inventory | Labels, descriptions, route metadata, copy/reset behavior, fallback | `App.tsx`, `shell.tsx` | New shell has a copy/metadata parity checklist. |
 | Runtime serving checklist | Docker/nginx/proxy/verifier checklist | `Dockerfile`, `nginx.conf`, platform scripts | Runtime validation is defined before cutover. |
 
+Inventory findings now captured:
+
+- `platform/app-web/src/features/` contains 107 feature files.
+- `platform/app-web/tests/` contains 101 `*.test.*` files.
+- `platform/app-web/src/components/` contains 16 shared component files.
+- `platform/app-web/src/lib/` contains 50 TypeScript library/helper files.
+- Current shell routing has 31 valid `view` ids.
+- `ApiClient` exposes 70 async methods; those correspond to a larger operation set because list/detail/timeline/action families expand into multiple backend routes.
+- `contracts.ts` has 316 exported mirrors; `frontend-phase0-contract-export-index.md` records the exact TypeScript AST export index, backend schema class-name matches, and direct `ApiClient` response usage.
+- Backend route posture now has executable consumed/download-only/backend-only/runtime-only classifications in the Phase 1 route-posture harness.
+- `platform/app-web/src/**/*.tsx` contains 800 indexed JSX control elements in the AST-generated interaction appendix.
+- High-risk safety copy now has exact phrase/source-location anchors in `frontend-phase0-safety-copy-source-anchors.md`.
+- Styling is layered across `styles.css`, `tokens.css`, `base.css`, `shell.css`, and `workspace.css`; `styles.css` remains a large feature-class monolith.
+- Accessibility baseline includes skip/main shell behavior, focus-visible styling, nav state, and labeled controls in many surfaces; `aria-live` usage still needs a rewrite decision.
+- Runtime remains Vite build into nginx on port 8088 with `/api/` proxied to `app-api:8000` and packaged validation through the platform scripts.
+
 Out of scope:
 
 - new components;
@@ -34,13 +62,20 @@ Out of scope:
 
 Acceptance criteria:
 
-- `frontend-inventory-gap-report.md` gaps 1 through 12 and 15 are either resolved in appendix docs or converted into explicit test work items.
-- Gaps 13 and 14 have acceptance criteria before design-system and cutover work.
+- `frontend-inventory-gap-report.md` gaps 1 through 12 and 15 are covered by appendix docs and have Phase 1 parity-test follow-ups.
+- Gaps 13 and 14 have design-system/accessibility acceptance criteria before shell/design work.
 - The team can answer "what breaks if we lose this file/test/button/endpoint/copy string?" for each high-risk item.
+- No Phase 0 inventory blockers remain. Design-system accessibility implementation items, such as `aria-live` policy and flagged shell runtime smoke checks, are Phase 2/Phase 3 acceptance gates rather than Phase 0 inventory work.
 
 ## Phase 1: Route and API Parity Harness
 
 Goal: create the safety net before new UI foundations.
+
+Current status: **complete for the first executable parity gate**. The Phase 1 harness now exists in `platform/app-web/tests/frontend-phase1-*.test.ts` and covers route ids, route params, copy/reset semantics, `ApiClient` paths/bodies, download/report/export/replay boundaries, backend route posture, safety-copy anchors, current-test migration dispositions, and the Phase 1 contract guardrail decision.
+
+Detailed plan:
+
+- `platform/app-web/docs/frontend-phase1-route-api-parity-harness-plan.md`
 
 Work packages:
 
@@ -53,6 +88,26 @@ Work packages:
 | Contract guardrail decision | Choose generated OpenAPI client or drift-check harness | Contract inventory | Decision recorded with migration impact. |
 | Safety-copy test anchors | Add expected copy anchors for high-risk language categories | Safety-copy inventory | Anchor coverage exists before feature replacement. |
 
+Phase 1 implementation artifacts:
+
+- `platform/app-web/tests/frontend-phase1-route-parity.test.ts`
+- `platform/app-web/tests/frontend-phase1-api-parity.test.ts`
+- `platform/app-web/tests/frontend-phase1-download-endpoint-parity.test.ts`
+- `platform/app-web/tests/frontend-phase1-backend-route-posture.test.ts`
+- `platform/app-web/tests/frontend-phase1-safety-copy-parity.test.ts`
+- `platform/app-web/tests/frontend-phase1-test-disposition-parity.test.ts`
+- `platform/app-web/tests/frontend-phase1-contract-guardrail.test.ts`
+
+Phase 1 inputs from Phase 0:
+
+| Input | Source appendix | How Phase 1 should use it |
+| --- | --- | --- |
+| Feature/test ownership | `frontend-phase0-feature-test-inventory.md` | Seed migration test ownership and mark tests as keep/port/replace/retire. |
+| API method and endpoint posture | `frontend-phase0-api-contract-inventory.md` | Generate API path coverage and endpoint posture allowlists. |
+| Route ids, params, and navigation helpers | `frontend-phase0-route-interaction-copy-inventory.md` | Generate typed route definitions and parse/build tests. |
+| Interaction and safety-copy families | `frontend-phase0-route-interaction-copy-inventory.md` | Seed JSX interaction audit and safety-copy anchor tests. |
+| Style/accessibility/runtime checklist | `frontend-phase0-design-runtime-checklist.md` | Define design-system and packaged-runtime acceptance gates. |
+
 Out of scope:
 
 - changing app navigation;
@@ -62,13 +117,17 @@ Out of scope:
 
 Required decisions:
 
-- Keep query-string URLs only, or introduce path routes with query-string compatibility.
-- Generate contracts immediately, or first add a route/client drift checker.
-- Make safe-action/rollback reject/cancel controls visible, or classify them as hidden/client-only.
+- Keep query-string URLs only, or introduce path routes with query-string compatibility. **Phase 1 decision:** preserve query-string parity only; path-route design remains a Phase 3+ shell decision.
+- Generate contracts immediately, or first add a route/client drift checker. **Phase 1 decision:** use a drift-check harness first; defer generated OpenAPI client work until after route/API parity remains green.
+- Make safe-action/rollback reject/cancel controls visible, or classify them as hidden/client-only. **Phase 1 decision:** keep list/detail hidden and reject/cancel backend-only for the rewrite baseline; visible create/approve/execute/timeline flows remain parity-covered.
+- Add `aria-live` / alert-region behavior for async errors/status, or document why visible-only status is sufficient. **Phase 1 decision:** keep as a Phase 2 design-system accessibility decision because Phase 1 adds tests only and does not change UI runtime behavior.
+- Treat `/api/v1/exports/maintenance-window-handoff` as backend-only, add a frontend helper, or document a product decision. **Phase 1 decision:** classify as backend-only until a dedicated handoff product helper is designed.
 
 Exit gate:
 
 - A failed parity test blocks any feature migration.
+- No new shell/design work starts until route/API/download/copy parity harnesses exist.
+- Phase 1 is considered complete when the focused `frontend-phase1-*.test.ts` suite is green.
 
 ## Phase 2: Design-System Foundation
 
@@ -97,6 +156,9 @@ Acceptance criteria:
 - Primitives render representative states from current UI fixtures.
 - Accessibility criteria exist for nav, buttons, forms, file import, tables, tabs, and focus.
 - No design token or component name overclaims safety or truth.
+- Existing token families from `tokens.css` are mapped or intentionally replaced.
+- Focus-visible and skip-link behavior from the current shell remain present.
+- Large feature-specific classes from `styles.css` are not removed until the owning feature migrates.
 
 ## Phase 3: New Shell Behind Flag
 
@@ -233,7 +295,7 @@ Work packages:
 | Evidence export | dossier/situation/investigation/briefing export helpers | Keep `evidence_export_v1` and briefing bundle behavior distinct. |
 | Impact report | impact report helpers/components | Keep `/reports/*-impact` separate from `/exports`. |
 | Change safety case | CSC helpers/components | Preserve pre-change reasoning and no safe-to-change proof. |
-| Maintenance handoff | maintenance window export | Preserve subject-set semantics and filename behavior. |
+| Maintenance handoff | backend export route / maintenance window product decision | Decide whether to add a frontend helper or explicitly classify as backend-only; preserve subject-set semantics if exposed. |
 | Evidence replay | replay parser/import/live pivots | Reject unsupported roots and keep frozen/live distinction. |
 
 Acceptance criteria:
@@ -243,6 +305,7 @@ Acceptance criteria:
 - filename behavior is known;
 - replay support/rejection behavior is explicit;
 - UI copy names the envelope/report family.
+- backend-only/export-only posture for maintenance handoff is explicitly resolved.
 
 Rollback:
 
@@ -318,7 +381,7 @@ Goal: prove the new frontend works in the packaged platform path.
 
 Validation sequence:
 
-1. Run focused frontend tests using the repo-approved validation path.
+1. Run focused frontend tests using the repo-approved Dockerized Vitest path when needed.
 2. Build packaged app-web image through platform scripts.
 3. Deploy the platform runtime where authorized.
 4. Run core runtime and auth verifiers from `platform/`.
@@ -396,18 +459,16 @@ Rollback:
 | Testing | parity, smoke, copy, runtime validation | every workstream |
 | Runtime | Vite/nginx/image validation | platform deployment owners |
 
-## Blockers to Resolve Before Coding
+## Resolved Phase 0/1 Blockers
 
-- Exact `ApiClient` method inventory is not complete.
-- Exact route-param inventory is not complete.
-- JSX button/link inventory is not complete.
-- Contract export inventory is not complete.
-- Test inventory is not complete.
-- Export/report/download matrix is not complete.
-- Safety-copy anchor inventory is not complete.
-- Safe-action/rollback reject/cancel UI posture is undecided.
-- OpenAPI generation vs drift-check strategy is undecided.
+- Phase 0 inventories are complete and have executable Phase 1 parity gates.
+- JSX button/link/control inventory is AST-generated in `frontend-phase0-jsx-interaction-inventory.md`.
+- Contract export inventory is exact in `frontend-phase0-contract-export-index.md`.
+- Safety-copy anchors have exact source locations in `frontend-phase0-safety-copy-source-anchors.md`.
+- Safe-action/rollback hidden-helper posture is resolved for Phase 1.
+- OpenAPI generation vs drift-check strategy is resolved for Phase 1: drift-check first, generated clients later.
+- Standalone `readiness-snapshot-history`, granular controller lane endpoints, runtime `/health`/`/metrics`, and maintenance handoff export have Phase 1 endpoint posture decisions.
 
-## First Task After This Plan
+## Next Task After Phase 1
 
-Create the Phase 0 appendices and parity inventory artifacts. The first coding PR should not begin until those artifacts either exist or are explicitly replaced by generated parity tests.
+Proceed to Phase 2: design-system foundation. Keep feature migration blocked until the design-system primitives preserve the current query states, action semantics, accessibility baseline, and safety-copy language captured by the Phase 0 inventories and Phase 1 parity harness.
