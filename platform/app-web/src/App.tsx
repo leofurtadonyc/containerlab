@@ -2,12 +2,29 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { appApiBaseUrl } from "./api/client";
 import { AppShell } from "./components/shell";
+import { NextShell } from "./components/next-shell";
 import {
   APP_URL_SEARCH_CHANGED,
   mergeViewIntoSearch,
-  readViewIdFromSearch,
   replaceUrlSearchParams,
 } from "./lib/url-app-state";
+import {
+  buildRouteContextChips,
+  findGroupLabelForView,
+  NEXT_SHELL_NAV_GROUPS,
+} from "./lib/next-shell-navigation";
+import {
+  LEGACY_UI_MODE_VALUE,
+  readShellModeFromSearch,
+  UI_MODE_PARAM,
+} from "./lib/shell-mode";
+import {
+  findCoreDomainRouteByViewId,
+  maybeCanonicalizeCoreDomainAlias,
+  mergeCoreDomainRouteIntoSearch,
+  readCoreDomainFlagsFromSearch,
+  readViewIdFromSearchWithCoreRoutes,
+} from "./lib/phase4-core-domain-routing";
 import { PLATFORM_NAV_VIEW_IDS } from "./nav-views";
 import { AuditView } from "./features/audit/view";
 import { CapabilitiesView } from "./features/capabilities/view";
@@ -54,7 +71,7 @@ type AppNavGroup = {
   items: AppNavItem[];
 };
 
-const NAV_GROUPS: readonly AppNavGroup[] = [
+const LEGACY_NAV_GROUPS: readonly AppNavGroup[] = [
   {
     id: "command-center",
     label: "Command Center",
@@ -249,7 +266,7 @@ const NAV_GROUPS: readonly AppNavGroup[] = [
 ] as const;
 
 const VIEW_META = new Map(
-  NAV_GROUPS.flatMap((group) =>
+  LEGACY_NAV_GROUPS.flatMap((group) =>
     group.items.map((item) => [
       item.id,
       {
@@ -276,6 +293,12 @@ function summarizeAppApiBaseUrl(baseUrl: string): string {
 function countRouteContextParams(search: string): number {
   const sp = new URLSearchParams(search);
   sp.delete("view");
+  sp.delete("route");
+  sp.delete("ui");
+  sp.delete("next_home");
+  sp.delete("next_network");
+  sp.delete("next_governance");
+  sp.delete("next_policy_service");
   return [...sp.keys()].length;
 }
 
@@ -350,6 +373,11 @@ function renderView(viewId: string) {
 export function App() {
   const [locationSearch, setLocationSearch] = useState<string>(() => window.location.search);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const runtimeShellMode = (import.meta.env.VITE_UI_SHELL_MODE as string | undefined) ?? undefined;
+  const coreDomainFlags = useMemo(
+    () => readCoreDomainFlagsFromSearch(locationSearch, import.meta.env),
+    [locationSearch],
+  );
 
   useEffect(() => {
     const syncFromUrl = () => {
@@ -364,9 +392,15 @@ export function App() {
   }, []);
 
   const handleSelectView = useCallback((id: string) => {
-    const sp = mergeViewIntoSearch(window.location.search, id);
+    let sp = mergeViewIntoSearch(window.location.search, id);
+    const route = findCoreDomainRouteByViewId(id);
+    if (route && coreDomainFlags[route.flag]) {
+      sp = mergeCoreDomainRouteIntoSearch(sp.toString(), route.id);
+    } else {
+      sp.delete("route");
+    }
     replaceUrlSearchParams(sp);
-  }, []);
+  }, [coreDomainFlags]);
 
   const handleCopyLink = useCallback(async () => {
     try {
@@ -379,22 +413,107 @@ export function App() {
   }, []);
 
   const activeView = useMemo(
-    () => readViewIdFromSearch(locationSearch, PLATFORM_NAV_VIEW_IDS) ?? "overview",
+    () =>
+      readViewIdFromSearchWithCoreRoutes(
+        locationSearch,
+        PLATFORM_NAV_VIEW_IDS,
+        coreDomainFlags,
+      ) ?? "overview",
+    [coreDomainFlags, locationSearch],
+  );
+  const requestedView = useMemo(
+    () => new URLSearchParams(locationSearch).get("view"),
     [locationSearch],
   );
+  const hasInvalidView = useMemo(
+    () => Boolean(requestedView && !PLATFORM_NAV_VIEW_IDS.has(requestedView)),
+    [requestedView],
+  );
+  const shellMode = useMemo(
+    () => readShellModeFromSearch(locationSearch, runtimeShellMode),
+    [locationSearch, runtimeShellMode],
+  );
+  const usingNextShell = shellMode === "next";
   const activeMeta = VIEW_META.get(activeView) ?? VIEW_META.get("overview")!;
   const routeContextCount = countRouteContextParams(locationSearch);
   const environmentSummary = summarizeAppApiBaseUrl(appApiBaseUrl);
+  const routeContextChips = useMemo(
+    () => buildRouteContextChips(locationSearch),
+    [locationSearch],
+  );
   const handleResetContext = useCallback(() => {
     const sp = new URLSearchParams();
     sp.set("view", activeView);
+    const route = findCoreDomainRouteByViewId(activeView);
+    if (route && coreDomainFlags[route.flag]) {
+      sp.set("route", route.id);
+    }
+    if (shellMode === "next") {
+      sp.set(UI_MODE_PARAM, "next");
+    } else if (shellMode === "legacy" && new URLSearchParams(window.location.search).get(UI_MODE_PARAM) === LEGACY_UI_MODE_VALUE) {
+      sp.set(UI_MODE_PARAM, LEGACY_UI_MODE_VALUE);
+    }
+    const current = new URLSearchParams(window.location.search);
+    if (current.has("next_home")) {
+      sp.set("next_home", current.get("next_home") ?? "");
+    }
+    if (current.has("next_network")) {
+      sp.set("next_network", current.get("next_network") ?? "");
+    }
+    if (current.has("next_governance")) {
+      sp.set("next_governance", current.get("next_governance") ?? "");
+    }
+    if (current.has("next_policy_service")) {
+      sp.set("next_policy_service", current.get("next_policy_service") ?? "");
+    }
     replaceUrlSearchParams(sp);
-  }, [activeView]);
+  }, [activeView, coreDomainFlags, shellMode]);
+
+  useEffect(() => {
+    if (!usingNextShell) {
+      return;
+    }
+    const canonical = maybeCanonicalizeCoreDomainAlias(locationSearch, coreDomainFlags);
+    if (!canonical) {
+      return;
+    }
+    if (canonical.toString() === new URLSearchParams(locationSearch).toString()) {
+      return;
+    }
+    replaceUrlSearchParams(canonical);
+  }, [coreDomainFlags, locationSearch, usingNextShell]);
+
+  if (usingNextShell) {
+    return (
+      <NextShell
+        title="Platform"
+        navigationGroups={NEXT_SHELL_NAV_GROUPS}
+        activeItemId={activeView}
+        onSelect={handleSelectView}
+        currentGroupLabel={findGroupLabelForView(activeView)}
+        currentPageLabel={activeMeta.label}
+        currentPageDescription={activeMeta.description}
+        routeContextChips={routeContextChips}
+        environmentSummary={environmentSummary}
+        onCopyLink={handleCopyLink}
+        copyState={copyState}
+        onResetContext={handleResetContext}
+        commandSlot={<GlobalOperatorSearch />}
+        fallbackNote={
+          hasInvalidView
+            ? `Unrecognized view "${requestedView}" opened. Showing Overview while preserving URL compatibility.`
+            : null
+        }
+      >
+        {renderView(activeView)}
+      </NextShell>
+    );
+  }
 
   return (
     <AppShell
       title="Platform"
-      navigationGroups={NAV_GROUPS.map((group) => ({
+      navigationGroups={LEGACY_NAV_GROUPS.map((group) => ({
         ...group,
         items: group.items.map((item) => ({ ...item })),
       }))}

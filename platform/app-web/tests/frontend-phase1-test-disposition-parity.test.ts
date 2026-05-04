@@ -143,7 +143,7 @@ describe("Phase 1 legacy test migration dispositions", () => {
   it("labels every pre-Phase-1 test file with a migration disposition", () => {
     const currentLegacyTests = readdirSync(__dirname)
       .filter((name) => /\.(test\.ts|test\.tsx)$/.test(name))
-      .filter((name) => !name.startsWith("frontend-phase1-"))
+      .filter((name) => !name.startsWith("frontend-phase"))
       .sort();
 
     expect(currentLegacyTests.filter((testName) => dispositionFor(testName) === undefined)).toEqual([]);

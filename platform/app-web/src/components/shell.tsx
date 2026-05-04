@@ -1,5 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 
+import { DsButton } from "../design-system";
+
 interface NavigationItem {
   id: string;
   label: string;
@@ -79,16 +81,17 @@ export function AppShell({
                 {group.items.map((item) => {
                   const isActive = item.id === activeItemId;
                   return (
-                    <button
+                    <DsButton
                       key={item.id}
                       type="button"
+                      variant="navigation"
                       className={isActive ? "app-nav-button app-nav-button--active" : "app-nav-button"}
                       onClick={() => onSelect(item.id)}
                       aria-current={isActive ? "page" : undefined}
                     >
                       <span className="app-nav-button__label">{item.label}</span>
                       <span className="app-nav-button__description">{item.description}</span>
-                    </button>
+                    </DsButton>
                   );
                 })}
               </div>
@@ -100,15 +103,16 @@ export function AppShell({
         <header className="app-shell__topbar">
           <div className="app-shell__topbar-main">
             <div className="app-shell__route-context">
-              <button
+              <DsButton
                 type="button"
+                variant="secondary"
                 className="app-shell__menu-toggle"
                 onClick={() => setNavOpen((open) => !open)}
                 aria-expanded={navOpen}
                 aria-controls="primary-navigation"
               >
                 Menu
-              </button>
+              </DsButton>
               <div>
                 <p className="app-shell__eyebrow">{currentGroupLabel}</p>
                 <h2 className="app-shell__route-title">{currentPageLabel}</h2>
@@ -124,17 +128,23 @@ export function AppShell({
                     ? `${routeContextCount} context parameter${routeContextCount === 1 ? "" : "s"}`
                     : "No extra context"}
                 </span>
-                <button type="button" className="shell-action-button" onClick={() => void onCopyLink()}>
-                  {copyState === "copied" ? "Link copied" : copyState === "failed" ? "Copy failed" : "Copy link"}
-                </button>
-                <button
+                <DsButton
                   type="button"
+                  variant="navigation"
+                  className="shell-action-button"
+                  onClick={() => void onCopyLink()}
+                >
+                  {copyState === "copied" ? "Link copied" : copyState === "failed" ? "Copy failed" : "Copy link"}
+                </DsButton>
+                <DsButton
+                  type="button"
+                  variant="secondary"
                   className="shell-action-button shell-action-button--secondary"
                   onClick={onResetContext}
                   disabled={routeContextCount === 0}
                 >
                   Reset context
-                </button>
+                </DsButton>
               </div>
             </div>
           </div>

@@ -120,7 +120,7 @@ Required decisions:
 - Keep query-string URLs only, or introduce path routes with query-string compatibility. **Phase 1 decision:** preserve query-string parity only; path-route design remains a Phase 3+ shell decision.
 - Generate contracts immediately, or first add a route/client drift checker. **Phase 1 decision:** use a drift-check harness first; defer generated OpenAPI client work until after route/API parity remains green.
 - Make safe-action/rollback reject/cancel controls visible, or classify them as hidden/client-only. **Phase 1 decision:** keep list/detail hidden and reject/cancel backend-only for the rewrite baseline; visible create/approve/execute/timeline flows remain parity-covered.
-- Add `aria-live` / alert-region behavior for async errors/status, or document why visible-only status is sufficient. **Phase 1 decision:** keep as a Phase 2 design-system accessibility decision because Phase 1 adds tests only and does not change UI runtime behavior.
+- Add `aria-live` / alert-region behavior for async errors/status, or document why visible-only status is sufficient. **Phase 2 decision:** apply `aria-live="polite"` for loading/refreshing status and `aria-live="assertive"` with `role="alert"` for error query states via shared design-system query-state primitives.
 - Treat `/api/v1/exports/maintenance-window-handoff` as backend-only, add a frontend helper, or document a product decision. **Phase 1 decision:** classify as backend-only until a dedicated handoff product helper is designed.
 
 Exit gate:
@@ -132,6 +132,21 @@ Exit gate:
 ## Phase 2: Design-System Foundation
 
 Goal: introduce reusable primitives that preserve current states and safety semantics.
+
+Current status: **complete**. Shared design-system primitives are implemented in `platform/app-web/src/design-system/` with token mappings in `platform/app-web/src/styles/design-system.css`, representative adoption in shared shell/query-state surfaces, and executable coverage in `platform/app-web/tests/frontend-phase2-design-system-foundation.test.tsx`.
+
+Implementation artifacts:
+
+- `platform/app-web/src/styles/design-system.css`
+- `platform/app-web/src/design-system/button.tsx`
+- `platform/app-web/src/design-system/layout.tsx`
+- `platform/app-web/src/design-system/query-states.tsx`
+- `platform/app-web/src/design-system/data-display.tsx`
+- `platform/app-web/src/design-system/forms.tsx`
+- `platform/app-web/src/design-system/copy.tsx`
+- `platform/app-web/src/design-system/index.ts`
+- Shared-surface adoption in `platform/app-web/src/components/shell.tsx` and `platform/app-web/src/components/query-states.tsx`
+- Validation in `platform/app-web/tests/frontend-phase2-design-system-foundation.test.tsx`
 
 Work packages:
 
@@ -160,9 +175,25 @@ Acceptance criteria:
 - Focus-visible and skip-link behavior from the current shell remain present.
 - Large feature-specific classes from `styles.css` are not removed until the owning feature migrates.
 
+Exit gate:
+
+- Phase 2 primitives and representative tests are green.
+- Existing Phase 1 parity harness remains green after primitive adoption.
+
 ## Phase 3: New Shell Behind Flag
 
 Goal: make the new navigation model available without replacing feature content.
+
+Current status: **complete**. The new shell is available behind the `ui=next` runtime/query flag while legacy shell remains the default. Existing `view=` routes and feature components continue to render unchanged through the old-view outlet.
+
+Implementation artifacts:
+
+- `platform/app-web/src/components/next-shell.tsx`
+- `platform/app-web/src/lib/shell-mode.ts`
+- `platform/app-web/src/lib/next-shell-navigation.ts`
+- `platform/app-web/src/App.tsx` shell-mode gating and fallback behavior
+- `platform/app-web/src/styles/shell.css` next-shell styles
+- `platform/app-web/tests/frontend-phase3-shell-flag.test.tsx`
 
 Flag posture:
 
@@ -191,9 +222,24 @@ Rollback:
 - Disable new shell flag.
 - Keep current shell and old `view=` routes untouched.
 
+Exit gate:
+
+- Legacy default shell remains unchanged.
+- `ui=next` enables the new shell without changing feature behavior.
+- Copy link preserves full query context and reset context preserves shell mode with per-route reset semantics.
+- Invalid/unknown `view` values fall back to `overview` with explicit compatibility note in next shell.
+
 ## Phase 4: Read-Only Core Domains
 
 Goal: migrate low-write, high-traffic surfaces first.
+
+Current status: **complete**. Read-only core-domain surfaces now resolve through typed canonical route ids in the new shell while preserving old `view=` deep-link aliases and unchanged feature rendering/API behavior.
+
+Implementation artifacts:
+
+- `platform/app-web/src/lib/phase4-core-domain-routing.ts`
+- `platform/app-web/src/App.tsx` (canonical route resolution, alias canonicalization, per-domain flags)
+- `platform/app-web/tests/frontend-phase4-readonly-core-domains.test.ts`
 
 Order:
 
@@ -223,6 +269,13 @@ Rollback:
 
 - Turn off the domain flag.
 - Keep old route alias rendering old component.
+
+Exit gate:
+
+- Legacy `view=` links for `overview`, `platform-health`, `devices`, `topology`, `capabilities`, `readiness`, `policies`, and `service-explorer` canonicalize to new route ids when corresponding domain flags are enabled.
+- New canonical routes still carry `view=` aliases for compatibility.
+- Per-domain rollback flags (`next_home`, `next_network`, `next_governance`, `next_policy_service`) disable canonicalization without changing feature behavior.
+- Existing API/path parity and query-state behavior remains unchanged because migrated surfaces still render existing view components.
 
 ## Phase 5: Object-Centered Workspaces
 
