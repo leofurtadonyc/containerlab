@@ -1,0 +1,46 @@
+.theme-v2-dark {
+  color-scheme: dark;
+  color: var(--text-primary);
+  background: var(--surface-base);
+}
+
+.theme-v2-dark .status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--layout-badge-height);
+  padding: 0 var(--space-2);
+  border: var(--border-width-default) solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+}
+
+.theme-v2-dark .status-chip[data-tone='healthy'] {
+  color: var(--status-healthy);
+}
+
+.theme-v2-dark .status-chip[data-tone='warning'] {
+  color: var(--status-warning);
+}
+
+.theme-v2-dark .status-chip[data-tone='critical'] {
+  color: var(--status-critical);
+}
+
+.theme-v2-dark .status-chip[data-tone='unknown'] {
+  color: var(--status-unknown);
+}
+
+.theme-v2-dark .status-chip[data-tone='pending'] {
+  color: var(--status-pending);
+}
+
+.theme-v2-dark .status-chip[data-tone='future'] {
+  color: var(--status-future);
+}
+
+.theme-v2-dark .status-chip[data-tone='readOnly'] {
+  color: var(--status-readonly);
+}

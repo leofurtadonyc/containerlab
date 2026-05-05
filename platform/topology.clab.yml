@@ -99,6 +99,12 @@ topology:
       ports:
         - "8088:8088"
 
+    app-web-v2:
+      kind: linux
+      image: platform-app-web-v2:0.1.0
+      ports:
+        - "8089:8089"
+
     br-odl-sb:
       kind: bridge
 

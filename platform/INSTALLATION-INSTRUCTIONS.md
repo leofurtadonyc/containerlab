@@ -160,6 +160,7 @@ This builds the current local images:
 - `platform-app-api:0.1.0`
 - `platform-gnmi-collector:0.1.0`
 - `platform-app-web:0.1.0`
+- `platform-app-web-v2:0.1.0`
 - `platform-odl:0.1.0`
 - `platform-postgres:0.1.0`
 - `platform-prometheus:0.1.0`
@@ -318,6 +319,7 @@ If your OpenDaylight **base image** does not provide a feature name, Karaf may *
 The current host port bindings are:
 
 - WebUI: `http://localhost:8088`
+- WebUI v2 preview: `http://localhost:8089/app/launchpad`
 - App API: `http://localhost:8000`
 - Grafana: `http://localhost:3000`
 - Prometheus: `http://localhost:9090`

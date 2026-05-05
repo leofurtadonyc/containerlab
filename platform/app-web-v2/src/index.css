@@ -1,0 +1,55 @@
+.v2-scaffold {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: var(--layout-top-bar-height) 1fr;
+}
+
+.v2-top-bar {
+  border-bottom: var(--border-width-default) solid var(--border-subtle);
+  background: var(--surface-overlay);
+  padding: 0 var(--space-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+}
+
+.v2-brand {
+  font-size: var(--font-size-md);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.v2-workspace {
+  display: grid;
+  grid-template-columns: var(--layout-left-rail-width) 1fr;
+  min-height: calc(100vh - var(--layout-top-bar-height));
+}
+
+.v2-rail {
+  border-right: var(--border-width-default) solid var(--border-subtle);
+  background: var(--surface-raised);
+  padding: var(--space-3) var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.v2-panel {
+  padding: var(--space-6);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.v2-panel h1 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  color: var(--text-primary);
+}
+
+.v2-panel p,
+.v2-panel li {
+  color: var(--text-secondary);
+}

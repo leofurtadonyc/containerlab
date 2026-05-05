@@ -24,9 +24,11 @@ GRAFANA_CONTAINER="${GRAFANA_CONTAINER:-clab-platform-grafana}"
 GNMI_COLLECTOR_CONTAINER="${GNMI_COLLECTOR_CONTAINER:-clab-platform-gnmi-collector}"
 APP_API_CONTAINER="${APP_API_CONTAINER:-clab-platform-app-api}"
 APP_WEB_CONTAINER="${APP_WEB_CONTAINER:-clab-platform-app-web}"
+APP_WEB_V2_CONTAINER="${APP_WEB_V2_CONTAINER:-clab-platform-app-web-v2}"
 GNMI_COLLECTOR_URL="${GNMI_COLLECTOR_URL:-http://127.0.0.1:9804}"
 APP_API_URL="${APP_API_URL:-http://127.0.0.1:8000}"
 APP_WEB_URL="${APP_WEB_URL:-http://127.0.0.1:8088}"
+APP_WEB_V2_URL="${APP_WEB_V2_URL:-http://127.0.0.1:8089}"
 PROMETHEUS_URL="${PROMETHEUS_URL:-http://127.0.0.1:9090}"
 GRAFANA_URL="${GRAFANA_URL:-http://127.0.0.1:3000}"
 GRAFANA_USER="${GRAFANA_USER:-admin}"
@@ -223,6 +225,27 @@ fetch_app_web_asset_chunk() {
   curl_http_static "$url" || exit 1
 }
 
+# Fetch one app-web-v2 /assets/*.js chunk with retries (cold start / same-workspace restart drills).
+fetch_app_web_v2_asset_chunk() {
+  url=$1
+  attempts=$STATIC_FETCH_ATTEMPTS
+
+  while [ "$attempts" -gt 0 ]; do
+    chunk=$(curl_http_static "$url" 2>/dev/null) || chunk=""
+    if [ -n "$chunk" ]; then
+      printf '%s' "$chunk"
+      return 0
+    fi
+    attempts=$((attempts - 1))
+    if [ "$attempts" -gt 0 ]; then
+      sleep "$VERIFY_SLEEP_SECONDS"
+    fi
+  done
+
+  echo "app-web-v2: failed to fetch static asset after $STATIC_FETCH_ATTEMPTS attempts: $url" >&2
+  curl_http_static "$url" || exit 1
+}
+
 wait_for_container_healthy() {
   container_name=$1
   attempts=$VERIFY_ATTEMPTS
@@ -258,6 +281,7 @@ require_container "$GRAFANA_CONTAINER"
 require_container "$GNMI_COLLECTOR_CONTAINER"
 require_container "$APP_API_CONTAINER"
 require_container "$APP_WEB_CONTAINER"
+require_container "$APP_WEB_V2_CONTAINER"
 
 wait_for_container_healthy "$POSTGRES_CONTAINER"
 wait_for_postgres
@@ -273,11 +297,14 @@ wait_for_container_healthy "$GRAFANA_CONTAINER"
 wait_for_container_healthy "$GNMI_COLLECTOR_CONTAINER"
 wait_for_container_healthy "$APP_API_CONTAINER"
 wait_for_container_healthy "$APP_WEB_CONTAINER"
+wait_for_container_healthy "$APP_WEB_V2_CONTAINER"
 wait_for_http_ok "gNMI collector metrics" "$GNMI_COLLECTOR_URL/metrics"
 wait_for_http_ok "app-api health" "$APP_API_URL/api/v1/health"
 wait_for_http_ok "app-api metrics" "$APP_API_URL/metrics"
 wait_for_http_ok "app-web root" "$APP_WEB_URL/"
 wait_for_http_ok "app-web API proxy health" "$APP_WEB_URL/api/v1/health"
+wait_for_http_ok "app-web-v2 root" "$APP_WEB_V2_URL/"
+wait_for_http_ok "app-web-v2 API proxy health" "$APP_WEB_V2_URL/api/v1/health"
 
 # /api/v1/health can be 200 before heavier read paths finish warming. Poll policies, platform/status,
 # and app-web / before asset + bulk JSON fetches (policies alone does not cover platform/status).
@@ -330,6 +357,35 @@ wait_for_app_web_root_ok() {
   exit 1
 }
 wait_for_app_web_root_ok
+
+wait_for_app_web_v2_route_ok() {
+  route_name=$1
+  route_path=$2
+  attempts=$VERIFY_ATTEMPTS
+  while [ "$attempts" -gt 0 ]; do
+    if curl_http_json "$APP_WEB_V2_URL$route_path" >/dev/null 2>&1; then
+      return 0
+    fi
+    attempts=$((attempts - 1))
+    if [ "$attempts" -gt 0 ]; then
+      sleep "$VERIFY_SLEEP_SECONDS"
+    fi
+  done
+  echo "app-web-v2 route did not return HTTP 200: $route_name ($route_path) (see docker logs $APP_WEB_V2_CONTAINER)" >&2
+  exit 1
+}
+
+wait_for_app_web_v2_route_ok "launchpad" "/app/launchpad"
+wait_for_app_web_v2_route_ok "command-center" "/app/command-center"
+wait_for_app_web_v2_route_ok "digital-twin" "/app/digital-twin"
+wait_for_app_web_v2_route_ok "change-safety" "/app/change-safety"
+wait_for_app_web_v2_route_ok "service-assurance" "/app/service-assurance"
+wait_for_app_web_v2_route_ok "transport-engineering" "/app/transport-engineering"
+wait_for_app_web_v2_route_ok "traffic-intelligence" "/app/traffic-intelligence"
+wait_for_app_web_v2_route_ok "intent-compliance" "/app/intent-compliance"
+wait_for_app_web_v2_route_ok "automation-studio" "/app/automation-studio"
+wait_for_app_web_v2_route_ok "ai-assistant" "/app/ai-assistant"
+wait_for_app_web_v2_route_ok "admin-platform-ops" "/app/admin-platform-ops"
 
 # Week 29–30 NOC cockpit / handoff WebUI: shipped /assets/*.js must retain stable composition markers (repository vitest covers UI behavior).
 app_web_index_html=$(curl_http_json "$APP_WEB_URL/")
@@ -438,6 +494,63 @@ for asset_path in $(printf '%s' "$app_web_index_html" | tr ' ' '\n' | tr '"' '\n
 done
 if [ "$app_web_noc_cockpit_marker" != "1" ] || [ "$app_web_overview_mode_marker" != "1" ] || [ "$app_web_delta_digest_marker" != "1" ] || [ "$app_web_operator_briefing_marker" != "1" ] || [ "$app_web_briefing_bundle_export_marker" != "1" ] || [ "$app_web_evidence_replay_marker" != "1" ] || [ "$app_web_noc_cockpit_strategic_pivots_marker" != "1" ] || [ "$app_web_global_search_week30_marker" != "1" ] || [ "$app_web_global_search_impact_hub_marker" != "1" ] || [ "$app_web_maintenance_preview_marker" != "1" ] || [ "$app_web_maintenance_evidence_workspace_marker" != "1" ] || [ "$app_web_maintenance_window_workspace_marker" != "1" ] || [ "$app_web_mww_subject_marker" != "1" ] || [ "$app_web_impact_report_marker" != "1" ] || [ "$app_web_service_explorer_marker" != "1" ] || [ "$app_web_service_dossier_marker" != "1" ] || [ "$app_web_policy_explainability_marker" != "1" ] || [ "$app_web_path_explorer_marker" != "1" ] || [ "$app_web_service_impact_workspace_marker" != "1" ] || [ "$app_web_change_safety_case_marker" != "1" ] || [ "$app_web_evidence_consistency_marker" != "1" ] || [ "$app_web_stability_workspace_marker" != "1" ] || [ "$app_web_topology_truth_v1_marker" != "1" ] || [ "$app_web_topology_lldp_marker" != "1" ] || [ "$app_web_topology_igp_marker" != "1" ]; then
   echo "app-web: expected noc_cockpit_v1, overview_mode, cross_domain_delta_digest_v1, operator_briefing_workspace_v1, briefing_export_bundle_v1, evidence_replay_viewer_v1, noc-cockpit-strategic-pivots, Evidence replay (frozen file), Impact report hub, maintenance_preview_v1, maintenance_evidence_workspace_v1, maintenance_window_workspace_v1, mww_subject (maintenance window URL state), impact_report_v1, service_explorer_v1, service_dossier_v1, policy_explainability_workspace_v1, path_explorer_v1, service_impact_workspace_v1, change_safety_case_v1, evidence_consistency_summary_v1, operational_stability_summary_v1, topology_truth_v1, LLDP observations, and IGP-confirmed Links substrings in shipped /assets/*.js (NOC cockpit + delta digest + operator briefing + bundle export + evidence replay + cockpit 2.0 pivots + global search week 30 footer + impact hub + maintenance preview + maintenance evidence workspace + maintenance window workspace + impact report + week 31 service/explainability + week 34 path explorer + week 34 service impact workspace + week 32 service dossier + change safety case + week 35 evidence consistency workspace + week 37 stability workspace + deeper topology truth v1 + LLDP + IGP topology cues)" >&2
+  exit 1
+fi
+
+app_web_v2_index_html=$(curl_http_json "$APP_WEB_V2_URL/")
+app_web_v2_launchpad_marker=0
+app_web_v2_command_center_marker=0
+app_web_v2_digital_twin_marker=0
+app_web_v2_change_safety_marker=0
+app_web_v2_service_assurance_marker=0
+app_web_v2_transport_engineering_marker=0
+app_web_v2_traffic_intelligence_marker=0
+app_web_v2_intent_compliance_marker=0
+app_web_v2_automation_studio_marker=0
+app_web_v2_ai_assistant_marker=0
+app_web_v2_admin_platform_ops_marker=0
+app_web_v2_theme_marker=0
+for asset_path in $(printf '%s' "$app_web_v2_index_html" | tr ' ' '\n' | tr '"' '\n' | grep -E '^/assets/.*\.js$' || true); do
+  app_web_v2_chunk=$(fetch_app_web_v2_asset_chunk "$APP_WEB_V2_URL$asset_path")
+  if printf '%s' "$app_web_v2_chunk" | grep -qF 'Platform Launchpad'; then
+    app_web_v2_launchpad_marker=1
+  fi
+  if printf '%s' "$app_web_v2_chunk" | grep -qF 'Command Center'; then
+    app_web_v2_command_center_marker=1
+  fi
+  if printf '%s' "$app_web_v2_chunk" | grep -qF 'Network Digital Twin'; then
+    app_web_v2_digital_twin_marker=1
+  fi
+  if printf '%s' "$app_web_v2_chunk" | grep -qF 'Change Safety'; then
+    app_web_v2_change_safety_marker=1
+  fi
+  if printf '%s' "$app_web_v2_chunk" | grep -qF 'Service Assurance'; then
+    app_web_v2_service_assurance_marker=1
+  fi
+  if printf '%s' "$app_web_v2_chunk" | grep -qF 'Transport Engineering'; then
+    app_web_v2_transport_engineering_marker=1
+  fi
+  if printf '%s' "$app_web_v2_chunk" | grep -qF 'Traffic Intelligence'; then
+    app_web_v2_traffic_intelligence_marker=1
+  fi
+  if printf '%s' "$app_web_v2_chunk" | grep -qF 'Intent & Compliance'; then
+    app_web_v2_intent_compliance_marker=1
+  fi
+  if printf '%s' "$app_web_v2_chunk" | grep -qF 'Automation Studio'; then
+    app_web_v2_automation_studio_marker=1
+  fi
+  if printf '%s' "$app_web_v2_chunk" | grep -qF 'AI Assistant'; then
+    app_web_v2_ai_assistant_marker=1
+  fi
+  if printf '%s' "$app_web_v2_chunk" | grep -qF 'Admin & Platform Ops'; then
+    app_web_v2_admin_platform_ops_marker=1
+  fi
+  if printf '%s' "$app_web_v2_chunk" | grep -qF 'theme-v2-dark'; then
+    app_web_v2_theme_marker=1
+  fi
+done
+if [ "$app_web_v2_launchpad_marker" != "1" ] || [ "$app_web_v2_command_center_marker" != "1" ] || [ "$app_web_v2_digital_twin_marker" != "1" ] || [ "$app_web_v2_change_safety_marker" != "1" ] || [ "$app_web_v2_service_assurance_marker" != "1" ] || [ "$app_web_v2_transport_engineering_marker" != "1" ] || [ "$app_web_v2_traffic_intelligence_marker" != "1" ] || [ "$app_web_v2_intent_compliance_marker" != "1" ] || [ "$app_web_v2_automation_studio_marker" != "1" ] || [ "$app_web_v2_ai_assistant_marker" != "1" ] || [ "$app_web_v2_admin_platform_ops_marker" != "1" ] || [ "$app_web_v2_theme_marker" != "1" ]; then
+  echo "app-web-v2: expected Launchpad, Command Center, Network Digital Twin, Change Safety, Service Assurance, Transport Engineering, Traffic Intelligence, Intent & Compliance, Automation Studio, AI Assistant, Admin & Platform Ops, and theme-v2-dark substrings in shipped /assets/*.js (Batch 1-3 runtime preview markers)." >&2
   exit 1
 fi
 
