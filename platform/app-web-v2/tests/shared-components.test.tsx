@@ -5,6 +5,7 @@ import App from '../src/App'
 
 describe('shared components', () => {
   it('renders shell primitives and navigation landmarks', () => {
+    window.history.replaceState({}, '', '/app/command-center')
     render(<App />)
 
     expect(screen.getByRole('banner')).toBeInTheDocument()
@@ -17,8 +18,8 @@ describe('shared components', () => {
     window.history.replaceState({}, '', '/app/launchpad')
     render(<App />)
 
-    expect(screen.getAllByText(/readOnly/i).length).toBeGreaterThan(0)
-    expect(screen.getAllByText('future').length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Partial/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Future').length).toBeGreaterThan(0)
   })
 
   it('renders query-state components', () => {
@@ -45,7 +46,7 @@ describe('shared components', () => {
   })
 
   it('renders drawers with accessible names and non-claim copy', () => {
-    window.history.replaceState({}, '', '/app/launchpad')
+    window.history.replaceState({}, '', '/app/command-center')
     render(<App />)
 
     const complementaryRegions = screen.getAllByRole('complementary')
@@ -53,11 +54,10 @@ describe('shared components', () => {
       .map((region) => region.getAttribute('aria-label'))
       .filter((label): label is string => Boolean(label))
 
-    expect(labels).toContain('Selected app context')
-    expect(labels).toContain('Evidence sections')
+    expect(labels).toContain('Selected incident context')
     expect(
       screen.getAllByText(
-        'Platform posture is bounded by available backend evidence and does not indicate production readiness.',
+        'Triage view only. This screen does not determine root cause or authorize remediation.',
       ).length,
     ).toBeGreaterThan(0)
   })

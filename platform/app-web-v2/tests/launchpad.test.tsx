@@ -18,10 +18,11 @@ describe('launchpad app', () => {
     expect(screen.getByText('Platform Launchpad')).toBeInTheDocument()
   })
 
-  it('renders all approved apps as tiles', () => {
+  it('renders featured and all-app launchpad cards', () => {
     render(<App />)
 
-    expect(screen.getAllByRole('button').filter((button) => button.className.includes('launchpad-tile')).length).toBe(11)
+    expect(screen.getAllByRole('button').filter((button) => button.className.includes('launchpad-featured-tile')).length).toBe(4)
+    expect(screen.getAllByRole('button').filter((button) => button.className.includes('launchpad-tile')).length).toBe(6)
   })
 
   it('shows future capability cards for future apps', () => {

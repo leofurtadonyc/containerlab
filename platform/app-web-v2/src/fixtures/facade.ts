@@ -43,6 +43,22 @@ function section<T>(
   }
 }
 
+function appDescription(id: string): string {
+  const descriptions: Record<string, string> = {
+    'command-center': 'Real-time network visibility, control, and diagnostics.',
+    'digital-twin': 'Live digital replica for analysis, simulation, and impact modeling.',
+    'change-safety': 'Pre-change risk analysis and impact validation.',
+    'service-assurance': 'End-to-end service health and experience assurance.',
+    'transport-engineering': 'Design, plan and optimize transport networks.',
+    'traffic-intelligence': 'Network traffic analytics and insights.',
+    'intent-compliance': 'Intent validation and policy compliance.',
+    'automation-studio': 'Automate workflows and operational tasks.',
+    'ai-assistant': 'Natural language insights and automation.',
+    'admin-platform-ops': 'Platform administration and operations.',
+  }
+  return descriptions[id] ?? `${id} app`
+}
+
 export function getLaunchpadAppsFixture(): LaunchpadAppsResponse {
   return {
     contract_id: 'frontend_v2_launchpad_apps_v1',
@@ -54,7 +70,7 @@ export function getLaunchpadAppsFixture(): LaunchpadAppsResponse {
     apps: APP_REGISTRY.map((app) => ({
       id: app.id,
       label: app.label,
-      description: `${app.label} app`,
+      description: appDescription(app.id),
       route: app.defaultRoute,
       maturity: app.maturity,
       status: app.maturity === 'future' ? 'future' : 'ok',

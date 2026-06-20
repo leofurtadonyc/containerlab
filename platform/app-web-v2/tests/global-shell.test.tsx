@@ -18,8 +18,8 @@ describe('global shell', () => {
     expect(screen.getByRole('banner')).toBeInTheDocument()
     expect(screen.getByRole('main')).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'App sidebar' })).toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: 'App tabs' })).toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: 'Section menu' })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'App tabs' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Section menu' })).not.toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: 'Global search' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Environment selector' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Fabric selector' })).toBeDisabled()
@@ -42,13 +42,12 @@ describe('global shell', () => {
   })
 
   it('renders accessible right drawer regions', () => {
+    window.history.replaceState({}, '', '/app/command-center')
     render(<App />)
 
     const complementaryRegions = screen.getAllByRole('complementary')
     const labels = complementaryRegions.map((region) => region.getAttribute('aria-label'))
-    expect(labels).toContain('Selected app context')
-    expect(labels).toContain('Evidence sections')
-    expect(labels).toContain('Task and approval drawer')
+    expect(labels).toContain('Selected incident context')
   })
 
   it('shows launchpad fallback notice for unknown routes', () => {

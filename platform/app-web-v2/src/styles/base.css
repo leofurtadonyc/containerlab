@@ -39,6 +39,19 @@ ol {
   margin: 0;
 }
 
+/* All enabled buttons and links get pointer cursor */
+button:not(:disabled),
+a,
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+/* Disabled controls get not-allowed cursor */
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 :focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);

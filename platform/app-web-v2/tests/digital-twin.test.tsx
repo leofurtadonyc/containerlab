@@ -61,6 +61,80 @@ describe('digital twin app', () => {
     expect(screen.getByRole('button', { name: 'Program controller path' })).toBeDisabled()
   })
 
+  it('renders KPI cards with wireframe values', () => {
+    window.history.replaceState({}, '', '/app/digital-twin')
+    render(<App />)
+
+    expect(screen.getByText('18,782')).toBeInTheDocument()
+    expect(screen.getByText('34,916')).toBeInTheDocument()
+    expect(screen.getByText('92.4%')).toBeInTheDocument()
+    expect(screen.getByText('Discovered Objects')).toBeInTheDocument()
+    expect(screen.getByText('Active Links')).toBeInTheDocument()
+    expect(screen.getByText('Topology Confidence')).toBeInTheDocument()
+  })
+
+  it('renders topology canvas with required nodes and regions', () => {
+    window.history.replaceState({}, '', '/app/digital-twin')
+    render(<App />)
+
+    const canvas = screen.getByRole('img', { name: 'Network topology canvas' })
+    expect(canvas).toBeInTheDocument()
+    // Node labels are rendered inside the SVG
+    expect(screen.getAllByText('SEA1').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('NYC1').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('FRA1').length).toBeGreaterThan(0)
+  })
+
+  it('renders path analysis with correct values', () => {
+    window.history.replaceState({}, '', '/app/digital-twin')
+    render(<App />)
+
+    expect(screen.getByText('Path Analysis')).toBeInTheDocument()
+    expect(screen.getByText('From SEA1 to FRA1')).toBeInTheDocument()
+    expect(screen.getByText('Reachable')).toBeInTheDocument()
+    expect(screen.getByText('78.6 ms')).toBeInTheDocument()
+    expect(screen.getByText('8.3 Gbps')).toBeInTheDocument()
+  })
+
+  it('renders snapshots and diff panel', () => {
+    window.history.replaceState({}, '', '/app/digital-twin')
+    render(<App />)
+
+    expect(screen.getByText('Snapshots & Diff')).toBeInTheDocument()
+    expect(screen.getByText('128')).toBeInTheDocument()
+    expect(screen.getByText('View Diff Summary')).toBeInTheDocument()
+  })
+
+  it('renders queries strip with required query cards', () => {
+    window.history.replaceState({}, '', '/app/digital-twin')
+    render(<App />)
+
+    expect(screen.getAllByText('Queries').length).toBeGreaterThan(0)
+    expect(screen.getByText('Reachability: SEA1 → FRA1')).toBeInTheDocument()
+    expect(screen.getByText('Devices without BFD')).toBeInTheDocument()
+    expect(screen.getByText('Links > 80% Utilization')).toBeInTheDocument()
+    expect(screen.getByText('Services impacted by NYC1')).toBeInTheDocument()
+  })
+
+  it('renders horizontal tabs including all nine tabs', () => {
+    window.history.replaceState({}, '', '/app/digital-twin')
+    render(<App />)
+
+    const tablists = screen.getAllByRole('tablist')
+    expect(tablists.length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('tab').length).toBeGreaterThanOrEqual(4)
+    expect(screen.getByRole('tab', { name: 'Map' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('renders NYC1 drawer with confidence and actions', () => {
+    window.history.replaceState({}, '', '/app/digital-twin')
+    render(<App />)
+
+    expect(screen.getAllByText('NYC1').length).toBeGreaterThan(0)
+    expect(screen.getByText('Open Dossier')).toBeInTheDocument()
+    expect(screen.getByText('Run What-If')).toBeInTheDocument()
+  })
+
   it('supports loading, empty, error, degraded, and future states via route query', () => {
     window.history.replaceState({}, '', '/app/digital-twin?digitalTwinState=loading')
     render(<App />)

@@ -71,7 +71,7 @@ export const ROUTE_REGISTRY: RouteRecord[] = [
     path: '/app/command-center/situation-room',
     appId: 'command-center',
     tabId: 'command.investigations',
-    verticalMenuId: 'command.situationRoom',
+    verticalMenuId: 'command.incidentQueue',
     maturity: 'bounded',
     breadcrumb: 'Command Center / Situation Room',
     facadeEndpointId: 'GET /api/v2/command-center/overview',
@@ -281,11 +281,20 @@ export const APP_VERTICAL_MENU_BY_APP: Record<V2AppId, NavItemDefinition[]> = {
   'command-center': [
     { id: 'command.operationsOverview', label: 'Operations Overview' },
     { id: 'command.incidentQueue', label: 'Incident Queue' },
-    { id: 'command.situationRoom', label: 'Situation Room' },
+    { id: 'command.allIncidents', label: 'All Incidents', disabled: true },
+    { id: 'command.majorIncidents', label: 'Major Incidents', disabled: true },
+    { id: 'command.myAssignments', label: 'My Assignments', disabled: true },
+    { id: 'command.sloBreaches', label: 'SLO Breaches', disabled: true },
+    { id: 'command.watchlist', label: 'Watchlist', disabled: true },
   ],
   'digital-twin': [
     { id: 'twin.physical', label: 'Physical' },
+    { id: 'twin.logical', label: 'Logical', disabled: true },
     { id: 'twin.routing', label: 'Routing' },
+    { id: 'twin.mplsSr', label: 'MPLS / SR', disabled: true },
+    { id: 'twin.services', label: 'Services', disabled: true },
+    { id: 'twin.policies', label: 'Policies', disabled: true },
+    { id: 'twin.controller', label: 'Controller', disabled: true },
     { id: 'twin.dossiers', label: 'Dossiers' },
   ],
   'change-safety': [
@@ -408,6 +417,11 @@ export function getRouteById(routeId: string): RouteRecord | undefined {
 
 export function getRouteByPath(path: string): RouteRecord | undefined {
   return ROUTE_REGISTRY.find((route) => route.path === path)
+}
+
+export function getDefaultPathForApp(appId: string): string {
+  const route = ROUTE_REGISTRY.find((r) => r.appId === appId)
+  return route ? route.path : DEFAULT_ROUTE_PATH
 }
 
 export function getBreadcrumb(path: string): string | undefined {

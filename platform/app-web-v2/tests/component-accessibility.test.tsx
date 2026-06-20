@@ -20,11 +20,12 @@ describe('component accessibility', () => {
     expect(screen.getByRole('complementary', { name: 'Selected incident context' })).toBeInTheDocument()
   })
 
-  it('keeps table/caption based views accessible', () => {
+  it('keeps digital twin interactive regions accessible', () => {
     window.history.replaceState({}, '', '/app/digital-twin')
     render(<App />)
 
-    expect(screen.getByRole('table', { name: 'Digital twin topology summary' })).toBeInTheDocument()
-    expect(screen.getByRole('table', { name: 'Controller evidence lanes' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Network topology canvas' })).toBeInTheDocument()
+    expect(screen.getByRole('complementary', { name: 'Selected object context' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Search topology')).toBeInTheDocument()
   })
 })

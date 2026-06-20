@@ -7,6 +7,7 @@ export interface NavItem {
   id: string
   label: string
   disabled?: boolean
+  icon?: string
 }
 
 export function AppShell({
@@ -35,14 +36,16 @@ export function AppShell({
       </aside>
       <section className="ds-app-main">
         {tabs}
-        <div className="ds-workspace">
-          {verticalMenu}
+        <div className="ds-workspace" data-has-menu={verticalMenu ? 'true' : 'false'} data-has-drawer={contextDrawer ? 'true' : 'false'}>
+          {verticalMenu ? verticalMenu : null}
           <main role="main" className="ds-content">
             {children}
           </main>
-          <aside aria-label="Context" className="ds-drawer-host">
-            {contextDrawer}
-          </aside>
+          {contextDrawer ? (
+            <aside aria-label="Context" className="ds-drawer-host">
+              {contextDrawer}
+            </aside>
+          ) : null}
         </div>
       </section>
       <span className="sr-only">Apps registered: {apps.length}</span>
@@ -61,24 +64,63 @@ export function TopBar({
 }) {
   return (
     <div className="ds-top-bar">
-      <span className="ds-brand">Network Change Safety and Transport Assurance Platform</span>
-      <div className="ds-top-controls">
-        <button type="button" className="ds-control" aria-label="Environment selector" disabled>
-          Env: {environment}
+      <div className="ds-top-bar-brand">
+        <span className="ds-brand-mark" aria-hidden="true">
+          N
+        </span>
+        <span className="ds-brand">NETOPS PLATFORM</span>
+      </div>
+      <div className="ds-top-bar-main">
+        <button type="button" className="ds-control ds-control-selector" aria-label="Environment selector" disabled>
+          <span className="ds-control-label">Environment</span>
+          <span className="ds-control-value">
+            <span className="ds-env-dot" aria-hidden="true">●</span>
+            {environment}
+          </span>
+          <span className="ds-caret" aria-hidden="true">▾</span>
         </button>
-        <button type="button" className="ds-control" aria-label="Fabric selector" disabled>
-          Fabric: {fabric}
+        <button type="button" className="ds-control ds-control-selector" aria-label="Fabric selector" disabled>
+          <span className="ds-control-label">Region / Fabric</span>
+          <span className="ds-control-value">
+            <span className="ds-fabric-globe" aria-hidden="true">◎</span>
+            {fabric}
+          </span>
+          <span className="ds-caret" aria-hidden="true">▾</span>
         </button>
         {commandSlot}
-        <button type="button" className="ds-control" aria-label="Notifications" disabled>
-          Notifications
+      </div>
+      <div className="ds-top-controls">
+        <button type="button" className="ds-control ds-icon-control ds-notification-btn" aria-label="Notifications" disabled>
+          <span aria-hidden="true">🔔</span>
+          <span className="ds-notification-badge" aria-hidden="true">4</span>
+        </button>
+        <button type="button" className="ds-control" aria-label="Quick actions" disabled>
+          ⚡ Quick Actions <span className="ds-caret" aria-hidden="true">▾</span>
+        </button>
+        <button type="button" className="ds-control ds-icon-control" aria-label="Help menu">
+          ?
+        </button>
+        <button type="button" className="ds-control" aria-label="User menu" disabled>
+          <span className="ds-user-avatar" aria-hidden="true">AD</span>
+          <span className="ds-user-meta">
+            <span className="ds-control-value">Alex Doe</span>
+            <span className="ds-control-label">Network Operator</span>
+          </span>
         </button>
       </div>
     </div>
   )
 }
 
-export function AppSidebar({ items, activeId }: { items: NavItem[]; activeId: string }) {
+export function AppSidebar({
+  items,
+  activeId,
+  onNavigate,
+}: {
+  items: NavItem[]
+  activeId: string
+  onNavigate?: (id: string) => void
+}) {
   return (
     <nav className="ds-app-sidebar" aria-label="App sidebar">
       {items.map((item) => (
@@ -88,15 +130,31 @@ export function AppSidebar({ items, activeId }: { items: NavItem[]; activeId: st
           className="ds-nav-item"
           aria-current={item.id === activeId ? 'page' : undefined}
           disabled={item.disabled}
+          onClick={onNavigate && !item.disabled ? () => onNavigate(item.id) : undefined}
         >
-          {item.label}
+          <span className="ds-nav-icon" aria-hidden="true">
+            {item.icon ?? item.label.slice(0, 1)}
+          </span>
+          <span>{item.label}</span>
         </button>
       ))}
+      <button type="button" className="ds-sidebar-collapse" aria-label="Collapse sidebar">
+        <span aria-hidden="true">‹</span>
+        <span>Collapse</span>
+      </button>
     </nav>
   )
 }
 
-export function AppTabs({ items, activeId }: { items: NavItem[]; activeId: string }) {
+export function AppTabs({
+  items,
+  activeId,
+  onNavigate,
+}: {
+  items: NavItem[]
+  activeId: string
+  onNavigate?: (id: string) => void
+}) {
   return (
     <nav className="ds-tabs" aria-label="App tabs">
       {items.map((item) => (
@@ -106,6 +164,7 @@ export function AppTabs({ items, activeId }: { items: NavItem[]; activeId: strin
           className="ds-tab"
           aria-current={item.id === activeId ? 'page' : undefined}
           disabled={item.disabled}
+          onClick={onNavigate && !item.disabled ? () => onNavigate(item.id) : undefined}
         >
           {item.label}
         </button>
@@ -114,9 +173,22 @@ export function AppTabs({ items, activeId }: { items: NavItem[]; activeId: strin
   )
 }
 
-export function VerticalMenu({ items, activeId }: { items: NavItem[]; activeId: string }) {
+export function VerticalMenu({
+  items,
+  activeId,
+  header,
+  footer,
+  onNavigate,
+}: {
+  items: NavItem[]
+  activeId: string
+  header?: ReactNode
+  footer?: ReactNode
+  onNavigate?: (id: string) => void
+}) {
   return (
     <nav className="ds-vertical-menu" aria-label="Section menu">
+      {header ? <div className="ds-vertical-menu-header">{header}</div> : null}
       {items.map((item) => (
         <button
           key={item.id}
@@ -124,10 +196,12 @@ export function VerticalMenu({ items, activeId }: { items: NavItem[]; activeId: 
           className="ds-menu-item"
           aria-current={item.id === activeId ? 'page' : undefined}
           disabled={item.disabled}
+          onClick={onNavigate && !item.disabled ? () => onNavigate(item.id) : undefined}
         >
           {item.label}
         </button>
       ))}
+      {footer ? <div className="ds-vertical-menu-footer">{footer}</div> : null}
     </nav>
   )
 }
@@ -273,12 +347,18 @@ export function NonClaimBanner({ copy }: { copy: string }) {
 export function ContextDrawer({
   title,
   subtitle,
+  headerAction,
   children,
-}: PropsWithChildren<{ title: string; subtitle?: string }>) {
+}: PropsWithChildren<{ title: string; subtitle?: string; headerAction?: ReactNode }>) {
   return (
     <section className="ds-drawer" role="complementary" aria-label={title}>
-      <h3>{title}</h3>
-      {subtitle ? <p className="ds-muted">{subtitle}</p> : null}
+      <div className="ds-drawer-header">
+        <div className="ds-drawer-header-text">
+          <h3>{title}</h3>
+          {subtitle ? <p className="ds-muted">{subtitle}</p> : null}
+        </div>
+        {headerAction ? <div className="ds-drawer-header-action">{headerAction}</div> : null}
+      </div>
       {children}
     </section>
   )
